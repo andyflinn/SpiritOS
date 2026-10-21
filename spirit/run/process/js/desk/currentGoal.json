@@ -1,5 +1,5 @@
 {
- "change": 77644,
+ "change": 77745,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -9565,15 +9566,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G30.10"
    ],
-   "blocked": [
-    "goal/G30.14"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -9643,15 +9643,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G30.11"
    ],
-   "blocked": [
-    "goal/G30.14"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -9909,10 +9908,11 @@
    "id": "goal/G30.14",
    "title": "Relay: face request as a stream event, and faceStream's pipe",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.13",
@@ -9923,21 +9923,47 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "design/decisions/0010-fix-the-protocol-or-name-the-cheat.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/faceStream.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "35ddc907",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -9998,6 +10024,51 @@
      "at": "2026-10-21T01:11:39.532Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "faceStream: the face request as a stream event, and the piped uploads",
+     "test": "spirit/test/faceStream.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/relay.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:00:40.250Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/relayAuth.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:00:42.769Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:00:45.216Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:01:37.992Z"
     }
    ],
    "chat": [
@@ -10072,6 +10143,60 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-21T01:12:28.275Z",
      "text": "green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T01:52:17.009Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:52:19.198Z",
+     "text": "commit 4f4a5af6b060dda18196b0e2ad56471df5ce11b0: goal/G30.14: the red for the face request as a stream event and faceStream: faceCall puts a face event on the member's stream and holds the face's response; faceAnswer pipes the home node's signed upl\n- spirit/test/faceStream.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:57:56.439Z",
+     "text": "Built; the red is green (faceStream 8 of 8): a face request goes down the member's stream as a face event, the home node's signed upload is piped straight into the waiting face response (300 KB in the test, past any post limit), and its long upload feeds the face's own stream, with face-open and face-close.\n\n- Decision 0010 now registers the new signed format and the three events, with your yes as their authority (protocolSurface asked for it).\n- Not tried live yet: that needs the home node side (G30.13).\n\nThe commit waits on grants for relay.js, relayServer.js and relayAuth.js. Grant them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:01:31.237Z",
+     "text": "commit 35ddc90725e7d12419ba303e1d9ae4150cd0a302: goal/G30.14: the face request as a stream event and faceStream (Andy's yes on each, Q1 and Q2): faceCall puts a face event { id, request } on the member's stream and holds the face's response; faceAns\n- design/decisions/0010-fix-the-protocol-or-name-the-cheat.md\n- spirit/run/js/relay.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:01:51.091Z",
+     "text": "Claimed: 35ddc907. Verify passes: faceStream 8 of 8, protocolSurface 13 of 13.\n\nFiles: relay.js, relayServer.js, relayAuth.js, decision 0010; the suite faceStream.\n\nNext in order: G30.13 (the home node side) and G30.12 (one face stream per member), each when it has its Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:01:53.897Z",
+     "text": "deskVerify: passed, at 35ddc907 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:02:19.289Z",
+     "text": "deskVerify: passed, at 35ddc907 (pull failed: fatal: Cannot fast-forward to multiple branches.). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:03:37.832Z",
+     "text": "does it help to tag and try it with the relay, there's no apps in there yet. I'd try with \"Files\" but are we ready for that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:04:21.874Z",
+     "text": "Not ready yet. Tagging it would deploy cleanly, but a live try would show only half the trip.\n\n- What is built (G30.14) is the relay's half: it puts the face request on your node's stream and waits for the answer.\n- Nobody answers yet. Your home node has no code that picks up a face event; that is G30.13.\n- With Files today, the face would send the request, your node would ignore it, and after 30 s the browser would get a 504.\n\nThe first real try with Files comes after G30.13, and the tag goes with that. Go on G30.13?"
     }
    ]
   }
