@@ -201,6 +201,57 @@ const done = (async function () {
     refusalStays: /ndAllocSaid\s*=\s*\(b && b\.error\)|ndAllocSaid\s*=\s*.*refused/.test(nd2),
     relayReadsFile: /deps\.readConfig/.test(code('spirit/run/js/relay.js')) && /readConfig/.test(code('spirit/run/js/relayServer.js')),
   };
+  // Box v17-v19 (Andy: "why would the relay not stash my login on my member-row?", "save the cookie 1. after login 2.
+  // after re-connect 3. every day", "delete it on logoff/logout"; one login per device): a face login survives a relay
+  // restart. NAMED HERE: relayStore members.faceLogins / setFaceLogins / byFaceLogin; the row holds the cookie's hash.
+  test.subHeading('6. a face login survives a relay restart');
+  let L = null;
+  try {
+    let t6 = Date.now();
+    const clock = function () { return t6; };
+    const home6 = fs.mkdtempSync(path.join(os.tmpdir(), 'g3015l-'));
+    homes.push(home6);
+    plant.ensureAt(home6, 'relay');
+    auth.writeOwner(home6, auth.generateIdentity('andy').publicKey);
+    fs.mkdirSync(path.join(home6, 'relay-state'), { recursive: true });
+    fs.writeFileSync(path.join(home6, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+    const mails6 = [];
+    const mk = function () { return createRelay(home6, { now: clock, sendMail: function (m) { mails6.push(m); return Promise.resolve({ ok: true }); } }); };
+    let box6 = mk();
+    const dave = auth.generateIdentity('dave');
+    box6.join(dave.publicKey, 'dave@example.org', 4242, '');
+    box6.joinConfirm(dave.publicKey, ((/\?join=([A-Za-z0-9_-]+)/.exec((mails6[0] || {}).text || '')) || [])[1] || '', '');
+    relayStore.open(home6).members.setFace(dave.publicKey, 'dock', 'dave@example.org');
+    const loginOnce = function (b) {
+      t6 += 2 * 60 * 1000;
+      b.faceLogin('dock', 'dave@example.org');
+      const tok = ((/\?([A-Za-z0-9_-]{16,})/.exec((mails6[mails6.length - 1] || {}).text || '')) || [])[1] || '';
+      return (b.faceLogin('dock', tok) || {}).session || '';
+    };
+    const sidA = loginOnce(box6);
+    const sidB = loginOnce(box6);                 // a second device
+    box6 = mk();                                  // the relay restarts
+    const afterRestart = [box6.faceSession(sidA).ok, box6.faceSession(sidB).ok];
+    const rowText = JSON.stringify(relayStore.open(home6).members.get(dave.publicKey));
+    const clear = rowText.indexOf(sidA) !== -1 || rowText.indexOf(sidB) !== -1;
+    // A reconnect writes the deadline: three days on, dave's face stream opens; nine days after login it still holds.
+    box6.streamOpen(dave.publicKey, auth.sign(dave.privateKey, auth.streamMessage(dave.publicKey, box6.relayPublicKey())), { write: function () {}, end: function () {}, close: function () {} });
+    t6 += 3 * 24 * 3600 * 1000;
+    box6.faceOpen(sidB, new PassThrough());
+    box6.faceLogout(sidA);
+    t6 += 6 * 24 * 3600 * 1000;
+    box6 = mk();
+    const afterLogout = [box6.faceSession(sidA).ok, box6.faceSession(sidB).ok];
+    t6 += 8 * 24 * 3600 * 1000;
+    box6 = mk();
+    const afterIdle = box6.faceSession(sidB).ok;
+    L = { afterRestart: afterRestart, clear: clear, afterLogout: afterLogout, afterIdle: afterIdle };
+  } catch (e) { L = { threw: e.message }; }
+  if (L && L.afterRestart && L.afterRestart[0] === true && L.afterRestart[1] === true && L.clear === false
+      && L.afterLogout[0] === false && L.afterLogout[1] === true && L.afterIdle === false)
+    test.check('two devices stay logged in across a restart, the row holds no cookie, a reconnect moves the deadline, Log out removes one, and 7 idle days end it');
+  else test.fail(OWED + 'logins across a restart: ' + short(L));
+
   const uiMissing = Object.keys(ui).filter(function (k) { return !ui[k]; });
   if (!uiMissing.length) test.check('the screen sets disc in GB, keeps a refusal, Restart sends only the restart, and the relay reads its own file');
   else test.fail(OWED + 'missing: ' + uiMissing.join(', '));
