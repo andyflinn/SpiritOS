@@ -28,13 +28,22 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
+  // WHAT THE WATCHER LAST SAID OF EACH PATH (goal/G30.16): the tree arrives as create commands when the page subscribes,
+  // usually before the rows that show it exist, so a row made later starts from this. A delete forgets the path.
+  var known = Object.create(null);
+  var subscribed = false;
   // The fs-watcher's commands, by path, to the rows that show that path.
   function dispatch(idx) {
+    if (subscribed) return;
+    subscribed = true;
     spirit.core.jobs.subscribe({
       onUpdate: function (job) {
         var cmd = job && job.type === 'fs-watcher' && job.data && job.data.command;
         if (!cmd || !cmd.path) return;
-        idx.forKey(String(cmd.path)).forEach(function (el) {
+        var p = String(cmd.path);
+        if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') delete known[p];
+        else known[p] = { kind: cmd.op === 'createDirectory' ? 'folder' : 'file', size: cmd.size, modified: cmd.modified };
+        idx.forKey(p).forEach(function (el) {
           if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') el.apply({ gone: true });
           else el.apply({ size: cmd.size, modified: cmd.modified, gone: false });
         });
@@ -42,15 +51,20 @@
     });
   }
 
+  function index() { files = files || E.rowElement.index(dispatch); return files; }
+  // Start listening before any row exists, so the tree is known when the rows come (Files calls it at mount).
+  function watch() { dispatch(index()); }
+
   function create(row) {
     var r = row || {};
     var p = String(r.path || '');
-    files = files || E.rowElement.index(dispatch);
+    var k = known[p] || {};
     return E.rowElement.create({
       kind: 'file',
       key: p,
-      index: files,
-      row: { path: p, name: p.slice(p.lastIndexOf('/') + 1), kind: r.kind || 'file', size: r.size, modified: r.modified, gone: false },
+      index: index(),
+      row: { path: p, name: p.slice(p.lastIndexOf('/') + 1), kind: r.kind || k.kind || 'file',
+        size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, gone: false },
       fields: [
         { name: 'icon', from: ['kind', 'gone'], paint: function (v) { var I = icons(); return v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || ''); } },
         { name: 'name', paint: function (v) { return esc(v.name); } },
@@ -74,5 +88,5 @@
     });
   }
 
-  E.fileElement = { create: create };
+  E.fileElement = { create: create, watch: watch, known: function (p) { return known[String(p)] || null; } };
 }());

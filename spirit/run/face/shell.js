@@ -110,6 +110,56 @@
     });
   }
 
+  // A FILE OF THE HOME NODE, PIECE BY PIECE (goal/G30.16): the same sealed answer as call(), each line opened as it
+  // arrives and its bytes handed to onPiece, so a viewer can show it before the last piece is in. -> { status, type, bytes }
+  function file(path, onPiece) {
+    var each = typeof onPiece === 'function' ? onPiece : function () {};
+    var request = { get: String(path || '').replace(/^\/+/, '') };
+    if (!link.sealed) return call(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
+    return window.faceSeal.seal(link.node.sealKey, link.key.publicKey, link.node.publicKey, JSON.stringify(request)).then(function (s) {
+      s.k = link.key.publicKey;
+      return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
+    }).then(function (r) {
+      if (r.status !== 200 || !r.body || typeof r.body.getReader !== 'function') {
+        return call(request).then(function (whole) { if (whole.status === 200) each(whole.bytes); return whole; });
+      }
+      var reader = r.body.getReader();
+      var decoder = new TextDecoder();
+      var held = '';
+      var head = null;
+      var parts = [];
+      var chain = Promise.resolve();
+      function open(l) {
+        chain = chain.then(function () {
+          return window.faceSeal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, l);
+        }).then(function (got) {
+          if (!got) throw new Error('an answer did not open');
+          if (!head) { head = JSON.parse(got.text); return; }
+          var piece = window.faceSeal.fromB64(got.text);
+          parts.push(piece);
+          if ((head.status || 0) === 200) each(piece);
+        });
+      }
+      function pump() {
+        return reader.read().then(function (step) {
+          if (step.done) { if (held) open(held); return chain; }
+          held += decoder.decode(step.value, { stream: true });
+          var cut = held.split('\n');
+          held = cut.pop();
+          cut.filter(Boolean).forEach(open);
+          return pump();
+        });
+      }
+      return pump().then(function () {
+        var size = parts.reduce(function (n, p) { return n + p.length; }, 0);
+        var all = new Uint8Array(size);
+        var at = 0;
+        parts.forEach(function (p) { all.set(p, at); at += p.length; });
+        return { status: (head && head.status) || 502, type: (head && head.type) || '', bytes: all };
+      });
+    });
+  }
+
   function ask(verb, args) {
     var request = { verb: String(verb) };
     Object.keys(args || {}).forEach(function (k) { request[k] = args[k]; });
@@ -259,7 +309,7 @@
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
   // The apps the face has from the start (the box: Contacts, in this item); every other app loads when opened.
-  var FIRST_APPS = ['shell/contacts/contacts.js'];
+  var FIRST_APPS = ['shell/contacts/contacts.js', 'shell/files/files.js'];
   var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
   var loadingId = '';
   var stack = [];         // ids on screen, newest last
@@ -460,7 +510,7 @@
           return window.faceSeal.newKey().then(function (key) { link.key = key; link.sealed = true; });
         });
     ready.then(function () {
-      if (!home) window.spiritTransport = { ask: ask, events: events };
+      if (!home) window.spiritTransport = { ask: ask, events: events, file: file };
       if (home) setConnected(true);
       return loadParts();
     }).then(function () {

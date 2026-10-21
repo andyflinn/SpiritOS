@@ -169,6 +169,10 @@
     <script src="/shell/js/probabilitySearch.js"></script>
     <!-- Contacts' one search in two tiers (goal/G30.19), on the list-tool with contactElement rows; Join draws it too. -->
     <script src="/shell/js/contactSearch.js"></script>
+    <!-- The viewers as shell elements (goal/G30.16): the frame both share, then text and media. -->
+    <script src="/shell/js/fileViewer.js"></script>
+    <script src="/shell/js/textViewer.js"></script>
+    <script src="/shell/js/mediaViewer.js"></script>
     <script src="/js/client/shell.js"></script>
     <script>
       (function () {
@@ -176,16 +180,7 @@
         var registerApp = spirit.shell.registerApp;
         var launchApp = spirit.shell.launchApp;
         var escapeHtml = spirit.shell.escapeHtml;
-        var renderOpenWith = spirit.shell.renderOpenWith;
-        var renderAppOfFile = spirit.shell.renderAppOfFile;
-        var findJobByType = spirit.shell.findJobByType;
-        var mimeTypeForName = spirit.shell.mimeTypeForName;
-        var classifyMimeType = spirit.shell.classifyMimeType;
-        var iconForFile = spirit.shell.iconForFile;
-        var CATEGORY_APP_HANDLERS = spirit.shell.CATEGORY_APP_HANDLERS;
         var setViewerTitle = spirit.shell.setViewerTitle;
-        var renderFileInfoBubble = spirit.shell.renderFileInfoBubble;
-        var renderAnnotationsSection = spirit.shell.renderAnnotationsSection;
         var renderAppGroup = spirit.shell.renderAppGroup;
         var listApps = spirit.shell.listApps;
         var getAppOverride = spirit.shell.getAppOverride;
@@ -202,205 +197,43 @@
         // its tile lives in the Spirit group; the two launchers below
         // stay here, and Files opens them through api.launchApp.
 
-        // ---- Text File Launcher app ----
-        // Only reachable via launchApp('text-file-launcher', { path }) from Files or
-        // the Processes app — no desktop icon (hidden: true).
-        function maybeRenderJobForm(container, scriptPath) {
-          var match = scriptPath.match(/^process\/([^/]+)\/([^/]+)\/(.+)\.js$/);
-          if (!match) return;
-
-          var lang = match[1]; // 'js' -> node, anything else used as the literal command name
-          var manifestPath = scriptPath.replace(/\.js$/, '.json');
-          var manifestRaw = spirit.core.fs.loadFile(manifestPath);
-          if (manifestRaw == null) return; // no manifest, no form — just a plain code view
-
-          var manifest;
-          try {
-            manifest = JSON.parse(manifestRaw); // { label, description?, args: [{name, type, label, default}, ...] }
-          } catch (e) {
-            return;
-          }
-
-          var command = lang === 'js' ? 'node' : lang;
-
-          var formEl = document.getElementById('job-manifest-form');
-          var argsHtml = (manifest.args || []).map(function (arg) {
-            var inputType = arg.type === 'number' ? 'number' : 'text';
-            return '<label class="field-label">' + escapeHtml(arg.label || arg.name) +
-              '<input type="' + inputType + '" data-arg-name="' + escapeHtml(arg.name) +
-              '" value="' + escapeHtml(arg.default != null ? arg.default : '') + '"></label>';
-          }).join('');
-
-          // The shell's own form shape, which this predated: captioned
-          // fields in a wrapping row with the button at the end of the
-          // last one (§3). It was stacked labels with a private copy of
-          // .field-label under an id, and a bare <h3> whose default top
-          // margin was the space above the panel nobody asked for.
-          formEl.innerHTML = '<div class="stat-tile wide">' +
-            '<div class="panel-heading">' + escapeHtml(manifest.label || scriptPath) + '</div>' +
-            '<div class="start-job-form card">' +
-              argsHtml +
-              '<button type="button" id="start-manifest-job" style="display:none">' + ICON.RUN + ' Start Job</button>' +
-              '<button type="button" id="job-include-toggle" style="display:none"></button>' +
-            '</div>' +
-            // Under the row: something to read when it appears, not a
-            // control on the line.
-            '<div id="job-manifest-note" class="job-manifest-note"></div>' +
-            '</div>';
-
-          // ── ONLY WHAT THIS NODE INCLUDES (slim/G1.3 T9) ────────────────
-          //
-          // Andy: "i will test this with the imageStats process, in
-          // fileViewer Launcher, it might have to give me the option to
-          // include/exclude a process". Start Job is offered only for an
-          // included process; the switch beside it asks twice, since a
-          // process change weighs more than an app's (Andy: "re-arm
-          // buttons"). The page cannot read relay-state/include.json, so it
-          // asks config.searchModules, and switches with config.setModules.
-          // process/js only: no other language's module exists yet (jobs.js).
-          var modulePath = lang === 'js' ? 'process/js/' + match[2] : '';
-          var included = false;
-          var toggle = document.getElementById('job-include-toggle');
-          var startBtn = document.getElementById('start-manifest-job');
-          var note = document.getElementById('job-manifest-note');
-          function drawInclude() {
-            startBtn.style.display = included ? '' : 'none';
-            toggle.style.display = modulePath ? '' : 'none';
-            toggle.removeAttribute('data-armed');
-            toggle.textContent = included ? 'Exclude from this node' : 'Include on this node';
-          }
-          function askIncluded() {
-            if (!modulePath) return Promise.resolve();
-            return Promise.resolve(spirit.core.ask('config.searchModules', { query: match[2] })).then(function (r) {
-              var items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
-              included = items.some(function (i) { return i && i.key === modulePath; });
-              drawInclude();
-            }, function () { included = false; drawInclude(); });
-          }
-          toggle.addEventListener('click', function () {
-            if (!toggle.hasAttribute('data-armed')) {
-              toggle.setAttribute('data-armed', '');
-              toggle.textContent = included ? 'Press again to exclude' : 'Press again to include';
-              return;
-            }
-            var on = !included;
-            Promise.resolve(spirit.core.ask('config.setModules', { path: modulePath, on: on })).then(function (r) {
-              note.textContent = r && r.status === 200
-                ? (on ? 'Included: it runs now if it is a server.' : 'Excluded: it stops at the next restart.')
-                : 'Not changed: ' + ((r && r.text) || 'no answer');
-              return askIncluded();
-            });
-          });
-          askIncluded();
-
-          document.getElementById('start-manifest-job').addEventListener('click', function () {
-            var values = {};
-            formEl.querySelectorAll('[data-arg-name]').forEach(function (input) {
-              values[input.dataset.argName] = input.type === 'number' ? Number(input.value) : input.value;
-            });
-            spirit.core.jobs.start({
-              command: command,
-              args: [scriptPath, JSON.stringify(values)],
-              type: manifest.label || match[2],
-            });
-            // Navigate immediately, don't wait on the request — the Jobs
-            // app picks up the new job live via SSE either way.
-            //
-            // {replace: true}: starting the job is finishing with the
-            // viewer, so Back from Jobs returns to whatever opened it —
-            // Processes, or Files — rather than to the form you have
-            // just spent (Andy). The third of three, and all three are a
-            // viewer stepping out of its own way.
-            launchApp('shell/jobs', null, { replace: true });
-          });
-        }
-
-        // Shared by mount (first open) and loadFile (every later "Open with"
-        // against a different file) — mount() itself only ever runs once
-        // now that apps stay persistently mounted across navigation, so a
-        // viewer that doesn't also implement loadFile would keep showing
-        // whichever file it first opened, forever.
-        // THE FILE ON CODEMIRROR (goal/G29.12): the text view shows it, the search words marked, the first in view.
-        function codeViewerLoadFile(path, words, line) {
-          setViewerTitle(path);
-          var content = spirit.core.fs.loadFile(path);
-          document.getElementById('cv-body').innerHTML =
-            renderFileInfoBubble(path) +
-            // Before Open with: which app this file IS outranks what else
-            // could open it.
-            '<div id="app-of-file"></div>' +
-            // cv-, not a bare id: BOTH launchers draw an Open with, both
-            // stay mounted once visited (switchTo keeps a pane per app),
-            // and getElementById answers with whichever is first in the
-            // document. Open a text file and then an image and the image
-            // viewer's handlers were written into the text viewer's pane.
-            '<div id="cv-open-with" class="open-with"></div>' +
-            '<div id="job-manifest-form"></div>' +
-            '<div id="cv-text" class="text-view"></div>' +
-            renderAnnotationsSection(path);
-          var cvText = document.getElementById('cv-text');
-          window.spiritElements.createTextView(cvText, {
-            text: content == null ? '(could not load file)' : content, words: words || '', line: line || 0, readOnly: true, path: path,
-          });
-          renderAppOfFile(document.getElementById('app-of-file'), path);
-          renderOpenWith(document.getElementById('cv-open-with'), 'text-file-launcher', path);
-          maybeRenderJobForm(document.getElementById('cv-body'), path);
-        }
-
+        // ---- The two launchers: the viewer elements (goal/G30.16) ----
+        // The viewers are shell elements now (shell/js/fileViewer.js, textViewer.js, mediaViewer.js), so the face has
+        // them too; their inline bodies and the job form stood here. Only reachable via launchApp(id, { path }) from
+        // Files, Open with or the Processes app — no desktop icon (hidden: true). A launcher, not a dialog: every one of
+        // its launches replaces its own stack entry (assertOneHiddenApp, shell.js). mount runs once; loadFile shows each
+        // later file.
+        var mediaShown = null;
         registerApp({
           id: 'text-file-launcher',
           name: 'Text File Launcher',
           icon: ICON.CODE,
           hidden: true,
-          // A launcher, not a dialog: it finishes with the file it was
-          // showing, so it MAY launch — and every one of its launches
-          // replaces its own stack entry. That is what keeps at most one
-          // hidden app on the stack (assertOneHiddenApp, shell.js).
           type: 'launcher',
           mount: function (container, api, params) {
-            container.innerHTML = '<div id="cv-body" class="stack"></div>';
-            codeViewerLoadFile(params.path, params.words, params.line);
+            this._host = container;
+            this.loadFile(params.path, params);
           },
           loadFile: function (path, params) {
-            codeViewerLoadFile(path, params && params.words, params && params.line);
+            setViewerTitle(path);
+            window.spiritElements.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
           },
-          render: function () {}, // static between loadFile calls — the file's content doesn't live-update
+          render: function () {},
         });
-
-        // ---- Media Launcher app (image/audio/video) ----
-        var MEDIA_TAG_BY_CATEGORY = {
-          image: { tag: 'img', extraAttrs: '' },
-          audio: { tag: 'audio', extraAttrs: ' controls' },
-          video: { tag: 'video', extraAttrs: ' controls' },
-        };
-
-        // Same reasoning as codeViewerLoadFile, above.
-        function mediaViewerLoadFile(path) {
-          setViewerTitle(path);
-          var category = classifyMimeType(mimeTypeForName(path));
-          var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
-          document.getElementById('mv-body').innerHTML =
-            renderFileInfoBubble(path) +
-            // mv-, for the reason above: two panes are alive at once and
-            // a bare id belongs to whichever mounted first.
-            '<div id="mv-open-with" class="open-with"></div>' +
-            '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>' +
-            renderAnnotationsSection(path);
-          renderOpenWith(document.getElementById('mv-open-with'), 'media-launcher', path);
-        }
-
         registerApp({
           id: 'media-launcher',
           name: 'Media Launcher',
           icon: ICON.VIEW,
           hidden: true,
-          type: 'launcher', // as above: launches, and every launch replaces
+          type: 'launcher',
           mount: function (container, api, params) {
-            container.innerHTML = '<div id="mv-body" class="stack"></div>';
-            mediaViewerLoadFile(params.path);
+            this._host = container;
+            this.loadFile(params.path, params);
           },
           loadFile: function (path) {
-            mediaViewerLoadFile(path);
+            setViewerTitle(path);
+            if (mediaShown) mediaShown.destroy();
+            mediaShown = window.spiritElements.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
           },
           render: function () {},
         });

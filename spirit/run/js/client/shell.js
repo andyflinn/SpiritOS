@@ -2550,30 +2550,6 @@
       ':</span><span class="file-info-value">' + value + '</span></div>';
   }
 
-  // A path that always fits, however narrow the pane (Andy: it is the most
-  // vital thing in the bubble, so it must never run off the side).
-  //
-  // One span per directory and one for the file, with a <wbr> between
-  // them. The spans are for reading — the directories dim, the filename
-  // stays at full strength, so the eye lands on the part you came for.
-  // They are NOT what makes it wrap: an element boundary is not a line
-  // break opportunity, so <span>run/</span><span>app/</span> breaks in
-  // exactly the places `run/shell/` does, which is nowhere. <wbr> is the
-  // break opportunity, and the browser prefers those points over any
-  // other — so it folds after a slash and only splits a segment if one
-  // is longer than the line, which .file-info-value's overflow-wrap
-  // catches.
-  //
-  // Escaped per segment, then the markup added, so a filename with a <
-  // in it cannot become part of the structure.
-  function pathValue(path) {
-    var parts = String(path == null ? '' : path).split('/');
-    var file = parts.pop();
-    return parts.map(function (dir) {
-      return '<span class="path-dir">' + escapeHtml(dir) + '/</span><wbr>';
-    }).join('') + '<span class="path-file">' + escapeHtml(file) + '</span>';
-  }
-
   // A handful of short facts as ONE reading rather than a list of rows,
   // in a bubble of their own so they are visibly not the controls beside
   // them. Used wherever a row has already supplied the heading: a
@@ -2597,18 +2573,6 @@
     }).join('') + '</div>';
   }
 
-  // Two bubbles, because they answer two different questions (Andy).
-  //
-  // The path is the title of the screen — which file this is — so it gets
-  // a bubble of its own and no caption. "Path:" in front of it was a word
-  // saying what the only thing in the bubble obviously is, and it cost
-  // 90px of the width that the path itself needed most.
-  //
-  // Everything else is a reading about that file, so it is a facts bubble
-  // like every other reading in the shell. Size, Changed and Created come
-  // from statFile and are simply absent when the call fails (a race with
-  // the file being deleted) rather than shown as blanks — §1, and what
-  // this function already did.
   // Reading an app's own entry script? Then say which app, and offer to
   // go there (Andy).
   //
@@ -2692,68 +2656,8 @@
     });
   }
 
-  function renderFileInfoBubble(path) {
-    var stats = spirit.core.fs.statFile(path);
-    var facts = [['MIME type', mimeTypeForName(path)]];
-    if (stats) {
-      facts.push(
-        ['Size', spirit.core.util.formatBytes(stats.size)],
-        ['Changed', new Date(stats.mtimeMs).toLocaleString()],
-        ['Created', new Date(stats.birthtimeMs).toLocaleString()]
-      );
-    }
-    return '<div class="stat-tile wide file-path">' + pathValue(path) + '</div>' +
-      factRow(facts);
-  }
-
-  // Turns e.g. "spiritImageStats" / "computedAt" into "Spirit Image Stats" /
-  // "Computed At" for display — annotation keys are tool-chosen camelCase
-  // identifiers, not written with a human reader in mind.
-  function prettifyAnnotationKey(key) {
-    return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, function (c) { return c.toUpperCase(); });
-  }
-
-  // Epoch-milliseconds heuristic, same idea renderFileInfoBubble already
-  // applies to mtime/birthtime — a bare "1788480690989" is unreadable.
-  // Every annotation field producing an epoch-ms value so far (mtimeMs,
-  // computedAt) safely clears this range for the foreseeable future.
-  function looksLikeEpochMs(value) {
-    return typeof value === 'number' && value > 1e11;
-  }
-
-  // Recursive, generic-on-purpose: the shell has no built-in knowledge of
-  // what any particular tool's payload looks like (today: imageStats's
-  // width/height/averageColor/histogram, imageCaptionClaude's
-  // caption/tags/model — more tools will add more shapes later). Scalars
-  // render as a row; nested objects recurse into a nested card; arrays
-  // (e.g. histogram's 16-bucket lists) collapse behind a <details> with
-  // raw pretty-printed JSON rather than dumping dozens of rows inline.
-  function renderAnnotationValue(value) {
-    if (value === null || value === undefined) return '<em>none</em>';
-    if (Array.isArray(value)) {
-      return '<details class="annotation-raw"><summary>' + value.length + ' value' + (value.length === 1 ? '' : 's') + '</summary><pre class="code-view">' + escapeHtml(JSON.stringify(value, null, 2)) + '</pre></details>';
-    }
-    if (typeof value === 'object') {
-      return '<div class="stat-tile nested">' + Object.keys(value).map(function (key) {
-        return fileInfoRow(escapeHtml(prettifyAnnotationKey(key)), renderAnnotationValue(value[key]));
-      }).join('') + '</div>';
-    }
-    if (looksLikeEpochMs(value)) return escapeHtml(new Date(value).toLocaleString());
-    return escapeHtml(String(value));
-  }
-
-  // Called by both Text File Launcher and Media Launcher, at the bottom of
-  // their display. Returns '' (nothing rendered) when the file's sidecar
-  // has no 'client' data — same "omit rather than show an empty state"
-  // convention renderFileInfoBubble above uses for missing stat rows.
-  function renderAnnotationsSection(path) {
-    var client = (spirit.core.fs.getAnnotations(path) || {}).client;
-    if (!client || Object.keys(client).length === 0) return '';
-    var sections = Object.keys(client).map(function (key) {
-      return '<div class="stat-tile wide"><h4>' + escapeHtml(prettifyAnnotationKey(key)) + '</h4>' + renderAnnotationValue(client[key]) + '</div>';
-    }).join('');
-    return '<h3>More Information</h3>' + sections;
-  }
+  // THE FILE INFO BUBBLE AND THE ANNOTATIONS (renderFileInfoBubble, pathValue, renderAnnotationsSection and its
+  // helpers) STOOD HERE: they are the viewer elements' now (shell/js/fileViewer.js, goal/G30.16), asking asynchronously.
 
   // Dynamically-loaded apps: discovery reads only each app's manifest
   // (app/<name>/<name>.json — same folder/basename convention process/
@@ -2918,9 +2822,6 @@
     setViewerTitle: setViewerTitle,
     fileInfoRow: fileInfoRow,
     factRow: factRow,
-    pathValue: pathValue,
-    renderFileInfoBubble: renderFileInfoBubble,
-    renderAnnotationsSection: renderAnnotationsSection,
     renderAppGroup: renderAppGroup,
     listApps: listApps,
     listIntrinsicApps: listIntrinsicApps,
