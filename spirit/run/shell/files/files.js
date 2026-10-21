@@ -19,9 +19,12 @@ function filesSearch(api, args) {
     var items = (body.items || []).map(function (i) {
       var row = null;
       try { row = JSON.parse(i.label); } catch (e) { row = null; }
-      var path = String((row && row.path) || i.key);
+      // A folder comes with a trailing slash; the watcher and the row know it without one.
+      var raw = String((row && row.path) || i.key);
+      var folder = /\/$/.test(raw);
+      var path = raw.replace(/\/+$/, '');
       var k = FE.known(path) || {};
-      return { key: path, label: JSON.stringify({ path: path, name: path.slice(path.lastIndexOf('/') + 1), kind: k.kind || 'file',
+      return { key: path, label: JSON.stringify({ path: path, name: path.slice(path.lastIndexOf('/') + 1), kind: folder ? 'folder' : (k.kind || 'file'),
         size: k.size, modified: k.modified, line: (row && row.line) || 0 }) };
     });
     return { status: 200, body: { ok: true, items: items, more: !!body.more } };
@@ -61,7 +64,7 @@ spirit.shell.activateApp({
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       columns: [
         { field: 'icon', label: '', width: '1.5em' },
-        { field: 'name', label: 'Name', sort: 'text' },
+        { field: 'name', from: 'path', label: 'Name', sort: 'text' },
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],

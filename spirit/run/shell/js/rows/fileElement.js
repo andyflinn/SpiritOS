@@ -67,7 +67,13 @@
         size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, gone: false },
       fields: [
         { name: 'icon', from: ['kind', 'gone'], paint: function (v) { var I = icons(); return v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || ''); } },
-        { name: 'name', paint: function (v) { return esc(v.name); } },
+        // Where it lives, then what it is: the folders dimmed, the name at full strength (goal/G30.16; a list of bare names
+        // read as if every file sat at the top).
+        { name: 'name', from: ['path'], paint: function (v) {
+          var p = String(v.path || '');
+          var cut = p.lastIndexOf('/');
+          return (cut >= 0 ? '<span class="path-dir">' + esc(p.slice(0, cut + 1)) + '</span>' : '') + '<span class="path-file">' + esc(p.slice(cut + 1)) + '</span>';
+        } },
         { name: 'size', paint: function (v) { return v.kind === 'folder' ? '' : esc(bytes(v.size)); } },
         { name: 'changed', from: ['modified'], paint: function (v) { return esc(when(v.modified)); } },
       ],

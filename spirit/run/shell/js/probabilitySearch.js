@@ -188,7 +188,7 @@
         // A HEADER IS A SORT TRIGGER (the box), and only while the search field is empty.
         var trigger = c.sort && !searching ? ' data-sort="' + esc(c.field) + '" style="cursor:pointer' + (c.width ? ';width:' + esc(c.width) : '') + '"'
           : (c.width ? ' style="width:' + esc(c.width) + '"' : '');
-        return '<th' + trigger + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + esc(c.label || c.field) + arrow + '</th>';
+        return '<th' + trigger + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + esc(c.label != null ? c.label : c.field) + arrow + '</th>';
       }).join('') + '</tr></thead>';
     }
     function draw() {
@@ -323,8 +323,10 @@
       if (e.key === 'ArrowUp') { stop(); move(-1); return; }
       if (e.key === 'Home' || e.key === 'End') { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
       if (e.key === 'Enter' && !e.repeat) {
+        // ENTER IN THE SEARCH FIELD SEARCHES, and only that (Andy: "that enter belong to the search input box only");
+        // Enter on the list opens the current row.
+        if (e.target && e.target.id === pre + 'text') { stop(); ask(); return; }
         if (currentKey != null && byKey[currentKey]) { stop(); pressRow(byKey[currentKey]); return; }
-        if (e.target && e.target.id === pre + 'text') ask();
       }
     });
     container.addEventListener('click', function (e) {
