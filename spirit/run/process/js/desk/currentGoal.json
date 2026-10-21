@@ -1,5 +1,5 @@
 {
- "change": 77746,
+ "change": 77795,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -9470,15 +9470,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G30.10"
    ],
-   "blocked": [
-    "goal/G30.13"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -9640,10 +9639,11 @@
    "id": "goal/G30.13",
    "title": "Home node answers the face through faceStream's queue",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.11"
@@ -9653,21 +9653,42 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/faceHome.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/faceHome.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "27bc6bfb",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -9728,6 +9749,42 @@
      "at": "2026-10-21T01:37:46.025Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/faceHome.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:13:17.586Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/presenceNode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:13:18.594Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:13:21.808Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/presenceNode.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:14:08.554Z"
     }
    ],
    "chat": [
@@ -9928,6 +9985,54 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T01:38:14.373Z",
      "text": "Green: settled, open none, box current (v8)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:10:03.016Z",
+     "text": "commit 701c33b8fd6e4f142036141fbc09f3380dfd755e: goal/G30.13: the red for the home node answering its face: a face request runs through the puppeteer's door (nodeDoor.call) or serves a file as the node's GET does, answered by an upload signed for it\n- spirit/test/faceHome.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T02:10:09.050Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:12:10.480Z",
+     "text": "Built; the red is 8 of 8 green. The commit waits on your grants for three core files:\n\n- faceHome.js (new): a face request runs through the puppeteer's door, or a file through the node's own GET; the answer goes up at once, signed for its id. relay.face, relay.join and a post carrying a face name are refused 403.\n- presenceNode.js: hands the relay's face, face-open and face-close events to faceHome.\n- server.js: builds faceHome; the GET's file serving is now one function, shared with the face.\n\nOne finding, outside this item: the relay's web server cuts any upload after 5 minutes (Node's default request timeout), so the face's live stream would stop after 5 minutes. The fix is one setting on the relay that lifts that limit for every upload. Header limits stay. I haven't touched it; it's yours to decide."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:13:49.437Z",
+     "text": "commit 27bc6bfb5a5b957115568b1627af5630b8f56dc5: goal/G30.13: the home node answers its face: faceHome runs a face request through the puppeteer's door (nodeDoor.call), or a file through the browser's own GET (serveGet, now one function), and upload\n- spirit/run/js/faceHome.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/server.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:14:17.671Z",
+     "text": "deskVerify: not checked, at 27bc6bfb (pulled): nothing ran, so this is not a pass. Not run: the item lists no test file."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T02:14:18.650Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:14:29.327Z",
+     "text": "deskVerify: not checked, at 27bc6bfb (pulled): nothing ran, so this is not a pass. Not run: the item lists no test file."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:14:59.387Z",
+     "text": "deskVerify: passed, at 27bc6bfb (pulled). 1 suite ran green."
     }
    ]
   },
