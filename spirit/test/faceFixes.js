@@ -141,7 +141,7 @@ const done = (async function () {
   const shell = code('spirit/run/face/shell.js');
   const rs = code('spirit/run/js/relayServer.js');
   const nd = code('spirit/run/shell/natterDetails/natterDetails.js');
-  const cs = code('spirit/run/shell/js/contactSearch.js');
+  const cs = code('spirit/run/shell/js/contacts/listElement.js');
   const ct = code('spirit/run/shell/contacts/contacts.js');
   const login = code('spirit/run/face/login/login.js');
   const checks = {
@@ -152,7 +152,7 @@ const done = (async function () {
     atRestAtBoot: /\.atRest\(/.test(rs) && /memoryUsage\(\)\.rss/.test(rs),
     statusParts: /capacity/.test(code('spirit/run/js/relayStatus.js')) && /capacity/.test(nd) && /members a megabyte|members per megabyte|membersPerMB/.test(nd),
     allocationScreen: /ramLimitMB/.test(nd) && /discLimitMB/.test(nd) && /restart:\s*true/.test(nd) && /next restart/i.test(nd),
-    listFillsWhenDrawn: /\n\s*list\.refresh\(\);\s*\n\s*return \{/.test(cs) && /spiritElements\.contactSearch\.create\(/.test(ct),
+    listFillsWhenDrawn: /\n\s*list\.refresh\(\);\s*\n\s*return \{/.test(cs) && /spiritElements.contactList\.create\(/.test(ct),
     noGzip: !/encode gzip/.test(code('bash/face-setup')),
     logoutTwoPress: /data-armed|[A-Za-z]Armed\b/.test(login) && /armUntilElsewhere/.test(login),
     capacityDoc: /three/i.test(raw('README/CAPACITY.md')) && /at rest|at-rest/i.test(raw('README/CAPACITY.md')) && /G30\.15/.test(raw('README/CAPACITY.md')),

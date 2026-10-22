@@ -11,7 +11,7 @@
 //      press needed).
 //   2. A small × at the right of the box clears the term and brings the whole list back.
 // SINCE goal/G30.19 THE BOX IS THE ONE LIST'S. The contactSelector pane and the separate network search (peerFind) are
-// deleted: Contacts draws shell/js/contactSearch.js on the standard list tool (shell/js/probabilitySearch.js), whose
+// deleted: Contacts draws shell/js/contacts/listElement.js on the standard list tool (shell/js/probabilitySearch.js), whose
 // own text box and ✕ (probsearch-<n>-text, probsearch-<n>-clear) are the ones meant here. The list RANKS from its cache
 // as he types, best on top and nothing cut, then asks contact.search with the words — so "shows Carol alone" is "Carol
 // on top, and the node asked for carol". The network is the same search's second tier, not a box below.
@@ -80,7 +80,7 @@ async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 // process, as in a page.
 const PAGE_SCRIPTS = [
   'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-  'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
+  'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js',
 ];
 
 function mountApp(people) {

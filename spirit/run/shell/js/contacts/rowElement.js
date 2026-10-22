@@ -1,4 +1,4 @@
-// spirit/run/shell/js/rows/contactElement.js
+// spirit/run/shell/js/contacts/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (owned, blocked, held), label (the name, editable in a details dialog) and add (a button on a row the book does not
 // hold). It reads data.contacts of the faceless layer (shell/js/spiritData.js, goal/G30.16), which presence, renames, the

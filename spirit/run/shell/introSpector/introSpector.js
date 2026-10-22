@@ -10,12 +10,10 @@
 //   - self: the verb api through the node's flat apiDoor ("the api query belongs to the apiDoor"), never jobs;
 //   - a peer node: api by peerPost, which that node answers cut to the grants it gave this node;
 //   - a relay: api by peerPost to its key, which the relay answers for every member, cut to the caller's verbs.
-// No families back: the dropdowns hide and the input pane says so. The dropdowns are the shared selectors, whose search
-// results stay in the list search's probability bucket.
+// No families back: the dropdowns hide and the input pane says so. The party is the contacts list as a dropdown.
 
 var isApi = null;
 var isParty = { kind: 'self', key: '', name: 'self' };   // who is asked; self until a pick
-var isKinds = Object.create(null);                         // party row key -> { kind, key (the relay's url for a relay) }
 var isFields = [];
 var isReply = null;
 
@@ -86,27 +84,6 @@ function isRelayKey(party) {
   });
 }
 
-// The party list: self first, then contacts, then relays, each search asked with the same text.
-function isSearch(text, ask) {
-  var q = String(text || '');
-  var self = { key: 'self', label: 'self (this node)' };
-  var peers = Promise.resolve(isApi.verb('contact.search', Object.assign({}, ask || {}, { q: q }))).then(function (a) { return (a && a.body && a.body.items) || []; }, function () { return []; });
-  var relays = Promise.resolve(isApi.verb('relay.search', { q: q || '*' })).then(function (a) { return (a && a.body && a.body.items) || []; }, function () { return []; });
-  return Promise.all([peers, relays]).then(function (got) {
-    isKinds.self = { kind: 'self', key: '' };
-    got[0].forEach(function (r) { isKinds[r.key] = { kind: 'peer', key: r.key }; });
-    var relayRows = got[1].map(function (r) {
-      isKinds['relay:' + r.key] = { kind: 'relay', key: r.key };
-      // relay.search answers each label as a JSON row (goal/G30.7); its name is what the list shows.
-      var row = null;
-      try { row = JSON.parse(r.label); } catch (e) { row = null; }
-      return { key: 'relay:' + r.key, label: 'relay ' + String((row && row.name) || r.key) };
-    });
-    var items = (!q || 'self'.indexOf(q.toLowerCase()) === 0 ? [self] : []).concat(got[0], relayRows);
-    return { items: items, more: false };
-  });
-}
-
 // ── PAINTING ─────────────────────────────────────────────────────────────
 function isSay(text) {
   var form = document.getElementById('is-form');
@@ -157,10 +134,26 @@ spirit.shell.activateApp({
         '<div id="is-reply" style="margin-top:1em"></div>' +
       '</div>';
     var line = document.getElementById('is-line');
-    var party = api.ui.elements.createContactSelector({ placeholder: 'self (this node)', all: 'self (this node)', search: isSearch });
+    var party = document.createElement('span');
     var branch = api.ui.elements.createApiBranchSelector({ serverPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     line.appendChild(party);
     line.appendChild(branch);
+    // THE PARTY: the contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js), the book and this
+    // node's relays; None is self.
+    window.spiritElements.contactList.create(party, {
+      api: api,
+      face: 'dropdown',
+      placeholder: 'self (this node)',
+      all: 'self (this node)',
+      pick: function (row, key) {
+        var relay = !!row && (row.kind === 'relay' || row.relay === true);
+        isParty = !row ? { kind: 'self', key: '', name: 'self' }
+          : { kind: relay ? 'relay' : 'peer', key: relay ? String(row.url || key) : key, name: String(row.name || key) };
+        isShow('');
+        isSay('asking ' + isParty.name + ' for its api…');
+        branch.load(function () { return isTreeOf(isParty); });
+      },
+    });
     isReply = window.spiritElements.createTextView(document.getElementById('is-reply'), { text: '', readOnly: true, path: 'reply.json' });
 
     // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
@@ -175,12 +168,5 @@ spirit.shell.activateApp({
       isPaintForm(branch);
     });
     branch.addEventListener('change', function () { isPaintForm(branch); });
-    party.addEventListener('change', function () {
-      var k = party.value ? isKinds[party.value] : null;
-      isParty = k ? { kind: k.kind, key: k.key, name: party.value } : { kind: 'self', key: '', name: 'self' };
-      isShow('');
-      isSay('asking ' + (k ? party.value : 'self') + ' for its api…');
-      branch.load(function () { return isTreeOf(isParty); });
-    });
   },
 });

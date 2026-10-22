@@ -53,13 +53,18 @@ spirit.shell.activateApp({
 
     var statusEl = document.getElementById('editor-status');
     // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
-    var picker = api.ui.elements.createFileSelector({ accept: ['text/', 'application/json', 'application/javascript', '.md'], placeholder: 'open a file…' });
-    document.getElementById('editor-picker').appendChild(picker);
-    picker.addEventListener('change', function () {
-      if (!picker.row || picker.row.kind !== 'file') return;
-      // Found by its contents: opened marked with the picker's words, at its line.
-      var contentsHit = picker.row.line > 0;
-      textEditorLoadPath(picker.value, contentsHit ? picker.words() : '', contentsHit ? picker.row.line : 0);
+    // The files list as a dropdown (goal/G30.20, shell/js/files/listElement.js).
+    var picker = window.spiritElements.fileList.create(document.getElementById('editor-picker'), {
+      api: api,
+      face: 'dropdown',
+      accept: ['text/', 'application/json', 'application/javascript', '.md'],
+      placeholder: 'open a file…',
+      pick: function (row, key) {
+        if (!row || row.kind !== 'file') return;
+        // Found by its contents: opened marked with the picker's words, at its line.
+        var contentsHit = row.line > 0;
+        textEditorLoadPath(key, contentsHit ? picker.words() : '', contentsHit ? row.line : 0);
+      },
     });
 
     document.getElementById('editor-load').addEventListener('click', function () {

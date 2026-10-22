@@ -166,7 +166,15 @@ spirit.shell.activateApp({
 
     var line = document.getElementById('gr-line');
     line.style.display = 'flex';
-    grContact = api.ui.elements.createContactSelector({ placeholder: 'whose access…', all: 'all peers' });
+    // The contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js); its value is the picked key.
+    var contactHost = document.createElement('span');
+    grContact = window.spiritElements.contactList.create(contactHost, {
+      api: api,
+      face: 'dropdown',
+      placeholder: 'whose access…',
+      all: 'all peers',
+      pick: function () { grList.redraw(); grLine(); },
+    }).list;
     grBranch = api.ui.elements.createApiBranchSelector({ all: 'all servers' });
     var grant = document.createElement('button');
     grant.type = 'button';
@@ -186,7 +194,7 @@ spirit.shell.activateApp({
     }
     var bundle = document.createElement('span');
     bundle.id = 'gr-bundle';
-    line.appendChild(grContact);
+    line.appendChild(contactHost);
     line.appendChild(grBranch);
     line.appendChild(grant);
     line.appendChild(hint);
@@ -203,7 +211,6 @@ spirit.shell.activateApp({
       empty: 'No grant matches.',
     });
 
-    grContact.addEventListener('change', function () { grList.redraw(); grLine(); });
     grBranch.addEventListener('change', function () {
       grList.redraw();
       grLine();

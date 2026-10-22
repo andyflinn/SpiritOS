@@ -158,23 +158,24 @@
     <!-- The shared progress bar (goal/G29.14), handed to apps as api.ui.elements.progressBar. -->
     <script src="/shell/shared/js/progressBar.js"></script>
     <script src="/shell/js/contactSelector.js"></script>
-    <script src="/shell/js/fileSelector.js"></script>
     <script src="/shell/js/appServerSelector.js"></script>
     <script src="/shell/js/apiBranchSelector.js"></script>
-    <!-- The rowElements (goal/G30.18): the shared base, then one file per kind. -->
-    <!-- The faceless layer (goal/G30.16): one data tree mirroring the node, before every element that reads it. -->
+    <!-- The faceless layer (goal/G30.16): one data tree mirroring the node, before every element that reads it; the
+         shared row base and the standard list-tool (goal/G30.17, G30.18). -->
     <script src="/shell/js/spiritData.js"></script>
     <script src="/shell/js/rowElement.js"></script>
-    <script src="/shell/js/rows/fileElement.js"></script>
-    <script src="/shell/js/rows/contactElement.js"></script>
-    <!-- The standard shell list-tool (goal/G30.17). -->
     <script src="/shell/js/probabilitySearch.js"></script>
-    <!-- Contacts' one search in two tiers (goal/G30.19), on the list-tool with contactElement rows; Join draws it too. -->
-    <script src="/shell/js/contactSearch.js"></script>
     <!-- The viewers as shell elements (goal/G30.16): the frame both share, then text and media. -->
     <script src="/shell/js/fileViewer.js"></script>
     <script src="/shell/js/textViewer.js"></script>
     <script src="/shell/js/mediaViewer.js"></script>
+    <!-- One folder per object type (goal/G30.20): its translator, its row, its drop-in list. -->
+    <script src="/shell/js/files/data.js"></script>
+    <script src="/shell/js/files/rowElement.js"></script>
+    <script src="/shell/js/files/listElement.js"></script>
+    <script src="/shell/js/contacts/data.js"></script>
+    <script src="/shell/js/contacts/rowElement.js"></script>
+    <script src="/shell/js/contacts/listElement.js"></script>
     <script src="/js/client/shell.js"></script>
     <script>
       (function () {

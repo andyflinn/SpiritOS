@@ -22,8 +22,8 @@
 //      written by presenceNode (its caller noted the route already).
 //   5. Contacts paints the dot from the proof: present true green, false red, no proof white; its title names the
 //      state as before (the age may follow later — not asserted).
-//      SINCE goal/G30.19 Contacts is the one list (shell/js/contactSearch.js) and each row is a contactElement
-//      (shell/js/rows/contactElement.js) that paints its own dot from the relay-presence job: present true green,
+//      SINCE goal/G30.19 Contacts is the one list (shell/js/contacts/listElement.js) and each row is a contactElement
+//      (shell/js/contacts/rowElement.js) that paints its own dot from the relay-presence job: present true green,
 //      false red, no proof white. Contacts paints no dot itself.
 // Suites asserting the old shape (presence[key] === true: presenceNode, presenceReconcile, presenceFeeding,
 // presenceWire and friends) go red on the build and are flipped to the proof by the builder — the handover.
@@ -163,7 +163,7 @@ function mountContacts(people) {
   const RUN = path.join(__dirname, '..', 'run');
   const win = { spirit: shellSpirit };
   ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-    'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
+    'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js'].forEach(function (rel) {
     new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);
   });
   new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);

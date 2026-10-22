@@ -17,7 +17,7 @@
 //     as peer.search did), resolving when the walk ends. A contact.search row label carries book: true or false.
 //   - The job: one permanent job of type 'peer-search'; each update's data.item is { key, label } for one found row.
 //   - createFaceHome({ ..., renames }): renames is hub.contactRenames; the face gets 'contact.rename' lines.
-//   - shell/js/contactSearch.js: window.spiritElements.contactSearch.create(host, opts) -> { list, refresh, destroy },
+//   - shell/js/contacts/listElement.js: window.spiritElements.contactList.create(host, opts) -> { list, refresh, destroy },
 //     on probabilitySearch with contactElement rows; contactElement gains the add action. Since goal/G30.16 the network
 //     rows land in data.contacts (shell/js/spiritData.js, the faceless layer) and the list is a view of it.
 // rule/11: through testSupport only; its own scratch folders.
@@ -133,12 +133,12 @@ const done = (async function () {
   if (/'contact\.search'/.test(onboard) && !/peer\.search/.test(onboard)) test.check('the desk onboarding asks contact.search');
   else test.fail(OWED + 'onboard.js still asks peer.search');
   const contacts = code('shell/contacts/contacts.js');
-  if (!/function contactsWatchPresence/.test(contacts) && !/function contactsPaintPresence/.test(contacts) && !/createContactSelector/.test(contacts) && /spiritElements\.contactSearch\.create\(/.test(contacts))
+  if (!/function contactsWatchPresence/.test(contacts) && !/function contactsPaintPresence/.test(contacts) && !/createContactSelector/.test(contacts) && /spiritElements.contactList\.create\(/.test(contacts))
     test.check('Contacts draws the one list (contactSearch) and paints no presence itself');
-  else test.fail(OWED + 'contacts.js: watch ' + /function contactsWatchPresence/.test(contacts) + ', paint ' + /function contactsPaintPresence/.test(contacts) + ', selector ' + /createContactSelector/.test(contacts) + ', contactSearch ' + /spiritElements\.contactSearch\.create\(/.test(contacts));
-  if (/spiritElements\.contactSearch/.test(code('shell/join/join.js')) && /\/shell\/js\/contactSearch\.js/.test(code('index.html')))
+  else test.fail(OWED + 'contacts.js: watch ' + /function contactsWatchPresence/.test(contacts) + ', paint ' + /function contactsPaintPresence/.test(contacts) + ', selector ' + /createContactSelector/.test(contacts) + ', contactSearch ' + /spiritElements.contactList\.create\(/.test(contacts));
+  if (/spiritElements\.contactList/.test(code('shell/join/join.js')) && /\/shell\/js\/contacts\/listElement\.js/.test(code('index.html')))
     test.check('Join\'s contact step shows the same list, and index.html loads it');
-  else test.fail(OWED + 'join.js or index.html does not use shell/js/contactSearch.js');
+  else test.fail(OWED + 'join.js or index.html does not use shell/js/contacts/listElement.js');
 
   // ── 4. The face stream carries the network search and renames ──────────────────────────────────────────────────────
   test.subHeading('4. the face gets the peer-search rows and contact renames');
@@ -182,7 +182,7 @@ const done = (async function () {
   window.spirit = spirit;
   const ctx = vm.createContext({ window: window, spirit: spirit, console: console, Promise: Promise, document: { addEventListener: function () {} } });
   const loaded = {};
-  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js', 'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
+  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js', 'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js'].forEach(function (rel) {
     try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
     catch (e) { loaded[rel] = e.message; }
   });
@@ -195,12 +195,12 @@ const done = (async function () {
     await net.act('add', {});
     const add = asked.filter(function (x) { return x.verb === 'peer.acquire'; })[0];
     const landed = window.spiritData && window.spiritData.get('contacts/' + far);
-    shell = { found: landed && landed.book === false ? far : '', off: 'function', add: add ? add.args : null, contactSearch: !!(E.contactSearch && typeof E.contactSearch.create === 'function') };
+    shell = { found: landed && landed.book === false ? far : '', off: 'function', add: add ? add.args : null, contactSearch: !!(E.contactList && typeof E.contactList.create === 'function') };
   } catch (e) { shell = { threw: e.message, loaded: loaded }; }
   if (shell && shell.found === far && shell.off === 'function' && shell.add && shell.add.publicKey === far && shell.add.url === 'https://lab.example' && shell.contactSearch)
     test.check('a peer-search update lands in data.contacts; Add asks peer.acquire with the row\'s relay; contactSearch is an element');
   else test.fail(OWED + 'shell elements: ' + short(shell));
-  if (/data: 'contacts'/.test(code('shell/js/contactSearch.js')) && /window\.spiritData\.seat\(o\.data/.test(code('shell/js/probabilitySearch.js')))
+  if (/data: 'contacts'/.test(code('shell/js/contacts/listElement.js')) && /window\.spiritData\.seat\(o\.data/.test(code('shell/js/probabilitySearch.js')))
     test.check('the contact list is a view of data.contacts, its answers seated in the tree');
   else test.fail(OWED + 'the contact list is not a view of data.contacts');
 
@@ -209,7 +209,7 @@ const done = (async function () {
   // from the network ALSO." NAMED HERE: contactSearch.filters, the list's filter definitions in order; a filter with
   // toggle: true is one button, its value false until pressed (probabilitySearch draws and flips it).
   test.subHeading('6. one filter row: all, puppets, blocked, held, relays, then a network toggle, off at first');
-  const F = (E.contactSearch && E.contactSearch.filters) || [];
+  const F = (E.contactList && E.contactList.filters) || [];
   const names = F.map(function (f) { return f.name; }).join(',');
   const net6 = F.filter(function (f) { return f.name === 'network'; })[0];
   const P = E.probabilitySearch;

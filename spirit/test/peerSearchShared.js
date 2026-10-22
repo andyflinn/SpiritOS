@@ -88,10 +88,10 @@ test.subHeading('4. Contacts\' one list is the standard list-tool');
 const contacts = code('shell/contacts/contacts.js');
 if (!/id="contacts-seen-q"/.test(contacts) && !/id="contacts-seen-go"/.test(contacts) && !/contacts-seen-section/.test(contacts)) test.check('the panel\'s own input, Search button and fold are gone');
 else test.fail(OWED + 'Find someone on the network still has its own input, Search button or fold');
-const finder = code('shell/js/contactSearch.js');
-if (/spiritElements\.contactSearch\.create\(/.test(contacts) && /spiritElements\.probabilitySearch\.create\(/.test(finder) && /'contact\.search'/.test(finder) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the list draws through the list-tool, asking contact.search');
+const finder = code('shell/js/contacts/listElement.js');
+if (/spiritElements.contactList\.create\(/.test(contacts) && /spiritElements\.probabilitySearch\.create\(/.test(finder) && /'contact\.search'/.test(finder) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the list draws through the list-tool, asking contact.search');
 else test.fail(OWED + 'the list does not draw through the list-tool');
-if (/data-action="add"/.test(code('shell/js/rows/contactElement.js')) && /function askCard\(/.test(finder) && /card: true/.test(finder)) test.check('a network row has its Add, and pressing it asks that node who it is');
+if (/data-action="add"/.test(code('shell/js/contacts/rowElement.js')) && /function askCard\(/.test(finder) && /card: true/.test(finder)) test.check('a network row has its Add, and pressing it asks that node who it is');
 else test.fail(OWED + 'a network row lost Add or the card it asks');
 
 test.reportSuccessFailureCount();

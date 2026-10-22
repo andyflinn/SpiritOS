@@ -1,4 +1,4 @@
-// spirit/run/shell/js/rows/fileElement.js
+// spirit/run/shell/js/files/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
 // it reads data.files of the faceless layer (shell/js/spiritData.js, goal/G30.16), which the fs-watcher's stream keeps,
 // so a change to a file repaints that file's cells and nothing else. rowElement.js does the shared work; this file says what a file is.

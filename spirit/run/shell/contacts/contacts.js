@@ -82,7 +82,7 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
-// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, shell/js/contactSearch.js,
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, shell/js/contacts/listElement.js,
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
@@ -386,7 +386,7 @@ spirit.shell.activateApp({
 
     // THE ONE LIST (goal/G30.19). A row opens the person (contactsDetails) or the relay (natterDetails) by its element's
     // open; a dialog that changed something asks the list again.
-    contactsList = window.spiritElements.contactSearch.create(document.getElementById('contacts-book'), {
+    contactsList = window.spiritElements.contactList.create(document.getElementById('contacts-book'), {
       api: contactsApi,
       say: contactsStatus,
       selfTail: function (tail) { contactsSelfTail = tail; contactsPaintSelf(); },

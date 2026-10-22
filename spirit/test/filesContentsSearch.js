@@ -16,7 +16,6 @@
 // NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
 //   - createNodeSearches({ jobs, rootDir, mimeTypes }).
 //   - the rank bar is a cell of class list-rank holding one element whose style width is a percentage.
-//   - fileSelector's root.words() answers the words; a row found by contents carries line in root.row.
 //   - createTextView takes line: the 1-based line put in view.
 // rule/11: through testSupport only; its own folders; never 65432.
 
@@ -174,60 +173,6 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   if (list1.scrollTop === 0 && snapped.length && current === snapped[0].key) test.check('a change of the words snaps the list: the top row current (' + current + '), scrolled to the top');
   else test.fail(OWED + 'after a change of the words: scrollTop ' + list1.scrollTop + ', current ' + short(current) + ', top row ' + short(snapped[0] && snapped[0].key));
 
-  // ── 3. the file list ──
-  test.subHeading('3. the file list: words in names | paths | contents, contents asking the node');
-  const p2 = page();
-  const asked = [];
-  const sp = { core: {
-    ask: function (verb, body) {
-      asked.push({ verb: verb, body: body || {} });
-      const items = verb === 'fs.search' && body && body.contents === 'yes'
-        ? [{ key: 'notes/many.txt', label: JSON.stringify({ path: 'notes/many.txt', score: 0.8, line: 1 }) },
-          { key: 'notes/todo.txt', label: JSON.stringify({ path: 'notes/todo.txt', score: 0.2, line: 3 }) }] : [];
-      return Promise.resolve({ status: 200, body: { ok: true, items: items, more: false } });
-    },
-    util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: kernel.core.const.ICON } } };
-  new Function('spirit', 'document', 'window', 'Event', fs.readFileSync(path.join(RUN, 'shell', 'js', 'fileSelector.js'), 'utf8'))(sp, p2.doc, p2.win, Event);
-  const TREE = [{ name: 'notes', relativePath: 'notes', kind: 'folder' },
-    { name: 'a-screwdriver.txt', relativePath: 'notes/a-screwdriver.txt', kind: 'file', size: 9 },
-    { name: 'many.txt', relativePath: 'notes/many.txt', kind: 'file', size: 50 },
-    { name: 'todo.txt', relativePath: 'notes/todo.txt', kind: 'file', size: 50 }];
-  const pane = p2.win.spiritElements.createFileSelector({ face: 'pane', files: function () { return TREE; } });
-  await settle();
-  const host = pane.children[0];
-  const pre = (/id="(listsearch-\d+-)text"/.exec(host.innerHTML) || [])[1];
-  const strip = host.innerHTML;
-  if (/data-filter="in"[^>]*data-value="names"/.test(strip) && /data-filter="in"[^>]*data-value="paths"/.test(strip) && /data-filter="in"[^>]*data-value="contents"/.test(strip) && !/data-filter="contents"/.test(strip)) test.check('one filter, words in: names | paths | contents, mutually exclusive');
-  else test.fail(OWED + 'the filters read ' + short((strip.match(/data-filter="[^"]*"[^>]*data-value="[^"]*"/g) || []).join(' ')));
-  const text = p2.doc.getElementById(pre + 'text');
-  text.value = 'screwdriver';
-  host.dispatchEvent({ type: 'input', target: text });
-  await settle();
-  if (!asked.some(function (a) { return a.verb === 'fs.search'; })) test.check('in names: typing asks the node nothing');
-  else test.fail(OWED + 'in names the node was asked ' + short(asked));
-  host.dispatchEvent({ type: 'click', target: { id: '', getAttribute: function (k) { return k === 'data-filter' ? 'in' : k === 'data-value' ? 'contents' : null; }, closest: function () { return null; } } });
-  await settle();
-  await settle();
-  const call = asked.filter(function (a) { return a.verb === 'fs.search'; }).pop();
-  if (call && call.body.q === 'screwdriver' && call.body.contents === 'yes') test.check('in contents: the node is asked fs.search {q: screwdriver, contents: yes}');
-  else test.fail(OWED + 'in contents the node was asked ' + short(asked));
-  const rows = rowsIn(p2.doc.getElementById(pre + 'list').innerHTML);
-  const keys = rows.map(function (r) { return r.key; });
-  if (keys[0] === 'notes/many.txt' && keys[1] === 'notes/todo.txt' && keys.indexOf('notes/a-screwdriver.txt') > 1) test.check('in contents the node\'s scores rank the files: many.txt, todo.txt, then the rest (a name match counts for nothing)');
-  else test.fail(OWED + 'in contents the rows rank ' + short(keys));
-  const w0 = barWidth(rows[0] && rows[0].first);
-  const w1 = barWidth(rows[1] && rows[1].first);
-  if (w0 === 100 && w1 === 25) test.check('the bar shows it: 100% for many.txt (0.8), 25% for todo.txt (0.2)');
-  else test.fail(OWED + 'the bars read ' + short([w0, w1]));
-  if (rows.every(function (r) { return !/file-selector-line|where did I put/.test(r.html); })) test.check('no found line in the rows');
-  else test.fail(OWED + 'a row still shows a found line');
-  let changed = 0;
-  pane.addEventListener('change', function () { changed += 1; });
-  host.dispatchEvent({ type: 'click', target: { id: '', getAttribute: function (k) { return k === 'data-key' ? 'notes/todo.txt' : null; }, closest: function () { return null; } } });
-  await settle();
-  if (changed === 1 && pane.value === 'notes/todo.txt' && pane.row && pane.row.line === 3 && typeof pane.words === 'function' && pane.words() === 'screwdriver') test.check('a press picks it: its row carries line 3, and words() answers the words');
-  else test.fail(OWED + 'after a press: changes ' + changed + ', value ' + short(pane.value) + ', row ' + short(pane.row) + ', words ' + short(typeof pane.words === 'function' ? pane.words() : pane.words));
-
   // ── 4. opened marked ──
   test.subHeading('4. Files opens the viewer marked, the editor\'s picker opens marked');
   const files = code(path.join(RUN, 'shell', 'files', 'files.js'));
@@ -239,6 +184,9 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));
   if (/picker\.words\(\)/.test(editor) && /contents/.test(editor)) test.check('the editor opens a file its picker found by contents marked with the picker\'s words');
   else test.fail(OWED + 'textEditor.js: picker.words() ' + /picker\.words\(\)/.test(editor) + ', contents ' + /contents/.test(editor));
+  const p2 = page();
+  const sp = { core: { ask: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
+    util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: kernel.core.const.ICON } } };
   const CM = [];
   p2.win.CodeMirror = function (place, opts) {
     const text2 = String(opts.value || '');

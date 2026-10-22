@@ -15,8 +15,8 @@
 //   ready(type)     true once the stream has handed the whole branch over (files: the watcher's treeComplete)
 //   seat(type, items)  a search answer's items ({ key, label: json }) merged into the tree like any event
 //
-// THE TRANSLATORS, one per event kind, the only type-specific code: the fs-watcher's commands (data.files), the
-// relay-presence job, the peer-search job and contact renames (data.contacts). Every one ends in set, merge or del.
+//   translate(t)    a type's translator, registered by its data.js (goal/G30.20): t.onJob(job, D), t.onRename(d, D);
+//                   every one ends in set, merge or del. This file knows no type.
 //
 // NO CAP (box v17; Andy: "the browsers side will flush on every page-refresh, so we'll avoid the complication of bounding
 // those browser site caches completely. no cache bounding on the browser side.").
@@ -71,57 +71,28 @@
     });
   }
 
-  // ── THE TRANSLATORS ────────────────────────────────────────────────────────────────────────────────────────────
-  var told = Object.create(null);   // keys the presence table has spoken of: one it drops goes back to not known
-  function onJob(job) {
-    if (!job || !job.data) return;
-    if (job.type === 'fs-watcher') {
-      // The tree arrives as create commands, then treeComplete: filled quietly, then one word to the watchers.
-      if (job.data.treeComplete) {
-        quiet.files = false;
-        readyOf.files = true;
-        (watchers.files || []).slice().forEach(function (fn) { try { fn('files', undefined); } catch (e) { /* one reader's fault */ } });
-        return;
-      }
-      var cmd = job.data.command;
-      if (!cmd || !cmd.path) return;
-      if (!readyOf.files) quiet.files = true;
-      var p = String(cmd.path);
-      if (cmd.op === 'deleteFile') del('files/' + p);
-      else if (cmd.op === 'deleteDirectory') {
-        del('files/' + p);
-        Object.keys(branch('files')).forEach(function (k) { if (k.indexOf(p + '/') === 0) del('files/' + k); });
-      } else {
-        var was = branch('files')[p] || {};
-        set('files/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified });
-      }
-      return;
-    }
-    if (job.type === 'relay-presence') {
-      var table = job.data.presence || {};
-      Object.keys(table).forEach(function (key) {
-        var proof = table[key];
-        if (!proof || typeof proof !== 'object') return;
-        told[key] = true;
-        if ((branch('contacts')[key] || {}).present !== (proof.present === true)) merge('contacts/' + key, { present: proof.present === true });
-      });
-      Object.keys(told).forEach(function (key) {
-        if (key in table) return;
-        delete told[key];
-        if (branch('contacts')[key]) merge('contacts/' + key, { present: undefined });
-      });
-      return;
-    }
-    if (job.type === 'peer-search') {
-      var item = job.data.item;
-      if (item) seat('contacts', [item]);
-    }
+  // ── THE TRANSLATORS ARE THE TYPES' (goal/G30.20) ─────────────────────────────────────────────────────────────
+  // Each type's folder has its data.js (shell/js/files/data.js, shell/js/contacts/data.js), which registers here what it
+  // makes of the stream's events: translate({ onJob(job, D), onRename(d, D) }). This file knows no type.
+  var translators = [];
+  function translate(t) { if (t && typeof t === 'object') translators.push(t); }
+  function each(name, arg) {
+    translators.forEach(function (t) { if (typeof t[name] === 'function') { try { t[name](arg, api); } catch (e) { /* one type's fault */ } } });
   }
-  function onRename(d) { if (d && d.key) merge('contacts/' + d.key, { name: String(d.caption || '') }); }
+  function onJob(job) { if (job && job.data) each('onJob', job); }
+  function onRename(d) { if (d && d.key) each('onRename', d); }
+  // A branch filled without telling (the file tree arriving), then one word to its watchers.
+  function quietly(type, on) { quiet[type] = !!on; }
+  function ready(type, now) {
+    if (now === undefined) return !!readyOf[type];
+    readyOf[type] = !!now;
+    quiet[type] = false;
+    (watchers[type] || []).slice().forEach(function (fn) { try { fn(type, undefined); } catch (e) { /* one reader's fault */ } });
+  }
 
   var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
-    ready: function (type) { return !!readyOf[type]; },
-    // For a suite: the translators fed by hand.
+    translate: translate, quietly: quietly, ready: ready, branch: branch,
+    // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 
   var core = root.spirit && root.spirit.core;

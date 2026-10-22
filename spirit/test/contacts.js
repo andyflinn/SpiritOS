@@ -10,9 +10,9 @@
 // SINCE goal/G30.19 CONTACTS IS ONE LIST. The contactSelector pane and the
 // Find-someone fold (peerFind) are deleted: the book, the shadow, the
 // network and this node's relays are one shell element,
-// shell/js/contactSearch.js, on the standard list tool
+// shell/js/contacts/listElement.js, on the standard list tool
 // (shell/js/probabilitySearch.js), each row a contactElement
-// (shell/js/rows/contactElement.js) that paints its own dot from the
+// (shell/js/contacts/rowElement.js) that paints its own dot from the
 // relay-presence job. Contacts paints no presence of its own any more.
 //
 // Driven the way chatSession drives the chat app: the scripts index.html
@@ -121,7 +121,7 @@ function fakeDocument() {
 // no process, as in a page: fieldRules.js takes its node branch on process.
 const PAGE_SCRIPTS = [
   'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-  'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
+  'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js',
 ];
 function loadPage(doc, shellSpirit) {
   const win = { spirit: shellSpirit };

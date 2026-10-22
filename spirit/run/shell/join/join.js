@@ -2,7 +2,7 @@
 // THE JOIN APP (goal/G30.1, box v39): it walks a new user from joining a relay to opening his face, as one to-do list.
 // The steps are its manifest's (join.json), each with its name, icon and the fact that ends it. Done steps are ticked;
 // every open step up to the open one is expanded with its form, so the optional Find someone never stands in the way
-// of the step after it. The forms are the shell elements: joinForm, contactSearch (Contacts' one list, goal/G30.19),
+// of the step after it. The forms are the shell elements: joinForm, contactList (Contacts' one list, goal/G30.19),
 // faceForm.
 //
 // DECIDED ONCE, IN THE SHELL (box v42; Andy: "Why, when the shell already figured out that the join-app must appear,
@@ -25,7 +25,7 @@ var joinWaiting = false;  // handed something new while he was typing
 // The shell elements this app is made of, as index.html hands them out.
 function joinEl() {
   var w = window.spiritElements || {};
-  return { joinForm: w && window.spiritElements.joinForm, contactSearch: w && window.spiritElements.contactSearch, faceForm: w && window.spiritElements.faceForm };
+  return { joinForm: w && window.spiritElements.joinForm, contactList: w && window.spiritElements.contactList, faceForm: w && window.spiritElements.faceForm };
 }
 function joinIcon(name) { return spirit.core.const.ICON[name] || ''; }
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
@@ -86,9 +86,9 @@ function joinForm(step, box) {
     return;
   }
   // FIND SOMEONE: the same one list Contacts draws (goal/G30.19), the book, the shadow and the network.
-  if (step.until === 'contact' && el.contactSearch) {
+  if (step.until === 'contact' && el.contactList) {
     box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
-    el.contactSearch.create(box.querySelector('.join-find-list'), {
+    el.contactList.create(box.querySelector('.join-find-list'), {
       api: joinApi,
       // The node republishes join-steps once the contact is in the book; nothing to ask here.
       say: function (text) { var s = box.querySelector('.join-find-said'); if (s) s.textContent = text; },

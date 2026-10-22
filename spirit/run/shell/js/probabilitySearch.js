@@ -25,9 +25,13 @@
 //   data                       optional: a branch of the faceless layer (shell/js/spiritData.js, goal/G30.16): the list is
 //                              a view of it. Its rows are the branch's, the server's answers are seated in it, and a
 //                              write to it redraws the list
-//   element(row, key)          optional: the rowElement that draws a row (shell/js/rows/)
+//   element(row, key)          optional: the rowElement that draws a row (shell/js/files/, shell/js/contacts/)
+//   face                       'pane' (the default) or 'dropdown' (goal/G30.20): a closed field with the chosen row's name
+//                              or the placeholder, opening to the same list; a pick closes it. placeholder, all (a None
+//                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
+//                              are the dropdown's
 //   filters, matched, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch
-// }) -> { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
+// }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
@@ -128,7 +132,9 @@
     var currentKey = null;
     var shown = [];
     var snap = false;
-    var self = {};
+    var dropdown = o.face === 'dropdown';
+    var open = !dropdown;
+    var self = { value: '', row: null };
 
     function el(name) {
       var inside = typeof container.querySelector === 'function' ? container.querySelector('#' + pre + name) : null;
@@ -149,7 +155,7 @@
         }).join('') + '</span>';
       }).join('');
     }
-    container.innerHTML =
+    var paneHtml =
       '<div id="' + pre + 'filters" style="margin-top:1em">' + filterHtml() + '</div>' +
       '<div style="margin-top:1em;display:flex;gap:1em;align-items:center">' +
         '<span style="position:relative;display:inline-block;flex:1">' +
@@ -158,7 +164,17 @@
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
       '</div>' +
-      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em"></div>';
+      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em' + (dropdown ? ';max-height:20em;overflow:auto' : '') + '"></div>';
+    // THE DROPDOWN IS JUST A POP-UP PANE (taken from listSearch, goal/G29.9): inline like any input, a field; the very
+    // same pane pops up under it, solid, as wide as its rows up to the page.
+    container.innerHTML = dropdown
+      ? '<span style="position:relative;display:inline-block">' +
+          '<button id="' + pre + 'field" type="button" style="text-align:left"></button>' +
+          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;width:max-content;max-width:calc(100vw - 32px);z-index:10;' +
+            'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
+        '</span>'
+      : paneHtml;
+    if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
     // THE MATCHED PARTS MARKED, by the one marking rule listSearch and the text view share (window.spiritMatchRanges).
     function mark(text) {
@@ -208,7 +224,7 @@
       }).join('') + '</tr></thead>';
     }
     function draw() {
-      if (!live) return;
+      if (!live || !open) return;
       takePage();
       var fs0 = el('filters');
       if (filters.length && fs0) fs0.innerHTML = filterHtml();
@@ -234,13 +250,13 @@
       var list = el('list');
       if (!list) return;
       if (snap) list.scrollTop = 0;
-      list.innerHTML = rows.length
-        ? '<table class="jobs-table">' + headHtml(searching) + '<tbody>' + rows.map(function (w) {
+      list.innerHTML = (dropdown && o.all ? '<button id="' + pre + 'none" type="button" style="margin-top:0.5em">None</button>' : '') + (rows.length
+        ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '>' + headHtml(searching) + '<tbody>' + rows.map(function (w) {
           var cur = w.key === currentKey;
           return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
             (searching ? bar(w) : '') + cellsOf(w) + '</tr>';
         }).join('') + '</tbody></table>'
-        : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
+        : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>');
       // EACH ROW'S ELEMENT PAINTS ITS OWN CELLS, and keeps repainting them as its subject changes.
       if (typeof list.querySelectorAll === 'function') {
         rows.forEach(function (w) {
@@ -299,7 +315,32 @@
     function lend(verb, args) {
       return new Promise(function (resolve, reject) { lent.push({ verb: verb, args: args || {}, resolve: resolve, reject: reject }); pump(); });
     }
-    function typed() { snap = true; draw(); ask(); }
+    function typed() { snap = true; setOpen(true); draw(); ask(); }
+
+    function nameOf(row) { return typeof o.name === 'function' ? String(o.name(row)) : String((row && (row.name || row.key)) || ''); }
+    // THE FIELD (dropdown): the chosen row's name, or the None words, or the placeholder.
+    function paintField(showing) {
+      var f = el('field');
+      if (!f) return;
+      var row = showing || self.row;
+      f.innerHTML = esc(row ? nameOf(row) : (o.all || o.placeholder || 'choose…')) + ' ▾';
+    }
+    // THE POPUP OPENED AND SHUT, in the dropdown only; opened, its search box takes the focus.
+    function setOpen(want) {
+      if (!dropdown || open === want) return;
+      open = want;
+      var pop = el('popup');
+      if (pop) pop.hidden = !open;
+      if (open) { draw(); var box = el('text'); if (box && typeof box.focus === 'function') box.focus(); }
+      else paintField();
+    }
+    // A PICK: the list's value and row are the chosen one's; a dropdown shuts and says it.
+    function choose(row, key) {
+      self.value = key == null ? '' : String(key);
+      self.row = row || null;
+      if (dropdown) { setOpen(false); paintField(); }
+      if (typeof o.pick === 'function') o.pick(row || null, self.value);
+    }
 
     function rowOf(target) {
       var tr = target && typeof target.closest === 'function' ? target.closest('[data-key]') : null;
@@ -314,8 +355,8 @@
       if (l && typeof l.focus === 'function') l.focus();
       if (typeof o.fold === 'function' && o.fold(w.row, w.key) === true) { draw(); return; }
       draw();
-      if (typeof o.details === 'function') { o.details(w.row, w.key, w.el || null); return; }
-      if (typeof o.pick === 'function') o.pick(w.row, w.key);
+      if (!dropdown && typeof o.details === 'function') { o.details(w.row, w.key, w.el || null); return; }
+      choose(w.el ? w.el.row : w.row, w.key);
     }
     function move(to) {
       if (!shown.length) return;
@@ -324,10 +365,13 @@
       var next = to === 'top' ? 0 : to === 'bottom' ? shown.length - 1
         : Math.max(0, Math.min(shown.length - 1, (at === -1 ? (to > 0 ? -1 : shown.length) : at) + to));
       currentKey = shown[next].key;
+      setOpen(true);
       draw();
       var l = el('list');
       var cur = l && typeof l.querySelector === 'function' ? l.querySelector('tr.current') : null;
       if (cur && typeof cur.scrollIntoView === 'function') cur.scrollIntoView({ block: 'nearest' });
+      // In a dropdown the keys move on into the list, so Enter there picks; the field says the current row.
+      if (dropdown) { if (l && typeof l.focus === 'function') l.focus(); if (byKey[currentKey]) paintField(byKey[currentKey].row); }
     }
     function setSort(field, direction) {
       if (!field) { sortBy = null; draw(); return; }
@@ -340,6 +384,7 @@
       if (e.key === 'ArrowDown') { stop(); move(1); return; }
       if (e.key === 'ArrowUp') { stop(); move(-1); return; }
       if (e.key === 'Home' || e.key === 'End') { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
+      if (e.key === 'Escape') { setOpen(false); return; }
       if (e.key === 'Enter' && !e.repeat) {
         // ENTER IN THE SEARCH FIELD SEARCHES, and only that (Andy: "that enter belong to the search input box only");
         // Enter on the list opens the current row.
@@ -350,6 +395,8 @@
     container.addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
+      if (t.id === pre + 'field') { setOpen(!open); return; }
+      if (t.id === pre + 'none') { currentKey = null; choose(null, ''); return; }
       if (t.id === pre + 'clear') { var box = el('text'); if (box) box.value = ''; typed(); return; }
       if (t.id === pre + 'search') { ask(); return; }
       // A HEADER PRESS sorts by its column, a second reverses (only while the field is empty: no header is a trigger then).
@@ -374,6 +421,12 @@
       if (typeof t.closest === 'function' && t.closest('[data-action]')) return;
       pressRow(rowOf(t));
     });
+    // A PRESS ELSEWHERE SHUTS AN OPEN DROPDOWN; a row a press drew away (a folder folding) is not elsewhere.
+    function outside(e) {
+      if (!open || !e || !e.target || e.target.isConnected === false) return;
+      if (typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
+    }
+    if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
     if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
     var unwatch = o.data && window.spiritData ? window.spiritData.watch(o.data, function () { draw(); }) : null;
 
@@ -386,9 +439,11 @@
       live = false;
       if (typeof off === 'function') off();
       if (typeof unwatch === 'function') unwatch();
+      if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);
       off = null;
       Object.keys(byKey).forEach(function (k) { if (byKey[k].el) byKey[k].el.destroy(); });
     };
+    paintField();
     if (typeof o.rows === 'function' || o.data) draw();
     return self;
   }

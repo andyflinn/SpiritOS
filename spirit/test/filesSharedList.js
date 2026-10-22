@@ -5,12 +5,8 @@
 // tree; claude-windows writes it and builds it (one agent). The item's box, in short:
 //   THE STREAM: the watcher's updates each carry the stat, size and modified, for every create and change; a delete
 //   carries none. The first load is the same commands. The shell holds every path, its kind and its stat.
-//   FILES ON THE SHARED LIST: fileSelector (shell/js/fileSelector.js), a wrapper on shellCreateListSearch over the
-//   shell's mirror, as contactSelector is, with a pane face and a dropdown face. Names and paths are searched in the page.
-//   Every display has size and modified, right-justified, and the mimetype icon before the name. No words: the tree,
-//   rows in path order, one indent per slash, a folder row folding the rows under it. Words: the rows ranked, each with
-//   its full path, the matched parts marked. fileSelector replaces pathSelector, which is deleted; the text editor
-//   picks its file with the dropdown; Files is a container for the pane.
+//   FILES ON THE SHARED LIST: the file selector this suite drove was deleted by goal/G30.20; the files list element
+//   (shell/js/files/listElement.js) took its place, asserted by listElements.js.
 //   THE DROPDOWN: its field stands inline like any input control; only the pane pops up under it.
 //   THE NODE'S fs.search: stays, on the node's own tree; words ranked by the probability modules, best first; the
 //   patterns (* and ?) go.
@@ -18,10 +14,6 @@
 //
 // NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
 //   - a command's stat: size (bytes, a number) and modified (an ISO time) beside op, path and at; the shell's rows
-//     carry the same two keys.
-//   - window.spiritElements.createFileSelector(options): options.face 'pane', else the dropdown; options.files() the
-//     rows, as spirit.shell.currentFiles answers them; the root's value is the picked path, its row the row, and a
-//     pick fires one bubbling change on it.
 //   - one indent is an element of class file-selector-indent in the row.
 // rule/11: through testSupport only; its own folders; never 65432.
 
@@ -32,8 +24,6 @@ const kernel = require('../run/js/kernel.js');
 
 const OWED = 'OWED by goal/G29.8: ';
 const RUN = path.join(__dirname, '..', 'run');
-const FILE = path.join(RUN, 'shell', 'js', 'fileSelector.js');
-const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
 const ICON = kernel.core.const.ICON;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -79,59 +69,6 @@ function bubble(target, ev) {
 function fire(n, type, extra) { bubble(n, Object.assign({ type: type, bubbles: true, preventDefault: function () {}, stopPropagation: function () {} }, extra || {})); }
 function all(root) { return [root].concat(root.children.reduce(function (acc, c) { return acc.concat(all(c)); }, [])); }
 
-let DOC = null;
-// The element the shared list writes into: the one holding its markup.
-function hostOf(root) { return all(root).filter(function (n) { return /id="listsearch-\d+-/.test(n.innerHTML); })[0] || null; }
-function partOf(root, name) {
-  const h = hostOf(root);
-  const m = h && /id="(listsearch-\d+-)text"/.exec(h.innerHTML);
-  return m && DOC ? DOC.getElementById(m[1] + name) : null;
-}
-function rowsOf(root) {
-  const list = partOf(root, 'list');
-  const popup = partOf(root, 'popup');
-  if (!list || list.hidden || (popup && popup.hidden)) return [];
-  const out = [];
-  const re = /<tr[^>]*\bdata-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
-  let m;
-  while ((m = re.exec(list.innerHTML))) {
-    const cells = [];
-    const cre = /<td[^>]*>[\s\S]*?<\/td>/g;
-    let c;
-    while ((c = cre.exec(m[2]))) cells.push(c[0]);
-    out.push({ key: m[1], html: m[2], cells: cells });
-  }
-  return out;
-}
-function keysOf(root) { return rowsOf(root).map(function (r) { return r.key; }); }
-function rowFor(root, key) { return rowsOf(root).filter(function (r) { return r.key === key; })[0] || null; }
-function typeInto(root, text) { const box = partOf(root, 'text'); if (!box) return false; box.value = text; fire(hostOf(root), 'input', { target: box }); return true; }
-function press(root, key) { fire(hostOf(root), 'click', { target: { id: '', getAttribute: function (k) { return k === 'data-key' ? key : null; }, closest: function () { return null; } } }); }
-
-function load() {
-  const byId = {};
-  const doc = { createElement: node, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; },
-    getElementById: function (id) { if (!byId[id]) { byId[id] = node('div'); byId[id].id = id; } return byId[id]; },
-    listeners: {}, addEventListener: function (t, fn) { (doc.listeners[t] = doc.listeners[t] || []).push(fn); }, removeEventListener: function () {}, dispatchEvent: function () { return true; } };
-  DOC = doc;
-  const win = {};
-  const asked = [];
-  const sp = { core: {
-    ask: function (verb, body) { asked.push(verb); return Promise.resolve({ status: 200, body: { items: [], more: false } }); },
-    util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes },
-    const: { ICON: ICON, MIME: {} } },
-    // The shell's own mimetype lookup, as the page has it on spirit.shell (shell.js mimeTypeForName, iconForFile).
-    shell: {
-      mimeTypeForName: function (name) { const d = name.lastIndexOf('.'); return kernel.core.const.MIME_TYPES[d >= 0 ? name.slice(d).toLowerCase() : ''] || 'application/octet-stream'; },
-      iconForFile: function (mime) { return /^(image|audio|video)\//.test(mime) ? ICON.VIEW : /^text\/|javascript|json/.test(mime) ? ICON.CODE : ICON.FILE; },
-    } };
-  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
-  });
-  new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
-  if (fs.existsSync(FILE)) new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(FILE, 'utf8'))(sp, doc, win, Event, CustomEvent);
-  return { make: win.spiritElements && win.spiritElements.createFileSelector, asked: asked, doc: doc };
-}
 
 const MOD = '2026-10-17T12:00:00.000Z';
 function entry(p, kind, size) {
@@ -200,210 +137,6 @@ const TREE = [
   if (after.size === 30 && after.modified === '2026-10-18T01:00:00.000Z' && shellFiles.version() !== v0) test.check('a changeFile updates the row\'s stat, and the tree\'s version moves so Files redraws');
   else test.fail(OWED + 'after a changeFile the row reads ' + short(after) + ', version ' + v0 + ' then ' + shellFiles.version());
 
-  // ── 3. the pane ──
-  test.subHeading('3. fileSelector\'s pane: the tree with no words, the ranked list with words');
-  const m = load();
-  if (typeof m.make !== 'function') {
-    test.fail(OWED + 'no window.spiritElements.createFileSelector (shell/js/fileSelector.js)');
-  } else {
-    const src = code(FILE);
-    if (/shellCreateListSearch\s*\(/.test(src)) test.check('fileSelector.js is a wrapper on shellCreateListSearch');
-    else test.fail(OWED + 'fileSelector.js does not call shellCreateListSearch');
-    const pane = m.make({ face: 'pane', files: function () { return TREE; } });
-    await settle();
-    // AFTER THE FIRST BUILD (Andy, 2026-10-18): "the initial presentation (when search box is empty) should always be
-    // collapsed, as soon as a search string is active, everything is visible (not collapsed)."
-    const start = keysOf(pane);
-    if (JSON.stringify(start) === JSON.stringify(['js', 'media', 'shell'])) test.check('with no words every folder starts folded: only js, media and shell show');
-    else test.fail(OWED + 'with no words the rows are ' + short(start));
-    // Andy, 2026-10-18, on a folded folder's "…": "the ... ellipses are only there for NO good reason ... get rid of those".
-    const foldedRow = (rowFor(pane, 'shell') || { html: '' }).html;
-    if (foldedRow && !/…|\.\.\./.test(foldedRow)) test.check('a folded folder carries no ellipsis after its name');
-    else test.fail(OWED + 'the folded folder shell draws ' + short(foldedRow));
-    for (const k of ['shell', 'shell/shared', 'shell/shared/js', 'js', 'media']) { press(pane, k); await settle(); }
-    const order = keysOf(pane);
-    const want = TREE.map(function (f) { return f.relativePath; });
-    if (JSON.stringify(order) === JSON.stringify(want)) test.check('pressed open, every row stands in path order');
-    else test.fail(OWED + 'unfolded, the rows are ' + short(order));
-    const indents = function (k) { return ((rowFor(pane, k) || { html: '' }).html.match(/class="[^"]*\bfile-selector-indent\b/g) || []).length; };
-    if (indents('js') === 0 && indents('js/server.js') === 1 && indents('shell/shared/js/listSearch.js') === 3) test.check('one indent per slash: 0, 1 and 3');
-    else test.fail(OWED + 'indents: js ' + indents('js') + ', js/server.js ' + indents('js/server.js') + ', listSearch.js ' + indents('shell/shared/js/listSearch.js'));
-    const server = rowFor(pane, 'js/server.js') || { html: '', cells: [] };
-    const rightCells = server.cells.filter(function (c) { return /text-align:\s*right/.test(c); });
-    const bytes = kernel.core.util.formatBytes(2048);
-    if (rightCells.some(function (c) { return c.indexOf(bytes) !== -1; }) && rightCells.some(function (c) { return /2026/.test(c); })) test.check('size (' + bytes + ') and modified stand in right-justified cells');
-    else test.fail(OWED + 'js/server.js\'s cells: ' + short(server.cells));
-    const icon = function (r, glyph) { return r && r.html.indexOf(glyph) !== -1 && r.html.indexOf(glyph) < r.html.indexOf(r.key.slice(r.key.lastIndexOf('/') + 1)); };
-    if (icon(server, ICON.CODE) && icon(rowFor(pane, 'media/cat.png'), ICON.VIEW)) test.check('the mimetype icon stands before the name: code for server.js, view for cat.png');
-    else test.fail(OWED + 'icons: server.js ' + short(server.html) + ' | cat.png ' + short((rowFor(pane, 'media/cat.png') || {}).html));
-    // "Is it possible to have the icons right next to the file name in \"tree\" mode."
-    const deep = (rowFor(pane, 'shell/shared/js/listSearch.js') || { html: '' }).html;
-    const lastIndent = deep.lastIndexOf('file-selector-indent');
-    const iconAt = deep.indexOf(ICON.CODE);
-    if (lastIndent !== -1 && iconAt > lastIndent && iconAt < deep.indexOf('listSearch.js')) test.check('in the tree the icon stands after the indent, right before the name');
-    else test.fail(OWED + 'the deep row draws ' + short(deep));
-
-    press(pane, 'shell');
-    await settle();
-    const folded = keysOf(pane);
-    press(pane, 'shell');
-    await settle();
-    const unfolded = keysOf(pane);
-    if (folded.indexOf('shell') !== -1 && !folded.some(function (k) { return k.indexOf('shell/') === 0; }) && folded.indexOf('js/server.js') !== -1) test.check('a press on an open folder folds the rows under it, and only those');
-    else test.fail(OWED + 'after a press on shell the rows are ' + short(folded));
-    if (unfolded.indexOf('shell/shared/js/listSearch.js') !== -1) test.check('a second press unfolds them as they were');
-    else test.fail(OWED + 'after a second press the rows are ' + short(unfolded));
-
-    const fresh = m.make({ face: 'pane', files: function () { return TREE; } });
-    await settle();
-    typeInto(fresh, 'js');
-    await settle();
-    if (keysOf(fresh).indexOf('shell/shared/js/listSearch.js') !== -1) test.check('with words every match shows, though no folder was ever opened');
-    else test.fail(OWED + 'typing js in a folded pane shows ' + short(keysOf(fresh)));
-
-    typeInto(pane, 'listsearch');
-    await settle();
-    const top = rowsOf(pane)[0] || { key: '', html: '' };
-    if (top.key === 'shell/shared/js/listSearch.js') test.check('words rank the rows: listsearch puts shell/shared/js/listSearch.js on top');
-    else test.fail(OWED + 'typing listsearch puts on top ' + short(top.key));
-    if (top.html.indexOf('shell/shared/js/') !== -1 && /<mark[^>]*>/.test(top.html) && !/file-selector-indent/.test(top.html)) test.check('in list mode a row shows its full path, the match marked, no indent');
-    else test.fail(OWED + 'the top row draws ' + short(top.html));
-    if (m.asked.length === 0) test.check('nothing asked the node: names and paths are searched in the page');
-    else test.fail(OWED + 'the pane asked the node ' + short(m.asked));
-
-    typeInto(pane, '');
-    await settle();
-    let changes = 0;
-    pane.addEventListener('change', function () { changes += 1; });
-    press(pane, 'js/server.js');
-    await settle();
-    if (pane.value === 'js/server.js' && pane.row && pane.row.relativePath === 'js/server.js' && changes === 1) test.check('a press on a file makes it the value, with its row, and fires one change');
-    else test.fail(OWED + 'after a press on js/server.js: value ' + short(pane.value) + ', changes ' + changes);
-
-    // ── 4. the dropdown ──
-    test.subHeading('4. the dropdown: an inline field, only the pane pops up');
-    const drop = m.make({ files: function () { return TREE; } });
-    await settle();
-    const host = hostOf(drop);
-    const html = host ? host.innerHTML : '';
-    const fieldTag = (/<button[^>]*id="listsearch-\d+-field"[^>]*>/.exec(html) || [''])[0];
-    const popupAt = html.indexOf('-popup"');
-    if (fieldTag && !/position:\s*absolute/.test(fieldTag) && popupAt > html.indexOf(fieldTag)) test.check('the field is a plain button in the flow, the popup after it');
-    else test.fail(OWED + 'the dropdown\'s markup: ' + short(html));
-    const field = partOf(drop, 'field');
-    let picked = 0;
-    drop.addEventListener('change', function () { picked += 1; });
-    if (field) fire(hostOf(drop), 'click', { target: field });
-    await settle();
-    if (drop.value === '' && picked === 0) test.check('the world: opened, nothing picked yet');
-    else test.fail('the world: the dropdown reads ' + short(drop.value) + ', changes ' + picked);
-    // "when i click on a folder in the dropdown, it treats that folder as chosen? when it should just expand/collapse it"
-    press(drop, 'js');
-    await settle();
-    // In a browser the pressed row is gone from the page once the rows are drawn again; the click then reaches document.
-    (m.doc.listeners.click || []).forEach(function (fn) { fn({ target: { isConnected: false, parentNode: null } }); });
-    await settle();
-    const popup = partOf(drop, 'popup');
-    if (popup && !popup.hidden && drop.value === '' && picked === 0 && keysOf(drop).indexOf('js/server.js') !== -1) test.check('a press on a folder in the dropdown unfolds it: the popup stays open, nothing is picked');
-    else test.fail(OWED + 'after a press on the folder js: popup hidden ' + (popup && popup.hidden) + ', value ' + short(drop.value) + ', changes ' + picked + ', rows ' + short(keysOf(drop)));
-    press(drop, 'js/server.js');
-    await settle();
-    if (drop.value === 'js/server.js' && picked === 1) test.check('a press on a file picks it: its value is the path and one change fires');
-    else test.fail(OWED + 'the dropdown picked ' + short(drop.value) + ', changes ' + picked);
-
-    // "when i scroll outside of view in the dropdown, the drobdown should make sure that the \"current\" line is visible,
-    // and the the current selection is reflected in the dropdown input."
-    const keyed = m.make({ files: function () { return TREE; } });
-    await settle();
-    const kField = partOf(keyed, 'field');
-    if (kField) fire(hostOf(keyed), 'click', { target: kField });
-    await settle();
-    const kList = partOf(keyed, 'list');
-    let scrolled = 0;
-    if (kList) kList.querySelector = function (sel) { return /current/.test(sel) ? { scrollIntoView: function () { scrolled += 1; } } : null; };
-    fire(hostOf(keyed), 'keydown', { key: 'ArrowDown', target: partOf(keyed, 'text') || {} });
-    fire(hostOf(keyed), 'keydown', { key: 'ArrowDown', target: partOf(keyed, 'text') || {} });
-    await settle();
-    const fieldText = kField ? String(kField.innerHTML || kField.textContent || '') : '';
-    if (scrolled > 0) test.check('as the keys move the current row, the list scrolls it into view');
-    else test.fail(OWED + 'the keys moved the current row; nothing was scrolled into view');
-    if (/\bmedia\b/.test(fieldText) && !/choose/.test(fieldText)) test.check('the field shows the current row while the keys move it: media');
-    else test.fail(OWED + 'after two downs the field reads ' + short(fieldText));
-
-    // Andy, 2026-10-18: "The home and End keys don't work in the dropdown.", then "after the user uses up and down arrow
-    // keys the home and end should belong to the list". The open dropdown's focus is its search box; the downs above
-    // moved the current row, so Home and End are the list's now.
-    const keyedRows = function () { return keysOf(keyed); };
-    fire(hostOf(keyed), 'keydown', { key: 'End', target: partOf(keyed, 'text') || {} });
-    await settle();
-    const atEnd = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(keyed, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
-    fire(hostOf(keyed), 'keydown', { key: 'Home', target: partOf(keyed, 'text') || {} });
-    await settle();
-    const atHome = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(keyed, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
-    const kr = keyedRows();
-    if (atEnd === kr[kr.length - 1] && atHome === kr[0]) test.check('after the downs, End and Home move the current row to the bottom and the top, from the search box');
-    else test.fail(OWED + 'End made ' + short(atEnd) + ' current, Home ' + short(atHome) + '; rows ' + short(kr));
-    const before = m.make({ files: function () { return TREE; } });
-    await settle();
-    const bField = partOf(before, 'field');
-    if (bField) fire(hostOf(before), 'click', { target: bField });
-    await settle();
-    fire(hostOf(before), 'keydown', { key: 'End', target: partOf(before, 'text') || {} });
-    await settle();
-    // Andy, 2026-10-18: "Give home and end to the list, same as up and down arrow keys."
-    const endFirst = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(before, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
-    if (endFirst === 'shell') test.check('End in the search box goes to the bottom with no arrow before it: Home and End are the list\'s');
-    else test.fail(OWED + 'End as the first key made ' + short(endFirst) + ' current');
-    // "is there a reason the dropdown is constrained wo that narrow width? ... can it be the required with to display
-    // everything, constrained by page width?"
-    const popTag = (/<div[^>]*id="listsearch-\d+-popup"[^>]*>/.exec((hostOf(keyed) || { innerHTML: '' }).innerHTML) || [''])[0];
-    if (/width:\s*max-content/.test(popTag) && /max-width:\s*(calc\()?[0-9.]+vw/.test(popTag)) test.check('the popup takes the width its rows need, up to the page width');
-    else test.fail(OWED + 'the popup is drawn ' + short(popTag));
-
-    // Andy, 2026-10-18: "it expands only as wide as the search string plus button need, and neglects the width of the
-    // table rows", and to the proposal: "let's try your width solution for the dropdown. max width should still be page
-    // width though". The rows' table takes its own width in a popup; a name is never cut short (no label-cell cap).
-    const kHtml = (partOf(keyed, 'list') || { innerHTML: '' }).innerHTML;
-    const tableTag = (/<table[^>]*>/.exec(kHtml) || [''])[0];
-    if (/style="[^"]*width:\s*(auto|max-content)/.test(tableTag)) test.check('in a popup the rows\' table takes its own width');
-    else test.fail(OWED + 'the popup\'s table is drawn ' + short(tableTag));
-    if (kHtml && !/label-cell/.test(kHtml)) test.check('a file name cell carries no width cap (no label-cell)');
-    else test.fail(OWED + 'the name cells still carry label-cell: ' + short(kHtml));
-
-    // "and the default for your filter should be filename only" (the box: words in: names | paths, names the default).
-    const named = m.make({ face: 'pane', files: function () { return TREE; } });
-    await settle();
-    typeInto(named, 'shared');
-    await settle();
-    const byName = keysOf(named);
-    // The strip is drawn with the pane's markup, into the element the list lives in.
-    const strip = (hostOf(named) || { innerHTML: '' }).innerHTML;
-    if (/data-filter="in"[^>]*data-value="names"/.test(strip) && /data-value="paths"/.test(strip)) test.check('the file list draws one filter, words in: names | paths');
-    else test.fail(OWED + 'the filter strip reads ' + short(strip));
-    // Every row stands in the shared list, ranked (goal/G29.4): a row the words miss sinks below every row they match.
-    const deepFile = 'shell/shared/js/listSearch.js';
-    if (byName[0] === 'shell/shared' && byName.indexOf(deepFile) > byName.indexOf('js')) test.check('by default the words match names only: shared ranks the folder shared first, and the files under it no higher than any miss');
-    else test.fail(OWED + 'with names, shared ranks ' + short(byName));
-    fire(hostOf(named), 'click', { target: { id: '', getAttribute: function (k) { return k === 'data-filter' ? 'in' : k === 'data-value' ? 'paths' : null; }, closest: function () { return null; } } });
-    await settle();
-    const byPathKeys = keysOf(named);
-    if (byPathKeys.indexOf(deepFile) !== -1 && byPathKeys.indexOf(deepFile) < byPathKeys.indexOf('js')) test.check('with paths the words match the whole path: shared ranks shell/shared/js/listSearch.js above the misses');
-    else test.fail(OWED + 'with paths, shared ranks ' + short(byPathKeys));
-
-    // "it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure"
-    const typed = m.make({ face: 'pane', accept: ['.js'], files: function () { return TREE; } });
-    await settle();
-    typeInto(typed, 's');
-    await settle();
-    const tk = keysOf(typed);
-    if (tk.indexOf('media/cat.png') === -1 && tk.indexOf('js/server.js') !== -1) test.check('accept [.js] keeps cat.png out and server.js in');
-    else test.fail(OWED + 'with accept [.js] the rows are ' + short(tk));
-    typeInto(typed, '');
-    await settle();
-    if (keysOf(typed).indexOf('media') !== -1) test.check('folders always show under a type filter');
-    else test.fail(OWED + 'with accept [.js] the folders are ' + short(keysOf(typed)));
-  }
-
   // ── 5. the node's fs.search ──
   test.subHeading('5. the node\'s fs.search ranks words over its own tree');
   const searches = require('../run/js/nodeSearches.js').createNodeSearches({
@@ -425,18 +158,10 @@ const TREE = [
   test.subHeading('6. Files, the text editor and Desk on the shell\'s tree; pathSelector gone');
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
-  if (at('/shell/js/fileSelector.js') > at('/shell/shared/js/listSearch.js') && at('/shell/shared/js/listSearch.js') !== -1) test.check('index.html loads fileSelector.js after listSearch.js');
-  else test.fail(OWED + 'index.html: fileSelector.js at ' + at('/shell/js/fileSelector.js') + ', listSearch.js at ' + at('/shell/shared/js/listSearch.js'));
   if (!fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
   else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'js', 'client', 'shell.js'))));
   if (!/contact-selector-face-dropdown\s+\.contact-selector-pane\s*\{[^}]*position:\s*absolute/.test(index)) test.check('index.html no longer floats the contact selector\'s whole pane');
   else test.fail(OWED + 'index.html still floats .contact-selector-face-dropdown .contact-selector-pane');
-  const files = code(path.join(RUN, 'shell', 'files', 'files.js'));
-  if (/createFileSelector\s*\(/.test(files) && /face\s*:\s*['"]pane['"]/.test(files) && !/<details/.test(files)) test.check('Files is a container for the fileSelector pane');
-  else test.fail(OWED + 'files.js: createFileSelector ' + /createFileSelector\s*\(/.test(files) + ', its own <details> tree ' + /<details/.test(files));
-  const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));
-  if (/createFileSelector\s*\(\s*\{[^}]*accept\s*:/.test(editor) && !/<input[^>]*id="editor-path"/.test(editor)) test.check('the text editor picks its file with the fileSelector dropdown, passing its text types; its path field gone');
-  else test.fail(OWED + 'textEditor.js: createFileSelector ' + /createFileSelector\s*\(/.test(editor) + ', path field ' + /<input[^>]*id="editor-path"/.test(editor));
   const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));
   if (!/['"]fs\.search['"]/.test(desk)) test.check('Desk\'s plugin finder asks the node nothing: it reads the shell\'s tree');
   else test.fail(OWED + 'shell/desk/desk.js still asks fs.search');

@@ -1,5 +1,6 @@
-// spirit/run/shell/js/contactSearch.js
-// CONTACTS' ONE SEARCH, A SHELL ELEMENT (goal/G30.19). Contacts draws it, and Join draws it as its contact step. The box:
+// spirit/run/shell/js/contacts/listElement.js
+// THE CONTACTS LIST, A DROP-IN SHELL ELEMENT (goal/G30.19, G30.20). Contacts draws it as a pane, and Join as its contact
+// step; grants and introSpector draw it as a dropdown (opts.face, placeholder, all, pick(row, key)). The box:
 //   - One search in two tiers. contact.search answers at once from the book and the shadow (the peers the node has
 //     heard of), and starts a network search on the node; each network result streams in as one row. All of it lands in
 //     data.contacts, the faceless layer (shell/js/spiritData.js, goal/G30.16), and this list is a view of it: every list
@@ -13,8 +14,9 @@
 //   - It fills as soon as it is drawn; an empty search answers like any other.
 // This node's relays stand beside the book (goal/G30.7): relay.search, a relay row keyed by its url.
 //
-//   create(host, opts) -> { list, refresh(), destroy() }
+//   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.api        the app's shell api: verb, peerPost, callDialog
+//     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's; a pane opens a pressed row
 //     opts.say(text)  where it says what an Add or a card did
 //     opts.onAdded(row), opts.onChanged()   after an Add, and after a dialog changed something
 //     opts.selfTail(tail)                    contact.search's selfTail, for "your key ends …"
@@ -92,6 +94,10 @@
       data: 'contacts',
       server: 'contact',
       verb: 'search',
+      face: o.face,
+      placeholder: o.placeholder || 'choose a contact…',
+      all: o.all,
+      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { q: text }; },
       columns: [
         { field: 'presence', label: '', width: '1.5em' },
@@ -140,5 +146,5 @@
   }
 
   window.spiritElements = window.spiritElements || {};
-  window.spiritElements.contactSearch = { create: create, filters: FILTERS };
+  window.spiritElements.contactList = { create: create, filters: FILTERS };
 }());

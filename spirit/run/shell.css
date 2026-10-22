@@ -620,13 +620,12 @@ select option { background: var(--shell-pane); color: #eee; }
 .icon-selector-row:hover,
 .icon-selector-row.is-active { background: var(--shell-accent); }
 
-/* The contact and file selectors (shell/js/contactSelector.js,
-   shell/js/fileSelector.js) draw through the shared list
-   (shell/shared/js/listSearch.js), which lays out its own field, pane
-   and popup. A dropdown stands inline like any input control; only its
-   pane pops up (goal/G29.8). */
-.contact-selector, .file-selector { position: relative; }
-.contact-selector-face-dropdown, .file-selector-face-dropdown { display: inline-block; }
+/* The contact selector (shell/js/contactSelector.js) draws through the
+   shared list (shell/shared/js/listSearch.js), which lays out its own
+   field, pane and popup. A dropdown stands inline like any input control;
+   only its pane pops up (goal/G29.8). */
+.contact-selector { position: relative; }
+.contact-selector-face-dropdown { display: inline-block; }
 
 /* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
    the style of its container, so nothing here sets its face or size;

@@ -45,8 +45,9 @@ const done = (async function () {
   else test.fail(OWED + 'index.html still draws the viewers inline, or its launchers do not use the elements');
 
   test.subHeading('3. Files: the list-tool with file rows, on the face too');
-  const filesApp = code('shell/files/files.js');
-  if (/spiritElements\.probabilitySearch\.create\(/.test(filesApp) && /fileElement\.create\(/.test(filesApp) && !/createFileSelector/.test(filesApp) && /'fs\.search'|verb: 'search'/.test(filesApp))
+  // Since goal/G30.20 the Files app wraps the files list element, which holds what this asserted.
+  const filesApp = code('shell/js/files/listElement.js');
+  if (/fileList\.create\(/.test(code('shell/files/files.js')) && /probabilitySearch\.create\(/.test(filesApp) && /fileElement\.create\(/.test(filesApp) && !/createFileSelector/.test(filesApp) && /'fs\.search'|verb: 'search'/.test(filesApp))
     test.check('Files lists through probabilitySearch over fs.search with fileElement rows');
   else test.fail(OWED + 'Files still uses the file selector, or not the list-tool with file rows');
   const face = code('face/shell.js');
@@ -75,7 +76,14 @@ const done = (async function () {
   // ── 5. The faceless layer (box v14-v16), in node, no page ─────────────────────────────────────────────────────────
   test.subHeading('5. one data tree: set and delete the only writes, watch by path, translators, no cap');
   let D = null;
-  try { delete require.cache[require.resolve('../run/shell/js/spiritData.js')]; D = require('../run/shell/js/spiritData.js'); } catch (e) { D = { threw: e.message }; }
+  // Each type's translator is its data.js since goal/G30.20, registered on the tree.
+  try {
+    ['../run/shell/js/spiritData.js', '../run/shell/js/files/data.js', '../run/shell/js/contacts/data.js'].forEach(function (m) { delete require.cache[require.resolve(m)]; });
+    D = require('../run/shell/js/spiritData.js');
+    globalThis.spiritData = D;
+    require('../run/shell/js/files/data.js');
+    require('../run/shell/js/contacts/data.js');
+  } catch (e) { D = { threw: e.message }; }
   let five = null;
   try {
     const heard = [];
@@ -105,7 +113,7 @@ const done = (async function () {
   else test.fail(OWED + 'data.contacts: ' + short(five && five.k1));
   if (five && five.kept) test.check('no cap in the browser: 3000 contacts later, the first is still there');
   else test.fail(OWED + 'something was shed: ' + short(five));
-  const views = code('shell/js/probabilitySearch.js') + code('shell/files/files.js') + code('shell/js/contactSearch.js');
+  const views = code('shell/js/probabilitySearch.js') + code('shell/js/files/listElement.js') + code('shell/js/contacts/listElement.js');
   if (/data: 'files'/.test(views) && /data: 'contacts'/.test(views) && !/self\.feed/.test(views) && !exists('shell/js/fileTree.js'))
     test.check('Files and Contacts are views of the tree; the list-tool has no feed of its own; no second file tree');
   else test.fail(OWED + 'the lists are not views of the tree');

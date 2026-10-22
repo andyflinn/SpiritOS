@@ -1313,8 +1313,6 @@
           createContactLabel: spiritElements.createContactLabel,
           createAppServerSelector: spiritElements.createAppServerSelector,
           createApiBranchSelector: spiritElements.createApiBranchSelector,
-          // A file or folder from the shell's one tree, on the shared list (goal/G29.8, shell/js/fileSelector.js).
-          createFileSelector: spiritElements.createFileSelector,
           // A file's text on CodeMirror 5, the search words marked (goal/G29.12, shell/js/textView.js).
           createTextView: spiritElements.createTextView,
           // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/shared/js/progressBar.js).

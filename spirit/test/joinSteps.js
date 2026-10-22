@@ -21,7 +21,7 @@
 //     but this node and its relays), face (the face name kept on that relay's row), faceUrl. refresh publishes the job
 //     when the facts changed, and answers whether it did. server.js refreshes it after a relay, contact or peer verb.
 //   - spiritElements.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
-//   - spiritElements.contactSearch (shell/js/contactSearch.js; peerFind until goal/G30.19) and spiritElements.faceForm
+//   - spiritElements.contactList (shell/js/contacts/listElement.js; peerFind until goal/G30.19) and spiritElements.faceForm
 //     (shell/js/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
 // rule/11: through testSupport only; its own scratch folders.
@@ -143,10 +143,10 @@ const info = code('shell/info/info.js');
 const joinApp = code('shell/join/join.js');
 // SINCE goal/G30.19 Find someone is Contacts' one list, contactSearch: contact.search (the book, the shadow, the
 // network), Add by peer.acquire on its contactElement rows.
-const contactSearch = element('shell/js/contactSearch.js', 'contactSearch');
+const contactSearch = element('shell/js/contacts/listElement.js', 'contactList');
 const faceForm = element('shell/js/faceForm.js', 'faceForm');
-if (contactSearch && typeof contactSearch.create === 'function' && /'contact\.search'/.test(code('shell/js/contactSearch.js')) && /'peer\.acquire'/.test(code('shell/js/rows/contactElement.js'))
-    && /spiritElements\.contactSearch/.test(contacts) && /spiritElements\.contactSearch/.test(joinApp)
+if (contactSearch && typeof contactSearch.create === 'function' && /'contact\.search'/.test(code('shell/js/contacts/listElement.js')) && /'peer\.acquire'/.test(code('shell/js/contacts/rowElement.js'))
+    && /spiritElements\.contactList/.test(contacts) && /spiritElements\.contactList/.test(joinApp)
     && !/function contactsSeenSource|function contactsSeenCells|function contactsAskCard|function contactsSeenAdd/.test(contacts))
   test.check('Find someone is the one list, contactSearch (contact.search, Add by peer.acquire); Contacts and the Join app draw it, Contacts keeps no copy');
 else test.fail(OWED + 'contactSearch is missing, or Contacts keeps its own find panel, or the Join app does not draw it');
@@ -154,8 +154,8 @@ if (faceForm && typeof faceForm.mount === 'function' && /'relay\.face'/.test(cod
     && /spiritElements\.faceForm/.test(info) && /spiritElements\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
   test.check('the face form is the faceForm element (relay.face); Info and the Join app draw it, Info keeps no copy');
 else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or the Join app does not draw it');
-if (['contactSearch', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/shell/js/' + nm + '\\.js"').test(index); }))
-  test.check('index.html loads contactSearch, faceForm and joinSteps');
+if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/shell/js/' + nm + '\\.js"').test(index); }))
+  test.check('index.html loads contacts/listElement, faceForm and joinSteps');
 else test.fail(OWED + 'index.html does not load all three elements');
 // Box v42: decided once, in the shell. The shell hands the Join app what it worked out (onSteps); the app neither
 // subscribes nor decides.
