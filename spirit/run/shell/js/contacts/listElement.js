@@ -22,7 +22,7 @@
 //     opts.selfTail(tail)                    contact.search's selfTail, for "your key ends …"
 //     opts.empty                              the words when nothing matches
 (function () {
-  function icons() { return (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON) || {}; }
+  // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row of that kind: owned, blocked, held, or a relay (this node's, or one the network or the shadow found).
   function is(kind) {
     return function (row) { return !!row && (kind === 'relay' ? (row.kind === 'relay' || row.relay === true) : row[kind] === true); };
@@ -35,11 +35,10 @@
     // where all 3 are mutually exclusive"): all, then each kind the list holds any of.
     { name: 'show',
       choices: function (all) {
-        var I = icons();
         var out = [{ value: 'all', word: 'all' }];
-        if (all.some(is('owned'))) out.push({ value: 'owned', icon: I.STAR || '★', word: 'my puppets' });
-        if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: I.NO || '', word: 'blocked' });
-        if (all.some(is('held'))) out.push({ value: 'held', icon: I.WAITING || '', word: 'held' });
+        if (all.some(is('owned'))) out.push({ value: 'owned', icon: '⭐', word: 'my puppets' });
+        if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
+        if (all.some(is('held'))) out.push({ value: 'held', icon: '⌛', word: 'held' });
         if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
         return out;
       },

@@ -25,7 +25,6 @@
 // characters, not yours.
 
 var contactsEscapeHtml = spirit.core.util.escapeHtml;
-var contactsIcon = spirit.core.const.ICON;
 var contactsApi = null;
 
 // What this node does with mail from somebody it has not added. It moved

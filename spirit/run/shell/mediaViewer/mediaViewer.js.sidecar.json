@@ -2,7 +2,7 @@
   "face": {
     "app": true,
     "name": "Media Viewer",
-    "icon": "VIDEO",
+    "icon": "🎬",
     "description": "Pick a picture, a song or a video from this node's files and play it."
   }
 }

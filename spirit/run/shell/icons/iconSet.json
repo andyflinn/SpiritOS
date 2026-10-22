@@ -1,0 +1,454 @@
+{
+  "😠": [
+    "angry"
+  ],
+  "⬇️": [
+    "arrowdown",
+    "download"
+  ],
+  "⬅️": [
+    "arrowleft",
+    "back"
+  ],
+  "➡️": [
+    "arrowright",
+    "forward"
+  ],
+  "⬆️": [
+    "arrowup",
+    "upload"
+  ],
+  "✅": [
+    "ok",
+    "yes",
+    "success"
+  ],
+  "❌": [
+    "delete",
+    "error",
+    "no"
+  ],
+  "⚠️": [
+    "warning"
+  ],
+  "ℹ️": [
+    "info"
+  ],
+  "☑️": [
+    "checked"
+  ],
+  "⬜": [
+    "unchecked"
+  ],
+  "✓": [
+    "delivered"
+  ],
+  "❗": [
+    "refused"
+  ],
+  "⏳": [
+    "loading"
+  ],
+  "▶️": [
+    "pointright",
+    "play"
+  ],
+  "🔽": [
+    "pointdown"
+  ],
+  "◀️": [
+    "pointleft"
+  ],
+  "🔼": [
+    "pointup"
+  ],
+  "🔄": [
+    "refresh"
+  ],
+  "➕": [
+    "add"
+  ],
+  "➖": [
+    "remove"
+  ],
+  "✏️": [
+    "edit"
+  ],
+  "👁️": [
+    "view"
+  ],
+  "🙈": [
+    "hidden"
+  ],
+  "🙉": [
+    "visible"
+  ],
+  "🔒": [
+    "locked",
+    "lock"
+  ],
+  "🔓": [
+    "unlocked",
+    "unlock"
+  ],
+  "⭐": [
+    "star"
+  ],
+  "❤️": [
+    "heart",
+    "love"
+  ],
+  "💔": [
+    "brokenheart"
+  ],
+  "💜": [
+    "purpleheart"
+  ],
+  "👍": [
+    "thumbsup"
+  ],
+  "👎": [
+    "thumbsdown"
+  ],
+  "🔥": [
+    "fire"
+  ],
+  "💧": [
+    "water"
+  ],
+  "🌍": [
+    "earth"
+  ],
+  "💨": [
+    "air",
+    "smoke"
+  ],
+  "☀️": [
+    "sun"
+  ],
+  "🌙": [
+    "moon"
+  ],
+  "☁️": [
+    "cloud"
+  ],
+  "🌧️": [
+    "rain"
+  ],
+  "❄️": [
+    "snow"
+  ],
+  "⚡": [
+    "lightning"
+  ],
+  "🌳": [
+    "tree"
+  ],
+  "🌸": [
+    "flower"
+  ],
+  "🐾": [
+    "animal"
+  ],
+  "👤": [
+    "person"
+  ],
+  "👥": [
+    "group"
+  ],
+  "📇": [
+    "rolodex"
+  ],
+  "⌛": [
+    "waiting"
+  ],
+  "🎵": [
+    "music"
+  ],
+  "🎬": [
+    "video"
+  ],
+  "📄": [
+    "document",
+    "file"
+  ],
+  "📁": [
+    "folder"
+  ],
+  "📂": [
+    "openfolder"
+  ],
+  "🔗": [
+    "link"
+  ],
+  "📍": [
+    "location"
+  ],
+  "⏰": [
+    "time"
+  ],
+  "📅": [
+    "calendar"
+  ],
+  "✉️": [
+    "email"
+  ],
+  "📞": [
+    "phone"
+  ],
+  "💬": [
+    "chat"
+  ],
+  "💻": [
+    "code"
+  ],
+  "🐛": [
+    "bug"
+  ],
+  "💡": [
+    "idea"
+  ],
+  "🍆": [
+    "eggplant"
+  ],
+  "✌️": [
+    "victory"
+  ],
+  "☕": [
+    "coffee"
+  ],
+  "🪡": [
+    "needle"
+  ],
+  "🧵": [
+    "thread"
+  ],
+  "📝": [
+    "note"
+  ],
+  "🏠": [
+    "home"
+  ],
+  "🏢": [
+    "work"
+  ],
+  "🏫": [
+    "school"
+  ],
+  "🚗": [
+    "car"
+  ],
+  "🚲": [
+    "bike"
+  ],
+  "🚌": [
+    "bus"
+  ],
+  "🚆": [
+    "train"
+  ],
+  "✈️": [
+    "plane"
+  ],
+  "🚢": [
+    "ship"
+  ],
+  "🚀": [
+    "rocket"
+  ],
+  "🛰️": [
+    "satellite"
+  ],
+  "🌐": [
+    "globe"
+  ],
+  "🔲": [
+    "object"
+  ],
+  "📦": [
+    "box",
+    "package"
+  ],
+  "👻": [
+    "spirit",
+    "ghost"
+  ],
+  "🧙": [
+    "wizard"
+  ],
+  "🧙‍♀️": [
+    "witch"
+  ],
+  "📊": [
+    "table"
+  ],
+  "📈": [
+    "chart"
+  ],
+  "📉": [
+    "graph"
+  ],
+  "📖": [
+    "book"
+  ],
+  "🔋": [
+    "battery"
+  ],
+  "🔑": [
+    "key"
+  ],
+  "⏸️": [
+    "paused",
+    "pause"
+  ],
+  "⏹️": [
+    "stop button"
+  ],
+  "⏺️": [
+    "record"
+  ],
+  "⏪": [
+    "rewind"
+  ],
+  "⏩": [
+    "fastforward"
+  ],
+  "🔊": [
+    "volumeup"
+  ],
+  "🔉": [
+    "volumedown"
+  ],
+  "🔇": [
+    "muted"
+  ],
+  "🔈": [
+    "unmuted"
+  ],
+  "🛡️": [
+    "protect",
+    "shield"
+  ],
+  "⚔️": [
+    "sword"
+  ],
+  "🔫": [
+    "gun"
+  ],
+  "💣": [
+    "bomb"
+  ],
+  "💥": [
+    "explode"
+  ],
+  "🙏": [
+    "pray",
+    "thanks"
+  ],
+  "😴": [
+    "sleep"
+  ],
+  "🥳": [
+    "party"
+  ],
+  "🎉": [
+    "celebrate"
+  ],
+  "🤔": [
+    "think"
+  ],
+  "😕": [
+    "confused"
+  ],
+  "😢": [
+    "sad"
+  ],
+  "😄": [
+    "happy"
+  ],
+  "😎": [
+    "groovy"
+  ],
+  "💀": [
+    "dead"
+  ],
+  "🐦": [
+    "bird"
+  ],
+  "🐱": [
+    "cat"
+  ],
+  "🐶": [
+    "dog"
+  ],
+  "🐒": [
+    "monkey"
+  ],
+  "🐟": [
+    "fish"
+  ],
+  "📋": [
+    "menu",
+    "list"
+  ],
+  "🔴": [
+    "red circle",
+    "off"
+  ],
+  "🟠": [
+    "orange circle",
+    "stop"
+  ],
+  "🟡": [
+    "yellow circle"
+  ],
+  "🟢": [
+    "green circle",
+    "on"
+  ],
+  "🔵": [
+    "blue circle",
+    "start"
+  ],
+  "🟣": [
+    "purple circle"
+  ],
+  "🟤": [
+    "brown circle"
+  ],
+  "⚫": [
+    "black circle"
+  ],
+  "⚪": [
+    "white circle"
+  ],
+  "🏃‍♂️": [
+    "run"
+  ],
+  "🔢": [
+    "number"
+  ],
+  "🔤": [
+    "string",
+    "text"
+  ],
+  "🔘": [
+    "boolean",
+    "toggle"
+  ],
+  "🔍": [
+    "search"
+  ],
+  "👓": [
+    "glasses"
+  ],
+  "🔚": [
+    "end"
+  ],
+  "📃": [
+    "page"
+  ],
+  "🪠": [
+    "plunger"
+  ]
+}

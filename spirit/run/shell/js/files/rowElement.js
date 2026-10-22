@@ -13,7 +13,7 @@
   var E = window.spiritElements = window.spiritElements || {};
   var files = null;
 
-  function icons() { return (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON) || {}; }
+  // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
     var f = window.spirit && spirit.core && spirit.core.util && spirit.core.util.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -62,8 +62,7 @@
         // every file sat at the top). A tree view hides the folders, the indent saying them.
         // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the fs-watcher's command.
         { name: 'name', from: ['path', 'kind', 'gone', 'core'], paint: function (v) {
-          var I = icons();
-          var glyph = v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || '');
+          var glyph = v.gone ? '❌' : v.kind === 'folder' ? '📁' : '📄';
           var p = String(v.path || '');
           var cut = p.lastIndexOf('/');
           return '<span class="file-depth" style="--depth:' + (p.split('/').length - 1) + '">' + glyph + '</span> ' +

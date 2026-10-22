@@ -47,14 +47,13 @@
       if (r.status !== 200) return;
       var manifest = null;
       try { manifest = JSON.parse(text(r)); } catch (e) { return; }
-      var I = (core().const && core().const.ICON) || {};
       host.innerHTML = '<div class="stat-tile wide">' +
         '<div class="panel-heading">' + esc(manifest.label || path) + '</div>' +
         '<div class="start-job-form card">' + (manifest.args || []).map(function (arg) {
           return '<label class="field-label">' + esc(arg.label || arg.name) + '<input type="' + (arg.type === 'number' ? 'number' : 'text') +
             '" data-arg-name="' + esc(arg.name) + '" value="' + esc(arg.default != null ? arg.default : '') + '"></label>';
         }).join('') +
-        '<button type="button" data-job="start" style="display:none">' + (I.RUN || '') + ' Start Job</button>' +
+        '<button type="button" data-job="start" style="display:none">' + '🏃‍♂️ Start Job</button>' +
         '</div><div data-job="note" class="job-manifest-note"></div></div>';
       var start = host.querySelector('[data-job="start"]');
       var note = host.querySelector('[data-job="note"]');

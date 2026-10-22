@@ -18,7 +18,7 @@
   var contacts = null;
   var subscribed = false;
 
-  function icons() { return (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON) || {}; }
+  // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
     var f = window.spirit && spirit.core && spirit.core.util && spirit.core.util.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -80,16 +80,14 @@
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
         { name: 'presence', from: ['present'], paint: function (v) {
-          var I = icons();
-          var dot = v.present === true ? (I.GREEN_CIRCLE || '') : v.present === false ? (I.RED_CIRCLE || '') : (I.WHITE_CIRCLE || '');
+          var dot = v.present === true ? '🟢' : v.present === false ? '🔴' : '⚪';
           var title = v.present === true ? 'present — a relay says they are connected'
             : v.present === false ? 'absent — a relay says they are not connected'
             : 'not known — no relay you are connected to mentions this key';
           return '<span title="' + esc(title) + '">' + dot + '</span>';
         } },
         { name: 'status', from: ['owned', 'blocked', 'held'], paint: function (v) {
-          var I = icons();
-          return v.blocked ? (I.NO || '') : v.held ? (I.WAITING || '') : v.owned ? (I.STAR || '') : '';
+          return v.blocked ? '❌' : v.held ? '⌛' : v.owned ? '⭐' : '';
         } },
         { name: 'label', from: ['name'], rule: nameRules(), paint: function (v) { return esc(v.name); },
           // In a details dialog: checked here first, then asked; the rename on the stream repaints.

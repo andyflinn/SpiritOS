@@ -497,7 +497,8 @@
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
       if (m.hidden || m.type === 'dialog') return;
-      var glyph = (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON && spirit.core.const.ICON[m.icon]) || m.icon || '';
+      // The face part holds the glyph itself (goal/G30.21: icons as themselves).
+      var glyph = String(m.icon || '');
       icon(glyph, m.name || id, function () { openApp(id, null); });
     });
   }

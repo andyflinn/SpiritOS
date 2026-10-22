@@ -52,15 +52,16 @@ function appsPanel(host, listHost, api, path) {
       // THE INTRINSIC MARK: only this one makes the app's code core (js/coreFiles.js).
       '<label class="field-label"><input type="checkbox" data-face="intrinsic"' + (face.intrinsic === true ? ' checked' : '') + dis + '> intrinsic (its code is core)</label>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
-      '<label class="field-label">Icon <input type="text" data-face="icon" value="' + appsEsc(face.icon || manifest.icon || '') + '"' + dis + '></label>' +
+      // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (shell/js/icons/listElement.js).
+      '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em">' + appsEsc(face.icon || '') + '</span> <span data-apps="icon-pick"></span>' +
+        '<input type="hidden" data-face="icon" value="' + appsEsc(face.icon || '') + '"></label>' +
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
       (canWrite ? '' : '<div class="job-manifest-note">The face part is written from the face.</div>') +
       '<div data-apps="said" class="job-manifest-note"></div>';
     if (!canWrite) return;
     // NO SAVE BUTTON (Andy: "why would there be a save button when the face can re-write annotations as soon as a field
     // changes?"): every change writes the whole face part at once.
-    panel.addEventListener('change', function (e) {
-      if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
+    function save() {
       var said = panel.querySelector('[data-apps="said"]');
       var v = function (k) { return panel.querySelector('[data-face="' + k + '"]'); };
       // Wholesale, as every sidecar part is written: what the panel shows is the whole face part.
@@ -72,6 +73,21 @@ function appsPanel(host, listHost, api, path) {
           if (m[1] === 'shell') spirit.shell.faceApp(id);
         } else said.textContent = 'not saved: ' + ((r && r.body && (r.body.error || r.body.code)) || (r && r.status) || 'no answer');
       }, function (err) { said.textContent = 'not saved: ' + ((err && err.message) || err); });
+    }
+    panel.addEventListener('change', function (e) {
+      if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
+      save();
+    });
+    window.spiritElements.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
+      api: api,
+      face: 'dropdown',
+      placeholder: 'choose an icon…',
+      pick: function (row, glyph) {
+        if (!glyph) return;
+        panel.querySelector('[data-face="icon"]').value = glyph;
+        panel.querySelector('[data-apps="icon-shown"]').textContent = glyph;
+        save();
+      },
     });
   }, function (e) { panel.textContent = 'could not read ' + path + ': ' + ((e && e.message) || e); });
 }
