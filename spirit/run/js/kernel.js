@@ -1110,81 +1110,86 @@ if (isNode()) {
     },
   };
 
+  // THE PAGE'S ONE STREAM (goal/G30.16; Andy: "the home page should need one stream only."). Every subscriber of
+  // spirit.core.jobs shares it: a browser holds six connections to a host, and with a stream per subscriber two tabs
+  // left nothing for a Desk send or an app's script, which then waited for good. The snapshot and every job as it
+  // stands are kept here, so a subscriber that comes later is handed them at once.
+  //
+  // IT COMES BACK BY ITSELF, AND SAYS WHEN IT IS DOWN. Andy, 2026-09-30, cut off from both agents after his node
+  // restarted: "this should work without a hickup." A browser retries an EventSource on its own until the server answers
+  // it wrongly (as a restarting node can); then it is CLOSED for good. So an error is reported, a closed stream is
+  // reopened, and the first open after being down is announced, so an app can ask again for what it missed.
+  //
+  // A wire, not a reader: packets (decoded server side, packet.decorate), what a relay this node owns did
+  // (relay-event, to the owner alone) and contact renames (goal/G4.13) are handed on as they come; what they mean is
+  // the subscriber's business.
+  var streamSubs = [];
+  var streamSource = null;
+  var streamUp = false;
+  var streamDown = false;
+  var streamStopped = false;
+  var streamJobs = new Map();
+  function tellStream(name, arg) {
+    streamSubs.slice().forEach(function (h) {
+      if (typeof h[name] === 'function') { try { h[name](arg); } catch (e) { /* one subscriber's fault */ } }
+    });
+  }
+  function openStream() {
+    streamStopped = false;
+    var source = streamSource = new EventSource('/api/events');
+    source.onopen = function() {
+      streamUp = true;
+      tellStream('onConnection', true);
+      if (streamDown) tellStream('onReconnect');
+      streamDown = false;
+    };
+    source.onerror = function() {
+      if (!streamDown) tellStream('onConnection', false);
+      streamUp = false;
+      streamDown = true;
+      if (source.readyState === 2 && !streamStopped) setTimeout(function() { if (!streamStopped && streamSource === source) openStream(); }, 2000);
+    };
+    source.addEventListener('snapshot', function(e) {
+      var jobs = JSON.parse(e.data).jobs || [];
+      streamJobs.clear();
+      jobs.forEach(function (j) { if (j && j.id) streamJobs.set(j.id, j); });
+      tellStream('onSnapshot', jobs);
+    });
+    source.addEventListener('job-updated', function(e) {
+      var job = JSON.parse(e.data);
+      if (job && job.id) streamJobs.set(job.id, job);
+      tellStream('onUpdate', job);
+    });
+    source.addEventListener('job-deleted', function(e) {
+      var id = JSON.parse(e.data);
+      streamJobs.delete(id);
+      tellStream('onDelete', id);
+    });
+    source.addEventListener('packet', function(e) { tellStream('onPacket', JSON.parse(e.data)); });
+    source.addEventListener('relay-event', function(e) { tellStream('onRelayEvent', JSON.parse(e.data)); });
+    source.addEventListener('contact.rename', function(e) { tellStream('onContactRename', JSON.parse(e.data)); });
+  }
+
   spirit.core.jobs = {
+    // ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should need one stream only."). Every subscriber shares
+    // the page's one EventSource: a browser holds six connections to a host, and three streams a tab left two tabs with
+    // nothing for a Desk send or an app's script, which waited for good. A subscriber that comes after the snapshot is
+    // handed the jobs as they stand now, and told the stream is up if it is; what it missed before that (the file tree's
+    // create commands) is the page's mirror's to give (shell/js/spiritData.js), not the stream's to send again.
     subscribe: function(handlers) {
       handlers = handlers || {};
       // ON A FACE (goal/G30.11) the events come down the face's own stream, which the face shell holds.
       if (window.spiritTransport && typeof window.spiritTransport.events === 'function') return window.spiritTransport.events(handlers);
-      // THE STREAM COMES BACK BY ITSELF, AND SAYS WHEN IT IS DOWN. Andy,
-      // 2026-09-30, cut off from both agents after his node restarted:
-      // "this should work without a hickup." A browser retries an
-      // EventSource on its own until the server answers it wrongly (as a
-      // restarting node can); then it is CLOSED for good and a page kept
-      // sending while it heard nothing. So an error is reported, a closed
-      // stream is reopened here, and the first open after being down is
-      // announced, so an app can ask again for what it missed.
-      let source = null;
-      let down = false;
-      let stopped = false;
-      function open() {
-      source = new EventSource('/api/events');
-      source.onopen = function() {
-        if (handlers.onConnection) handlers.onConnection(true);
-        if (down && handlers.onReconnect) handlers.onReconnect();
-        down = false;
-      };
-      source.onerror = function() {
-        if (!down && handlers.onConnection) handlers.onConnection(false);
-        down = true;
-        if (source.readyState === 2 && !stopped) setTimeout(function() { if (!stopped) open(); }, 2000);
-      };
-      source.addEventListener('snapshot', function(e) {
-        if (handlers.onSnapshot) handlers.onSnapshot(JSON.parse(e.data).jobs);
-      });
-      source.addEventListener('job-updated', function(e) {
-        if (handlers.onUpdate) handlers.onUpdate(JSON.parse(e.data));
-      });
-      source.addEventListener('job-deleted', function(e) {
-        if (handlers.onDelete) handlers.onDelete(JSON.parse(e.data));
-      });
-      // A PACKET FROM A PEER. `/api/events` is the node's event stream and
-      // jobs were only its first customer, which is why this belongs on
-      // the one connection the page already holds rather than on a second
-      // EventSource of its own — one per tab is the budget, and an app
-      // opening another multiplies the server's sseConnections by the
-      // number of apps in the page.
-      //
-      // Nothing is interpreted here. The message arrives already carrying
-      // its decoded envelope (packet.decorate, server side); the shell
-      // routes it by packet.app and this is a wire, not a reader.
-      source.addEventListener('packet', function(e) {
-        if (handlers.onPacket) handlers.onPacket(JSON.parse(e.data));
-      });
-
-      // WHAT A RELAY THIS NODE OWNS JUST DID. invite-minted, claim,
-      // peer-renamed, peer-removed, invite-revoked — pushed the moment
-      // it happens, to the owner alone (relay.ownerEvent).
-      //
-      // The relay has fired these all along and server.js has written
-      // them to this stream all along; nothing in the browser listened,
-      // so a screen showing outstanding invites could only learn about a
-      // new one by being asked again. Andy noticed from the other side:
-      // "once the invite is successfully issued, that invite should be
-      // immediately visible in outstanding invites."
-      //
-      // A wire, not a reader — same as `packet` above. What the event
-      // MEANS is the subscribing app's business.
-      source.addEventListener('relay-event', function(e) {
-        if (handlers.onRelayEvent) handlers.onRelayEvent(JSON.parse(e.data));
-      });
-      // A CONTACT RENAMED, {key, caption} (goal/G4.13): the node's own
-      // event, so every label showing that key can redraw.
-      source.addEventListener('contact.rename', function(e) {
-        if (handlers.onContactRename) handlers.onContactRename(JSON.parse(e.data));
-      });
+      streamSubs.push(handlers);
+      if (!streamSource) openStream();
+      else {
+        if (handlers.onSnapshot) { try { handlers.onSnapshot(Array.from(streamJobs.values())); } catch (e) { /* one subscriber's fault */ } }
+        if (streamUp && handlers.onConnection) { try { handlers.onConnection(true); } catch (e) { /* one subscriber's fault */ } }
       }
-      open();
-      return function unsubscribe() { stopped = true; source.close(); };
+      return function unsubscribe() {
+        streamSubs = streamSubs.filter(function (h) { return h !== handlers; });
+        if (!streamSubs.length && streamSource) { streamStopped = true; streamSource.close(); streamSource = null; }
+      };
     },
     start: function(options) {
       return new Promise(function(resolve, reject) {
