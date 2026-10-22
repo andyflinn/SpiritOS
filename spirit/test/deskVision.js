@@ -150,10 +150,10 @@ async function faceHalf() {
   if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED + 'no shell/desk/plugins/vision/vision.js'); return; }
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} };
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} });
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
-  const ui = win.spiritDeskPlugins.vision;
-  if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.vision.open'); return; }
+  const ui = win.spirit.deskPlugins.vision;
+  if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spirit.deskPlugins.vision.open'); return; }
   const asked = [];
   const dialogs = [];
   let chatAt = null;
@@ -201,7 +201,7 @@ async function faceHalf() {
     const ids = {};
     const d2 = { getElementById: function (id) { return ids[id] || (ids[id] = fakeElement(id)); } };
     let app = null;
-    new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
+    new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
     const f = { id: 'x/G1.1', title: 'an item', goal: 'x/G1', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
     app.mount(fakeElement('dd'), { escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
       verb: function (n, body) { const q = (test.foldAsk(Object.assign({}, body, { verb: n })) || {}).desk; const v = q && Object.keys(q)[0];

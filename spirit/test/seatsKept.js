@@ -536,7 +536,7 @@ function mountDetails(row, rows) {
   };
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', 'navigator',
     fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'))(
-    shellSpirit, doc, { spiritOwnerBadge: require('../run/js/ownerBadge') }, fakeFetch, function () { return 1; }, function () {}, {});
+    shellSpirit, doc, test.withSpirit({ 'spirit.ownerBadge': require('../run/js/ownerBadge') }), fakeFetch, function () { return 1; }, function () {}, {});
   const answers = [];
   const api = {
     verb: function (name, args) {

@@ -9,6 +9,6 @@
       fetch: { url: 'url', method: 'text?', headers: 'object?', body: 'text?', timeoutMs: 'number?' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['net'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['net'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

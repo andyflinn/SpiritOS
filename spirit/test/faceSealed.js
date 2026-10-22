@@ -19,7 +19,7 @@
 //     answer is ndjson, each line sealed from the home node to k: first { status, type }, then the body in pieces,
 //     each piece's text its bytes in base64.
 //   - GET /face/stream?key=<k> hands k to the home node in face-open; each stream line is then sealed to k.
-//   - kernel.js takes window.spiritTransport { ask, events } when the face shell sets it.
+//   - kernel.js takes window.spirit.transport { ask, events } when the face shell sets it.
 // The browser shell is checked by its code (there is no DOM here); the seal, the home node and the relay by running
 // them. rule/11: through testSupport only; its own scratch folders.
 
@@ -214,8 +214,8 @@ const done = (async function () {
   const html = raw('face.html');
   const login = raw('face/login/login.js') + raw('face/login/login.json');
   const checks = {
-    kernelHook: /spiritTransport/.test(kernel) && /spiritTransport[\s\S]{0,200}ask/.test(kernel) && /spiritTransport[\s\S]{0,300}events/.test(kernel),
-    transport: /spiritTransport\s*=/.test(shell),
+    kernelHook: /spirit\.transport/.test(kernel) && /spirit\.transport[\s\S]{0,200}ask/.test(kernel) && /spirit\.transport[\s\S]{0,300}events/.test(kernel),
+    transport: /spirit\.transport\s*=/.test(shell),
     homeVersion: /index\.html/.test(shell) && /js\/client\/shell\.js/.test(shell),
     contacts: /shell\/contacts\/contacts\.js/.test(shell),
     sealed: /faceSeal\.(supported|newKey)/.test(shell) && /seal\.js/.test(html),

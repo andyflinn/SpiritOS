@@ -501,11 +501,11 @@ function ddSay() {
 //
 //   rule/12: "every input in the shell, system or app level, whose value a field rule governs is marked with that rule
 //   (data-field="label", ...) and validated as typed with the same rule the node uses (fieldRules.js,
-//   window.spiritFieldRules in the browser): bytes left shown beside it, its action refused while the rule says no."
+//   window.spirit.fieldRules in the browser): bytes left shown beside it, its action refused while the rule says no."
 // The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
 // refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
 var DD_FIELD_ACTION = { 'dd-add-title': 'dd-add', 'dd-name': 'dd-name-save' };
-function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spiritFieldRules) || null; }
+function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && window.spirit.fieldRules) || null; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
   var el = document.getElementById(id);

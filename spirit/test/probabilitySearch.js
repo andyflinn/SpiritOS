@@ -19,7 +19,7 @@
 //     cells only. destroy drops every listener.
 //   - Apps not yet ported keep using listSearch until none does.
 // NAMED HERE where the box names none:
-//   - window.spiritElements.probabilitySearch = { create(container, options), order(entries, state) }. order is the pure
+//   - window.spirit.elements.probabilitySearch = { create(container, options), order(entries, state) }. order is the pure
 //     heart of the list: entries [{ key, row, at, gone }], state { words, values, filters, sort: { field, direction },
 //     columns, matched, score } -> [{ key, row, rank }] in the order drawn. It is what the list draws from, so it is
 //     what this suite holds to the box.
@@ -37,14 +37,14 @@ const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 
 
 test.startTest('goal/G30.17: probabilitySearch, the standard shell list-tool');
 
-const window = { spiritElements: {} };
+const window = test.withSpirit({ 'spirit.elements': {} });
 const ctx = vm.createContext({ window: window, console: console, document: { addEventListener: function () {} } });
 const loaded = {};
 ['js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
-const PS = window.spiritElements.probabilitySearch;
+const PS = window.spirit.elements.probabilitySearch;
 
 // Five files, in the order they came.
 const entries = [

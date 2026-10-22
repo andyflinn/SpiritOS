@@ -134,9 +134,9 @@ else test.fail(OWED + 'hub.js puts no kept face on the relay rows relay.get answ
 const info = code('shell/info/info.js');
 // Info's face form is the shell element faceForm since goal/G30.1 (box v39); Info draws it.
 const faceForm = code('shell/js/faceForm.js');
-if (/spiritElements\.faceForm/.test(info) && /\.face\b/.test(faceForm) && /addEventListener\('change'/.test(faceForm)) test.check('the info app draws the kept face of the selected relay and follows a change of selection');
+if (/spirit\.elements\.faceForm/.test(info) && /\.face\b/.test(faceForm) && /addEventListener\('change'/.test(faceForm)) test.check('the info app draws the kept face of the selected relay and follows a change of selection');
 else test.fail(OWED + 'the info app does not show the kept face of the selected relay');
-if (/'relay\.face'/.test(faceForm)) test.check('the info app asks relay.face, through faceForm');
+if (/\.relay\.face\(/.test(faceForm)) test.check('the info app asks relay.face, through faceForm');
 else test.fail(OWED + 'the info app never asks relay.face');
 if (!/info-face-email/.test(info) && !/email:\s*email/.test(info)) test.check('the info app has no email field and sends no email');
 else test.fail(OWED + 'the info app still has its email field or sends one');

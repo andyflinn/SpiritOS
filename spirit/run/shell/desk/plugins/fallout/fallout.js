@@ -13,11 +13,11 @@
 // goal/G27.14, "make SURE there's MAX one search in flight over the wire.... IMPORTANT."
 //
 // Loaded once into the Desk page the first time its tab opens (shell/desk/desk.js, deskOpenPlugin); it registers
-// window.spiritDeskPlugins.fallout = { open(container, ctx) }.
+// window.spirit.deskPlugins.fallout = { open(container, ctx) }.
 
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
-  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
   var LIST_SCRIPT = '/shell/shared/js/listSearch.js';
   var ctx = null;
   var inner = 'reds';
@@ -89,7 +89,7 @@
   }
 
   function mountList() {
-    var make = win.spiritElements && win.spiritElements.shellCreateListSearch;
+    var make = win.spirit.elements && win.spirit.elements.shellCreateListSearch;
     var el = document.getElementById('fallout-list');
     if (typeof make !== 'function' || !el || !ctx) return;
     list = make(el, {
@@ -109,7 +109,7 @@
   }
   // THE SHARED LIST, LOADED ON DEMAND, as Desk loads its shared element (deskLoadSharedElement): once per page.
   function withList(done) {
-    if (win.spiritElements && typeof win.spiritElements.shellCreateListSearch === 'function') { done(); return; }
+    if (win.spirit.elements && typeof win.spirit.elements.shellCreateListSearch === 'function') { done(); return; }
     if (typeof document.createElement !== 'function' || !document.body) return;
     var script = document.createElement('script');
     script.src = LIST_SCRIPT;

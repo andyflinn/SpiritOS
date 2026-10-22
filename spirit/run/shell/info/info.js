@@ -106,7 +106,7 @@ var infoBusy = false;
 // have agreed anyway (Andy: "an input field should validate before taxing
 // the wire").
 function infoRule() {
-  return (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+  return (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
 }
 
 function infoNameProblem(text) {
@@ -242,7 +242,7 @@ function infoDrawRelays() {
 // The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
 function infoDrawFace() {
-  var form = window.spiritElements && window.spiritElements.faceForm;
+  var form = window.spirit && window.spirit.elements && window.spirit.elements.faceForm;
   var box = document.getElementById('info-face');
   if (!box || !form) return;
   form.mount(box, {

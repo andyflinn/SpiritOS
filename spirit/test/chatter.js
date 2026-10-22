@@ -287,13 +287,14 @@ function mount(opts) {
       statFile: function () { return null; },
     },
   };
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritElements: {} };
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.elements': {} });
   const sp = { core: { ask: coreAsk, util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: ICON } } };
+  test.spiritFor(sp.core.ask, sp);
   const load = function (file) {
     new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(file, 'utf8'))(sp, doc, win, Event, CustomEvent);
   };
   // goal/G29.6: as index.html loads them, the probability modules and the shared list before the contact selector,
-  // which is now a thin wrapper around window.spiritElements.shellCreateListSearch.
+  // which is now a thin wrapper around window.spirit.elements.shellCreateListSearch.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
   });
@@ -303,11 +304,11 @@ function mount(opts) {
   // Watched, not replaced: what chatter builds with is recorded, and the real element answers.
   const selectors = [];
   const labels = [];
-  const realSelector = win.spiritElements.createContactSelector;
-  const realLabel = win.spiritElements.createContactLabel;
-  win.spiritElements.createContactSelector = function (o) { const r = realSelector(o); docOf.set(r, doc); selectors.push({ options: o || {}, root: r }); return r; };
-  win.spiritElements.createContactLabel = function (o) { const r = realLabel(o); labels.push({ options: o || {}, root: r }); return r; };
-  api.ui = { elements: win.spiritElements };
+  const realSelector = win.spirit.elements.createContactSelector;
+  const realLabel = win.spirit.elements.createContactLabel;
+  win.spirit.elements.createContactSelector = function (o) { const r = realSelector(o); docOf.set(r, doc); selectors.push({ options: o || {}, root: r }); return r; };
+  win.spirit.elements.createContactLabel = function (o) { const r = realLabel(o); labels.push({ options: o || {}, root: r }); return r; };
+  api.ui = { elements: win.spirit.elements };
   let behavior = null;
   sp.shell = { activateApp: function (b) { behavior = b; }, registerApp: function (b) { behavior = b; } };
   new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(APP, 'utf8'))(sp, doc, win, Event, CustomEvent);

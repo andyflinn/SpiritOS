@@ -70,10 +70,10 @@ spirit.keyTail = function (publicKey) {
 // disagreed about which they wanted and a caller picking a helper by
 // return shape picks wrong eventually.
 spirit.core.ask = function (verb, args, base) {
-  // ON A FACE (goal/G30.11) the page is not on its node: the face shell sets window.spiritTransport, and every ask goes
+  // ON A FACE (goal/G30.11) the page is not on its node: the face shell sets window.spirit.transport, and every ask goes
   // through it, over the sealed link to the home node.
-  if (!base && typeof window !== 'undefined' && window.spiritTransport && typeof window.spiritTransport.ask === 'function') {
-    return window.spiritTransport.ask(String(verb), args || {});
+  if (!base && typeof window !== 'undefined' && window.spirit && window.spirit.transport && typeof window.spirit.transport.ask === 'function') {
+    return window.spirit.transport.ask(String(verb), args || {});
   }
   const payload = { verb: String(verb) };
   if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
@@ -1160,7 +1160,7 @@ if (isNode()) {
     subscribe: function(handlers) {
       handlers = handlers || {};
       // ON A FACE (goal/G30.11) the events come down the face's own stream, which the face shell holds.
-      if (window.spiritTransport && typeof window.spiritTransport.events === 'function') return window.spiritTransport.events(handlers);
+      if (window.spirit && window.spirit.transport && typeof window.spirit.transport.events === 'function') return window.spirit.transport.events(handlers);
       streamSubs.push(handlers);
       // OPENED ONCE THE PAGE HAS PARSED: every subscriber its scripts make (the shell, the page's mirror) is then in
       // place before the first event, so none of them misses the file tree a connecting page is handed.

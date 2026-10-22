@@ -119,7 +119,7 @@ function bootPage(desk) {
     createDocumentFragment: function () { return fakeElement('fragment'); },
     addEventListener: function () {},
   };
-  const win = { spiritPacket: packet, spiritLimits: require('../run/js/limits.js'), addEventListener: function () {} };
+  const win = test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js'), addEventListener: function () {} });
   const subscribers = [];
   const shellSpirit = {
     core: {

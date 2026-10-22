@@ -182,7 +182,7 @@ async function listHalf() {
   const subs = {};
   let behavior = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))(
-    { shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
+    { shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, { spirit: {} });
   const fake = require('./deskFake.js').create([]);
   const goal = { id: 'lv/G1', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['lv/G1.1', 'lv/G1.2', 'lv/G1.3'], live: [], working: [], waiting: 0 };
   const row = function (id, status) { return { id: id, title: id, goal: 'lv/G1', status: status, with: '', buttons: [], blocking: ['lv/G1'], blocked: [], asks: 0 }; };
@@ -249,7 +249,7 @@ async function dialogHalf() {
   const calls = [];
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
   const line = function (i, by, text) { return { key: String(i), label: JSON.stringify({ by: by, at: '2026-10-12T10:0' + i + ':00.000Z', text: text }) }; };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,

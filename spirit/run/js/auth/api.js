@@ -14,6 +14,6 @@
       relabel: { key: 'key', label: 'name' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['auth'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['auth'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

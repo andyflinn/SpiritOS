@@ -133,5 +133,5 @@ var iconIndexApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = iconIndexApi;
 } else if (typeof window !== 'undefined') {
-  window.spiritIconIndex = iconIndexApi;
+  (window.spirit = window.spirit || {}).iconIndex = iconIndexApi;
 }

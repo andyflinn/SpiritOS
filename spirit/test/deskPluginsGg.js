@@ -161,7 +161,7 @@ function fakeDocument() {
 // The face mounted with a window it shares with a plugin's UI, every desk ask kept, every stream subscriber kept.
 function mountFace(answers) {
   const doc = fakeDocument();
-  const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js') });
+  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
   const asked = [];
   const published = [];
   const servers = [];
@@ -740,10 +740,10 @@ function clickTab(el, tab) {
   try {
     if (!fs.existsSync(PLUGIN_UI)) throw new Error('no ' + path.relative(RUN, PLUGIN_UI));
     const doc = fakeDocument();
-    const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js') });
+    const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
     new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
-    const ui = win.spiritDeskPlugins && win.spiritDeskPlugins.stackFrameChecks;
-    if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spiritDeskPlugins.stackFrameChecks.open');
+    const ui = win.spirit.deskPlugins && win.spirit.deskPlugins.stackFrameChecks;
+    if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spirit.deskPlugins.stackFrameChecks.open');
     const asked = [];
     const box = fakeElement('box');
     const NEVER = { running: false, ran: false, green: false, around: 0, of: 0, startedAt: '', endedAt: '', stopped: false };
@@ -881,7 +881,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'Open opened ' + short(dialogs));
     // The dialog app, mounted as the shell mounts it, its verbs answered as the plugin answers them.
     const ddoc = fakeDocument();
-    const dwin = withShared(ddoc, { spiritFieldRules: require('../run/js/fieldRules.js') });
+    const dwin = withShared(ddoc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
     let dApp = null;
     new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { dApp = x; } }, core: kernel.core }, ddoc, dwin);
     const dAsked = [];

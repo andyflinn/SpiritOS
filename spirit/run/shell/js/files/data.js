@@ -4,7 +4,7 @@
 // fills quietly and its watchers hear one word at the end; after that each change is told by path. Every event ends in
 // set or del. Runs in node too, for a suite.
 (function (root) {
-  var D = root.spiritData;
+  var D = (root.spirit || {}).data;
   if (!D || typeof D.translate !== 'function') return;
   D.translate({
     onJob: function (job) {

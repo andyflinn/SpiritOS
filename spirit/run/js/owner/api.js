@@ -11,6 +11,6 @@
       command: { to: 'key', command: 'id', body: 'object?' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['owner'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['owner'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -69,7 +69,7 @@ function grRows() {
 }
 function grPaint(row, mark) {
   var m = typeof mark === 'function' ? mark : grEsc;
-  var gone = grTree && !window.spiritApiTreeIndex.serves(grTree, row.path);
+  var gone = grTree && !window.spirit.apiTreeIndex.serves(grTree, row.path);
   return '<td style="white-space:nowrap">' + m(row.name) + '</td>' +
     '<td style="white-space:nowrap">' + m(row.path) +
       // Deprecated is a REPORT: the server is away or the verb is gone,
@@ -168,7 +168,7 @@ spirit.shell.activateApp({
     line.style.display = 'flex';
     // The contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js); its value is the picked key.
     var contactHost = document.createElement('span');
-    grContact = window.spiritElements.contactList.create(contactHost, {
+    grContact = window.spirit.elements.contactList.create(contactHost, {
       api: api,
       face: 'dropdown',
       placeholder: 'whose access…',
@@ -202,8 +202,8 @@ spirit.shell.activateApp({
 
     var listHost = document.createElement('div');
     document.getElementById('gr-list').appendChild(listHost);
-    // The shared list lives on window.spiritElements, as Fallout reaches it; the shell hands apps the selectors.
-    grList = window.spiritElements.shellCreateListSearch(listHost, {
+    // The shared list lives on window.spirit.elements, as Fallout reaches it; the shell hands apps the selectors.
+    grList = window.spirit.elements.shellCreateListSearch(listHost, {
       mode: 'pane',
       rows: grRows,
       paint: grPaint,

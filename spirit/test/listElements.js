@@ -10,7 +10,7 @@
 //     element under it. The intrinsic apps are mountable wrappers.
 //   - The legacy file selector is deleted, its user (textEditor) moved; grants and introSpector move off the legacy
 //     contact selector, which stays for chatter until chats are their own type.
-// NAMED HERE: window.spiritElements.fileList / contactList .create(host, { face, ... }); spiritData.translate({ onJob,
+// NAMED HERE: window.spirit.elements.fileList / contactList .create(host, { face, ... }); spirit.data.translate({ onJob,
 // onRename }) registers a type's translator; a data.js registers one.
 // rule/11: through testSupport only.
 
@@ -39,8 +39,8 @@ if (!gone.length && !/createFileSelector/.test(code('js/client/shell.js'))) test
 else test.fail(OWED + 'still there: ' + gone.join(', ') + (/createFileSelector/.test(code('js/client/shell.js')) ? ', createFileSelector' : ''));
 const sd = code('shell/js/spiritData.js');
 if (sd && !/fs-watcher|relay-presence|peer-search/.test(sd) && /translate/.test(sd) && /fs-watcher/.test(code('shell/js/files/data.js')) && /relay-presence/.test(code('shell/js/contacts/data.js')))
-  test.check('spiritData is the tree only; each type\'s translator is its data.js');
-else test.fail(OWED + 'spiritData still translates types itself, or a data.js does not');
+  test.check('spirit.data is the tree only; each type\'s translator is its data.js');
+else test.fail(OWED + 'spirit.data still translates types itself, or a data.js does not');
 
 test.subHeading('2. the list-tool doubles as a dropdown');
 const ps = code('shell/js/probabilitySearch.js');
@@ -67,7 +67,7 @@ try {
   const g = globalThis;
   delete require.cache[require.resolve('../run/shell/js/spiritData.js')];
   D = require('../run/shell/js/spiritData.js');
-  g.spiritData = D;
+  (g.spirit = g.spirit || {}).data = D;
   require('../run/shell/js/files/data.js');
   require('../run/shell/js/contacts/data.js');
   D.take({ type: 'fs-watcher', data: { command: { op: 'createFile', path: 'media/a.mp3', size: 9, modified: 'm' } } });

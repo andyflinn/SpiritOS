@@ -3,7 +3,7 @@
 // helpers, all reading synchronously) and are shell elements now, so the face has them too. This is what both share:
 //
 //   fileViewer.read(path, onPiece) -> Promise<{ status, type, bytes }>
-//     A file of the home node. On a face it comes through the sealed link, window.spiritTransport.file, each piece
+//     A file of the home node. On a face it comes through the sealed link, window.spirit.transport.file, each piece
 //     handed to onPiece as it opens; at home by the node's own GET, each chunk as it arrives. Asynchronous only.
 //   fileViewer.fStatViewer(host, path)       the path in its own tile and the facts bubble: MIME type at once, then
 //                                             size, changed and created when fs.stat answers (absent if it fails)
@@ -14,15 +14,18 @@
 //     a body slot for the viewer, the annotations.
 //   fileViewer.mimeOf(path), fileViewer.kindOf(mime)   'image' | 'audio' | 'video' | 'code' | null
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
 
   function core() { return (window.spirit && window.spirit.core) || {}; }
   function esc(s) {
     var f = core().util && core().util.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // Through the spirit object (goal/G32.2): fs.stat and fs.annotations, null where the node refuses.
   function ask(verb, args) {
-    return Promise.resolve(core().ask(verb, args)).then(function (r) { return r && r.status === 200 ? r.body : null; }, function () { return null; });
+    var name = String(verb).replace(/^fs\./, '');
+    return (window.spirit && window.spirit.ready ? window.spirit.ready : Promise.reject(new Error('no spirit object')))
+      .then(function (s) { return s.fs[name](args); }).then(function (body) { return body; }, function () { return null; });
   }
 
   function mimeOf(path) {
@@ -51,7 +54,7 @@
   function read(path, onPiece) {
     var clean = String(path || '').replace(/^\/+/, '');
     var each = typeof onPiece === 'function' ? onPiece : function () {};
-    var t = window.spiritTransport;
+    var t = window.spirit.transport;
     if (t && typeof t.file === 'function') return Promise.resolve(t.file(clean, each));
     return fetch('/' + encodeURI(clean), { credentials: 'same-origin' }).then(function (r) {
       var type = r.headers.get('Content-Type') || '';

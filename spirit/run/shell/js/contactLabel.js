@@ -2,7 +2,7 @@
 // ONE SHELL ELEMENT: the contact label, a contact's name by key.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spiritElements,
+//   so one file per element, each adding itself to window.spirit.elements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // ── WHAT IT SHOWS IS THE NODE'S, NOT ITS OWN (goal/G4.13) ─────────────
@@ -35,8 +35,9 @@
   var asking = Object.create(null);
   function nameFor(key) {
     if (!asking[key]) {
-      asking[key] = spirit.core.ask('contact.get', { key: key }).then(function (a) {
-        var person = a && a.body && a.body.person;
+      // Through the spirit object (goal/G32.2): a checked call answering the reply's body.
+      asking[key] = spirit.ready.then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+        var person = body && body.person;
         if (person && typeof person.caption === 'string') known[key] = person.caption;
         return known[key] || '';
       }, function () { return ''; }).then(function (name) { delete asking[key]; return name; });
@@ -82,19 +83,15 @@
     function save(typed) {
       var name = String(typed || '').trim();
       if (!name) return;
-      var rule = window.spiritFieldRules || null;
+      var rule = window.spirit.fieldRules || null;
       var bad = rule ? rule.problem(name) : '';
       if (bad) { why.textContent = bad; return; }
-      spirit.core.ask('contact.label', { publicKey: key, myLabel: name }).then(function (a) {
-        if (!a || a.status !== 200) {
-          why.textContent = (a && a.body && (a.body.error || a.body.message)) || 'not renamed';
-          return;
-        }
-        caption = (a.body && typeof a.body.caption === 'string') ? a.body.caption : name;
+      spirit.ready.then(function (s) { return s.contact.label({ publicKey: key, myLabel: name }); }).then(function (body) {
+        caption = (body && typeof body.caption === 'string') ? body.caption : name;
         known[key] = caption;
         close();
         draw();
-      }, function () { why.textContent = 'not renamed'; });
+      }, function (e) { why.textContent = (e && e.message) || 'not renamed'; });
     }
 
     function open() {
@@ -150,6 +147,6 @@
     return root;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createContactLabel = createContactLabel;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createContactLabel = createContactLabel;
 })();

@@ -196,17 +196,17 @@ async function main() {
   const appServerJs = code('js/appServer.js');
   if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
   else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
-  // The picker lists spiritApiTreeIndex.servers of the verb api's answer, which is now the flat table.
+  // The picker lists spirit.apiTreeIndex.servers of the verb api's answer, which is now the flat table.
   let listed = null;
   try {
     global.window = global.window || {};
     delete require.cache[require.resolve('../run/js/client/apiTreeIndex.js')];
     require('../run/js/client/apiTreeIndex.js');
-    const idx = (global.window && global.window.spiritApiTreeIndex) || require('../run/js/client/apiTreeIndex.js');
+    const idx = (global.window && global.window.spirit && global.window.spirit.apiTreeIndex) || require('../run/js/client/apiTreeIndex.js');
     listed = idx.servers({ fs: { stat: {} }, jobs: { authGrant: {} }, desk: { items: {} } });
   } catch (e) { listed = { threw: e.message }; }
   const picker = code('shell/js/appServerSelector.js');
-  if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /spirit\.core\.ask\('api'/.test(picker))
+  if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /\.tree\(\)/.test(picker))
     test.check('the picker lists every family of the flat table, the node\'s (fs, jobs) beside the apps\' (desk)');
   else test.fail(OWED + 'the picker lists ' + short(listed));
 }

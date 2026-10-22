@@ -17,6 +17,6 @@
       setSenders: { policy: 'id' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['contact'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['contact'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

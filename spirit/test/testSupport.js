@@ -506,6 +506,30 @@ const test = {
         };
     },
 
+    // A FAKE WINDOW'S SPIRIT MEMBERS (goal/G32.2): the page's client interface lives on window.spirit, so a suite writes
+    // { 'spirit.packet': packet, addEventListener: ... } and this puts each 'spirit.<name>' key under one spirit object.
+    // THE SPIRIT OBJECT IN A SUITE (goal/G32.2): the node's families from their api.js, every call through ask(verb,
+    // args) -> {status, body} (the stub a suite already has for spirit.core.ask), put onto `onto` with ready resolved.
+    spiritFor: function (ask, onto) {
+        const S = require('../run/face/spirit.js');
+        const defs = {};
+        ['auth', 'config', 'contact', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'].forEach(function (f) { defs[f] = require('../run/js/' + f + '/api.js'); });
+        const made = S.assemble({ ask: function (v, a) { return Promise.resolve(ask(v, a)); }, file: function () { return Promise.resolve({ status: 404, bytes: new Uint8Array(0) }); } }, defs);
+        const target = onto || {};
+        Object.keys(made).forEach(function (k) { target[k] = made[k]; });
+        target.ready = Promise.resolve(target);
+        return target;
+    },
+
+    withSpirit: function (win) {
+        const out = {};
+        Object.keys(win || {}).forEach(function (k) {
+            const m = /^spirit\.(.+)$/.exec(k);
+            if (m) { out.spirit = out.spirit || {}; out.spirit[m[1]] = win[k]; } else out[k] = win[k];
+        });
+        return out;
+    },
+
 };
 
 module.exports = test;

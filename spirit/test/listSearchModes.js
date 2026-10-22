@@ -74,7 +74,7 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
 
 (async function main() {
   const p = page();
-  const make = p.win.spiritElements && p.win.spiritElements.shellCreateListSearch;
+  const make = p.win.spirit.elements && p.win.spirit.elements.shellCreateListSearch;
   if (typeof make !== 'function') { test.fail(OWED + 'no shellCreateListSearch'); test.reportSuccessFailureCount(); process.exit(0); }
 
   test.subHeading('1. two tiers: rows the page holds, ranked in the page, the server never asked');

@@ -62,5 +62,5 @@ var apiTreeIndexApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = apiTreeIndexApi;
 } else if (typeof window !== 'undefined') {
-  window.spiritApiTreeIndex = apiTreeIndexApi;
+  (window.spirit = window.spirit || {}).apiTreeIndex = apiTreeIndexApi;
 }

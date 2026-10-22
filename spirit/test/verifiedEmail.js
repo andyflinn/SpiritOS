@@ -138,7 +138,7 @@ if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email a
   test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
 else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
 // Info's face form is the shell element faceForm since box v39.
-const infoFace = /spiritElements\.faceForm/.test(info) ? code('shell/js/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
+const infoFace = /spirit\.elements\.faceForm/.test(info) ? code('shell/js/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
 if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoFace) && /callDialog\('shell\/natterDetails'/.test(infoFace))
   test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
 else test.fail(OWED + 'Info draws the face form without a verified email, or offers no way to natterDetails');
@@ -156,23 +156,23 @@ if (/'join'/.test((/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*\]/.exec(shellSrc) || ['
 else test.fail(OWED + 'the shell does not keep the join app out of the group grid');
 
 test.subHeading('5d. the join form is one shell element (box v33)');
-// NAMED HERE: spiritElements.joinForm = { html(opts), bind(root, opts), send(opts) }. send asks opts.ask('relay.join',
-// {url, email, code: ''}) and answers {ok, text}; html draws the field (prefilled with opts.email), the button and the
+// NAMED HERE: spirit.elements.joinForm = { html(opts), bind(root, opts), send(opts) }. send calls spirit.relay.join(
+// {url, email, code: ''}) through the spirit object (goal/G32.2) and answers {ok, text}; html draws the field (prefilled with opts.email), the button and the
 // line the text goes to; bind wires a root's button and Enter to send.
 let element = null;
+let asked = null;
 try {
   const src = fs.readFileSync(path.join(RUN, 'shell', 'js', 'joinForm.js'), 'utf8');
-  const win = {};
-  new Function('window', src)(win);
-  element = win.spiritElements && win.spiritElements.joinForm;
+  const win = { spirit: test.spiritFor(function (verb, args) { asked = { verb: verb, args: args }; return { status: 200, body: { ok: true } }; }) };
+  new Function('window', 'spirit', src)(win, win.spirit);
+  element = win.spirit.elements && win.spirit.elements.joinForm;
 } catch (e) { element = null; }
-let asked = null;
 let said = null;
 let drawn = '';
 const sendIt = function () {
   if (!element || typeof element.send !== 'function') return Promise.resolve(null);
   drawn = typeof element.html === 'function' ? String(element.html({ email: 'held@example.org', label: 'Change email address' })) : '';
-  return element.send({ url: 'https://relay.example', email: 'new@example.org', ask: function (verb, args) { asked = { verb: verb, args: args }; return Promise.resolve({ status: 200, body: { ok: true } }); } });
+  return element.send({ url: 'https://relay.example', email: 'new@example.org' });
 };
 const elementDone = sendIt().then(function (r) {
   said = r;
@@ -183,7 +183,7 @@ const elementDone = sendIt().then(function (r) {
   const index = (function () { try { return fs.readFileSync(path.join(RUN, 'index.html'), 'utf8'); } catch (e) { return ''; } }());
   const ndSrc = code('shell/natterDetails/natterDetails.js');
   const joinSrc = code('shell/join/join.js');
-  if (/src="\/shell\/js\/joinForm\.js"/.test(index) && /spiritElements\.joinForm/.test(ndSrc) && /spiritElements\.joinForm/.test(joinSrc)
+  if (/src="\/shell\/js\/joinForm\.js"/.test(index) && /spirit\.elements\.joinForm/.test(ndSrc) && /spirit\.elements\.joinForm/.test(joinSrc)
       && !/type="email"/.test(ndSrc) && !/type="email"/.test(joinSrc) && !/'relay\.join'/.test(ndSrc) && !/'relay\.join'/.test(joinSrc))
     test.check('index.html loads it; natterDetails and the Join app draw it and keep no email form or relay.join of their own');
   else test.fail(OWED + 'joinForm is not loaded, or natterDetails or the Join app keeps its own form');

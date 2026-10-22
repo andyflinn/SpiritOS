@@ -106,7 +106,7 @@ function page() {
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
   });
-  win.spiritApiTreeIndex = require(path.join(RUN, 'js', 'client', 'apiTreeIndex.js'));
+  (win.spirit = win.spirit || {}).apiTreeIndex = require(path.join(RUN, 'js', 'client', 'apiTreeIndex.js'));
   const VERB = { request: {}, reply: { x: '' } };
   const TREE = { desk: { 'item.get': VERB, 'item.add': VERB }, chatter: { 'chat.add': VERB } };
   const GRANTS = [{ name: 'alice', key: ALICE, path: 'desk.item.get' }, { name: 'alice', key: ALICE, path: 'chatter' }, { name: 'bob', key: BOB, path: 'desk' }];
@@ -133,7 +133,7 @@ function page() {
     load('shell/grants/grants.js');
   } catch (e) { test.fail(OWED + 'the page did not load: ' + (e && e.message || e)); }
   const container = p.node('div');
-  const api = { escapeHtml: kernel.core.util.escapeHtml, verb: function (v, b) { return ask(v, b); }, ui: { elements: win.spiritElements } };
+  const api = { escapeHtml: kernel.core.util.escapeHtml, verb: function (v, b) { return ask(v, b); }, ui: { elements: win.spirit.elements } };
   try { sp.app.mount(container, api); } catch (e) { test.fail(OWED + 'Grants did not mount: ' + (e && e.stack || e)); }
   await settle(); await settle(); await settle();
 
@@ -193,7 +193,7 @@ function page() {
   new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(p2.doc, w2);
   const box2 = p2.node('span');
   const picks = [];
-  const dd = w2.spiritElements.shellCreateListSearch(box2, { mode: 'dropdown', all: 'all servers',
+  const dd = w2.spirit.elements.shellCreateListSearch(box2, { mode: 'dropdown', all: 'all servers',
     rows: function () { return [{ key: 'desk', name: 'desk' }, { key: 'chatter', name: 'chatter' }]; },
     paint: function (row, mark) { return '<td>' + mark(row.name) + '</td>'; }, pick: function (row, key) { picks.push(key); } });
   const pre2 = (/id="(listsearch-\d+-)field"/.exec(box2.innerHTML) || [])[1];

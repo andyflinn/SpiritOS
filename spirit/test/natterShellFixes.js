@@ -62,7 +62,7 @@ const contactsList = code('shell/contacts/contacts.js');
 // The list of peers seen was the shell element peerFind (goal/G30.1, box v39); since goal/G30.19 it is Contacts' one
 // list, contactSearch, on the standard list-tool.
 const finder = code('shell/js/contacts/listElement.js');
-if (/spiritElements.contactList\.create\(/.test(contactsList) && /spiritElements\.probabilitySearch\.create\(/.test(finder) && !natterApp())
+if (/spirit\.elements.contactList\.create\(/.test(contactsList) && /spirit\.elements\.probabilitySearch\.create\(/.test(finder) && !natterApp())
   test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
 const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
@@ -170,7 +170,7 @@ else test.fail(OWED + 'the contact selector has no relay filter, or still two al
 // Since goal/G30.19 Contacts' one list (contactSearch) asks relay.search beside contact.search, and a relay row's
 // element opens natterDetails.
 const contactsCode = code('shell/js/contacts/listElement.js');
-if (/function search\(args\)[\s\S]{0,900}'relay\.search'/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
+if (/function search\(args\)[\s\S]{0,900}\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
   test.check('the contact list adds this node\'s relays (relay.search) and a relay row opens natterDetails');
 else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
 

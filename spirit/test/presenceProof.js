@@ -158,6 +158,7 @@ function mountContacts(people) {
       jobs: { subscribe: function (s) { subscribers.push(s); return function () {}; } },
     },
   };
+  test.spiritFor(shellSpirit.core.ask, shellSpirit);
   // THE LIST AS THE SHELL GIVES IT (goal/G30.19): the scripts index.html loads for it, in its order, no module and no
   // process, as in a page; then the app.
   const RUN = path.join(__dirname, '..', 'run');

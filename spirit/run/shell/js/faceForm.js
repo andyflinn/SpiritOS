@@ -18,11 +18,6 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  function bodyOf(r) {
-    if (r && r.body) return r.body;
-    try { return JSON.parse(r && r.text); } catch (e) { return null; }
-  }
-
   function mount(box, opts) {
     if (!box) return;
     var o = opts || {};
@@ -89,11 +84,11 @@
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
       say('asking the relay…', false);
-      return Promise.resolve(o.ask('relay.face', { url: relay.value, name: name.value })).then(function (r) {
-        var said = bodyOf(r) || {};
+      // Through the spirit object (goal/G32.2): spirit.relay.face answers the reply's body, or refuses with the node's words.
+      return spirit.ready.then(function (s) { return s.relay.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
-          : { text: said.error || (r && r.error) || 'the relay did not answer', bad: true };
+          : { text: said.error || 'the relay did not answer', bad: true };
         say(box._faceSaid.text, box._faceSaid.bad);
         // The node now holds the new pair: read the rows again so the line under the form says so.
         if (said.ok && typeof o.reload === 'function') return o.reload();
@@ -114,6 +109,6 @@
     if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.faceForm = { mount: mount };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.faceForm = { mount: mount };
 }());

@@ -65,7 +65,7 @@
 
   function shellCreateListSearch(container, options) {
     var o = options || {};
-    var P = window.spiritProbability || {};
+    var P = window.spirit.probability || {};
     var pre = 'listsearch-' + (++made) + '-';
     var filters = Array.isArray(o.filters) ? o.filters : [];
     var values = Object.create(null);
@@ -448,7 +448,7 @@
     return self;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.shellCreateListSearch = shellCreateListSearch;
-  window.spiritMatchRanges = matchRanges;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.shellCreateListSearch = shellCreateListSearch;
+  (window.spirit = window.spirit || {}).matchRanges = matchRanges;
 }());

@@ -564,7 +564,7 @@ var deskRulesElement = null;
 // know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
 var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 function deskLoadSharedElement(done) {
-  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof have === 'function') { done(); return; }
   if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
   var script = document.createElement('script');
@@ -573,7 +573,7 @@ function deskLoadSharedElement(done) {
   document.body.appendChild(script);
 }
 function deskMakeElement(o) {
-  var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof make !== 'function' || !deskApi || typeof deskApi.onPublished !== 'function') return null;
   return make(Object.assign({ subscribe: function (fn) { return deskApi.onPublished(fn); } }, o));
 }
@@ -721,7 +721,7 @@ function deskRowCells(row, presses) {
 // tab is 'app:<name>'. Both put Apps on. The plugins are found on their goals' rows (plugin, and pluginTab, the name the
 // desk server takes from the plugin's .json): one search for the plugin goals at mount and after a gap, and any row the
 // List or the stream brings. A plugin's pane is made once, inside Apps, and its private UI is loaded the first time its
-// tab opens: one script, shell/desk/plugins/<name>/<name>.js, which registers window.spiritDeskPlugins[<name>] =
+// tab opens: one script, shell/desk/plugins/<name>/<name>.js, which registers window.spirit.deskPlugins[<name>] =
 // { open(container, ctx) }. ctx: goal (its goal's id), ask (this page's deskAsk), onPublished (the desk server's
 // stream, which the UI subscribes to itself, as every shell element does) and chat(container), which mounts its goal's
 // chat there, Team's own (deskMountChat). Switching tabs repaints nothing, so what is
@@ -787,7 +787,7 @@ function deskOpenPlugin(app) {
   if (!el) return;
   app.opened = true;
   var win = typeof window !== 'undefined' ? window : {};
-  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
   var name = app.name;
   var open = function () {
     var ui = held[name];
@@ -1006,13 +1006,13 @@ var DESK_SHARED_CHAT = '/shell/shared/js/deskChat.js';
 function deskMountChat(el, goal) {
   if (!el) return;
   var mount = function () {
-    var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskChat;
+    var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskChat;
     if (typeof make !== 'function') return;
     make(el, { id: goal, ask: deskAsk, escape: deskEsc, time: deskTime, title: 'Chat of ' + goal, placeholder: 'to every agent, under ' + goal,
       lineHtml: function (text) { return deskLineHtml({ text: text }); },
       onPublished: function (fn) { return deskApi && typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn) : null; } });
   };
-  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskChat;
+  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskChat;
   if (typeof have === 'function') { mount(); return; }
   if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
   var script = document.createElement('script');

@@ -3,7 +3,7 @@
 // relay-presence job sets each key's present (a key the table drops goes back to not known), the peer-search job seats
 // each row the network found, a contact rename sets its name. Every event ends in set or merge. Runs in node too.
 (function (root) {
-  var D = root.spiritData;
+  var D = (root.spirit || {}).data;
   if (!D || typeof D.translate !== 'function') return;
   var told = Object.create(null);   // keys the presence table has spoken of
   D.translate({

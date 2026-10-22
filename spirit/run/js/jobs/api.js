@@ -14,6 +14,6 @@
       delete: { id: 'id' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['jobs'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['jobs'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

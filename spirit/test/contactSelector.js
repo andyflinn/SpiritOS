@@ -29,7 +29,7 @@ const elements = fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.
 
 test.subHeading('the shell defines it and hands it to apps');
 const at = elements.indexOf('function createContactSelector');
-const handed = /elements:\s*\{[^}]*createContactSelector:\s*spiritElements\.createContactSelector/.test(shell.replace(/\n/g, ' '));
+const handed = /elements:\s*\{[^}]*createContactSelector:\s*shellElements\.createContactSelector/.test(shell.replace(/\n/g, ' '));
 let body = '';
 if (at !== -1) {
   let depth = 0;

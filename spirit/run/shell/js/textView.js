@@ -38,12 +38,12 @@
     });
     var marks = [];
     var firstAt = null;   // where the first match stands, put in view again once the page is drawn
-    // EVERY MATCH MARKED, THE FIRST IN VIEW, BY THE LIST'S OWN RULE (window.spiritMatchRanges, listSearch.js): one
+    // EVERY MATCH MARKED, THE FIRST IN VIEW, BY THE LIST'S OWN RULE (window.spirit.matchRanges, listSearch.js): one
     // marking rule for the list and the text view (goal/G29.12).
     function mark(words) {
       marks.forEach(function (m) { m.clear(); });
       marks = [];
-      var ranges = typeof window.spiritMatchRanges === 'function' ? window.spiritMatchRanges(cm.getValue(), words) : [];
+      var ranges = typeof window.spirit.matchRanges === 'function' ? window.spirit.matchRanges(cm.getValue(), words) : [];
       var first = null;
       ranges.forEach(function (r) {
         var from = cm.posFromIndex(r[0]);
@@ -71,6 +71,6 @@
     return { cm: cm, value: function () { return cm.getValue(); }, mark: mark };
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createTextView = createTextView;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createTextView = createTextView;
 }());

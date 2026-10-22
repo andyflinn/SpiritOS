@@ -30,7 +30,7 @@ var SD_SHARED = { deskDoorFields: '/shell/shared/js/deskDoorFields.js', createDe
 
 function sdEsc(s) { return sdApi && sdApi.escapeHtml ? sdApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function sdWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
-function sdElements() { return (typeof window !== 'undefined' && window.spiritElements) || {}; }
+function sdElements() { return (typeof window !== 'undefined' && window.spirit && window.spirit.elements) || {}; }
 // A shared element, loaded once per page when it is not there yet.
 function sdNeed(name, done) {
   if (sdElements()[name]) { done(); return; }

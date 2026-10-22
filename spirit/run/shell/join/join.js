@@ -24,12 +24,11 @@ var joinWaiting = false;  // handed something new while he was typing
 
 // The shell elements this app is made of, as index.html hands them out.
 function joinEl() {
-  var w = window.spiritElements || {};
-  return { joinForm: w && window.spiritElements.joinForm, contactList: w && window.spiritElements.contactList, faceForm: w && window.spiritElements.faceForm };
+  var w = window.spirit.elements || {};
+  return { joinForm: w && window.spirit.elements.joinForm, contactList: w && window.spirit.elements.contactList, faceForm: w && window.spirit.elements.faceForm };
 }
 function joinIcon(name) { return spirit.core.const.ICON[name] || ''; }
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
-function joinAsk(verb, args) { return joinApi.verb(verb, args); }
 // The steps' names, icons and words, read once from this app's own manifest.
 var joinStepList = null;
 function joinSteps() {
@@ -79,10 +78,10 @@ function joinForm(step, box) {
   // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
   // without a verified email (by invite), Change once verified. So a node seated by invite completes it here.
   if (step.until === 'email' && el.joinForm) {
-    var w = window.spiritElements.joinForm.words(joinFacts);
+    var w = window.spirit.elements.joinForm.words(joinFacts);
     box.innerHTML = '<span class="job-manifest-note">' + joinEsc(w.title) + ' on ' + joinEsc((joinFacts.relayUrl || 'no relay').replace(/^https?:\/\//, '')) + '</span>' +
       el.joinForm.html(w);
-    el.joinForm.bind(box, { url: function () { return joinFacts.relayUrl; }, ask: joinAsk });
+    el.joinForm.bind(box, { url: function () { return joinFacts.relayUrl; } });
     return;
   }
   // FIND SOMEONE: the same one list Contacts draws (goal/G30.19), the book, the shadow and the network.
@@ -102,15 +101,15 @@ function joinForm(step, box) {
     var mount = function () {
       el.faceForm.mount(box, {
         seats: joinRelayRow ? [joinRelayRow] : [],
-        ask: joinAsk,
         callDialog: function (id, params) { return joinApi.callDialog(id, params); },
         reload: function () { return Promise.resolve(); },
         idPrefix: 'join-face-',
         escape: joinApi.escapeHtml,
       });
     };
-    Promise.resolve(joinAsk('relay.get', { key: joinFacts.relayUrl })).then(function (g) {
-      var row = (g && g.body && g.body.relay) || null;
+    // Through the spirit object (goal/G32.2): spirit.relay.get answers the reply's body.
+    spirit.ready.then(function (s) { return s.relay.get({ key: String(joinFacts.relayUrl || '') }); }).then(function (g) {
+      var row = (g && g.relay) || null;
       joinRelayRow = row ? Object.assign({ label: row.label || joinFacts.relayUrl.replace(/^https?:\/\//, '') }, row) : null;
       mount();
     }, mount);

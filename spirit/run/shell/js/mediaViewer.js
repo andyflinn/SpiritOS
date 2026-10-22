@@ -10,7 +10,7 @@
 // the end) plays once complete, from memory. The pieces stay while the viewer is open, so playing again plays from
 // memory; destroy() (or the next file) drops them.
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
 
   function tagFor(kind) { return kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'img'; }
 
@@ -30,7 +30,7 @@
     body.appendChild(el);
     function url(blobOrSource) { var u = URL.createObjectURL(blobOrSource); urls.push(u); return u; }
 
-    if (!window.spiritTransport || typeof window.spiritTransport.file !== 'function') {
+    if (!window.spirit.transport || typeof window.spirit.transport.file !== 'function') {
       el.src = '/' + encodeURI(path);
     } else if (tag !== 'img' && window.MediaSource && MediaSource.isTypeSupported(mime)) {
       // PLAYED AS IT ARRIVES: each opened piece appended in order; a format MediaSource refuses part-way falls back to

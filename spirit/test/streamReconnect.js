@@ -88,7 +88,7 @@ test.startTest('the page hears again after its node restarts');
       return null; }, saveFile: function () { return Promise.resolve(); }, statFile: function () { return null; },
       getAnnotations: function () { return {}; }, createScopedFs: function () { return {}; } },
     jobs: { subscribe: function (h) { handlers = h; } } } };
-  new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, { spiritPacket: packet });
+  new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, test.withSpirit({ 'spirit.packet': packet }));
   let api = null;
   shellSpirit.shell.registerApp({ id: 'hearer', name: 'Hearer', icon: 'FILE', mount: function (e, a) { api = a; }, render: function () {} });
   shellSpirit.shell.launchApp('hearer');

@@ -211,7 +211,7 @@ function bootShell() {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8'))(
-    sp, doc, function () {}, { spiritPacket: require('../run/js/client/packet'), spiritLimits: require('../run/js/limits.js') });
+    sp, doc, function () {}, test.withSpirit({ 'spirit.packet': require('../run/js/client/packet'), 'spirit.limits': require('../run/js/limits.js') }));
   const send = function (command) { subscribers.forEach(function (h) { if (typeof h.onUpdate === 'function') h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: command } }); }); };
   subscribers.forEach(function (h) { if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]); });
   send({ op: 'createDirectory', path: 'shell', at: '', modified: MOD });

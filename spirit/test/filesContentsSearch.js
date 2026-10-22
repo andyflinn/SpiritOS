@@ -120,7 +120,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   test.subHeading('2. every search on the shared list shows its ranking as a bar');
   const p1 = page();
   const box1 = p1.node();
-  p1.win.spiritElements.shellCreateListSearch(box1, { rows: function () { return [{ key: 'a', name: 'alpha gate' }, { key: 'b', name: 'beta door' }, { key: 'c', name: 'gamma gate keeper' }]; },
+  p1.win.spirit.elements.shellCreateListSearch(box1, { rows: function () { return [{ key: 'a', name: 'alpha gate' }, { key: 'b', name: 'beta door' }, { key: 'c', name: 'gamma gate keeper' }]; },
     paint: function (row, mark) { return '<td>' + mark(row.name) + '</td>'; } });
   await settle();
   const pre1 = (/id="(listsearch-\d+-)text"/.exec(box1.innerHTML) || [])[1];
@@ -199,7 +199,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
     return cm;
   };
   new Function('window', 'document', 'spirit', fs.readFileSync(path.join(RUN, 'shell', 'js', 'textView.js'), 'utf8'))(p2.win, p2.doc, sp);
-  p2.win.spiritElements.createTextView(p2.node(), { text: 'a\nb\nc\nd\ne\n', readOnly: true, line: 4 });
+  p2.win.spirit.elements.createTextView(p2.node(), { text: 'a\nb\nc\nd\ne\n', readOnly: true, line: 4 });
   const sc = (CM[CM.length - 1] || { scrolled: [] }).scrolled[0];
   if (sc && sc.line === 3) test.check('createTextView puts line 4 in view (0-based 3)');
   else test.fail(OWED + 'with line 4 the view scrolled to ' + short((CM[CM.length - 1] || {}).scrolled));

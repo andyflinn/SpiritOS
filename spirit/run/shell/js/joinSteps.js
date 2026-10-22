@@ -38,6 +38,6 @@
     return null;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.joinSteps = { fromJob: fromJob, done: done, current: current };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.joinSteps = { fromJob: fromJob, done: done, current: current };
 }());

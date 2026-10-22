@@ -21,12 +21,12 @@
 //      (NAMED, as onRelayEvent); the shell, on it, dispatches on document a CustomEvent 'contact.rename' with that data
 //      as detail (NAMED), so any element can listen without a stream of its own.
 //   3. THE ELEMENT: shell/js/contactLabel.js (NAMED, beside contactSelector.js), adding
-//      window.spiritElements.createContactLabel({key, caption, editable}) (NAMED), handed to apps as
+//      window.spirit.elements.createContactLabel({key, caption, editable}) (NAMED), handed to apps as
 //      api.ui.elements.createContactLabel beside the other elements; it answers a root element.
 //      - It shows the caption it is given, or, given none, asks contact.get {key} and shows person.caption.
 //      - Display only (editable false): a click changes nothing and asks nothing.
 //      - Editable: a click offers a text input; Return asks contact.label {publicKey, myLabel} with what was typed,
-//        when it is not empty and js/fieldRules.js (window.spiritFieldRules) passes it; a refused name is not asked
+//        when it is not empty and js/fieldRules.js (window.spirit.fieldRules) passes it; a refused name is not asked
 //        and the rule's reason is shown; empty is not asked.
 //      - Both modes listen: a contact.rename for its key redraws it with the new caption; another key's leaves it.
 //   4. (goal/G4.10) NO KEY FLASHES: a label not yet answered shows no key; a name once known is kept for the page, so
@@ -49,8 +49,8 @@ const OWED10 = 'owed by goal/G4.10: ';
 const ELEMENT = path.join(RUN, 'shell', 'js', 'contactLabel.js');
 const KERNEL = path.join(RUN, 'js', 'kernel.js');
 const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
-const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerp=';
-const OTHER = 'MCowBQYDK2VwAyEAotherotherotherotherotherotherother=';
+const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerppeerpe=';
+const OTHER = 'MCowBQYDK2VwAyEAotherotherotherotherotherotherotherotheroth=';
 
 const kids = [];
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contactlabel-'));
@@ -191,8 +191,9 @@ async function thePage() {
       return null; }, saveFile: function () { return Promise.resolve(); }, statFile: function () { return null; },
       getAnnotations: function () { return {}; }, createScopedFs: function () { return {}; } },
     jobs: { subscribe: function (h) { handlers = h; } } } };
+  test.spiritFor(shellSpirit.core.ask, shellSpirit);
   try {
-    new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, { spiritPacket: packet });
+    new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, test.withSpirit({ 'spirit.packet': packet }));
   } catch (e) { test.fail('shell.js did not load in the harness: ' + e.message); return; }
   await settle();
   if (handlers && typeof handlers.onContactRename === 'function') handlers.onContactRename({ key: PEER, caption: 'Pete' });
@@ -240,10 +241,11 @@ function mountElement() {
     if (verb === 'contact.label') return Promise.resolve({ status: 200, body: { publicKey: body.publicKey, myLabel: body.myLabel, caption: body.myLabel } });
     return Promise.resolve({ status: 200, body: {} });
   };
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js') };
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') });
   const sp = { core: { ask: ask, util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: kernel.core.const.ICON } } };
+  test.spiritFor(sp.core.ask, sp);
   new Function('spirit', 'document', 'window', 'CustomEvent', fs.readFileSync(ELEMENT, 'utf8'))(sp, doc, win, CustomEvent);
-  return { make: win.spiritElements && win.spiritElements.createContactLabel, asked: asked, doc: doc };
+  return { make: win.spirit.elements && win.spirit.elements.createContactLabel, asked: asked, doc: doc };
 }
 
 async function theElement() {
@@ -251,12 +253,12 @@ async function theElement() {
   if (!fs.existsSync(ELEMENT)) { test.fail(OWED + 'there is no shell/js/contactLabel.js'); return; }
   let m = null;
   try { m = mountElement(); } catch (e) { test.fail(OWED + 'shell/js/contactLabel.js did not load: ' + e.message); return; }
-  if (typeof m.make !== 'function') { test.fail(OWED + 'window.spiritElements.createContactLabel is missing'); return; }
+  if (typeof m.make !== 'function') { test.fail(OWED + 'window.spirit.elements.createContactLabel is missing'); return; }
   const indexHtml = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   if (/<script src="\/shell\/js\/contactLabel\.js"><\/script>/.test(indexHtml)) test.check('index.html loads /shell/js/contactLabel.js with the other elements');
   else test.fail(OWED + 'index.html does not load /shell/js/contactLabel.js');
   const shellSrc = fs.readFileSync(SHELL, 'utf8').replace(/\n/g, ' ');
-  if (/elements:\s*\{[^}]*createContactLabel:\s*spiritElements\.createContactLabel/.test(shellSrc)) test.check('the shell hands it to apps as api.ui.elements.createContactLabel');
+  if (/elements:\s*\{[^}]*createContactLabel:\s*shellElements\.createContactLabel/.test(shellSrc)) test.check('the shell hands it to apps as api.ui.elements.createContactLabel');
   else test.fail(OWED + 'api.ui.elements has no createContactLabel');
 
   const plain = m.make({ key: PEER, caption: 'Pete', editable: false });
@@ -315,7 +317,7 @@ async function theElement() {
   // until contact.get answered.
   test.subHeading('4. (goal/G4.10) no key flashes: a name once known is shown at once');
   const m2 = mountElement();
-  const THIRD = 'MCowBQYDK2VwAyEAthirdthirdthirdthirdthirdthirdthird=';
+  const THIRD = 'MCowBQYDK2VwAyEAthirdthirdthirdthirdthirdthirdthirdthirdthi=';
   const first = m2.make({ key: THIRD, editable: false });
   const beforeAnswer = shown(first);
   if (beforeAnswer.indexOf(THIRD) === -1) test.check('a label not yet answered shows no key');
@@ -334,7 +336,7 @@ async function theElement() {
   if (/Third Renamed/.test(shown(third))) test.check('and a rename updates the name a new label shows');
   else test.fail(OWED10 + 'after a rename a new label shows ' + JSON.stringify(shown(third)).slice(0, 120));
   // Two labels made before the first answer share one ask (wsl-claude's note on bda37747: each asking passed).
-  const FOURTH = 'MCowBQYDK2VwAyEAfourthfourthfourthfourthfourthfourt=';
+  const FOURTH = 'MCowBQYDK2VwAyEAfourthfourthfourthfourthfourthfourtfourthfo=';
   const f1 = m2.make({ key: FOURTH, editable: false });
   const f2 = m2.make({ key: FOURTH, editable: false });
   await settle();

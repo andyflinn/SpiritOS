@@ -9,7 +9,7 @@ var filesList = null;
 var filesShown = null;                 // the media viewer open, dropped when another file or the list is shown
 
 function filesShow(host, listHost, path, words, line) {
-  var E = window.spiritElements;
+  var E = window.spirit.elements;
   if (filesShown) { filesShown.destroy(); filesShown = null; }
   listHost.hidden = true;
   host.hidden = false;
@@ -32,7 +32,7 @@ spirit.shell.activateApp({
     container.innerHTML = '<div data-files="list"></div><div data-files="file" hidden></div>';
     var listHost = container.querySelector('[data-files="list"]');
     var fileHost = container.querySelector('[data-files="file"]');
-    filesList = window.spiritElements.fileList.create(listHost, {
+    filesList = window.spirit.elements.fileList.create(listHost, {
       api: api,
       face: 'pane',
       // A file found by its contents opens at that line with the words marked (goal/G29.11).

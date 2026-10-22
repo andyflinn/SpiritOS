@@ -18,7 +18,7 @@
 //   - EVERY CALL ASYNCHRONOUS (the box: "the face shell makes every call asynchronously"): no synchronous request here.
 //   - THE PAGE'S PARTS are the home node's own: its index.html is read and its sheets and scripts loaded in order, all
 //     but the old shell (js/client/shell.js) and CodeMirror, which loads when an app needs it. kernel.js is told to ask
-//     through this link (window.spiritTransport) and to take its events from the face's own stream.
+//     through this link (window.spirit.transport) and to take its events from the face's own stream.
 //   - THE STREAM is /face/stream (sealed to this page's key when it can seal): the jobs as the loopback shell gets them,
 //     presence peer by peer, rebuilt here into the relay-presence job the apps read. Another device holding it is said,
 //     with Connect here; a face replaced by another device is told it was taken.
@@ -202,7 +202,7 @@
     jobsById[job.id] = job;
     subscribers.slice().forEach(function (h) { if (h.onUpdate) { try { h.onUpdate(job); } catch (e) { /* one app's fault */ } } });
   }
-  // The kernel's jobs.subscribe on a face (window.spiritTransport.events): what is known now, then every update.
+  // The kernel's jobs.subscribe on a face (window.spirit.transport.events): what is known now, then every update.
   function events(handlers) {
     var h = handlers || {};
     subscribers.push(h);
@@ -345,7 +345,7 @@
     }, function () { /* no answer: the app is not shown */ });
   }
   function listApps() {
-    var D = window.spiritData;
+    var D = window.spirit.data;
     if (!D) return;
     var SCRIPT = /^(shell\/([^/]+))\/\2\.js$/;
     var read = Object.create(null);   // the apps already asked, so another file's change asks nothing again
@@ -377,7 +377,7 @@
       escapeHtml: spirit.core.util.escapeHtml,
       verb: function (name, args) { return spirit.core.ask(name, args); },
       sendMessagePacket: function (packetApp, toId, body, opts) {
-        var envelope = window.spiritPacket || null;
+        var envelope = window.spirit.packet || null;
         if (!envelope) return Promise.resolve({ status: 0, text: '{"error":"js/client/packet.js is not loaded"}' });
         var made = envelope.encode(packetApp, body, { re: (opts && opts.re) || '' });
         if (!made.ok) return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
@@ -390,7 +390,7 @@
           var said = null;
           try { said = JSON.parse(r.text); } catch (e) { said = null; }
           var text = (said && typeof said.text === 'string') ? said.text : '';
-          var envelope = window.spiritPacket || null;
+          var envelope = window.spirit.packet || null;
           var decoded = (envelope && text) ? envelope.decode(text) : null;
           var reached = r.status === 200 && !!(said && said.ok);
           var answeredYes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
@@ -418,7 +418,7 @@
       onFiles: function () { return function () {}; },
       // What a relay the home node owns did, as the old shell hands it (goal/G30.15): Relay Details redraws on it.
       onRelayEvent: function (fn) { return events({ onRelayEvent: fn }); },
-      ui: { elements: window.spiritElements || {} },
+      ui: { elements: window.spirit.elements || {} },
     };
     return api;
   }
@@ -552,7 +552,7 @@
           return window.faceSeal.newKey().then(function (key) { link.key = key; link.sealed = true; });
         });
     ready.then(function () {
-      if (!home) window.spiritTransport = { ask: ask, events: events, file: file };
+      if (!home) window.spirit.transport = { ask: ask, events: events, file: file };
       if (home) setConnected(true);
       // The spirit object (goal/G32.1), inline in this page, gets its families once the node can be reached.
       if (window.spirit && typeof window.spirit.start === 'function') window.spirit.start();

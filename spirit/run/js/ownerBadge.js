@@ -495,7 +495,7 @@ function chooseUrl(urls, wanted) {
 
 // The node side gets everything. The browser gets the rules it has to
 // obey and nothing that would need a filesystem — Natter reads
-// window.spiritOwnerBadge, and if this script never loaded it finds no
+// window.spirit.ownerBadge, and if this script never loaded it finds no
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
   module.exports = {
@@ -519,7 +519,7 @@ if (isNode) {
     chooseUrl: chooseUrl,
   };
 } else if (typeof window !== 'undefined') {
-  window.spiritOwnerBadge = {
+  (window.spirit = window.spirit || {}).ownerBadge = {
     normalizeUrl: normalizeUrl,
     removalRefusal: removalRefusal,
     isPublicRelay: isPublicRelay,

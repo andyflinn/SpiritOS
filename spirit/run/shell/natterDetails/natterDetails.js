@@ -73,7 +73,7 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+  var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
   return rule ? rule.problem(name) : '';
 }
 var ndApi = null;
@@ -412,7 +412,7 @@ function ndRefusedHtml(refused) {
 // WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7, Natter retired): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
-  var badge = window.spiritOwnerBadge;
+  var badge = window.spirit && window.spirit.ownerBadge;
   if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
   return badge.removalRefusal(ndRows, ndUrl);
 }
@@ -713,7 +713,7 @@ function ndEmailHtml() {
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): shell/js/joinForm.js, loaded by index.html.
-function ndJoinForm() { return (window.spiritElements && window.spiritElements.joinForm) || null; }
+function ndJoinForm() { return (window.spirit && window.spirit.elements && window.spirit.elements.joinForm) || null; }
 
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
 //

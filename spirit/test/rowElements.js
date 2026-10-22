@@ -15,14 +15,14 @@
 //     editor asks and never paints; the confirmed change on the stream repaints.
 //   - A rowElement carries its actions (add, block, remove, open). expandInfo fetches what is too large for a row.
 // NAMED HERE where the box names none:
-//   - window.spiritElements.rowElement.create(parts): parts { kind, key, row, index, fields: [{ name, rule, paint(row),
+//   - window.spirit.elements.rowElement.create(parts): parts { kind, key, row, index, fields: [{ name, rule, paint(row),
 //     edit }], actions: [{ name, label, run(el, ctx) }], expand(el) } -> el { kind, key, row, cells() [{ name, html }],
 //     mount(hosts by field name), apply(changes), act(name, ctx), expandInfo(), destroy() }.
-//   - window.spiritElements.rowElement.index(subscribe) -> { add(key, el), remove(key, el), forKey(key) }: subscribe(index)
+//   - window.spirit.elements.rowElement.index(subscribe) -> { add(key, el), remove(key, el), forKey(key) }: subscribe(index)
 //     is called once, on the first add.
-//   - window.spiritElements.fileElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
+//   - window.spirit.elements.fileElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
 //     size, changed; fed by fs-watcher job-updated commands for its path. Actions open and remove.
-//   - window.spiritElements.contactElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
+//   - window.spirit.elements.contactElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
 //     label; fed by the relay-presence job and contact renames. Actions open, block, unblock, remove.
 // The elements are browser scripts; this runs them in a sandbox with a stand-in window and spirit.core, and checks what
 // they paint and ask. rule/11: through testSupport only.
@@ -42,7 +42,7 @@ test.startTest('goal/G30.18: the rowElements, fileElement and contactElement');
 // The page: a window, spirit.core with ask and jobs.subscribe, the field rules, and the three element files.
 const asked = [];
 const subscribers = [];
-const window = { spiritElements: {} };
+const window = test.withSpirit({ 'spirit.elements': {} });
 const spirit = { core: {
   ask: function (verb, args) { asked.push({ verb: verb, args: args }); return Promise.resolve({ status: 200, body: { ok: true, verb: verb } }); },
   jobs: { subscribe: function (h) { subscribers.push(h); return function () { subscribers.splice(subscribers.indexOf(h), 1); }; } },
@@ -56,7 +56,7 @@ const loaded = {};
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
-const E = window.spiritElements;
+const E = window.spirit.elements;
 function host() { return { innerHTML: '', paints: 0, set html(v) { this.innerHTML = v; this.paints += 1; } }; }
 // A host whose innerHTML setter counts paints.
 function counted() {
@@ -143,7 +143,7 @@ const done = (async function () {
     people = { subs: subs, pPresence: hp.presence.innerHTML, pPresencePaints: hp.presence.paints, qPresencePaints: hq.presence.paints,
       qLabel: hq.label.innerHTML, pLabelPaints: hp.label.paints, pStatusPaints: hp.status.paints, blockAsked: blockAsked, opened: opened,
       expand: asked.map(function (x) { return x.verb + ':' + x.args.key; }).join(','),
-      fields: p.cells().map(function (z) { return z.name; }).join(','), rule: !!(window.spiritFieldRules && window.spiritFieldRules.label) };
+      fields: p.cells().map(function (z) { return z.name; }).join(','), rule: !!(window.spirit.fieldRules && window.spirit.fieldRules.label) };
   } catch (e) { people = { threw: e.message }; }
   if (people && people.subs === 1 && />G<\/span>/.test(people.pPresence) && people.pPresencePaints === 2 && people.qPresencePaints === 1
       && /Quinn/.test(people.qLabel) && people.pLabelPaints === 1 && people.pStatusPaints === 1 && people.blockAsked === 'KEY-P'

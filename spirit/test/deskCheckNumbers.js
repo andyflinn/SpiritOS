@@ -111,7 +111,7 @@ async function dialogHalf() {
   const calls = [];
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
   const facts = function (id) { return { id: id, title: id, goal: 'cn/G1', status: 'running', with: '', buttons: [], blocking: ['cn/G1'], blocked: [], asks: 0 }; };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,

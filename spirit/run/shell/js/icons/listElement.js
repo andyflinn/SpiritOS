@@ -14,7 +14,7 @@
 //     opts.pick(row, glyph)   an icon chosen; row { glyph, keywords }
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var SET = 'shell/icons/iconSet.json';
 
   function create(host, opts) {
@@ -22,9 +22,10 @@
     var rows = [];
     var list = null;
     function reload() {
-      return Promise.resolve(o.api.verb('fs.load', { path: SET })).then(function (r) {
+      // Through the spirit object (goal/G32.2).
+      return spirit.ready.then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
         var set = {};
-        try { set = JSON.parse((r && r.body && r.body.text) || '{}'); } catch (e) { set = {}; }
+        try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
         rows = Object.keys(set).map(function (g) { return { key: g, glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }; });
         if (list) list.redraw();
         return set;
@@ -51,7 +52,7 @@
       empty: o.empty || 'No icon matches.',
     });
     // The set written again (by the Icons app, or anyone): read again.
-    var unwatch = window.spiritData ? window.spiritData.watch('files/' + SET, function () { reload(); }) : null;
+    var unwatch = window.spirit && window.spirit.data ? window.spirit.data.watch('files/' + SET, function () { reload(); }) : null;
     var destroy = list.destroy;
     list.destroy = function () { if (typeof unwatch === 'function') unwatch(); destroy(); };
     list.reload = reload;

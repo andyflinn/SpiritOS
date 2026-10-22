@@ -18,17 +18,18 @@ function iconsSame(a, b) { var strip = function (g) { return String(g || '').rep
 
 // The set as it stands, changed by fn, written whole.
 function iconsChange(api, fn, said) {
-  return Promise.resolve(api.verb('fs.load', { path: ICON_SET })).then(function (r) {
+  // Through the spirit object (goal/G32.2).
+  return spirit.ready.then(function (s) { return s.fs.loadFile(ICON_SET); }).then(function (text) {
     var set = {};
-    try { set = JSON.parse((r && r.body && r.body.text) || '{}'); } catch (e) { set = {}; }
+    try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
     // fn answers a refusal (a sentence) when nothing is to change; the set is then not written.
     var no = fn(set);
     if (typeof no === 'string') return { refused: no };
-    return Promise.resolve(api.verb('fs.save', { path: ICON_SET, content: JSON.stringify(set, null, 2) + '\n' }));
+    return spirit.ready.then(function (s) { return s.fs.saveFile(ICON_SET, JSON.stringify(set, null, 2) + '\n'); });
   }).then(function (r) {
     if (r && r.refused) { if (said) said.textContent = r.refused; return false; }
-    var ok = r && r.status >= 200 && r.status < 300;
-    if (said) said.textContent = ok ? 'saved' : 'not saved: ' + ((r && r.body && (r.body.error || r.body.code)) || (r && r.status) || 'no answer');
+    var ok = !!(r && r.ok);
+    if (said) said.textContent = ok ? 'saved' : 'not saved: ' + ((r && r.reason) || 'no answer');
     if (ok && iconsList) iconsList.reload();
     return ok;
   }, function (e) { if (said) said.textContent = 'not saved: ' + ((e && e.message) || e); return false; });
@@ -46,6 +47,8 @@ function iconsPanel(host, listHost, api, row, glyph) {
   function back() { host.hidden = true; host.innerHTML = ''; listHost.hidden = false; }
   host.querySelector('[data-icons="back"]').addEventListener('click', back);
   // Saved as the field changes, no Save button (as the Apps panel).
+  // The keywords stop at their limit as they are typed (shell/js/fieldInput.js).
+  window.spirit.elements.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'paragraph');
   host.querySelector('[data-icons="keywords"]').addEventListener('change', function (e) {
     var words = iconsWords(e.target.value);
     iconsChange(api, function (set) { set[glyph] = words; }, said);
@@ -57,7 +60,7 @@ function iconsPanel(host, listHost, api, row, glyph) {
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var E = window.spiritElements;
+    var E = window.spirit.elements;
     container.innerHTML =
       '<div data-icons="list">' +
         '<div class="stat-tile wide" style="display:flex;gap:1em;align-items:center">' +
@@ -69,6 +72,7 @@ spirit.shell.activateApp({
       '</div><div data-icons="icon" hidden></div>';
     var listHost = container.querySelector('[data-icons="list"]');
     var iconHost = container.querySelector('[data-icons="icon"]');
+    window.spirit.elements.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
     iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
       api: api,
       face: 'pane',
@@ -77,6 +81,7 @@ spirit.shell.activateApp({
     container.querySelector('[data-icons="add"]').addEventListener('click', function () {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
+      if (!window.spirit.elements.fieldInput.fits(words.join(', '), 'paragraph')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
       var said = container.querySelector('[data-icons="added"]');
       if (!glyph) { said.textContent = 'paste an icon first'; return; }
       // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"): an

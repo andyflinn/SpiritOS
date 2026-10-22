@@ -2,11 +2,11 @@
 // ONE SHELL ELEMENT: the app-server selector, a factory apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spiritElements,
+//   so one file per element, each adding itself to window.spirit.elements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spiritIconIndex, window.spiritApiTreeIndex)
+// has (spirit, document, window.spirit.iconIndex, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 
@@ -46,11 +46,11 @@
     root.tree = null;
 
     function rows() {
-      var names = root.tree ? window.spiritApiTreeIndex.servers(root.tree) : [];
+      var names = root.tree ? window.spirit.apiTreeIndex.servers(root.tree) : [];
       var out = names.map(function (name) { return { key: name, name: name }; });
       return out;
     }
-    var list = window.spiritElements.shellCreateListSearch(host, {
+    var list = window.spirit.elements.shellCreateListSearch(host, {
       mode: 'dropdown',
       placeholder: options.placeholder || 'choose a server…',
       all: options.all,
@@ -71,7 +71,8 @@
       root.value = '';
       root.tree = null;
       list.redraw();
-      var got = typeof fn === 'function' ? fn() : spirit.core.ask('api').then(function (a) { return a && a.body; });
+      // The node's own api answer, through the spirit object (goal/G32.2).
+      var got = typeof fn === 'function' ? fn() : spirit.ready.then(function (s) { return s.tree(); });
       return Promise.resolve(got).then(function (tree) {
         root.tree = tree && typeof tree === 'object' ? tree : null;
         list.redraw();
@@ -82,6 +83,6 @@
     return root;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createAppServerSelector = createAppServerSelector;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createAppServerSelector = createAppServerSelector;
 })();

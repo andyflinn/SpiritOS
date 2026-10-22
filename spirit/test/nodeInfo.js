@@ -170,7 +170,7 @@ function mountApp(home, relays) {
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   // The browser's copy of the rule, which is the same file the node
   // requires — that is the whole point of fieldRules being isomorphic.
-  const win = { spiritFieldRules: fieldRules };
+  const win = test.withSpirit({ 'spirit.fieldRules': fieldRules });
   new Function('spirit', 'document', 'window', src)(shellSpirit, doc, win);
 
   const container = fakeElement('container');
@@ -817,7 +817,7 @@ function noTick() {
     core: { relays: test.browserRelays(function (v, a) { return api.verb(v, a); }) } };
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   new Function('spirit', 'document', 'window', src)(
-    shellSpirit, doc, { spiritFieldRules: fieldRules }
+    shellSpirit, doc, test.withSpirit({ 'spirit.fieldRules': fieldRules })
   );
 
   // NOTHING HERE CHANGES ON ITS OWN — this app is the only writer of

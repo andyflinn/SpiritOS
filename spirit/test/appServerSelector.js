@@ -7,7 +7,7 @@
 //   the owner's api tree itself this cycle (since goal/G30.6 the verb api on the flat apiDoor). And: "the boot continues. and the failure is logged. and that server will not
 //   be part of the apiTree".
 // The contract the builder follows, in the icon selector's pattern (iconIndex.js beside createIconSelector):
-//   - js/client/apiTreeIndex.js, loaded by both sides (module.exports for node, window.spiritApiTreeIndex for the
+//   - js/client/apiTreeIndex.js, loaded by both sides (module.exports for node, window.spirit.apiTreeIndex for the
 //     page, index.html loads it): servers(tree) -> the names of the servers in an 'api' answer, sorted; a branch that
 //     is an error ({ok: false, ...}, a server that did not answer) is not a server.
 //   - shell.js hands apps api.ui.elements.createAppServerSelector(options), beside createIconSelector: an element
@@ -50,7 +50,7 @@ const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
 // The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
 const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'appServerSelector.js'), 'utf8');
 const at = elements.indexOf('function createAppServerSelector');
-const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*spiritElements\.createAppServerSelector/.test(shell);
+const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*shellElements\.createAppServerSelector/.test(shell);
 let body = '';
 if (at !== -1) {
   let depth = 0;
@@ -61,8 +61,8 @@ if (at !== -1) {
 }
 if (at !== -1 && handed) test.check('shell/js/appServerSelector.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
 else test.fail(OWED + 'appServerSelector.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
-if (body && /spirit\.core\.ask\(\s*['"]api['"]\s*\)/.test(body) && /spiritApiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
-  test.check('it asks the verb api (the flat apiDoor), lists spiritApiTreeIndex.servers, and carries value and a change event');
-} else test.fail(OWED + 'createAppServerSelector does not ask the verb api, list spiritApiTreeIndex.servers, and carry value with a change event');
+if (body && /\.tree\(\)/.test(body) && /spirit\.apiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
+  test.check('it asks the verb api (the flat apiDoor), lists spirit.apiTreeIndex.servers, and carries value and a change event');
+} else test.fail(OWED + 'createAppServerSelector does not ask the verb api, list spirit.apiTreeIndex.servers, and carry value with a change event');
 
 test.reportSuccessFailureCount();

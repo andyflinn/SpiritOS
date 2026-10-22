@@ -341,5 +341,5 @@ var limitsApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = limitsApi;
 } else if (typeof window !== 'undefined') {
-  window.spiritLimits = limitsApi;
+  (window.spirit = window.spirit || {}).limits = limitsApi;
 }

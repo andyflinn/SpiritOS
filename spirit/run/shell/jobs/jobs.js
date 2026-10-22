@@ -83,7 +83,7 @@ function jobsKind(job) { return job.kind === 'permanent' ? 'node' : job.kind ===
 
 function jobsProgress(job) {
   var open = jobsOpen[job.id];
-  var bar = window.spiritElements && window.spiritElements.progressBar;
+  var bar = window.spirit && window.spirit.elements && window.spirit.elements.progressBar;
   if (!open || JOBS_TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
   return bar(open.done, open.total, open.text);
 }
@@ -123,7 +123,7 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     jobsApi = api;
     container.innerHTML = '';
-    jobsList = window.spiritElements.shellCreateListSearch(container, {
+    jobsList = window.spirit.elements.shellCreateListSearch(container, {
       rows: jobsRows,
       filters: [
         // FAILED, THE LAST FILTER (goal/G29.16; Andy: "the last filter in the jobs search should be "failed" and the

@@ -22,6 +22,6 @@
     return '<span class="progress-bar">' + tag + (words ? ' <span class="job-manifest-note">' + esc(words) + '</span>' : '') + '</span>';
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.progressBar = progressBar;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.progressBar = progressBar;
 }());

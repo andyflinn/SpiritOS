@@ -274,9 +274,9 @@ async function paneHalf() {
   test.subHeading('D1. the pane opens a door with callDialog, and draws no inline detail');
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} });
+  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} }));
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
-  const ui = win.spiritDeskPlugins.stackFrameChecks;
+  const ui = win.spirit.deskPlugins.stackFrameChecks;
   const dialogs = [];
   const asked = [];
   const box = fakeElement('pane');
@@ -312,7 +312,7 @@ async function dialogHalf() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const calls = [];
   let app = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, withShared(doc, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') }));
+  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, withShared(doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') })));
   const box = fakeElement('dlg');
   app.mount(box, {
     escapeHtml: kernel.core.util.escapeHtml,

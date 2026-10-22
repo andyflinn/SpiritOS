@@ -16,7 +16,7 @@
 // THE CONTRACT (the box of goal/G4.16).
 //   1. THE NAME: js/labelRule.js becomes js/fieldRules.js; nothing under spirit/run or spirit/test names labelRule or
 //      its browser global spiritLabelRule any more; index.html loads /js/fieldRules.js; in a browser the file sets
-//      window.spiritFieldRules (the old global, renamed with the file).
+//      window.spirit.fieldRules (the old global, renamed with the file).
 //   2. A LABEL: at most 64 bytes, counted after normalising; no character count (MAX_GRAPHEMES gone). The invisible
 //      stays refused, as now.
 //   3. A DESCRIPTION: at most 128 bytes, refused when over, never cut: by the rule (describeProblem), by the node's
@@ -89,8 +89,8 @@ function theName() {
   try {
     new Function('window', 'process', 'module', fs.readFileSync(RULE_FILE, 'utf8'))(win, undefined, undefined);
   } catch (e) { win = {}; }
-  if (win.spiritFieldRules && typeof win.spiritFieldRules.problem === 'function') test.check('in a browser it sets window.spiritFieldRules');
-  else test.fail(OWED + 'in a browser the file sets no window.spiritFieldRules');
+  if (win.spirit.fieldRules && typeof win.spirit.fieldRules.problem === 'function') test.check('in a browser it sets window.spirit.fieldRules');
+  else test.fail(OWED + 'in a browser the file sets no window.spirit.fieldRules');
 }
 
 // ── 2. A LABEL ───────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ function mountDetails(rule) {
     },
   };
   const src = fs.readFileSync(path.join(RUN, 'shell', 'contactsDetails', 'contactsDetails.js'), 'utf8');
-  new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, { spiritFieldRules: rule }, fakeFetch);
+  new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, test.withSpirit({ 'spirit.fieldRules': rule }), fakeFetch);
   const api = {
     verb: function (name, args) {
       const payload = Object.assign({ verb: String(name) }, args || {});

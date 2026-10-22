@@ -6,7 +6,7 @@
 // chat of the desk item that added the door ... the inherited component as in deskDetails"). The Desk face mounts it
 // for a plugin's goal, the door dialog for a door's item; each loads it on demand.
 //
-//   window.spiritElements.createDeskChat(el, { id, ask, onPublished, escape, lineHtml, time, title, placeholder })
+//   window.spirit.elements.createDeskChat(el, { id, ask, onPublished, escape, lineHtml, time, title, placeholder })
 //     id           the item or goal whose chat it is
 //     ask          the page's call to the desk server: ask(verb, args) -> Promise of the answer
 //     onPublished  the desk server's stream: onPublished(fn) -> its unsubscribe (desk rule 8: it subscribes itself)
@@ -102,6 +102,6 @@
     return { destroy: function () { live = false; if (typeof off === 'function') off(); off = null; } };
   }
   var win = typeof window !== 'undefined' ? window : {};
-  win.spiritElements = win.spiritElements || {};
-  win.spiritElements.createDeskChat = createDeskChat;
+  (win.spirit = win.spirit || {}).elements = win.spirit.elements || {};
+  win.spirit.elements.createDeskChat = createDeskChat;
 }());

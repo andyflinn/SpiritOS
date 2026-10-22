@@ -12,7 +12,7 @@
 //     the first is scrolled into view.
 //
 // NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
-//   - one shell element, shell/js/textView.js: window.spiritElements.createTextView(container, { text, words,
+//   - one shell element, shell/js/textView.js: window.spirit.elements.createTextView(container, { text, words,
 //     readOnly, path }) answers { value(), cm }, on window.CodeMirror; it marks each match with className
 //     'text-view-match' and scrolls the first into view. The launcher and the editor both make one.
 //   - the text launcher (index.html) passes params.words through; the editor (shell/textEditor) saves view.value().
@@ -108,13 +108,13 @@ function fakeElement() {
   if (fs.existsSync(VIEW)) new Function('window', 'document', 'spirit', fs.readFileSync(VIEW, 'utf8'))(win, { createElement: fakeElement }, { core: { util: { escapeHtml: kernel.core.util.escapeHtml } } });
   // Andy, 2026-10-18, to "both markers live in one shared function": "yes". The box: the shared list owns the rule.
   const viewSrc = code(VIEW);
-  if (typeof win.spiritMatchRanges === 'function' && /spiritMatchRanges/.test(viewSrc) && !/new RegExp/.test(viewSrc)) test.check('one marking rule: the shared list gives window.spiritMatchRanges, and the text view uses it, with no rule of its own');
-  else test.fail(OWED + 'spiritMatchRanges ' + typeof win.spiritMatchRanges + '; textView uses it ' + /spiritMatchRanges/.test(viewSrc) + ', has its own RegExp ' + /new RegExp/.test(viewSrc));
+  if (typeof win.spirit.matchRanges === 'function' && /spirit\.matchRanges/.test(viewSrc) && !/new RegExp/.test(viewSrc)) test.check('one marking rule: the shared list gives window.spirit.matchRanges, and the text view uses it, with no rule of its own');
+  else test.fail(OWED + 'spirit.matchRanges ' + typeof win.spirit.matchRanges + '; textView uses it ' + /spirit\.matchRanges/.test(viewSrc) + ', has its own RegExp ' + /new RegExp/.test(viewSrc));
   const listSrc = code(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'));
-  if ((listSrc.match(/new RegExp/g) || []).length === 1 && /function mark\(text\)[\s\S]{0,400}?(spiritMatchRanges|matchRanges)\(/.test(listSrc)) test.check('the list marks its rows with that same function');
-  else test.fail(OWED + 'listSearch.js: RegExps ' + (listSrc.match(/new RegExp/g) || []).length + ', its mark() uses the shared ranges ' + /function mark\(text\)[\s\S]{0,400}?(spiritMatchRanges|matchRanges)\(/.test(listSrc));
-  const make = win.spiritElements && win.spiritElements.createTextView;
-  if (typeof make !== 'function') { test.fail(OWED + 'no window.spiritElements.createTextView (shell/js/textView.js)'); }
+  if ((listSrc.match(/new RegExp/g) || []).length === 1 && /function mark\(text\)[\s\S]{0,400}?(spirit\.matchRanges|matchRanges)\(/.test(listSrc)) test.check('the list marks its rows with that same function');
+  else test.fail(OWED + 'listSearch.js: RegExps ' + (listSrc.match(/new RegExp/g) || []).length + ', its mark() uses the shared ranges ' + /function mark\(text\)[\s\S]{0,400}?(spirit\.matchRanges|matchRanges)\(/.test(listSrc));
+  const make = win.spirit.elements && win.spirit.elements.createTextView;
+  if (typeof make !== 'function') { test.fail(OWED + 'no window.spirit.elements.createTextView (shell/js/textView.js)'); }
   else {
     const TEXT = 'first line\nthe Screwdriver is here\nno match\na screwdriver and another SCREWDRIVER';
     const view = make(fakeElement(), { text: TEXT, words: 'screwdriver', readOnly: true, path: 'notes.txt' });
@@ -161,7 +161,7 @@ function fakeElement() {
   // editor takes no words from whoever opens it; only its own picker, found by contents, hands it some.
   if (!/params\s*&&\s*params\.words|params\.words/.test(editor)) test.check('the editor takes no words from whoever opens it');
   else test.fail(OWED + 'textEditor.js still takes words from its opener');
-  if (/createTextView\s*:\s*spiritElements\.createTextView/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
+  if (/createTextView\s*:\s*shellElements\.createTextView/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
   else test.fail(OWED + 'shell.js hands apps no createTextView');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();

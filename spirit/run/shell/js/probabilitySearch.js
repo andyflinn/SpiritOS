@@ -36,7 +36,7 @@
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
 (function () {
-  function P() { return window.spiritProbability || {}; }
+  function P() { return window.spirit.probability || {}; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -176,10 +176,10 @@
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
-    // THE MATCHED PARTS MARKED, by the one marking rule listSearch and the text view share (window.spiritMatchRanges).
+    // THE MATCHED PARTS MARKED, by the one marking rule listSearch and the text view share (window.spirit.matchRanges).
     function mark(text) {
       var s = String(text == null ? '' : text);
-      var ranges = typeof window.spiritMatchRanges === 'function' ? window.spiritMatchRanges(s, words()) : [];
+      var ranges = typeof window.spirit.matchRanges === 'function' ? window.spirit.matchRanges(s, words()) : [];
       var out = '';
       var at = 0;
       ranges.forEach(function (r) { out += esc(s.slice(at, r[0])) + '<mark>' + esc(s.slice(r[0], r[1])) + '</mark>'; at = r[1]; });
@@ -188,7 +188,7 @@
     // The page's own rows, when the app has them (rows()); each joins the cache by its key.
     var pageKeys = Object.create(null);
     function pageRows() {
-      if (o.data && window.spiritData) return window.spiritData.rows(o.data);
+      if (o.data && window.spirit.data) return window.spirit.data.rows(o.data);
       return typeof o.rows === 'function' ? o.rows() : null;
     }
     function takePage() {
@@ -273,7 +273,7 @@
     // THE SERVER'S ANSWERS ONLY FEED THE CACHE.
     function take(answer) {
       // A VIEW: the answer goes into the tree, and the tree's write redraws this list and every other one of that type.
-      if (o.data && window.spiritData) { window.spiritData.seat(o.data, answer && answer.items); return; }
+      if (o.data && window.spirit.data) { window.spirit.data.seat(o.data, answer && answer.items); return; }
       (answer && Array.isArray(answer.items) ? answer.items : []).forEach(function (it) {
         var row = null;
         try { row = JSON.parse(it.label); } catch (e) { row = null; }
@@ -428,7 +428,7 @@
     }
     if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
     if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
-    var unwatch = o.data && window.spiritData ? window.spiritData.watch(o.data, function () { draw(); }) : null;
+    var unwatch = o.data && window.spirit && window.spirit.data ? window.spirit.data.watch(o.data, function () { draw(); }) : null;
 
     self.refresh = function () { draw(); ask(); };
     self.redraw = function () { draw(); };
@@ -448,6 +448,6 @@
     return self;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.probabilitySearch = { create: create, order: order };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.probabilitySearch = { create: create, order: order };
 }());

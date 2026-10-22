@@ -12,7 +12,7 @@
 //     answer, sorted, DEBUG and DEPENDENCIES never among them; a server the tree does not hold, or one
 //     whose branch is an error, has no verbs.
 //   - shell.js hands apps api.ui.elements.createApiBranchSelector(options), beside the other two: the
-//     appServer selector inside it (G1.8), a verb dropdown filled from spiritApiTreeIndex.verbs that
+//     appServer selector inside it (G1.8), a verb dropdown filled from spirit.apiTreeIndex.verbs that
 //     refills when the server changes, and an "all verbs" option. Its root carries .value — the PATH,
 //     'app' when all verbs is chosen, 'app.verb' otherwise — and fires a bubbling change.
 
@@ -50,7 +50,7 @@ const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
 // The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
 const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'apiBranchSelector.js'), 'utf8');
 const at = elements.indexOf('function createApiBranchSelector');
-const handed = /elements:\s*\{[^}]*createApiBranchSelector:\s*spiritElements\.createApiBranchSelector/.test(shell.replace(/\n/g, ' '));
+const handed = /elements:\s*\{[^}]*createApiBranchSelector:\s*shellElements\.createApiBranchSelector/.test(shell.replace(/\n/g, ' '));
 let body = '';
 if (at !== -1) {
   let depth = 0;
@@ -61,11 +61,11 @@ if (at !== -1) {
 }
 if (at !== -1 && handed) test.check('shell/js/apiBranchSelector.js defines createApiBranchSelector and shell.js hands it to apps under api.ui.elements');
 else test.fail(OWED + 'apiBranchSelector.js: createApiBranchSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
-if (body && /createAppServerSelector/.test(body) && /spiritApiTreeIndex\.verbs/.test(body) && /all verbs/.test(body) &&
+if (body && /createAppServerSelector/.test(body) && /spirit\.apiTreeIndex\.verbs/.test(body) && /all verbs/.test(body) &&
     /\bvalue\b/.test(body) && /change/.test(body)) {
-  test.check('it holds the appServer selector, fills its verbs from spiritApiTreeIndex.verbs, offers all verbs, and carries value with a change event');
+  test.check('it holds the appServer selector, fills its verbs from spirit.apiTreeIndex.verbs, offers all verbs, and carries value with a change event');
 } else test.fail(OWED + 'createApiBranchSelector misses its parts: appServer selector ' + /createAppServerSelector/.test(body)
-  + ', index verbs ' + /spiritApiTreeIndex\.verbs/.test(body) + ', all verbs ' + /all verbs/.test(body)
+  + ', index verbs ' + /spirit\.apiTreeIndex\.verbs/.test(body) + ', all verbs ' + /all verbs/.test(body)
   + ', value ' + /\bvalue\b/.test(body) + ', change ' + /change/.test(body));
 
 test.reportSuccessFailureCount();

@@ -26,7 +26,7 @@
 //   path        a path inside the node's run folder, relative, no '..'
 //   url         an http or https address        id        a non-empty string
 //
-// WHERE IT RUNS: on the face its calls go through window.spiritTransport (the sealed link to the home node); at home
+// WHERE IT RUNS: on the face its calls go through window.spirit.transport (the sealed link to the home node); at home
 // through the node's own door (POST /api/spirit); in node through the node's loopback door at the url it is given.
 (function (root) {
   'use strict';
@@ -50,7 +50,7 @@
   // ── THE CHECKS ──────────────────────────────────────────────────────────────────────────────────────────────────
   // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
   function fieldRules() {
-    if (root.spiritFieldRules) return root.spiritFieldRules;
+    if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
     if (typeof require === 'function') { try { return require('../js/fieldRules.js'); } catch (e) { return null; } }
     return null;
   }
@@ -124,7 +124,7 @@
   function parse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
   // On the face: the sealed link; at home: the node's own door. A file, as text, the same two ways.
   function pageTransport() {
-    var t = function () { return root.spiritTransport || null; };
+    var t = function () { return (root.spirit || {}).transport || null; };
     return {
       ask: function (verb, args) {
         if (t() && typeof t().ask === 'function') return Promise.resolve(t().ask(verb, args));
@@ -149,7 +149,7 @@
     if (typeof TextDecoder !== 'undefined') return new TextDecoder().decode(bytes);
     return Buffer.from(bytes).toString('utf8');
   }
-  // A family's api.js run in the page: it registers itself on root.spiritFamilies. The node's families first, then a
+  // A family's api.js run in the page: it registers itself on (root.spirit || {}).families. The node's families first, then a
   // server's family folder.
   function pageFamily(transport, name) {
     var tried = ['js/' + name + '/api.js', 'process/js/' + name + '/' + name + '.family/api.js'];
@@ -160,7 +160,7 @@
         var s = document.createElement('script');
         s.textContent = text(r.bytes) + '\n//# sourceURL=' + tried[i];
         document.head.appendChild(s);
-        return (root.spiritFamilies || {})[name] || null;
+        return ((root.spirit || {}).families || {})[name] || null;
       }, function () { return next(i + 1); });
     }
     return next(0);
@@ -203,9 +203,9 @@
 
   // ── THE ASSEMBLING ───────────────────────────────────────────────────────────────────────────────────────────────
   // One member per family, each verb a checked async call; then the family's own names (the kernel's, for fs).
-  function member(transport, def) {
+  // The name is the one the node gives the family (its api answer), never one the family's api.js claims.
+  function member(transport, fam, def) {
     var out = {};
-    var fam = String(def.family);
     function call(verb, args) {
       var spec = def.verbs[verb];
       var name = fam + '.' + verb;
@@ -240,20 +240,36 @@
     }
     return out;
   }
+  // spirit.tree() -> the node's api answer as it stands: every family and verb this caller may call.
+  function tree(t) {
+    return function () {
+      return Promise.resolve(t.ask('api', {})).then(function (r) {
+        if (r && r.status >= 200 && r.status < 300) return r.body || {};
+        throw refusal('refused', 'the node answered ' + (r && r.status), { status: r && r.status });
+      });
+    };
+  }
   // createSpirit(transport) -> Promise<spirit>. transport: ask(verb, args), file(path), family(name), families().
   function createSpirit(transport) {
     var t = transport || (typeof window === 'undefined' ? nodeTransport('') : pageTransport());
-    var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES) };
+    var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(t) };
     return Promise.resolve(t.families()).then(function (names) {
       return Promise.all((names || []).map(function (name) {
         return Promise.resolve(t.family(name)).then(function (def) {
-          if (def && def.verbs && String(def.family) === name) spirit[name] = member(t, def);
+          if (def && def.verbs) spirit[name] = member(t, name, def);
         }, function () { /* a family without its api.js is not on the object */ });
       }));
     }).then(function () { return spirit; });
   }
 
-  var api = { createSpirit: createSpirit, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
+  // assemble(transport, { <family>: def }) -> the members at once, for a caller that holds the families already (a suite).
+  function assemble(transport, defs) {
+    var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(transport) };
+    Object.keys(defs || {}).forEach(function (name) { if (defs[name] && defs[name].verbs) spirit[name] = member(transport, name, defs[name]); });
+    return spirit;
+  }
+
+  var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
     error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
 
@@ -269,7 +285,8 @@
   s.start = function () {
     if (started) return started;
     started = createSpirit(pageTransport()).then(function (made) {
-      Object.keys(made).forEach(function (k) { if (made[k] && typeof made[k] === 'object' && !Array.isArray(made[k])) root.spirit[k] = made[k]; });
+      // The families, and tree(); the helpers are on the page's spirit already.
+      Object.keys(made).forEach(function (k) { if (k === 'tree' || (made[k] && typeof made[k] === 'object' && !Array.isArray(made[k]))) root.spirit[k] = made[k]; });
       return root.spirit;
     });
     s.ready = started;

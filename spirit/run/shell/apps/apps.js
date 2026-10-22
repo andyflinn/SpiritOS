@@ -22,7 +22,7 @@ function appsOnFace() { return !!(window.spirit && spirit.shell && typeof spirit
 // An app: its .js, with its .json in the Files cache beside it.
 function appsIsApp(path) {
   var m = APP_SCRIPT.exec(String(path || ''));
-  var D = window.spiritData;
+  var D = window.spirit.data;
   return !!m && !!D && !!D.get('files/' + path.replace(/\.js$/, '.json'));
 }
 
@@ -34,13 +34,13 @@ function appsPanel(host, listHost, api, path) {
   host.innerHTML = '<button type="button" class="cancel-btn" data-apps="back">← Apps</button><div data-apps="panel" class="stat-tile wide">reading…</div>';
   var panel = host.querySelector('[data-apps="panel"]');
   host.querySelector('[data-apps="back"]').addEventListener('click', function () { host.hidden = true; host.innerHTML = ''; listHost.hidden = false; });
-  Promise.all([
-    Promise.resolve(api.verb('fs.annotations', { path: path })),
-    Promise.resolve(api.verb('fs.load', { path: id + '/' + m[2] + '.json' })),
-  ]).then(function (got) {
-    var face = (got[0] && got[0].body && got[0].body.face) || {};
+  // Through the spirit object (goal/G32.2): the face part and the manifest's text.
+  spirit.ready.then(function (s) {
+    return Promise.all([s.fs.getAnnotations(path), s.fs.loadFile(id + '/' + m[2] + '.json')]);
+  }).then(function (got) {
+    var face = (got[0] && got[0].face) || {};
     var manifest = {};
-    try { manifest = JSON.parse((got[1] && got[1].body && got[1].body.text) || '{}'); } catch (e) { manifest = {}; }
+    try { manifest = JSON.parse(got[1] || '{}'); } catch (e) { manifest = {}; }
     var home = Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1 || manifest.intrinsic === true;
     var canWrite = appsOnFace();
     var dis = canWrite ? '' : ' disabled';
@@ -66,19 +66,19 @@ function appsPanel(host, listHost, api, path) {
       var v = function (k) { return panel.querySelector('[data-face="' + k + '"]'); };
       // Wholesale, as every sidecar part is written: what the panel shows is the whole face part.
       var payload = { app: !!v('shown').checked, intrinsic: !!v('intrinsic').checked, name: v('name').value, icon: v('icon').value, description: v('description').value };
-      Promise.resolve(api.verb('fs.annotate', { path: path, payload: payload })).then(function (r) {
-        // Any 2xx is the node's yes.
-        if (r && r.status >= 200 && r.status < 300) {
-          said.textContent = 'saved';
-          if (m[1] === 'shell') spirit.shell.faceApp(id);
-        } else said.textContent = 'not saved: ' + ((r && r.body && (r.body.error || r.body.code)) || (r && r.status) || 'no answer');
+      spirit.ready.then(function (s) { return s.fs.annotate({ path: path, payload: payload }); }).then(function () {
+        said.textContent = 'saved';
+        if (m[1] === 'shell') spirit.shell.faceApp(id);
       }, function (err) { said.textContent = 'not saved: ' + ((err && err.message) || err); });
     }
+    // The name and the description stop at their limits as they are typed (shell/js/fieldInput.js).
+    window.spirit.elements.fieldInput.attach(panel.querySelector('[data-face="name"]'), 'name');
+    window.spirit.elements.fieldInput.attach(panel.querySelector('[data-face="description"]'), 'description');
     panel.addEventListener('change', function (e) {
       if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
       save();
     });
-    window.spiritElements.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
+    window.spirit.elements.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
       api: api,
       face: 'dropdown',
       placeholder: 'choose an icon…',
@@ -94,7 +94,7 @@ function appsPanel(host, listHost, api, path) {
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var E = window.spiritElements;
+    var E = window.spirit.elements;
     container.innerHTML = '<div data-apps="list"></div><div data-apps="detail" hidden></div>';
     var listHost = container.querySelector('[data-apps="list"]');
     var appHost = container.querySelector('[data-apps="detail"]');

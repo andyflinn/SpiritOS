@@ -88,21 +88,8 @@ var contactsList = null;
 var contactsSelfTail = '';
 
 
-// Both of these are `contactsApi.verb` now (AGENT.md, Comms) — the shell
-// is the only thing an app speaks to. They stay as two names because they
-// answer two shapes and their callers read different halves.
-function contactsPost(verb, body) {
-  return contactsApi.verb(verb, body);
-}
-
-// ONE DOOR, AND THE VERB IS THE ARGUMENT. Same shape as ndPost in
-// natterDetails: the path is the same string for every loopback verb
-// now, so a caller that had to repeat it was repeating a constant.
-// Answers the parsed body, because a refusal from these verbs is a
-// `{ ok: false }` rather than a status the caller reads.
-function contactsAsk(verb, body) {
-  return contactsApi.verb(verb, body).then(function (r) { return r.body; });
-}
+// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.2): contactsPost and contactsAsk, the two wrappers over
+// contactsApi.verb that stood here, are gone; each call is spirit.<family>.<verb>(args), answering the reply's body.
 
 function contactsStatus(text) {
   var el = document.getElementById('contacts-status');
@@ -208,7 +195,7 @@ function contactsRefresh() {
 // radios show is always what the node last said, never what this app
 // believes it asked for.
 function contactsLoadPrefs() {
-  return contactsAsk('contact.senders')
+  return spirit.ready.then(function (s) { return s.contact.senders(); })
     .then(function (d) {
       var wanted = d && d.policy;
       contactsPrefs = {
@@ -229,7 +216,7 @@ function contactsLoadPrefs() {
 // unwritable setting shows as unchanged instead of showing a radio that
 // lies.
 function contactsSavePrefs() {
-  return contactsAsk('contact.setSenders', { policy: contactsPrefs.unknown })
+  return spirit.ready.then(function (s) { return s.contact.setSenders({ policy: contactsPrefs.unknown }); })
     .then(function (d) {
       if (!d || d.ok !== true) throw new Error((d && d.error) || 'refused');
       contactsPrefs.unknown = d.policy;
@@ -378,14 +365,14 @@ spirit.shell.activateApp({
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      contactsAsk('relay.add', { url: url, label: label }).then(function (said) {
+      spirit.ready.then(function (s) { return s.relay.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
 
     // THE ONE LIST (goal/G30.19). A row opens the person (contactsDetails) or the relay (natterDetails) by its element's
     // open; a dialog that changed something asks the list again.
-    contactsList = window.spiritElements.contactList.create(document.getElementById('contacts-book'), {
+    contactsList = window.spirit.elements.contactList.create(document.getElementById('contacts-book'), {
       api: contactsApi,
       say: contactsStatus,
       selfTail: function (tail) { contactsSelfTail = tail; contactsPaintSelf(); },

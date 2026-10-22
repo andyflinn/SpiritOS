@@ -111,12 +111,13 @@ function page(asks) {
   const ICON = { STAR: '⭐', GREEN_CIRCLE: '🟢', WHITE_CIRCLE: '⚪', WAITING: '⏳', NO: '🚫' };
   const spirit = { core: { util: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); } }, const: { ICON: ICON },
     ask: function (verb, args) { asks.push([verb, args]); return Promise.resolve({ status: 200, body: verb === 'contact.search' ? hub.searchPeople(PEOPLE, args && args.q, args) : { ok: false } }); } } };
+  test.spiritFor(spirit.core.ask, spirit);
   function Event(type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); }
   const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
   new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   const made = [];
-  const real = win.spiritElements.shellCreateListSearch;
-  win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
+  const real = win.spirit.elements.shellCreateListSearch;
+  win.spirit.elements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
   new Function('spirit', 'document', 'window', 'Event', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(spirit, doc, win, Event);
   return { byId: byId, doc: doc, win: win, made: made, ICON: ICON };
 }
@@ -131,7 +132,7 @@ const listHtml = function (p, m) {
   test.subHeading('4. contactSelector is a wrapper around shellCreateListSearch');
   const asks = [];
   const p = page(asks);
-  const make = p.win.spiritElements && p.win.spiritElements.createContactSelector;
+  const make = p.win.spirit.elements && p.win.spirit.elements.createContactSelector;
   if (typeof make !== 'function') { test.fail(OWED + 'no createContactSelector'); test.reportSuccessFailureCount(); process.exit(0); }
   const changes = [];
   const root = make({ face: 'pane', statuses: [{ status: 'none' }, { status: 'unanswered', iconKey: 'WAITING' }] });
@@ -164,7 +165,7 @@ const listHtml = function (p, m) {
   else test.fail(OWED + 'the filters read ' + short(hf));
   const asks2 = [];
   const p2 = page(asks2);
-  p2.win.spiritElements.createContactSelector({ face: 'pane', search: function () { return { items: [{ key: 'K-bert', label: hub.contactLabel(PEOPLE[0]) }], more: false }; } });
+  p2.win.spirit.elements.createContactSelector({ face: 'pane', search: function () { return { items: [{ key: 'K-bert', label: hub.contactLabel(PEOPLE[0]) }], more: false }; } });
   await sleep(30);
   const hf2 = listHtml(p2, p2.made[0]).filters;
   if (!/⭐/.test(hf2) && !/blocked/i.test(hf2) && !/held|waiting/i.test(hf2)) test.check('a list holding none of them shows none of those filters');
@@ -201,8 +202,8 @@ const listHtml = function (p, m) {
   test.subHeading('9. callers with their own rows still work');
   const asks3 = [];
   const p3 = page(asks3);
-  p3.win.spiritElements.createContactSelector({ face: 'pane', search: function () { return { items: [{ key: 'K-chat' }], more: false }; } });
-  p3.win.spiritElements.createContactSelector({ face: 'pane', contacts: [{ key: 'K-own', label: 'Ownrow' }] });
+  p3.win.spirit.elements.createContactSelector({ face: 'pane', search: function () { return { items: [{ key: 'K-chat' }], more: false }; } });
+  p3.win.spirit.elements.createContactSelector({ face: 'pane', contacts: [{ key: 'K-own', label: 'Ownrow' }] });
   await sleep(30);
   const l3a = listHtml(p3, p3.made[0]).list;
   const l3b = listHtml(p3, p3.made[1]).list;
@@ -213,7 +214,7 @@ const listHtml = function (p, m) {
   // picker; the rule this section kept stands: no state words read off a label.
   test.subHeading('10. Contacts lists its book with the one list');
   const contacts = strip(fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8'));
-  if (/spiritElements\.contactList\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
+  if (/spirit\.elements\.contactList\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
   else test.fail(OWED + 'Contacts still draws its own book table from label words');
   const sel = strip(fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'));
   if (!/contact-selector-rows|contact-selector-search/.test(sel) && !/createContactLabel/.test(sel)) test.check('the selector draws no list or search box of its own any more');

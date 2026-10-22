@@ -15,7 +15,7 @@
 //   - shell/grants/grants.js: picks a contact (api.ui.elements.createContactSelector) and a path
 //     (createApiBranchSelector); grants and revokes through auth.grant and auth.revoke; shows a key's grants
 //     (auth.peer) and finds them by label (auth.search); offers a server's bundle, read from its
-//     DEPENDENCIES (<server>.DEPENDENCIES by name, goal/G30.6); and marks every grant spiritApiTreeIndex.serves says is gone, for the owner
+//     DEPENDENCIES (<server>.DEPENDENCIES by name, goal/G30.6); and marks every grant spirit.apiTreeIndex.serves says is gone, for the owner
 //     to revoke. Nothing is pruned without his press.
 
 const fs = require('fs');
@@ -62,7 +62,7 @@ const parts = {
   'shows a key\'s grants': /grContact\.value/,
   'finds by label': /auth\.search/,
   'reads a bundle': /DEPENDENCIES/,
-  'marks deprecated grants': /spiritApiTreeIndex\.serves/,
+  'marks deprecated grants': /spirit\.apiTreeIndex\.serves/,
 };
 const missing = Object.keys(parts).filter(function (k) { return !parts[k].test(src); });
 if (src && !missing.length) test.check('grants.js ' + Object.keys(parts).join(', '));

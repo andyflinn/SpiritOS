@@ -10,6 +10,6 @@
       acquire: { publicKey: 'key', publicLabel: 'name?', url: 'url?', via: 'text?' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['peer'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['peer'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

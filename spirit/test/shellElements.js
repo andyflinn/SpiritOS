@@ -13,13 +13,13 @@
 // good reason, said back — "i can guarantee you: there will be many". So one file per element.
 // The contract the builder follows (the shape in goal/G2.12's box):
 //   1. One file per element in spirit/run/shell/js/: iconSelector.js, contactSelector.js, appServerSelector.js,
-//      apiBranchSelector.js. Each defines its one factory and adds it to window.spiritElements (created by
-//      whichever loads first), on the globals every shell script has (spirit, window.spiritIconIndex,
-//      window.spiritApiTreeIndex, document) and nothing inside shell.js or another element's closure; the
-//      api-branch selector reaches the app-server one through window.spiritElements. elements.js is gone.
+//      apiBranchSelector.js. Each defines its one factory and adds it to window.spirit.elements (created by
+//      whichever loads first), on the globals every shell script has (spirit, window.spirit.iconIndex,
+//      window.spirit.apiTreeIndex, document) and nothing inside shell.js or another element's closure; the
+//      api-branch selector reaches the app-server one through window.spirit.elements. elements.js is gone.
 //   2. index.html loads the four before /js/client/shell.js, appServerSelector.js before apiBranchSelector.js,
 //      and no longer loads elements.js.
-//   3. shell.js defines none of the four and hands spiritElements.createXSelector under api.ui.elements — the api
+//   3. shell.js defines none of the four and hands spirit.elements.createXSelector under api.ui.elements — the api
 //      an app sees is unchanged.
 //   4. Loaded together the four expose four functions, and a contact selector still works as a control (root.value,
 //      one bubbling change on the root).
@@ -69,10 +69,10 @@ const index = fs.readFileSync(INDEX, 'utf8');
 const src = {};
 FOUR.forEach(function (n) { try { src[n] = fs.readFileSync(path.join(DIR, FILES[n]), 'utf8'); } catch (e) { src[n] = null; } });
 
-test.subHeading('1. one file per element, each adding itself to spiritElements');
+test.subHeading('1. one file per element, each adding itself to spirit.elements');
 const missing = FOUR.filter(function (n) { return !src[n]; });
-const wrong = FOUR.filter(function (n) { return src[n] && (src[n].indexOf('function ' + n) === -1 || !/spiritElements/.test(src[n]) || FOUR.some(function (o) { return o !== n && src[n].indexOf('function ' + o) !== -1; })); });
-if (!missing.length && !wrong.length) test.check('iconSelector.js, contactSelector.js, appServerSelector.js and apiBranchSelector.js each define their one factory and add it to spiritElements');
+const wrong = FOUR.filter(function (n) { return src[n] && (src[n].indexOf('function ' + n) === -1 || !/spirit\.elements/.test(src[n]) || FOUR.some(function (o) { return o !== n && src[n].indexOf('function ' + o) !== -1; })); });
+if (!missing.length && !wrong.length) test.check('iconSelector.js, contactSelector.js, appServerSelector.js and apiBranchSelector.js each define their one factory and add it to spirit.elements');
 else test.fail(OWED + (missing.length ? 'missing files: ' + missing.map(function (n) { return FILES[n]; }).join(', ') : '') + (wrong.length ? ' wrong contents: ' + wrong.map(function (n) { return FILES[n]; }).join(', ') : ''));
 if (!fs.existsSync(path.join(DIR, 'elements.js'))) test.check('and the all-in-one elements.js is gone');
 else test.fail(OWED + 'shell/js/elements.js still exists');
@@ -89,9 +89,9 @@ const stillDefined = FOUR.filter(function (n) { return shell.indexOf('function '
 if (stillDefined.length === 0) test.check('shell.js defines none of the four');
 else test.fail(OWED + 'shell.js still defines ' + stillDefined.join(', '));
 const flat = shell.replace(/\s+/g, ' ');
-const handed = FOUR.filter(function (n) { return new RegExp('elements: \\{[^}]*' + n + ': spiritElements\\.' + n).test(flat); });
-if (handed.length === 4) test.check('and hands all four to apps under api.ui.elements from spiritElements');
-else test.fail(OWED + 'handed from spiritElements under ui.elements: ' + handed.join(', ') + ' — missing ' + FOUR.filter(function (n) { return handed.indexOf(n) === -1; }).join(', '));
+const handed = FOUR.filter(function (n) { return new RegExp('elements: \\{[^}]*' + n + ': shellElements\\.' + n).test(flat); });
+if (handed.length === 4) test.check('and hands all four to apps under api.ui.elements from spirit.elements');
+else test.fail(OWED + 'handed from spirit.elements under ui.elements: ' + handed.join(', ') + ' — missing ' + FOUR.filter(function (n) { return handed.indexOf(n) === -1; }).join(', '));
 
 // The contact selector paints from a search that answers later (goal/G4.14), so the report waits for it.
 let pending = Promise.resolve();
@@ -99,7 +99,7 @@ test.subHeading('4. loaded together, the factories still work as controls');
 if (missing.length) {
   test.fail(OWED + 'not every element file exists — the behaviour is owed with them');
 } else {
-  const window = { spiritIconIndex: { choices: function () { return []; }, keyFor: function () { return ''; } }, spiritApiTreeIndex: { servers: function () { return []; }, verbs: function () { return []; } } };
+  const window = test.withSpirit({ 'spirit.iconIndex': { choices: function () { return []; }, keyFor: function () { return ''; } }, 'spirit.apiTreeIndex': { servers: function () { return []; }, verbs: function () { return []; } } });
   // goal/G29.6: the contact selector is a wrapper around the shared list, which finds its parts by id; the page hands
   // the same fake element for an id every time.
   const byId = {};
@@ -113,7 +113,7 @@ if (missing.length) {
   ctx.self = ctx.window;
   let tripped = null;
   // goal/G29.6: as index.html loads them, the probability modules and the shared list (shell/shared/js/listSearch.js)
-  // come before contactSelector.js, which builds on window.spiritElements.shellCreateListSearch.
+  // come before contactSelector.js, which builds on window.spirit.elements.shellCreateListSearch.
   const before = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); })
     .concat([path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js')]);
   try {
@@ -121,9 +121,9 @@ if (missing.length) {
     before.forEach(function (f) { vm.runInContext(fs.readFileSync(f, 'utf8'), ctx); });
     ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'].forEach(function (n) { vm.runInContext(src[n], ctx); });
   } catch (e) { tripped = e; }
-  const E = window.spiritElements;
+  const E = window.spirit.elements;
   if (!tripped && E && FOUR.every(function (n) { return typeof E[n] === 'function'; })) test.check('the four files load on the shell\'s globals alone and expose four functions');
-  else test.fail(OWED + (tripped ? 'an element file tripped on load: ' + tripped.message : 'spiritElements exposes ' + JSON.stringify(E && Object.keys(E))));
+  else test.fail(OWED + (tripped ? 'an element file tripped on load: ' + tripped.message : 'spirit.elements exposes ' + JSON.stringify(E && Object.keys(E))));
   if (E && typeof E.createContactSelector === 'function') {
     // goal/G4.14: the contact selector is a drawn list now, the dropdown the same pane under a button (its own suite,
     // contactSelectorPane.js); what this suite keeps is that it still works as a control on the shell's globals.

@@ -62,8 +62,9 @@
     // added to the book by its key shows once, as the relay.
     function search(args) {
       var q = String((args && args.q) || '').trim();
-      var book = Promise.resolve(api.verb('contact.search', { q: q })).then(body);
-      var relays = Promise.resolve(api.verb('relay.search', { q: q || '*' })).then(body, function () { return { items: [] }; });
+      // Through the spirit object (goal/G32.2): each answers the reply's body.
+      var book = spirit.ready.then(function (s) { return s.contact.search({ q: q }); });
+      var relays = spirit.ready.then(function (s) { return s.relay.search({ q: q || '*' }); }).then(null, function () { return { items: [] }; });
       return Promise.all([book, relays]).then(function (got) {
         if (got[0].selfTail && typeof o.selfTail === 'function') o.selfTail(got[0].selfTail);
         var rows = (got[1].items || []).map(function (i) {
@@ -88,7 +89,7 @@
       }, function (e) { say('could not reach them — ' + ((e && e.message) || e)); });
     }
 
-    list = window.spiritElements.probabilitySearch.create(host, {
+    list = window.spirit.elements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       data: 'contacts',
       server: 'contact',
@@ -104,7 +105,7 @@
         { field: 'label', from: 'name', label: 'Name', sort: 'text' },
         { field: 'add', label: '' },
       ],
-      element: function (row, key) { var el = window.spiritElements.contactElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
+      element: function (row, key) { var el = window.spirit.elements.contactElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
       matched: function (row) { return { name: String((row && row.name) || ''), publicLabel: String((row && row.publicLabel) || '') }; },
       filters: FILTERS,
       details: function (row, key, el) {
@@ -126,10 +127,9 @@
       var el = tr ? els[tr.getAttribute('data-key')] : null;
       if (!el) return;
       say('adding…');
-      Promise.resolve(el.act(b.getAttribute('data-action'), {})).then(function (r) {
-        var row = body(r);
-        // A new contact is 201: any 2xx is the node saying yes.
-        if (r && r.status && (r.status < 200 || r.status > 299)) { say('could not add: ' + (row.error || r.status)); return; }
+      // The action answers the reply's body, or refuses with the node's words (any 2xx is the node saying yes).
+      Promise.resolve(el.act(b.getAttribute('data-action'), {})).then(function (row) {
+        row = row || {};
         say(row.publicLabel ? 'added ' + row.publicLabel : 'added');
         if (typeof o.onAdded === 'function') o.onAdded(row);
         list.refresh();
@@ -144,6 +144,6 @@
     };
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.contactList = { create: create, filters: FILTERS };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.contactList = { create: create, filters: FILTERS };
 }());

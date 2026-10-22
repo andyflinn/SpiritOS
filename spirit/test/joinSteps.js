@@ -20,8 +20,8 @@
 //     seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the book holds anyone
 //     but this node and its relays), face (the face name kept on that relay's row), faceUrl. refresh publishes the job
 //     when the facts changed, and answers whether it did. server.js refreshes it after a relay, contact or peer verb.
-//   - spiritElements.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
-//   - spiritElements.contactList (shell/js/contacts/listElement.js; peerFind until goal/G30.19) and spiritElements.faceForm
+//   - spirit.elements.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
+//   - spirit.elements.contactList (shell/js/contacts/listElement.js; peerFind until goal/G30.19) and spirit.elements.faceForm
 //     (shell/js/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
 // rule/11: through testSupport only; its own scratch folders.
@@ -37,7 +37,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); } catch (e) { return ''; } };
 const raw = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } };
 function element(rel, name) {
-  try { const win = {}; new Function('window', raw(rel))(win); return (win.spiritElements || {})[name] || null; } catch (e) { return null; }
+  try { const win = {}; new Function('window', raw(rel))(win); return (win.spirit.elements || {})[name] || null; } catch (e) { return null; }
 }
 function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
 const homes = [];
@@ -145,13 +145,13 @@ const joinApp = code('shell/join/join.js');
 // network), Add by peer.acquire on its contactElement rows.
 const contactSearch = element('shell/js/contacts/listElement.js', 'contactList');
 const faceForm = element('shell/js/faceForm.js', 'faceForm');
-if (contactSearch && typeof contactSearch.create === 'function' && /'contact\.search'/.test(code('shell/js/contacts/listElement.js')) && /'peer\.acquire'/.test(code('shell/js/contacts/rowElement.js'))
-    && /spiritElements\.contactList/.test(contacts) && /spiritElements\.contactList/.test(joinApp)
+if (contactSearch && typeof contactSearch.create === 'function' && /\.contact\.search\(/.test(code('shell/js/contacts/listElement.js')) && /\.peer\.acquire\(/.test(code('shell/js/contacts/rowElement.js'))
+    && /spirit\.elements\.contactList/.test(contacts) && /spirit\.elements\.contactList/.test(joinApp)
     && !/function contactsSeenSource|function contactsSeenCells|function contactsAskCard|function contactsSeenAdd/.test(contacts))
   test.check('Find someone is the one list, contactSearch (contact.search, Add by peer.acquire); Contacts and the Join app draw it, Contacts keeps no copy');
 else test.fail(OWED + 'contactSearch is missing, or Contacts keeps its own find panel, or the Join app does not draw it');
-if (faceForm && typeof faceForm.mount === 'function' && /'relay\.face'/.test(code('shell/js/faceForm.js'))
-    && /spiritElements\.faceForm/.test(info) && /spiritElements\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
+if (faceForm && typeof faceForm.mount === 'function' && /\.relay\.face\(/.test(code('shell/js/faceForm.js'))
+    && /spirit\.elements\.faceForm/.test(info) && /spirit\.elements\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
   test.check('the face form is the faceForm element (relay.face); Info and the Join app draw it, Info keeps no copy');
 else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or the Join app does not draw it');
 if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/shell/js/' + nm + '\\.js"').test(index); }))
@@ -159,8 +159,8 @@ if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { retu
 else test.fail(OWED + 'index.html does not load all three elements');
 // Box v42: decided once, in the shell. The shell hands the Join app what it worked out (onSteps); the app neither
 // subscribes nor decides.
-if (/onSteps:/.test(joinApp) && !/spiritElements\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
-    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spiritElements\.joinForm/.test(joinApp))
+if (/onSteps:/.test(joinApp) && !/spirit\.elements\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
+    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spirit\.elements\.joinForm/.test(joinApp))
   test.check('the Join app draws what the shell hands it (onSteps): it neither subscribes nor decides, draws the join form and keeps the opened link as its override');
 else test.fail(OWED + 'the Join app still decides or subscribes, or lacks onSteps, the join form or faceOpened');
 if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(shell) && /function handSteps\(/.test(shell))
@@ -187,7 +187,7 @@ try {
   const win = {};
   new Function('window', 'document', raw('shell/js/faceForm.js'))(win, { getElementById: fakeEl });
   const box = fakeEl('box');
-  win.spiritElements.faceForm.mount(box, { seats: [{ url: 'https://relay.example', label: 'relay', emailVerified: true, email: 'a@b.c' }], ask: function () { return Promise.resolve({}); } });
+  win.spirit.elements.faceForm.mount(box, { seats: [{ url: 'https://relay.example', label: 'relay', emailVerified: true, email: 'a@b.c' }], ask: function () { return Promise.resolve({}); } });
   faceHtml = box.innerHTML;
 } catch (e) { faceHtml = 'threw ' + e.message; }
 if (/<\/select><\/label><label class="field-label grow">Face name<input[^>]*><\/label><button type="button" id="info-face-save">/.test(faceHtml))

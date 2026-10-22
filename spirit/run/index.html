@@ -12,7 +12,7 @@
     <script src="/js/kernel.js"></script>
     <!-- The spirit object (goal/G32.1): the node api, async and checked; its families start at once at home. -->
     <script src="/face/spirit.js"></script>
-    <script>if (window.spirit && typeof window.spirit.start === 'function' && !window.spiritTransport) window.spirit.start();</script>
+    <script>if (window.spirit && typeof window.spirit.start === 'function' && !window.spirit.transport) window.spirit.start();</script>
     <!-- The isomorphic half of js/ownerBadge.js: the relay rules the
          browser has to obey too (Natter's Remove asks it whether this
          node may be left with fewer relays). Node-only code inside it
@@ -33,7 +33,7 @@
          code in the shell?", and "ideally we make it super-easy to implement
          it, right inside of contact-list elements etc,, and they all can
          count on the probability stuff being available, shell-side....".
-         Found on window.spiritProbability: probabilityStringMatch,
+         Found on window.spirit.probability: probabilityStringMatch,
          probabilityStringObjectMatch (which needs the first, so it loads
          after it) and createProbabilityBucket. -->
     <script src="/js/probabilityStringMatch.js"></script>
@@ -86,7 +86,7 @@
          What is still true: no app owns a second file, because an app is
          one script. That is not what would need building. -->
     <script src="/js/client/chatLog.js"></script>
-    <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spiritLimits,
+    <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spirit.limits,
          so the size a page refuses is the size the relay refuses. -->
     <script src="/js/limits.js"></script>
     <!-- The envelope every app's traffic travels in, inside the relay's
@@ -134,7 +134,7 @@
     </div>
 
     <!-- The element factories apps build their screens from, one file per
-         element (goal/G2.14). Each adds itself to window.spiritElements; the
+         element (goal/G2.14). Each adds itself to window.spirit.elements; the
          shell hands them to apps as api.ui.elements. Before the shell, and
          the app-server selector before the api-branch one built from it. -->
     <!-- CodeMirror 5 and the modes the text view picks by extension, before the text view (goal/G29.12). -->
@@ -182,6 +182,8 @@
     <!-- Icons (goal/G30.21): a row and a list, no translator: the set is one file. -->
     <script src="/shell/js/icons/rowElement.js"></script>
     <script src="/shell/js/icons/listElement.js"></script>
+    <!-- An input stops at its field rule's limit as it is typed (goal/G32.2). -->
+    <script src="/shell/js/fieldInput.js"></script>
     <script src="/js/client/shell.js"></script>
     <script>
       (function () {
@@ -225,7 +227,7 @@
           },
           loadFile: function (path, params) {
             setViewerTitle(path);
-            window.spiritElements.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
+            window.spirit.elements.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
           },
           render: function () {},
         });
@@ -242,7 +244,7 @@
           loadFile: function (path) {
             setViewerTitle(path);
             if (mediaShown) mediaShown.destroy();
-            mediaShown = window.spiritElements.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
+            mediaShown = window.spirit.elements.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
           },
           render: function () {},
         });

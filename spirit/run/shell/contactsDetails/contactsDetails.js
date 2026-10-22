@@ -412,7 +412,7 @@ spirit.shell.activateApp({
       // checks again (js/fieldRules.js; Andy, goal/G4.16: "the shell may
       // as well rule that inputs themselves implement constraints in
       // fieldRules.js"). Empty clears your name for them, and is asked.
-      var rule = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+      var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
       var bad = (typed && rule) ? rule.problem(typed) : '';
       if (bad) { cdStatus(bad); return; }
       cdPeerAction('label', { myLabel: typed });

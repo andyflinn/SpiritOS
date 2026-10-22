@@ -26,7 +26,7 @@
 // In node the module beside it; in a page the shell's own, loaded first by index.html (goal/G27.14).
 var probabilityStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
   ? require('./probabilityStringMatch').probabilityStringMatch
-  : window.spiritProbability.probabilityStringMatch;
+  : window.spirit.probability.probabilityStringMatch;
 
 function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
@@ -65,10 +65,10 @@ function probabilityStringObjectMatch(string, object) {
   return table.reduce(function (sum, row) { return sum + probabilityStringMatch(string, row.objectString) * row.weight; }, 0);
 }
 
-// IN NODE AND IN A PAGE ALIKE (goal/G27.14): a page finds it on window.spiritProbability.
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14): a page finds it on window.spirit.probability.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringObjectMatch: probabilityStringObjectMatch };
 if (typeof window !== 'undefined' && window) {
-  window.spiritProbability = window.spiritProbability || {};
-  window.spiritProbability.probabilityStringObjectMatch = probabilityStringObjectMatch;
+  (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
+  window.spirit.probability.probabilityStringObjectMatch = probabilityStringObjectMatch;
 }
 }());

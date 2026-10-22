@@ -42,14 +42,12 @@
     var email = String(o.email || '').trim();
     if (!/^[^\s@]+@[^\s@]+$/.test(email)) return Promise.resolve({ ok: false, text: 'type your email address' });
     if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
-    return Promise.resolve(o.ask('relay.join', { url: url, email: email, code: '' })).then(function (r) {
-      // api.verb answers {status, text}, spirit.core.ask {status, text, body}: the body, or the text parsed.
-      var said = r && r.body;
-      if (!said) { try { said = JSON.parse(r && r.text); } catch (e) { said = null; } }
+    // Through the spirit object (goal/G32.2): spirit.relay.join answers the reply's body, or refuses with the node's words.
+    return spirit.ready.then(function (s) { return s.relay.join({ url: url, email: email, code: '' }); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };
-      return { ok: false, text: String(said.error || ('the relay did not answer (' + ((r && r.status) || 'no status') + ')')) };
+      return { ok: false, text: String(said.error || 'the relay did not answer') };
     }, function (e) { return { ok: false, text: String((e && e.message) || e) }; });
   }
 
@@ -77,6 +75,6 @@
     });
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.joinForm = { words: words, html: html, bind: bind, send: send };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.joinForm = { words: words, html: html, bind: bind, send: send };
 }());

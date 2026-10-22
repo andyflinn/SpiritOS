@@ -5,7 +5,7 @@
 // today's tree; claude-windows writes it and builds it (one agent). The box (v2), in short:
 //   - The shell elements, Files, Contacts, Join, Media Viewer, Apps and Icons reach the node only through the spirit
 //     object (goal/G32.1): no hand-made verb call is left in them.
-//   - The client interface lives in the spirit name space, the data buckets included: window.spiritData,
+//   - The client interface lives in the spirit name space, the data buckets included: window.spirit.data,
 //     spiritElements, spiritTransport and the other window.spiritX globals become members of spirit (spirit.data,
 //     spirit.elements ...), and no window.spiritX global is left (Andy: "we don't clutter public name spaces", "all
 //     SpiritOS objects are internally references by one global only spirit.this.or.that").
@@ -37,7 +37,7 @@ function walk(dir, out) {
 test.startTest('goal/G32.2: the face code on the spirit object, the client interface in the spirit name space');
 
 test.subHeading('1. no window.spiritX global is left');
-const OLD = /\bspirit(Data|Elements|Transport|FieldRules|Probability|MatchRanges|ApiTreeIndex|Limits|Packet|IconIndex|DeskPlugins|Lever|RelayMonitor|PeerFile|OwnerBadge|ChatLog|Families)\b/;
+const OLD = /\bspirit(Data|Elements|Transport|FieldRules|Probability|MatchRanges|ApiTreeIndex|Limits|Packet|IconIndex|DeskPlugins|Lever|RelayMonitor|PeerFile|OwnerBadge|ChatLog|Families)\b(?!\.js)/;
 const left = walk('', []).filter(function (f) { return OLD.test(code(raw(f))); });
 if (!left.length) test.check('no file under spirit/run names a spiritX global; they are members of spirit');
 else test.fail(OWED + left.length + ' files still name one: ' + left.slice(0, 10).join(', '));

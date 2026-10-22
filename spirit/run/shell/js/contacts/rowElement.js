@@ -14,7 +14,7 @@
 // checks js/fieldRules.js (the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var contacts = null;
   var subscribed = false;
 
@@ -25,16 +25,16 @@
   }
   // The label's rule, from the one definition (goal/G4.16).
   function nameRules() {
-    var R = window.spiritFieldRules || {};
+    var R = window.spirit.fieldRules || {};
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 
-  function known(key) { var D = window.spiritData; return (D && D.get('contacts/' + key)) || null; }
+  function known(key) { var D = window.spirit.data; return (D && D.get('contacts/' + key)) || null; }
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
   function dispatch(idx) {
-    if (subscribed || !window.spiritData) return;
+    if (subscribed || !window.spirit.data) return;
     subscribed = true;
-    window.spiritData.watch('contacts', function (path, v) {
+    window.spirit.data.watch('contacts', function (path, v) {
       var key = String(path).slice('contacts/'.length);
       if (!key || !v) return;
       var changes = {};
@@ -61,13 +61,16 @@
       { name: 'open', label: 'Open', run: function (el, ctx) {
         return typeof ctx.callDialog === 'function' ? ctx.callDialog('shell/contactsDetails', { key: el.key }) : null;
       } },
-      { name: 'block', label: 'Block', run: function (el) { return spirit.core.ask('contact.block', { publicKey: el.key }); } },
-      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.core.ask('contact.unblock', { publicKey: el.key }); } },
-      { name: 'remove', label: 'Remove', run: function (el) { return spirit.core.ask('contact.forget', { publicKey: el.key }); } },
+      // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
+      { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
+      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.ready.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
+      { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
     ] : [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
-        return spirit.core.ask('peer.acquire', { publicKey: el.key, url: String(el.row.relay || ''), via: 'handle', publicLabel: String(el.row.publicLabel || '') });
+        var ask = { publicKey: el.key, via: 'handle', publicLabel: String(el.row.publicLabel || '') };
+        if (el.row.relay) ask.url = String(el.row.relay);
+        return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
     return E.rowElement.create({
@@ -96,7 +99,8 @@
             var wanted = typeof R.normalize === 'function' ? R.normalize(text) : String(text || '').trim();
             var bad = typeof R.problem === 'function' ? R.problem(wanted) : '';
             if (bad) return Promise.resolve({ ok: false, error: bad });
-            return spirit.core.ask('contact.label', { publicKey: el.key, myLabel: wanted });
+            return spirit.ready.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
+              .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
         { name: 'add', from: ['book', 'kind'], paint: function (v) {
           return v.book === false && v.kind !== 'relay' ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
@@ -105,7 +109,7 @@
       actions: actions,
       expand: function (el) {
         if (relay || !inBook) return Promise.resolve(null);
-        return spirit.core.ask('contact.get', { key: el.key }).then(function (a) { return a && a.body; });
+        return spirit.ready.then(function (s) { return s.contact.get({ key: el.key }); });
       },
     });
   }

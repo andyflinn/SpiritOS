@@ -535,7 +535,7 @@ spirit.shell.activateApp({
     // chat.search for the open chat's lines; nothing is asked until words are typed. A row is keyed by its chat as
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
-    chSearch = window.spiritElements.shellCreateListSearch(chEl('ch-search'), {
+    chSearch = window.spirit.elements.shellCreateListSearch(chEl('ch-search'), {
       api: {
         verb: function (name, body) {
           var a = body || {};

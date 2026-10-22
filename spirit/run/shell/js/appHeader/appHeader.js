@@ -35,6 +35,6 @@
     return div;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createAppHeader = createAppHeader;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createAppHeader = createAppHeader;
 })();

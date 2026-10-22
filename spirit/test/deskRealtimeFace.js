@@ -7,13 +7,13 @@
 //      face-wide deskDraw stays for layout only."
 //   C. "No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show."
 //   D. "a new folder spirit/run/shell/shared/js ... one file per element, each named with the desk prefix ... each
-//      adding itself to window.spiritElements as the shell elements do. The element is made with the keys it shows and
+//      adding itself to window.spirit.elements as the shell elements do. The element is made with the keys it shows and
 //      a paint function and subscribes to the stream itself (desk rule 8); Desk rows, the remote switch, warnings and
 //      pairs are all made from it."
 //   S4: "every remote element listens for itself and redraws only itself."
 //
 // THE SHAPES THIS RED NAMES (left to the builder by the box; named here so it can be run):
-//   - spirit/run/shell/shared/js/deskElement.js sets window.spiritElements.createDeskElement({subscribe, wants, paint}):
+//   - spirit/run/shell/shared/js/deskElement.js sets window.spirit.elements.createDeskElement({subscribe, wants, paint}):
 //     subscribe(handler) is the stream (an app's onPublished) and answers its unsubscribe; the element subscribes
 //     itself when made; a published object it wants is painted, any other is not; destroy() unsubscribes.
 //   - a Desk row is its own element: <tr id="desk-row-<id>">, repainted alone when a publish changes that row.
@@ -67,7 +67,7 @@ function target(attrs) { return { id: attrs.id || '', getAttribute: function (n)
 function loadElement(win) {
   if (!fs.existsSync(ELEMENT)) return false;
   new Function('window', fs.readFileSync(ELEMENT, 'utf8'))(win);
-  return !!(win.spiritElements && typeof win.spiritElements.createDeskElement === 'function');
+  return !!(win.spirit.elements && typeof win.spirit.elements.createDeskElement === 'function');
 }
 
 function row(id, title, goal) {
@@ -79,12 +79,12 @@ test.startTest('goal/G27.9 S2 to S4: the faces repaint element by element');
 async function elementHalf() {
   test.subHeading('1. the shared element');
   const win = {};
-  if (!loadElement(win)) { test.fail(OWED + 'spirit/run/shell/shared/js/deskElement.js does not set window.spiritElements.createDeskElement'); return; }
+  if (!loadElement(win)) { test.fail(OWED + 'spirit/run/shell/shared/js/deskElement.js does not set window.spirit.elements.createDeskElement'); return; }
   let handler = null;
   let subscribed = 0;
   let unsubscribed = 0;
   const painted = [];
-  const el = win.spiritElements.createDeskElement({
+  const el = win.spirit.elements.createDeskElement({
     subscribe: function (fn) { handler = fn; subscribed++; return function () { unsubscribed++; handler = null; }; },
     wants: function (obj) { return !!(obj && obj.mine); },
     paint: function (obj) { painted.push(obj); },
@@ -187,7 +187,7 @@ async function remoteHalf() {
   const handlers = [];
   const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
-  ctx.window.spiritFieldRules = fieldRules;
+  (ctx.window.spirit = ctx.window.spirit || {}).fieldRules = fieldRules;
   const loaded = loadElement(ctx);
   vm.runInNewContext(fs.readFileSync(REMOTE, 'utf8'), ctx, { filename: REMOTE });
   behavior.mount(doc.getElementById('container'), {

@@ -19,7 +19,7 @@
 //      (row.body), never of a packet's text.
 //   4. N3: peerPost's refusal reader takes a reply that carries an app as the app's answer, not as a node refusal: its
 //      refusal check reads the envelope through envelopeOf and requires no app.
-//   5. THE CONTROL the old guard lost: the shell's own decode is found where it now lives (window.spiritPacket), so a
+//   5. THE CONTROL the old guard lost: the shell's own decode is found where it now lives (window.spirit.packet), so a
 //      green here is about code that exists; nodeKnowsNoApps.js is retired.
 // rule/11: through testSupport only; no node, no ports.
 
@@ -108,8 +108,8 @@ test.subHeading('4. peerPost\'s refusal reader leaves an app\'s answer alone');
 test.subHeading('5. the control: the shell\'s own decode is where the guard says it is');
 {
   const shell = fs.readFileSync(path.join(JS, 'client', 'shell.js'), 'utf8');
-  if (/window\.spiritPacket/.test(shell) && /envelope\.decode\(/.test(shell)) test.check('the shell decodes for itself, through window.spiritPacket');
-  else test.fail('the control failed: the shell no longer decodes through window.spiritPacket, so this guard needs a new control');
+  if (/window\.spirit.packet/.test(shell) && /envelope\.decode\(/.test(shell)) test.check('the shell decodes for itself, through window.spirit.packet');
+  else test.fail('the control failed: the shell no longer decodes through window.spirit.packet, so this guard needs a new control');
   if (!fs.existsSync(path.join(__dirname, 'nodeKnowsNoApps.js'))) test.check('nodeKnowsNoApps.js is retired; this file is the guard');
   else test.fail(OWED + 'nodeKnowsNoApps.js still stands beside this guard');
 }

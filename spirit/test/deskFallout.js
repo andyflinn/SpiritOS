@@ -230,7 +230,7 @@ async function paneHalf() {
   if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED29 + 'no shell/desk/plugins/fallout/fallout.js'); return; }
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} };
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} });
   // The shell's modules as index.html loads them, and the shared container as the pane loads it on demand; a fake
   // page cannot load a script, so the world puts it there and watches what the pane makes of it.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
@@ -239,13 +239,13 @@ async function paneHalf() {
   const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
   if (fs.existsSync(LIST)) new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   const made = [];
-  if (win.spiritElements && typeof win.spiritElements.shellCreateListSearch === 'function') {
-    const real = win.spiritElements.shellCreateListSearch;
-    win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
+  if (win.spirit.elements && typeof win.spirit.elements.shellCreateListSearch === 'function') {
+    const real = win.spirit.elements.shellCreateListSearch;
+    win.spirit.elements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
   }
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
-  const ui = win.spiritDeskPlugins.fallout;
-  if (!ui || typeof ui.open !== 'function') { test.fail(OWED29 + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
+  const ui = win.spirit.deskPlugins.fallout;
+  if (!ui || typeof ui.open !== 'function') { test.fail(OWED29 + 'the UI registers no window.spirit.deskPlugins.fallout.open'); return; }
   const GREEN = { suite: 'zzFalloutB.js', title: 'a door stays shut #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T07:00:00.000Z', failure: '' };
   const desks = [];
   const asked = [];

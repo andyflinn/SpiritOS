@@ -20,7 +20,7 @@
 //
 // Loaded once into the Desk page, the first time its tab opens (shell/desk/desk.js, deskOpenPlugin), into its own pane
 // that stays for the page's life; it registers itself on
-// window.spiritDeskPlugins.stackFrameChecks = { open(container, ctx) }. ctx.goal is its goal's id, ctx.ask the page's
+// window.spirit.deskPlugins.stackFrameChecks = { open(container, ctx) }. ctx.goal is its goal's id, ctx.ask the page's
 // call to the desk server, ctx.onPublished the desk server's stream, ctx.chat(container) the face's chat of its goal,
 // mounted below its items, ctx.callDialog(app, params) the shell's dialog. The server half is
 // process/js/desk/plugins/js/stackFrameChecks/: its verbs do the work and refuse what is wrong; this page only spares
@@ -31,7 +31,7 @@
 
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
-  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
   var ctx = null;
   var subscribed = false;
   var doors = [];
@@ -41,7 +41,7 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  function fields() { return (win.spiritElements || {}).deskDoorFields || null; }
+  function fields() { return (win.spirit.elements || {}).deskDoorFields || null; }
   // The shared door fields, loaded once per page when they are not there yet.
   function needFields(done) {
     if (fields()) { done(); return; }

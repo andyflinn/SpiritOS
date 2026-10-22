@@ -86,7 +86,7 @@ function bootShell(manifest) {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
-    shellSpirit, doc, function () {}, { spiritPacket: packet, spiritLimits: require('../run/js/limits.js') });
+    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js') }));
   // The tree as the node sends it since goal/G4.25: a snapshot without a file list, then the create commands, then
   // treeComplete.
   subscribers.forEach(function (h) {

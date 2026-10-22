@@ -271,5 +271,5 @@ var RULE = {
 if (typeof process !== 'undefined' && !!process.versions && !!process.versions.node) {
   module.exports = RULE;
 } else if (typeof window !== 'undefined') {
-  window.spiritFieldRules = RULE;
+  (window.spirit = window.spirit || {}).fieldRules = RULE;
 }

@@ -8,8 +8,8 @@
 //     viewers are deleted. CodeMirror loads when a textViewer first needs it, on the face as at home.
 //   - The Files app's list is a probabilitySearch over fs.search with fileElement rows.
 //   - On the face the mediaViewer plays as the sealed pieces arrive; the pieces stay while the viewer is open.
-// NAMED HERE: window.spiritElements.fileViewer.read(path, onPiece) -> Promise<{ status, type, bytes }>, through
-// window.spiritTransport.file(path, onPiece) on a face and the node's own GET at home; fileViewer/textViewer/mediaViewer
+// NAMED HERE: window.spirit.elements.fileViewer.read(path, onPiece) -> Promise<{ status, type, bytes }>, through
+// window.spirit.transport.file(path, onPiece) on a face and the node's own GET at home; fileViewer/textViewer/mediaViewer
 // .create(host, { path, ... }); the face's transport gains file(); Files is one of the face's first apps.
 // rule/11: through testSupport only.
 
@@ -40,7 +40,7 @@ const done = (async function () {
   else test.fail(OWED + 'the viewers still read synchronously, or ask neither fs.stat nor fs.annotations');
 
   test.subHeading('2. the old inline viewers are gone');
-  if (!/function codeViewerLoadFile|function mediaViewerLoadFile/.test(index) && /spiritElements\.textViewer/.test(index) && /spiritElements\.mediaViewer/.test(index))
+  if (!/function codeViewerLoadFile|function mediaViewerLoadFile/.test(index) && /spirit\.elements\.textViewer/.test(index) && /spirit\.elements\.mediaViewer/.test(index))
     test.check('index.html keeps the two launchers only as the elements, their inline bodies deleted');
   else test.fail(OWED + 'index.html still draws the viewers inline, or its launchers do not use the elements');
 
@@ -53,22 +53,22 @@ const done = (async function () {
   const face = code('face/shell.js');
   // The face's apps are the home node's data: the manifests in data.files whose runs names face (goal/G30.20), no list
   // in the relay's file.
-  if (!/FIRST_APPS/.test(face) && /watch\('files'/.test(face) && /spiritTransport = \{[^}]*file:/.test(face))
+  if (!/FIRST_APPS/.test(face) && /watch\('files'/.test(face) && /spirit\.transport = \{[^}]*file:/.test(face))
     test.check('the face lists its apps from the home node, and its transport reads a file piece by piece');
   else test.fail(OWED + 'the face keeps its own app list, or has no file() on its transport');
 
   test.subHeading('4. read() streams through the transport on a face');
   const pieces = [new Uint8Array([1, 2]), new Uint8Array([3])];
-  const window = { spiritElements: {}, spiritTransport: { file: function (p, onPiece) {
+  const window = test.withSpirit({ 'spirit.elements': {}, 'spirit.transport': { file: function (p, onPiece) {
     pieces.forEach(function (x) { onPiece(x); });
     return Promise.resolve({ status: 200, type: 'video/webm', bytes: new Uint8Array([1, 2, 3]) });
-  } } };
+  } } });
   const ctx = vm.createContext({ window: window, spirit: { core: { ask: function () { return Promise.resolve({ status: 200, body: {} }); } } }, console: console, Promise: Promise, Uint8Array: Uint8Array, document: { createElement: function () { return {}; } } });
   let got = null;
   try {
     vm.runInContext(raw('shell/js/fileViewer.js'), ctx, { filename: 'fileViewer.js' });
     const seen = [];
-    const r = await window.spiritElements.fileViewer.read('media/a.webm', function (p) { seen.push(p.length); });
+    const r = await window.spirit.elements.fileViewer.read('media/a.webm', function (p) { seen.push(p.length); });
     got = { seen: seen.join(','), status: r.status, size: r.bytes.length };
   } catch (e) { got = { threw: e.message }; }
   if (got && got.seen === '2,1' && got.status === 200 && got.size === 3) test.check('each piece is handed on as it arrives, then the whole');
@@ -81,7 +81,7 @@ const done = (async function () {
   try {
     ['../run/shell/js/spiritData.js', '../run/shell/js/files/data.js', '../run/shell/js/contacts/data.js'].forEach(function (m) { delete require.cache[require.resolve(m)]; });
     D = require('../run/shell/js/spiritData.js');
-    globalThis.spiritData = D;
+    (globalThis.spirit = globalThis.spirit || {}).data = D;
     require('../run/shell/js/files/data.js');
     require('../run/shell/js/contacts/data.js');
   } catch (e) { D = { threw: e.message }; }

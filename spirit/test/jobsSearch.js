@@ -18,7 +18,7 @@
 //   null, 2) in a read-only CodeMirror textView); the log and the box scroll inside themselves.
 //
 // NAMED HERE where the box names none (argued in Desk first if the build disagrees):
-//   - shell/shared/js/progressBar.js sets window.spiritElements.progressBar(done, total, text) -> html, handed to apps
+//   - shell/shared/js/progressBar.js sets window.spirit.elements.progressBar(done, total, text) -> html, handed to apps
 //     as api.ui.elements.progressBar; index.html loads it.
 //   - a shared-list filter with multi: true is a row of toggles, every one on at the start; its choices may be a
 //     function of the rows held; test(row, off) gets the object of the values turned off.
@@ -79,8 +79,8 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
 (async function () {
   // ── 1. the shared progressBar ─────────────────────────────────────────
   test.subHeading('1. progressBar: one shared element, drawn from (done, total, text)');
-  const bar = win.spiritElements && win.spiritElements.progressBar;
-  if (hasBar && typeof bar === 'function') test.check('shell/shared/js/progressBar.js sets window.spiritElements.progressBar');
+  const bar = win.spirit.elements && win.spirit.elements.progressBar;
+  if (hasBar && typeof bar === 'function') test.check('shell/shared/js/progressBar.js sets window.spirit.elements.progressBar');
   else test.fail(OWED + 'no progressBar in shell/shared/js');
   const known = typeof bar === 'function' ? String(bar(3, 10, 'image 3')) : '';
   if (/<progress[^>]*\bvalue="3"[^>]*>|<progress[^>]*\bmax="10"[^>]*\bvalue="3"/.test(known) && /max="10"/.test(known) && /image 3/.test(known)) test.check('(3, 10, "image 3") draws a bar at 3 of 10 with its text');
@@ -88,14 +88,14 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const unknown = typeof bar === 'function' ? String(bar(1, 0, 'counting')) : '';
   if (/<progress/.test(unknown) && !/\bvalue=/.test(unknown) && /counting/.test(unknown)) test.check('total 0 draws an indeterminate bar: a progress tag with no value');
   else test.fail(OWED + 'progressBar(1, 0) drew ' + short(unknown));
-  if (/progressBar:\s*spiritElements\.progressBar/.test(read('js/client/shell.js'))) test.check('apps get it as api.ui.elements.progressBar');
+  if (/progressBar:\s*shellElements\.progressBar/.test(read('js/client/shell.js'))) test.check('apps get it as api.ui.elements.progressBar');
   else test.fail(OWED + 'shell.js does not hand progressBar to apps');
   if (/<script src="\/shell\/shared\/js\/progressBar\.js"><\/script>/.test(read('index.html'))) test.check('index.html loads it');
   else test.fail(OWED + 'index.html does not load progressBar.js');
 
   // ── 2. the shared list's toggle filter ────────────────────────────────
   test.subHeading('2. the shared list: a multi filter is a row of toggles, every one on at the start');
-  const make = win.spiritElements && win.spiritElements.shellCreateListSearch;
+  const make = win.spirit.elements && win.spirit.elements.shellCreateListSearch;
   const box = p.node('box');
   const ROWS = [{ key: 'a', state: 'red' }, { key: 'b', state: 'green' }, { key: 'c', state: 'green' }];
   let toggles = null;
@@ -141,7 +141,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const api = { escapeHtml: kernel.core.util.escapeHtml, onJobs: function (fn) { heard.push(fn); return function () {}; },
     callDialog: function (id, params) { dialogs.push({ id: id, params: params }); return new Promise(function () {}); },
     setScreenTitle: function () {}, closeDialog: function () {},
-    ui: { elements: Object.assign({}, win.spiritElements, { createTextView: function (c, o) {
+    ui: { elements: Object.assign({}, win.spirit.elements, { createTextView: function (c, o) {
       const v = { opts: o, texts: [String((o && o.text) || '')], cm: { setValue: function (t) { v.texts.push(String(t)); }, refresh: function () {} }, value: function () { return v.texts[v.texts.length - 1]; }, mark: function () { return 0; } };
       views.push(v);
       return v;

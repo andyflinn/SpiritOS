@@ -6,7 +6,7 @@ var mediaViewerShown = null;
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var E = window.spiritElements;
+    var E = window.spirit.elements;
     container.innerHTML = '<div class="stat-tile wide"><div data-media="pick"></div><div data-media="viewer" style="margin-top:1em"></div></div>';
     var viewer = container.querySelector('[data-media="viewer"]');
     E.fileList.create(container.querySelector('[data-media="pick"]'), {

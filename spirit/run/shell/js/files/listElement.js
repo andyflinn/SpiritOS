@@ -15,7 +15,7 @@
 //     opts.accept, opts.placeholder, opts.all, opts.empty
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;
@@ -31,12 +31,13 @@
   // BY CONTENTS ONLY: fs.search labels a name match with its path and a contents match with json {path, score, line}.
   // found(next) is handed what the node scored, by path, for the list to rank by (goal/G29.11, taken from the file
   // selector): in contents a file ranks by the node's score alone.
-  function search(api, args, found) {
+  // Through the spirit object (goal/G32.2): spirit.fs.search answers the reply's body.
+  function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
-    return Promise.resolve(api.verb('fs.search', { q: a.q || '', contents: a.contents || '' })).then(function (r) {
-      var body = (r && r.body) || {};
-      var D = window.spiritData;
+    return spirit.ready.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
+      body = body || {};
+      var D = window.spirit.data;
       var next = Object.create(null);
       var items = (body.items || []).map(function (i) {
         var row = null;
@@ -64,7 +65,7 @@
       '<div class="files-tree"></div>';
     var inner = host.lastChild;
     list = E.probabilitySearch.create(inner, {
-      api: { verb: function (name, args) { return search(o.api, args, function (next) { scores = next; }); } },
+      api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
       data: 'files',
       server: 'fs',
       verb: 'search',

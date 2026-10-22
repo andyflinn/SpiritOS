@@ -108,7 +108,7 @@ const done = (async function () {
 
   test.subHeading('4. the Apps app');
   const apps = code('shell/apps/apps.js');
-  if (/data: 'files'|fileList\.create\(|spiritData/.test(apps) && /'fs\.annotate'/.test(apps) && !/setAppOverride|appOverrides/.test(apps))
+  if (/data: 'files'|fileList\.create\(|spirit\.data/.test(apps) && /\.fs\.annotate\(/.test(apps) && !/setAppOverride|appOverrides/.test(apps))
     test.check('Apps rides on the Files cache and edits the face annotation; the old overrides are gone');
   else test.fail(OWED + 'shell/apps/apps.js is not the new Apps app');
 

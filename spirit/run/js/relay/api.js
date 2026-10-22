@@ -17,6 +17,6 @@
       record: { relay: 'text', from: 'number?', to: 'number?' },
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['relay'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['relay'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

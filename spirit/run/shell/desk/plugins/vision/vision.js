@@ -7,12 +7,12 @@
 // goal's items each with Open, then the goal's chat, the face's (ctx.chat).
 //
 // Loaded once into the Desk page the first time its tab opens (shell/desk/desk.js, deskOpenPlugin); it registers
-// window.spiritDeskPlugins.vision = { open(container, ctx) }: ctx.goal its goal, ctx.ask the desk server, ctx.onPublished
+// window.spirit.deskPlugins.vision = { open(container, ctx) }: ctx.goal its goal, ctx.ask the desk server, ctx.onPublished
 // the stream (it subscribes itself), ctx.chat(container) the goal's chat, ctx.callDialog(app, params) the shell's dialog.
 
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
-  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
   var ctx = null;
   var subscribed = false;
 
@@ -22,7 +22,7 @@
   function say(text) { var el = document.getElementById('vision-note'); if (el) el.textContent = String(text || ''); }
   function errText(e) { return (e && e.message) || String(e); }
   function fieldWhy(v) {
-    var rules = win.spiritFieldRules;
+    var rules = win.spirit.fieldRules;
     // The label rule, as every title in Desk (fieldRules.js): '' when it may be sent.
     return rules && typeof rules.problem === 'function' ? String(rules.problem(v) || '') : '';
   }

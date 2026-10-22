@@ -55,7 +55,7 @@
   // Absent only if the page was built wrong, in which case the app still
   // draws and simply says it could not read the lever.
   function leverLib() {
-    if (typeof window !== 'undefined' && window.spiritLever) return window.spiritLever;
+    if (typeof window !== 'undefined' && window.spirit && window.spirit.lever) return window.spirit.lever;
     if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
       try { return require('../../js/lever.js'); } catch (e) { return null; }
     }
@@ -319,7 +319,7 @@
   }
 
   if (typeof window !== 'undefined') {
-    window.spiritRelayMonitor = {
+    (window.spirit = window.spirit || {}).relayMonitor = {
       leverRows: rmLeverRows,
       leverLine: rmLeverLine,
       asOf: rmAsOf,

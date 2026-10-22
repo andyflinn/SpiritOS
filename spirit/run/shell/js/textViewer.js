@@ -8,7 +8,7 @@
 // CODEMIRROR LOADS WHEN FIRST NEEDED. At home index.html has loaded it already; on a face it is read through the link,
 // the same files index.html names, in its order, once.
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var codeMirror = null;
 
   function core() { return (window.spirit && window.spirit.core) || {}; }

@@ -10,7 +10,7 @@
 // and paints nothing: the fs-watcher's own event repaints, or marks the row gone. expandInfo asks fs.stat and
 // fs.annotations, once.
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var files = null;
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
@@ -28,13 +28,13 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
-  function known(p) { var D = window.spiritData; return (D && D.get('files/' + p)) || null; }
+  function known(p) { var D = window.spirit.data; return (D && D.get('files/' + p)) || null; }
   var subscribed = false;
   // A write to data.files, by path, to the rows that show that path.
   function dispatch(idx) {
-    if (subscribed || !window.spiritData) return;
+    if (subscribed || !window.spirit.data) return;
     subscribed = true;
-    window.spiritData.watch('files', function (path, v) {
+    window.spirit.data.watch('files', function (path, v) {
       var p = String(path).slice('files/'.length);
       if (!p) return;
       idx.forKey(p).forEach(function (el) {
@@ -77,13 +77,13 @@
           if (typeof ctx.launchApp === 'function') return ctx.launchApp('text-file-launcher', { path: el.row.path });
           return null;
         } },
-        { name: 'remove', label: 'Remove', run: function (el) { return spirit.core.ask('fs.delete', { path: el.row.path }); } },
+        // Through the spirit object (goal/G32.2): checked calls answering the reply's body.
+        { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.fs.delete({ path: el.row.path }); }); } },
       ],
       expand: function (el) {
-        return Promise.all([
-          spirit.core.ask('fs.stat', { path: el.row.path }),
-          spirit.core.ask('fs.annotations', { path: el.row.path }),
-        ]).then(function (a) { return { stat: a[0] && a[0].body, annotations: a[1] && a[1].body }; });
+        return spirit.ready.then(function (s) {
+          return Promise.all([s.fs.stat({ path: el.row.path }), s.fs.annotations({ path: el.row.path })]);
+        }).then(function (a) { return { stat: a[0], annotations: a[1] }; });
       },
     });
   }

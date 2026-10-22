@@ -39,6 +39,6 @@
       };
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['fs'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['fs'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

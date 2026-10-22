@@ -51,7 +51,7 @@ function fieldRules() {
   if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
     return require('./fieldRules.js');
   }
-  return (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+  return (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
 }
 
 // REFUSES RATHER THAN CORRECTS. A gauge built with a bad label or an
@@ -124,5 +124,5 @@ var LEVER = {
 if (typeof process !== 'undefined' && !!process.versions && !!process.versions.node) {
   module.exports = LEVER;
 } else if (typeof window !== 'undefined') {
-  window.spiritLever = LEVER;
+  (window.spirit = window.spirit || {}).lever = LEVER;
 }

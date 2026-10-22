@@ -110,6 +110,6 @@
     return idx;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.rowElement = { create: create, index: index };
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.rowElement = { create: create, index: index };
 }());

@@ -4,7 +4,7 @@
 // rowElement.js does the shared work; this file says what an icon is. The set is one file, not a stream, so there is no
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {
-  var E = window.spiritElements = window.spiritElements || {};
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var icons = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }

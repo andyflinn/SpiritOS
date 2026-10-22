@@ -14,7 +14,7 @@
 //   contactSelector is perfect".
 //
 // THE CONTRACT (the box of goal/G4.14; the shapes it left open named here, marked NAMED).
-//   One factory, window.spiritElements.createContactSelector(options), two faces: options.face 'pane' (NAMED), or the
+//   One factory, window.spirit.elements.createContactSelector(options), two faces: options.face 'pane' (NAMED), or the
 //   dropdown, the default, so its users (grants.js, natterDetails.js) change nothing.
 //   1. THE LIST: a search box (an input) over rows fed by a bounded search: options.search(text) -> Promise of
 //      {items: [{key, label}], more} (NAMED), contact.search {q} when none is given. With nothing typed it asks with
@@ -170,13 +170,14 @@ function load() {
   const sp = { core: {
     ask: function (verb, body) { asked.push({ verb: verb, body: body || {} }); return Promise.resolve({ status: 200, body: { items: [{ key: 'kc', label: 'from contact.search' }], more: false } }); },
     util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: ICON } } };
+  test.spiritFor(sp.core.ask, sp);
   // As index.html loads them (goal/G29.6): the probability modules, the shared list, then the selector.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
   });
   new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(FILE, 'utf8'))(sp, doc, win, Event, CustomEvent);
-  return { make: win.spiritElements && win.spiritElements.createContactSelector, asked: asked };
+  return { make: win.spirit.elements && win.spirit.elements.createContactSelector, asked: asked };
 }
 
 const ROWS = [{ key: 'k1', label: 'one' }, { key: 'k2', label: 'two' }, { key: 'k3', label: 'three' }];

@@ -106,6 +106,7 @@ function mountApp(people) {
       jobs: { subscribe: function () { return function () {}; } },
     },
   };
+  test.spiritFor(shellSpirit.core.ask, shellSpirit);
   const win = { spirit: shellSpirit };
   PAGE_SCRIPTS.forEach(function (rel) {
     new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);

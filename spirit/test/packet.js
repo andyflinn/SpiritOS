@@ -378,7 +378,7 @@ test.subHeading('relay.js did not have to change');
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
   const parses =
     /require\(\s*['"]\.\/packet/.test(relayCode) ||
-    /packetDecode|packetEncode|packetIsEnvelope|spiritPacket/.test(relayCode) ||
+    /packetDecode|packetEncode|packetIsEnvelope|spirit\.packet/.test(relayCode) ||
     /\.envelope/.test(relayCode);
   if (!parses) {
     test.check('the relay still knows nothing about envelopes');

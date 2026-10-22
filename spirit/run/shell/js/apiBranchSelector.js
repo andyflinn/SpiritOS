@@ -2,15 +2,15 @@
 // ONE SHELL ELEMENT: the api-branch selector, a factory apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spiritElements,
+//   so one file per element, each adding itself to window.spirit.elements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spiritIconIndex, window.spiritApiTreeIndex)
+// has (spirit, document, window.spirit.iconIndex, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 //
-// Built from the app-server selector, reached through window.spiritElements, so
+// Built from the app-server selector, reached through window.spirit.elements, so
 // index.html loads appServerSelector.js before this file.
 
 (function () {
@@ -33,7 +33,7 @@
     var ALL_VERBS = '*';   // kept for a pick that names all verbs; the dropdown's Clear means the same
     var root = document.createElement('div');
     root.className = 'api-branch-selector' + (options.className ? ' ' + options.className : '');
-    var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all, tree: options.tree });
+    var servers = window.spirit.elements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all, tree: options.tree });
     var verbBox = document.createElement('span');
     verbBox.hidden = true;
     // SIDE BY SIDE (goal/G29.7; Andy, 2026-10-18: "get those two selector, server and verb NEXT to each other, not
@@ -48,10 +48,10 @@
     root.value = '';
 
     function verbRows() {
-      var verbs = root.server ? window.spiritApiTreeIndex.verbs(servers.tree, root.server) : [];
+      var verbs = root.server ? window.spirit.apiTreeIndex.verbs(servers.tree, root.server) : [];
       return verbs.map(function (v) { return { key: v, name: v }; });
     }
-    var verbList = window.spiritElements.shellCreateListSearch(verbBox, {
+    var verbList = window.spirit.elements.shellCreateListSearch(verbBox, {
       mode: 'dropdown',
       placeholder: 'all verbs',
       rows: verbRows,
@@ -88,6 +88,6 @@
     return root;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createApiBranchSelector = createApiBranchSelector;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createApiBranchSelector = createApiBranchSelector;
 })();

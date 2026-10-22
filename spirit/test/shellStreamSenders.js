@@ -137,7 +137,7 @@ function bootShell() {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
-    shellSpirit, doc, function () {}, { spiritPacket: packet, spiritLimits: require('../run/js/limits.js') });
+    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js') }));
   subscribers.forEach(function (h) {
     if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]);
     if (typeof h.onUpdate === 'function') {

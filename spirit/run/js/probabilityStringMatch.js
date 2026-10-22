@@ -242,10 +242,10 @@ function probabilityStringMatch(A, B) {
 
 // IN NODE AND IN A PAGE ALIKE (goal/G27.14). Andy, 2026-10-17: "why down't the UI run the exact same search code in
 // the shell? ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a
-// pattern....". A page loads this file as it is and finds it on window.spiritProbability.
+// pattern....". A page loads this file as it is and finds it on window.spirit.probability.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringMatch: probabilityStringMatch };
 if (typeof window !== 'undefined' && window) {
-  window.spiritProbability = window.spiritProbability || {};
-  window.spiritProbability.probabilityStringMatch = probabilityStringMatch;
+  (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
+  window.spirit.probability.probabilityStringMatch = probabilityStringMatch;
 }
 }());

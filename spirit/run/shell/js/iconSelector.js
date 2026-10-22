@@ -2,11 +2,11 @@
 // ONE SHELL ELEMENT: the icon selector, a factory apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spiritElements,
+//   so one file per element, each adding itself to window.spirit.elements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spiritIconIndex, window.spiritApiTreeIndex)
+// has (spirit, document, window.spirit.iconIndex, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 
@@ -43,7 +43,7 @@
   // working with no change to its handler.
   function createIconSelector(excludeGlyphs, options) {
     options = options || {};
-    var iconIndex = window.spiritIconIndex;
+    var iconIndex = window.spirit.iconIndex;
     var choices = iconIndex.choices(spirit.core.const.ICON, excludeGlyphs);
 
     var root = document.createElement('div');
@@ -181,6 +181,6 @@
     return root;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createIconSelector = createIconSelector;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createIconSelector = createIconSelector;
 })();

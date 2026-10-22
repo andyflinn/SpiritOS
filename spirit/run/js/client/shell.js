@@ -586,7 +586,7 @@
     Object.keys(apps).forEach(function (id) { if (apps[id].steps) handSteps(apps[id]); });
   }
   function stepsOf(app) {
-    var steps = window.spiritElements && window.spiritElements.joinSteps;
+    var steps = window.spirit && window.spirit.elements && window.spirit.elements.joinSteps;
     if (!steps || !stepFacts) return null;
     var facts = steps.fromJob(stepFacts, !!getAppOverride(app.id).faceOpened);
     var open = steps.current(app.steps, facts);
@@ -712,7 +712,7 @@
   // handed to apps below as api.ui.elements, unchanged. A host that loaded
   // this file without it (a fixture booting the shell alone) hands apps no
   // factories rather than failing to boot.
-  var spiritElements = (typeof window !== 'undefined' && window.spiritElements) || {};
+  var shellElements = (typeof window !== 'undefined' && window.spirit && window.spirit.elements) || {};
 
   function registerApp(app) {
     apps[app.id] = app;
@@ -1308,17 +1308,17 @@
       // lives here is only the painting.
       ui: {
         elements: {
-          createIconSelector: spiritElements.createIconSelector,
-          createContactSelector: spiritElements.createContactSelector,
-          createContactLabel: spiritElements.createContactLabel,
-          createAppServerSelector: spiritElements.createAppServerSelector,
-          createApiBranchSelector: spiritElements.createApiBranchSelector,
+          createIconSelector: shellElements.createIconSelector,
+          createContactSelector: shellElements.createContactSelector,
+          createContactLabel: shellElements.createContactLabel,
+          createAppServerSelector: shellElements.createAppServerSelector,
+          createApiBranchSelector: shellElements.createApiBranchSelector,
           // A file's text on CodeMirror 5, the search words marked (goal/G29.12, shell/js/textView.js).
-          createTextView: spiritElements.createTextView,
+          createTextView: shellElements.createTextView,
           // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/shared/js/progressBar.js).
-          progressBar: spiritElements.progressBar,
+          progressBar: shellElements.progressBar,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
-          createAppHeader: spiritElements.createAppHeader,
+          createAppHeader: shellElements.createAppHeader,
         },
       },
 
@@ -1404,7 +1404,7 @@
       // hash over bytes the sender holds, and the node has no business
       // reading it either.
       sendMessagePacket: function (packetApp, toId, body, opts) {
-        var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+        var envelope = (typeof window !== 'undefined' && window.spirit && window.spirit.packet) || null;
         if (!envelope) {
           return Promise.resolve({ status: 0, text: '{"error":"js/client/packet.js is not loaded"}' });
         }
@@ -1490,7 +1490,7 @@
           //
           // `reply` stays alongside as the raw text, because a caller
           // that wants the bytes should not have to re-encode them.
-          var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+          var envelope = (typeof window !== 'undefined' && window.spirit && window.spirit.packet) || null;
           var decoded = (envelope && text) ? envelope.decode(text) : null;
 
           // ── A DELIVERED REFUSAL IS NOT A DELIVERY ────────────────
@@ -2045,7 +2045,7 @@
       return;
     }
     var seen = JSON.stringify(app);
-    var lim = typeof window !== 'undefined' && window.spiritLimits && window.spiritLimits.PAYLOAD_MAX;
+    var lim = typeof window !== 'undefined' && window.spirit && window.spirit.limits && window.spirit.limits.PAYLOAD_MAX;
     if (lim && unescape(encodeURIComponent(seen)).length > lim) return;
     var key = from + ' ' + m[1];
     if (streamedLast[key] && streamedLast[key].seen === seen) return;
@@ -2089,7 +2089,7 @@
     var seen = JSON.stringify(job.app);
     // NO APP IS HANDED AN OBJECT OVER MAX_PAYLOAD (Andy: "the shared layer MUST instantly reject a payload"). The
     // node refuses one already; this is the last door, measured in bytes as the limit is.
-    var lim = typeof window !== 'undefined' && window.spiritLimits && window.spiritLimits.PAYLOAD_MAX;
+    var lim = typeof window !== 'undefined' && window.spirit && window.spirit.limits && window.spirit.limits.PAYLOAD_MAX;
     if (lim && unescape(encodeURIComponent(seen)).length > lim) return;
     if (publishedLast[job.id] === seen) return;
     publishedLast[job.id] = seen;
@@ -2213,7 +2213,7 @@
 
   function deliverPackets(messages) {
     var routed = [];
-    var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+    var envelope = (typeof window !== 'undefined' && window.spirit && window.spirit.packet) || null;
 
     // ── LOUD, BECAUSE THIS FAILS QUIETLY ─────────────────────────────
     //

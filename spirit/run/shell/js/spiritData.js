@@ -99,6 +99,6 @@
   if (core && core.jobs && typeof core.jobs.subscribe === 'function') {
     core.jobs.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(onJob); }, onUpdate: onJob, onContactRename: onRename });
   }
-  root.spiritData = api;
+  (root.spirit = root.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

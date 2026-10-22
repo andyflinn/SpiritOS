@@ -2,7 +2,7 @@
 // ONE SHELL ELEMENT: the contact selector, the peer picker apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spiritElements,
+//   so one file per element, each adding itself to window.spirit.elements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // A THIN WRAPPER AROUND THE SHARED LIST (goal/G29.6). Andy, 2026-10-17: "now i want the contactSelector to be just a
@@ -102,7 +102,8 @@
           return r && r.key && (!t || String(r.label || '').toLowerCase().indexOf(t) !== -1 || String(r.key).toLowerCase().indexOf(t) !== -1);
         }), more: false });
       }
-      return spirit.core.ask('contact.search', args).then(function (a) { return (a && a.body) || {}; });
+      // Through the spirit object (goal/G32.2): spirit.contact.search answers the reply's body.
+      return spirit.ready.then(function (s) { return s.contact.search(args); }).then(function (b) { return b || {}; });
     }
     var api = {
       verb: function (name, body) {
@@ -121,7 +122,7 @@
       },
     };
     var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
-    list = window.spiritElements.shellCreateListSearch(pane, {
+    list = window.spirit.elements.shellCreateListSearch(pane, {
       mode: isPane ? 'pane' : 'dropdown',
       placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
       all: isPane ? undefined : options.all,
@@ -170,6 +171,6 @@
     return root;
   }
 
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createContactSelector = createContactSelector;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createContactSelector = createContactSelector;
 })();

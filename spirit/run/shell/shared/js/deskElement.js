@@ -5,7 +5,7 @@
 //   automatically subscribed to the events that update them."
 //   The item's box, D: "a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core
 //   folder and stays the shell's own), one file per element, each named with the desk prefix ... each adding itself to
-//   window.spiritElements as the shell elements do. The element is made with the keys it shows and a paint function
+//   window.spirit.elements as the shell elements do. The element is made with the keys it shows and a paint function
 //   and subscribes to the stream itself."
 //
 // createDeskElement({ subscribe, wants, paint }) -> { destroy }
@@ -38,6 +38,6 @@
       },
     };
   }
-  window.spiritElements = window.spiritElements || {};
-  window.spiritElements.createDeskElement = createDeskElement;
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.createDeskElement = createDeskElement;
 }());

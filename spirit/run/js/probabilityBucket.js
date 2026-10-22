@@ -82,10 +82,10 @@ function createProbabilityBucket(capacity) {
   };
 }
 
-// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as probabilityStringMatch.js: a page finds it on window.spiritProbability.
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as probabilityStringMatch.js: a page finds it on window.spirit.probability.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { createProbabilityBucket: createProbabilityBucket };
 if (typeof window !== 'undefined' && window) {
-  window.spiritProbability = window.spiritProbability || {};
-  window.spiritProbability.createProbabilityBucket = createProbabilityBucket;
+  (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
+  window.spirit.probability.createProbabilityBucket = createProbabilityBucket;
 }
 }());

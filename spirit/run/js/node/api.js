@@ -13,6 +13,6 @@
       rotateCipher: {},
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['node'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['node'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

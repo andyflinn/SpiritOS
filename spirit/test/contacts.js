@@ -271,6 +271,7 @@ function mountApp(options) {
       jobs: { subscribe: function (handlers) { jobFeed.push(handlers || {}); return function () {}; } },
     },
   };
+  test.spiritFor(shellSpirit.core.ask, shellSpirit);
 
   const win = loadPage(doc, shellSpirit);
   new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);

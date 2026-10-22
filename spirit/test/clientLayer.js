@@ -129,10 +129,10 @@ function mountShell(answerFor) {
   const src = fs.readFileSync(SHELL, 'utf8');
   // `window` carries the isomorphic rule modules in a real page
   // (index.html loads them before shell.js). The layer decodes a reply
-  // envelope through spiritPacket, so the fixture supplies the real one
+  // envelope through spirit.packet, so the fixture supplies the real one
   // rather than a stand-in — otherwise the decode half is asserted
   // against a mock of itself.
-  const win = { spiritPacket: packet };
+  const win = test.withSpirit({ 'spirit.packet': packet });
   new Function('spirit', 'document', 'fetch', 'window', src)(shellSpirit, doc, fakeFetch, win);
 
   const wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; })[0];

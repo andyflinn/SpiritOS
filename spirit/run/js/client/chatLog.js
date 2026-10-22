@@ -57,7 +57,7 @@ var CHAT_LOG_CAP = 500;
 // so it is genuinely dual-target where this file is not.
 var chatLogPeerFile = (typeof require === 'function' && typeof module !== 'undefined')
   ? require('../peerFile')
-  : (typeof window !== 'undefined' ? window.spiritPeerFile : null);
+  : (typeof window !== 'undefined' ? window.spirit.peerFile : null);
 
 // Only a key names a file. Everything else — the reserved mailbox row, a
 // peer the mailbox has no key for — is not written down at all.
@@ -187,5 +187,5 @@ var chatLogApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = chatLogApi;
 } else if (typeof window !== 'undefined') {
-  window.spiritChatLog = chatLogApi;
+  (window.spirit = window.spirit || {}).chatLog = chatLogApi;
 }

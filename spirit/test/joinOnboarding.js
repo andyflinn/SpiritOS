@@ -140,7 +140,7 @@ async function main() {
   const nd = code('shell/natterDetails/natterDetails.js');
   // The form is the shell element joinForm since goal/G30.1 (box v33): natterDetails draws it, the element asks.
   const jf = code('shell/js/joinForm.js');
-  if (/spiritElements\.joinForm/.test(nd) && /type="email"/.test(jf) && /'relay\.join',\s*\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
+  if (/spirit\.elements\.joinForm/.test(nd) && /type="email"/.test(jf) && /\.relay\.join\(\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('js/relayServer.js');
   // Through the driver loader since the box's v28 (no vendor in core).

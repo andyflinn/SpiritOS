@@ -75,7 +75,7 @@ const shellSpirit = {
     jobs: { subscribe: function () {} },
   },
 };
-new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, { spiritPacket: packet });
+new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(shellSpirit, doc, fakeFetch, test.withSpirit({ 'spirit.packet': packet }));
 
 let hostApi = null;
 shellSpirit.shell.registerApp({ id: 'host', name: 'Host', icon: 'FILE', mount: function (el, api) { hostApi = api; }, render: function () {} });

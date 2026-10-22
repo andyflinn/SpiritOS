@@ -9,6 +9,6 @@
       // none yet
     },
   };
-  (root.spiritFamilies = root.spiritFamilies || {})['config'] = def;
+  ((root.spirit = root.spirit || {}).families = (root.spirit || {}).families || {})['config'] = def;
   if (typeof module === 'object' && module.exports) module.exports = def;
 }(typeof window !== 'undefined' ? window : globalThis));

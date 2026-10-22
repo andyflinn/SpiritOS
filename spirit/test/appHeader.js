@@ -9,7 +9,7 @@
 //   "cap"; his Go.
 //
 // THE SHAPES (the box's):
-//   1  spirit/run/shell/js/appHeader/appHeader.js adds createAppHeader to window.spiritElements, on the shell's globals.
+//   1  spirit/run/shell/js/appHeader/appHeader.js adds createAppHeader to window.spirit.elements, on the shell's globals.
 //   2  createAppHeader() returns an empty div: position sticky, its top the titlebar's measured height, a background, a
 //      z-index above the content; measured again when the window resizes.
 //   3  index.html loads it beside iconSelector.js, before the shell; the shell hands it to apps as api.ui.elements.
@@ -87,9 +87,9 @@ const src = read(FILE);
 const index = read(INDEX) || '';
 const shell = read(SHELL) || '';
 
-test.subHeading('1. appHeader.js adds createAppHeader to spiritElements');
-if (src && src.indexOf('createAppHeader') !== -1 && /spiritElements/.test(src)) test.check('spirit/run/shell/js/appHeader/appHeader.js defines createAppHeader and adds it to spiritElements');
-else test.fail(OWED + (src ? 'appHeader.js has no createAppHeader added to spiritElements' : 'no spirit/run/shell/js/appHeader/appHeader.js'));
+test.subHeading('1. appHeader.js adds createAppHeader to spirit.elements');
+if (src && src.indexOf('createAppHeader') !== -1 && /spirit\.elements/.test(src)) test.check('spirit/run/shell/js/appHeader/appHeader.js defines createAppHeader and adds it to spirit.elements');
+else test.fail(OWED + (src ? 'appHeader.js has no createAppHeader added to spirit.elements' : 'no spirit/run/shell/js/appHeader/appHeader.js'));
 
 test.subHeading('2. the div: empty, sticky at the titlebar\'s height, opaque, above, measured again on resize');
 let pending = Promise.resolve();
@@ -109,7 +109,7 @@ else {
     getComputedStyle: function (el) { return el.style; }, spirit: { core: { util: { escapeHtml: function (s) { return String(s); } } } } };
   ctx.self = ctx.window;
   let tripped = null; let div = null;
-  try { vm.createContext(ctx); vm.runInContext(src, ctx); div = window.spiritElements && window.spiritElements.createAppHeader && window.spiritElements.createAppHeader(); } catch (e) { tripped = e; }
+  try { vm.createContext(ctx); vm.runInContext(src, ctx); div = window.spirit.elements && window.spirit.elements.createAppHeader && window.spirit.elements.createAppHeader(); } catch (e) { tripped = e; }
   const tick = function () { return new Promise(function (r) { setTimeout(r, 20); }); };
   pending = tick().then(function () {
     if (tripped || !div) { test.fail(OWED + (tripped ? 'appHeader.js or createAppHeader() threw: ' + tripped.message : 'createAppHeader() returned nothing')); return; }
@@ -138,8 +138,8 @@ pending = pending.then(function () {
   const atShell = index.indexOf('src="/js/client/shell.js"');
   if (at !== -1 && atShell !== -1 && at < atShell) test.check('index.html loads /shell/js/appHeader/appHeader.js before /js/client/shell.js');
   else test.fail(OWED + 'index.html: appHeader at ' + at + ', shell at ' + atShell);
-  if (/createAppHeader\s*:\s*spiritElements\.createAppHeader/.test(shell)) test.check('shell.js hands createAppHeader to apps from spiritElements, beside the others');
-  else test.fail(OWED + 'shell.js does not hand createAppHeader: spiritElements.createAppHeader under ui.elements (shell.js 1338-1344 hands each by name)');
+  if (/createAppHeader\s*:\s*shellElements\.createAppHeader/.test(shell)) test.check('shell.js hands createAppHeader to apps from spirit.elements, beside the others');
+  else test.fail(OWED + 'shell.js does not hand createAppHeader: spirit.elements.createAppHeader under ui.elements (shell.js 1338-1344 hands each by name)');
 
   test.subHeading('4. desk and deskDetails move onto it, their own copies gone');
   [['desk', read(DESK) || '', 'deskBarTop'], ['deskDetails', read(DETAILS) || '', 'ddBarTop']].forEach(function (a) {

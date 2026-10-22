@@ -4,7 +4,7 @@
 // Moved here from the Stacks pane (shell/desk/plugins/stackFrameChecks) when its door dialog became a shell dialog of
 // its own (shell/stackFrameCheckDetail): the pane's add form and the dialog's edit form both hold a door's fields, so
 // both use this, loaded on demand (Andy, 2026-10-17: "it is ok for apps to know about other apps and their shared
-// elements"). It adds itself to window.spiritElements as every shared element does.
+// elements"). It adds itself to window.spirit.elements as every shared element does.
 //
 // THE FORMS, DECIDED BY ANDY (goal/G22.3's box, 2026-10-13), not this file's to loosen: the gate is narrow, one
 // spirit/run/<file>.js::<function>, and a whole module named as the gate is cheating; the endpoint is wide, a whole
@@ -125,6 +125,6 @@
   }
 
   var win = typeof window !== 'undefined' ? window : {};
-  win.spiritElements = win.spiritElements || {};
-  win.spiritElements.deskDoorFields = { FIELDS: FIELDS, html: html, check: check, why: why, door: door, fill: fill };
+  (win.spirit = win.spirit || {}).elements = win.spirit.elements || {};
+  win.spirit.elements.deskDoorFields = { FIELDS: FIELDS, html: html, check: check, why: why, door: door, fill: fill };
 }());

@@ -114,7 +114,7 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
     keyFromFileName: peerFileKeyFromFileName,
   };
 } else if (typeof window !== 'undefined') {
-  window.spiritPeerFile = {
+  (window.spirit = window.spirit || {}).peerFile = {
     PREFIX: PEER_FILE_PREFIX,
     nameFromKey: peerFileNameFromKey,
     keyFromName: peerFileKeyFromName,

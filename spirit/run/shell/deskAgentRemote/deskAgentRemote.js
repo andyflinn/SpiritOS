@@ -326,7 +326,7 @@ function deskAgentRemoteSaveServer() {
   var key = document.getElementById('dur-server-key');
   var n = String((name && name.value) || '').trim();
   var u = String((url && url.value) || '').trim();
-  var rules = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+  var rules = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
   var why = rules ? rules.problem(n) : (n ? '' : 'name required');
   if (why) {
     var bytes = rules ? rules.byteLength(rules.normalize(n)) : 0;
@@ -683,7 +683,7 @@ var deskAgentRemoteElements = [];
 // know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
 var DESK_AGENT_REMOTE_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 function deskAgentRemoteLoadSharedElement(done) {
-  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof have === 'function') { done(); return; }
   if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
   var script = document.createElement('script');
@@ -692,7 +692,7 @@ function deskAgentRemoteLoadSharedElement(done) {
   document.body.appendChild(script);
 }
 function deskAgentRemoteMakeElements(api) {
-  var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof make !== 'function' || !api || typeof api.onPublished !== 'function') return;
   function part(name, of, paint) {
     var last = null;

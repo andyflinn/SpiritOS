@@ -53,7 +53,7 @@ function page() {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
   });
   const spy = { buckets: [], sorts: 0, objectMatches: 0 };
-  const P = win.spiritProbability;
+  const P = win.spirit.probability;
   const realObj = P.probabilityStringObjectMatch;
   P.probabilityStringObjectMatch = function () { spy.objectMatches += 1; return realObj.apply(null, arguments); };
   const realBucket = P.createProbabilityBucket;
@@ -125,9 +125,9 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   test.check('shell/shared/js/listSearch.js exists');
   const p = page();
   try { new Function('document', 'window', fs.readFileSync(FILE, 'utf8'))(p.doc, p.win); } catch (e) { test.fail(OWED + 'the file does not load in a page: ' + e.message); }
-  const make = p.win.spiritElements && p.win.spiritElements.shellCreateListSearch;
-  if (typeof make === 'function') test.check('it adds window.spiritElements.shellCreateListSearch, as the shared elements do');
-  else { test.fail(OWED + 'no window.spiritElements.shellCreateListSearch'); test.reportSuccessFailureCount(); process.exit(0); }
+  const make = p.win.spirit.elements && p.win.spirit.elements.shellCreateListSearch;
+  if (typeof make === 'function') test.check('it adds window.spirit.elements.shellCreateListSearch, as the shared elements do');
+  else { test.fail(OWED + 'no window.spirit.elements.shellCreateListSearch'); test.reportSuccessFailureCount(); process.exit(0); }
 
   // Answers: the empty words bring r1 and r2; "gate" brings r3; a second answer for r1 changes its label.
   let r1Label = ROWS.r1;
