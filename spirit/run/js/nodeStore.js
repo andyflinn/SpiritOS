@@ -811,7 +811,8 @@ function open(rootDir, opts) {
     untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.admitted = 1 AND t.at > ? AND NOT EXISTS " +
       "(SELECT 1 FROM traffic m WHERE m.hash = t.hash AND m.hash <> '' AND m.mark = 'taken') ORDER BY t.at"),
     // The oldest rows, a chunk at a time, for the shedding below.
-    shed: db.prepare('DELETE FROM traffic WHERE seq IN (SELECT seq FROM traffic ORDER BY seq LIMIT ?)'),
+    // The oldest rows below the one just written: a packet is never shed in the moment it is written.
+    shed: db.prepare('DELETE FROM traffic WHERE seq IN (SELECT seq FROM traffic WHERE seq < ? ORDER BY seq LIMIT ?)'),
     // The highest stamp written. NOT the last seq's: the migration
     // (transport/R19.5) appends a node's older history after rows it wrote
     // since, so seq order and time order part there. Read once per process.
@@ -845,9 +846,14 @@ function open(rootDir, opts) {
   // read); past the cap the packet log's oldest rows go, a chunk at a time, and their pages are given back to the disc,
   // until it fits or the log is empty. The log is what grows; everything else here has its own bound.
   function fileBytes() { return q.pages.get().page_count * q.pageSize.get().page_size; }
-  function shedToCap() {
+  // WHAT IS PAST ITS WINDOW GOES FIRST (found on Andy's node, 2026-10-22: a store whose replay memory alone was over the
+  // cap shed every packet the moment it was written, and compacted the file on each one). The replay memory older than
+  // its window, then the packet log's oldest rows below the one just written; when nothing more may go, nothing is tried.
+  function shedToCap(newest) {
+    if (fileBytes() <= MAX_DB_BYTES) return;
+    if (q.rSweep.run(Date.now() - BACKLOG_MS).changes) db.exec('PRAGMA incremental_vacuum');
     for (let pass = 0; pass < 64 && fileBytes() > MAX_DB_BYTES; pass += 1) {
-      if (!tq.shed.run(SHED_CHUNK).changes) break;
+      if (!tq.shed.run(Number(newest) || 0, SHED_CHUNK).changes) break;
       db.exec('PRAGMA incremental_vacuum');
     }
   }
@@ -872,7 +878,7 @@ function open(rootDir, opts) {
         });
         vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
         const seq = Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
-        shedToCap();
+        shedToCap(seq);
         return seq;
       },
       all: function () { return tq.all.all().map(trafficRow); },
