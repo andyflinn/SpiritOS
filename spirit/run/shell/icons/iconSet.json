@@ -1,7 +1,4 @@
 {
-  "😠": [
-    "angry"
-  ],
   "⬇️": [
     "arrowdown",
     "download"
@@ -66,16 +63,20 @@
     "refresh"
   ],
   "➕": [
-    "add"
+    "add",
+    "plus"
   ],
   "➖": [
-    "remove"
+    "remove",
+    "minus"
   ],
   "✏️": [
-    "edit"
+    "edit",
+    "pencil"
   ],
   "👁️": [
-    "view"
+    "view",
+    "eye"
   ],
   "🙈": [
     "hidden"
@@ -370,7 +371,8 @@
     "groovy"
   ],
   "💀": [
-    "dead"
+    "dead",
+    "skull"
   ],
   "🐦": [
     "bird"
@@ -450,5 +452,19 @@
   ],
   "🪠": [
     "plunger"
+  ],
+  "😠": [
+    "angry",
+    "face"
+  ],
+  "😂": [
+    "laugh",
+    "tears",
+    "ROFL"
+  ],
+  "😇": [
+    "face",
+    "halo",
+    "smile"
   ]
 }
