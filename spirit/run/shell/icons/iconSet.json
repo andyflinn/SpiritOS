@@ -466,5 +466,173 @@
     "face",
     "halo",
     "smile"
+  ],
+  "🥰": [
+    "face",
+    "smile",
+    "hearts"
+  ],
+  "😍": [
+    "face",
+    "smile",
+    "hearts",
+    "eyes"
+  ],
+  "🤩": [
+    "face",
+    "smile",
+    "stars",
+    "eyes"
+  ],
+  "😘": [
+    "face",
+    "heart",
+    "kiss"
+  ],
+  "😗": [
+    "face",
+    "kiss"
+  ],
+  "☺": [
+    "face",
+    "smile"
+  ],
+  "🥲": [
+    "face",
+    "smile",
+    "tear"
+  ],
+  "😋": [
+    "face",
+    "smile",
+    "tongue",
+    "stones"
+  ],
+  "😛": [
+    "face",
+    "tongue",
+    "stones"
+  ],
+  "🤪": [
+    "face",
+    "tongue",
+    "zany"
+  ],
+  "😝": [
+    "face",
+    "tongue",
+    "squinty"
+  ],
+  "🤑": [
+    "face",
+    "money",
+    "tongue",
+    "cash"
+  ],
+  "🫣": [
+    "face",
+    "peekaboo",
+    "hand",
+    "eye"
+  ],
+  "🤫": [
+    "face",
+    "shush",
+    "pssst"
+  ],
+  "🤐": [
+    "face",
+    "mouth",
+    "zipped"
+  ],
+  "🤨": [
+    "face",
+    "raised",
+    "eye",
+    "brow"
+  ],
+  "😶‍🌫️": [
+    "face",
+    "clouded"
+  ],
+  "😏": [
+    "face",
+    "smirk"
+  ],
+  "😒": [
+    "face",
+    "disappointed",
+    "unamused",
+    "grumpy",
+    "sad"
+  ],
+  "🙄": [
+    "face",
+    "rolling",
+    "eyes"
+  ],
+  "😬": [
+    "face",
+    "grimacing"
+  ],
+  "😮‍💨": [
+    "face",
+    "exhaling",
+    "puffing",
+    "smoke"
+  ],
+  "🤥": [
+    "face",
+    "lying",
+    "Pinocchio",
+    "long",
+    "nose"
+  ],
+  "🤤": [
+    "face",
+    "drooling"
+  ],
+  "😷": [
+    "face",
+    "medical",
+    "mask"
+  ],
+  "🤒": [
+    "face",
+    "thermometer"
+  ],
+  "🤕": [
+    "face",
+    "bandaged"
+  ],
+  "🤢": [
+    "face",
+    "nauseated",
+    "sick",
+    "green"
+  ],
+  "🤮": [
+    "face",
+    "vomit",
+    "puke",
+    "hurl",
+    "throw",
+    "up"
+  ],
+  "🤧": [
+    "face",
+    "sneeze",
+    "cold",
+    "snotty"
+  ],
+  "🥶": [
+    "face",
+    "cold",
+    "teeth",
+    "chattering"
+  ],
+  "🤯": [
+    "face",
+    "exploding"
   ]
 }
