@@ -1,5 +1,5 @@
 {
- "change": 91858,
+ "change": 91986,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -601,9 +602,12 @@
    "id": "goal/G33.2",
    "title": "small desk issues",
    "goal": "goal/G33",
-   "status": "build",
+   "status": "done",
    "with": "claude-windows",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G33.3"
    ],
@@ -612,19 +616,19 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "fileCount": 0,
+   "fileCount": 5,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "de087633",
    "redCommit": "4a88d94f",
    "waived": true,
    "rules": [
@@ -816,6 +820,42 @@
      "key": "",
      "at": "2026-10-22T22:40:59.568Z",
      "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:05:41.831Z",
+     "text": "commit de087633bfe28f14d61743fe45ae73e2a60796ec: a line from the phase holder marks its item red until he opens it; the Verifier tab shows no queue (goal/G33.2)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/desk/desk.js\n- spirit/test/deskVerifyQueueKept.js\n- spirit/test/deskVerifyTab.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:06:49.801Z",
+     "text": "G33.2 claimed and verified at de087633, pushed.\n\n- a line from the agent holding an item's phase marks it: the List draws the row red, and opening the item clears it, as for a brought-back one\n- the Verifier tab lists no waiting runs\n- files: process/js/desk/desk.js, shell/desk/desk.js, and three suites (deskSmallFixes 18/18; deskVerifyQueueKept and deskVerifyTab now say no queue is listed)\n\nNo relay tag needed: your node takes a pull and restart. Done is yours; G33.3 is next once you give it a Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:07:07.437Z",
+     "text": "G33.2 claimed and verified at de087633, pushed.\n\n- a line from the agent holding an item's phase marks it: the List draws the row red, and opening the item clears it, as for a brought-back one\n- the Verifier tab lists no waiting runs\n- files: process/js/desk/desk.js, shell/desk/desk.js, and three suites (deskSmallFixes 18/18; deskVerifyQueueKept and deskVerifyTab now say no queue is listed)\n\nNo relay tag needed: your node takes a pull and restart. Done is yours; G33.3 is next once you give it a Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:07:30.369Z",
+     "text": "G33.2 claimed and verified at de087633, pushed.\n\n- a line from the agent holding an item's phase marks it: the List draws the row red, and opening the item clears it, as for a brought-back one\n- the Verifier tab lists no waiting runs\n- files: process/js/desk/desk.js, shell/desk/desk.js, and three suites (deskSmallFixes 18/18; deskVerifyQueueKept and deskVerifyTab now say no queue is listed)\n\nNo relay tag needed: your node takes a pull and restart. Done is yours; G33.3 is next once you give it a Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:12:08.107Z",
+     "text": "G33.2 claimed and verified at de087633, pushed.\n\n- a line from the agent holding an item's phase marks it: the List draws the row red, and opening the item clears it, as for a brought-back one\n- the Verifier tab lists no waiting runs\n- files: process/js/desk/desk.js, shell/desk/desk.js, and three suites (deskSmallFixes 18/18; deskVerifyQueueKept and deskVerifyTab now say no queue is listed)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:12:24.589Z",
+     "text": "G33.2 claimed and verified at de087633, pushed.\n\n- a line from the agent holding an item's phase marks it: the List draws the row red, and opening the item clears it, as for a brought-back one\n- the Verifier tab lists no waiting runs\n- files: process/js/desk/desk.js, shell/desk/desk.js, and three suites (deskSmallFixes 18/18; deskVerifyQueueKept and deskVerifyTab now say no queue is listed)"
     }
    ]
   },
@@ -826,15 +866,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G33"
    ],
-   "blocked": [
-    "goal/G33.2"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -864,7 +903,20 @@
    "box": "DESK CLIENTS KEEP THE CURRENT GOAL: ONE CACHE, TWO CLIENTS\n\n- A desk search answers what the List's rows show: each item's facts, the trunk and main branches of the current goal's data tree.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient fetches on its own, by priority: the current goal's rows first, then the one item its agent holds a phase of (an agent holds one at a time), whole: its box, its newest chat, its checks and its files, so anything the agent needs is on hand; the agent's reads are answered from it, and only writes go to the desk.\n- The Desk app in the browser keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js, the faceless layer the face apps keep their data in, with one desk translator; deskClient loads the two in node, the Desk app in the page.\n- Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step on the path that makes Desk a face app too: the cache is the face's own layer, and its calls go through the spirit object, which the face already has.\n\nWhere: shell/js/spiritData.js (as it is), a desk translator beside it, process/js/deskClient, shell/desk, shell/deskDetails. Blocked by goal/G33.2.",
    "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T23:11:16.315Z",
+     "text": "need something from me?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:11:50.807Z",
+     "text": "Yes, two presses:\n\n- Done on G33.2 (claimed and verified at de087633; your node takes a pull and restart to show it)\n- then Go on G33.3, which G33.2 blocks until it is done"
+    }
+   ]
   }
  ]
 }
