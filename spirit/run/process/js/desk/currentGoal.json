@@ -1,5 +1,5 @@
 {
- "change": 85698,
+ "change": 85701,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -14820,10 +14820,9 @@
    "id": "goal/G30.20",
    "title": "create new face-app: mediaViewer",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
