@@ -1,5 +1,5 @@
 {
- "change": 91361,
+ "change": 91453,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G33.1"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -43,7 +45,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 1,
    "excluded": [
     "ollama agent node"
@@ -60,10 +62,139 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "- while the icons app works mostly nice, it now has started to refuse me more icons-adds. This applet is the one that should be feeding a NEW icon dropdown in face-apps, it doesn't. Apps, still uses the legacy icon dropdown, with the hard-coded table from kernel.js. \n\n- kernel.js is still sticking about in face-apps?\n\n",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:09:21.151Z",
+     "text": "explain."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:10:02.618Z",
+     "text": "Taking: reading the Icons app, the Apps icon field and what the face loads, then I explain."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:12:27.849Z",
+     "text": "What is behind each:\n\n- Icons refusing adds: every add loads the whole set and saves it back whole, 271 icons, 10.9 KB. The app refuses for only three reasons: a duplicate, too many keywords, or a save that failed (it then says not saved: and why). The node puts no size limit on the file, but on the face both trips go as one sealed message each, so a growing set can outgrow the face link.\n- The old dropdown: the Apps app's icon field is the new list, read from the Icons app's set. The old one, with kernel.js's built-in table, is still drawn by the Groups app (group-manager) and by the old home shell's elements.\n- kernel.js on the face: the face loads the home node's index.html scripts in order, kernel.js among them, because the shell elements and apps still read the kernel's members (its constants, util, the jobs stream). It goes when those move onto the spirit object; G32 moved the node calls, not those.\n\nWhat does the line beside Add say when it refuses, and which screen showed you the old dropdown?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:19:42.039Z",
+     "text": "i searched i icons for '🤹'  it's no there, then try to add it, with one keyword only, icons says: \"not saved: refused\". it has been doing this for a while, with every icon i tried to add.\n\ni verified that the icon-dropdown shows icons that i added in icons, and don't exist in kernel.js. aaccepted. in fact all your remarks are accepted, except the one i mentioned above."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:21:58.792Z",
+     "text": "The icons refusal, what I found:\n\n- at home the same save works: the whole set with your icon added saves (204), so the node takes it\n- on the face it travels sealed through the relay to your node and back, and somewhere on that way it is refused; the refusal there carries its reason as text but no code, and the spirit object keeps only the code, so the screen says refused and the reason is lost\n- likeliest cause: every add sends the whole set (now 10.9 KB, about 18 KB sealed), close to what one face request may carry; not proven\n\nProposal, in two steps: first the refusal shows its reason on screen (a small fix in the spirit object), you try once more and we read the real cause; then the fix for that cause. Add an item for the first step?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:23:03.483Z",
+     "text": "add item to fix this"
+    }
+   ]
+  },
+  {
+   "id": "goal/G33.1",
+   "title": "Icons on the face: a refusal says why, and adding works",
+   "goal": "goal/G33",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "ICONS ON THE FACE: A REFUSAL SAYS WHY, AND ADDING WORKS\n\n- On the face, adding an icon in the Icons app says not saved: refused, for every icon; at home the same save is taken.\n- A refusal on its way to the face keeps its reason: where the node, the face door or the relay answers with words and no code, the spirit object carries the words, and the Icons app shows them beside Add.\n- Then the cause the words name is fixed, so an icon added on the face is saved and shows in every icon list.\n- The Icons app keeps writing the one set it owns, shell/icons/iconSet.json; a set too large to travel is not the answer to cut.\n\nWhere: face/spirit.js, shell/icons/icons.js, and the hop the reason names.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:24:02.602Z",
+     "text": "Added: G33.1. The box says what it fixes; it waits for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:25:53.395Z",
+     "text": "here's the thing, the icons app has to send the whole set, otherwise it would require an appServer taking only one icon and changing the server side file...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:26:47.634Z",
+     "text": "Agreed: the app sends the whole set, and that stays.\n\nSo if the reason turns out to be size, the fix is in the face link, not the app: a request too large for one trip goes in pieces, as the node's answers already come back in pieces. The first step stays the same: the refusal shows its reason, so we know it is size before building that."
+    }
+   ]
   }
  ]
 }
