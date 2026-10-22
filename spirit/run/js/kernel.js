@@ -1128,6 +1128,7 @@ if (isNode()) {
   var streamUp = false;
   var streamDown = false;
   var streamStopped = false;
+  var streamWaiting = false;
   var streamJobs = new Map();
   function tellStream(name, arg) {
     streamSubs.slice().forEach(function (h) {
@@ -1181,8 +1182,15 @@ if (isNode()) {
       // ON A FACE (goal/G30.11) the events come down the face's own stream, which the face shell holds.
       if (window.spiritTransport && typeof window.spiritTransport.events === 'function') return window.spiritTransport.events(handlers);
       streamSubs.push(handlers);
-      if (!streamSource) openStream();
-      else {
+      // OPENED ONCE THE PAGE HAS PARSED: every subscriber its scripts make (the shell, the page's mirror) is then in
+      // place before the first event, so none of them misses the file tree a connecting page is handed.
+      if (!streamSource && !streamWaiting) {
+        if (typeof document !== 'undefined' && document.readyState === 'loading') {
+          streamWaiting = true;
+          document.addEventListener('DOMContentLoaded', function () { streamWaiting = false; if (streamSubs.length && !streamSource) openStream(); });
+        } else openStream();
+      }
+      else if (streamSource) {
         if (handlers.onSnapshot) { try { handlers.onSnapshot(Array.from(streamJobs.values())); } catch (e) { /* one subscriber's fault */ } }
         if (streamUp && handlers.onConnection) { try { handlers.onConnection(true); } catch (e) { /* one subscriber's fault */ } }
       }
