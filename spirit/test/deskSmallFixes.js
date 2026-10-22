@@ -92,6 +92,35 @@ async function deskHalf() {
     const pwhy = String(((prof.body || {}).extra || {}).why || '');
     if ((prof.body || {}).ok === false && /nick/i.test(pwhy)) test.check('profile.set with a bad nick says why: ' + pwhy);
     else test.fail(OWED + 'profile.set answered ' + short(prof.body));
+
+    // goal/G33.2. Andy: "make an item go red in the list when the phase holder posts a report or questions ..., so
+    // that my attention is caught when something happens", and "red until i open it, it may be just a status report".
+    test.subHeading('2b. a line from the phase holder marks the item until he opens it (goal/G33.2)');
+    const G33 = 'OWED by goal/G33.2: ';
+    const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
+    // Its own goal, written by the owner (goal/G29.21: an agent's session creates none).
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'mk/G1', title: 'Marks' }, items: [{ id: 'mk/G1.1', title: 'Held', blocks: ['mk/G1'] }] }) }, ANDY);
+    await call('press', { id: 'mk/G1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'mk/G1.1', what: 'code' }, ANDY);
+    await call('press', { id: 'mk/G1.1', what: 'go' }, ANDY);
+    await call('item.take', { id: 'mk/G1.1' }, CW);
+    await call('phase.take', { id: 'mk/G1.1', phase: 'red' }, CW);
+    const before = await factsOf('mk/G1.1');
+    await call('chat.add', { id: 'mk/G1.1', text: 'a report from the phase holder' }, CW);
+    const marked = await factsOf('mk/G1.1');
+    await call('press', { id: 'mk/G1.1', what: 'seen' }, ANDY);
+    const seen = await factsOf('mk/G1.1');
+    await call('chat.add', { id: 'mk/G1.1', text: 'his own line' }, ANDY);
+    const his = await factsOf('mk/G1.1');
+    if (before.phase === 'red' && before.alert !== true && marked.alert === true) test.check('the phase holder\'s line marks the item');
+    else test.fail(G33 + 'phase ' + before.phase + ', marked before ' + before.alert + ', after the holder\'s line ' + marked.alert);
+    if (seen.alert !== true && his.alert !== true) test.check('his seen clears it, and his own line does not mark it');
+    else test.fail(G33 + 'after seen ' + seen.alert + ', after his own line ' + his.alert);
+    const list = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+    if (/row\.alert \?[^:]*(color|class)[^:]*red|alert[^\n]*desk-row-red|data-alert/.test(list)) test.check('the List draws a marked row red');
+    else test.fail(G33 + 'the List does not draw a marked row red');
+    if (!/deskVerifier\.queued/.test(list)) test.check('the Verifier tab shows no queue');
+    else test.fail(G33 + 'the Verifier tab still draws its queue');
   } finally {
     await new Promise(function (r) { kid.once('exit', r); kid.kill(); setTimeout(r, 3000); });
   }
