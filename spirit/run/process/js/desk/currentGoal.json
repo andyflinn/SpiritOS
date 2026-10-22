@@ -1,5 +1,5 @@
 {
- "change": 91453,
+ "change": 91706,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -10,12 +10,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G33.1"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,16 +45,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -108,10 +105,11 @@
    "id": "goal/G33.1",
    "title": "Icons on the face: a refusal says why, and adding works",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -121,21 +119,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "fileCount": 0,
+   "fileCount": 5,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "ce0a908c",
+   "redCommit": "3b20526d",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -174,7 +172,26 @@
    "full": false,
    "box": "ICONS ON THE FACE: A REFUSAL SAYS WHY, AND ADDING WORKS\n\n- On the face, adding an icon in the Icons app says not saved: refused, for every icon; at home the same save is taken.\n- A refusal on its way to the face keeps its reason: where the node, the face door or the relay answers with words and no code, the spirit object carries the words, and the Icons app shows them beside Add.\n- Then the cause the words name is fixed, so an icon added on the face is saved and shows in every icon list.\n- The Icons app keeps writing the one set it owns, shell/icons/iconSet.json; a set too large to travel is not the answer to cut.\n\nWhere: face/spirit.js, shell/icons/icons.js, and the hop the reason names.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/spirit.js, spirit/run/js/fs/api.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T21:32:43.458Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/js/faceHome.js, spirit/run/js/fs/api.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T21:44:58.726Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -193,6 +210,384 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T21:26:47.634Z",
      "text": "Agreed: the app sends the whole set, and that stays.\n\nSo if the reason turns out to be size, the fix is in the face link, not the app: a request too large for one trip goes in pieces, as the node's answers already come back in pieces. The first step stays the same: the refusal shows its reason, so we know it is size before building that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:28:45.627Z",
+     "text": "commit 3b20526dd2e0d45b733404a68f890fa6b1d17c9c: goal/G33.1: the red for a refusal that says why: saveFile refused by the relay or in plain text answers the refusal's words, and the Icons app shows them\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:28:59.665Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:30:05.364Z",
+     "text": "Step one is built: a refusal keeps its own words on the way to the face, and the Icons app shows them beside Add instead of refused. The red is green.\n\nPress G1 (face/spirit.js and js/fs/api.js) and I commit and push; then pull, restart, add one icon on the face, and tell me the words it shows."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:33:26.217Z",
+     "text": "commit 8178b7c2e6f6323f5503204f3fb529c11b6968f0: a refusal keeps its own words as far as the Icons app (goal/G33.1)\n- spirit/run/face/spirit.js\n- spirit/run/js/fs/api.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:33:36.887Z",
+     "text": "Pushed: 8178b7c2.\n\nThe face gets spirit.js inline from the relay, so the new words show on the face only once spirit-3 runs a tag holding it; your node takes a pull and restart.\n\nTag the relays now, so you can add an icon and read the reason?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:35:33.801Z",
+     "text": "not saved: the node answered 413"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:35:35.762Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:36:46.114Z",
+     "text": "413 is too large: the size it was, then. Every add sends the whole set, which with your icon is 13.5 KB as a request and about 18 KB sealed.\n\n- that wording is still the old spirit.js the relay hands the face; the new one carries the words the 413 came with, which name the hop that refused and its limit\n- the fix is the one we agreed: a request too large for one trip goes in pieces, as answers already come back\n\nTag the relays now, so the next try names the hop before I build the pieces?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:38:08.105Z",
+     "text": "tag the relay"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:38:10.202Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:38:52.838Z",
+     "text": "Tagged: v-2026-10-23-00-12 at 8178b7c2, pushed. Once spirit-3 runs it, add the icon again and the face shows the words the 413 came with."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:39:21.213Z",
+     "text": "Correction: the tag is v-2026-10-22-23-38 (at 8178b7c2), not the name in my line above."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:39:52.275Z",
+     "text": "root@spirit-3:~/SpiritOS# ./bash/update\n==> fetch origin (tag)\nremote: Enumerating objects: 10, done.\nremote: Counting objects: 100% (10/10), done.\nremote: Compressing objects: 100% (3/3), done.\nremote: Total 10 (delta 7), reused 10 (delta 7), pack-reused 0 (from 0)\nUnpacking objects: 100% (10/10), 1.86 KiB | 475.00 KiB/s, done.\nFrom github.com:andyflinn/SpiritOS\n   3b20526d..8178b7c2  master             -> origin/master\n * [new tag]           v-2026-10-22-23-38 -> v-2026-10-22-23-38\n==> reset --hard tag v-2026-10-22-23-38\n    bab13989 -> 8178b7c2\nHEAD is now at 8178b7c2 a refusal keeps its own words as far as the Icons app (goal/G33.1)\n==> restart spirit-relay\n    ok  spirit-relay is running\nroot@spirit-3:~/SpiritOS#"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:39:54.419Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:40:39.304Z",
+     "text": "not saved: Body too large: 23608 of 23552"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:40:41.382Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:41:35.370Z",
+     "text": "There it is: the relay takes at most 23552 bytes for one face request, and your save came to 23608, 56 over.\n\nThe fix, as agreed, without touching the relay:\n\n- the face splits a sealed request too large for one trip into pieces, each its own call under the limit; the relay passes them on as it does any call and still reads none of it\n- your node collects the pieces by their id (bounded in count, size and time), opens the whole once the last is in, and answers it on the last piece\n\nBuilding it now under G33.1, red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:42:47.094Z",
+     "text": "commit bf4bccbe2b11606158f10d0a010e0468c24a73d9: goal/G33.1: the red for a face request in pieces: the home node runs nothing on the first piece and the whole request once the last is in; the face shell sends a request larger than one trip in pieces\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:43:02.372Z",
+     "text": "you'd have to have a fs.edit type verb to accomplish something like that"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:43:04.779Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:43:54.835Z",
+     "text": "No new verb is needed: the pieces are not partial writes. Your node puts them back together into the one whole request first, and only then runs it, so fs.save is called once with the whole set, exactly as at home; no node verb changes.\n\nIt is built: the face splits a request over the limit, your node joins the pieces (at most 64, kept a minute), and the red is green. Next: the sweep, then a grant (face/shell.js, js/faceHome.js)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:44:23.554Z",
+     "text": "this actuall would be effiecient, a json edit or insert function...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:44:25.998Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:45:04.911Z",
+     "text": "Agreed, it would be: an add would send one icon instead of the whole set, and any app keeping a JSON file would gain.\n\n- it is a new node verb (say fs.jsonSet {path, key, value} and its delete), so it needs its own item and your yes on the verb itself\n- the pieces stand either way: they serve any request too large for one trip, not only the icons\n\nG33.1 is built and its sweep is clean; G2 (face/shell.js, js/faceHome.js, beside the two already granted) is the last step before the commit.\n\nAdd a new item for a JSON edit verb?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:45:43.396Z",
+     "text": "commit 9767cf860b2aaa86bb011e8fb1fd320b5990988c: a face request too large for one trip goes in pieces (goal/G33.1)\n- spirit/run/face/shell.js\n- spirit/run/js/faceHome.js\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:45:53.675Z",
+     "text": "let's do YOUR fix first, and discuss my idea later. oos"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T21:45:56.247Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:46:37.250Z",
+     "text": "G33.1 claimed and verified at 9767cf86, pushed. Files: face/spirit.js, js/fs/api.js, face/shell.js, js/faceHome.js, test/appsApp.js (20/20).\n\nFor the icon to save on the face, both ends need it: the relay serves face/shell.js, so spirit-3 needs a tag; your node needs a pull and restart for faceHome.\n\nTag the relays now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:46:47.839Z",
+     "text": "G33.1 claimed and verified at 9767cf86, pushed. Files: face/spirit.js, js/fs/api.js, face/shell.js, js/faceHome.js, test/appsApp.js (20/20).\n\nFor the icon to save on the face, both ends need it: the relay serves face/shell.js, so spirit-3 needs a tag; your node needs a pull and restart for faceHome.\n\nTag the relays now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:47:04.385Z",
+     "text": "tag please."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:47:24.020Z",
+     "text": "Tagged: v-2026-10-22-23-47 at 9767cf86, pushed. Your JSON edit idea is parked, out of scope, for later.\n\nOnce spirit-3 runs the tag and your node has pulled and restarted, add the icon on the face again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:48:03.640Z",
+     "text": "Already done: v-2026-10-22-23-47 (at 9767cf86) is on origin, ready for spirit-3's update."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:48:19.287Z",
+     "text": "Already done: v-2026-10-22-23-47 (at 9767cf86) is on origin, ready for spirit-3's update."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:52:19.892Z",
+     "text": "i lost my face-login on spirit-3 it wants me to re-log-in, and the emails are not reaching my inbox...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:53:09.470Z",
+     "text": "What the relay does there, read from its code:\n\n- a face login is kept on your member row and survives a restart, but it expires after a stretch of no use; then it asks again\n- the login mail goes out at most once a minute and five times an hour; past that it sends nothing and says nothing\n- a mail that fails to send is dropped without a word in the log, so a broken mail driver looks exactly like this\n\nI cannot see spirit-3. How many times did you ask for the mail in the last hour, and what does journalctl -u spirit-relay -n 50 say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:54:37.846Z",
+     "text": "i've been using the face constantly to verify fixes, and we said my login lasts for 7 days of idleness, so there's a bug there somewhere"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:55:41.294Z",
+     "text": "Found it, I think: the relay hands your browser the login cookie with a 7-day life only when you log in, and never renews it.\n\n- each use moves the relay's own deadline 7 days on, but your browser throws the cookie away 7 days after the login itself, however busy you were\n- if your last login was about a week ago, that is what happened\n- the fix: the relay renews the cookie whenever the face shows it is still logged in (its state check); a relay change, so a tag\n\nThe missing mails are a separate question: past one a minute or five an hour the relay sends none and says nothing.\n\nAdd an item for the cookie renewal?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:56:21.422Z",
+     "text": "mailgun logs show nothing"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:56:57.153Z",
+     "text": "Then the relay never handed mailgun a mail. In its code that happens, silently, in three cases:\n\n- the cap: more than one ask a minute or five an hour; it clears within the hour\n- no mail driver loaded: relay-state/mail.json missing or unreadable since the restart\n- what you typed into the login field is not exactly the email on your member row (any case, but no spaces)\n\nOn spirit-3: does ls ~/SpiritOS/spirit/run/relay-state/mail.json show the file, and does journalctl -u spirit-relay -n 50 mention mail?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:57:01.522Z",
+     "text": "the login doesn't even exist for 7 days yet"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:57:38.602Z",
+     "text": "and mailgun shows no transactions for the last 24 hours (that's how far back their logs go.)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:57:48.525Z",
+     "text": "Then the cookie is not it, and I read the relay again: your login is kept on your member row and found again after a restart, and its hash does not change, so it should still be good.\n\nMy best guess now: while spirit-3 restarted, the face asked whether you are logged in, got no answer, showed the login screen, and never asked again.\n\nWould you reload the face page (F5) and tell me whether it comes up logged in?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:58:21.479Z",
+     "text": "Nothing in 24 hours means the relay has not tried to send at all, not the hourly cap: either no mail driver is loaded (relay-state/mail.json gone or unreadable) or it never gets that far. The file and journalctl on spirit-3 tell which.\n\nAnd the reload first: does the face come up logged in after F5?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:58:43.768Z",
+     "text": "i hard reloaded already several times, nothing."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:59:28.850Z",
+     "text": "Then it is a real logout, and I am guessing blind from here. Two things only your side shows:\n\n- in the browser, on the face page: DevTools, Application, Cookies, is there a spirit_face cookie, and its expiry?\n- on spirit-3: sqlite3 ~/SpiritOS/spirit/run/relay-state/relay.db \"select faceName, email, emailVerified, faceLogins from members where faceName != ''\" and ls ~/SpiritOS/spirit/run/relay-state/mail.json\n\nThe cookie first: is it there?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:01:18.328Z",
+     "text": "/face/call:1  Failed to load resource: the server responded with a status of 400 ()\n/face/call:1  Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:02:14.699Z",
+     "text": "Those two 400s say who refused, in their answer. In DevTools, Network: click one /face/call with 400, and the Response tab shows its text (the relay says the body is not json; your node says a piece or the seal failed).\n\nWhat does that Response say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:02:57.886Z",
+     "text": "the cookie\n\nspirit_face\tY_TbIL-rrDZ6KRSXZu2k5kwbcyO1m_qk\tandy.spirit.andyflinn.com\t/\t2026-10-28T06:49:21.342Z\t43\t✓\t✓\tLax\t\t\tMedium"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:03:58.263Z",
+     "text": "Thanks: the cookie is there and good till 2026-10-28, so the browser kept it; the refusal is on the relay or node side.\n\nThat value is your live login, now in this chat: once you are back in, log out and in again so it is replaced.\n\nThe Response text of one of those 400 /face/call answers will name who refuses. What does it say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:04:33.503Z",
+     "text": "spirit_face\tY_TbIL-rrDZ6KRSXZu2k5kwbcyO1m_qk\tandy.spirit.andyflinn.com\t/\t2026-10-28T06:49:21.342Z\t43\t✓\t✓\tLax\t\t\tMedium"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:06:13.289Z",
+     "text": "// spirit/run/face/login/login.js\n// THE FACE'S LOGIN APP (goal/G30.9), the counterpart of the node's Join app, drawn as Join draws: every step a bullet,\n// done ones ticked, the open one expanded with its form. It draws what the shell hands it (onSteps: the facts, the\n// open step, the done steps) and decides nothing. One field, Log in: it takes the member's verified email or the token\n// from the mail, and the page never says which it got; it says that a relay owner who swaps face.html or this app could\n// read what the face shows (goal/G30.11). After login: the home node, reached sealed or not (the shell decides and hands\n// it over), and Log out (on the face; on the home node its owner is logged in and there is nothing to log out of).\n\n(function () {\n  var api = null;\n  var pane = null;\n  var shown = '';\n  var steps = [];\n\n  function escape(s) {\n    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n  }\n\n  function draw(h) {\n    var said = JSON.stringify(h);\n    if (said === shown) return;\n    // Handed something new while he types in the field: drawn once he leaves it.\n    if (pane.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;\n    shown = said;\n    var reached = false;\n    pane.innerHTML = '<ol class=\"join-steps\">' + steps.map(function (s, i) {\n      var done = !!h.done[i];\n      var open = !done && !reached;\n      if (s.until === h.open) reached = true;\n      return '<li class=\"stat-tile wide\">' +\n        '<div class=\"label\">' + (done ? '☑️' : '⬜') + ' ' + escape(s.icon || '') + ' ' + escape(s.name) + '</div>' +\n        (open ? '<div class=\"job-manifest-note\">' + escape(s.text || '') + '</div><div id=\"face-step-' + escape(s.until) + '\"></div>' : '') +\n        '</li>';\n    }).join('') + '</ol>';\n\n    var login = document.getElementById('face-step-login');\n    if (login) {\n      login.innerHTML =\n        '<div class=\"start-job-form card\">' +\n          '<label class=\"field-label grow\">Log in<input id=\"face-login-field\" type=\"text\" autocomplete=\"email\" autofocus></label>' +\n          '<button type=\"button\" id=\"face-login-go\">Log in</button>' +\n        '</div>' +\n        '<div class=\"job-manifest-note\" id=\"face-login-said\"></div>';\n      var go = function () {\n        var field = document.getElementById('face-login-field');\n        var out = document.getElementById('face-login-said');\n        var text = String(field.value || '').trim();\n        if (!text) return;\n        api.post('login', { text: text }).then(function (r) {\n          if (r && r.loggedIn) { api.refresh(); return; }\n          // The same words for every other answer, so the page never says which it got.\n          out.textContent = 'If that matched, check your mail for the token and the link.';\n        }, function () { out.textContent = 'The relay did not answer; try again.'; });\n      };\n      document.getElementById('face-login-go').addEventListener('click', go);\n      document.getElementById('face-login-field').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });\n    }\n    // The last step stays drawn once done: who is logged in, how the home node is reached, and Log out.\n    var last = steps[steps.length - 1];\n    var linkStep = document.getElementById('face-step-link');\n    if (!linkStep && last && last.until === 'link' && h.done[steps.length - 1]) {\n      pane.querySelector('.join-steps').insertAdjacentHTML('beforeend', '<li class=\"stat-tile wide\"><div id=\"face-step-link\"></div></li>');\n      linkStep = document.getElementById('face-step-link');\n    }\n    if (linkStep) {\n      var how = h.facts.home ? 'This is your home node.'\n        : !h.facts.up ? 'Your home node is not connected; this face reconnects by itself.'\n        : h.facts.sealed ? 'Connected to your home node over a sealed link.'\n        : 'Connected to your home node unsealed: this browser cannot seal, so your traffic is readable on the relay.';\n      linkStep.innerHTML =\n        '<div class=\"job-manifest-note\">Logged in as ' + escape(h.facts.face) + '. ' + escape(how) + '</div>' +\n        (h.facts.home ? '' : '<div class=\"start-job-form card\"><button type=\"button\" id=\"face-logout\">Log out</button></div>');\n      // TWO PRESSES (goal/G30.15): the first arms it, a press anywhere else disarms it (the shell's armUntilElsewhere),\n      // the second logs out.\n      var out = document.getElementById('face-logout');\n      if (out) out.addEventListener('click', function () {\n        if (out.getAttribute('data-armed') !== '1') {\n          out.setAttribute('data-armed', '1');\n          out.classList.add('armed');\n          out.textContent = 'Log out? Press again';\n          if (typeof api.armUntilElsewhere === 'function') api.armUntilElsewhere(function () {\n            out.removeAttribute('data-armed');\n            out.classList.remove('armed');\n            out.textContent = 'Log out';\n          });\n          return;\n        }\n        api.post('logout').then(function () { window.location.reload(); }, api.refresh);\n      });\n    }\n  }\n\n  window.faceShell.activateApp({\n    mount: function (container, shellApi) {\n      pane = container;\n      api = shellApi;\n      fetch('/face/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); })\n        .then(function (m) { steps = (m && m.steps) || []; shown = ''; api.refresh(); });\n    },\n    onSteps: function (h) { if (pane && steps.length) draw(h); },\n  });\n}());"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:06:56.377Z",
+     "text": "Request URL\nhttps://andy.spirit.andyflinn.com/face/call\nRequest method\nPOST\nStatus code\n400 Bad Request\nRemote address\n194.37.81.237:443\nReferrer policy\nstrict-origin-when-cross-origin\nalt-svc\nh3=\":443\"; ma=2592000\ncontent-type\napplication/json; charset=utf-8\ndate\nThu, 22 Oct 2026 22:04:06 GMT\nvia\n1.1 Caddy\n:authority\nandy.spirit.andyflinn.com\n:method\nPOST\n:path\n/face/call\n:scheme\nhttps\naccept\n*/*\naccept-encoding\ngzip, deflate, br, zstd\naccept-language\nen-US,en;q=0.9\ncontent-length\n5\ncontent-type\napplication/json\ncookie\nspirit_face=Y_TbIL-rrDZ6KRSXZu2k5kwbcyO1m_qk\norigin\nhttps://andy.spirit.andyflinn.com\npriority\nu=1, i\nreferer\nhttps://andy.spirit.andyflinn.com/\nsec-ch-ua\n\"Microsoft Edge\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"\nsec-ch-ua-mobile\n?0\nsec-ch-ua-platform\n\"Windows\"\nsec-fetch-dest\nempty\nsec-fetch-mode\ncors\nsec-fetch-site\nsame-origin\nuser-agent\nMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:07:02.701Z",
+     "text": "That is the login app itself (login.js), not the refusal.\n\nIn Network, the rows named call with status 400 (red): click one, then its Response tab; it is one short line of text. Or, just as good: your node's window (65432) prints a face: line when it refuses a face request.\n\nWhat does either say?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:08:27.806Z",
+     "text": "commit ce0a908c46e4f82acf282306b48aa9322734d84d: the face's state check reaches /face/api again (goal/G33.1)\n- spirit/run/face/shell.js\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:08:45.468Z",
+     "text": "Found, and it was mine: content-length 5 is the word state.\n\n- I named the new piece sender post, and the face shell already had a post for the relay's /face/api; the second replaced the first, so the face's am-I-logged-in check went to /face/call, was refused 400, and the face showed you the login screen\n- your login stood all along (the cookie and the relay are fine); no mail was ever needed\n- fixed: it is postCall now, and the suite checks the shell names each function once\n\nTagged: v-2026-10-23-00-08 at ce0a908c, pushed. Update spirit-3 and reload the face: you should be in, and adding the icon should save."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:09:06.541Z",
+     "text": "Request URL\nhttps://andy.spirit.andyflinn.com/face/call\nRequest method\nPOST\nStatus code\n400 Bad Request\nRemote address\n194.37.81.237:443\nReferrer policy\nstrict-origin-when-cross-origin"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:09:37.400Z",
+     "text": "That 400 is the bug the line above fixes; it lasts until spirit-3 serves the fixed face. Is spirit-3 on v-2026-10-23-00-08 yet (./bash/update, then a hard reload)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:10:43.887Z",
+     "text": "i am now logged in again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:11:13.649Z",
+     "text": "Good, and sorry for the scare: that was my naming clash.\n\nThe last check of this item: does adding 🤹 in the Icons app on the face now save?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:12:02.898Z",
+     "text": "and the icons app saves new icons again"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:12:36.826Z",
+     "text": "that's development. happens."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:13:06.884Z",
+     "text": "Good: G33.1 works end to end. The claim now stands at ce0a908c, which holds the naming fix as well.\n\nFiles: face/spirit.js, js/fs/api.js, face/shell.js, js/faceHome.js, test/appsApp.js (21/21). Done is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:13:47.222Z",
+     "text": "now we have something again to occupy me during long jobs that you do.\n\nnext"
     }
    ]
   }
