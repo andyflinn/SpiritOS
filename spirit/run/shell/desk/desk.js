@@ -209,7 +209,7 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red. THE STAR IS GONE (goal/G4.20 point 8), from the rows and the tabs alike. Andy: "ha ha, the red
 // star has no function anymore. take it out." What waits on him is the row's ICON.ERROR (facts.asks).
 // A brought-back item's mark (goal/G2.1 note 6): "the attention-grabbing error icon"; his seen clears it.
-var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="brought back: needs your eye">❗</span>';
+var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">❗</span>';
 var deskSeen = { team: 0, agents: {} };
 var deskTab = 'list';
 // THE DIRECT TABS ARE GONE (goal/G3.12). Team is the group chat alone; there is no chat inside Team to pick, no
@@ -678,7 +678,9 @@ function deskInRow(row, what) {
 function deskRowHtml(row) {
   var goal = row.goal === '';
   var presses = deskRowPresses(row);
-  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
+  // A MARKED ROW IS RED (goal/G33.2). Andy: "make an item go red in the list when the phase holder posts a report or
+  // questions", "red until i open it": the desk marks it (alert) and his opening clears it.
+  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '"' + (row.alert ? ' data-alert="1"' : '') + ' style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + (row.alert ? ';color:#d00' : '') + '">' +
     deskRowCells(row, presses) + '</tr>';
 }
 function deskRowPresses(row) {
@@ -1434,7 +1436,6 @@ function deskVerifyCountdown(since) {
 function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { id: '', suite: '', since: '' };
-  var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
   var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
   var live = deskVerifyRun;
   // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
@@ -1462,10 +1463,7 @@ function deskVerifyHtml() {
     ' <button type="button" id="desk-verify-stop"' + (run.id || run.suite ? '' : ' disabled') + '>Stop the run</button>' +
     (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
     '</div>' +
-    // THE QUEUE, BELOW THE TAB'S OWN ELEMENTS (goal/G19.3). Andy, 2026-10-12: "the verifier tab may keep an updated
-    // queue list below it's current ui elements." One line per waiting run, kind and id, as deskVerify's now says it.
-    '<div class="label">Waiting</div>' +
-    (queued.length ? queued.map(function (q) { return '<div>' + deskEsc(String((q && q.kind) || '')) + ' ' + deskEsc(String((q && q.id) || '')) + '</div>'; }).join('') : '<div class="job-manifest-note">Nothing waiting</div>') +
+    // THE QUEUE THAT STOOD HERE (goal/G19.3) IS GONE (goal/G33.2). Andy, 2026-10-22: "remove verifier queue".
     // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
     deskVerifyConsoleHtml() +
     '</div>';
@@ -1509,7 +1507,7 @@ function deskVerifyEvent(obj) {
   deskVerifyMissed = false;
   if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
   if (obj.id) deskVerifyLast = String(obj.id);
-  if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
+  if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' } }; deskDrawTabs(); }
   deskDrawVerifier();
   deskVerifyConsoleHeard(obj);
   // AND THE LIST'S STATUS BOX FOLLOWS IT (goal/G18.5): the row it runs for shows the progress, and is itself again

@@ -803,6 +803,10 @@ function apply(s, r, b, item, goalOf) {
       // EVERY LINE CARRIES ITS WRITER'S KEY (goal/G21.1); the label stays for showing where no name is set.
       const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
       it.chat.push(line);
+      // A LINE FROM THE PHASE HOLDER MARKS THE ITEM (goal/G33.2). Andy: "make an item go red in the list when the phase
+      // holder posts a report or questions ..., so that my attention is caught", and "red until i open it": alert is
+      // the mark his List draws red and his opening the item (press seen) clears.
+      if (it.phaseWith && r.by === it.phaseWith && r.by !== 'andy') it.alert = true;
       // HIS NEWEST LINE GRANTS ITEM ADDS, OR ENDS THE GRANT (goal/G29.21).
       // The item grant holds only for the goal his line is in: under the goal itself or one of its items.
       if (r.by === 'andy') { s.addGrant = addGrantOf(b.text); s.addGrantGoal = it.goal ? it.id : it.goalId; s.goalGrant = goalGrantOf(b.text); }

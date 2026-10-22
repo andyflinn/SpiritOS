@@ -199,7 +199,8 @@ async function faceHalf() {
   await settled(); await sleep(50); await settled();
   const body = docB.getElementById('desk-verifier');
   const b = body.innerHTML;
-  if (/tb\/G1\.2/.test(b) && /zzRunning\.js/.test(b) && /tb\/G1\.3/.test(b)) test.check('the tab shows what runs now, for which item, and what waits');
+  // What waits is no longer listed (goal/G33.2, Andy: "remove verifier queue").
+  if (/tb\/G1\.2/.test(b) && /zzRunning\.js/.test(b) && !/tb\/G1\.3/.test(b)) test.check('the tab shows what runs now and for which item, and lists no waiting run');
   else test.fail(OWED + '#desk-verifier reads ' + short(b));
   // THE RECORDS LIST WENT (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." This section asserted the list until that word; it now asserts its absence, so a session that

@@ -187,7 +187,8 @@ async function faceHalf() {
   const buttons = b.indexOf('id="desk-verify-full"');
   const one = b.indexOf('item qk/G1.2');
   const two = b.indexOf('goal qk/G1');
-  if (b.indexOf('[object Object]') === -1 && buttons !== -1 && one > buttons && two > one) test.check('below the buttons: item qk/G1.2, then goal qk/G1');
+  // THE QUEUE IS GONE FROM THE TAB (goal/G33.2, Andy: "remove verifier queue"); the tab itself stays.
+  if (b.indexOf('[object Object]') === -1 && buttons !== -1 && one === -1 && two === -1) test.check('the tab stays, its buttons drawn, and no waiting run is listed');
   else test.fail(OWED + '#desk-verifier reads ' + short(b.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')));
 }
 
