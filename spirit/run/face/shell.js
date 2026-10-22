@@ -308,10 +308,10 @@
   }
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
-  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16; Andy: "make the shape, so we don't need any more
-  // tags for the time being."): its include list (config.searchModules), each app's manifest read as it comes and its
-  // icon drawn at once; an app's script loads when it is opened. This file, served by the relay, only logs in and holds
-  // the link, so a new app on the face needs no tag.
+  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.20): its own file, face.json beside
+  // preferences.json, {"apps": ["shell/contacts", ...]}, separate from the node's include list (Andy: "A Separate
+  // included list"). Each app's manifest is read as it comes and its icon drawn at once; an app's script loads when it
+  // is opened. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
   var loadingId = '';
   var stack = [];         // ids on screen, newest last
@@ -327,16 +327,17 @@
       return apps[id];
     });
   }
-  // The home node's apps, each icon drawn as its manifest arrives; nothing waits for the rest.
+  // The face's apps from face.json, each icon drawn as its manifest arrives; nothing waits for the rest. No file, no
+  // apps.
   function listApps() {
-    return ask('config.searchModules', { query: '' }).then(function (r) {
-      var items = (r.status === 200 && r.body && Array.isArray(r.body.items)) ? r.body.items : [];
-      items.forEach(function (i) {
-        var id = String((i && i.key) || '');
+    return fileText('face.json').then(function (t) {
+      var list = JSON.parse(t);
+      (list && Array.isArray(list.apps) ? list.apps : []).forEach(function (a) {
+        var id = String(a || '');
         if (id.indexOf('shell/') !== 0 || id.split('/').length !== 2) return;
         manifestOf(id).then(function () { hand(); }, function () { /* an app without a manifest is not shown */ });
       });
-    }, function () { /* the node did not answer: the desktop keeps the login step */ });
+    }, function () { /* no face.json on the home node: the face has no apps */ });
   }
 
   function loadApp(id) {

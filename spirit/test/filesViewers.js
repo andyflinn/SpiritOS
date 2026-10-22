@@ -51,8 +51,8 @@ const done = (async function () {
     test.check('Files lists through probabilitySearch over fs.search with fileElement rows');
   else test.fail(OWED + 'Files still uses the file selector, or not the list-tool with file rows');
   const face = code('face/shell.js');
-  // Since box v18 the face's apps are the home node's data (config.searchModules), no list in the relay's file.
-  if (!/FIRST_APPS/.test(face) && /'config\.searchModules'/.test(face) && /spiritTransport = \{[^}]*file:/.test(face))
+  // The face's apps are the home node's own face.json (goal/G30.20), separate from its include list; no list in the relay's file.
+  if (!/FIRST_APPS/.test(face) && /fileText\('face\.json'\)/.test(face) && !/config\.searchModules/.test(face) && /spiritTransport = \{[^}]*file:/.test(face))
     test.check('the face lists its apps from the home node, and its transport reads a file piece by piece');
   else test.fail(OWED + 'the face keeps its own app list, or has no file() on its transport');
 
