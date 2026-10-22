@@ -75,6 +75,7 @@ function refusal(why) { return { ok: false, code: 'bad-request', error: 'text re
 function deskAnswer(verb, a) {
   if (verb === 'AGENTS') return { text: 'Rules for agents.' };
   if (verb === 'AGENTS.introspect') return { items: [], more: false };
+  if (verb === 'item.files') return { files: (ITEMS[a.id] || {}).files || [], filesMore: false };
   if (verb === 'items.search') return { items: Object.keys(ITEMS).map(function (k) { return { key: k, label: JSON.stringify(ITEMS[k]) }; }), more: false };
   const it = ITEMS[a.id];
   if (verb === 'item.get') return it ? { item: JSON.stringify(it), version: 1, change: 1 } : { ok: false, code: 'no-such-item' };

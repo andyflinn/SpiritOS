@@ -87,6 +87,7 @@ function deskAnswer(verb, a) {
   if (verb === 'FS.loadFile' && a.path === 'AGENTS.md') return { text: 'Rules for agents.' };
   if (verb === 'FS.search') return { items: Object.keys(verbs).map(function (v) { return { key: v + '.json', label: v + '.json' }; }), more: false };
   if (verb === 'FS.loadJsonValue') return { value: verbs[String(a.path || '').replace(/\.json$/, '')] || null };
+  if (verb === 'item.files') return { files: (ITEMS.filter(function (i) { return i.id === a.id; })[0] || {}).files || [], filesMore: false };
   if (verb === 'items.search') return { items: ITEMS.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
   const it = ITEMS.filter(function (i) { return i.id === a.id; })[0];
   if (verb === 'item.get') return it ? { item: JSON.stringify(it), version: 1, change: 1 } : { ok: false, code: 'no-such-item' };

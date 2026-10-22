@@ -167,7 +167,7 @@ async function pages() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { addEventListener: function () {} });
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { spirit: {}, addEventListener: function () {} });
   const item = label({ id: 't/G1.2', title: 'Second' });
   const itemFiles = [{ path: CORE, by: 'claude-windows', core: true }, { path: PLAIN, by: 'wsl-claude', core: false }];
   dd.mount(fakeElement('dd'), {
@@ -204,7 +204,7 @@ async function pages() {
   const ldoc = { byId: {}, getElementById: function (id) { return this.byId[id] || (this.byId[id] = fakeElement(id)); } };
   let desk = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(
-    { shell: { activateApp: function (x) { desk = x; } }, core: kernel.core }, ldoc, { addEventListener: function () {} });
+    { shell: { activateApp: function (x) { desk = x; } }, core: kernel.core }, ldoc, { spirit: {}, addEventListener: function () {} });
   desk.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
     escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,

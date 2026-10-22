@@ -1301,13 +1301,19 @@ function insideClone(p) {
 function fencedPaths() {
   return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }).then(function (b) {
     const out = Object.create(null);
+    const mine = [];
     ((b && b.items) || []).forEach(function (i) {
       let it = null;
       try { it = JSON.parse(i.label); } catch (e) { it = null; }
       if (!it || !it.goal || !NODE_NAME || it.with !== NODE_NAME || it.status === 'done' || it.status === 'closed') return;
-      (Array.isArray(it.files) ? it.files : []).forEach(function (f) { if (f && f.path) out[String(f.path)] = it.id; });
+      mine.push(it.id);
     });
-    return out;
+    // Each item's files are item.files' own answer since goal/G32.2.
+    return Promise.all(mine.map(function (id) {
+      return desk('item.files', { id: id }).then(function (f) {
+        ((f && f.files) || []).forEach(function (e) { if (e && e.path) out[String(e.path)] = id; });
+      });
+    })).then(function () { return out; });
   });
 }
 function fenced(rel) {

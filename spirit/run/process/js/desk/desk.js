@@ -791,8 +791,11 @@ function apply(s, r, b, item, goalOf) {
       return;
     }
     case 'check.set': {
-      const c = it.checks.filter(function (x) { return x.number === String(b.check); })[0];
-      if (c) { c.state = String(b.state); c.by = r.by; c.at = r.at; }
+      // GRANT-ALL (goal/G32.2): check 'all' grants every open G check of the item in this one record.
+      const set = String(b.check) === 'all' && String(b.state) === 'granted'
+        ? it.checks.filter(function (x) { return x.kind === 'G' && x.state === 'open'; })
+        : it.checks.filter(function (x) { return x.number === String(b.check); }).slice(0, 1);
+      set.forEach(function (c) { c.state = String(b.state); c.by = r.by; c.at = r.at; });
       return;
     }
     case 'chat.add': {
@@ -1489,10 +1492,9 @@ function facts(s, it) {
     boxTaken: it.boxTakenBy || '',
     // goal/G5.4: in limbo, and marked a sub-goal by a split.
     limbo: limboOf(s, it), subGoal: it.subGoal === true,
-    // THE FILES TOUCHED (goal/G8.8), the whole item's, every writer's together: { path, by, core }. Andy: "that file
-    // list should be visible in desk ui per item, core files market as requiring grants." Which paths are core is read
-    // from js/coreFiles.js, the one list commitCheck already locks, so the mark and the grants cannot disagree.
-    files: filesOf(it),
+    // THE FILES TOUCHED (goal/G8.8) are item.files' own answer since goal/G32.2: a 142-file list in the facts made
+    // every write to the item too large to come back. The facts say only how many.
+    fileCount: filesOf(it).length,
     // DESIGN-GREEN (goal/G6.8): no open red question on it.
     green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
@@ -1508,7 +1510,7 @@ function facts(s, it) {
   // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
   // goal/G21.6: every agent with an open take of one of his lines.
   f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
-    .concat(openTakes(it).map(function (l) { return l.taken; }), Object.keys(it.takers), f.files.map(function (e) { return e.by; }), it.goal ? Object.keys(s.agentKey) : []));
+    .concat(openTakes(it).map(function (l) { return l.taken; }), Object.keys(it.takers), Object.keys(it.files || {}), it.goal ? Object.keys(s.agentKey) : []));
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -2238,6 +2240,22 @@ appServer.serve(withPlugins({
       return { box: it.box, version: it.version };
     },
   },
+  // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by, core } (goal/G8.8; core read from
+  // js/coreFiles.js, the one list commitCheck locks), core files first, then by path; as many as fit one answer, and
+  // filesMore says there were more. Nothing pages.
+  'item.files': {
+    request: { id: '' }, reply: { files: [{ path: '', by: '', core: false }], filesMore: false },
+    handler: function (a) {
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      const all = filesOf(it);
+      const order = all.filter(function (e) { return e.core; }).concat(all.filter(function (e) { return !e.core; }));
+      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ filesMore: true }), 'utf8');
+      const found = walked(order.map(function (e, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(order[i]) }; }, room);
+      const files = found.items.map(function (p) { return JSON.parse(p.label); });
+      return { files: files, filesMore: files.length < order.length };
+    },
+  },
   'item.checks': {
     request: { id: '' }, reply: { checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }] },
     handler: function (a) {
@@ -2494,6 +2512,12 @@ appServer.serve(withPlugins({
       // answered the agent's; each fits only its own kind.
       if (a.state === 'granted') ownerOnly(caller);
       return { change: write('check.set', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+        // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". His alone, as every grant is.
+        if (a.check === 'all') {
+          if (a.state !== 'granted') throw refusedWhy('bad-request', 'check all is for granted only');
+          if (!it.checks.some(function (x) { return x.kind === 'G' && x.state === 'open'; })) throw refusedWhy('bad-request', 'no open grant on ' + it.id);
+          return;
+        }
         const c = it.checks.filter(function (x) { return x.number === a.check; })[0];
         if (!c) throw refused('no-row');
         if ((a.state === 'granted' && c.kind !== 'G') || (a.state === 'answered' && c.kind !== 'Q')) throw refusedWhy('bad-request', a.check + ' is a ' + c.kind + ' check: ' + a.state + ' is for ' + (a.state === 'granted' ? 'a G' : 'a Q') + ' check');

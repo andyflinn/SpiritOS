@@ -267,7 +267,8 @@ async function verifyHalf() {
             out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
           } else {
             asks.push({ verb: verb, args: a });
-            if (verb === 'items.search') out = { items: items.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
+            if (verb === 'item.files') out = { files: (items.filter(function (i) { return i.id === a.id; })[0] || {}).files || [], filesMore: false };
+            else if (verb === 'items.search') out = { items: items.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
             else if (verb === 'item.get') out = { item: JSON.stringify(items.filter(function (i) { return i.id === a.id; })[0] || null), version: 1, change: 1 };
             else if (verb === 'item.chat') out = { chat: (CHATS[a.id] || []).slice(), chatMore: false };
             else if (verb === 'item.checks') out = { checks: [] };

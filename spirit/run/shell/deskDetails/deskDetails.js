@@ -20,6 +20,8 @@ var ddFacts = null;          // the item's facts, as the server last said them
 var ddBox = '';
 var ddVersion = 0;
 var ddChecks = [];
+var ddFiles = [];            // item.files, its own answer since goal/G32.2: core first, as many as fit
+var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
 var ddFound = null;           // the chat search's ranked lines; null while the search is empty (goal/G18.5)
@@ -234,7 +236,12 @@ function ddQsHtml() {
 }
 // The grants, open ones as his armed button, given ones in green, under the files they cover.
 function ddGrantsHtml() {
-  return ddChecks.map(function (c) {
+  // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". Armed like every grant; one write grants them all.
+  var open = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).length;
+  var armedAll = ddArmed === 'grant:all';
+  var all = open > 1 ? '<div><button type="button" data-grant="all"' + (armedAll ? ' data-armed="1"' : '') +
+    ' style="background:#c00;color:#fff">' + (armedAll ? 'Grant all ' + open + ': sure?' : 'Grant all ' + open) + '</button></div>' : '';
+  return all + ddChecks.map(function (c) {
     if (c.kind === 'G' && c.state === 'granted') {
       return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
     }
@@ -345,13 +352,13 @@ function ddLinksHtml() {
 // market as requiring grants." One line per path with the agent that wrote it; a core path is marked data-core="1"
 // and says it needs his grant. The server decides which is core (js/coreFiles.js), never this page.
 function ddFilesHtml() {
-  var files = (ddFacts && Array.isArray(ddFacts.files)) ? ddFacts.files : [];
+  var files = ddFiles;
   if (!files.length) return '';
   return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
     var core = e && e.core === true;
     return '<div data-file="' + ddEsc(e.path) + '"' + (core ? ' data-core="1" title="a core file: it needs your grant"' : '') + '>' +
       (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.by ? ddName(e.by) : '') + ')</span></div>';
-  }).join('') + '</div>';
+  }).join('') + (ddFilesMore ? '<div class="job-manifest-note">' + ddEsc(String((ddFacts && ddFacts.fileCount) || '')) + ' files in all; the core ones are shown first.</div>' : '') + '</div>';
 }
 
 // CHAT LINES DRAWN READABLY (desk/G1.10): line breaks kept, short times
@@ -454,7 +461,13 @@ function ddTake(obj) {
   if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddBoxLoaded = true; }
   if (obj.chat) ddChat.push(obj.chat);
   if (Array.isArray(obj.checks)) ddChecks = obj.checks;
+  if (obj.verb === 'item.files.add') ddLoadFiles(ddId);
   ddPaint();
+}
+
+// The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
+function ddLoadFiles(id) {
+  return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
 }
 
 // Asks the desk to rank this item's lines by the text; an answer that comes after the text changed is dropped. On a
@@ -572,6 +585,7 @@ function ddLoad() {
     return Promise.all([
       ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
+      ddLoadFiles(id),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
     ]);
   }).then(null, function (e) {
@@ -711,6 +725,8 @@ spirit.shell.activateApp({
     ddBoxLoaded = false;
     ddVersion = 0;
     ddChecks = [];
+    ddFiles = [];
+    ddFilesMore = false;
     ddChat = [];
     ddChatMore = false;
     ddFound = null;

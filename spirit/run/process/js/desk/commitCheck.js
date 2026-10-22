@@ -144,8 +144,11 @@ function checkItems(ids) {
 // ── the core grants (goal/G4.23) ───────────────────────────────────
 // Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
 // grant request in the item?". A staged core file (spirit/run/js/coreFiles.js) needs a granted G check on the item
-// naming its path under spirit/run. Refused without it, and the refusal puts one open G check "core grant: <path>"
-// under the item, once, so his List shows it.
+// naming its path under spirit/run. Refused without it. SINCE goal/G32.2 THE REFUSAL RAISES NO GRANT OF ITS OWN: one G
+// check per file (64 on G32.2) outgrew the item's one answer and Desk refused his grants. It says to list the files
+// with item.files.add instead, whose one grant for all the core files (goal/G8.8: "all files that need a grant should
+// get one 'grant' button together") he grants once. A path is matched whole against a grant's comma list, as the full
+// repository path or under spirit/run, never as the end of a longer path.
 // NO SCOPE SINCE goal/G10.8: Andy, 2026-10-12, "all agents in desk have "/" file scope", the per-agent setting removed
 // from desk and commitCheck ("b"). Every agent commits anywhere in the repo; the core grants still hold.
 function coreGrants(id) {
@@ -155,18 +158,14 @@ function coreGrants(id) {
     const core = staged.filter(function (f) { return require('../../../js/coreFiles.js').isCore(f, top); });
     if (!core.length) return null;
     const under = function (f) { return f.replace(/^spirit\/run\//, ''); };
+    const named = function (c) { return String(c.words).replace(/^core grant: /, '').split(', '); };
     return desk('item.checks', { id: id }).then(function (got) {
       const checks = Array.isArray(got.checks) ? got.checks : [];
-      const grants = checks.filter(function (c) { return c.kind === 'G'; });
-      const ungranted = core.filter(function (f) { return !grants.some(function (c) { return c.state === 'granted' && c.words.indexOf(under(f)) !== -1; }); });
+      const granted = checks.filter(function (c) { return c.kind === 'G' && c.state === 'granted'; });
+      const ungranted = core.filter(function (f) { return !granted.some(function (c) { const n = named(c); return n.indexOf(f) !== -1 || n.indexOf(under(f)) !== -1; }); });
       if (!ungranted.length) return null;
-      const toAsk = ungranted.filter(function (f) { return !grants.some(function (c) { return c.words.indexOf(under(f)) !== -1; }); });
-      return toAsk.reduce(function (chain, f) {
-        return chain.then(function () { return desk('check.add', { id: id, kind: 'G', words: 'core grant: ' + under(f), test: '' }); });
-      }, Promise.resolve()).then(function () {
-        end(1, 'commitCheck: REFUSED (grant): core files Andy has not granted under ' + id + ' (a grant request is under the item):\n' +
-          ungranted.map(function (f) { return '- ' + f; }).join('\n'));
-      });
+      end(1, 'commitCheck: REFUSED (grant): core files Andy has not granted under ' + id + '. List them with item.files.add ' +
+        'under the item: the desk raises one grant for all its core files.\n' + ungranted.map(function (f) { return '- ' + f; }).join('\n'));
     });
   });
 }

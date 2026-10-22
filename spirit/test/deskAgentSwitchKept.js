@@ -84,6 +84,7 @@ function deskAnswer(verb, a) {
   if (verb === 'AGENTS') return { text: 'Rules for agents.' };
   if (verb === 'AGENTS.introspect') return { items: Object.keys(verbs).map(function (v) { return { key: v, label: verbs[v].description }; }), more: false };
   if (verb.indexOf('AGENTS.') === 0) return verbs[verb.slice(7)] || { ok: false, code: 'no-such-verb' };
+  if (verb === 'item.files') return { files: (ITEMS.filter(function (i) { return i.id === a.id; })[0] || {}).files || [], filesMore: false };
   if (verb === 'items.search') return { items: ITEMS.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
   const it = ITEMS.filter(function (i) { return i.id === a.id; })[0];
   if (verb === 'item.get') return it ? { item: JSON.stringify(it), version: 1, change: 1 } : { ok: false, code: 'no-such-item' };

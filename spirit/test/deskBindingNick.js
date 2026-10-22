@@ -372,6 +372,8 @@ async function theDialog() {
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
       if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'text', version: 1 } });
       if (v === 'item.checks') return Promise.resolve({ status: 200, body: { checks: [] } });
+      // The file list is item.files' own answer since goal/G32.2.
+      if (v === 'item.files') return Promise.resolve({ status: 200, body: { files: f.files, filesMore: false } });
       if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [{ by: CW.label, key: CW.key, name: 'Claude Windows', at: new Date().toISOString(), text: 'in the dialog', taken: '' }], chatMore: false } });
       return Promise.resolve({ status: 200, body: {} });
     },

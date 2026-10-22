@@ -73,6 +73,7 @@ let nextQueue = [];
 function deskAnswer(verb, a) {
   if (verb === 'AGENTS') return { text: 'Rules for agents.' };
   if (verb === 'AGENTS.introspect') return { items: [], more: false };
+  if (verb === 'item.files') return { files: (ITEMS[a.id] || {}).files || [], filesMore: false };
   if (verb === 'items.search') {
     let ids = Object.keys(ITEMS);
     if (a.goalsOnly) ids = ids.filter(function (k) { return !ITEMS[k].goal; });

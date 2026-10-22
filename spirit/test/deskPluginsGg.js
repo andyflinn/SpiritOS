@@ -364,8 +364,10 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'its title reads ' + short(mf && mf.title));
     if (String(mb.box || '').indexOf('every production stack reaching ' + END + ' passes through ' + GATE) !== -1) test.check('its box states the rule');
     else test.fail(OWED + 'its box reads ' + short(mb.box));
-    if (mf && JSON.stringify(pathsOf(mf)) === JSON.stringify(['spirit/test/stackFrameTestItems.js'])) test.check('its file list is [spirit/test/stackFrameTestItems.js]');
-    else test.fail(OWED + 'its file list reads ' + short(mf && pathsOf(mf)));
+    // The file list is item.files' own answer since goal/G32.2.
+    const mfl = made.id ? await call('item.files', { id: made.id }, ANDY) : {};
+    if (JSON.stringify(pathsOf(mfl)) === JSON.stringify(['spirit/test/stackFrameTestItems.js'])) test.check('its file list is [spirit/test/stackFrameTestItems.js]');
+    else test.fail(OWED + 'its file list reads ' + short(pathsOf(mfl)));
 
     test.subHeading('g. the list of doors');
     let listed = null;

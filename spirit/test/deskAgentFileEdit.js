@@ -99,6 +99,7 @@ function deskAnswer(verb, a) {
   // The desk's family folder through its FS (goal/G30.4): its AGENTS.md, and no verb files.
   if (verb === 'FS.loadFile') return { text: 'Rules for agents.' };
   if (verb === 'FS.search') return { items: [], more: false };
+  if (verb === 'item.files') return { files: (ITEMS.filter(function (i) { return i.id === a.id; })[0] || {}).files || [], filesMore: false };
   if (verb === 'items.search') return { items: ITEMS.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
   return { change: 1 };
 }

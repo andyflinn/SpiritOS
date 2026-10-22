@@ -1013,15 +1013,18 @@ async function regress(failed, pulled, doing) {
   for (const suite of failed) {
     const found = await desk('items.search', { text: suite, currentGoalOnly: false, goalsOnly: false, includeClosed: true });
     if (found && found.more) out.partial = true;
-    ((found && found.items) || []).forEach(function (i) {
+    for (const i of ((found && found.items) || [])) {
       let one = null;
       try { one = JSON.parse(i.label); } catch (e) { one = null; }
-      if (!one || !one.id || one.goal === '' || (one.status !== 'done' && one.status !== 'closed')) return;
-      const lists = (Array.isArray(one.files) ? one.files : []).some(function (f) { return String((f && f.path) || '') === suite; });
-      if (!lists) return;
+      if (!one || !one.id || one.goal === '' || (one.status !== 'done' && one.status !== 'closed')) continue;
+      // The item's files are item.files' own answer since goal/G32.2.
+      const fl = await desk('item.files', { id: one.id });
+      if (fl && fl.filesMore) out.partial = true;
+      const lists = ((fl && fl.files) || []).some(function (f) { return String((f && f.path) || '') === suite; });
+      if (!lists) continue;
       const at = byId[one.id] || (byId[one.id] = { id: String(one.id), goal: String(one.goal), suites: [] });
       if (at.suites.indexOf(suite) === -1) at.suites.push(suite);
-    });
+    }
   }
   const t = await tree();
   const where = 'at ' + (t.short || t.commit || 'an unknown commit') + ' (' + pulled + ')';
@@ -1061,15 +1064,17 @@ function regressSaid(u) {
 async function goalSuites(goalId) {
   const found = await desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true });
   const out = Object.create(null);
-  ((found && found.items) || []).forEach(function (i) {
+  for (const i of ((found && found.items) || [])) {
     let one = null;
     try { one = JSON.parse(i.label); } catch (e) { one = null; }
-    if (!one || one.goal !== String(goalId)) return;
-    (Array.isArray(one.files) ? one.files : []).forEach(function (f) {
+    if (!one || one.goal !== String(goalId)) continue;
+    // The item's files are item.files' own answer since goal/G32.2.
+    const fl = await desk('item.files', { id: one.id });
+    ((fl && fl.files) || []).forEach(function (f) {
       const p = String((f && f.path) || '');
       if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
     });
-  });
+  }
   return Object.keys(out).sort();
 }
 
