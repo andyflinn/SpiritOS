@@ -1,5 +1,5 @@
 {
- "change": 91834,
+ "change": 91858,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -106,10 +106,9 @@
    "id": "goal/G33.1",
    "title": "Icons on the face: a refusal says why, and adding works",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -602,11 +601,9 @@
    "id": "goal/G33.2",
    "title": "small desk issues",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "build",
    "with": "claude-windows",
-   "buttons": [
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G33.3"
    ],
@@ -617,19 +614,19 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
    "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "redCommit": "4a88d94f",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -807,6 +804,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T22:38:45.626Z",
      "text": "Yes: both are green, no open question on either. G33.2 first (its Go button is offered now), then G33.3, which G33.2 blocks and which gets its Go button once G33.2 is done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:40:50.186Z",
+     "text": "commit 4a88d94f8fdc252b795d7e71efe0b0be9e464309: goal/G33.2: the red for the small desk issues: a line from the phase holder marks the item until he opens it, his seen clears it and his own line does not mark it; the List draws a marked row red; the\n- spirit/test/deskSmallFixes.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:40:59.568Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
     }
    ]
   },
