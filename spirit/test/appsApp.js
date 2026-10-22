@@ -174,6 +174,37 @@ const done = (async function () {
   else test.fail('OWED by goal/G33.1: saveFile refused answered ' + JSON.stringify(said).slice(0, 240));
   if (/not saved: ' \+ \(\(r && r\.reason\)/.test(code('shell/icons/icons.js'))) test.check('the Icons app shows the reason beside Add');
   else test.fail('OWED by goal/G33.1: the Icons app does not show the reason');
+
+  // goal/G33.1, the cause the words named. Andy: "not saved: Body too large: 23608 of 23552": the relay takes one face
+  // request up to BODY_MAX, and the Icons app sends its whole set. A request too large for one trip goes in pieces,
+  // each its own call through the relay; the home node puts them back together and runs the whole once.
+  test.subHeading('8. a face request too large for one trip goes in pieces (goal/G33.1)');
+  const big = { verb: 'fs.save', path: 'shell/icons/iconSet.json', content: 'x'.repeat(30000) };
+  const whole = JSON.stringify(big);
+  const cut = Math.floor(whole.length / 2);
+  const ran = [];
+  const sent = [];
+  let pieceAnswer = null;
+  try {
+    const FH = require('../run/js/faceHome.js');
+    const home2 = FH.createFaceHome({
+      call: function (verb, args) { ran.push({ verb: verb, bytes: String((args && args.content) || '').length }); return Promise.resolve({ status: 204, body: null }); },
+      annotateFace: function () { return { ok: true }; }, serveFile: function () {}, identity: function () { return me; }, relayKey: function () { return ''; },
+      jobs: { subscribe: function () { return function () {}; } }, renames: null, log: function () {},
+      upload: function (url, at, headers) { sent.push({ at: at, status: headers && headers['x-spirit-status'] }); return { on: function () {}, write: function () { return true; }, end: function () {} }; },
+    });
+    home2.request('http://relay.test', { id: 'c1', request: { piece: { id: 'P1', n: 0, of: 2, text: whole.slice(0, cut) } } });
+    await new Promise(function (r) { setTimeout(r, 30); });
+    pieceAnswer = ran.length;
+    home2.request('http://relay.test', { id: 'c2', request: { piece: { id: 'P1', n: 1, of: 2, text: whole.slice(cut) } } });
+    await new Promise(function (r) { setTimeout(r, 50); });
+  } catch (e) { ran.push({ threw: e.message }); }
+  if (pieceAnswer === 0 && ran.length === 1 && ran[0].verb === 'fs.save' && ran[0].bytes === 30000)
+    test.check('the node runs nothing on the first piece, and the whole fs.save once the last is in (30000 bytes)');
+  else test.fail('OWED by goal/G33.1: pieces ran ' + JSON.stringify(ran).slice(0, 200) + ' (after the first: ' + pieceAnswer + ')');
+  const faceShellNow = code('face/shell.js');
+  if (/piece/.test(faceShellNow) && /BODY_MAX|PIECE_MAX|piece.*max/i.test(faceShellNow)) test.check('the face shell sends a request larger than one trip in pieces');
+  else test.fail('OWED by goal/G33.1: face/shell.js sends every request whole');
 }());
 
 done.then(function () { test.reportSuccessFailureCount(); process.exit(0); },
