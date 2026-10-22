@@ -60,7 +60,7 @@ spirit.shell.activateApp({
     var E = window.spiritElements;
     // THE TREE'S INDENT (Andy: "in tree-mode an indent of 2em per slash ahead of the file-icon."): only while the field is
     // empty, when the list is the tree.
-    container.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}</style>' +
+    container.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
       '<div data-files="list" class="files-tree"></div><div data-files="file" hidden></div>';
     var listHost = container.querySelector('[data-files="list"]');
     var fileHost = container.querySelector('[data-files="file"]');
@@ -71,7 +71,6 @@ spirit.shell.activateApp({
       verb: 'search',
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       columns: [
-        { field: 'icon', label: '' },
         { field: 'name', from: 'path', label: 'Name', sort: 'path' },
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
