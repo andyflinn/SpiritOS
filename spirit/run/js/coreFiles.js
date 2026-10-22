@@ -38,6 +38,8 @@ function isCore(repoPath, repoRoot) {
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   if (p.indexOf('spirit/run/js/') === 0 || p.indexOf('spirit/run/shell/js/') === 0) return true;
   if (FRAME.indexOf(p) !== -1) return true;
+  // THE FACE IS CORE (goal/G30.21; Andy: "the face folder is core", "face.html is core"): what the relay serves a face.
+  if (p.indexOf('spirit/run/face/') === 0 || p === 'spirit/run/face.html') return true;
   // AN INTRINSIC APP'S CORE IS ITS CODE ONLY (goal/G30.21; Andy: "core for an intrinsic app is its code only (.js, .css,
   // .html), so its data files stay writable"), a server's the same.
   const app = /^spirit\/run\/(shell|process\/js)\/([^/]+)\//.exec(p);
