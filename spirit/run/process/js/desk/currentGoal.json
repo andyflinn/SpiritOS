@@ -1,5 +1,5 @@
 {
- "change": 91706,
+ "change": 91834,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -7,14 +7,15 @@
    "id": "goal/G33",
    "title": "Small fixes in existing apps.",
    "goal": "",
-   "status": "",
+   "status": "goal run started",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G33.3"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -45,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -588,8 +589,273 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-22T22:13:47.222Z",
      "text": "now we have something again to occupy me during long jobs that you do.\n\nnext"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:14:32.210Z",
+     "text": "Next as in G32.4, the typed rules (the long one, waiting for your Go), or the next small fix under G33?"
     }
    ]
+  },
+  {
+   "id": "goal/G33.2",
+   "title": "small desk issues",
+   "goal": "goal/G33",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G33.3"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "SMALL DESK ISSUES\n\n- The Verifier tab shows no queue: the list of waiting runs under its own elements (goal/G19.3) goes, and with it whatever only fed it.\n- An item turns red in the List when the agent holding its phase posts a line under it, a report or a question, so his attention is caught when something happens; it stays red until he opens the item.\n- Discussed, not built here: Desk's searches changed so a Desk client keeps what it has learned of the current goal, as the face apps keep their data, instead of asking again.\n\nWhere: shell/desk/desk.js, the desk server's facts for the List, deskDetails.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:17:17.163Z",
+     "text": "- remove verifier queue\n- make an item go red in the list when the phase holder posts a report or questions (others can't post any more, correct?), so that my attention is caught when something happens...\n- at least discuss, changing the underlying search concepts in desk, so that desk clients accumulate knowledge about the current goal like face-apps do....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:18:46.623Z",
+     "text": "Taken; the box holds the three as statements.\n\n- your question: correct. Since G18.8 an agent posts under an item only while it holds the item or the take of one of your lines, so under a held item it is the phase holder, and deskVerify, which posts under your name\n- the queue I take to be the list of waiting runs under the Verifier tab; it goes\n- red: I read it as red from the holder's line until you open the item\n\nRed until you open the item, or until you answer in it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:19:52.559Z",
+     "text": "red until i open it, it may be just a status report to keep me happy...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:19:54.699Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:20:24.132Z",
+     "text": "That is what the box says: red from the holder's line until you open the item. The queue goes too.\n\nGo on G33.2? The search question I bring to you once these two are in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:30:42.383Z",
+     "text": "on the deskClient side\n\n- what if searches finally just return what the main-list rows actually show. this, cached on the client side establishes the trunk and the main branches of the current-project data-tree.\n- the deskClient autonomously searches the items with the following priorities-\n- since an agent can only hold 1 phase of one item at the time, deskClient focuses on fetching that items file, chat etc branches and twigs of the data tree, so anything the agent needs is already on hand....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:31:25.411Z",
+     "text": "I think it is right, and most of the trunk is there already:\n\n- the rows: items.search already answers each item's facts as its label, the same facts the List draws, and every write already publishes the rows it changed; so deskClient can hold one mirror of the current goal's rows, filled once by a search and kept by the stream, never asked again\n- the branches: on taking a phase, deskClient fetches that one item's box, newest chat, checks and files, and keeps them by the same stream; the agent then reads its own item from its own node at once, and asks the desk only to write\n- after a gap it catches up from its cursor (changes already replays from a number), so the mirror is never stale\n- bounded: the current goal and the one held item, newest chat only; anything older stays a search\n\nWhat changes: deskClient grows the mirror and answers reads from it; the desk itself barely moves. It is bigger than a small fix.\n\nAdd a new item for it, after G33.2?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:31:30.068Z",
+     "text": "ame concepts in the users web-client"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:31:32.201Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:32:01.541Z",
+     "text": "Yes, the same in your Desk app: one mirror of the current goal's rows, filled once and kept by the stream, and the item you open filled whole and kept the same way, so nothing on your screen asks twice. One concept, two clients: deskClient for agents, the Desk app for you.\n\nAdd it as a new item after G33.2?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:32:57.726Z",
+     "text": "so you may need an updated shared client block that handles this same for deskClient and the web-UI"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:33:00.074Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:33:44.891Z",
+     "text": "Agreed, and it exists already: shell/js/spiritData.js, the faceless layer the face apps keep their data in. It runs in node as well as in the page: one tree, a branch per type, filled by seat(search answer) and kept by a type's translator from the stream.\n\n- the shared block is that layer plus one new translator for the desk: data.items (id to its row) from items.search and the published rows, and the held or opened item's box, chat, checks and files as its branches\n- deskClient loads both in node and answers the agent's reads from them; the Desk app loads the same two files in the page\n- nothing new beside it: one cache, one translator, two clients\n\nAdd it as a new item after G33.2?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:34:33.758Z",
+     "text": "yes, add item for this as well"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:34:35.974Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:35:47.082Z",
+     "text": ".... i still would like for desk to remain usable and want to pursue an improvment strategy, that makes it ultimately a face-app, too."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:35:49.293Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:36:05.696Z",
+     "text": "Added: G33.3, Desk clients keep the current goal, one cache for deskClient and the Desk app; its box holds the design as we agreed it. G33.2 blocks it, and G33.2 still waits for your Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:36:21.212Z",
+     "text": "Added: G33.3, Desk clients keep the current goal, one cache for deskClient and the Desk app; its box holds the design as we agreed it. G33.2 blocks it, and G33.2 still waits for your Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:37:20.689Z",
+     "text": "Agreed, and written into G33.3: Desk stays usable all the way, and that item is a step to Desk as a face app, since the cache is the face's own layer and its calls go through the spirit object. G33.3 is added, blocked by G33.2, which waits for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T22:38:06.355Z",
+     "text": "so both open items are green, and you're ready to go?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T22:38:08.418Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T22:38:45.626Z",
+     "text": "Yes: both are green, no open question on either. G33.2 first (its Go button is offered now), then G33.3, which G33.2 blocks and which gets its Go button once G33.2 is done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G33.3",
+   "title": "Desk clients keep the current goal: one cache, two clients",
+   "goal": "goal/G33",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [
+    "goal/G33.2"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "DESK CLIENTS KEEP THE CURRENT GOAL: ONE CACHE, TWO CLIENTS\n\n- A desk search answers what the List's rows show: each item's facts, the trunk and main branches of the current goal's data tree.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient fetches on its own, by priority: the current goal's rows first, then the one item its agent holds a phase of (an agent holds one at a time), whole: its box, its newest chat, its checks and its files, so anything the agent needs is on hand; the agent's reads are answered from it, and only writes go to the desk.\n- The Desk app in the browser keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js, the faceless layer the face apps keep their data in, with one desk translator; deskClient loads the two in node, the Desk app in the page.\n- Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step on the path that makes Desk a face app too: the cache is the face's own layer, and its calls go through the spirit object, which the face already has.\n\nWhere: shell/js/spiritData.js (as it is), a desk translator beside it, process/js/deskClient, shell/desk, shell/deskDetails. Blocked by goal/G33.2.",
+   "version": 2,
+   "checks": [],
+   "chat": []
   }
  ]
 }
