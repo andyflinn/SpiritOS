@@ -54,20 +54,24 @@ function appsPanel(host, listHost, api, path) {
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
       '<label class="field-label">Icon <input type="text" data-face="icon" value="' + appsEsc(face.icon || manifest.icon || '') + '"' + dis + '></label>' +
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
-      (canWrite ? '<button type="button" data-apps="save">Save</button>' : '<div class="job-manifest-note">The face part is written from the face.</div>') +
+      (canWrite ? '' : '<div class="job-manifest-note">The face part is written from the face.</div>') +
       '<div data-apps="said" class="job-manifest-note"></div>';
     if (!canWrite) return;
-    panel.querySelector('[data-apps="save"]').addEventListener('click', function () {
+    // NO SAVE BUTTON (Andy: "why would there be a save button when the face can re-write annotations as soon as a field
+    // changes?"): every change writes the whole face part at once.
+    panel.addEventListener('change', function (e) {
+      if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
       var said = panel.querySelector('[data-apps="said"]');
       var v = function (k) { return panel.querySelector('[data-face="' + k + '"]'); };
       // Wholesale, as every sidecar part is written: what the panel shows is the whole face part.
       var payload = { app: !!v('shown').checked, intrinsic: !!v('intrinsic').checked, name: v('name').value, icon: v('icon').value, description: v('description').value };
       Promise.resolve(api.verb('fs.annotate', { path: path, payload: payload })).then(function (r) {
-        if (r && r.status === 200) {
+        // Any 2xx is the node's yes.
+        if (r && r.status >= 200 && r.status < 300) {
           said.textContent = 'saved';
           if (m[1] === 'shell') spirit.shell.faceApp(id);
         } else said.textContent = 'not saved: ' + ((r && r.body && (r.body.error || r.body.code)) || (r && r.status) || 'no answer');
-      }, function (e) { said.textContent = 'not saved: ' + ((e && e.message) || e); });
+      }, function (err) { said.textContent = 'not saved: ' + ((err && err.message) || err); });
     });
   }, function (e) { panel.textContent = 'could not read ' + path + ': ' + ((e && e.message) || e); });
 }
