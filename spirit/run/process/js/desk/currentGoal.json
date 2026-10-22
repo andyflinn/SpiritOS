@@ -1,5 +1,5 @@
 {
- "change": 88681,
+ "change": 88682,
  "line": 8510,
  "goal": "goal/G32",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -391,7 +391,6 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G32.2",
     "goal/G32.3"
    ],
    "blocked": [],
@@ -647,10 +646,9 @@
    "id": "goal/G32.2",
    "title": "the face code moves onto the spirit object",
    "goal": "goal/G32",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
