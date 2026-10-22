@@ -145,6 +145,35 @@ const done = (async function () {
   if (/coreFiles/.test(code('js/jobs.js')) && /core/.test(code('shell/js/files/data.js')) && /core/.test(row) && /yellow|--spirit-core/.test(row))
     test.check('an fs-watcher command marks a core file; the files list paints it yellow');
   else test.fail(OWED + 'core files are not marked or not painted');
+
+  // goal/G33.1. Andy: on the face every icon add says "not saved: refused"; at home the same save is taken. A refusal
+  // on its way to the face kept only a code, and the relay's refusals ({ok: false, error}) and plain-text answers carry
+  // none, so the words that said why were lost. A refusal now keeps its words, and the Icons app shows them.
+  test.subHeading('7. a refusal says why, as far as the Icons app (goal/G33.1)');
+  const S = require('../run/face/spirit.js');
+  const answers = {
+    relayJson: { status: 400, body: { ok: false, error: 'the body is not json' }, text: '{"ok":false,"error":"the body is not json"}' },
+    plainText: { status: 504, body: null, text: 'the home node did not answer' },
+  };
+  let mode = 'relayJson';
+  const transport = {
+    ask: function (verb, args) {
+      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: raw('js/' + args.family + '/api.js') } });
+      if (verb === 'api') return Promise.resolve({ status: 200, body: { fs: {} } });
+      return Promise.resolve(answers[mode]);
+    },
+    file: function () { return Promise.resolve({ status: 404, bytes: new Uint8Array(0) }); },
+  };
+  let said = [];
+  try {
+    const s = await S.createSpirit(transport);
+    for (const m of Object.keys(answers)) { mode = m; said.push(await s.fs.saveFile('shell/icons/iconSet.json', '{}')); }
+  } catch (e) { said = [{ threw: e.message }]; }
+  if (said.length === 2 && said[0].ok === false && /the body is not json/.test(said[0].reason) && said[1].ok === false && /the home node did not answer/.test(said[1].reason))
+    test.check('saveFile refused by the relay or in plain text answers the words: "' + said[0].reason + '", "' + said[1].reason + '"');
+  else test.fail('OWED by goal/G33.1: saveFile refused answered ' + JSON.stringify(said).slice(0, 240));
+  if (/not saved: ' \+ \(\(r && r\.reason\)/.test(code('shell/icons/icons.js'))) test.check('the Icons app shows the reason beside Add');
+  else test.fail('OWED by goal/G33.1: the Icons app does not show the reason');
 }());
 
 done.then(function () { test.reportSuccessFailureCount(); process.exit(0); },
