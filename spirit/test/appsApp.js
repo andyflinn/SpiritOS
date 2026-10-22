@@ -109,6 +109,34 @@ const done = (async function () {
     test.check('Apps rides on the Files cache and edits the face annotation; the old overrides are gone');
   else test.fail(OWED + 'shell/apps/apps.js is not the new Apps app');
 
+  // ── 6. The Icons app and glyphs as themselves (box v22) ──────────────────────────────────────────────────────────
+  test.subHeading('6. the Icons app, and icons used as themselves on the face');
+  const set = json('shell/icons/iconSet.json');
+  const setKeys = set ? Object.keys(set) : [];
+  const kernelGlyphs = Object.keys(spirit.core.const.ICON).map(function (k) { return spirit.core.const.ICON[k]; });
+  if (setKeys.length > 50 && setKeys.every(function (g) { return Array.isArray(set[g]) && !/^[A-Z_]+$/.test(g); }) && kernelGlyphs.every(function (g) { return setKeys.indexOf(g) !== -1; }))
+    test.check('shell/icons/iconSet.json: each key a glyph, its keywords an array, every glyph of the kernel\'s table in it');
+  else test.fail(OWED + 'iconSet.json: ' + setKeys.length + ' keys' + (set ? '' : ' (missing)'));
+  const iconsSide = json('shell/icons/icons.js.sidecar.json');
+  const iconsMan = json('shell/icons/icons.json');
+  if (iconsMan && raw('shell/icons/icons.js') && iconsSide && iconsSide.face && iconsSide.face.app === true && iconsSide.face.intrinsic === true)
+    test.check('the Icons app: its folder, its manifest, its face part on the face and intrinsic');
+  else test.fail(OWED + 'the Icons app is missing, or its face part does not say app and intrinsic');
+  const idx = raw('index.html');
+  const iconsList = code('shell/js/icons/listElement.js');
+  if (iconsList && code('shell/js/icons/rowElement.js') && idx.indexOf('/shell/js/icons/listElement.js') !== -1 && idx.indexOf('/shell/js/icons/rowElement.js') !== -1
+      && /iconList/.test(iconsList) && /iconList\.create\(/.test(code('shell/apps/apps.js')) && /iconList\.create\(/.test(code('shell/icons/icons.js')))
+    test.check('shell/js/icons/ has its row and list, loaded by index.html; Apps\' icon field and the Icons app draw that list');
+  else test.fail(OWED + 'the icons elements are missing, not loaded, or not drawn by Apps and Icons');
+  const keyed = ['face/shell.js', 'shell/js/contacts/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/files/rowElement.js',
+    'shell/js/textViewer.js', 'shell/contacts/contacts.js'].filter(function (f) { return /const\.ICON|ICON\[|ICON\.[A-Z]/.test(code(f)); });
+  const keyParts = ['contacts', 'files', 'mediaViewer', 'apps', 'icons'].filter(function (n) {
+    const s2 = json('shell/' + n + '/' + n + '.js.sidecar.json');
+    return !s2 || !s2.face || /^[A-Z_]+$/.test(String(s2.face.icon || ''));
+  });
+  if (!keyed.length && !keyParts.length) test.check('the face code and the face parts use glyphs as themselves, no key into a table');
+  else test.fail(OWED + 'still by key: ' + keyed.concat(keyParts.map(function (n) { return n + ' face part'; })).join(', '));
+
   test.subHeading('5. core files seen');
   const row = code('shell/js/files/rowElement.js');
   if (/coreFiles/.test(code('js/jobs.js')) && /core/.test(code('shell/js/files/data.js')) && /core/.test(row) && /yellow|--spirit-core/.test(row))
