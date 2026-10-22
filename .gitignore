@@ -48,8 +48,6 @@ media
 published
 release
 preferences.json
-# The face's own app list on this home node (goal/G30.20), the owner's, like preferences.json.
-spirit/run/face.json
 conversation.json
 history.json
 log.jsonl

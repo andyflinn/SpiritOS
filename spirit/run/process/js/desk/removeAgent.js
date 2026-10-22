@@ -4,7 +4,7 @@
 // ANDY'S SIDE OF TAKING AN AGENT OUT AGAIN — goal/G4.17.
 //
 //   Andy, 2026-10-04, to "Your side (desk grant, contact, scope) as a second script you run on your node?": "yes".
-//   The agent's side is offboard.js.
+//   The agent's side, offboard.js, is deleted (goal/G30.20): agent onboarding comes later, through the "agent" server on Andy's node.
 //
 // Run by Andy, against his own node (the one that runs the desk):
 //

@@ -46,7 +46,7 @@ fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
   try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
 });
-fs.writeFileSync(path.join(root, 'relay-state', 'include.json'), JSON.stringify({ modules: ['process/js/desk'] }), 'utf8');
+// The desk server runs: the copied tree's manifest says home (goal/G30.20).
 fs.writeFileSync(path.join(root, 'relay-state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
 let child = null;

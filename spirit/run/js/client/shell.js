@@ -2588,32 +2588,14 @@
   // Written into a container and wired here, the way renderOpenWith is:
   // it is one button, and a delegated listener somewhere else would be a
   // second place to look.
-  // ── WHAT THIS NODE INCLUDES (slim/G1.3) ──────────────────────────────
+  // ── WHERE AN APP RUNS IS ITS MANIFEST'S (goal/G30.20) ─────────────────
   //
-  // Asked once, at load: config.searchModules {query: ''} -> {items: [{key:
-  // path}], more}. The page cannot read relay-state/include.json itself
-  // (fileServable refuses relay-state/). UNTIL IT ANSWERS, NOTHING IS HIDDEN:
-  // a node that cannot answer (older, or the call failed) must not empty
-  // the desktop; the list applies once the node has said what it includes.
-  // Intrinsic apps are always included (Andy: "intrinsic apps must always
-  // be included, never excluded").
-  var includedModules = null; // null: the node has not answered
-  function loadIncludedModules() {
-    var asked;
-    try { asked = spirit.core.ask('config.searchModules', { query: '' }); } catch (e) { return; }
-    Promise.resolve(asked).then(function (r) {
-      var items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
-      var next = {};
-      items.forEach(function (i) { if (i && typeof i.key === 'string') next[i.key] = true; });
-      includedModules = next;
-      // The answer can come after the first paint: draw again (slim/G1.7).
-      if (typeof renderDesktop === 'function' && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
-    }, function () { /* the node said nothing: the slim default stands */ });
-  }
-  loadIncludedModules();
+  // An app shows at home when its manifest's runs names 'home'; an intrinsic one always does (Andy: "intrinsic apps
+  // must always be included, never excluded"). The include list and config.searchModules that said this before
+  // (slim/G1.3) are deleted: the manifest, found in the page's own file tree, is the one place.
   function isIncluded(appId) {
     var app = apps[appId];
-    return !includedModules || !!(app && app.intrinsic) || !!includedModules[appId];
+    return !!app && (!!app.intrinsic || (Array.isArray(app.runs) && app.runs.indexOf('home') !== -1));
   }
   // WHAT THE DESKTOP AND A GROUP'S SCREEN SHOW (slim/G1.7). Andy, on a new
   // node: "the shell still shows, desk and text editor". An app from a
@@ -2699,6 +2681,8 @@
       name: manifest.name,
       icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
       intrinsic: !!manifest.intrinsic,
+      // Where it runs (goal/G30.20): ['home'], ['home', 'face'] or [].
+      runs: Array.isArray(manifest.runs) ? manifest.runs : [],
       // `&& !manifest.intrinsic` used to be here, and it meant an
       // intrinsic app could not be hidden. That was right while
       // "intrinsic" meant "part of the node, so always on the desktop".

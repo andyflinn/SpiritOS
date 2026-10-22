@@ -1,9 +1,7 @@
-# config: what this node includes, for agents
+# config: empty, kept for later use
 
-The `config` namespace reads and sets the include list (relay-state/
-include.json): which process servers and shell apps this node runs. Local
-(`wire: false`).
-
-Described to agents (goal/G10.5): config.searchModules, the read. The write,
-config.setModules, has no file here and is closed to agents until a goal
-opens it.
+The `config` namespace has no verbs. Its two, config.searchModules and
+config.setModules, were deleted with the include list they read and set
+(goal/G30.20): where a process server or a shell app runs is its own
+manifest's `runs`, `["home"]`, `["home", "face"]` or `[]`, nothing else.
+Local (`wire: false`).

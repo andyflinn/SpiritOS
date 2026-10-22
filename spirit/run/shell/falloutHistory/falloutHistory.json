@@ -1,4 +1,5 @@
 {
+  "runs": [],
   "name": "Test history",
   "description": "The flips of one tested thing: every check under one sub-heading of one test file, red or green, newest first (goal/G27.14, F6).",
   "icon": "GRAPH",

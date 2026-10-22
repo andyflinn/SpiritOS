@@ -60,7 +60,7 @@ fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
 });
 // One served app, so a grant has a live path to take: the desk server.
-fs.writeFileSync(path.join(root, 'relay-state', 'include.json'), JSON.stringify({ modules: ['process/js/desk'] }), 'utf8');
+// The desk server runs: the copied tree's manifest says home (goal/G30.20).
 // His contacts know KEYA as alice; KEYB and KEYC they have never met.
 fs.writeFileSync(path.join(root, 'relay-state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
@@ -169,7 +169,8 @@ function down() {
 
   test.subHeading('a suspended appServer keeps its grants grantable (Andy: suspend/repair, return intact)');
   await down();
-  fs.writeFileSync(path.join(root, 'relay-state', 'include.json'), JSON.stringify({ modules: [] }), 'utf8');
+  // The desk server off for this boot: its manifest in this scratch copy runs nowhere (goal/G30.20).
+  (function () { const f = path.join(root, 'process', 'js', 'desk', 'desk.json'); const m = JSON.parse(fs.readFileSync(f, 'utf8')); m.runs = []; fs.writeFileSync(f, JSON.stringify(m, null, 2)); }());
   port = await freePort();
   child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up2 = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);

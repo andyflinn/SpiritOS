@@ -55,41 +55,15 @@
             '" data-arg-name="' + esc(arg.name) + '" value="' + esc(arg.default != null ? arg.default : '') + '"></label>';
         }).join('') +
         '<button type="button" data-job="start" style="display:none">' + (I.RUN || '') + ' Start Job</button>' +
-        '<button type="button" data-job="include" style="display:none"></button>' +
         '</div><div data-job="note" class="job-manifest-note"></div></div>';
       var start = host.querySelector('[data-job="start"]');
-      var toggle = host.querySelector('[data-job="include"]');
       var note = host.querySelector('[data-job="note"]');
-      var modulePath = lang === 'js' ? 'process/js/' + match[2] : '';
-      var included = false;
-      function draw() {
-        start.style.display = included ? '' : 'none';
-        toggle.style.display = modulePath ? '' : 'none';
-        toggle.removeAttribute('data-armed');
-        toggle.textContent = included ? 'Exclude from this node' : 'Include on this node';
-      }
-      function asked() {
-        if (!modulePath) return Promise.resolve();
-        return Promise.resolve(core().ask('config.searchModules', { query: match[2] })).then(function (a) {
-          var items = a && a.body && Array.isArray(a.body.items) ? a.body.items : [];
-          included = items.some(function (i) { return i && i.key === modulePath; });
-          draw();
-        }, function () { included = false; draw(); });
-      }
-      // Asked twice, as a process change weighs more than an app's (Andy: "re-arm buttons").
-      toggle.addEventListener('click', function () {
-        if (!toggle.hasAttribute('data-armed')) {
-          toggle.setAttribute('data-armed', '');
-          toggle.textContent = included ? 'Press again to exclude' : 'Press again to include';
-          return;
-        }
-        var on = !included;
-        Promise.resolve(core().ask('config.setModules', { path: modulePath, on: on })).then(function (a) {
-          note.textContent = a && a.status === 200 ? (on ? 'Included: it runs now if it is a server.' : 'Excluded: it stops at the next restart.')
-            : 'Not changed: ' + ((a && a.text) || 'no answer');
-          return asked();
-        });
-      });
+      // WHERE IT RUNS IS ITS MANIFEST'S (goal/G30.20): a server whose runs names 'home' (or an intrinsic one) can be
+      // started; any other says so. The include switch that stood here is deleted with the include list: runs is edited
+      // in the manifest's text.
+      var included = manifest.intrinsic === true || (Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
+      start.style.display = included ? '' : 'none';
+      if (!included) note.textContent = 'Not run on this node: the runs in its manifest does not name home.';
       start.addEventListener('click', function () {
         var values = {};
         Array.prototype.forEach.call(host.querySelectorAll('[data-arg-name]'), function (input) {
@@ -99,7 +73,6 @@
         var shell = window.spirit && window.spirit.shell;
         if (shell && typeof shell.launchApp === 'function') shell.launchApp('shell/jobs', null, { replace: true });
       });
-      asked();
     });
   }
 

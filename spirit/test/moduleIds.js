@@ -13,7 +13,7 @@
 //
 // THE CONTRACT:
 //   T1 a job started from process/js/<name>/ carries module 'process/js/<name>',
-//      the same string the include list holds (includeList.paths)
+//      the module's own path (process/js/<name>)
 //   T2 two starts of one process are two jobs, two instances of one module
 //   T3 the node's own boot does the same: a node-operated server's job carries
 //      its module (a face is such a server since goal/G13.2)
@@ -35,7 +35,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const jobs = require('../run/js/jobs.js')(kernel, 65433);
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-moduleids-'));
 const started = [];
-const includeList = require('../run/js/includeList.js');
+const runsHome = require('./tools/runsHome.js');
 
 // A node's run folder with one one-shot process and one node-operated server.
 function plantNode() {
@@ -52,9 +52,9 @@ function plantNode() {
   // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
   const auth = require('../run/js/relayAuth.js');
   auth.saveIdentity(run, auth.generateIdentity('moduleids'));
-  // Listed: this suite is about ids, not about the list (slim/G1.3 T6).
-  includeList.add(run, 'process/js/counter');
-  includeList.add(run, 'process/js/keeper');
+  // Run at home: this suite is about ids, not about where a module runs (goal/G30.20).
+  runsHome(run, 'process/js/counter');
+  runsHome(run, 'process/js/keeper');
   return run;
 }
 
@@ -68,8 +68,7 @@ test.startTest('slim/G1.5: the node owns every module id, by path; a job is an i
   let a = null;
   try { a = jobs.startJob('node', [script, JSON.stringify({ folder: 'photos-a' })], { type: 'counter' }); } catch (e) { a = { error: e.message }; }
   if (a && a.id) started.push(a);
-  const listed = includeList.paths(run);
-  if (a && a.module === 'process/js/counter' && listed.indexOf(a.module) !== -1) test.check('job.module is process/js/counter, the same string the include list holds');
+  if (a && a.module === 'process/js/counter') test.check('job.module is process/js/counter, the module\'s own path');
   else test.fail(OWED + 'the job reads ' + JSON.stringify(a && { id: a.id, module: a.module, type: a.type, error: a.error }));
 
   test.subHeading('T2: two starts of one process are two instances of one module');

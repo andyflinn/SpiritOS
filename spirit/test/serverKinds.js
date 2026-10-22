@@ -87,8 +87,8 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
   const nodePort = await freePort();
   const userPort = await freePort();
   const root = home(nodePort, userPort);
-  // A test node includes what it runs, for this run (slim/G1.3 T6).
-  ['counterNode', 'counterUser'].forEach(function (n) { require('../run/js/includeList.js').add(root, 'process/js/' + n); });
+  // A test node includes what it runs, for this run (its manifest runs it at home, goal/G30.20).
+  ['counterNode', 'counterUser'].forEach(function (n) { require('./tools/runsHome.js')(root, 'process/js/' + n); });
   const userScript = path.join(root, 'process', 'js', 'counterUser', 'counterUser.js');
 
   // ── T1 ──────────────────────────────────────────────────────────────
@@ -173,7 +173,7 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
   const p1 = await freePort();
   const p2 = await freePort();
   const root2 = home(p1, p2);
-  ['counterNode', 'counterUser'].forEach(function (n) { require('../run/js/includeList.js').add(root2, 'process/js/' + n); });
+  ['counterNode', 'counterUser'].forEach(function (n) { require('./tools/runsHome.js')(root2, 'process/js/' + n); });
   const driver = 'const spirit=require(' + JSON.stringify(path.join(RUN, 'js', 'kernel.js')) + ');' +
     'const jobs=require(' + JSON.stringify(path.join(RUN, 'js', 'jobs.js')) + ')(spirit,65432);' +
     'if(!jobs.startJob||!jobs.startNodeServers){process.exit(3);}' +

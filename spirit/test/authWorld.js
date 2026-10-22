@@ -5,8 +5,8 @@
 //   grants; "a script will configure the grants, via loopback.", "it's about permutations of configurations
 //   that peerPost() fails in apiAuth", and his "yes" to the three fields (team meeting under G1.0).
 // The contract the builder follows:
-//   - scenario.js takes three fields more: servers: [names] (the OWNER's, seeded into its include.json through
-//     includeList — the owner is a name, so the field sits at the top beside it); a peer's grants: [paths] (set
+//   - scenario.js takes three fields more: servers: [names] (the OWNER's, run at home through
+//     its manifests' runs — the owner is a name, so the field sits at the top beside it); a peer's grants: [paths] (set
 //     through auth.grant on the owner's loopback, never by writing node.db); and top-level cases:
 //     [{ from, ask, expect }], expect one of 'answered' | 'refused <code>' | 'silence'.
 //   - labWorld.createWorld({ scenario }) builds that world on real ports: the owner running its servers, each

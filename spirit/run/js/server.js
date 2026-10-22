@@ -1909,33 +1909,11 @@ contactBook.syncMarks(ROOT_DIR);
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   }, { wire: false, by: 'server.js' });
 
-  // ── WHAT THIS NODE INCLUDES (slim/G1.3) ──────────────────────────────
+  // ── THE CONFIG FAMILY, EMPTY (goal/G30.20) ─────────────────────────────
   //
-  //   Andy: "keep server slim by default"; the verbs his, named by him
-  //   ("config.searchModules and config.setModules, so config can have other
-  //   similar verbs"), reviewed by wsl-claude and claude-windows.
-  // LOCAL, and loopback only: they say what this node runs. The list itself
-  // is includeList.js's (relay-state/include.json), read nowhere else.
-  loopbackVerbs.mount('config', path.join(__dirname, 'config'), {
-    // A search, as every list is: {query} -> {items: [{key: path, label}], more}.
-    'searchModules': { request: { query: '' }, reply: LIST, handler: proxyVerb(function (b) {
-      const r = require('./includeList').search(ROOT_DIR, b.query);
-      return { ok: true, items: r.items, more: r.more };
-    }) },
-    // {path, on}: on lists it and starts a process now; off takes it off the
-    // list, and it stops at the next start. An intrinsic app stays included.
-    'setModules': { request: { path: '', on: false }, reply: { ok: true, path: '', on: false }, handler: proxyVerb(function (b) {
-      const includeList = require('./includeList');
-      const p = String((b && b.path) || '');
-      if (!includeList.isPath(p)) return { ok: false, status: 400, code: 'bad-request', error: 'a module is process/js/<name> or shell/<name>' };
-      const was = includeList.includes(ROOT_DIR, p);
-      if (b.on === true) {
-        includeList.add(ROOT_DIR, p);
-        if (!was && p.indexOf('process/js/') === 0) jobs.startNodeServers(ROOT_DIR, appClient, p.slice('process/js/'.length));
-      } else includeList.remove(ROOT_DIR, p);
-      return { ok: true, path: p, on: includeList.includes(ROOT_DIR, p) };
-    }) },
-  }, { wire: false, by: 'server.js' });
+  // Its two verbs, config.searchModules and config.setModules, went with the include list they read and set (slim/G1.3):
+  // where a module runs is its manifest's runs, nothing else. Andy: "keep the config family for later use."
+  loopbackVerbs.mount('config', path.join(__dirname, 'config'), {}, { wire: false, by: 'server.js' });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
   // Every one of these goes through spirit.core.fs, which asks

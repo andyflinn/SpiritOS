@@ -1,4 +1,5 @@
 {
+  "runs": ["home"],
   "label": "Desk server",
   "description": "Owns Desk's record, desk.db, in the node's state (relay-state/process/desk/). Started by the node; reached by its verbs on the loopback door (the flat apiDoor) and by an api packet from a known member (desk/G1.3).",
   "kind": "server",

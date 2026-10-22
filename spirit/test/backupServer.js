@@ -274,8 +274,8 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.js'),
     'require("fs").writeFileSync(' + JSON.stringify(argvFile) + ', JSON.stringify(process.argv.slice(2)));\n');
   const jobs = require('../run/js/jobs.js')(require('../run/js/kernel.js'), 65432);
-  // A test node includes what it starts, for this run (slim/G1.3 T6).
-  require('../run/js/includeList.js').add(probeRun, 'process/js/probe');
+  // A test node runs at home what it starts, for this run (goal/G30.20: its manifest says so).
+  require('./tools/runsHome.js')(probeRun, 'process/js/probe');
   const probeJobs = jobs.startNodeServers(probeRun) || [];
   let probeArgv = null;
   for (let i = 0; i < 60 && !probeArgv; i++) { await sleep(100); try { probeArgv = JSON.parse(fs.readFileSync(argvFile, 'utf8')); } catch (e) { probeArgv = null; } }
@@ -302,7 +302,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ kind: 'server', operated: 'node', args: [] }));
   fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.js'),
     'require("fs").writeFileSync(' + JSON.stringify(bareArgv) + ', JSON.stringify(process.argv.slice(2)));\n');
-  require('../run/js/includeList.js').add(bareRun, 'process/js/probe');
+  require('./tools/runsHome.js')(bareRun, 'process/js/probe');
   const bareJobs = jobs.startNodeServers(bareRun) || [];
   let bare = null;
   for (let i = 0; i < 60 && !bare; i++) { await sleep(100); try { bare = JSON.parse(fs.readFileSync(bareArgv, 'utf8')); } catch (e) { bare = null; } }

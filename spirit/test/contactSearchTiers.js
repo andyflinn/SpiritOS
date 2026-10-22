@@ -129,9 +129,6 @@ const done = (async function () {
   if (!exists('shell/js/peerFind.js') && !/peerFind/.test(code('index.html')) && !/peerFind/.test(code('shell/contacts/contacts.js')) && !/peerFind/.test(code('shell/join/join.js')))
     test.check('peerFind is deleted and nothing loads or uses it');
   else test.fail(OWED + 'peerFind: file ' + exists('shell/js/peerFind.js') + ', index.html ' + /peerFind/.test(code('index.html')) + ', contacts ' + /peerFind/.test(code('shell/contacts/contacts.js')) + ', join ' + /peerFind/.test(code('shell/join/join.js')));
-  const onboard = code('process/js/desk/onboard.js');
-  if (/'contact\.search'/.test(onboard) && !/peer\.search/.test(onboard)) test.check('the desk onboarding asks contact.search');
-  else test.fail(OWED + 'onboard.js still asks peer.search');
   const contacts = code('shell/contacts/contacts.js');
   if (!/function contactsWatchPresence/.test(contacts) && !/function contactsPaintPresence/.test(contacts) && !/createContactSelector/.test(contacts) && /spiritElements.contactList\.create\(/.test(contacts))
     test.check('Contacts draws the one list (contactSearch) and paints no presence itself');

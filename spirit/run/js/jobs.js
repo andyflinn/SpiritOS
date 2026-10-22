@@ -410,19 +410,22 @@ module.exports = function installJobs(spirit, port) {
     const file = path.resolve(cwd || process.cwd(), script).replace(/\.js$/, '.json');
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
   }
-  // ── ONLY WHAT THE NODE INCLUDES RUNS (slim/G1.3) ──────────────────
+  // ── ONLY WHAT ITS MANIFEST SAYS RUNS AT HOME RUNS (goal/G30.20) ──────
   //
   // A script under <root>/process/js/<name>/ belongs to the process <name>,
-  // and runs only if <root>'s process list names it (includeList.js): an
-  // unlisted process never runs, so Jobs never shows it. Refused by name,
-  // process-not-included, before anything is spawned.
-  // ONLY process/js TODAY: a module is process/js/<name> (includeList.js),
-  // and no process in another language exists yet. One that does needs its
-  // own path form here, in includeList.js and in the viewer's Start Job
-  // (claude-windows, reviewing 6501e589).
+  // and runs only if its manifest's runs names 'home' (or it is intrinsic):
+  // a process that does not never runs, so Jobs never shows it. Refused by
+  // name, process-not-included, before anything is spawned. The include list
+  // that said this before (slim/G1.3) is deleted; the manifest is the one place.
+  function runsHome(root, name) {
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
+      return m.intrinsic === true || (Array.isArray(m.runs) && m.runs.indexOf('home') !== -1);
+    } catch (e) { return false; }
+  }
   // A script under <root>/process/js/<name>/, read as {root, name}; null for
-  // anything else. The one reading of a script's path, for the include list
-  // (slim/G1.3) and for the module a job is an instance of (slim/G1.5).
+  // anything else. The one reading of a script's path, for where it runs and
+  // for the module a job is an instance of (slim/G1.5).
   function processOf(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);
@@ -430,14 +433,14 @@ module.exports = function installJobs(spirit, port) {
     return m ? { root: m[1], name: m[2] } : null;
   }
   // THE NODE OWNS EVERY MODULE ID, BY PATH (slim/G1.5). Andy: "what we see in
-  // jobs monitor are ID-instances". The id is the include list's own string.
+  // jobs monitor are ID-instances". The id is the module's path.
   function moduleOf(script, cwd) {
     const p = processOf(script, cwd);
     return p ? 'process/js/' + p.name : '';
   }
   function refuseUnlisted(script, cwd) {
     const p = processOf(script, cwd);
-    if (!p || require('./includeList').includes(p.root, 'process/js/' + p.name)) return;
+    if (!p || runsHome(p.root, p.name)) return;
     const e = new Error('process not included on this node: ' + p.name);
     e.refusal = 'process-not-included';
     e.process = p.name;
@@ -464,19 +467,12 @@ module.exports = function installJobs(spirit, port) {
   // registered with `client` (appClient) so 'api' and calls reach it. Only
   // process/js gets this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!",
   // "you want the support, move to precess/js").
-  // `only`, a name: start just that one, if listed (config.setModules
-  // switching it on, slim/G1.3 T4), the same way the boot does.
-  function startNodeServers(rootDir, client, only) {
+  function startNodeServers(rootDir, client) {
     const base = path.join(rootDir, 'process', 'js');
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
-    // ONLY THE LISTED ONES (slim/G1.3): a node that ran servers before the
-    // lists existed is seeded once from what it ran (includeList.seedOnce);
-    // a fresh node lists nothing and starts nothing.
-    const includeList = require('./includeList');
-    const seeded = includeList.seedOnce(rootDir);
-    if (seeded.length) console.log('include: this node ran servers before; listed once: ' + seeded.join(', '));
-    names = names.filter(function (name) { return includeList.includes(rootDir, 'process/js/' + name) && (!only || name === only); });
+    // ONLY WHAT RUNS AT HOME (goal/G30.20): its manifest's runs says so.
+    names = names.filter(function (name) { return runsHome(rootDir, name); });
     const pipePathFor = require('./appClient').pipePathFor;
     // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
     // to know whose node it runs on gets --node {name, publicKey, ownerKey}.

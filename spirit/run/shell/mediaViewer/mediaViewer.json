@@ -1,4 +1,5 @@
 {
+  "runs": ["home", "face"],
   "name": "Media Viewer",
   "description": "Pick a picture, a song or a video from this node's files and play it.",
   "icon": "VIDEO",

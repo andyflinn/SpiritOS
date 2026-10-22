@@ -1,4 +1,5 @@
 {
+  "runs": [],
   "label": "WordPress Scanner",
   "description": "Scans a WordPress site's REST API for posts/pages and writes one flat JSON record per item into published/",
   "args": [

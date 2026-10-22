@@ -33,7 +33,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const includeList = require('../run/js/includeList.js');
+const runsHome = require('./tools/runsHome.js');
 const { relayRequest } = require('../run/js/relayRequest.js');
 
 const OWED = 'OWED by goal/G5.1: ';
@@ -181,7 +181,7 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
   test.subHeading('5. from Jobs: one JSON string of arguments, on a node that lists the process');
   const home = path.join(scratch, 'node', 'spirit', 'run');
   plantRun.plantRunTree(home);
-  includeList.add(home, 'process/js/pushOrigin');
+  runsHome(home, 'process/js/pushOrigin');
   const port = await freePort();
   const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
   kids.push(node);

@@ -3,12 +3,12 @@
 // fileTransfer goal/G1.6: the fileServer is intrinsic, it runs on every node. Red on today's tree.
 //   Andy (G1.1): "whether every node runs the fileServer by default; yes. its intrinsic and many apps can
 //   use it." Found unbuilt at the goal's close, since no red carried it; Andy: "fix it."
-// Today intrinsic is read for shell elements only (includeList.js intrinsicShell), and a server runs only
-// if relay-state/include.json lists it, so a fresh node starts no fileServer.
+// Since goal/G30.20 a server runs where its manifest's runs says, and an intrinsic one always runs at home; there is
+// no include list any more.
 // The contract the builder follows (the shape both agents gave in goal/G1.6):
 //   1. A server's manifest may say intrinsic: true, honoured like a shell element's: always included,
 //      never excluded, with nothing listed.
-//   2. The node starts it on a fresh node, with no include.json at all.
+//   2. The node starts it on a fresh node, with no runs in its manifest.
 //   3. spirit/run/process/js/fileServer/fileServer.json says intrinsic: true.
 //   A server without the word is untouched: not listed, not started (slim/G1.3).
 
@@ -19,7 +19,6 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by fileTransfer goal/G1.6: ';
 const REPO_RUN = path.join(__dirname, '..', 'run');
-const includeList = require('../run/js/includeList.js');
 const jobs = require('../run/js/jobs.js')(require('../run/js/kernel.js'), 65432);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -31,7 +30,7 @@ const marks = path.join(scratch, 'marks');
 fs.mkdirSync(marks);
 const started = [];
 
-// A fresh node: two node-operated servers, one intrinsic, and no include.json at all.
+// A fresh node: two node-operated servers, one intrinsic, neither with runs.
 const run = path.join(scratch, 'n', 'spirit', 'run');
 [['core', true], ['plain', false]].forEach(function (s) {
   const dir = path.join(run, 'process', 'js', s[0]);
@@ -47,14 +46,6 @@ fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
 require('../run/js/relayAuth.js').saveIdentity(run, require('../run/js/relayAuth.js').generateIdentity('n'));
 
 (async function () {
-  test.subHeading('an intrinsic server is included with nothing listed, and cannot be excluded');
-  const all = includeList.paths(run);
-  if (all.indexOf('process/js/core') !== -1 && all.indexOf('process/js/plain') === -1) test.check('with nothing listed, the intrinsic server is included and the plain one is not');
-  else test.fail(OWED + 'with nothing listed the node includes ' + JSON.stringify(all));
-  try { includeList.remove(run, 'process/js/core'); } catch (e) { /* refusing is also keeping it */ }
-  if (includeList.includes(run, 'process/js/core')) test.check('removing it from the list leaves it included');
-  else test.fail(OWED + 'an intrinsic server could be excluded');
-
   test.subHeading('a fresh node starts it');
   (jobs.startNodeServers(run) || []).forEach(function (j) { started.push(j); });
   const coreRan = await waitFor(function () { return fs.existsSync(path.join(marks, 'core')); }, 8000);

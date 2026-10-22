@@ -46,7 +46,7 @@ const TOP = [
   // apiAuth/G1.0 (team meeting, both agents, Andy: "yes"): the owner's
   // servers, and the cases a built world runs at its gate. `servers`
   // sits at the top because the owner is a name here, not an object;
-  // the builder seeds them through includeList, the one way a node is
+  // the builder writes home into their manifests' runs (goal/G30.20), the one way a node is
   // told what it runs.
   'servers', 'cases',
 ];

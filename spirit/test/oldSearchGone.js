@@ -5,7 +5,6 @@
 // tree; claude-windows writes it and builds it (one agent). The item's box (v1):
 //   - jobs.search (the node verb behind the Jobs app) ranks jobs by the probability modules, cut by bytes.
 //   - owner.boxSearch (the box search) ranks by the probability modules, cut by bytes.
-//   - The module list search (config.searchModules) ranks by the probability modules, cut by bytes.
 //   - With no user left, the old search is deleted: gradedSearch.js, searchBucket.js and bucket.js, with tests that they
 //     are gone. A bounded single-object answer still needed (searchBucket.boundedGet) moves to a home of its own first.
 // NAMED HERE where the box names none: the home of the bounded single-object answer is limits.js, as
@@ -55,19 +54,6 @@ const br = bx ? bx.search('box harbour') : null;
 const bk = keysOf(br);
 if (bk[0] === 'fpH' && bk.length === 3) test.check('"box harbour" puts the harbour box first and still answers all three (' + bk.join(', ') + ')');
 else test.fail(OWED + 'the box search "box harbour" answered ' + short(bk) + ', where fpH first of all three is owed');
-
-test.subHeading('3. the module list search ranks every module, the best match first');
-const includeList = load('includeList.js');
-const modRoot = path.join(scratch, 'mods');
-fs.mkdirSync(path.join(modRoot, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(modRoot, 'relay-state', 'include.json'), JSON.stringify({ modules: ['process/js/backup', 'process/js/desk', 'shell/textEditor'] }));
-const mr = includeList ? includeList.search(modRoot, 'editor text', 4000) : null;
-const mk = keysOf(mr);
-if (mk[0] === 'shell/textEditor' && mk.length === 3) test.check('"editor text" puts shell/textEditor first and still answers all three (' + mk.join(', ') + ')');
-else test.fail(OWED + 'the module search "editor text" answered ' + short(mk) + ', where shell/textEditor first of all three is owed');
-const mcut = includeList ? includeList.search(modRoot, '', 120) : null;
-if (mcut && mcut.more === true && mcut.items.length >= 1 && Buffer.byteLength(JSON.stringify(mcut.items), 'utf8') <= 120) test.check('cut by bytes: 120 bytes hold ' + mcut.items.length + ' and say more');
-else test.fail(OWED + 'the module search cut at 120 bytes answered ' + short(mcut));
 
 test.subHeading('4. the bounded single-object answer lives in limits.js');
 const limits = load('limits.js');

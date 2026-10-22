@@ -402,7 +402,7 @@ function createWorld(opts) {
     //
     // The cases are decided at the owner's gate, so the owner stops being
     // a bare key and runs a node: its servers from the scenario, seeded
-    // through includeList (the one way a node is told what it runs), its
+    // through their manifests' runs (goal/G30.20, the one way a node is told what it runs), its
     // peers made known through contacts.acquire (frontDoor's 'known' is
     // the acquired set, hub.js listenSet) — GAP 1's shape, but through
     // the product's own writers. The grants then go through
@@ -411,7 +411,7 @@ function createWorld(opts) {
     if (sc) {
       const node = await ensureNode('owner', 'avatar', OWNER_PORT);
       if (!node.ok) return node;
-      const includeList = require('../run/js/includeList.js');
+      const runsHome = require('./tools/runsHome.js');
       const contactBook = require('../run/js/contacts.js');
       auth.saveIdentity(node.home, owner);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
@@ -422,7 +422,7 @@ function createWorld(opts) {
         path.join(node.home, 'shell', 'natter', 'session.json'),
         JSON.stringify({ label: ownerName, boundAt: new Date().toISOString() }, null, 2)
       );
-      sc.servers.forEach(function (s) { includeList.add(node.home, 'process/js/' + s); });
+      sc.servers.forEach(function (s) { runsHome(node.home, 'process/js/' + s); });
       peers.forEach(function (p) {
         contactBook.acquire(node.home, { publicKey: p.id.publicKey, publicLabel: p.name }, 'invite');
         contactBook.setCard(node.home, p.id.publicKey,

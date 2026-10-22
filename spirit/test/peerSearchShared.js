@@ -80,9 +80,6 @@ if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /mo
 else test.fail(OWED + 'server.js declares ' + short(decl));
 if (/item:\s*\{\s*key:\s*row\.publicKey,\s*label:\s*label\s*\}/.test(hub)) test.check('each network row is one peer-search job update in the same shape, {key, label}');
 else test.fail(OWED + 'the network search\'s rows are not {key, label}');
-const onboard = code('process/js/desk/onboard.js');
-if (!/body\.matches/.test(onboard) && /body\.items/.test(onboard) && /'contact\.search'/.test(onboard)) test.check('the desk\'s onboard reads items, from contact.search');
-else test.fail(OWED + 'process/js/desk/onboard.js still reads matches or asks peer.search');
 
 test.subHeading('4. Contacts\' one list is the standard list-tool');
 const contacts = code('shell/contacts/contacts.js');

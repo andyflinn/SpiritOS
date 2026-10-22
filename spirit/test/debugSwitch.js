@@ -39,7 +39,7 @@ function freePort() {
     const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
   });
 }
-// includeLists.js's way to a node's one door.
+// A node's one door, by its flat apiDoor.
 function post(port, body) {
   return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
     let j = null;

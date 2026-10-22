@@ -308,10 +308,11 @@
   }
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
-  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.20): its own file, face.json beside
-  // preferences.json, {"apps": ["shell/contacts", ...]}, separate from the node's include list (Andy: "A Separate
-  // included list"). Each app's manifest is read as it comes and its icon drawn at once; an app's script loads when it
-  // is opened. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
+  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.20): each app's own manifest says where it runs,
+  // and the face shows those whose runs names 'face'. The manifests are found in data.files, the file tree already in
+  // the page (shell/js/spiritData.js): nothing asks the node for a list. Each icon is drawn as its manifest arrives; an
+  // app's script loads when it is opened. This file, served by the relay, only logs in and holds the link, so a new app
+  // on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
   var loadingId = '';
   var stack = [];         // ids on screen, newest last
@@ -327,17 +328,37 @@
       return apps[id];
     });
   }
-  // The face's apps from face.json, each icon drawn as its manifest arrives; nothing waits for the rest. No file, no
-  // apps.
+  // The face's apps, each icon drawn as its manifest arrives; nothing waits for the rest. A manifest written again is
+  // read again, so an app whose runs gains or loses 'face' comes or goes (one already open stays until closed).
+  function readManifest(id) {
+    var name = id.split('/').pop();
+    fileText(id + '/' + name + '.json').then(function (t) {
+      var m = JSON.parse(t);
+      var onFace = !!m && Array.isArray(m.runs) && m.runs.indexOf('face') !== -1;
+      if (onFace) {
+        if (apps[id]) apps[id].manifest = m;
+        else apps[id] = { id: id, manifest: m, behavior: null, pane: null, api: null, result: null };
+      } else if (apps[id] && stack.indexOf(id) === -1) delete apps[id];
+      hand();
+    }, function () { /* an app without a manifest is not shown */ });
+  }
   function listApps() {
-    return fileText('face.json').then(function (t) {
-      var list = JSON.parse(t);
-      (list && Array.isArray(list.apps) ? list.apps : []).forEach(function (a) {
-        var id = String(a || '');
-        if (id.indexOf('shell/') !== 0 || id.split('/').length !== 2) return;
-        manifestOf(id).then(function () { hand(); }, function () { /* an app without a manifest is not shown */ });
+    var D = window.spiritData;
+    if (!D) return;
+    var MANIFEST = /^(shell\/([^/]+))\/\2\.json$/;
+    var read = Object.create(null);   // the manifests already read, so another file's change asks nothing again
+    function look(p) {
+      var at = String(p || '').replace(/^files\//, '');
+      var one = MANIFEST.exec(at);
+      // One manifest written: that app, again. Anything else: only the manifests not read yet.
+      if (one) { read[one[1]] = true; readManifest(one[1]); return; }
+      Object.keys(D.branch('files')).forEach(function (k) {
+        var m = MANIFEST.exec(k);
+        if (m && !read[m[1]]) { read[m[1]] = true; readManifest(m[1]); }
       });
-    }, function () { /* no face.json on the home node: the face has no apps */ });
+    }
+    D.watch('files', look);
+    look('');
   }
 
   function loadApp(id) {
