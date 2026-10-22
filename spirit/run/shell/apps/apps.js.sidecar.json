@@ -1,9 +1,16 @@
 {
   "face": {
     "app": true,
-    "name": "Apps",
+    "intrinsic": true,
+    "name": "Face Apps",
+    "icon": "VICTORY",
+    "description": "Every app of this node, shell and process, each with its face part: whether it shows on the face, and its name, icon and description there."
+  },
+  "client": {
+    "app": true,
+    "intrinsic": true,
+    "name": "Face-Apps",
     "icon": "TABLE",
-    "description": "Every app of this node, shell and process, each with its face part: whether it shows on the face, and its name, icon and description there.",
-    "intrinsic": true
+    "description": "Every app of this node, shell and process, each with its face part: whether it shows on the face, and its name, icon and description there."
   }
 }
