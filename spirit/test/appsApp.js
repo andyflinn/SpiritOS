@@ -180,7 +180,8 @@ const done = (async function () {
   // each its own call through the relay; the home node puts them back together and runs the whole once.
   test.subHeading('8. a face request too large for one trip goes in pieces (goal/G33.1)');
   const big = { verb: 'fs.save', path: 'shell/icons/iconSet.json', content: 'x'.repeat(30000) };
-  const whole = JSON.stringify(big);
+  // A piece carries base64 of the request's bytes: nothing in it is escaped again, so its size is what it measures.
+  const whole = Buffer.from(JSON.stringify(big), 'utf8').toString('base64');
   const cut = Math.floor(whole.length / 2);
   const ran = [];
   const sent = [];

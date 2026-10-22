@@ -75,6 +75,30 @@
   function bytesText(bytes) { return new TextDecoder().decode(bytes); }
   function lines(text) { return String(text || '').split('\n').filter(Boolean); }
 
+  // A REQUEST TOO LARGE FOR ONE TRIP GOES IN PIECES (goal/G33.1). Andy: "not saved: Body too large: 23608 of 23552": the
+  // relay takes one request up to BODY_MAX. A larger one goes as {piece: {id, n, of, text}}, text a run of base64 of its
+  // bytes, each piece its own call; the home node (js/faceHome.js) answers 202 to each but the last and the whole request
+  // on the last, whose answer is this call's. The relay passes the pieces on and reads none of them.
+  function post(text) {
+    var once = function (t) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: t }); };
+    var BODY_MAX = (window.spirit && window.spirit.limits && window.spirit.limits.BODY_MAX) || 23552;
+    var bytes = new TextEncoder().encode(text);
+    if (bytes.length <= BODY_MAX - 1024) return once(text);
+    var b64 = window.faceSeal.toB64(bytes);
+    var size = BODY_MAX - 1024;
+    var of = Math.ceil(b64.length / size);
+    var idBytes = new Uint8Array(12);
+    crypto.getRandomValues(idBytes);
+    var id = Array.prototype.map.call(idBytes, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+    function next(n) {
+      return once(JSON.stringify({ piece: { id: id, n: n, of: of, text: b64.slice(n * size, (n + 1) * size) } })).then(function (r) {
+        if (n === of - 1 || r.status !== 202) return r;
+        return next(n + 1);
+      });
+    }
+    return next(0);
+  }
+
   // One request to the home node through the relay: { status, type, bytes }. Sealed when this page can seal.
   function call(request) {
     var sending = link.sealed
@@ -82,7 +106,7 @@
           .then(function (s) { s.k = link.key.publicKey; return s; })
       : Promise.resolve(request);
     return sending.then(function (body) {
-      return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
+      return post(JSON.stringify(body));
     }).then(function (r) {
       if (r.status === 503 || r.status === 504) setConnected(false);
       if (!link.sealed || r.status !== 200) {

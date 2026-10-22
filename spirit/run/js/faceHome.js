@@ -146,12 +146,48 @@ function createFaceHome(opts) {
     };
   }
 
+  // A REQUEST IN PIECES (goal/G33.1). Andy: "not saved: Body too large: 23608 of 23552": the relay takes one face request
+  // up to BODY_MAX, and the Icons app sends its whole set, as it must. A request too large for one trip comes as
+  // {piece: {id, n, of, text}}, each its own call through the relay, text a run of base64 of the whole request's bytes.
+  // The pieces are kept here by id, bounded in count, bytes and time; each but the last is answered 202 {more: true},
+  // and once the last is in, the whole is opened and handled as if it had come in one trip.
+  const pieces = new Map();
+  const PIECES_MAX = 64;
+  const PIECE_WAIT_MS = 60000;
+  const PIECES_BYTES_MAX = PIECES_MAX * require('./limits').BODY_MAX;
+  function piece(p, res) {
+    const now = Date.now();
+    pieces.forEach(function (v, k) { if (now - v.at > PIECE_WAIT_MS) pieces.delete(k); });
+    const pid = String((p && p.id) || '');
+    const n = Number(p && p.n);
+    const of = Number(p && p.of);
+    if (!pid || !Number.isInteger(n) || !Number.isInteger(of) || of < 1 || of > PIECES_MAX || n < 0 || n >= of || typeof p.text !== 'string' || !/^[A-Za-z0-9+/=]*$/.test(p.text)) {
+      json(res, 400, { ok: false, code: 'bad-piece', error: 'a piece is {id, n, of, text}: n below of, of at most ' + PIECES_MAX + ', text base64' });
+      return null;
+    }
+    const got = pieces.get(pid) || { of: of, parts: new Array(of), seen: 0, bytes: 0, at: now };
+    if (got.of !== of) { pieces.delete(pid); json(res, 400, { ok: false, code: 'bad-piece', error: 'piece ' + n + ' of ' + pid + ' says ' + of + ' pieces, the first said ' + got.of }); return null; }
+    if (got.parts[n] === undefined) { got.parts[n] = p.text; got.seen += 1; got.bytes += p.text.length; }
+    if (got.bytes > PIECES_BYTES_MAX) { pieces.delete(pid); json(res, 413, { ok: false, code: 'too-large', error: 'a request in pieces may hold ' + PIECES_BYTES_MAX + ' bytes' }); return null; }
+    pieces.set(pid, got);
+    if (got.seen < got.of) { json(res, 202, { ok: true, more: true, piece: n }); return null; }
+    pieces.delete(pid);
+    let whole = null;
+    try { whole = JSON.parse(Buffer.from(got.parts.join(''), 'base64').toString('utf8')); } catch (e) { whole = null; }
+    if (!whole || typeof whole !== 'object' || whole.piece) { json(res, 400, { ok: false, code: 'bad-piece', error: 'the pieces of ' + pid + ' do not make a request' }); return null; }
+    return whole;
+  }
+
   function request(url, data) {
     const d = data || {};
     const id = String(d.id || '');
     if (!id) return;
     let r = d.request || {};
     let res = answerInto(url, id);
+    if (r && r.piece) {
+      r = piece(r.piece, res);
+      if (!r) return;
+    }
     if (r.sealed === 1) {
       const k = String(r.k || '');
       const me = o.identity();
