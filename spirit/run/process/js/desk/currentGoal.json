@@ -1,5 +1,5 @@
 {
- "change": 86160,
+ "change": 86821,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G30.21"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,16 +45,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -660,7 +657,7 @@
     {
      "path": "spirit/run/shell/join/join.json",
      "by": "claude-windows",
-     "core": true
+     "core": false
     },
     {
      "path": "spirit/run/shell/js/faceForm.js",
@@ -981,7 +978,7 @@
     {
      "number": "G17",
      "kind": "G",
-     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -1008,7 +1005,7 @@
     {
      "number": "G20",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/joinForm.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -1062,7 +1059,7 @@
     {
      "number": "G25",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -1080,7 +1077,7 @@
     {
      "number": "G27",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/joinStepsJob.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/joinStepsJob.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -6301,7 +6298,7 @@
     {
      "path": "spirit/run/shell/introSpector/introSpector.json",
      "by": "claude-windows",
-     "core": true
+     "core": false
     },
     {
      "path": "spirit/run/shell/js/apiBranchSelector.js",
@@ -6491,7 +6488,7 @@
     {
      "number": "G9",
      "kind": "G",
-     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/relay.js, spirit/run/js/server.js, spirit/run/js/verbTable.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/introSpector/introSpector.json, spirit/run/shell/js/apiBranchSelector.js, spirit/run/shell/js/appServerSelector.js",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/relay.js, spirit/run/js/server.js, spirit/run/js/verbTable.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/js/apiBranchSelector.js, spirit/run/shell/js/appServerSelector.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -8531,27 +8528,27 @@
     {
      "path": "spirit/run/face.html",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/face.css",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/login/login.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/login/login.json",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/index.html",
@@ -8689,7 +8686,7 @@
     {
      "number": "G3",
      "kind": "G",
-     "words": "core grant: spirit/run/js/relay.js, spirit/run/js/relayServer.js",
+     "words": "core grant: spirit/run/face.html, spirit/run/face/login/login.js, spirit/run/face/login/login.json, spirit/run/face/shell.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -8707,7 +8704,7 @@
     {
      "number": "G5",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/relay.js, spirit/run/js/relayServer.js",
+     "words": "core grant: spirit/run/face.html, spirit/run/face/face.css, spirit/run/face/login/login.js, spirit/run/face/login/login.json, spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/relay.js, spirit/run/js/relayServer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -9168,7 +9165,7 @@
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/js/faceHome.js",
@@ -9240,7 +9237,7 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Connect the home node and the face: requests from the logged-in face reach the home node, and the home node streams answers and updates back to the face, through the relay. No face node, no puppet process, no app servers on the relay box.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node and loads everything else from it, lazily: the home node serves the face its own version, so there is no version to sync. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The home node acts as a puppet to its verified face: the face gets exactly the local shell's interface, through the same door a puppeteer uses on the home node, minus the email and face changes with the relay (adding or changing the email, asking a face name). Only the face and its connection are protected.\n- The home node keeps the one stream it holds to its relay; the logged-in face opens its own stream to the relay, tied to its login.\n- A face request goes into the member's stream as an event (no route, no in-flight slot); the home node answers on faceStream, and the relay hands the answer to the waiting face request. One request, one answer, no polling.\n- faceStream is node-internal, the owner's node to the owner's face, with the relay only shovelling bytes both ways. It is not a peerPost: no post limit (22 KB) and no size cap of its own; files, media and source travel whole. A file is a plain upload of its raw data, tagged with the request's id and piped straight into the waiting request: no base64, no JSON around it.\n- The home node streams to the face what it streams to its loopback shell.\n- On the home node, faceStream has its own serializing queue and a queue manager: face requests first, the fs-watcher, stats and the other streamed updates after. Tuning that queue will take experimentation.\n- After login everything on faceStream is sealed between the home node and the browser, with a browser-compatible seal whose key is lost with the session. That keeps the relay from reading it passively; a relay owner who swaps face.html or the login app could still read it, since those come from the relay, and the login says so to the member.\n- One face stream per member. A face opened while another device holds it warns: your face is open on another device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a last event, taken by another device, and says so.\n- The face stream counts in the relay's one stream ceiling (set from its RAM), so a full relay refuses a new face as it refuses a member's stream: at most two streams per member, the home node's and one face's.\n- The two relay additions, the face request as a stream event and faceStream, need review and Andy's yes on each before they are built.\n- When the home node goes offline, the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.\n- The home node's face uploads go through relayRequest, the one outbound door, as a streamed upload; faceHome reaches for no http of its own.\n- The relay sets no request timeout, so the face's live upload stays open as long as the face does; the limit on headers stays.\n- The face learns the home node's keys (its public key and seal key) from faceHome itself, by a face request answered before the door; node.card is not changed.\n- The face shell offers spirit.shell.factRow, the old shell's fact row, so Relay Details and Contact draw in the face.\n\nNOT IN THIS ITEM: a reconnect that keeps the browser's cached content; app components found and installed on demand, with the home node learning what to deliver.",
@@ -9301,6 +9298,15 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-21T03:39:16.635Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/js/faceHome.js, spirit/run/js/relayRequest.js, spirit/run/js/relayServer.js",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-21T03:55:14.632Z"
     }
    ],
    "chat": [
@@ -9901,32 +9907,32 @@
     {
      "path": "spirit/run/face.html",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/face.css",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/login/login.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/login/login.json",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/seal.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/js/faceHome.js",
@@ -10087,7 +10093,7 @@
     {
      "number": "G7",
      "kind": "G",
-     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/kernel.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/server.js",
+     "words": "core grant: spirit/run/face.html, spirit/run/face/face.css, spirit/run/face/login/login.js, spirit/run/face/login/login.json, spirit/run/face/seal.js, spirit/run/face/shell.js, spirit/run/js/faceHome.js, spirit/run/js/kernel.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/server.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -11158,22 +11164,22 @@
     {
      "path": "spirit/run/face.html",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/favicon.svg",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/login/login.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/js/faceHome.js",
@@ -11414,7 +11420,7 @@
     {
      "number": "G9",
      "kind": "G",
-     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/relayStatus.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/face.html, spirit/run/face/favicon.svg, spirit/run/face/login/login.js, spirit/run/face/shell.js, spirit/run/js/faceHome.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/relayStatus.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -11432,7 +11438,7 @@
     {
      "number": "G11",
      "kind": "G",
-     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/relayStatus.js, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "words": "core grant: spirit/run/face.html, spirit/run/face/favicon.svg, spirit/run/face/login/login.js, spirit/run/face/shell.js, spirit/run/js/faceHome.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/relayStatus.js, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -12361,7 +12367,7 @@
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/index.html",
@@ -12496,7 +12502,7 @@
     {
      "number": "G1",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/textViewer.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/textViewer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -12514,7 +12520,7 @@
     {
      "number": "G3",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/textViewer.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/textViewer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -12523,7 +12529,7 @@
     {
      "number": "G4",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textViewer.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/files/files.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js, spirit/run/shell/js/rows/fileElement.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textViewer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -14094,7 +14100,7 @@
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/index.html",
@@ -14450,7 +14456,7 @@
     {
      "number": "G15",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -14477,7 +14483,7 @@
     {
      "number": "G18",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/js/trafficLog.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/js/trafficLog.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -14842,7 +14848,7 @@
     {
      "path": "spirit/run/face/shell.js",
      "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/run/index.html",
@@ -15574,7 +15580,7 @@
     {
      "number": "G39",
      "kind": "G",
-     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/config/AGENTS.md, spirit/run/js/config/searchModules.json, spirit/run/js/includeList.js, spirit/run/js/jobs.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/files/files.js, spirit/run/shell/grants/grants.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contacts/data.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/js/contacts/rowElement.js, spirit/run/shell/js/fileSelector.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/listElement.js, spirit/run/shell/js/files/rowElement.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textViewer.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/config/AGENTS.md, spirit/run/js/config/searchModules.json, spirit/run/js/includeList.js, spirit/run/js/jobs.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/files/files.js, spirit/run/shell/grants/grants.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contacts/data.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/js/contacts/rowElement.js, spirit/run/shell/js/fileSelector.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/listElement.js, spirit/run/shell/js/files/rowElement.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textViewer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -15894,10 +15900,11 @@
    "id": "goal/G30.21",
    "title": "replacing the apps APP",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -15907,21 +15914,272 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/face/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/coreFiles.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceHome.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/jobs.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/fileServer/fileServer.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/apps/apps.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/apps/apps.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/apps/apps.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/contacts/contacts.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/contacts/contacts.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/contacts/contacts.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/contactsDetails/contactsDetails.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/files/files.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/files/files.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/grants/grants.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/group-manager/group-manager.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/icons/iconSet.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/icons/icons.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/icons/icons.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/icons/icons.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/info/info.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/introSpector/introSpector.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/jobs/jobs.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/jobsDetails/jobsDetails.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/join/join.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/js/contacts/listElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/contacts/rowElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/fileViewer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/files/data.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/files/rowElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/icons/listElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/icons/rowElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/textViewer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/mediaViewer/mediaViewer.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/mediaViewer/mediaViewer.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/natterDetails/natterDetails.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/relayMonitor/relayMonitor.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/rotateKey/rotateKey.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/stats/stats.js.sidecar.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appsApp.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listElements.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/pathCanonicalization.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/servableAssets.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellRename.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/writableRoots.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "4b66762dd4616aff7759838f78eff8ad4e0658eb",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -15966,9 +16224,190 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A new Apps app, replacing the old one. Built end to end, it sets the migration from the shell to the face; the home app (the relay's face/shell.js) is fixed and tagged in it.\n\nTHE APP\n- A shell-only mountable wrapper for the face world: it runs on the face, and at home in place of shell/apps.\n- Its rows come only from the Files cache (data.files).\n- An app is a <name>/<name>.js, under shell/ or process/js/ (two types), with a valid face annotation; only the .js shows as a row.\n- Its detail panel edits the app's face annotation space; where the app runs (home, face) is shown, not changed.\n- The old Apps app's overrides (name, icon, group, desktop place) are not carried over.\n\nTHE FACE PART OF A SIDECAR\n- A sidecar has three parts: client, server, face. fs.annotate and fs.annotations reach the face part when asked by the face (through faceHome), the client part when asked at home.\n- An app's face settings (that it runs on the face, a face label or icon) live in the face part of its .js sidecar.\n- The face finds its apps by fs.annotations on each shell/<app>/<app>.js in data.files; an app's script loads when opened.\n- Contacts, Files, Media Viewer and Apps ship with their face part set, their sidecars in the tree.\n- The home shell is untouched: its <name>/<name>.json says intrinsic and runs (home only).\n\nTHE WRITE GATE\n- Only core files are write-protected; every other file under the run folder is writable, server scripts included.\n- A manifest is never core: js/coreFiles.js leaves <name>/<name>.json out.\n- The node's root files and relay-state/ stay protected.\n- The core names no user folders: every special status for media/, published/ and the like goes.\n\nCORE FILES SEEN\n- The files list shows core files in a yellow typeface, by js/coreFiles.js's own rule.",
-   "version": 14,
-   "checks": [],
+   "box": "A new Apps app, replacing the old one, and an Icons app. Built end to end, they set the migration from the shell to the face; the home app (the relay's face/shell.js) is fixed and tagged in this item.\n\nTHE APPS APP\n- A mountable wrapper on the face, and at home in place of shell/apps; its rows come only from the Files cache.\n- An app is a <name>/<name>.js under shell/ or process/js/ (two types); only the .js is a row.\n- Its panel edits the app's face part (on the face, intrinsic, name, icon, description) as each field changes; where it runs (home, face) is shown, not changed.\n- The old overrides (name, icon, group, desktop place) are not carried over.\n\nTHE FACE PART OF A SIDECAR\n- A sidecar has three parts: client, server, face. fs.annotate and fs.annotations reach the face part when asked by the face (through faceHome), the client part when asked at home.\n- An app's face settings live in the face part of its .js sidecar; the face finds its apps there with fs.annotations.\n- Contacts, Files, Media Viewer, Apps and Icons ship with their face part set.\n- The home shell is untouched: its <name>/<name>.json says intrinsic and runs (home only).\n\nTHE WRITE GATE AND THE CORE\n- Only core files are write-protected; every other file under the run folder is writable, server scripts included; the node's root files and relay-state/ stay protected; no user folder (media/, published/) is special.\n- Core: spirit/run/js/, spirit/run/shell/js/, the shell's frame, the face folder and face.html, and the code (.js, .css, .html) of an app or server whose face part says intrinsic: true. A manifest is never core; an intrinsic app's data files stay writable.\n- Every app and server intrinsic today ships with that mark.\n- The files list shows core files in yellow, by js/coreFiles.js's own rule.\n\nTHE ICONS APP\n- An intrinsic app, on the face and at home, maintaining shell/icons/iconSet.json: each key a glyph, its value the keywords it is found by, {\"❌\": [\"error\", \"delete\", \"no\", \"red\"], ...}; started from the kernel's icon table, each glyph with its names.\n- shell/js/icons/listElement.js and rowElement.js (glyph and keywords), pane or dropdown; no data.js.\n- The Apps panel's icon field is that list as a dropdown.\n- Face code uses icons as themselves: a selected icon is the glyph stored and used, never a key like TABLE. The face shell and the elements the face loads (contact row and list, file row, text viewer) write glyphs; the shipped face parts store glyphs.\n- Today's face apps are retrofitted to it in this item: Contacts, Files, Media Viewer and Apps, their code and the elements they draw.",
+   "version": 22,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/coreFiles.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:11.532Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/faceHome.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:15.575Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/jobs.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:16.631Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/kernel.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:17.928Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:21.228Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: shell/apps/apps.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:19.184Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: shell/js/fileViewer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:22.337Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: shell/js/files/data.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:25.210Z"
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: shell/js/files/rowElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T05:28:24.112Z"
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/js/coreFiles.js, spirit/run/js/faceHome.js, spirit/run/js/jobs.js, spirit/run/js/kernel.js, spirit/run/js/server.js, spirit/run/shell/apps/apps.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/rowElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:32:45.499Z"
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:36:46.688Z"
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:36:51.342Z"
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: shell/contacts/contacts.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:36:53.146Z"
+    },
+    {
+     "number": "G14",
+     "kind": "G",
+     "words": "core grant: shell/icons/icons.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:36:58.052Z"
+    },
+    {
+     "number": "G15",
+     "kind": "G",
+     "words": "core grant: shell/js/contacts/listElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:37:09.197Z"
+    },
+    {
+     "number": "G16",
+     "kind": "G",
+     "words": "core grant: shell/js/contacts/rowElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:37:53.758Z"
+    },
+    {
+     "number": "G17",
+     "kind": "G",
+     "words": "core grant: shell/js/icons/listElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:37:57.398Z"
+    },
+    {
+     "number": "G18",
+     "kind": "G",
+     "words": "core grant: shell/js/icons/rowElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:38:01.037Z"
+    },
+    {
+     "number": "G19",
+     "kind": "G",
+     "words": "core grant: shell/js/textViewer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:37:59.221Z"
+    },
+    {
+     "number": "G20",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/coreFiles.js, spirit/run/js/faceHome.js, spirit/run/js/jobs.js, spirit/run/js/kernel.js, spirit/run/js/server.js, spirit/run/shell/apps/apps.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/icons/icons.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/js/contacts/rowElement.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/rowElement.js, spirit/run/shell/js/icons/listElement.js, spirit/run/shell/js/icons/rowElement.js, spirit/run/shell/js/textViewer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-22T06:40:08.177Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -16179,6 +16618,324 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T05:12:08.366Z",
      "text": "Yes: the home app (face/shell.js) finds its apps by fs.annotations on each app's .js, from the face part, and is fixed and tagged in this item; that is in THE FACE PART OF A SIDECAR.\n\nOne correction: my v13 was an old draft by mistake and dropped your edits. v14 is the cap of your own v12, your edits kept."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:14:29.310Z",
+     "text": "Taking G30.21, red first.\n\nOne reading to check: the box says an app is a <name>/<name>.js with a valid face annotation. Read literally, the Apps list shows only apps already on the face (four today), and an app could never be put on the face from it.\n\nMy reading: the list shows every <name>/<name>.js that has its .json beside it, marks the ones whose face annotation is valid, and the panel edits that annotation, so an app can be put on the face there. That way?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:16:24.247Z",
+     "text": "commit 3914e0ca9fdca3e89983b1408de43a2e5cb411aa: goal/G30.21: the red for the Apps app end to end (box v14): the write gate protects core only, manifests never core, no special user folders; the face part of a sidecar written from the face through f\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T05:16:30.943Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:20:46.932Z",
+     "text": "Built and green on its own red (9 of 9). One consequence found while checking the old suites, yours to decide:\n\n- coreFiles counts an intrinsic app's whole folder as core, so with only core protected, an intrinsic app can no longer write its own data files there. Info keeps shell/info/captions.json that way, and it would break.\n\nTwo ways: core for an intrinsic app is its code only (.js, .css, .html), so its data files stay writable; or the whole folder stays core and such data moves out of it.\n\nWhich?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:23:25.393Z",
+     "text": "core for an intrinsic app is its code only (.js, .css, .html), so its data files stay writable, and the face-annotations are the decider"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T05:23:26.443Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:23:56.916Z",
+     "text": "Building it: an intrinsic app's core is its code only (.js, .css, .html); its data files stay writable.\n\nQuestion: the face annotations decide what, which apps are intrinsic (core) in place of the .json's intrinsic, or which apps the face shows?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:24:57.328Z",
+     "text": "only face-annotations intrinsic mark count the code files in that pp or process as intrinsic."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T05:24:58.366Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:25:46.628Z",
+     "text": "In the box (v16): only the face part's intrinsic mark makes code core, for apps and servers; today's intrinsic ones ship with it; the panel edits it. Building."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:29:09.454Z",
+     "text": "commit 987bf1b220a85a1c79ee5ae8f580b36cdb6e0f56: goal/G30.21: the Apps app, end to end from the shell to the face (box v16): the write gate protects core files only, every other file under the run folder writable, server scripts and manifests includ\n- spirit/run/face/shell.js\n- spirit/run/js/coreFiles.js\n- spirit/run/js/faceHome.js\n- spirit/run/js/jobs.js\n- spirit/run/js/kernel.js\n- spirit/run/js/server.js\n- spirit/run/process/js/fileServer/fileServer.js.sidecar.json\n- spirit/run/shell/apps/apps.js\n- spirit/run/shell/apps/apps.js.sidecar.json\n- spirit/run/shell/apps/apps.json\n- spirit/run/shell/contacts/contacts.js.sidecar.json\n- spirit/run/shell/contacts/contacts.json\n- spirit/run/shell/contactsDetails/contactsDetails.js.sidecar.json\n- spirit/run/shell/files/files.js.sidecar.json\n- spirit/run/shell/files/files.json\n- spirit/run/shell/grants/grants.js.sidecar.json\n- spirit/run/shell/group-manager/group-manager.js.sidecar.json\n- spirit/run/shell/info/info.js.sidecar.json\n- spirit/run/shell/introSpector/introSpector.js.sidecar.json\n- spirit/run/shell/jobs/jobs.js.sidecar.json\n- spirit/run/shell/jobsDetails/jobsDetails.js.sidecar.json\n- spirit/run/shell/join/join.js.sidecar.json\n- spirit/run/shell/js/fileViewer.js\n- spirit/run/shell/js/files/data.js\n- spirit/run/shell/js/files/rowElement.js\n- spirit/run/shell/mediaViewer/mediaViewer.js.sidecar.json\n- spirit/run/shell/mediaViewer/mediaViewer.json\n- spirit/run/shell/natterDetails/natterDetails.js.sidecar.json\n- spirit/run/shell/relayMonitor/relayMonitor.js.sidecar.json\n- spirit/run/shell/rotateKey/rotateKey.js.sidecar.json\n- spirit/run/shell/stats/stats.js.sidecar.json\n- spirit/test/appsApp.js\n- spirit/test/listElements.js\n- spirit/test/pathCanonicalization.js\n- spirit/test/servableAssets.js\n- spirit/test/serverSurface.js\n- spirit/test/shellRename.js\n- spirit/test/writableRoots.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:30:09.522Z",
+     "text": "Pushed 987bf1b2, claimed, verified: the item's red 11 of 11; the 16 suites it touched green, serverSurface among them. Tag the new v- tag is pushed for spirit-3.\n\nFiles: the item's list (39, the shipped sidecars among them).\n\nWhat stands between you and Done: check G10, a core grant the desk opened when I listed the files. Your node's desk still reads the old core rule (an intrinsic app's whole folder, sidecars and manifests too); after you pull and restart it reads the new one.\n\nTo see it end to end: spirit-3 on the tag, your node pulled and restarted, then on the face open Apps, pick an app, tick on the face, save: its icon comes onto the face desktop."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:30:22.318Z",
+     "text": "The tag is v-2026-10-22-07-29. Claim-done pressed; Done shows once G10 is granted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:32:22.852Z",
+     "text": "I'm in the details panel (at home) of the apps app, if doesn't let me edit, may as well let me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:33:03.187Z",
+     "text": "it doesn't matter if the sidecar exists, the node knows it came from a web-browser, so it's ok."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:33:10.047Z",
+     "text": "At home the node has no way to write the face part: home's fs.annotate writes the client part, and only the face's reaches the face part (your ruling: only the face uses the annotate functions).\n\nTo let you edit at home: fs.annotate takes one more argument, part: face, honoured from home (the owner's loopback) and from the face alike; the panel then writes it from both. That changes a verb, so it needs your yes.\n\nYes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:33:44.299Z",
+     "text": "ok, then lets tag for the relay"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:34:02.431Z",
+     "text": "Already tagged: v-2026-10-22-07-29, on 987bf1b2, pushed. spirit-3 checks it out and restarts; then the Apps panel saves from the face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:37:52.665Z",
+     "text": "Save\nnot saved: 204\n\nfrom the face's apps app....\n- why not save?\n- why would there be a save button when the face can re-write annotations as soon as a field changes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:39:13.570Z",
+     "text": "ok, the save button worked, why not auto save on field change?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:39:26.350Z",
+     "text": "Fixed in 6ea6325d, pushed: no Save button, every field writes the face part as it changes; any 2xx is a save.\n\nWhy you saw 204: that is the answer of the node's ordinary fs.annotate, so your node had pulled 987bf1b2 but was still running the code from before. The write landed in the client part. After a restart the face's change goes to the face part.\n\nThe Apps app is a node file, not the relay's: pull and restart, no new tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:39:30.354Z",
+     "text": "commit 6ea6325d5e3da784fdc7f39b934f6cc403e774a0: goal/G30.21: the Apps panel writes the face part as each field changes, no Save button (Andy's ask); any 2xx answer is a save\n- spirit/run/shell/apps/apps.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:39:54.174Z",
+     "text": "It does now: 6ea6325d, pushed, saves on every field change and has no Save button. Your node still shows the Save button because it runs the code from before: pull and restart."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:53:29.373Z",
+     "text": "- the face folder is core\n- face.html is core\n\n- face gets it's own icon.js, to begin with, there's a sketch of it in spirit/run/face/icon.js\n- there needs to be a new set of shell elements\n- shell/js/icons/listElement.js\n- shell/js/icons/rowElement.js\n- no data element needed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:55:05.136Z",
+     "text": "In the box (v17): face/ and face.html core; the face's own icon.js; shell/js/icons/ with a row and a list, no data.js.\n\nMy reading of what the icons list is for: the Apps panel's Icon field becomes the icons list as a dropdown, each row the glyph and its name, picking writes the name into the face part. And the face page loads face/icon.js where the home page has the kernel's table. That way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:00:01.918Z",
+     "text": "nice how the changes in apps change the icon and description in the face in realtime!\n\nthere is already an icon selector somewhere, i just need it moved in a official shell element, adhering to our UI standards, the face may simply store that icon object in its dataset if it wants. or\n\n- we can create a core json file: face/icons.json and make an icons app to maintain them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:00:32.359Z",
+     "text": "that way icons, in the future, won't be hard-coded anymore."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:00:52.640Z",
+     "text": "The selector exists: shell/js/iconSelector.js (createIconSelector), used by the group manager and the old shell; its deciding half is js/client/iconIndex.js. One glyph per row with all its names, glyphs already taken struck out.\n\nThe two ways, weighed:\n\n- Move it: shell/js/icons/listElement.js and rowElement.js on the standard list-tool, pane or dropdown, rows from the face's icon table (face/icon.js), the taken-glyph rule carried over. The Apps panel's Icon field is that dropdown. Nothing new to keep.\n- face/icons.json with an Icons app: as a core file the page could not write it, so the app could not maintain it; it would have to be a non-core file, which anyone with fs.save can change.\n\nI recommend moving it. That way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:21:34.470Z",
+     "text": "- i'll go with an icons app.\n- this came up because the apps app made me enter an icon key like TABLE etc...\n- so i'll go with an intrinsic app, that modifies an icon set in its own folder, where the key is the icon and the icon has\n\n{\n    \"❌\":[\n            \"error \",\n            \"delete\",\n            \"no\",\n            \"red\",\n            \"don't\"\n    ],\n    \"🔴\":[\n            \"circle\",\n            \"filled\",\n            \"red\",\n            \"ball\"\n    ]\n}\n\n.. or use a \"keyword\" string if that makes it more searchable...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:22:41.392Z",
+     "text": "In the box (v18): an intrinsic Icons app keeping shell/icons/iconSet.json, glyph to keywords, seeded from the kernel's table; the icons list as the Apps panel's dropdown; a face part stores the glyph.\n\n- Keywords as an array, not one string: the search matches the words joined either way, and an array keeps each word whole to edit and to show.\n- Named iconSet.json, because icons.json in that folder is the app's own manifest.\n\nQuestion: face/icon.js, the face's own table you sketched: dropped, the set taking its place?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:23:01.047Z",
+     "text": "and we use icons as themselves in all the face-code, when an icon is selected, it's the icon we store or use"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:24:07.753Z",
+     "text": "In the box (v19): face code uses icons as themselves; a selected icon is the glyph stored and used.\n\nWhat that reaches today: the face shell turns a key into a glyph in one place, and four shell elements the face loads read the kernel's table by key (the contact row and list, the file row, the text viewer). With glyphs used as themselves, face/icon.js has nothing left to do.\n\nQuestion: are those four elements in this item, their keys replaced by glyphs, and face/icon.js dropped?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:26:34.344Z",
+     "text": "Named iconSet.json, because icons.json in that folder is the app's own manifest.\n- ha ha, not in the face-system is there an icons.json, but use your name anyway, to be save and becaue it won't matter."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:27:06.960Z",
+     "text": "iconSet.json it stays. Still open: the four elements' keys replaced by glyphs in this item, and face/icon.js dropped?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:27:13.785Z",
+     "text": "my icon.json, i'll delete it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:28:23.938Z",
+     "text": "In the box (v20): face/icon.js not needed; the face shell and the four elements the face loads write their glyphs as themselves, in this item, as your ruling says.\n\nThe new part to build: the Icons app with iconSet.json, the icons list and row, the Apps panel's icon dropdown, the glyphs as themselves.\n\nGreen from my side. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:28:35.804Z",
+     "text": "cap\n\ngreen?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:29:20.783Z",
+     "text": "and we'll need to retrofit current face-apps, too"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:29:31.380Z",
+     "text": "Capped (v21), and green: nothing is open.\n\nTwo gaps I closed as statements, from your rulings: the Icons app is on the face and at home like Apps, shipped with its face part; the shipped face parts store glyphs, not keys.\n\nGo?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:30:21.413Z",
+     "text": "In the box (v22): today's face apps retrofitted in this item, Contacts, Files, Media Viewer and Apps, their code and the elements they draw. Of those, Contacts itself reads the kernel's table by key; the rest is the four elements already named.\n\nGo?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:31:46.003Z",
+     "text": "go"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:33:19.178Z",
+     "text": "commit 4ea25045c0c422f135f4c2436acc8fb20a6af10e: goal/G30.21: the red for the Icons app (box v22): iconSet.json glyph to keywords seeded from the kernel's table; the Icons app intrinsic and on the face; shell/js/icons/ row and list drawn by Apps and\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:38:53.539Z",
+     "text": "commit 4b66762dd4616aff7759838f78eff8ad4e0658eb: goal/G30.21: the Icons app and icons as themselves (box v22): an intrinsic Icons app keeps shell/icons/iconSet.json, each glyph with its keywords, seeded from the kernel's table, on the face and at ho\n- spirit/run/face/shell.js\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/apps/apps.js\n- spirit/run/shell/apps/apps.js.sidecar.json\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/contacts/contacts.js.sidecar.json\n- spirit/run/shell/files/files.js.sidecar.json\n- spirit/run/shell/icons/iconSet.json\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/icons/icons.js.sidecar.json\n- spirit/run/shell/icons/icons.json\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/js/contacts/rowElement.js\n- spirit/run/shell/js/files/rowElement.js\n- spirit/run/shell/js/icons/listElement.js\n- spirit/run/shell/js/icons/rowElement.js\n- spirit/run/shell/js/textViewer.js\n- spirit/run/shell/mediaViewer/mediaViewer.js.sidecar.json"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:40:10.979Z",
+     "text": "Pushed 4b66762d, claimed, verified: the item's red 15 of 15; the 13 suites that draw contact and file rows green.\n\nTag v-2026-10-22-08-39 is pushed for spirit-3 (the face draws the glyph itself).\n\nFiles: the item's list.\n\nDone waits on G20: the desk opens a core grant each time I list the files, because your node's desk still runs the old core rule. After a pull and restart it reads the new one.\n\nTo see it: spirit-3 on the tag, your node pulled and restarted; on the face open Icons to edit keywords, and in Apps pick an icon from the dropdown."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:44:09.381Z",
+     "text": "the icon app allowed me to add a duplicate icon.... that shouldn't work"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:45:34.844Z",
+     "text": "commit d205fd62eb04d9d14abcfcbe8128e7099cfa2237: goal/G30.21: the Icons app refuses adding an icon already in the set, under any spelling (the invisible variation selectors ignored), and writes nothing then (Andy: \"the icon app allowed me to add a d\n- spirit/run/shell/icons/icons.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:45:38.456Z",
+     "text": "Fixed in d205fd62, pushed: adding an icon already in the set is refused, under any spelling (the invisible variation selectors ignored), and nothing is written; it says to open that icon's row instead.\n\nWhat happened: the set's keys are the glyphs, so your add did not make a second row; it replaced that icon's keywords and said saved. Your set has no duplicate in it now.\n\nPull and restart to get it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T06:47:18.409Z",
+     "text": "and it doesn't search the icon itself.... this search string found nothing:\n\"🐦 💀🐱\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:48:25.764Z",
+     "text": "commit 6ed42c6d3376892173358413b5cdf5429d441700: goal/G30.21: the icons list searches the glyph itself beside its keywords, so pasted icons find their rows (Andy: \"it doesn't search the icon itself\")\n- spirit/run/shell/js/icons/listElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T06:48:29.610Z",
+     "text": "Fixed in 6ed42c6d, pushed: the icons list matches the glyph itself as well as its keywords. Your search 🐦 💀🐱 now puts the bird, the skull and the cat first.\n\nPull and restart to get it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T07:04:12.766Z",
+     "text": "face still doesn't show as \"core\" or intrinsic in files...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T07:05:25.897Z",
+     "text": "commit 0f8cda0626d887a865c3ef30515ac6f959081a47: goal/G30.21: the face folder and face.html are core (box v17, Andy: \"the face folder is core\", \"face.html is core\"); the red asserts it\n- spirit/run/js/coreFiles.js\n- spirit/test/appsApp.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T07:05:29.551Z",
+     "text": "You are right: it was in the box and I had not built it, and the red did not check it. Fixed in 0f8cda06, pushed: face/ and face.html are core, and the red now asserts it (16 of 16).\n\nAfter a pull and restart, the file list paints them yellow."
     }
    ]
   }
