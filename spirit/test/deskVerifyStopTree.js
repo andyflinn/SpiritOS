@@ -25,8 +25,8 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G19.4: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
-const CW = { key: 'MCowBQYDK2VwAyEAdeskVerifyStopTreeTestCWAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyStopTreeTestOwnerAAAAAAAAAA=', label: 'andy' };
+const CW = { key: 'MCowBQYDK2VwAyEAdeskVerifyStopTreeTestCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyStopTreeTestOwnerAAAAAAAAAAAAAAAA=', label: 'andy' };
 const HANG = 'zzStopTreeHang.js';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -83,6 +83,7 @@ async function verifyHalf() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
@@ -95,7 +96,8 @@ async function verifyHalf() {
             out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
           } else {
             asks.push({ verb: verb, args: a });
-            if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }) || {}).files ? (({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }), version: 1, change: 1 };
             else if (verb === 'item.chat') out = { chat: [], chatMore: false };
             else out = { change: 1 };
           }

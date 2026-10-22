@@ -30,8 +30,8 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G16.13: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
-const CW = { key: 'MCowBQYDK2VwAyEAdeskVerifyOnClaimTestCWAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyOnClaimTestOwnerAAAAAAAAAAA=', label: 'andy' };
+const CW = { key: 'MCowBQYDK2VwAyEAdeskVerifyOnClaimTestCWAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyOnClaimTestOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const GREEN = 'zzClaimGreen.js';
 const RED = 'zzClaimRed.js';
 
@@ -98,6 +98,7 @@ async function verifyHalf() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
@@ -112,7 +113,8 @@ async function verifyHalf() {
           } else {
             asks.push({ verb: verb, args: a, at: Date.now() });
             const it = ITEMS[a.id] || { code: false, files: [] };
-            if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'oc/G1', code: it.code, go: true, files: it.files }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'oc/G1', code: it.code, go: true, files: it.files }) || {}).files ? (({ id: a.id, goal: 'oc/G1', code: it.code, go: true, files: it.files }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'oc/G1', code: it.code, go: true, files: it.files }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
@@ -146,7 +148,8 @@ async function verifyHalf() {
     const before = Date.now();
     rec('press', { id: 'oc/G1.1', what: 'claim-done' });
     const checked = await waitFor(function () { return lineOn('oc/G1.1').length > 0; }, 15000);
-    if (checked && said('item.get', 'oc/G1.1').length) test.check('a claim-done on a plain item: within seconds, unasked, it checked the item');
+    // It reads the item's file list with item.files, the list's own answer since goal/G32.2.
+    if (checked && said('item.files', 'oc/G1.1').length) test.check('a claim-done on a plain item: within seconds, unasked, it checked the item');
     else test.fail(OWED + 'no check after a claim-done; the desk was asked ' + short(asks.filter(function (x) { return x.args.id === 'oc/G1.1'; })));
     await sleep(1500);
     if (lineOn('oc/G1.1').length === 1) test.check('once, not on every read');

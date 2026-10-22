@@ -97,6 +97,14 @@ function answer(servers, ask, caller) {
       return { status: 200, body: kept };
     });
   }
+  // A FAMILY'S INTERFACE (goal/G32.3, the approved api {family}): the text of its api.js, for a member holding a grant
+  // in that family, the family whole or one of its verbs; any other family is refused as its verbs would be.
+  if (ask && typeof ask === 'object' && !Array.isArray(ask) && Object.keys(ask).length === 1 && ask.api && typeof ask.api === 'object') {
+    const fam = String(ask.api.family || '');
+    const held = paths.some(function (p) { return p === fam || p.indexOf(fam + '.') === 0; });
+    if (!fam || !held) return Promise.resolve(refusal('not-granted', 'no grant in the family ' + fam + ' is held by this key'));
+    return Promise.resolve(servers.ask({ api: { family: fam } }, who));
+  }
   // A call runs only when its app or its exact app.verb is granted; a
   // granted app's missing verb is the server's to answer, never the gate's.
   // THE AGENTS SPECIAL CASE STOOD HERE (goal/G29.19): AGENTS and AGENTS.introspect opened by any grant in the app and

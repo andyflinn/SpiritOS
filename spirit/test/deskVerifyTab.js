@@ -37,7 +37,7 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G8.11: ';
 const FACE = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyTabTestOwnerAAAAAAAAAAAAAAA=', label: 'andy' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyTabTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const SLOW = 'zzTabSlow.js';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -64,6 +64,7 @@ async function serverHalf() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
@@ -76,7 +77,8 @@ async function serverHalf() {
           }
           else {
             asks.push({ verb: verb, args: a });
-            if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }) || {}).files ? (({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };

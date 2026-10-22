@@ -54,12 +54,12 @@ const SERVER = process.env.CHATCLERVER_STUB || path.join(RUN, 'process', 'js', '
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-const SELF_KEY = 'MCowBQYDK2VwAyEAchatClerverWriteTestSelfAAAAAAAAAAAAA=';
-const PEER = 'MCowBQYDK2VwAyEAchatClerverWriteTestPeerAAAAAAAAAAAAA=';
-const BLOCKED = 'MCowBQYDK2VwAyEAchatClerverWriteTestBlockedAAAAAAAAAA=';
-const HELD = 'MCowBQYDK2VwAyEAchatClerverWriteTestHeldAAAAAAAAAAAAA=';
+const SELF_KEY = 'MCowBQYDK2VwAyEAchatClerverWriteTestSelfAAAAAAAAAAAAAAAAAAA=';
+const PEER = 'MCowBQYDK2VwAyEAchatClerverWriteTestPeerAAAAAAAAAAAAAAAAAAA=';
+const BLOCKED = 'MCowBQYDK2VwAyEAchatClerverWriteTestBlockedAAAAAAAAAAAAAAAA=';
+const HELD = 'MCowBQYDK2VwAyEAchatClerverWriteTestHeldAAAAAAAAAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
-const MEMBER = { key: 'MCowBQYDK2VwAyEAchatClerverWriteTestMemberAAAAAAAAAAA=', label: 'somebody' };
+const MEMBER = { key: 'MCowBQYDK2VwAyEAchatClerverWriteTestMemberAAAAAAAAAAAAAAAAA=', label: 'somebody' };
 const NONE = { writer: '', seq: 0 };
 
 test.startTest('goal/G4.6 and G4.7: the owner writes a line to a peer');
@@ -97,6 +97,7 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
     asked.push({ verb: b.verb, body: b });
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return json(200, { ok: true });
     if (b.verb === 'contact.get') {
       const row = book[String(b.key || '')];

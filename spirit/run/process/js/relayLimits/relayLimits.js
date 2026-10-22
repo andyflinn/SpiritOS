@@ -40,7 +40,7 @@
 // point: a shrink that would strand members is refused whole, and the
 // answer names the gap (design/principles/LIMITED-RESOURCES.md).
 
-const http = require('http');
+const spiritObject = require('../../../face/spirit.js');
 
 const NODE = process.env.SPIRIT_NODE || 'http://127.0.0.1:65432';
 const RELAY_APP = 'relay';
@@ -48,47 +48,31 @@ const RELAY_APP = 'relay';
 // that a box which is not there says so while somebody is still looking.
 const WAIT_MS = 20000;
 
-function door(pathname, body) {
-  const u = new URL(pathname, NODE);
-  const payload = body === undefined ? null : JSON.stringify(body);
-  return new Promise(function (resolve, reject) {
-    const req = http.request({
-      host: u.hostname, port: u.port, path: u.pathname,
-      method: payload ? 'POST' : 'GET',
-      headers: payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {},
-    }, function (res) {
-      const chunks = [];
-      res.on('data', function (c) { chunks.push(c); });
-      res.on('end', function () {
-        const text = Buffer.concat(chunks).toString('utf8');
-        let json = null;
-        try { json = JSON.parse(text); } catch (e) { json = null; }
-        if (json === null) reject(new Error('the node answered ' + res.statusCode + ': ' + text.slice(0, 200)));
-        else resolve(json);
-      });
-    });
-    req.on('error', function (e) {
-      reject(new Error('no node at ' + NODE + ' (' + e.message + ') — start it, or set SPIRIT_NODE'));
-    });
-    req.end(payload || undefined);
+// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one verb by its name on the node's loopback door, its answer or its
+// refusal's body; a node that does not answer says so.
+function door(verb, args) {
+  return spiritObject.outcome(spiritObject.forNode(NODE, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) {
+    if (!r || !r.status) throw new Error('no node at ' + NODE + ' — start it, or set SPIRIT_NODE');
+    return r.body || {};
   });
 }
 
 // ── THE RELAYS THIS NODE OWNS ───────────────────────────────────────
 //
-// `relay.status` answers every relay this node holds a row on, with
+// `relay.search` answers every relay this node holds a row on, with
 // `owned` saying which of them this key may configure. A relay this node
 // is merely a member of is listed and refused here rather than at the far
 // end, so the reason arrives now instead of as a silent non-answer.
 function relays(doorFn) {
-  return (doorFn || door)('/api/spirit', { verb: 'relay.status', name: '' }).then(function (out) {
-    return (out.rows || []).map(function (row) {
-      return {
-        url: row.url,
-        owned: !!row.owned,
-        label: (row.roll && row.roll.relayLabel) || row.label || '',
-        key: (row.roll && row.roll.relayKey) || '',
-      };
+  // relay.status is gone from the node: a list is a search (puppets/G2). relay.search answers one row per relay this
+  // node holds, its label the row as the node paints it: url, owned, relayLabel and relayKey among it (hub.js relayRow).
+  return (doorFn || door)('relay.search', { q: '' }).then(function (out) {
+    if (out && out.ok === false) throw new Error('the node refused relay.search: ' + (out.error || out.code || JSON.stringify(out).slice(0, 200)));
+    if (out && out.more) console.error('relayLimits: the node holds more relays than one answer carries; only the first are considered');
+    return ((out && out.items) || []).map(function (item) {
+      let row = {};
+      try { row = JSON.parse(item.label) || {}; } catch (e) { row = {}; }
+      return { url: String(row.url || item.key || ''), owned: !!row.owned, label: row.relayLabel || row.name || '', key: row.relayKey || '' };
     });
   });
 }
@@ -122,7 +106,7 @@ function pick(rows, which) {
 // code without the verb, all come back here rather than as silence.
 function askRelay(relay, verbBody, doorFn) {
   const packet = JSON.stringify({ app: RELAY_APP, v: 1, body: verbBody });
-  return (doorFn || door)('/api/spirit', { verb: 'peer.post', to: relay.key, text: packet }).then(function (out) {
+  return (doorFn || door)('peer.post', { to: relay.key, text: packet }).then(function (out) {
     if (!out || out.ok === false) {
       throw new Error('the post did not land: ' + (out && out.error ? out.error : JSON.stringify(out).slice(0, 200)));
     }

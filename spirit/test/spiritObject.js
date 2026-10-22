@@ -11,8 +11,9 @@
 //     error(), formatBytes(), escapeHtml() are the object's own.
 //   - The check is complete: every argument of every call checked before it goes out (shape and field rules, by
 //     js/fieldRules.js); a malformed call never leaves; a reply not 2xx refuses.
-// NAMED HERE: face/spirit.js exports createSpirit({ ask(verb, args) -> Promise<{status, body}>, family(name) ->
-// Promise<def> }) -> Promise<spirit>; a family's api.js defines { family, verbs: { <verb>: { <arg>: '<rule>[?]' } },
+// NAMED HERE: face/spirit.js exports createSpirit({ ask(verb, args) -> Promise<{status, body}> }) -> Promise<spirit>;
+// since goal/G32.3 the families are api's names and each interface is api {family}; a family's api.js is module.exports =
+// { verbs: { <verb>: { <arg>: '<rule>[?]' } },
 // names(call) }; a refusal is an Error with .code ('no-such-argument', 'bad-request') and .status for a reply;
 // serveCommon.inlineSpirit(html, runDir) puts face/spirit.js inline where face.html says <!-- spirit.js -->.
 // rule/11: through testSupport only; nothing reaches a node.
@@ -54,9 +55,12 @@ const done = (async function () {
   const sent = [];
   let replyStatus = 200;
   const transport = {
-    ask: function (verb, args) { sent.push({ verb: verb, args: args }); return Promise.resolve({ status: replyStatus, body: { ok: true, path: args.path, text: 'hello' } }); },
-    family: function (name) { return Promise.resolve(require(path.join(RUN, 'js', name, 'api.js'))); },
-    families: function () { return Promise.resolve(FAMILIES); },
+    ask: function (verb, args) {
+      // The node's side of goal/G32.3: api answers the families, api {family} each one's interface.
+      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: fs.readFileSync(path.join(RUN, 'js', args.family, 'api.js'), 'utf8') } });
+      if (verb === 'api') { const t = {}; FAMILIES.forEach(function (f) { t[f] = {}; }); return Promise.resolve({ status: 200, body: t }); }
+      sent.push({ verb: verb, args: args }); return Promise.resolve({ status: replyStatus, body: { ok: true, path: args.path, text: 'hello' } });
+    },
   };
   let spirit = null;
   try { spirit = await require(path.join(RUN, 'face', 'spirit.js')).createSpirit(transport); } catch (e) { spirit = { threw: e.message }; }

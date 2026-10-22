@@ -30,12 +30,15 @@ const ROWS = [
 // A door that answers whatever it is handed, and records what it was
 // asked — which is how the packet's shape is asserted without a relay.
 function doorSaying(answer, seen) {
-  return function (pathname, body) {
-    if (seen) seen.push({ pathname: pathname, body: body });
-    if (body && body.verb === 'relay.status') {
-      return Promise.resolve({ rows: ROWS.map(function (r) {
-        return { url: r.url, owned: r.owned, roll: { relayKey: r.key, relayLabel: r.label } };
-      }) });
+  // goal/G32.3: the tool names the verb and its arguments; the door is the spirit object's.
+  return function (verb, args) {
+    const body = Object.assign({ verb: verb }, args);
+    if (seen) seen.push({ verb: verb, body: body });
+    // relay.search, as the node answers it since relay.status went (puppets/G2): a row per relay, its label the row.
+    if (verb === 'relay.search') {
+      return Promise.resolve({ items: ROWS.map(function (r) {
+        return { key: r.url, label: JSON.stringify({ url: r.url, owned: r.owned, relayLabel: r.label, relayKey: r.key }) };
+      }), more: false });
     }
     return Promise.resolve(answer);
   };
@@ -94,7 +97,7 @@ function run() {
     .then(function () {
       const posted = seen[seen.length - 1];
       const packet = JSON.parse(posted.body.text);
-      if (posted.pathname === '/api/spirit' && posted.body.verb === 'peer.post' &&
+      if (posted.verb === 'peer.post' &&
           posted.body.to === 'KEY-LAB' && packet.app === 'relay' && packet.body.config.ramLimitMB === 1) {
         test.check('peer.post to the relay\'s own key, carrying { app: relay, body: { config } } — no new verb');
       } else {

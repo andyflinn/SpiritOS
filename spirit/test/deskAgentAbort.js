@@ -80,10 +80,12 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as deskAgent.<verb> (by name on the flat apiDoor, goal/G30.6), and
     // the node answers them here as it answered fs.load before (recorded as verb file.load / FS.search). Since
     // goal/G30.4 the tools are described from the family folder: FS.search lists file.load.json, FS.loadJsonValue reads it.
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     const ask = test.foldAsk(b);
     const du = ask && ask.deskAgent;
     if (du && du['FS.search']) { nodeAsks.push({ verb: 'deskAgent.FS.search' }); return answer(200, { items: [{ key: 'file.load.json', label: 'file.load.json' }], more: false }); }

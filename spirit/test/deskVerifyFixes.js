@@ -36,7 +36,7 @@ const OWED = 'OWED by goal/G21.3: ';
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
 const FACE = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const SUPPORT = path.join(__dirname, 'testSupport.js');
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyFixesTestOwnerAAAAAAAAAAAAA=', label: 'andy' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyFixesTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const CAP = 1024;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -84,6 +84,7 @@ function fakeNode(opts) {
         return { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
       }
       st.asks.push({ verb: verb, args: a });
+      if (verb === 'item.files') return { files: (({ id: a.id, goal: 'fx/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (p) { return { path: p, by: 'claude-windows', core: false }; }) }) || {}).files ? (({ id: a.id, goal: 'fx/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (p) { return { path: p, by: 'claude-windows', core: false }; }) }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
       if (verb === 'item.get') return { item: JSON.stringify({ id: a.id, goal: 'fx/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (p) { return { path: p, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
       if (verb === 'item.chat') return { chat: (st.chats[a.id] || []).slice(), chatMore: false };
       if (verb === 'items.search') return { items: st.items.map(function (it) { return { key: it.id, label: JSON.stringify(it) }; }), more: false };
@@ -96,6 +97,7 @@ function fakeNode(opts) {
       req.on('end', async function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (j && j.verb === 'jobs.update') { if (j.app) st.published.push(j.app); }

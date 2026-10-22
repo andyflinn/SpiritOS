@@ -48,6 +48,8 @@ const node = http.createServer(function (req, res) {
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+    // The ear asks deskClient's interface first (goal/G32.3); it is answered here and neither counted nor scripted.
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
     asked.push({ method: req.method, url: req.url, body: b });
     const a = script.length > 1 ? script.shift() : script[0];
     res.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -129,12 +131,13 @@ async function main() {
     test.subHeading('5. one ask of its own deskClient');
     asked.length = 0;
     script = [{ status: 200, body: { set: true } }];
-    const setDesk = await run([port, 'deskClient.setDesk', '{"key":"KEY="}']);
+    // A key of a real key's shape: the spirit object checks it before it leaves (goal/G32.3).
+    const setDesk = await run([port, 'deskClient.setDesk', '{"key":"MCowBQYDK2VwAyEAdeskAgentEarThinSetDeskKeyAAAAAAAAAAAAAAAAA="}']);
     const sentSet = asked[0] ? asked[0].body : {};
     script = [{ status: 200, body: { items: [], more: false } }];
     const hist = await run([port, 'deskClient.history.search', '{"text":""}']);
     const sentHist = asked[1] ? asked[1].body : {};
-    if (setDesk.code === 0 && setDesk.out.trim() === '{"set":true}' && JSON.stringify(sentSet) === JSON.stringify({ verb: 'deskClient.setDesk', key: 'KEY=' })
+    if (setDesk.code === 0 && setDesk.out.trim() === '{"set":true}' && JSON.stringify(sentSet) === JSON.stringify({ verb: 'deskClient.setDesk', key: 'MCowBQYDK2VwAyEAdeskAgentEarThinSetDeskKeyAAAAAAAAAAAAAAAAA=' })
       && hist.code === 0 && hist.out.trim() === '{"items":[],"more":false}' && JSON.stringify(sentHist) === JSON.stringify({ verb: 'deskClient.history.search', text: '' })) {
       test.check('deskClient.setDesk and deskClient.history.search went to its own deskClient as named, answers printed, exit 0');
     } else test.fail(OWED + 'setDesk exited ' + setDesk.code + ' having sent ' + JSON.stringify(sentSet) + '; history.search exited ' + hist.code + ' having sent ' + JSON.stringify(sentHist));
@@ -144,7 +147,7 @@ async function main() {
     const code = lines.join('\n');
     const holds = [/\bfetch\s*\(/, /require\(\s*['"](node:)?https?['"]\s*\)/, /require\(\s*['"](node:)?fs['"]\s*\)/, /AGENTS_[A-Z]+/, /api\/events/, /relay-state/, /identity\.json/, /peerPost/]
       .filter(function (re) { return re.test(code); });
-    if (/kernel\.js/.test(code) && /kernel\.core\.ask\('deskClient\.' \+/.test(code) && !holds.length && lines.length < 80) test.check('deskAgentEar.js asks deskClient.<verb> by name through the kernel\'s ask alone, in ' + lines.length + ' lines of code');
+    if (/face\/spirit\.js/.test(code) && /s\.call\('deskClient\.' \+/.test(code) && !holds.length && lines.length < 80) test.check('deskAgentEar.js asks deskClient.<verb> by name through the spirit object alone (goal/G32.3), in ' + lines.length + ' lines of code');
     else test.fail(OWED + 'deskAgentEar.js is ' + lines.length + ' lines of code and holds ' + holds.map(String).join(', '));
   }
 

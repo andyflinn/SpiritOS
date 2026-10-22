@@ -398,7 +398,9 @@ function moveGrants(from, to) {
   const url = process.env.SPIRIT_CALLBACK_URL;
   if (!url) return Promise.resolve();
   const base = new URL(url).origin;
-  const ask = function (verb, args) { return require('../../../js/kernel.js').core.ask(verb, args, base).then(function (r) { return (r && r.body) || {}; }); };
+  // Through the spirit object (goal/G32.3): the node's answer, or its refusal's body.
+  const node = require('../../../face/spirit.js');
+  const ask = function (verb, args) { return node.outcome(node.forNode(base, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) { if (!r || !r.status) throw new Error('the node did not answer ' + verb); return r.body || {}; }); };
   const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
   return ask('auth.search', { text: from }).then(function (found) {
     // auth.search answers the new search's list (goal/G29.7): each grant's label is {name, key, path}.

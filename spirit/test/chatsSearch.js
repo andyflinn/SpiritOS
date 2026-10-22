@@ -33,7 +33,7 @@ const SERVER = path.join(RUN, 'process', 'js', 'chatClerver', 'chatClerver.js');
 const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); } catch (e) { return ''; } };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-const key = function (tag) { return 'MCowBQYDK2VwAyEAchatsSearch' + tag + 'A'.repeat(Math.max(0, 27 - tag.length)) + '='; };
+const key = function (tag) { return 'MCowBQYDK2VwAyEAchatsSearch' + tag + 'A'.repeat(Math.max(0, 32 - tag.length)) + '='; }; // 43 characters, a real key's length (the spirit object checks it, goal/G32.3)
 const SELF = key('Self');
 const OWNER = { owner: true, key: SELF, label: 'me' };
 const MEMBER = { key: key('Member'), label: 'somebody' };
@@ -61,6 +61,7 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return json(200, { ok: true });
     if (b.verb === 'contact.get') return json(200, { ok: true, key: b.key, person: { publicKey: b.key, blocked: b.key === BLOCKED, held: false } });
     return json(400, { ok: false, code: 'no-such-verb', error: 'the pretend node has no ' + b.verb });

@@ -38,9 +38,9 @@ const PUBLISH = path.join(RUN, 'process', 'js', 'deskClient', 'publishData.js');
 const PUSH_ORIGIN = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.js');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
-const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 // goal/G29.21: the owner writes the world, since an agent's session creates no goal.
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAgitHelpersTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAgitHelpersTestOwnerAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const ENV = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' });
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -110,6 +110,7 @@ const node = http.createServer(function (req, res) {
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     heard.push(b);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, name: 'gemma', id: 'job-' + heard.length }));

@@ -52,6 +52,7 @@ async function startNode() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const asked = test.foldAsk(j);
         let out = asked === 'api' ? { desk: {} } : { ok: true };
         if (asked && asked.deskVerify) {

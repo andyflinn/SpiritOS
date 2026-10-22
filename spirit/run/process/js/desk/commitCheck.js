@@ -36,7 +36,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
-const kernel = require('../../../js/kernel.js');
+const spiritObject = require('../../../face/spirit.js');
 
 const USAGE = 'usage: node commitCheck.js install <port> | check <port> <message file> | record <port> | push <port> <remote>';
 const NODE_WAIT_MS = 20000;
@@ -61,11 +61,12 @@ function gitDir() {
 function desk(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
-  const ask = kernel.core.ask('deskClient.desk', { name: verb, json: JSON.stringify(args) }, 'http://127.0.0.1:' + port);
+  // Through the spirit object (goal/G32.3): deskClient.desk on the node's loopback door, as {status, body}.
+  const ask = spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.deskClient.desk({ name: verb, json: JSON.stringify(args) }); }));
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
     // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.
-    if (!r || r.status !== 200 || !r.body || typeof r.body !== 'object') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.text : 'nothing'));
+    if (!r || r.status !== 200 || !r.body || typeof r.body !== 'object') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'nothing'));
     if (r.body.ok === false) throw new Error('the desk answered ' + JSON.stringify(r.body));
     return r.body;
   }, function (e) { clearTimeout(timer); end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });

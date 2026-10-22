@@ -31,9 +31,9 @@ const packet = require('../run/js/client/packet.js');
 const OWED = 'OWED by goal/G19.6: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const POLL_MS = 400;
-const SELF_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestSelfAAAAAAAAAAAAAAAA=';
-const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestOtherAAAAAAAAAAAAAAA=';
-const DESK_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestDeskNodeAAAAAAAAAAA=';
+const SELF_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestSelfAAAAAAAAAAAAAAAAAAAAA=';
+const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestOtherAAAAAAAAAAAAAAAAAAAA=';
+const DESK_KEY = 'MCowBQYDK2VwAyEAdeskClientPullTestDeskNodeAAAAAAAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const SELF_AT_DESK = { key: SELF_KEY, label: 'claude-windows' };
 const OTHER_AT_DESK = { key: OTHER_KEY, label: 'wsl-claude' };
@@ -76,6 +76,7 @@ const node = http.createServer(function (req, res) {
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
     if (b.verb === 'contact.get') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, key: b.key, person: { publicKey: b.key, blocked: true } })); return; }
     if (b.verb !== 'peer.post') { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end('{"ok":false}'); return; }

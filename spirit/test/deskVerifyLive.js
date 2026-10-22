@@ -37,7 +37,7 @@ const OWED = 'OWED by goal/G8.12: ';
 const FACE = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
 const RUNALL = path.join(__dirname, 'runAll.js');
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyLiveTestOwnerAAAAAAAAAAAAAA=', label: 'andy' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyLiveTestOwnerAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const SLOW = 'zzLiveA.js';
 const FAST = 'zzLiveB.js';
 
@@ -61,6 +61,7 @@ function fakeNode(opts) {
       req.on('end', async function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (j && j.verb === 'jobs.update') { if (j.app) st.published.push(j.app); out = { ok: true }; }
@@ -75,7 +76,8 @@ function fakeNode(opts) {
             out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
           } else {
             st.asks.push({ verb: verb, args: a });
-            if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }) || {}).files ? (({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };

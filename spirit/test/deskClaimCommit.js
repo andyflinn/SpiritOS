@@ -37,8 +37,8 @@ const OWED = 'OWED by goal/G19.13: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
 const RUN_JS = path.join(__dirname, '..', 'run', 'js');
-const CW = { key: 'MCowBQYDK2VwAyEAdeskClaimCommitTestCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskClaimCommitTestOwnerAAAAAAAAAAAAA=', label: 'andy' };
+const CW = { key: 'MCowBQYDK2VwAyEAdeskClaimCommitTestCWAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskClaimCommitTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const MISSING = '0123456789abcdef0123456789abcdef01234567';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -76,6 +76,7 @@ function apiNode() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         const out = flatCall === 'api' ? { desk: {} } : {};
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
@@ -171,6 +172,12 @@ function scratchRepo() {
   fs.mkdirSync(path.join(repo, 'spirit', 'run', 'process', 'js', 'deskVerify'), { recursive: true });
   fs.mkdirSync(path.join(repo, 'spirit', 'test'), { recursive: true });
   fs.cpSync(RUN_JS, path.join(repo, 'spirit', 'run', 'js'), { recursive: true });
+
+  // deskVerify reaches its node through the spirit object (goal/G32.3), which lives in face/.
+
+  fs.mkdirSync(path.join(repo, 'spirit', 'run', 'face'), { recursive: true });
+
+  fs.copyFileSync(path.join(RUN_JS, '..', 'face', 'spirit.js'), path.join(repo, 'spirit', 'run', 'face', 'spirit.js'));
   fs.copyFileSync(VERIFY, path.join(repo, 'spirit', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js'));
   const probe = function (name, body) { fs.writeFileSync(path.join(repo, 'spirit', 'test', name), "'use strict';\n// startTest(\n" + body); };
   probe('zzClaimGreen.js', "console.log('SUCCESS #1 green');\n");
@@ -228,6 +235,7 @@ async function verifyHalf() {
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (flatCall === 'api') out = { desk: {}, deskVerify: {} };

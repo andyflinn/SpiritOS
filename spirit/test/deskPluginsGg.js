@@ -215,6 +215,7 @@ function clickTab(el, tab) {
         reports.push(b);
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = flatCall === 'api' ? { desk: {} } : { ok: true };
         if (flatCall && flatCall.deskVerify) {

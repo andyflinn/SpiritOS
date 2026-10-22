@@ -26,6 +26,7 @@ const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
 const kernel = require('../../../js/kernel.js');
+const spiritObject = require('../../../face/spirit.js');
 const packet = require('../../../js/client/packet.js');
 const limits = require('../../../js/limits.js');
 const appClient = require('../../../js/appClient.js');
@@ -83,9 +84,10 @@ const READ_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
 function refused(code, why) { const e = new Error(code); e.refusal = code; if (why) e.extra = { why: String(why) }; return e; }
 // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
-// One ask of this node: {status, body}, or {status: 0} when the node did not answer at all.
-function askNode(verb, args) {
-  return kernel.core.ask(verb, args, NODE_URL).then(function (r) { return r || { status: 0 }; }, function () { return { status: 0 }; });
+// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one call of a node family, {status, body}, or {status: 0} when the
+// node did not answer at all.
+function onNode(family, call) {
+  return spiritObject.outcome(spiritObject.forNode(NODE_URL, family).then(call));
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
@@ -239,16 +241,16 @@ appServer.serve({
       // Measured before anything is asked, with the largest number this line could carry.
       const made = packet.encode('api', bodyOf({ seq: Number.MAX_SAFE_INTEGER, at: new Date().toISOString(), text: text, reWriter: re.writer, reSeq: re.seq }));
       if (!made || !made.ok || !limits.fitsSealed(made.text)) throw refused('line-too-large');
-      return askNode('contact.get', { key: to }).then(function (r) {
+      return onNode('contact', function (s) { return s.contact.get({ key: to }); }).then(function (r) {
         // A key the book never saw is nobody's block; a book that does not answer cannot vouch for one.
         if (r.status === 404) return null;
         const person = r.status === 200 && r.body && r.body.person;
         if (!person) throw refused('no-answer');
         if (person.blocked === true) throw refused('peer-blocked');
         if (person.held !== true) return null;
-        return askNode('contact.accept', { publicKey: to }).then(function (x) { if (x.status !== 200) throw refused('no-answer'); });
+        return onNode('contact', function (s) { return s.contact.accept({ publicKey: to }); }).then(function (x) { if (x.status !== 200) throw refused('no-answer'); });
       }).then(function () {
-        return askNode('auth.grant', { key: to, path: 'chatClerver.line.receive' });
+        return onNode('auth', function (s) { return s.auth.grant({ key: to, path: 'chatClerver.line.receive' }); });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');
@@ -285,7 +287,7 @@ appServer.serve({
       // does not answer refuses the search rather than show somebody it may have blocked.
       function offerRow(i) {
         if (i >= rows.length) return Promise.resolve();
-        return askNode('contact.get', { key: rows[i].peer }).then(function (r) {
+        return onNode('contact', function (s) { return s.contact.get({ key: rows[i].peer }); }).then(function (r) {
           if (r.status !== 200 && r.status !== 404) throw refused('no-answer');
           const person = r.body && r.body.person;
           if (person && person.blocked === true) return offerRow(i + 1);

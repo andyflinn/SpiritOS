@@ -24,7 +24,7 @@
 // The port is the agent's OWN node's and has no default: Andy's door is never an agent's.
 // Exits: 0 lines printed, or the answer printed; 1 refused or not answered (the reason is printed); 2 usage.
 
-const kernel = require('../../../js/kernel.js');
+const spiritObject = require('../../../face/spirit.js');
 
 const USAGE = 'usage: node deskAgentEar.js <port of your own node> [<desk verb> | deskClient.<verb>] [json]';
 const NODE_WAIT_MS = 20000;
@@ -43,7 +43,9 @@ function end(code, text, bad) { (bad ? console.error : console.log)(text); proce
 function ask(what, a) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer from the node in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
-  return Promise.race([kernel.core.ask('deskClient.' + what, a, 'http://127.0.0.1:' + port), late])
+  // Through the spirit object (goal/G32.3): the deskClient verb by its name, as {status, body}.
+  const asked = spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.call('deskClient.' + what, a); }));
+  return Promise.race([asked, late])
     .then(function (r) { clearTimeout(timer); return r; }, function (e) { end(1, 'deskAgentEar: the node on port ' + port + ' did not answer: ' + ((e && e.message) || e), true); });
 }
 function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === false; }
@@ -52,7 +54,7 @@ function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === fals
 function wait() {
   ask('next', {}).then(function (r) {
     if (r.body && r.body.code === 'signed-off') end(1, 'deskAgentEar: this agent is signed off; the desk clears it, or your listen does', true);
-    if (refusedBy(r) || !Array.isArray(r.body.lines)) end(1, 'deskAgentEar: ' + r.text, true);
+    if (refusedBy(r) || !Array.isArray(r.body.lines)) end(1, 'deskAgentEar: ' + r.status + ' ' + JSON.stringify(r.body), true);
     if (r.body.lines.length) end(0, r.body.lines.join('\n'));
     setTimeout(wait, PAUSE_MS);
   });
@@ -61,13 +63,13 @@ function wait() {
 if (!verb) wait();
 else if (verb.indexOf('deskClient.') === 0) {
   // ONE ASK OF ITS OWN deskClient, the answer printed as it came.
-  ask(verb.slice('deskClient.'.length), args).then(function (r) { end(refusedBy(r) ? 1 : 0, r.text, refusedBy(r)); });
+  ask(verb.slice('deskClient.'.length), args).then(function (r) { end(refusedBy(r) ? 1 : 0, JSON.stringify(r.body), refusedBy(r)); });
 } else {
   // ONE ASK OF THE DESK. Its answer is printed as it came, a refusal of the desk's too (exit 1); deskClient's own
   // refusal (a slow desk: no-answer with the record's id) is the reason. Since goal/G4.19 deskClient hands back the
   // desk's answer itself, not a json string, so a desk refusal arrives as the body: ok false, printed, exit 1.
   ask('desk', { name: verb, json: process.argv[4] || '{}' }).then(function (r) {
-    if (r.status !== 200 || !r.body || typeof r.body !== 'object') end(1, 'deskAgentEar: ' + r.text, true);
+    if (r.status !== 200 || !r.body || typeof r.body !== 'object') end(1, 'deskAgentEar: ' + r.status + ' ' + JSON.stringify(r.body), true);
     end(r.body.ok === false ? 1 : 0, JSON.stringify(r.body));
   });
 }

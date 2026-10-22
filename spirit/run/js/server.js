@@ -1486,6 +1486,9 @@ contactBook.syncMarks(ROOT_DIR);
       if (me.name) own.label = String(me.name);
       return own;
     },
+    // A served app's family folder, where its api.js is (goal/G32.3): process/js/<name>/<name>.family, as appServer
+    // mounts it beside the script.
+    familyDir: function (name) { return path.join(ROOT_DIR, 'process', 'js', name, name + '.family'); },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);
 

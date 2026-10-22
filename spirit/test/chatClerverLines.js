@@ -52,12 +52,12 @@ const HALF_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-const SELF_KEY = 'MCowBQYDK2VwAyEAchatClerverLinesTestSelfAAAAAAAAAAAAA=';
-const PEER = 'MCowBQYDK2VwAyEAchatClerverLinesTestPeerAAAAAAAAAAAAA=';
-const SLOW = 'MCowBQYDK2VwAyEAchatClerverLinesTestSlowAAAAAAAAAAAAA=';
-const TWIN = 'MCowBQYDK2VwAyEAchatClerverLinesTestTwinAAAAAAAAAAAAA=';
-const DARK = 'MCowBQYDK2VwAyEAchatClerverLinesTestDarkAAAAAAAAAAAAA=';
-const NOGRANT = 'MCowBQYDK2VwAyEAchatClerverLinesTestNoGrantAAAAAAAAAA=';
+const SELF_KEY = 'MCowBQYDK2VwAyEAchatClerverLinesTestSelfAAAAAAAAAAAAAAAAAAA=';
+const PEER = 'MCowBQYDK2VwAyEAchatClerverLinesTestPeerAAAAAAAAAAAAAAAAAAA=';
+const SLOW = 'MCowBQYDK2VwAyEAchatClerverLinesTestSlowAAAAAAAAAAAAAAAAAAA=';
+const TWIN = 'MCowBQYDK2VwAyEAchatClerverLinesTestTwinAAAAAAAAAAAAAAAAAAA=';
+const DARK = 'MCowBQYDK2VwAyEAchatClerverLinesTestDarkAAAAAAAAAAAAAAAAAAA=';
+const NOGRANT = 'MCowBQYDK2VwAyEAchatClerverLinesTestNoGrantAAAAAAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const FROM_PEER = { key: PEER, label: 'the peer' };
 const NONE = { writer: '', seq: 0 };
@@ -91,6 +91,7 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') { if (b.app) published.push(b.app); return json(200, { ok: true }); }
     if (b.verb === 'contact.get') {
       if (b.key === DARK) return json(500, { ok: false, error: 'the node broke' });

@@ -52,6 +52,7 @@ const appClient = require('../../../js/appClient.js');
 const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 const kernel = require('../../../js/kernel.js');
+const spiritObject = require('../../../face/spirit.js');
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -224,10 +225,10 @@ function publishOn(body) {
   let b = null;
   try { b = JSON.parse(body); } catch (e) { return; }
   if (!b || b.id !== 'desk/G0.0' || String(b.text || '').trim() !== 'publish' || !NODE_URL || !PORT) return;
-  kernel.core.ask('jobs.create', { command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)],
-    type: 'publishData' }, NODE_URL).then(function (r) {
-    if (!r || r.status >= 300) console.error('deskClient: the node refused the publish job: ' + (r ? r.text : 'no answer'));
-  }, function (e) { console.error('deskClient: the publish job was not asked: ' + ((e && e.message) || e)); });
+  // Through the spirit object (goal/G32.3).
+  spiritObject.forNode(NODE_URL, 'jobs').then(function (s) {
+    return s.jobs.create({ command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)], type: 'publishData' });
+  }).then(null, function (e) { console.error('deskClient: the node refused the publish job: ' + ((e && e.message) || e)); });
 }
 
 // THE PULL (goal/G5.8): the clone this deskClient runs from, fast-forwarded onto its origin only when it holds no
@@ -365,8 +366,9 @@ function rememberOther(key, name) {
 }
 function blockedHere(key) {
   if (!NODE_URL) return Promise.resolve(false);
-  return kernel.core.ask('contact.get', { key: key }, NODE_URL).then(function (r) {
-    const p = r && r.body && r.body.person;
+  // Through the spirit object (goal/G32.3).
+  return spiritObject.forNode(NODE_URL, 'contact').then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+    const p = body && body.person;
     return !!(p && p.blocked === true);
   }, function () { return false; });
 }

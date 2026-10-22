@@ -71,11 +71,13 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
     if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load a file' }, { key: 'fs.search', label: 'search files' }], more: false });
     if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file under spirit/run', request: { path: '' }, reply: { path: '', text: '' } });
     if (b.verb === 'fs.AGENTS.search') return answer(200, { description: 'search files under spirit/run', request: { text: '' }, reply: {} });
     // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient) return answer(200, { change: 1 });

@@ -106,9 +106,9 @@ function settle() { return new Promise(function (r) { setImmediate(r); }).then(f
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 
 // This agent (the owner of its node), the other agent, and Andy at his own desk.
-const SELF_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestSelfAAAAAAAAAAAAAAAAAAAA=';
-const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestOtherAAAAAAAAAAAAAAAAAAA=';
-const DESK_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestDeskNodeAAAAAAAAAAAAAAAA=';
+const SELF_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestSelfAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestOtherAAAAAAAAAAAAAAAAAAAAAAAAA=';
+const DESK_KEY = 'MCowBQYDK2VwAyEAdeskRulesTestDeskNodeAAAAAAAAAAAAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const SELF_AT_DESK = { key: SELF_KEY, label: 'claude-windows' };
 const OTHER_AT_DESK = { key: OTHER_KEY, label: 'wsl-claude' };
@@ -160,6 +160,7 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     asked.push({ verb: b.verb, body: b });
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return json(200, { ok: true });
     if (ownDoor.serves(b.verb)) {
       return ownDoor.call(b.verb, argsOf(b)).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });

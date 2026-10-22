@@ -8,9 +8,14 @@
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
 //   - The rest comes from the api.js every family folder holds (js/fs/api.js, js/contact/api.js ...; a server's in
-//     process/js/<name>/<name>.family/api.js), written to this file's standard: { family, verbs: { <verb>: { <argument>:
-//     '<rule>' } }, names(call, tools) }. One member per family: spirit.fs.load({path}), spirit.contact.label({...}) ...,
-//     every verb an async function answering the reply's body.
+//     process/js/<name>/<name>.family/api.js), written to this file's standard: module.exports = { verbs: { <verb>:
+//     { <argument>: '<rule>' } }, names(call, tools) }. One member per family: spirit.fs.load({path}),
+//     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
+//     there in camel case (spirit.chatClerver.lineWrite for line.write).
+//   - WHERE A MEMBER COMES FROM (goal/G32.3). Andy, 2026-10-22: "the api.js files should not assume the namespace they
+//     will occupy in the spirit object, that mapping belongs to the node". The names are the families the verb api
+//     answers; each family's interface is api {family}, the text of its api.js as the node reads it, run here as a
+//     module and bound under the name the node gave. No path of the page's own, and no api.js names itself.
 //
 // THE CHECK IS COMPLETE (Andy: "the pages check must be complete"): before a call goes out, every argument is checked
 // against its verb's declaration: no argument the verb does not name (no-such-argument), every required one present,
@@ -141,34 +146,20 @@
           return r.arrayBuffer().then(function (b) { return { status: r.status, type: r.headers.get('Content-Type') || '', bytes: new Uint8Array(b) }; });
         });
       },
-      family: function (name) { return pageFamily(this, name); },
-      families: function () { return this.ask('api', {}).then(function (r) { return r && r.status === 200 && isPlain(r.body) ? Object.keys(r.body) : []; }); },
     };
   }
   function text(bytes) {
     if (typeof TextDecoder !== 'undefined') return new TextDecoder().decode(bytes);
     return Buffer.from(bytes).toString('utf8');
   }
-  // A family's api.js run in the page: it registers itself on (root.spirit || {}).families. The node's families first, then a
-  // server's family folder.
-  function pageFamily(transport, name) {
-    var tried = ['js/' + name + '/api.js', 'process/js/' + name + '/' + name + '.family/api.js'];
-    function next(i) {
-      if (i >= tried.length) return Promise.resolve(null);
-      return transport.file(tried[i]).then(function (r) {
-        if (!r || r.status !== 200) return next(i + 1);
-        var s = document.createElement('script');
-        s.textContent = text(r.bytes) + '\n//# sourceURL=' + tried[i];
-        document.head.appendChild(s);
-        return ((root.spirit || {}).families || {})[name] || null;
-      }, function () { return next(i + 1); });
-    }
-    return next(0);
+  // A family's interface, the text api {family} answered, run as a module: its module.exports is the definition.
+  function loadInterface(source, name) {
+    var m = { exports: {} };
+    new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-interface/' + name + '/api.js')(m, m.exports);
+    return m.exports;
   }
-  // In node: the loopback door at the url the node hands its servers, and the family files from the run folder.
+  // In node: the loopback door at the url the node hands its servers.
   function nodeTransport(base) {
-    var runDir = require('path').join(__dirname, '..');
-    var fsMod = require('fs');
     return {
       ask: function (verb, args) {
         var payload = { verb: verb };
@@ -182,15 +173,6 @@
           return { status: r ? r.status : 0, type: '', bytes: t === null ? new Uint8Array(0) : new Uint8Array(Buffer.from(t, 'utf8')) };
         });
       },
-      family: function (name) {
-        var tried = [['js', name, 'api.js'], ['process', 'js', name, name + '.family', 'api.js']];
-        for (var i = 0; i < tried.length; i++) {
-          var full = require('path').join.apply(null, [runDir].concat(tried[i]));
-          if (fsMod.existsSync(full)) return Promise.resolve(require(full));
-        }
-        return Promise.resolve(null);
-      },
-      families: function () { return this.ask('api', {}).then(function (r) { return r && r.status === 200 && isPlain(r.body) ? Object.keys(r.body) : []; }); },
     };
   }
 
@@ -219,7 +201,12 @@
         throw refusal(String(b.code || 'refused'), String(b.error || b.code || ('the node answered ' + status)), { status: status, body: b });
       });
     }
-    Object.keys(def.verbs || {}).forEach(function (verb) { out[verb] = function (args) { return call(verb, args); }; });
+    Object.keys(def.verbs || {}).forEach(function (verb) {
+      out[verb] = function (args) { return call(verb, args); };
+      // line.write is spirit.chatClerver.lineWrite as well.
+      var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });
+      if (camel !== verb && !(camel in out)) out[camel] = out[verb];
+    });
     // EVERY FAMILY'S OWN FOLDER (introSpector.js): the same FS verbs on each, spirit.<family>.FS.loadFile({path}) ...
     out.FS = {};
     Object.keys(FOLDER).forEach(function (v) {
@@ -240,6 +227,19 @@
     }
     return out;
   }
+  // spirit.call('family.verb', args) -> the member call of that name (goal/G32.3), for a caller that names its verb at run
+  // time; a family or verb the object does not hold is refused no-such-verb, as the node would.
+  function byName(spirit) {
+    return function (name, args) {
+      var n = String(name || '');
+      var dot = n.indexOf('.');
+      var fam = dot > 0 ? spirit[n.slice(0, dot)] : null;
+      var rest = n.slice(dot + 1);
+      var fn = fam && typeof fam === 'object' ? (fam[rest] || (rest.indexOf('FS.') === 0 && fam.FS ? fam.FS[rest.slice(3)] : null)) : null;
+      if (typeof fn !== 'function') return Promise.reject(refusal('no-such-verb', 'the node serves no verb ' + n));
+      return fn(args);
+    };
+  }
   // spirit.tree() -> the node's api answer as it stands: every family and verb this caller may call.
   function tree(t) {
     return function () {
@@ -249,15 +249,20 @@
       });
     };
   }
-  // createSpirit(transport) -> Promise<spirit>. transport: ask(verb, args), file(path), family(name), families().
+  // createSpirit(transport) -> Promise<spirit>. transport: ask(verb, args), file(path). The names from api, each
+  // family's interface from api {family}, bound under the node's name.
   function createSpirit(transport) {
     var t = transport || (typeof window === 'undefined' ? nodeTransport('') : pageTransport());
     var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(t) };
-    return Promise.resolve(t.families()).then(function (names) {
-      return Promise.all((names || []).map(function (name) {
-        return Promise.resolve(t.family(name)).then(function (def) {
+    spirit.call = byName(spirit);
+    return Promise.resolve(t.ask('api', {})).then(function (r) {
+      var names = r && r.status === 200 && isPlain(r.body) ? Object.keys(r.body) : [];
+      return Promise.all(names.map(function (name) {
+        return Promise.resolve(t.ask('api', { family: name })).then(function (got) {
+          if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') return;
+          var def = loadInterface(got.body.interface, name);
           if (def && def.verbs) spirit[name] = member(t, name, def);
-        }, function () { /* a family without its api.js is not on the object */ });
+        }).then(null, function () { /* a family without an interface is not on the object */ });
       }));
     }).then(function () { return spirit; });
   }
@@ -265,12 +270,51 @@
   // assemble(transport, { <family>: def }) -> the members at once, for a caller that holds the families already (a suite).
   function assemble(transport, defs) {
     var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(transport) };
+    spirit.call = byName(spirit);
     Object.keys(defs || {}).forEach(function (name) { if (defs[name] && defs[name].verbs) spirit[name] = member(transport, name, defs[name]); });
     return spirit;
   }
 
+  // A SERVER'S SPIRIT OBJECT (goal/G32.3): forNode(url) -> Promise<spirit> on the node's loopback door at url, made once
+  // per url; one made while the node answered nothing (no family on it) is made again at the next call.
+  // forNode(url, family): the object on the node's loopback door at url, made once per url; a family it does not hold
+  // yet is asked for by name, api {family}, and bound under that name once it answers.
+  var made = {};
+  function forNode(url, family) {
+    var u = String(url || '');
+    if (!made[u]) {
+      // No family up front: a server binds only those it calls, each when it first calls it, so nothing is asked of the
+      // node before a server's first call.
+      var t = nodeTransport(u);
+      var bare = assemble(t, {});
+      bare.__transport = t;
+      made[u] = Promise.resolve(bare);
+    }
+    if (!family) return made[u];
+    return made[u].then(function (s) {
+      if (s[family]) return s;
+      return Promise.resolve(s.__transport.ask('api', { family: family })).then(function (got) {
+        if (got && got.status === 200 && got.body && typeof got.body.interface === 'string') {
+          var def = loadInterface(got.body.interface, family);
+          if (def && def.verbs) s[family] = member(s.__transport, family, def);
+        }
+        return s;
+      }, function () { return s; });
+    });
+  }
+  // outcome(call) -> Promise<{status, body}>: a call's answer as the status it came with, for code that tells the
+  // node's refusals apart by status; 0 when the node did not answer at all.
+  function outcome(call) {
+    return Promise.resolve(call).then(function (body) { return { status: 200, body: body }; },
+      function (e) {
+        // A call the check refused never left: the caller's fault, as the node would answer it.
+        var local = e && !e.status && ['no-such-argument', 'bad-request', 'no-such-verb'].indexOf(e.code) !== -1;
+        return { status: (e && e.status) || (local ? 400 : 0), body: (e && e.body) || (local ? { ok: false, code: e.code, error: e.message } : null) };
+      });
+  }
+
   var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
-    error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
+    loadInterface: loadInterface, forNode: forNode, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
 
   // ── IN A PAGE ────────────────────────────────────────────────────────────────────────────────────────────────────

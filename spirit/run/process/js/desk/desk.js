@@ -29,6 +29,7 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
+const spiritObject = require('../../../face/spirit.js');
 const appClient = require('../../../js/appClient.js');
 
 const argv = process.argv;
@@ -1813,11 +1814,14 @@ function shareFile(repoPath, fromFile, message) {
   let base = '';
   try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
   Promise.resolve().then(function () {
-    return require('../../../js/kernel.js').core.ask('jobs.create', { command: process.execPath,
-      // A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays, to be seen.
-      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message] }, base);
+    // Through the spirit object (goal/G32.3), as {status, body}.
+    return spiritObject.outcome(spiritObject.forNode(base, 'jobs').then(function (s) {
+      return s.jobs.create({ command: process.execPath,
+        // A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays, to be seen.
+        args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message] });
+    }));
   }).then(function (r) {
-    if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.text : 'no answer'));
+    if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'no answer'));
   }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });
 }
 
@@ -1884,8 +1888,8 @@ function nodeNamedPort() {
 function lookForDeskVerify() {
   const port = nodeNamedPort();
   if (!port) return;
-  appServer.spirit.core.ask('api', {}, 'http://127.0.0.1:' + port).then(function (r) {
-    const body = r && r.status === 200 ? r.body : null;
+  // The node's api tree, through the spirit object (goal/G32.3).
+  spiritObject.forNode('http://127.0.0.1:' + port).then(function (s) { return s.tree(); }).then(function (body) {
     const apps = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
     VERIFY_SEEN = { at: Date.now(), there: apps.indexOf('deskVerify') !== -1 };
   }, function () { /* asked again on the next turn of the clock */ });
@@ -2052,7 +2056,8 @@ function pluginDesk(name, manifest) {
     verify: function (verb, args) {
       const port = nodeNamedPort();
       if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
-      return appServer.spirit.core.ask('deskVerify.' + verb, args || {}, 'http://127.0.0.1:' + port).then(function (r) {
+      // Through the spirit object (goal/G32.3), as {status, body}; made again when deskVerify came up after it.
+      return spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
         const b = r && r.body;
         if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
         const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));
@@ -2242,13 +2247,20 @@ appServer.serve(withPlugins({
   },
   // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by, core } (goal/G8.8; core read from
   // js/coreFiles.js, the one list commitCheck locks), core files first, then by path; as many as fit one answer, and
-  // filesMore says there were more. Nothing pages.
+  // filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with it (deskVerify asks
+  // spirit/test/ for an item's suites, which a long list of core files would push past the room).
   'item.files': {
-    request: { id: '' }, reply: { files: [{ path: '', by: '', core: false }], filesMore: false },
+    request: { id: '', under: '' }, reply: { files: [{ path: '', by: '', core: false }], filesMore: false },
+    // under is optional: {id} alone answers the whole list, as the Details and deskAgent ask it.
+    accepts: function (x) {
+      return !!x && typeof x === 'object' && !Array.isArray(x) && typeof x.id === 'string' &&
+        Object.keys(x).every(function (k) { return k === 'id' || (k === 'under' && typeof x.under === 'string'); });
+    },
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      const all = filesOf(it);
+      const under = typeof a.under === 'string' ? a.under : '';
+      const all = filesOf(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
       const order = all.filter(function (e) { return e.core; }).concat(all.filter(function (e) { return !e.core; }));
       const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ filesMore: true }), 'utf8');
       const found = walked(order.map(function (e, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(order[i]) }; }, room);

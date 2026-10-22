@@ -60,8 +60,8 @@ const kids = [];
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'fileServer', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('fileServer', pipe);
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAfileSlotsOwnerAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
-const PEER = { key: 'MCowBQYDK2VwAyEAfileSlotsPeerAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'bert' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAfileSlotsOwnerAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const PEER = { key: 'MCowBQYDK2VwAyEAfileSlotsPeerAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'bert' };
 const call = function (verb, args, caller) { const b = {}; b[verb] = args; return client.ask({ fileServer: b }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
 function write(name, text) { const d = fs.mkdtempSync(path.join(scratch, 'f-')); const p = path.join(d, name); fs.writeFileSync(p, text); return p; }
 async function nameOf(id) {

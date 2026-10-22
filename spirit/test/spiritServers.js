@@ -67,6 +67,28 @@ const done = (async function () {
   if (servers.length >= 5 && !lacking.length) test.check('the ' + servers.length + ' servers with verbs each ship <name>.family/api.js with their verbs: ' + servers.join(', '));
   else test.fail(OWED + 'servers without an api.js of their verbs: ' + short(lacking));
 
+  // WRITTEN BY HAND, NOT FROM THE SHAPES (Andy, 2026-10-22, on the generated first cut: "the delievered api.js only
+  // implement the async calls but don't do any type checking, request validation worth a damn?"). An interface whose
+  // every argument is optional checks nothing a server needs; a required argument carries its real rule.
+  const loose = servers.filter(function (n) {
+    const m = { exports: {} };
+    try { new Function('module', 'exports', raw(path.join(PROC, n, n + '.family', 'api.js')))(m, m.exports); } catch (e) { return true; }
+    const rules = [];
+    Object.keys((m.exports && m.exports.verbs) || {}).forEach(function (v) { Object.keys(m.exports.verbs[v]).forEach(function (a) { rules.push(m.exports.verbs[v][a]); }); });
+    return rules.length && rules.every(function (r) { return /\?$/.test(r); });
+  });
+  if (!loose.length) test.check('no server interface leaves every argument optional');
+  else test.fail(OWED + 'interfaces with every argument optional: ' + short(loose));
+  const ruleOf = function (n, verb, arg) {
+    const m = { exports: {} };
+    try { new Function('module', 'exports', raw(path.join(PROC, n, n + '.family', 'api.js')))(m, m.exports); } catch (e) { return ''; }
+    return ((m.exports.verbs || {})[verb] || {})[arg] || '';
+  };
+  const spots = [['chatClerver', 'line.write', 'to', 'key'], ['chatClerver', 'line.write', 'text', 'text'], ['desk', 'item.get', 'id', 'id'], ['deskClient', 'desk', 'name', 'id']];
+  const wrongSpots = spots.filter(function (s) { return ruleOf(s[0], s[1], s[2]) !== s[3]; });
+  if (!wrongSpots.length) test.check('the rules a handler needs: chatClerver.line.write to is a key and text required, desk.item.get id, deskClient.desk name');
+  else test.fail(OWED + 'rules not as their handlers need: ' + short(wrongSpots.map(function (s) { return s.slice(0, 3).join('.') + ' is "' + ruleOf(s[0], s[1], s[2]) + '", wants "' + s[3] + '"'; })));
+
   test.subHeading('3. no hand-made node call left in process/js');
   const handMade = jsFiles(PROC).filter(function (f) {
     const s = raw(f);
@@ -74,6 +96,10 @@ const done = (async function () {
   });
   if (!handMade.length) test.check('no askNode, core.ask or /api/spirit of its own in any server');
   else test.fail(OWED + 'hand-made node calls in ' + short(handMade.map(rel)));
+  // A verb the node no longer serves is no call at all (relay.status went with puppets/G2: a list is a search).
+  const gone = jsFiles(PROC).filter(function (f) { return /['"]relay\.status['"]/.test(raw(f)); });
+  if (!gone.length) test.check('no server asks relay.status, which the node no longer serves');
+  else test.fail(OWED + 'relay.status still asked in ' + short(gone.map(rel)));
 
   test.subHeading('4. api {family} answers the interface, and the gate holds');
   const vt = require('../run/js/verbTable.js');

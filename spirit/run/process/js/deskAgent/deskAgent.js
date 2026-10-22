@@ -30,6 +30,7 @@ const http = require('http');
 const https = require('https');
 const appServer = require('../../../js/appServer');
 const spirit = appServer.spirit;
+const spiritObject = require('../../../face/spirit.js');
 
 // ── THE TWO FILES, ITS OWN STATE FOLDER'S (goal/G10.3 point 4) ────────
 //
@@ -248,17 +249,24 @@ const WAIT_MS = 250;
 function say(text) { console.log('deskAgent: ' + text); }
 function bytes(s) { return Buffer.byteLength(String(s), 'utf8'); }
 
-// One verb of a server on this node, {server: {verb: args}}, asked by its name on the flat apiDoor (goal/G30.6).
-function askNode(ask) {
+// One verb of a server on this node, {server: {verb: args}}, through the spirit object (goal/G32.3) on the node's
+// loopback door: its answer, or its refusal's body; a node that does not answer rejects.
+function onNode(ask) {
   const server = Object.keys(ask)[0];
   const verb = Object.keys(ask[server])[0];
-  return spirit.core.ask(server + '.' + verb, ask[server][verb], NODE_URL).then(function (r) { return (r && r.body) || {}; });
+  return answered(server + '.' + verb, ask[server][verb]).then(function (r) { return r.body || {}; });
+}
+function answered(name, args) {
+  return spiritObject.outcome(spiritObject.forNode(NODE_URL, name.slice(0, name.indexOf('.'))).then(function (s) { return s.call(name, args); })).then(function (r) {
+    if (!r || !r.status) throw new Error('the node did not answer ' + name);
+    return r;
+  });
 }
 function desk(verb, args) {
-  return askNode({ deskClient: { desk: { name: verb, json: JSON.stringify(args || {}) } } });
+  return onNode({ deskClient: { desk: { name: verb, json: JSON.stringify(args || {}) } } });
 }
 function nextLines() {
-  return askNode({ deskClient: { next: {} } }).then(function (b) { return Array.isArray(b.lines) ? b.lines : []; });
+  return onNode({ deskClient: { next: {} } }).then(function (b) { return Array.isArray(b.lines) ? b.lines : []; });
 }
 
 // ── WHAT IT ANSWERS: EVERY CHANGE BUT ITS OWN, AND JOBs ────────────────
@@ -548,7 +556,7 @@ const tools = require('./tools').createTools({
     desk: {
       ask: function (verb, args) {
         if (!connected && !FS_READS.test(String(verb))) return Promise.resolve(offTheDesk(verb));
-        return askNode({ deskClient: { desk: { name: String(verb), json: JSON.stringify(args || {}) } } })
+        return onNode({ deskClient: { desk: { name: String(verb), json: JSON.stringify(args || {}) } } })
           .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
       },
       verb: function (stem) { return stem; },
@@ -557,7 +565,7 @@ const tools = require('./tools').createTools({
     deskAgent: {
       ask: function (verb, args) {
         if (!connected && !FS_READS.test(String(verb)) && READS_OFF_THE_DESK.indexOf(String(verb)) === -1) return Promise.resolve(offTheDesk(verb));
-        return spirit.core.ask('deskAgent.' + String(verb), args || {}, NODE_URL).then(function (r) {
+        return answered('deskAgent.' + String(verb), args || {}).then(function (r) {
           const body = (r && r.body) || {};
           return { status: (r && r.status) || 200, body: body, text: JSON.stringify(body) };
         });
@@ -600,7 +608,7 @@ function argumentsOf(call) {
 // file.save, file.edit, commit and push; while any current goal is in design, or the desk cannot say, none of them is given.
 const WRITE_TOOLS = ['deskAgent_file_save', 'deskAgent_file_edit', 'deskAgent_commit', 'deskAgent_push'];
 function designNow() {
-  return askNode({ deskClient: { desk: { name: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) } } })
+  return onNode({ deskClient: { desk: { name: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) } } })
     .then(function (r) {
       const items = (r && r.items) || [];
       return items.some(function (p) { try { return JSON.parse(p.label).design === true; } catch (e) { return false; } });
@@ -1808,14 +1816,14 @@ function setConnected(on) {
     waiting.length = 0;
     publishState();
     say(PERSONA + ' leaves the desk: signing off');
-    askNode({ deskClient: { signoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not sign off: ' + ((e && e.message) || e)); });
+    onNode({ deskClient: { signoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not sign off: ' + ((e && e.message) || e)); });
     return deskWrite('switch', 'signoff', {}).then(function () { return { connected: false }; }, function (e) {
       say('the signoff could not be said: ' + e.message);
       return { connected: false };
     });
   }
   connected = true;
-  askNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not clear the signoff: ' + ((e && e.message) || e)); });
+  onNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not clear the signoff: ' + ((e && e.message) || e)); });
   keepSwitch(true);
   caughtUp = false;
   publishState();
@@ -1870,7 +1878,7 @@ appServer.serve({
   // node asks its deskClient, which clears the state and answers with it.
   clearSignoff: {
     request: {}, reply: { cleared: true, status: '' },
-    handler: function () { return askNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).then(function (b) { return { cleared: b.cleared === true, status: String(b.status || '') }; }); },
+    handler: function () { return onNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).then(function (b) { return { cleared: b.cleared === true, status: String(b.status || '') }; }); },
   },
   // THE REMOTE'S ABORT (goal/G19.7): cancels every model answer in flight and frees Levant. Andy's manual
   // intervention, in place of any automatic timeout. No verb file: it is the Remote's, never a tool of Levant's.

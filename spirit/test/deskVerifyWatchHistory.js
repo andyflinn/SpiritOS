@@ -47,6 +47,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-watchhistory-'));
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
         if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
@@ -62,7 +63,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-watchhistory-'));
             out = { records: recs, lines: [], n: last, line: 0, more: last < records.length };
           } else {
             asks.push({ verb: verb, args: a });
-            if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'wh/G1', code: true, go: true, files: files }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'wh/G1', code: true, go: true, files: files }) || {}).files ? (({ id: a.id, goal: 'wh/G1', code: true, go: true, files: files }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'wh/G1', code: true, go: true, files: files }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };

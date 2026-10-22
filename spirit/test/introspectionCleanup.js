@@ -189,9 +189,10 @@ async function main() {
     const home = path.join(RUN, 'process', 'js', a);
     const famDir = path.join(home, a + '.family');
     return !fs.existsSync(path.join(famDir, 'AGENTS.md')) || fs.existsSync(path.join(home, 'AGENTS.md')) ||
-      fs.readdirSync(famDir).some(function (f) { return /\.js$/.test(f); });
+      // The one script a family folder holds is its interface, api.js (goal/G32.3): the node reads it, the server never runs it.
+      fs.readdirSync(famDir).some(function (f) { return /\.js$/.test(f) && f !== 'api.js'; });
   });
-  if (!wrong.length) test.check('desk, deskAgent and deskVerify keep AGENTS.md and their verb files in <module>.family beside <module>.js, with no code in it');
+  if (!wrong.length) test.check('desk, deskAgent and deskVerify keep AGENTS.md, their verb files and their api.js in <module>.family beside <module>.js, with no other code in it');
   else test.fail(OWED + 'not moved to <module>.family: ' + short(wrong));
   const appServerJs = code('js/appServer.js');
   if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');

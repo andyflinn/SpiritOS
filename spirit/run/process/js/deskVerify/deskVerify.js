@@ -191,13 +191,20 @@ async function pullFirst() {
 // without one is his clone; neither is out of scope by his word. Kept once read: a node's servers do not change while
 // this one runs. A failed read is not kept, so it is asked again next time.
 const spirit = appServer.spirit;
+const spiritObject = require('../../../face/spirit.js');
+// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one verb by its name on the node's loopback door, {status, body};
+// status 0 when the node did not answer. The object is made again when the family came up after it.
+function onNode(name, args) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  return spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, String(name).split('.')[0]).then(function (s) { return s.call(name, args); }));
+}
 let MODE = null;
 function mode() {
   if (MODE) return Promise.resolve(MODE);
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   if (!port) return Promise.resolve({ mode: 'none', apps: [] });
-  return spirit.core.ask('api', {}, 'http://127.0.0.1:' + port).then(function (r) {
-    const body = r && r.status === 200 ? r.body : null;
+  // The node's api tree, through the spirit object (goal/G32.3).
+  return spiritObject.forNode('http://127.0.0.1:' + port).then(function (s) { return s.tree(); }).then(function (body) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) return { mode: 'none', apps: [] };
     const apps = Object.keys(body);
     MODE = { mode: apps.indexOf('deskClient') !== -1 ? 'agent' : apps.indexOf('desk') !== -1 ? 'desk' : 'none', apps: apps };
@@ -427,10 +434,9 @@ function stopRun() {
 function suitesOf(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   if (!port) return Promise.resolve([]);
-  return spirit.core.ask('desk.item.get', { id: String(id) }, 'http://127.0.0.1:' + port).then(function (r) {
-    let it = null;
-    try { it = JSON.parse((r && r.body && r.body.item) || 'null'); } catch (e) { it = null; }
-    const files = it && Array.isArray(it.files) ? it.files : [];
+  // The file list is item.files' own answer since goal/G32.2; the test files alone, so no core file crowds them out.
+  return onNode('desk.item.files', { id: String(id), under: 'spirit/test/' }).then(function (r) {
+    const files = r && r.status === 200 && r.body && Array.isArray(r.body.files) ? r.body.files : [];
     const out = Object.create(null);
     files.forEach(function (f) {
       const p = String((f && f.path) || '');
@@ -462,15 +468,14 @@ function claimCheck(id) {
     const text = 'deskVerify: the check of ' + String(id) + ' broke before it finished: ' + ((e && e.message) || e)
       + '. Nothing was measured, so this is not a pass.';
     noteLine(text);
-    return spirit.core.ask('desk.chat.add', { id: String(id), text: text },
-      'http://127.0.0.1:' + port).catch(function () { /* said on stderr below */ })
+    return onNode('desk.chat.add', { id: String(id), text: text }).catch(function () { /* said on stderr below */ })
       .then(function () { throw e; });
   });
 }
 // The commits written under the item that this tree does not hold (goal/G18.10). A hash git cannot name is lacking;
 // so is one it names that is not an ancestor of HEAD. An item with no commit line lacks nothing.
 function commitsLacking(id, port) {
-  return spirit.core.ask('desk.item.chat', { id: String(id) }, 'http://127.0.0.1:' + port).then(function (r) {
+  return onNode('desk.item.chat', { id: String(id) }).then(function (r) {
     const body = r && r.body && r.body.body ? r.body.body : (r && r.body) || {};
     const chat = Array.isArray(body.chat) ? body.chat : [];
     const hashes = [];
@@ -502,8 +507,7 @@ async function claimCheckRun(id) {
   // wrote nothing, so a verdict existed and he could not see it. Said once per check.
   const report = function (text) {
     noteLine(text);
-    return spirit.core.ask('desk.chat.add', { id: String(id), text: text },
-      'http://127.0.0.1:' + port).catch(function () { /* the verdict below still stands */ });
+    return onNode('desk.chat.add', { id: String(id), text: text }).catch(function () { /* the verdict below still stands */ });
   };
   // THE PASS IS BOUND TO THE ITEM'S COMMIT (goal/G18.10). Found live on 2026-10-12: it passed goal/G18.7 "at 24533a26
   // (dirty, not pulled)" while the item's commit was 227b0ad4, so the suites it ran were older than the item's and the
@@ -577,14 +581,14 @@ async function claimCheckRun(id) {
       // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
       // the button", so saying nothing would leave Done forever absent on his node. verify.pass is that word.
       await report('deskVerify: passed, ' + where + '. ' + (ran === 1 ? '1 suite' : ran + ' suites') + ' ran green.' + besides);
-      return spirit.core.ask('desk.verify.pass', { id: String(id) }, 'http://127.0.0.1:' + port)
+      return onNode('desk.verify.pass', { id: String(id) })
         .then(function () { return { rejected: false, reds: [] }; }, function () { return { rejected: false, reds: [] }; });
     }
     const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
     // The red suites by name, so the line says WHAT to go and look at and not only that
     // something failed.
     await report('deskVerify: rejected, ' + where + '. Red: ' + why + besides);
-    return spirit.core.ask('desk.verify.reject', { id: String(id), why: why }, 'http://127.0.0.1:' + port)
+    return onNode('desk.verify.reject', { id: String(id), why: why })
       .then(function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; },
         function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; });
   });
@@ -1018,7 +1022,7 @@ async function regress(failed, pulled, doing) {
       try { one = JSON.parse(i.label); } catch (e) { one = null; }
       if (!one || !one.id || one.goal === '' || (one.status !== 'done' && one.status !== 'closed')) continue;
       // The item's files are item.files' own answer since goal/G32.2.
-      const fl = await desk('item.files', { id: one.id });
+      const fl = await desk('item.files', { id: one.id, under: 'spirit/test/' });
       if (fl && fl.filesMore) out.partial = true;
       const lists = ((fl && fl.files) || []).some(function (f) { return String((f && f.path) || '') === suite; });
       if (!lists) continue;
@@ -1069,7 +1073,7 @@ async function goalSuites(goalId) {
     try { one = JSON.parse(i.label); } catch (e) { one = null; }
     if (!one || one.goal !== String(goalId)) continue;
     // The item's files are item.files' own answer since goal/G32.2.
-    const fl = await desk('item.files', { id: one.id });
+    const fl = await desk('item.files', { id: one.id, under: 'spirit/test/' });
     ((fl && fl.files) || []).forEach(function (f) {
       const p = String((f && f.path) || '');
       if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
@@ -1123,7 +1127,7 @@ async function fullRun(goalId) {
 // ONE VERB OF THE DESK, through this server's own node.
 function desk(verb, args) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  return spirit.core.ask('desk.' + verb, args, 'http://127.0.0.1:' + port)
+  return onNode('desk.' + verb, args)
     .then(function (r) { return r && r.status === 200 && r.body ? r.body : {}; }, function () { return {}; });
 }
 
@@ -1170,7 +1174,7 @@ async function keep(suite, title, outcome, failure) {
 function deskVia(m, verb, args) {
   if (m && m.mode === 'agent') {
     const port = Number(spirit.core.node.const.SPIRIT_PORT);
-    return spirit.core.ask('deskClient.desk', { name: verb, json: JSON.stringify(args || {}) }, 'http://127.0.0.1:' + port)
+    return onNode('deskClient.desk', { name: verb, json: JSON.stringify(args || {}) })
       .then(function (r) { return r && r.status === 200 && r.body && r.body.ok !== false ? r.body : {}; }, function () { return {}; });
   }
   return desk(verb, args);

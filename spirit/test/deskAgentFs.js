@@ -99,12 +99,14 @@ const fake = http.createServer(function (req, res) {
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
     // The node's verbs as goal/G30.4 describes them: the flat table from the verb api, each verb file through its
     // family's FS.loadJsonValue. The process must reach none of them (point 4).
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'api') return answer(200, { fs: { load: { request: { path: '' }, reply: {} }, save: { request: { path: '', content: '' }, reply: {} } }, net: { fetch: { request: { url: '' }, reply: {} } } });
     if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
     if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'save.json') return answer(200, { value: { description: 'save a file', request: { path: '', content: '' }, reply: {} } });
     if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: 'fetch', request: { url: '' }, reply: {} } });
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
     // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     const ask = test.foldAsk(b);
     const dc = ask && ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });

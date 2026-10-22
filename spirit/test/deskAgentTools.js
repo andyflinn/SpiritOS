@@ -74,6 +74,7 @@ const node = http.createServer(function (req, res) {
     function answer(status, body, type) { res.writeHead(status, { 'Content-Type': type || 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as deskAgent.<verb> (by name, goal/G30.6), and
     // the node answers them here as it answered fs.load before (recorded as verb file.load), so the loop is the same.
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     const ask = test.foldAsk(b);
     const du = ask && ask.deskAgent;
     // Described from the family folder since goal/G30.4: FS.search lists file.load.json, FS.loadJsonValue reads it.
@@ -87,6 +88,7 @@ const node = http.createServer(function (req, res) {
     }
     if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     // The node's verbs from the flat table (the verb api), each verb's file through its family's FS (goal/G30.4).
+    { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'api') return answer(200, { net: Object.assign({ 'FS.loadJsonValue': { request: { path: '' }, reply: {} } }, netVerbs) });
     if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} } });
     if (b.verb === 'net.fetch') {

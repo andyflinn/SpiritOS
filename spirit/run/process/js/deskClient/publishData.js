@@ -26,7 +26,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const kernel = require('../../../js/kernel.js');
+const spiritObject = require('../../../face/spirit.js');
 
 const USAGE = 'usage: node publishData.js <port of the agent\'s own node> [--asks N] [--only packets] [--out <dir>]';
 const NODE_WAIT_MS = 20000;
@@ -48,7 +48,9 @@ function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'u
 function ask(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
-  return Promise.race([kernel.core.ask(verb, args, node), late]).then(function (r) { clearTimeout(timer); return r || {}; },
+  // Through the spirit object (goal/G32.3): the verb by its name, as {status, body}.
+  const asked = spiritObject.outcome(spiritObject.forNode(node, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); }));
+  return Promise.race([asked, late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }
 function desk(verb, args) { return ask('deskClient.desk', { name: verb, json: JSON.stringify(args) }); }
