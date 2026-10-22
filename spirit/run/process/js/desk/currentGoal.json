@@ -1,5 +1,5 @@
 {
- "change": 87527,
+ "change": 87529,
  "line": 8510,
  "goal": "goal/G32",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -48,16 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -722,11 +719,9 @@
    "id": "goal/G32.2",
    "title": "the face code moves onto the spirit object",
    "goal": "goal/G32",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -734,17 +729,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -752,7 +747,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -768,11 +792,9 @@
    "id": "goal/G32.3",
    "title": "server retrofit onto the spirit object",
    "goal": "goal/G32",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -780,17 +802,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -798,7 +820,44 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
