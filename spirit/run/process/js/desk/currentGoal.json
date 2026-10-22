@@ -1,5 +1,5 @@
 {
- "change": 85701,
+ "change": 86160,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.21"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -15886,6 +15887,298 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T03:51:39.452Z",
      "text": "No verb needed from you: my own step was missing. The verify phase is done now, with its pass, and the item offers Done.\n\nIt says waiting for deskVerify only as a status word; with deskVerify off, the Done stands."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.21",
+   "title": "replacing the apps APP",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A new Apps app, replacing the old one. Built end to end, it sets the migration from the shell to the face; the home app (the relay's face/shell.js) is fixed and tagged in it.\n\nTHE APP\n- A shell-only mountable wrapper for the face world: it runs on the face, and at home in place of shell/apps.\n- Its rows come only from the Files cache (data.files).\n- An app is a <name>/<name>.js, under shell/ or process/js/ (two types), with a valid face annotation; only the .js shows as a row.\n- Its detail panel edits the app's face annotation space; where the app runs (home, face) is shown, not changed.\n- The old Apps app's overrides (name, icon, group, desktop place) are not carried over.\n\nTHE FACE PART OF A SIDECAR\n- A sidecar has three parts: client, server, face. fs.annotate and fs.annotations reach the face part when asked by the face (through faceHome), the client part when asked at home.\n- An app's face settings (that it runs on the face, a face label or icon) live in the face part of its .js sidecar.\n- The face finds its apps by fs.annotations on each shell/<app>/<app>.js in data.files; an app's script loads when opened.\n- Contacts, Files, Media Viewer and Apps ship with their face part set, their sidecars in the tree.\n- The home shell is untouched: its <name>/<name>.json says intrinsic and runs (home only).\n\nTHE WRITE GATE\n- Only core files are write-protected; every other file under the run folder is writable, server scripts included.\n- A manifest is never core: js/coreFiles.js leaves <name>/<name>.json out.\n- The node's root files and relay-state/ stay protected.\n- The core names no user folders: every special status for media/, published/ and the like goes.\n\nCORE FILES SEEN\n- The files list shows core files in a yellow typeface, by js/coreFiles.js's own rule.",
+   "version": 14,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T03:57:57.071Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T03:58:41.271Z",
+     "text": "Thoughts:\n\n- Apps become a type like files and contacts: shell/js/apps/ with its row, its drop-in list and its translator. The translator reads every shell/<app>/<app>.json and process/js/<name>/<name>.json already in data.files, so nothing is asked of the node.\n- The app is a mountable wrapper over that list, as Files is; the detail panel is the row element opened.\n- Shell manifests can be written from the page today. Server manifests cannot: process/ is read-only from the browser.\n- So editing a server's label, description or intrinsic needs either the page allowed to write process/js manifests (a gate change), or a node verb (an interface change, your yes on it).\n- Any edit is an edit to a file in git, so a pull meets it as a local change, the snag already in G30.20.\n- The old Apps app's overrides (name, icon, group, desktop place) are not in your list; I read them as going with it.\n\nFirst question: for server manifests, open process/js manifests to writes, or a node verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:24:19.010Z",
+     "text": "Apps become a type like files and contacts: shell/js/apps/ with its row, its drop-in list and its translator. The translator reads every shell/<app>/<app>.json and process/js/<name>/<name>.json already in data.files, so nothing is asked of the node.\n- no, Apps rides on the cache of \"Files\" 100%.\n\nThe app is a mountable wrapper over that list, as Files is; the detail panel is the row element opened.\n- The app is a mountable wrapper over the files cache, filtering always <name>/<name>.js that MUST have a buddy <name>/<name>.json\n\nShell manifests can be written from the page today. Server manifests cannot: process/ is read-only from the browser.\n- Server manifest WERE writable from the shell before the recent manifest-shitstorm\n\nSo editing a server's label, description or intrinsic needs either the page allowed to write process/js manifests (a gate change), or a node verb (an interface change, your yes on it).\n- just tell me what ACTUALLY stops and app from writing to a process-manifest.\n\nAny edit is an edit to a file in git, so a pull meets it as a local change, the snag already in G30.20.\n- Irrelevant, if a SpiritOS node actually lives in a repo, that is not a problem for the product\n\nThe old Apps app's overrides (name, icon, group, desktop place) are not in your list; I read them as going with it.\n- the new shell doesn't have any of that shit yet, so it can be discussed, but may be oos"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:24:54.194Z",
+     "text": "What stops it: one line, the node's write gate. kernel.js keeps WRITABLE_ROOT_NAMES = [shell, media, published]; every write outside those folders is refused, so process/ never was writable from the page. That line has stood since 2026-08-31 (2f8d69f3), with the note \"process/ is deliberately excluded: scripts stay browser-read-only\".\n\nWhat you used before was the include switch in the text viewer: a verb that wrote include.json, never the manifest. G30.20 deleted it, so that door closed with the list.\n\nThe fix is a gate change: let the page write process/js/<name>/<name>.json and nothing else under process/, the scripts staying read-only. Yes to that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:28:42.154Z",
+     "text": "claude-windows 06:24 What stops it: one line, the node's write gate. kernel.js keeps WRITABLE_ROOT_NAMES = [shell, media, published]; every write outside those folders is refused, so process/ never was writable from the page. That line has stood since 2026-08-31 (2f8d69f3), with the note \"process/ is deliberately excluded: scripts stay browser-read-only\".\n\n- no longer acceptable. only \"core\" files are write-protected, manifests are no longer core.\n- the notion that we dictate to a user how to organize his file is dumb as well. media/ published/ etc, will disappear from any mention in the core."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:29:22.999Z",
+     "text": "Taken: the write gate protects core files only, manifests are never core, and the gate names no folders like media/ or published/.\n\nCore today (coreFiles.js): spirit/run/js/, spirit/run/shell/js/, index.html with the two shell stylesheets, and an intrinsic app's whole folder, its manifest included. So manifests come out of that last rule. relay-state/ stays unwritable from the page: it holds the node's keys.\n\nOne consequence to weigh: process/js server scripts are not core, so they become writable from the page too. A server script runs as a node process with the node's rights, unlike a shell app's script, which runs in the browser. Anyone the node lets call fs.save, a face peer with that grant included, could then plant code the node runs at its next start.\n\nShould server scripts under process/js be core as well, so only their manifests open up?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:35:32.010Z",
+     "text": "the important root files are protected by fileWriteable() no issue there.\n\n- I'm even considering to rename index.html to shell.html so that a user can construct his own index.html which can supersede shell.html or face.html if it exists. \n- in the future my local agent needs to manipulate files and javaScripts in the run-folder, any non-core file is fair game.\n- any linux install into a users file-tree is deletable by fiat... SpiritOS will be no different."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:36:13.052Z",
+     "text": "In the box (v4): every non-core file writable, server scripts included; your lines kept, the rulings as statements. The index.html rename I left out: you are still considering it.\n\nGreen from my side. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:39:23.757Z",
+     "text": "- the list will only display the <name>/<name>.js file, NOT the <name>/<name>.json file, the detail panel will be the editor of <name>/<name>.json though.\n\nput also into this item: the files list thing should display core files with yellow typeface or something. I'd like that for visualization."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:43:22.834Z",
+     "text": "- how about this: we use normal \"*.sidecar.json\" to hold manifests?\n\n- shell and face get their own key in those \"*.sidecar.json* files?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:44:01.663Z",
+     "text": "Sidecars as manifests, assessed against the tree:\n\n- Fits: one way to hang data on any file. A sidecar is already hidden from every file listing, so the Apps list shows the .js and nothing else without a filter.\n- A sidecar today is <file>.sidecar.json with two buckets, client (written through fs.annotate) and server (the node's own).\n- Cost 1: because sidecars are hidden, they are not in data.files and a plain file read refuses them. Every manifest read then becomes an fs.annotations ask: the face, the home shell's app discovery and the Apps list. That is a request per app, unless the stream carries the sidecars too.\n- Cost 2: annotate only writes when the .js itself is writable. An intrinsic app's .js is core, so its manifest could not be edited, against manifests never core. The gate would need a sidecar rule of its own.\n- Cost 3: every node-side reader moves to the sidecar: jobs.js (runs), coreFiles.js (intrinsic), and each server's args.\n\nQuestion: shell and face as keys, what goes under each: only whether it runs there, or that context's own settings (label, icon and the like)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:44:05.893Z",
+     "text": "sidecar already have their API"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:44:51.051Z",
+     "text": "Yes: fs.annotations reads a sidecar, fs.annotate writes its client part. So the files cache gives the .js rows, and each app's settings come by one fs.annotations ask when its row needs them.\n\nStill open: under shell and under face, only whether it runs there, or that context's own settings?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:46:59.683Z",
+     "text": "sidecars will have client, server, and face, because the node knows when a request comes from \"face\",\n\nthe home-shell will be recognized as face when it is completely replaced by face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:47:54.210Z",
+     "text": "In the box (v5): manifests are sidecars with client, server and face parts; the list shows the .js only; core files in yellow.\n\nNext question: which part holds intrinsic and where it runs (home, face), the facts the node itself reads at start: server?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:50:46.289Z",
+     "text": "which part holds intrinsic and where it runs (home, face), the facts the node itself reads at start: server?\n\nshell works as it works now, face only will use the annotate functions as the holder of the face space in the sidecar. shell is not included in this scheme."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:51:45.140Z",
+     "text": "In the box (v6): the home shell keeps its .json manifests as they are; only the face uses the face part of a sidecar.\n\nQuestion: does this item build the face part (the three-part sidecar, and the face writing its own part), or only record the scheme for later?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:52:34.168Z",
+     "text": "Question: does this item build the face part (the three-part sidecar, and the face writing its own part), or only record the scheme for later?\n\nthis item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:53:30.790Z",
+     "text": "In the box (v7): built here; the face's annotate and annotations reach the face part through faceHome, home ones the client part.\n\nNothing in this item writes the face part yet, so its own red proves it.\n\nGreen from my side. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:54:21.890Z",
+     "text": "adjustments to the core, eliminating special status for media/ published/ etc.. fileWriteable() etc.. also in this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:55:00.615Z",
+     "text": "In the box (v8): the core loses every special status for media/, published/ and the like, in this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T04:57:27.166Z",
+     "text": "the home app will be fixed in this item too.\n\nthis item will work end to end, and so define the migration strategy from shell to face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T04:58:17.184Z",
+     "text": "In the box (v9): end to end, the migration strategy from shell to face, the home app fixed here.\n\nQuestion: what is to be fixed in the home app? I know of nothing broken in it since the tag, so I need the symptom."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:00:43.238Z",
+     "text": "ah, at some point, the home app needs to know that it must identify it's mountable appse using the fs.annotation interface? when does face load the icons and labels?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:01:22.205Z",
+     "text": "When the face loads them today (since the 05-40 tag):\n\n- After the page's parts are in and the file tree has arrived, the face looks in data.files for every shell/<app>/<app>.json.\n- It reads each one once, by a file read over the sealed link, and draws the icon and label of each one whose runs names face, as each arrives.\n- The app's script loads only when it is opened.\n\nSo the face reads the .json manifests now, not fs.annotations.\n\nThe end to end you describe would be: the face-ready mark, and the face's own label and icon if any, live in the face part of the app's .js sidecar; the face finds them with fs.annotations; the Apps app on the face writes them. The .json stays the home shell's.\n\nIs that the shape: runs face leaves the .json and moves into the face part?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:02:12.758Z",
+     "text": "see, there you have it the relay needs fixing and tagging with this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:03:04.063Z",
+     "text": "In the box (v10):\n\n- The face mark leaves the .json and lives in the face part of the app's .js sidecar; the .json keeps runs for home.\n- The face finds its apps by fs.annotations, one per app in data.files.\n- Contacts, Files and Media Viewer ship with their face part set, their sidecars in the tree.\n- face/shell.js changes and is tagged in this item.\n\nQuestion: does the Apps app itself run on the face in this item, so the end to end is seen there?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:03:12.413Z",
+     "text": "so\n\n\"Question: what is to be fixed in the home app? I know of nothing broken in it since the tag, so I need the symptom.\"\n\nis now answered?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:03:50.691Z",
+     "text": "Yes, answered: the fix in the home app is that it finds its apps through the face part of each sidecar (fs.annotations) instead of reading the .json manifests. In the box.\n\nStill open: does the Apps app itself run on the face in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:04:55.916Z",
+     "text": "why not? it is meant for the new face-world."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:05:51.516Z",
+     "text": "In the box (v11): Apps runs on the face, shipped with its face part set, and at home in place of shell/apps.\n\nGreen from my side. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:10:40.896Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:11:20.365Z",
+     "text": "Capped (v13): same design, your edits kept, one line each."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T05:11:55.402Z",
+     "text": "and the home-app modifications are in the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T05:12:08.366Z",
+     "text": "Yes: the home app (face/shell.js) finds its apps by fs.annotations on each app's .js, from the face part, and is fixed and tagged in this item; that is in THE FACE PART OF A SIDECAR.\n\nOne correction: my v13 was an old draft by mistake and dropped your edits. v14 is the cap of your own v12, your edits kept."
     }
    ]
   }
