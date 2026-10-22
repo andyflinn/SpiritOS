@@ -11,8 +11,10 @@
 //   1  THE CORE TABLE: spirit/run/js/coreFiles.js isCore(repoPath): every file under spirit/run/js/, and every file in
 //      the folder of a shell app whose manifest says "intrinsic": true.
 //   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope since goal/G10.8); a
-//      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it, the
-//      refusal adding one open G check "core grant: <path>", once; granted, the same commit is taken.
+//      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it. Since
+//      goal/G32.2 the refusal raises no grant of its own, one per file (64 of them outgrew the item's answer): it says
+//      to list the files with item.files.add, whose ONE grant for all the core files (goal/G8.8) he grants once; granted,
+//      the same commit is taken. A path is matched whole in the grant's comma list, never as a part of a longer path.
 
 const fs = require('fs');
 const os = require('os');
@@ -158,16 +160,19 @@ async function main() {
   const coreOne = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: a core file, not granted');
   const n3 = await commits(repo);
   const checks = ((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || [];
-  const asked = checks.filter(function (c) { return c.kind === 'G' && c.state === 'open' && c.words.indexOf('js/core.js') !== -1; });
+  const raised = checks.filter(function (c) { return c.kind === 'G'; });
   if (coreOne.status !== 0 && n3 === 2 && /grant/i.test(coreOne.stderr + coreOne.stdout)) test.check('a core file nobody granted is refused, saying grant');
   else test.fail(OWED + 'the ungranted core file: commit ' + coreOne.status + ' (' + n3 + ' commits): ' + String(coreOne.stderr).trim().slice(0, 160));
-  if (asked.length === 1) test.check('and the refusal put one open grant under the item: ' + asked[0].number + ' "' + asked[0].words + '"');
-  else test.fail(OWED + 'open G checks naming js/core.js after the refusal: ' + short(checks));
-  await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: a core file, still not granted');
-  const again = (((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.words.indexOf('js/core.js') !== -1; });
-  if (again.length === 1) test.check('a second refusal asks no second grant');
-  else test.fail(OWED + 'after a second refusal there are ' + again.length + ' G checks for js/core.js');
+  if (!raised.length && /item\.files\.add/.test(coreOne.stderr + coreOne.stdout)) test.check('the refusal raises no grant of its own and says to list the files with item.files.add');
+  else test.fail('OWED by goal/G32.2: the refusal raised ' + short(raised) + ' and said ' + String(coreOne.stderr).trim().slice(0, 160));
+  await desk('item.files.add', { id: 'k/G1.1', paths: ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js'] }, SELF_AT_DESK);
+  const asked = (((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
+  if (asked.length === 1) test.check('the list raised one open grant for both core files: ' + asked[0].number + ' "' + asked[0].words + '"');
+  else test.fail(OWED + 'open G checks after item.files.add: ' + short(asked));
   if (asked.length) await desk('check.set', { id: 'k/G1.1', check: asked[0].number, state: 'granted' }, ANDY);
+  const part = await commitWith(repo, 'spirit/run/js/one.js', 'x', 'k/G1.1: js/one.js is only the end of js/client/js/one.js, not granted');
+  if (part.status !== 0) test.check('a path that is only the end of a granted one is not covered by it');
+  else test.fail('OWED by goal/G32.2: js/one.js was taken under the grant naming js/client/js/one.js');
   const granted = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: the core file, granted');
   if (granted.status === 0 && (await commits(repo)) === 3) test.check('once he granted it, the same commit is taken');
   else test.fail(OWED + 'after his grant the commit answered ' + granted.status + ' ' + String(granted.stderr).trim().slice(0, 160));

@@ -13,7 +13,9 @@
 //
 // THE SHAPE ASSERTED, from the box and the red writer's naming where the box leaves it open:
 //   item.files.add {id, paths}: the caller's whole list for that item, replacing its own entries and leaving others'.
-//   item.get carries it as facts.files, [{path, by, core}], core read from js/coreFiles.js isCore (never a second list).
+//   item.files {id} answers it as {files: [{path, by, core}], filesMore}, core read from js/coreFiles.js isCore (never a
+//   second list): its own answer since goal/G32.2, core files first, as many as fit one answer, filesMore saying there
+//   were more. The facts carry no files: 64 core grants and a 142-file list outgrew the item's one answer.
 //   A list holding any core file puts ONE open G check on the item for all of them, not one per file.
 //   The Details draws the list in its files panel (#dd-panel with 📂 pressed, goal/G30.8; #dd-files before it), a core
 //   path marked data-core="1". The List never draws Delete.
@@ -43,7 +45,7 @@ const PLAIN2 = 'spirit/run/shell/desk/desk.js';
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parse(x) { if (typeof x !== 'string') return x; try { return JSON.parse(x); } catch (e) { return x; } }
-function listOf(f) { return (Array.isArray(f.files) ? f.files : []).map(function (e) { return (e && e.by) + ':' + (e && e.path); }).sort(); }
+function listOf(f) { return (Array.isArray(f) ? f : []).map(function (e) { return (e && e.by) + ':' + (e && e.path); }).sort(); }
 
 test.startTest('goal/G8.8: files touched per item, kept by the desk, one grant for the core ones');
 
@@ -64,6 +66,8 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 function refusedByVerb(r) { return !took(r) && !(r.body && r.body.code === 'no-such-verb'); }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
+async function filesAnswer(id) { const r = await call('item.files', { id: id }, ANDY); return r.body || {}; }
+async function files(id) { return (await filesAnswer(id)).files || []; }
 async function openGrants(id) {
   const r = await call('item.checks', { id: id }, ANDY);
   return ((r.body && r.body.checks) || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
@@ -81,18 +85,20 @@ async function server() {
   const add = await call('item.files.add', { id: 'ft/G1.1', paths: [PLAIN, CORE] }, CW);
   if (took(add)) test.check('item.files.add {id, paths} is taken');
   else test.fail(OWED + 'item.files.add answered ' + add.status + ' ' + short(add.body));
-  const f1 = await facts('ft/G1.1');
-  if (JSON.stringify(listOf(f1)) === JSON.stringify(['claude-windows:' + CORE, 'claude-windows:' + PLAIN].sort())) test.check('item.get carries both paths, written by claude-windows');
-  else test.fail(OWED + 'facts.files reads ' + short(f1.files));
-  const core = (f1.files || []).filter(function (e) { return e && e.path === CORE; })[0] || {};
-  const plain = (f1.files || []).filter(function (e) { return e && e.path === PLAIN; })[0] || {};
+  const f1 = await files('ft/G1.1');
+  if (JSON.stringify(listOf(f1)) === JSON.stringify(['claude-windows:' + CORE, 'claude-windows:' + PLAIN].sort())) test.check('item.files answers both paths, written by claude-windows');
+  else test.fail('OWED by goal/G32.2: item.files reads ' + short(f1));
+  if (!('files' in (await facts('ft/G1.1')))) test.check('and the item\'s facts carry no file list');
+  else test.fail('OWED by goal/G32.2: item.get still carries files');
+  const core = (f1 || []).filter(function (e) { return e && e.path === CORE; })[0] || {};
+  const plain = (f1 || []).filter(function (e) { return e && e.path === PLAIN; })[0] || {};
   if (core.core === true && plain.core === false) test.check(CORE + ' is marked core, ' + PLAIN + ' is not (coreFiles.isCore)');
   else test.fail(OWED + 'core marks read ' + short({ core: core.core, plain: plain.core }));
 
   test.subHeading('2. the list is the item\'s: each writer replaces its own entries, never another\'s');
   await call('item.files.add', { id: 'ft/G1.1', paths: [PLAIN2] }, WSL);
   await call('item.files.add', { id: 'ft/G1.1', paths: [CORE, CORE2] }, CW);
-  const f2 = await facts('ft/G1.1');
+  const f2 = await files('ft/G1.1');
   const want = ['claude-windows:' + CORE, 'claude-windows:' + CORE2, 'wsl-claude:' + PLAIN2].sort();
   if (JSON.stringify(listOf(f2)) === JSON.stringify(want)) test.check('claude-windows\'s second list replaced its first; wsl-claude\'s entry stands');
   else test.fail(OWED + 'after both writers the list reads ' + short(listOf(f2)));
@@ -112,8 +118,23 @@ async function server() {
   else test.fail(OWED + 'after his grant, the unchanged list raised ' + short(again.map(function (c) { return c.number + ' ' + c.words; })));
   await call('item.files.add', { id: 'ft/G1.2', paths: [PLAIN] }, CW);
   const none = await openGrants('ft/G1.2');
-  if (!none.length && listOf(await facts('ft/G1.2')).length === 1) test.check('a list with no core file raises no grant');
-  else test.fail(OWED + 'ft/G1.2 has grants ' + short(none.map(function (c) { return c.words; })) + ' and list ' + short(listOf(await facts('ft/G1.2'))));
+  if (!none.length && listOf(await files('ft/G1.2')).length === 1) test.check('a list with no core file raises no grant');
+  else test.fail(OWED + 'ft/G1.2 has grants ' + short(none.map(function (c) { return c.words; })) + ' and list ' + short(listOf(await files('ft/G1.2'))));
+
+  test.subHeading('3b. a list larger than one answer is taken, and answered core first (goal/G32.2)');
+  // G32.2 listed 142 files, 64 of them core: the list in the facts made every write to the item too large to come back.
+  const many = [];
+  for (let i = 0; i < 150; i++) many.push(i % 3 ? 'spirit/test/manyFilesSuite' + String(i).padStart(3, '0') + '.js' : 'spirit/run/js/manyCore' + String(i).padStart(3, '0') + '.js');
+  const big = await call('item.files.add', { id: 'ft/G1.2', paths: many }, CW);
+  const bigAnswer = await filesAnswer('ft/G1.2');
+  const shown = bigAnswer.files || [];
+  const firstPlain = shown.findIndex(function (e) { return !e.core; });
+  const coreFirst = shown.length && shown.slice(firstPlain === -1 ? shown.length : firstPlain).every(function (e) { return !e.core; });
+  if (took(big) && shown.length > 10 && bigAnswer.filesMore === true && coreFirst && Buffer.byteLength(JSON.stringify(bigAnswer), 'utf8') <= appClient.ANSWER_MAX) test.check('150 paths are taken; item.files answers ' + shown.length + ' of them in one answer, core first, with filesMore');
+  else test.fail('OWED by goal/G32.2: 150 paths answered ' + big.status + ' ' + short(big.body) + '; item.files ' + shown.length + ' files, filesMore ' + bigAnswer.filesMore + ', core first ' + coreFirst);
+  const grantsBig = await openGrants('ft/G1.2');
+  if (grantsBig.length === 1) test.check('and its 50 core files ask one grant');
+  else test.fail('OWED by goal/G32.2: the 150 paths left ' + grantsBig.length + ' open grants');
 
   test.subHeading('4. what it refuses');
   const notList = await call('item.files.add', { id: 'ft/G1.1', paths: PLAIN }, CW);
@@ -147,7 +168,8 @@ async function pages() {
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
     { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { addEventListener: function () {} });
-  const item = label({ id: 't/G1.2', title: 'Second', files: [{ path: CORE, by: 'claude-windows', core: true }, { path: PLAIN, by: 'wsl-claude', core: false }] });
+  const item = label({ id: 't/G1.2', title: 'Second' });
+  const itemFiles = [{ path: CORE, by: 'claude-windows', core: true }, { path: PLAIN, by: 'wsl-claude', core: false }];
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -155,6 +177,7 @@ async function pages() {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(item), box: 'BOX', version: 1, change: 1, chatMore: false, checks: [], chat: [] } });
+      if (v === 'item.files') return Promise.resolve({ status: 200, body: { files: itemFiles, filesMore: false } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], box: '', version: 1 } });
     },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
