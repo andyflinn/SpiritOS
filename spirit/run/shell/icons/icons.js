@@ -12,15 +12,21 @@ var ICON_SET = 'shell/icons/iconSet.json';
 
 function iconsEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function iconsWords(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
+// The same picture under another spelling: the variation selectors (U+FE0E, U+FE0F) are invisible, so a glyph pasted
+// with or without one is the same icon.
+function iconsSame(a, b) { var strip = function (g) { return String(g || '').replace(/[︎️]/g, ''); }; return strip(a) === strip(b); }
 
 // The set as it stands, changed by fn, written whole.
 function iconsChange(api, fn, said) {
   return Promise.resolve(api.verb('fs.load', { path: ICON_SET })).then(function (r) {
     var set = {};
     try { set = JSON.parse((r && r.body && r.body.text) || '{}'); } catch (e) { set = {}; }
-    fn(set);
+    // fn answers a refusal (a sentence) when nothing is to change; the set is then not written.
+    var no = fn(set);
+    if (typeof no === 'string') return { refused: no };
     return Promise.resolve(api.verb('fs.save', { path: ICON_SET, content: JSON.stringify(set, null, 2) + '\n' }));
   }).then(function (r) {
+    if (r && r.refused) { if (said) said.textContent = r.refused; return false; }
     var ok = r && r.status >= 200 && r.status < 300;
     if (said) said.textContent = ok ? 'saved' : 'not saved: ' + ((r && r.body && (r.body.error || r.body.code)) || (r && r.status) || 'no answer');
     if (ok && iconsList) iconsList.reload();
@@ -73,7 +79,13 @@ spirit.shell.activateApp({
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
       var said = container.querySelector('[data-icons="added"]');
       if (!glyph) { said.textContent = 'paste an icon first'; return; }
-      iconsChange(api, function (set) { set[glyph] = words; }, said);
+      // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"): an
+      // icon already in the set, under any spelling, is changed from its own row, never added again.
+      iconsChange(api, function (set) {
+        var known = Object.keys(set).filter(function (g) { return iconsSame(g, glyph); })[0];
+        if (known) return known + ' is in the set already: open its row to change its keywords';
+        set[glyph] = words;
+      }, said);
     });
   },
 
