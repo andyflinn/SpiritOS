@@ -204,6 +204,13 @@ const done = (async function () {
     test.check('the node runs nothing on the first piece, and the whole fs.save once the last is in (30000 bytes)');
   else test.fail('OWED by goal/G33.1: pieces ran ' + JSON.stringify(ran).slice(0, 200) + ' (after the first: ' + pieceAnswer + ')');
   const faceShellNow = code('face/shell.js');
+  // A second declaration of the same name replaces the first without a word: the piece sender, named post, took the
+  // place of post(verb, body), sent the face's state check to /face/call and showed Andy the login screen (G33.1).
+  // The shell's own scope is its top level, two spaces in; a helper inside a function is that function's own.
+  const declared = (faceShellNow.match(/^ {2}function\s+\w+\s*\(/gm) || []).map(function (d) { return d.replace(/^\s*function\s+|\s*\($/g, ''); });
+  const twice = declared.filter(function (n, i) { return declared.indexOf(n) !== i; });
+  if (!twice.length) test.check('face/shell.js declares every function name of its own scope once');
+  else test.fail('OWED by goal/G33.1: face/shell.js declares twice: ' + twice.join(', '));
   if (/piece/.test(faceShellNow) && /BODY_MAX|PIECE_MAX|piece.*max/i.test(faceShellNow)) test.check('the face shell sends a request larger than one trip in pieces');
   else test.fail('OWED by goal/G33.1: face/shell.js sends every request whole');
 }());

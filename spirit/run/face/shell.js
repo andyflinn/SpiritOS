@@ -79,7 +79,9 @@
   // relay takes one request up to BODY_MAX. A larger one goes as {piece: {id, n, of, text}}, text a run of base64 of its
   // bytes, each piece its own call; the home node (js/faceHome.js) answers 202 to each but the last and the whole request
   // on the last, whose answer is this call's. The relay passes the pieces on and reads none of them.
-  function post(text) {
+  // Named apart from post(verb, body) above, the relay's /face/api: one function name each (a second declaration
+  // replaced the first and sent the face's state check to /face/call, goal/G33.1).
+  function postCall(text) {
     var once = function (t) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: t }); };
     var BODY_MAX = (window.spirit && window.spirit.limits && window.spirit.limits.BODY_MAX) || 23552;
     var bytes = new TextEncoder().encode(text);
@@ -106,7 +108,7 @@
           .then(function (s) { s.k = link.key.publicKey; return s; })
       : Promise.resolve(request);
     return sending.then(function (body) {
-      return post(JSON.stringify(body));
+      return postCall(JSON.stringify(body));
     }).then(function (r) {
       if (r.status === 503 || r.status === 504) setConnected(false);
       if (!link.sealed || r.status !== 200) {
