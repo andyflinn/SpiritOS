@@ -1250,6 +1250,11 @@ if (isNode()) {
     onDelete: function(id) { print('[jobs] deleted: ' + id); },
   });
 
+  // THE SPIRIT OBJECT KEEPS ITS MEMBERS (goal/G32.1): on the face face/spirit.js runs first, inline, and its members
+  // (the families, start, ready) stay on the one object this file now names window.spirit.
+  if (window.spirit && typeof window.spirit === 'object' && window.spirit !== spirit) {
+    Object.keys(window.spirit).forEach(function (k) { if (!(k in spirit)) spirit[k] = window.spirit[k]; });
+  }
   window.spirit = spirit;
 }
 

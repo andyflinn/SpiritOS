@@ -430,6 +430,8 @@ function faceSend(res, status, file) {
   fs.readFile(path.join(FACE_DIR, file), function (err, data) {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
     res.writeHead(status, { 'Content-Type': FACE_TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    // face.html carries the spirit object inline as its first script (goal/G32.1).
+    if (path.basename(file) === 'face.html') { res.end(common.inlineSpirit(data.toString('utf8'), path.join(FACE_DIR, '..'))); return; }
     res.end(data);
   });
 }

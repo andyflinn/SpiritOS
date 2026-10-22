@@ -99,6 +99,8 @@ function sendFile(res, filePath) {
     }
 
     res.writeHead(200, { 'Content-Type': type });
+    // face.html, served by the home node too, carries the spirit object inline (goal/G32.1).
+    if (path.basename(filePath) === 'face.html') { res.end(inlineSpirit(data.toString('utf8'), path.dirname(filePath))); return; }
     res.end(data);
   });
 }
@@ -367,7 +369,20 @@ function ensureFirstRun(rootDir, opts) {
   return auth.loadIdentity(rootDir);
 }
 
+// THE SPIRIT OBJECT, INLINE AND FIRST (goal/G32.1; Andy: "the very first script it serves should be right in a script
+// tab in the very only html file it servers"): face.html marks the place with <!-- spirit.js -->, and whoever serves the
+// page, the relay or the home node, puts face/spirit.js there inline. One source, so the page and a server process run
+// the same file.
+function inlineSpirit(html, runDir) {
+  let src = '';
+  try { src = require('fs').readFileSync(require('path').join(runDir, 'face', 'spirit.js'), 'utf8'); } catch (e) { return html; }
+  // A '</script' inside the source would end the tag early.
+  const safe = src.replace(/<\/script/gi, '<\\/script');
+  return String(html).replace('<!-- spirit.js -->', function () { return '<script>\n' + safe + '\n</script>'; });
+}
+
 module.exports = {
+  inlineSpirit: inlineSpirit,
   ensureFirstRun: ensureFirstRun,
   firstDescription: firstDescription,
   bodyBytes: bodyBytes,
