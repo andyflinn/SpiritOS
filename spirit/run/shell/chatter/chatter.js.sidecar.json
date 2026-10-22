@@ -1,6 +1,6 @@
 {
   "face": {
-    "app": true,
+    "app": false,
     "intrinsic": false,
     "name": "chatter",
     "icon": "💬",

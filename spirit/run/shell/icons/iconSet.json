@@ -634,5 +634,381 @@
   "🤯": [
     "face",
     "exploding"
+  ],
+  "🤓": [
+    "face",
+    "nerdy",
+    "glasses",
+    "open",
+    "mouth"
+  ],
+  "💩": [
+    "turd",
+    "shit",
+    "poo",
+    "crap",
+    "dump"
+  ],
+  "🤡": [
+    "clown",
+    "face"
+  ],
+  "👹": [
+    "ogre"
+  ],
+  "👺": [
+    "goblin"
+  ],
+  "👽": [
+    "alien"
+  ],
+  "👾": [
+    "alien",
+    "monster"
+  ],
+  "🤖": [
+    "robot"
+  ],
+  "🙊": [
+    "speak",
+    "no",
+    "evil"
+  ],
+  "💌": [
+    "love",
+    "letter"
+  ],
+  "💘": [
+    "arrow",
+    "through",
+    "heart"
+  ],
+  "❤️‍🩹": [
+    "mending",
+    "ill",
+    "sick",
+    "heart"
+  ],
+  "🩷": [
+    "pink",
+    "heart"
+  ],
+  "🧡": [
+    "orange",
+    "heart"
+  ],
+  "💛": [
+    "yellow",
+    "heart"
+  ],
+  "💚": [
+    "green",
+    "heart"
+  ],
+  "🤎": [
+    "brown",
+    "heart"
+  ],
+  "🖤": [
+    "black",
+    "heart"
+  ],
+  "🩶": [
+    "gray",
+    "heart"
+  ],
+  "🤍": [
+    "white",
+    "heart"
+  ],
+  "💋": [
+    "kiss",
+    "mark"
+  ],
+  "💯": [
+    "hundred",
+    "points"
+  ],
+  "💢": [
+    "anger",
+    "symbol"
+  ],
+  "🫯": [
+    "fight",
+    "cloud"
+  ],
+  "👁️‍🗨️": [
+    "eye",
+    "chat",
+    "bubble"
+  ],
+  "💤": [
+    "zzzz"
+  ],
+  "👋": [
+    "hand",
+    "wave",
+    "waving"
+  ],
+  "🖖": [
+    "live",
+    "long",
+    "and",
+    "prosper",
+    "Vulcan",
+    "salute"
+  ],
+  "🫷": [
+    "hand",
+    "stop",
+    "push",
+    "left"
+  ],
+  "🫸": [
+    "hand",
+    "stop",
+    "push",
+    "right"
+  ],
+  "👌": [
+    "hand",
+    "ok",
+    "perfect",
+    "good"
+  ],
+  "🤞": [
+    "hand",
+    "fingers",
+    "crossed"
+  ],
+  "🤙": [
+    "hand",
+    "call",
+    "me"
+  ],
+  "✊": [
+    "hand",
+    "raised",
+    "fist"
+  ],
+  "👊": [
+    "hand",
+    "coming",
+    "fist"
+  ],
+  "👏": [
+    "hands",
+    "clapping"
+  ],
+  "🫶": [
+    "hands",
+    "heart"
+  ],
+  "🤝": [
+    "hands",
+    "shake",
+    "shaking"
+  ],
+  "✍": [
+    "hand",
+    "writing"
+  ],
+  "🤳": [
+    "selfie"
+  ],
+  "👂": [
+    "ear"
+  ],
+  "👃": [
+    "nose"
+  ],
+  "🧠": [
+    "brain"
+  ],
+  "🫁": [
+    "lung"
+  ],
+  "🦷": [
+    "tooth"
+  ],
+  "🦴": [
+    "bone"
+  ],
+  "👀": [
+    "eyes",
+    "eye",
+    "balls"
+  ],
+  "👅": [
+    "tongue"
+  ],
+  "👄": [
+    "mouth"
+  ],
+  "👶": [
+    "baby",
+    "face"
+  ],
+  "🧒": [
+    "child",
+    "face"
+  ],
+  "👦": [
+    "boy",
+    "face"
+  ],
+  "👧": [
+    "girl",
+    "face"
+  ],
+  "🧑": [
+    "person",
+    "peer",
+    "individual"
+  ],
+  "👨": [
+    "man"
+  ],
+  "👴": [
+    "man",
+    "old"
+  ],
+  "👵": [
+    "woman",
+    "old"
+  ],
+  "🧑‍⚕️": [
+    "doctor"
+  ],
+  "🧑‍🎓": [
+    "student"
+  ],
+  "🧑‍⚖️": [
+    "judge"
+  ],
+  "🧑‍🌾": [
+    "farmer"
+  ],
+  "🧑‍🍳": [
+    "cook",
+    "chef"
+  ],
+  "🧑‍🔧": [
+    "mechanic"
+  ],
+  "🧑‍💼": [
+    "suit"
+  ],
+  "🧑‍🎤": [
+    "singer"
+  ],
+  "🧑‍🎨": [
+    "artist",
+    "painter"
+  ],
+  "🧑‍✈️": [
+    "pilot"
+  ],
+  "🧑‍🚀": [
+    "astronaut"
+  ],
+  "🧑‍🚒": [
+    "fire",
+    "fighter"
+  ],
+  "👮": [
+    "police",
+    "man",
+    "cop"
+  ],
+  "🕵": [
+    "detective",
+    "sherlock"
+  ],
+  "💂": [
+    "royal",
+    "guard"
+  ],
+  "🥷": [
+    "ninja"
+  ],
+  "👷": [
+    "construction",
+    "worker"
+  ],
+  "🤵": [
+    "tuxedo",
+    "suit"
+  ],
+  "🎅": [
+    "santa",
+    "clause"
+  ],
+  "🧚": [
+    "fairy"
+  ],
+  "🧛": [
+    "vampire"
+  ],
+  "🧜": [
+    "merperson"
+  ],
+  "🧜‍♂️": [
+    "merman"
+  ],
+  "🧜‍♀️": [
+    "mermaid",
+    "Arielle"
+  ],
+  "🧝": [
+    "elf"
+  ],
+  "🧞": [
+    "genie"
+  ],
+  "🧟": [
+    "zombie"
+  ],
+  "🧌": [
+    "troll"
+  ],
+  "🚶": [
+    "person",
+    "walking"
+  ],
+  "🚶‍➡️": [
+    "person",
+    "walking"
+  ],
+  "🧍": [
+    "person",
+    "standing"
+  ],
+  "🧎": [
+    "person",
+    "kneeling"
+  ],
+  "🧎‍➡️": [
+    "person",
+    "kneeling"
+  ],
+  "🧑‍🦯": [
+    "person",
+    "cane"
+  ],
+  "🧑‍🦯‍➡️": [
+    "person",
+    "cane"
+  ],
+  "🧑‍🦽": [
+    "wheel",
+    "chair"
+  ],
+  "🧑‍🦽‍➡️": [
+    "wheel",
+    "chair"
+  ],
+  "🧑‍🩰": [
+    "ballet"
   ]
 }
