@@ -46,6 +46,9 @@ const done = (async function () {
   if (!/WRITABLE_ROOT_NAMES|'media'|'published'/.test(kern)) test.check('the core names no user folder: media/ and published/ have no special status');
   else test.fail(OWED + 'kernel.js still names media/ or published/');
   const core = require('../run/js/coreFiles.js');
+  if (core.isCore('spirit/run/face/shell.js') && core.isCore('spirit/run/face/login/login.js') && core.isCore('spirit/run/face.html'))
+    test.check('the face folder and face.html are core');
+  else test.fail(OWED + 'coreFiles: face/shell.js ' + core.isCore('spirit/run/face/shell.js') + ', face.html ' + core.isCore('spirit/run/face.html'));
   if (core.isCore('spirit/run/shell/contacts/contacts.js') && !core.isCore('spirit/run/shell/contacts/contacts.json'))
     test.check('a manifest is never core, an intrinsic app\'s included');
   else test.fail(OWED + 'coreFiles: contacts.js ' + core.isCore('spirit/run/shell/contacts/contacts.js') + ', contacts.json ' + core.isCore('spirit/run/shell/contacts/contacts.json'));
