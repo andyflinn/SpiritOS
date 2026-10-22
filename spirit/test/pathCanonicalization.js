@@ -140,8 +140,9 @@ function expectEverySpellingWritable(label, canonical) {
     }
   });
 }
-test.subHeading('App entry scripts are writable in every spelling (goal/G14.8)');
-expectEverySpellingWritable('shell/info/info.js (intrinsic)', 'shell/info/info.js');
+// Since goal/G30.21 only core files are protected: an intrinsic app's script is core, any other app's is not.
+test.subHeading('An intrinsic app\'s script is core and unwritable, another app\'s writable, in every spelling (goal/G30.21)');
+expectEverySpellingUnwritable('shell/info/info.js (intrinsic, core)', 'shell/info/info.js');
 expectEverySpellingWritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
 
 test.subHeading('App manifests are writable in every spelling (goal/G14.8)');

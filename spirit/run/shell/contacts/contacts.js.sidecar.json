@@ -1,0 +1,9 @@
+{
+  "face": {
+    "app": true,
+    "name": "Contacts",
+    "icon": "ROLODEX",
+    "description": "The people this node knows: what you call them, how each key got here, and who is waiting or refused.",
+    "intrinsic": true
+  }
+}

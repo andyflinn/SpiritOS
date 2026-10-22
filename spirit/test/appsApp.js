@@ -50,6 +50,24 @@ const done = (async function () {
     test.check('a manifest is never core, an intrinsic app\'s included');
   else test.fail(OWED + 'coreFiles: contacts.js ' + core.isCore('spirit/run/shell/contacts/contacts.js') + ', contacts.json ' + core.isCore('spirit/run/shell/contacts/contacts.json'));
 
+  // Only the face part's intrinsic mark makes code core (box v16), for apps and servers; the .json's intrinsic counts
+  // for nothing here. A scratch tree with one app marked each way.
+  const os = require('os');
+  const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'apps-app-core-'));
+  const put = function (rel, obj) { const f = path.join(tree, 'spirit', 'run', rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(obj)); };
+  put('shell/marked/marked.js.sidecar.json', { face: { intrinsic: true } });
+  put('shell/oldway/oldway.json', { intrinsic: true });
+  put('process/js/srv/srv.js.sidecar.json', { face: { intrinsic: true } });
+  const marks = { marked: core.isCore('spirit/run/shell/marked/marked.js', tree), data: core.isCore('spirit/run/shell/marked/notes.json', tree),
+    oldway: core.isCore('spirit/run/shell/oldway/oldway.js', tree), srv: core.isCore('spirit/run/process/js/srv/srv.js', tree) };
+  try { fs.rmSync(tree, { recursive: true, force: true }); } catch (e) { /* temp */ }
+  if (marks.marked && !marks.data && !marks.oldway && marks.srv) test.check('only the face part\'s intrinsic mark makes code core, for an app and a server; data stays writable; a .json\'s intrinsic counts for nothing');
+  else test.fail(OWED + 'coreFiles on a scratch tree: ' + short(marks));
+  const fsSide = json('process/js/fileServer/fileServer.js.sidecar.json');
+  if (fsSide && fsSide.face && fsSide.face.intrinsic === true && (json('shell/files/files.js.sidecar.json').face || {}).intrinsic === true)
+    test.check('today\'s intrinsic apps and servers ship with the mark (fileServer, Files)');
+  else test.fail(OWED + 'the intrinsic mark is not shipped in the face parts');
+
   test.subHeading('2. the face part of a sidecar');
   const asked = { annotateFace: [], call: [] };
   // The answer is signed and uploaded to the relay; a scratch identity signs it, and the upload to a relay that is not

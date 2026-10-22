@@ -68,7 +68,8 @@ function read(file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { 
 // manifest's type, a log line's fallback name, a label on the page), and
 // a line declaring an old location by a LEGACY name, which is how the
 // move in T4 (and hub.js's older one) names where it reads from.
-const ALLOWED = [/manifest\.type \|\| 'app'/, /\(name \|\| 'app'\)/, /row\('app',/, /\b[A-Z_]*LEGACY[A-Z_]*\s*=/];
+// The page's ?app= address parameter is a name in a URL, not a folder.
+const ALLOWED = [/manifest\.type \|\| 'app'/, /\(name \|\| 'app'\)/, /row\('app',/, /\b[A-Z_]*LEGACY[A-Z_]*\s*=/, /URLSearchParams\([^)]*\)\.get\('app'\)/];
 function appFolderUses() {
   const files = execSync('git ls-files -- js process index.html app shell', { cwd: RUN, encoding: 'utf8' })
     .split('\n').filter(function (f) { return /\.(js|html)$/.test(f) && f.indexOf('node_modules') === -1 && fs.existsSync(path.join(RUN, f)); });
@@ -133,8 +134,9 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   const hits = appFolderUses();
   const kernel = require('../run/js/kernel.js');
   const writable = kernel.core.fs.fileWritable;
-  const gate = { shell: writable('shell/probeapp/data.json'), app: writable('app/probeapp/data.json') };
-  if (!hits.length && gate.shell && !gate.app) test.check('no app/ folder named in js/, process/, index.html or the shell\'s own code; the write gate takes shell/ and refuses app/');
+  // Since goal/G30.21 the gate names no folder: app/ is as writable as any non-core folder, so only shell/ is asked.
+  const gate = { shell: writable('shell/probeapp/data.json'), app: '(no folder is special since goal/G30.21)' };
+  if (!hits.length && gate.shell) test.check('no app/ folder named in js/, process/, index.html or the shell\'s own code; the write gate takes shell/');
   else test.fail(OWED + hits.length + ' uses of app/ as a folder (' + hits.slice(0, 6).join(', ') + (hits.length > 6 ? ', …' : '') +
     '); writable shell/ ' + gate.shell + ', app/ ' + gate.app);
 

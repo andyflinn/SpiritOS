@@ -1,0 +1,9 @@
+{
+  "face": {
+    "app": true,
+    "name": "Files",
+    "icon": "FOLDER",
+    "description": "The tree of everything under this node's home, with what each file is and what can open it.",
+    "intrinsic": true
+  }
+}

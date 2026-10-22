@@ -20,7 +20,8 @@
         Object.keys(D.branch('files')).forEach(function (k) { if (k.indexOf(p + '/') === 0) D.del('files/' + k); });
       } else {
         var was = D.branch('files')[p] || {};
-        D.set('files/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified });
+        // core: the node's word that the file is core (goal/G30.21), painted yellow by its row.
+        D.set('files/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true });
       }
     },
   });

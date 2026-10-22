@@ -123,7 +123,7 @@ expectLoads('js/peerFile.js', 'js/peerFile.js');
 // commit hook, not the gate. The verdict is asked; nothing is written.
 test.subHeading('App code, manifests and app data');
 expectLoads('shell/info/info.js (app entry script)', 'shell/info/info.js');
-expectWritable('shell/info/info.js (app entry script, goal/G14.8)', 'shell/info/info.js');
+expectNotWritable('shell/info/info.js (an intrinsic app\'s script is core, goal/G30.21)', 'shell/info/info.js');
 expectLoads('shell/info/info.json (manifest)', 'shell/info/info.json');
 expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.json');
 
@@ -155,7 +155,7 @@ expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json'
 // the next one deleted.
 test.subHeading('Process scripts are read-only, not hidden');
 expectLoads('process/js/imageStats/imageStats.js', 'process/js/imageStats/imageStats.js');
-expectNotWritable('process/js/imageStats/imageStats.js', 'process/js/imageStats/imageStats.js');
+expectWritable('process/js/imageStats/imageStats.js (only core is protected, goal/G30.21)', 'process/js/imageStats/imageStats.js');
 expectLoads('process/js/imageStats/imageStats.json', 'process/js/imageStats/imageStats.json');
 
 // ---- sidecars and relay state are invisible to every generic consumer ----

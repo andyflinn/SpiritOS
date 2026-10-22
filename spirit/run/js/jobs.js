@@ -180,10 +180,13 @@ module.exports = function installJobs(spirit, port) {
     try { st = fs.statSync(full); } catch (e) { return { kind: kind }; }
     return kind === 'folder' ? { kind: kind, modified: st.mtime.toISOString() } : { kind: kind, size: st.size, modified: st.mtime.toISOString() };
   }
+  // A CORE FILE SAYS SO (goal/G30.21: "the files list thing should display core files with yellow typeface"), by the one
+  // rule the commit check reads (coreFiles.js); the run folder is spirit/run of the checkout two folders up.
   function commandOf(op, p, at, held) {
     const c = { op: op, path: p, at: at };
     if (held && held.size !== undefined) c.size = held.size;
     if (held && held.modified !== undefined) c.modified = held.modified;
+    if (held && held.kind === 'file' && require('./coreFiles').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) c.core = true;
     return c;
   }
 

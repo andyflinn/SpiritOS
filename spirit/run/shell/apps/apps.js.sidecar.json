@@ -1,0 +1,9 @@
+{
+  "face": {
+    "app": true,
+    "name": "Apps",
+    "icon": "TABLE",
+    "description": "Every app of this node, shell and process, each with its face part: whether it shows on the face, and its name, icon and description there.",
+    "intrinsic": true
+  }
+}

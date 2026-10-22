@@ -174,6 +174,14 @@ function createFaceHome(opts) {
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
     const verb = String(r.verb || '');
+    // THE FACE'S OWN PART OF A SIDECAR (goal/G30.21). The node knows this request came from the face, so its fs.annotate
+    // writes the face part and never reaches the door, whose fs.annotate writes the client part.
+    if (verb === 'fs.annotate' && typeof o.annotateFace === 'function') {
+      const out = (r.payload && typeof r.payload === 'object') ? o.annotateFace(String(r.path || ''), r.payload) : { ok: false, reason: 'bad-payload' };
+      if (out && out.ok) json(res, 200, { ok: true });
+      else json(res, out && out.reason === 'file-not-found' ? 404 : 400, { ok: false, code: (out && out.reason) || 'refused', error: 'the face part was not written: ' + ((out && out.reason) || 'refused') });
+      return;
+    }
     const args = Object.assign({}, r);
     Promise.resolve(o.call(verb, args)).then(function (a) {
       const status = (a && a.status) || 500;

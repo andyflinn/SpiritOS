@@ -39,7 +39,7 @@
       if (!p) return;
       idx.forKey(p).forEach(function (el) {
         if (!v) el.apply({ gone: true });
-        else el.apply({ kind: v.kind, size: v.size, modified: v.modified, gone: false });
+        else el.apply({ kind: v.kind, size: v.size, modified: v.modified, core: v.core === true, gone: false });
       });
     });
   }
@@ -55,18 +55,19 @@
       key: p,
       index: index(),
       row: { path: p, name: p.slice(p.lastIndexOf('/') + 1), kind: r.kind || k.kind || 'file',
-        size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, gone: false },
+        size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, core: (r.core !== undefined ? r.core : k.core) === true, gone: false },
       fields: [
         // ONE CELL: the indent, the icon, then where it lives and what it is (goal/G30.16). The depth rides along (one per
         // slash) for a tree view to indent; the folders dimmed, the name at full strength (a list of bare names read as if
         // every file sat at the top). A tree view hides the folders, the indent saying them.
-        { name: 'name', from: ['path', 'kind', 'gone'], paint: function (v) {
+        // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the fs-watcher's command.
+        { name: 'name', from: ['path', 'kind', 'gone', 'core'], paint: function (v) {
           var I = icons();
           var glyph = v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || '');
           var p = String(v.path || '');
           var cut = p.lastIndexOf('/');
           return '<span class="file-depth" style="--depth:' + (p.split('/').length - 1) + '">' + glyph + '</span> ' +
-            (cut >= 0 ? '<span class="path-dir">' + esc(p.slice(0, cut + 1)) + '</span>' : '') + '<span class="path-file">' + esc(p.slice(cut + 1)) + '</span>';
+            (cut >= 0 ? '<span class="path-dir">' + esc(p.slice(0, cut + 1)) + '</span>' : '') + '<span class="path-file"' + (v.core ? ' style="color:var(--spirit-core, #e6c200)" title="core: write-protected"' : '') + '>' + esc(p.slice(cut + 1)) + '</span>';
         } },
         { name: 'size', paint: function (v) { return v.kind === 'folder' ? '' : esc(bytes(v.size)); } },
         { name: 'changed', from: ['modified'], paint: function (v) { return esc(when(v.modified)); } },

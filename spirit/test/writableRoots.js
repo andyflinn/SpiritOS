@@ -101,9 +101,9 @@ if (preferencesBackup !== null) {
   test.check('preferences.json did not exist before the probe, and the probe was removed');
 }
 
-// ---- everything else at root level, and process/, are NOT writable ----
+// ---- a root-level file and core are NOT writable; process/ is, since goal/G30.21 (only core is protected) ----
 expectForbidden('a random root-level file', '__writableRootsProbe__.txt');
-expectForbidden('process/ (scripts are browser-read-only by design)', 'process/js/__writableRootsProbe__/__writableRootsProbe__.json');
+expectWritable('process/ (writable since goal/G30.21: only core files are protected)', 'process/js/__writableRootsProbe__.json');
 expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js');
 
 // ---- app entry scripts and manifests are shell files like any other ----

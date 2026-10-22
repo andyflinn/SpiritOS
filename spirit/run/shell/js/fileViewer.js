@@ -122,14 +122,14 @@
     var o = opts || {};
     var path = String(o.path || '');
     host.innerHTML = '<div class="stack">' +
-      '<div data-part="stat"></div><div data-part="app"></div><div data-part="open-with" class="open-with"></div>' +
+      '<div data-part="stat"></div><div data-part="owner-app"></div><div data-part="open-with" class="open-with"></div>' +
       '<div data-part="body"></div><div data-part="notes"></div></div>';
     function slot(name) { return host.querySelector('[data-part="' + name + '"]'); }
     fStatViewer(slot('stat'), path);
     annotationManager(slot('notes'), path);
     // The old shell's registry of apps and handlers: at home only (the face has no Open with yet).
     var shell = window.spirit && window.spirit.shell;
-    if (shell && typeof shell.renderAppOfFile === 'function') shell.renderAppOfFile(slot('app'), path);
+    if (shell && typeof shell.renderAppOfFile === 'function') shell.renderAppOfFile(slot('owner-app'), path);
     if (shell && typeof shell.renderOpenWith === 'function' && o.launcherId) shell.renderOpenWith(slot('open-with'), o.launcherId, path);
     return { path: path, slot: slot };
   }

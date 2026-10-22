@@ -1,5 +1,5 @@
 {
-  "runs": ["home", "face"],
+  "runs": ["home"],
   "name": "Files",
   "description": "The tree of everything under this node's home, with what each file is and what can open it.",
   "icon": "FOLDER",

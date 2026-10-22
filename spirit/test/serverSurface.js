@@ -141,7 +141,8 @@ function startSink(delayMs) {
 }
 
 const nodeRoot = setupRelayFakes('serverSurface').andy;
-const ENTRY_SCRIPT = path.join(nodeRoot, 'shell', 'natter', 'natter.js');
+// The entry script probed is a non-intrinsic app's: since goal/G30.21 an intrinsic app's script is core and refused.
+const ENTRY_SCRIPT = path.join(nodeRoot, 'shell', 'textEditor', 'textEditor.js');
 
 // A relay identity for case 2 to try to steal. relay-state/ is gitignored
 // and this node lives in the temp dir, so this never touches the repo.
@@ -289,7 +290,7 @@ freePort()
     }).then(function () {
       return request(port, 'POST', '/api/spirit', {
         verb: 'fs.save',
-        path: 'shell/./natter/natter.js',
+        path: 'shell/./textEditor/textEditor.js',
         content: '// serverSurface.js probe — the fakes\' copy, restored at once',
       });
     }).then(function (r) {
@@ -701,7 +702,9 @@ freePort()
       // (loopbackVerbs.mount('fs', dir, {'stat': ...})) and the table
       // names them fs.stat: the family from each mount block, the verbs
       // from its four-space keys.
-      for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',[\s\S]*?\n {2}\}, \{ wire:/g)) {
+      // A block never runs into the next mount: the config family is mounted empty on one line (goal/G30.20), and a
+      // block reaching past it credited the next family's verbs to config.
+      for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',(?:(?!loopbackVerbs\.mount)[\s\S])*?\n {2}\}, \{ wire:/g)) {
         for (const m of block[0].matchAll(/^ {4}'([a-z][a-zA-Z0-9]*)':/gm)) claimed.push(block[1] + '.' + m[1]);
       }
 

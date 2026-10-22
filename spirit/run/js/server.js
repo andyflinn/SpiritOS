@@ -1519,6 +1519,8 @@ contactBook.syncMarks(ROOT_DIR);
     faceHome = require('./faceHome').createFaceHome({
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
+      // The face's fs.annotate writes the face part of a sidecar (goal/G30.21).
+      annotateFace: function (rel, payload) { return spirit.core.fs.annotateFace(rel, payload); },
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       jobs: jobs,

@@ -291,18 +291,11 @@ if (isNode()) {
     }
   };
 
-  // saveFile/deleteFile are new write capability, so they get a tighter
-  // boundary than loadFile: not just "inside ROOT_DIR" but "inside
-  // ROOT_DIR/shell/", since that's the only place apps are meant to persist.
-  // Writable roots for saveFile/deleteFile — app/ (per-app data), media/
-  // (tagged assets + their JSON sidecars, added via the OS file browser, not
-  // this API), and published/ (flat writing-corpus records written by scanner
-  // process scripts, e.g. the WordPress scanner). process/ is deliberately
-  // excluded: scripts stay browser-read-only.
-  const WRITABLE_ROOT_NAMES = ['shell', 'media', 'published'];
-
-  // A handful of single, well-known root-level files also need to be
-  // writable without opening up the whole ROOT_DIR — currently just
+  // ONLY CORE FILES ARE WRITE-PROTECTED (goal/G30.21). Andy: "only "core" files are write-protected, manifests are no
+  // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
+  // is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (js/coreFiles.js,
+  // the commit check's own rule), relay-state/ at any depth, a sidecar's own path, and the node's root-level files,
+  // all but the ones named here.
   // preferences.json (user-configurable app preferences, e.g. default file
   // handlers; deliberately root-level rather than app-scoped since these
   // choices are meant to be part of the personal dataset this project is
@@ -325,32 +318,11 @@ if (isNode()) {
     return !!OWN_STATE_DIR && (canonical === OWN_STATE_DIR || canonical.startsWith(OWN_STATE_DIR + '/'));
   }
 
-  function isWithinWritableRoot(resolvedPath) {
-    if (WRITABLE_ROOT_NAMES.some(function(rootName) {
-      const root = path.join(ROOT_DIR, rootName);
-      const relative = path.relative(root, resolvedPath);
-      return !relative.startsWith('..') && !path.isAbsolute(relative);
-    })) return true;
-
-    return WRITABLE_ROOT_FILES.some(function(fileName) {
-      return resolvedPath === path.join(ROOT_DIR, fileName);
-    });
+  // A CORE FILE, by the one rule the commit check reads (js/coreFiles.js): spirit/run/js/, spirit/run/shell/js/, the
+  // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
+  function isCoreFile(canonical) {
+    return require('./coreFiles').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
   }
-
-  // AN APP'S OWN ENTRY SCRIPT AND MANIFEST ARE ORDINARY FILES OF THE shell
-  // ROOT since goal/G14.8 (2026-10-10). Two patterns stood here
-  // (APP_ENTRY_SCRIPT_PATTERN, MANIFEST_PATTERN) and fileWritable refused
-  // both shapes for every caller: the guard of the App Builder era, kept
-  // after decision 0008 deleted the builder. Andy, closing it: "the whole
-  // story of protecting app sources came from a time when we had the
-  // stupid AI app-builder, which is gone now", and "we only protect
-  // intrinsic apps, and they are already gated by the commit hooks as
-  // "core"". So the fence for an intrinsic app is the commit hook
-  // (coreFiles.js counts its files as core; a commit without his grant is
-  // refused), not this gate; an agent's fs.save writes its own app's
-  // code (Levant's textEditor.js), and the writable roots, relay-state
-  // and the sidecar rule are what the gate still says.
-
   // The one sidecar per annotated file gets a suffix, never a same-name
   // extension swap — <file>.sidecar.json can never collide with the
   // target itself, whatever the target's own extension is (a plain
@@ -401,10 +373,10 @@ if (isNode()) {
     const canonical = canonicalPath(filePath);
     if (canonical === null) return false;
     if (isOwnState(canonical)) return true;
-    const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinWritableRoot(resolved)) return false;
     if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
-    return true;
+    if (canonical.split('/').indexOf('relay-state') !== -1) return false;
+    if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
+    return !isCoreFile(canonical);
   }
 
   // Same idea as fileWritable, for "can this path ever be read or listed
@@ -518,8 +490,10 @@ if (isNode()) {
     }
   }
 
+  // A SIDECAR IS NEVER CORE (goal/G30.21): its target must be a file that may be read, not one that may be written, so
+  // an intrinsic app's .js, which is core, still takes its notes.
   function writeBucket(bucket, filePath, payload) {
-    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
+    if (!fileServable(filePath)) return { ok: false, reason: 'forbidden' };
     const resolvedTarget = fsPath(ROOT_DIR, filePath);
     let stat;
     try {
@@ -542,6 +516,12 @@ if (isNode()) {
   // getAnnotations(...).client first.
   let annotateFile = spirit.core.fs.annotateFile = function(filePath, payload) {
     return writeBucket('client', filePath, payload);
+  };
+
+  // THE FACE'S PART (goal/G30.21). A sidecar has three parts, client, server and face. Only faceHome calls this, for a
+  // request that came from the face, so the face's fs.annotate lands here and never in the client part. Wholesale too.
+  spirit.core.fs.annotateFace = function(filePath, payload) {
+    return writeBucket('face', filePath, payload);
   };
 
   let getAnnotations = spirit.core.fs.getAnnotations = function(filePath) {

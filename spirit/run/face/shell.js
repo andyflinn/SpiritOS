@@ -308,11 +308,11 @@
   }
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
-  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.20): each app's own manifest says where it runs,
-  // and the face shows those whose runs names 'face'. The manifests are found in data.files, the file tree already in
-  // the page (shell/js/spiritData.js): nothing asks the node for a list. Each icon is drawn as its manifest arrives; an
-  // app's script loads when it is opened. This file, served by the relay, only logs in and holds the link, so a new app
-  // on the face needs no tag.
+  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.21): an app is a shell/<app>/<app>.js whose
+  // sidecar's face part says app: true, with the name and icon the face draws. The scripts are found in data.files, the
+  // file tree already in the page (shell/js/spiritData.js); each one's face part is asked once (fs.annotations), and each
+  // icon is drawn as its answer arrives. An app's script loads when it is opened. The home shell's .json manifests are
+  // not read here. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
   var loadingId = '';
   var stack = [];         // ids on screen, newest last
@@ -328,37 +328,34 @@
       return apps[id];
     });
   }
-  // The face's apps, each icon drawn as its manifest arrives; nothing waits for the rest. A manifest written again is
-  // read again, so an app whose runs gains or loses 'face' comes or goes (one already open stays until closed).
-  function readManifest(id) {
+  // The face's apps, each icon drawn as its face part arrives; nothing waits for the rest. An app whose face part is
+  // written again (the Apps app tells the face, spirit.shell.faceApp) is read again, so it comes or goes; one already
+  // open stays until closed.
+  function readFace(id) {
     var name = id.split('/').pop();
-    fileText(id + '/' + name + '.json').then(function (t) {
-      var m = JSON.parse(t);
-      var onFace = !!m && Array.isArray(m.runs) && m.runs.indexOf('face') !== -1;
-      if (onFace) {
+    return Promise.resolve(ask('fs.annotations', { path: id + '/' + name + '.js' })).then(function (r) {
+      var face = (r && r.status === 200 && r.body && r.body.face) || null;
+      if (face && face.app === true) {
+        var m = { name: String(face.name || name), icon: String(face.icon || ''), description: String(face.description || '') };
         if (apps[id]) apps[id].manifest = m;
         else apps[id] = { id: id, manifest: m, behavior: null, pane: null, api: null, result: null };
       } else if (apps[id] && stack.indexOf(id) === -1) delete apps[id];
       hand();
-    }, function () { /* an app without a manifest is not shown */ });
+    }, function () { /* no answer: the app is not shown */ });
   }
   function listApps() {
     var D = window.spiritData;
     if (!D) return;
-    var MANIFEST = /^(shell\/([^/]+))\/\2\.json$/;
-    var read = Object.create(null);   // the manifests already read, so another file's change asks nothing again
-    function look(p) {
-      var at = String(p || '').replace(/^files\//, '');
-      var one = MANIFEST.exec(at);
-      // One manifest written: that app, again. Anything else: only the manifests not read yet.
-      if (one) { read[one[1]] = true; readManifest(one[1]); return; }
+    var SCRIPT = /^(shell\/([^/]+))\/\2\.js$/;
+    var read = Object.create(null);   // the apps already asked, so another file's change asks nothing again
+    function look() {
       Object.keys(D.branch('files')).forEach(function (k) {
-        var m = MANIFEST.exec(k);
-        if (m && !read[m[1]]) { read[m[1]] = true; readManifest(m[1]); }
+        var m = SCRIPT.exec(k);
+        if (m && !read[m[1]]) { read[m[1]] = true; readFace(m[1]); }
       });
     }
     D.watch('files', look);
-    look('');
+    look();
   }
 
   function loadApp(id) {
@@ -557,7 +554,7 @@
       if (home) setConnected(true);
       return loadParts();
     }).then(function () {
-      window.spirit.shell = { activateApp: activateApp, factRow: factRow };
+      window.spirit.shell = { activateApp: activateApp, factRow: factRow, faceApp: readFace };
       link.loaded = true;
       openStream(false);
       listApps();
