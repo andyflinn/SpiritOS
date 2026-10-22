@@ -1,5 +1,5 @@
 {
- "change": 91352,
+ "change": 91354,
  "line": 8510,
  "goal": "goal/G32",
  "items": [
@@ -47,16 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -415,7 +413,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G32.3"
+    "goal/G32.4"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1084,10 +1082,9 @@
    "id": "goal/G32.3",
    "title": "server retrofit onto the spirit object",
    "goal": "goal/G32",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
