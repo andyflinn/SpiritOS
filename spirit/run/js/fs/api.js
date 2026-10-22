@@ -15,14 +15,15 @@ module.exports = {
   },
   // THE KERNEL'S NAMES, async (Andy listed them): what the old shell's apps call, so an app ports by adding await.
   // loadFile and statFile answer null where the node refuses, as the kernel's did; a malformed call still refuses.
+  // saveFile and deleteFile answer {ok: false, reason} with the refusal's own words (goal/G33.1), never a bare code.
   names: function (call, tools) {
     function orNull(p) { return p.then(function (b) { return b; }, function (e) { if (e && e.status) return null; throw e; }); }
     return {
       loadFile: function (path) { return orNull(call('load', { path: path })).then(function (b) { return b && typeof b.text === 'string' ? b.text : null; }); },
       statFile: function (path) { return orNull(call('stat', { path: path })); },
       getAnnotations: function (path) { return call('annotations', { path: path }); },
-      saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.code }; throw e; }); },
-      deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.code }; throw e; }); },
+      saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
+      deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       // A data: url of the file, read as the page reads a file (on the face, in its sealed pieces); null if refused.
       loadDataUrl: function (path) {
         var bad = tools.check('fs.loadDataUrl', { path: 'path' }, { path: path });

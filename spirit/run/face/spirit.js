@@ -183,6 +183,17 @@
     getAnnotations: { path: 'path' }, annotateFile: { path: 'path', payload: 'object' }, search: { q: 'text?' },
   };
 
+  // WHY A CALL WAS REFUSED, IN THE ANSWER'S OWN WORDS (goal/G33.1). Andy: on the face every icon add said "not saved:
+  // refused". The relay refuses with {ok: false, error} and no code, and a timeout answers plain text; the words are kept
+  // here (the error, else the text, cut to a line), and only an answer with none says its status.
+  function saidWhy(r, status) {
+    var b = (r && r.body) || {};
+    if (b.error) return String(b.error);
+    var t = r && typeof r.text === 'string' ? r.text.trim() : '';
+    if (t && !/^[{[]/.test(t)) return t.split('\n')[0].slice(0, 200);
+    return String(b.code || ('the node answered ' + status));
+  }
+
   // ── THE ASSEMBLING ───────────────────────────────────────────────────────────────────────────────────────────────
   // One member per family, each verb a checked async call; then the family's own names (the kernel's, for fs).
   // The name is the one the node gives the family (its api answer), never one the family's api.js claims.
@@ -198,7 +209,7 @@
         var status = r && r.status;
         if (status >= 200 && status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
         var b = (r && r.body) || {};
-        throw refusal(String(b.code || 'refused'), String(b.error || b.code || ('the node answered ' + status)), { status: status, body: b });
+        throw refusal(String(b.code || 'refused'), saidWhy(r, status), { status: status, body: b });
       });
     }
     Object.keys(def.verbs || {}).forEach(function (verb) {
@@ -217,7 +228,7 @@
         return Promise.resolve(transport.ask(name, args || {})).then(function (r) {
           if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
           var b = (r && r.body) || {};
-          throw refusal(String(b.code || 'refused'), String(b.error || b.code || ('the node answered ' + (r && r.status))), { status: r && r.status, body: b });
+          throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
         });
       };
     });
