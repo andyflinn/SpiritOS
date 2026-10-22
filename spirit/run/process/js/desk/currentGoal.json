@@ -1,5 +1,5 @@
 {
- "change": 91312,
+ "change": 91352,
  "line": 8510,
  "goal": "goal/G32",
  "items": [
@@ -47,14 +47,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -407,10 +409,9 @@
    "id": "goal/G32.1",
    "title": "the spirit object: node api, async, checked",
    "goal": "goal/G32",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -757,7 +758,7 @@
     {
      "number": "G3",
      "kind": "G",
-     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/index.html, spirit/run/js/auth/api.js, spirit/run/js/client/apiTreeIndex.js, spirit/run/js/client/chatLog.js, spirit/run/js/client/iconIndex.js, spirit/run/js/client/packet.js, spirit/run/js/client/shell.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/fieldRules.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/lever.js, spirit/run/js/limits.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/ownerBadge.js, spirit/run/js/peer/api.js, spirit/run/js/peerFile.js, spirit/run/js/probabilityBucket.js, spirit/run/js/probabilityStringMatch.js, spirit/run/js/probabilityStringObjectMatch.js, spirit/run/js/relay/api.js, spirit/run/shell/apps/apps.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/contactsDetails/contactsDetails.js, spirit/run/shell/files/files.js, spirit/run/shell/grants/grants.js, spirit/run/shell/icons/icons.js, spirit/run/shell/info/info.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/jobs/jobs.js, spirit/run/shell/join/join.js, spirit/run/shell/js/apiBranchSelector.js, spirit/run/shell/js/appHeader/appHeader.js, spirit/run/shell/js/appServerSelector.js, spirit/run/shell/js/contactLabel.js, spirit/run/shell/js/contactSelector.js, spirit/run/shell/js/contacts/data.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/js/contacts/rowElement.js, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/fieldInput.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/listElement.js, spirit/run/shell/js/files/rowElement.js, spirit/run/shell/js/iconSelector.js, spirit/run/shell/js/icons/listElement.js, spirit/run/shell/js/icons/rowElement.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rowElement.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textView.js, spirit/run/shell/js/textViewer.js, spirit/run/shell/natterDetails/natterDetails.js, spirit/run/shell/relayMonitor/relayMonitor.js",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/index.html, spirit/run/js/auth/api.js, spirit/run/js/client/apiTreeIndex.js, spirit/run/js/client/chatLog.js, spirit/run/js/client/iconIndex.js, spirit/run/js/client/packet.js, spirit/run/js/client/shell.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/fieldRules.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/lever.js, spirit/run/js/limits.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/ownerBadge.js, spirit/run/js/peer/api.js, spirit/run/js/peerFile.js, spirit/run/js/probabilityBucket.js, spirit/run/js/probabilityStringMatch.js, spirit/run/js/probabilityStringObjectMatch.js, spirit/run/js/relay/api.js, spirit/run/process/js/deskVerify/deskVerify.js, spirit/run/shell/apps/apps.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/contactsDetails/contactsDetails.js, spirit/run/shell/files/files.js, spirit/run/shell/grants/grants.js, spirit/run/shell/icons/icons.js, spirit/run/shell/info/info.js, spirit/run/shell/introSpector/introSpector.js, spirit/run/shell/jobs/jobs.js, spirit/run/shell/join/join.js, spirit/run/shell/js/apiBranchSelector.js, spirit/run/shell/js/appHeader/appHeader.js, spirit/run/shell/js/appServerSelector.js, spirit/run/shell/js/contactLabel.js, spirit/run/shell/js/contactSelector.js, spirit/run/shell/js/contacts/data.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/js/contacts/rowElement.js, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/fieldInput.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/js/files/data.js, spirit/run/shell/js/files/listElement.js, spirit/run/shell/js/files/rowElement.js, spirit/run/shell/js/iconSelector.js, spirit/run/shell/js/icons/listElement.js, spirit/run/shell/js/icons/rowElement.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/mediaViewer.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rowElement.js, spirit/run/shell/js/spiritData.js, spirit/run/shell/js/textView.js, spirit/run/shell/js/textViewer.js, spirit/run/shell/natterDetails/natterDetails.js, spirit/run/shell/relayMonitor/relayMonitor.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -1162,7 +1163,7 @@
     {
      "number": "G1",
      "kind": "G",
-     "words": "core grant: spirit/run/face/spirit.js, spirit/run/js/apiDoor.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/server.js, spirit/run/js/verbTable.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js",
+     "words": "core grant: spirit/run/face/spirit.js, spirit/run/js/apiDoor.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/server.js, spirit/run/js/verbTable.js, spirit/run/process/js/deskVerify/deskVerify.family/api.js, spirit/run/process/js/deskVerify/deskVerify.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js",
      "test": "",
      "state": "granted",
      "by": "andy",
@@ -1384,6 +1385,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T15:22:13.387Z",
      "text": "Added: G32.4 holds the typed rules, the box states them; G32.3 blocks it. Nothing is built for it until G32.3 is done and you give it a Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:00:51.528Z",
+     "text": "By the way, i see lots of nice changes, real-time value-painting etc. nice! i do have some \"bad\" complaints, but overall it looks very good.\n\nthis is another one of those long items/jobs where i wander off  because there's nothing for me to do?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:01:22.538Z",
+     "text": "Glad it shows. Yes, mostly: retyping every api.js by hand, then the introSpector's fields, is a long stretch of my work.\n\nWhere you come in:\n\n- the Go to start it\n- one early decision: the list of kinds (contact, file, relay, item, agent ...), which I would bring to you before retyping anything\n- one grant at the end\n\nMeanwhile your complaints are welcome here as they come, and I take them in order. Go on G32.4?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T21:02:28.485Z",
+     "text": "I'll hold of on this one, for now, since there's a few smaller complaints i wan to get out the way first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T21:03:21.329Z",
+     "text": "Understood: G32.4 waits. Ready for the complaints, one at a time, wherever you open them."
     }
    ]
   }
