@@ -80,4 +80,26 @@ if (four && four.file && four.file.size === 9 && four.contact && four.contact.pr
   test.check('a file event, presence and a rename land in the tree through their types\' translators');
 else test.fail(OWED + 'the translators: ' + short(four));
 
+test.subHeading('5. where an app runs: its manifest, and nothing else (box v8)');
+const manifests = [];
+['shell', 'process/js'].forEach(function (dir) {
+  let names = [];
+  try { names = fs.readdirSync(path.join(RUN, dir)); } catch (e) { names = []; }
+  names.forEach(function (n) { if (exists(dir + '/' + n + '/' + n + '.json')) manifests.push(dir + '/' + n); });
+});
+const runsOf = function (m) { try { return JSON.parse(raw(m + '/' + m.split('/').pop() + '.json')).runs; } catch (e) { return null; } };
+const noRuns = manifests.filter(function (m) { return !Array.isArray(runsOf(m)); });
+const faced = ['shell/contacts', 'shell/files', 'shell/mediaViewer'].filter(function (m) { const r = runsOf(m) || []; return r.indexOf('face') !== -1 && r.indexOf('home') !== -1; });
+if (manifests.length > 10 && !noRuns.length && faced.length === 3) test.check('every manifest says where it runs; Contacts, Files and Media Viewer at home and on the face');
+else test.fail(OWED + 'no runs in ' + noRuns.join(', ') + '; home and face: ' + faced.join(', '));
+const listGone = ['js/includeList.js', 'process/js/desk/onboard.js', 'process/js/desk/offboard.js'].filter(exists);
+const verbsLeft = ['js/server.js', 'js/jobs.js', 'js/client/shell.js', 'face/shell.js', 'shell/js/textViewer.js']
+  .filter(function (f) { return /searchModules|setModules|includeList/.test(code(f)); });
+if (!listGone.length && !verbsLeft.length) test.check('the include list is gone: its file, its reader, config.setModules and config.searchModules, onboarding and offboarding');
+else test.fail(OWED + 'still there: ' + listGone.concat(verbsLeft).join(', '));
+const faceCode = code('face/shell.js');
+if (/watch\('files'/.test(faceCode) && /runs/.test(faceCode) && /runs/.test(code('js/client/shell.js')) && /runs/.test(code('js/jobs.js')))
+  test.check('both shells find their apps in data.files and read runs; the node starts what says home');
+else test.fail(OWED + 'the face does not read data.files, or a shell or the node does not read runs');
+
 test.reportSuccessFailureCount();
