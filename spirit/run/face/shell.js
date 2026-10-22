@@ -308,8 +308,10 @@
   }
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
-  // The apps the face has from the start (the box: Contacts, in this item); every other app loads when opened.
-  var FIRST_APPS = ['shell/contacts/contacts.js', 'shell/files/files.js'];
+  // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16; Andy: "make the shape, so we don't need any more
+  // tags for the time being."): its include list (config.searchModules), each app's manifest read as it comes and its
+  // icon drawn at once; an app's script loads when it is opened. This file, served by the relay, only logs in and holds
+  // the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
   var loadingId = '';
   var stack = [];         // ids on screen, newest last
@@ -317,11 +319,30 @@
   var pendingDialog = null;
   var armed = null;
 
+  function manifestOf(id) {
+    if (apps[id] && apps[id].manifest) return Promise.resolve(apps[id]);
+    var name = id.split('/').pop();
+    return fileText(id + '/' + name + '.json').then(function (m) {
+      if (!apps[id]) apps[id] = { id: id, manifest: JSON.parse(m), behavior: null, pane: null, api: null, result: null };
+      return apps[id];
+    });
+  }
+  // The home node's apps, each icon drawn as its manifest arrives; nothing waits for the rest.
+  function listApps() {
+    return ask('config.searchModules', { query: '' }).then(function (r) {
+      var items = (r.status === 200 && r.body && Array.isArray(r.body.items)) ? r.body.items : [];
+      items.forEach(function (i) {
+        var id = String((i && i.key) || '');
+        if (id.indexOf('shell/') !== 0 || id.split('/').length !== 2) return;
+        manifestOf(id).then(function () { hand(); }, function () { /* an app without a manifest is not shown */ });
+      });
+    }, function () { /* the node did not answer: the desktop keeps the login step */ });
+  }
+
   function loadApp(id) {
     if (apps[id] && apps[id].behavior) return Promise.resolve(apps[id]);
     var name = id.split('/').pop();
-    return fileText(id + '/' + name + '.json').then(function (m) {
-      apps[id] = { id: id, manifest: JSON.parse(m), behavior: null, pane: null, api: null, result: null };
+    return manifestOf(id).then(function () {
       return fileText(id + '/' + name + '.js');
     }).then(function (code) {
       loadingId = id;
@@ -456,7 +477,7 @@
     if (step) icon(step.icon, step.name, openLogin);
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
-      if (m.hidden || m.type === 'dialog' || !apps[id].behavior) return;
+      if (m.hidden || m.type === 'dialog') return;
       var glyph = (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON && spirit.core.const.ICON[m.icon]) || m.icon || '';
       icon(glyph, m.name || id, function () { openApp(id, null); });
     });
@@ -517,7 +538,7 @@
       window.spirit.shell = { activateApp: activateApp, factRow: factRow };
       link.loaded = true;
       openStream(false);
-      return Promise.all(FIRST_APPS.map(function (p) { return loadApp(p.split('/').slice(0, -1).join('/')); }));
+      listApps();
     }).then(function () { hand(); }, function (e) {
       link.starting = false;
       setConnected(false);
