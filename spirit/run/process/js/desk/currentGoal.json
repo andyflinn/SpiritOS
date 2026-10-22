@@ -1,5 +1,5 @@
 {
- "change": 85018,
+ "change": 85208,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.20"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -52,9 +53,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -14813,6 +14812,164 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T14:57:10.428Z",
      "text": "Folded and pushed (dbc5d3de): puppetsPending now asserts no verb answers with a list. Its own run is green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.20",
+   "title": "create new face-app: mediaViewer",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A Media Viewer app, on the face as at home: pick a file, see or hear it.\n\nTHE APP\n- shell/mediaViewer/, its own folder and manifest, in the home node's include list, so the face shows its icon with no tag.\n- Two shell elements and nothing of its own beside them: the files list element as a dropdown on top, the mediaViewer element under it, filtered to what it plays (images, sound, video).\n- Picking a file shows it in the mediaViewer below; picking another drops the one before (its pieces freed).\n- It opens at once and never waits on data: the dropdown fills as data.files does.\n\nTHE MEDIA VIEWER\n- The mediaViewer element as built in goal/G30.16: at home the node streams the file to the player; on the face it plays as the sealed pieces arrive.\n\nONE FOLDER PER OBJECT TYPE\n- Shared, in shell/js: probabilitySearch.js (the list-tool, pane and dropdown), rowElement.js (the row base), spiritData.js (the one data tree, nothing type-specific).\n- Each type in its own folder: shell/js/files/ and shell/js/contacts/, each with rowElement.js (its row), listElement.js (its drop-in list, pane or dropdown) and data.js (its translator: the stream events into set and delete on its branch: the fs-watcher for files; presence, renames and the network search for contacts).\n- A new type is one new folder.\n- The list-tool takes face: pane (open) or dropdown (closed, opening to the same list, closing on a pick, Escape or a press outside); the dropdown's mechanics are taken from the legacy listSearch and fileSelector.\n- The intrinsic apps (Files, Contacts) are only mountable wrappers around these elements.\n\nTHE LEGACY SELECTORS GO\n- Their users move onto the list elements in this item; shell/js/fileSelector.js is deleted with its api.ui.elements entry, and shell/js/contactSelector.js once its last user has moved.\n- textEditor: the files list element as a dropdown, filtered to the text kinds, \"open a file…\" as its placeholder.\n- grants: the contacts list element as a dropdown, \"whose access…\" as its placeholder and \"all peers\" as an extra first row.\n- introSpector: the contacts list element as a dropdown (relays are already in it), \"self (this node)\" as an extra first row.\n- chatter stays on the legacy contact selector for now: its rows carry each chat's state, and chats are likely a data type of their own, out of scope here. The contact selector is deleted when chatter moves.\n- So a list element takes a placeholder, an extra first row and a value with a change event, as the selectors did.",
+   "version": 6,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:09:34.750Z",
+     "text": "fill the box please\n\n- a file-selector dropdown from our new fileElement and the mediaViewer element\n- the fileViewer only selects mimeTypes compatible with the mediaViewer."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:10:40.664Z",
+     "text": "Box filled (v1): the app is two shell elements in its own folder, a new file dropdown (fileElement rows from data.files, filtered to what the mediaViewer plays) and the mediaViewer under it. It is in your include list, so the face shows it without a tag.\n\nAnything to add before green?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:11:32.785Z",
+     "text": "Huh, our new list-thinggie doesn't double as dropdown yet?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:12:12.530Z",
+     "text": "Not yet: the list-tool has only its open face; the old file selector had both. It should double as one, so the box (v2) now says: probabilitySearch gains a dropdown face, a closed field showing the pick that opens to the same list and closes on a pick. No separate dropdown element; any app gets a dropdown of any type that way."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:17:58.403Z",
+     "text": "let's steal those things from the legacy parts/elements, and make sure that we have a good shape for dropdowns that correspond exactly to the list-panes.\n\nthoughts?\n\nisn't it a new shell/js/ element that makes \"files\" a drop-in element as well?\nisn't it a new shell/js/element that makes \"contacts\" a drop-in element?\n\n- the list-tool doubles as dropDown-list as well"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:19:06.247Z",
+     "text": "Yes to all three, in the box (v3):\n\n- The list-tool takes a face: pane, or dropdown, the dropdown's mechanics taken from the legacy listSearch and fileSelector.\n- Files becomes a drop-in element, shell/js/fileSearch.js, as Contacts already is (contactSearch.js); both take the face option.\n- The Media Viewer draws fileSearch as a dropdown filtered to what it plays.\n\nThe legacy selectors still have users: the file selector in textEditor; the contact selector in chatter, grants and introSpector. Move those onto the drop-ins in this item, so both legacy selectors can be deleted?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:25:15.222Z",
+     "text": "very object type that uses shell/js/probabilitySearch.js and has a corresponding shell/js/rows/ type should also have a corresponding shell/js/list/ type that features a drop-in list-or-dropdown element.\n\nor the folder-structure is:\n\nshell/js/probabilitySearch.js (delivers both pane and dropdown versions)\nshell/js/files/rowElement.js\nshell/js/files/listElement.js (which delivers both pane and dropdown versions)\nshell/js/contacts/rowElement.js\nshell/js/contacts/listElement (which delivers both pane and dropdown versions)\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:25:40.850Z",
+     "text": "The second shape, one folder per object type. Everything about files then sits together, as an app keeps its own config in its own folder.\n\n- shared, in shell/js: probabilitySearch.js (pane and dropdown), rowElement.js (the row base), spiritData.js (the one data tree)\n- shell/js/files/rowElement.js and shell/js/files/listElement.js\n- shell/js/contacts/rowElement.js and shell/js/contacts/listElement.js\n\nOne step further: each type's translator, the bit of spiritData that turns its stream events into writes (the fs-watcher for files; presence, renames and the network search for contacts), moves into the type's folder too, as data.js. spiritData stays the tree, and a new type is one new folder.\n\nThat shape, translator included?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:28:43.090Z",
+     "text": "yes to the shape, translator included, and a remark that the actual intrinsic apps are just the mountable wrappers."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:29:38.750Z",
+     "text": "In the box (v4): one folder per type, its row, its list and its translator; the intrinsic apps only mountable wrappers.\n\nOne point left before green: the legacy selectors' users (textEditor's file selector; chatter, grants and introSpector with the contact selector). Move them onto the new list elements in this item, so both legacy selectors are deleted?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:30:30.707Z",
+     "text": "Move them onto the new list elements in this item, so both legacy selectors are deleted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:31:28.576Z",
+     "text": "In the box (v5), with what each user needs: textEditor a text-only files dropdown; grants and introSpector a contacts dropdown with an extra first row (all peers, self); chatter a contacts pane.\n\nOne point left: chatter marks each person with their chat's state (unanswered), which it reads from its own server (chats.search) beside contact.search. By the one-data rule that is a type of its own: data.chats, in shell/js/chats/ with its translator, and the contacts rows show its mark.\n\nChats as their own type, that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T02:36:29.455Z",
+     "text": "chats likely their own data type, oos for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T02:37:26.977Z",
+     "text": "In the box (v6): chatter stays on the legacy contact selector until chats are their own type, so only the file selector is deleted in this item; the contact selector goes when chatter moves.\n\nGreen: settled, open none, box current (v6)."
     }
    ]
   }
