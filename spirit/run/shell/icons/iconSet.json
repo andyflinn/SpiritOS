@@ -1725,5 +1725,78 @@
   ],
   "🍭": [
     "lollipop"
+  ],
+  "🍮": [
+    "custard"
+  ],
+  "🍯": [
+    "honey",
+    "pot"
+  ],
+  "🫖": [
+    "teapot"
+  ],
+  "🍷": [
+    "wine",
+    "glass"
+  ],
+  "🍸": [
+    "cocktail",
+    "glass"
+  ],
+  "🍺": [
+    "beer",
+    "mug",
+    "glass"
+  ],
+  "🍻": [
+    "clinking",
+    "toasting",
+    "beer",
+    "mugs",
+    "glasses"
+  ],
+  "🍹": [
+    "tropical",
+    "drink",
+    "glass"
+  ],
+  "🥃": [
+    "tumbler",
+    "glass"
+  ],
+  "🫗": [
+    "pouring",
+    "liquid"
+  ],
+  "🥤": [
+    "cup",
+    "straw"
+  ],
+  "🧃": [
+    "beverage",
+    "box",
+    "carton"
+  ],
+  "🧉": [
+    "mate"
+  ],
+  "🧊": [
+    "ice",
+    "cube",
+    "block"
+  ],
+  "🥢": [
+    "chopsticks"
+  ],
+  "🍴": [
+    "fork",
+    "knife"
+  ],
+  "🥄": [
+    "spoon"
+  ],
+  "🔪": [
+    "knife"
   ]
 }
