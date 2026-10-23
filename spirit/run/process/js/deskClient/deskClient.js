@@ -314,8 +314,7 @@ function wakeOnHeld(row, change) {
   if (f) heldIds[id] = now;
   if (!change || !mine) return;
   if (SELF_KEY ? row.byKey === SELF_KEY : row.by === SELF) return;
-  waiting.push({ text: 'DESK ' + String(row.by || 'desk') + ' ' + change.text, key: change.key });
-  wakers.splice(0).forEach(function (wake) { wake(); });
+  wakeWith({ text: 'DESK ' + String(row.by || 'desk') + ' ' + change.text, key: change.key });
 }
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
@@ -326,7 +325,7 @@ function streamed(row) {
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
   const line = meantForAgent(row);
   if (!line) return;
-  const hand = function () { waiting.push(line); wakers.splice(0).forEach(function (wake) { wake(); }); };
+  const hand = function () { wakeWith(line); };
   if (!line.take) { hand(); return; }
   // TAKE FIRST, THEN WAKE (goal/G27.12, reopened). Andy, 2026-10-17: "when an agent's deskClient takes a chat line for
   // him, all other deskClients should be refused a take, and thus NOT notify their agent." So his line is taken at the
@@ -493,8 +492,7 @@ function pumpPulls() {
   pulling = true;
   pullClone(pulls.shift()).then(function (told) {
     if (!told) return;
-    waiting.push({ text: told });
-    wakers.splice(0).forEach(function (wake) { wake(); });
+    wakeWith({ text: told });
   }).catch(function (e) { console.error('deskClient: the pull failed: ' + ((e && e.message) || e)); })
     .then(function () { pulling = false; pumpPulls(); });
 }
@@ -547,13 +545,21 @@ function say(to, word) {
 // stream brought since the agent's last wake, whoever wrote them and wherever, newest last, together with what was meant
 // for it (the waking line among them, once); as many as fill one answer, the oldest left out first, and more says so.
 // Nothing is asked of the desk: they are the rows the stream brought. A line not meant for the agent wakes nothing.
+// THE ONE WAKE (goal/G33.2, box v3; Andy: "it's the actual 'wake' that must gather the news and attach it to the wake
+// trigger"). Every trigger, a line meant for the agent, a general line its deskClient took, a change on an item it holds,
+// a job or a Go, a pull's word, calls wakeWith with itself; the wait it ends hands over what the wake gathers
+// (handOver): all the news since the last wake from what the stream brought, then the triggers, last. No trigger
+// gathers news of its own.
+function wakeWith(trigger) {
+  waiting.push(trigger);
+  wakers.splice(0).forEach(function (wake) { wake(); });
+}
 function handOver(to, t0) {
   moveSince();
-  const items = sinceWake.splice(0);
-  waiting.splice(0).forEach(function (w) {
-    const twin = w.key ? items.filter(function (x) { return x.key === w.key; })[0] : null;
-    if (twin) twin.text = w.text; else items.push({ key: '', text: w.text });
-  });
+  const triggers = waiting.splice(0);
+  // A trigger's own NEWS copy goes: it comes once, as the trigger.
+  const items = sinceWake.splice(0).filter(function (x) { return !triggers.some(function (w) { return w.key && w.key === x.key; }); });
+  triggers.forEach(function (w) { items.push({ key: w.key || '', text: w.text }); });
   const all = items.map(function (x) { return x.text; });
   const lines = [];
   for (let i = all.length - 1; i >= 0; i--) {
@@ -716,8 +722,8 @@ const server = appServer.serve({
         return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
           // A wake already waiting (a line, its own item's change) goes on without a job; with one, the job comes last.
           if (!job) return wait();
-          // A job's wake hands the news too, the job last (goal/G33.8, box v16).
-          waiting.push({ text: job });
+          // A job is a trigger like any other (goal/G33.2, box v3): the one wake.
+          wakeWith({ text: job });
           return ending(function () { return handOver(to, t0); });
         });
       }

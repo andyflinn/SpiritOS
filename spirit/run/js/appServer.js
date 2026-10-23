@@ -479,10 +479,11 @@ function publish(row) {
   subscribers.forEach(function (q, key) { if (!to || to.indexOf(key) !== -1) sendTo(key, row); });
   return out;
 }
+// EVERY SUBSCRIBE IS HANDED THE BOOTSTRAP (goal/G33.2, box v3; found live: a deskClient restarted while the desk still
+// counted it subscribed was sent nothing to start from, so it never knew its current goal and handed no news). A client
+// that subscribes again says it may have lost what it had: its subscription starts afresh, the bootstrap first.
 function subscribe(key, family) {
   const k = String(key || '');
-  const was = subscribers.get(k);
-  if (was && !was.away && was.family === family) return false;
   subscribers.set(k, { family: family, busy: false, rows: [], away: false });
   let rows = [];
   try { rows = (publisher.bootstrap && publisher.bootstrap(k)) || []; } catch (e) { rows = []; }

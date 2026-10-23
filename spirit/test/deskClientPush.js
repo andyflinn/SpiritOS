@@ -109,10 +109,13 @@ const toPages = [];
 const toB = [];
 // dropToB: how many of the desk's next rows to B this node loses (goal/G33.8: a delivery that goes unanswered).
 let dropToB = 0;
+let delayToB = 0;
 const andysNode = pretendNode(function (to, ask) {
   if (to !== B_KEY) return null;
   const sl = ask.body && ask.body.deskClient && ask.body.deskClient.streamListener;
   if (sl && dropToB > 0) { dropToB -= 1; return null; }
+  // delayToB: the desk's rows to B arrive this much later (goal/G33.2: another agent's deskClient takes a line first).
+  if (sl && delayToB > 0) { const d = delayToB; return sleep(d).then(function () { return test.peerAnswer(client, ask.body, DESK_AT_B).then(function (r) { return { from: B_KEY, body: r && r.body }; }); }); }
   if (sl) { try { toB.push(JSON.parse(sl.json)); } catch (e) { /* not a row */ } }
   return test.peerAnswer(client, ask.body, DESK_AT_B).then(function (r) { return { from: B_KEY, body: r && r.body }; });
 }, function (app) { toPages.push(app); });
@@ -155,11 +158,16 @@ async function main() {
   // The world (goal/G33.7: session.set went): seeded before the desk starts, which takes it in at start.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   if (!await startDesk(andysUrl)) { test.fail('the world: the desk did not start'); return; }
-  kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50, resubscribeMs: 5000 }), '--pipe', clientPipe, '--state', clientState,
-    '--node', JSON.stringify({ name: 'wsl-claude', publicKey: B_KEY })], {
-    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: agentsUrl + '/' }),
-  }));
+  const startClient = function () {
+    const kid = spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50, resubscribeMs: 5000 }), '--pipe', clientPipe, '--state', clientState,
+      '--node', JSON.stringify({ name: 'wsl-claude', publicKey: B_KEY })], {
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: agentsUrl + '/' }),
+    });
+    kids.push(kid);
+    return kid;
+  };
+  let clientKid = startClient();
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, B_OWNER);
   // Its first wait makes the agent known at the desk; whatever it ends with, it is not what is asserted.
@@ -228,10 +236,17 @@ async function main() {
   await waitFor(15000);
   const jobWait = waitFor(15000);
   await sleep(1000);
+  // goal/G33.2 (box v3): every wake carries the news since the last one; a closed item is that news here.
+  const jobNewsItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'News maker jobNews' }, ANDY);
+  const jobNewsId = String((jobNewsItem.body || {}).id || '');
+  await call('desk', 'press', { id: jobNewsId, what: 'close' }, ANDY);
+  await sleep(500);
   const goAt = Date.now();
   const go = await call('desk', 'press', { id: jobId, what: 'go' }, ANDY);
   const jobLines = await jobWait;
   const jobMs = Date.now() - goAt;
+  if ((jobLines || []).some(function (l) { return /^NEWS /.test(String(l)) && String(l).indexOf(jobNewsId) !== -1; }) && /^JOB /.test(String((jobLines || [])[(jobLines || []).length - 1]))) test.check('the wake of the job carried the news (the close of ' + jobNewsId + '), the job last');
+  else test.fail('OWED by goal/G33.2 (one wake): the wake of the job ended with ' + short(jobLines));
   if (go.status === 200 && jobLines && jobLines.some(function (l) { return String(l).indexOf('JOB ' + jobId) === 0; }) && jobMs < 8000) test.check('his Go on ' + jobId + ' ended the agent\'s wait with its job, ' + jobMs + ' ms after');
   else test.fail(OWED + 'his Go on ' + short(jobId) + ' answered ' + go.status + ' ' + short(go.body) + '; the wait ended with ' + short(jobLines) + ' after ' + jobMs + ' ms');
   // A third agent takes the red phase, so no job is open to this one and its next waits start quiet again.
@@ -303,10 +318,17 @@ async function main() {
   await waitFor(15000);
   const grantWait = waitFor(15000);
   await sleep(1000);
+  // goal/G33.2 (box v3): every wake carries the news since the last one; a closed item is that news here.
+  const grantNewsItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'News maker grantNews' }, ANDY);
+  const grantNewsId = String((grantNewsItem.body || {}).id || '');
+  await call('desk', 'press', { id: grantNewsId, what: 'close' }, ANDY);
+  await sleep(500);
   const grantAt = Date.now();
   const granted = await call('desk', 'check.set', { id: grantId, check: 'G1', state: 'granted' }, ANDY);
   const grantLines = await grantWait;
   const grantMs = Date.now() - grantAt;
+  if ((grantLines || []).some(function (l) { return /^NEWS /.test(String(l)) && String(l).indexOf(grantNewsId) !== -1; }) && /^DESK /.test(String((grantLines || [])[(grantLines || []).length - 1]))) test.check('the wake of the grant carried the news (the close of ' + grantNewsId + '), the grant last');
+  else test.fail('OWED by goal/G33.2 (one wake): the wake of the grant ended with ' + short(grantLines));
   const grantDesk = (grantLines || []).filter(function (l) { return /^DESK andy check\.set /.test(String(l)) && String(l).indexOf(grantId) !== -1 && /granted/.test(String(l)); });
   if (raised.status === 200 && granted.status === 200 && grantDesk.length === 1 && grantMs < 8000) test.check('his grant of G1 on ' + grantId + ', whose red B holds, woke B with it as DESK, ' + grantMs + ' ms after');
   else test.fail('OWED by goal/G33.9 (grant wake): check.add ' + short(raised.body) + ', check.set ' + short(granted.body) + '; B\'s wait ended with ' + short(grantLines) + ' after ' + grantMs + ' ms');
@@ -400,6 +422,55 @@ async function main() {
   const follows = /\bstream\s*:/.test(deskCode) || /\.follow\(/.test(deskCode) || /streamListener/.test(deskApi);
   if (sent.status !== 200 && !follows) test.check('a streamListener row sent to the desk is refused (' + sent.status + '), and the desk names no stream to follow');
   else test.fail(OWED + 'the desk answered a streamListener row ' + sent.status + (follows ? ', and desk.js or its interface names a stream to follow' : ''));
+
+  // ── goal/G33.2 (box v3; Andy: "Why did the line arriving and waking you not bring all the other news with it. you
+  // would have known otherwise that this item was open."). Found live: a deskClient restarted while the desk still
+  // counted it subscribed was sent no bootstrap, so it never knew the current goal and handed no news.
+  test.subHeading('9. a deskClient restarted while the desk counts it subscribed hands the news with its wake');
+  const shut = await call('desk', 'item.add', { goal: 'goal/G100', title: 'Closed, then reopened' }, ANDY);
+  const shutId = String((shut.body || {}).id || '');
+  await call('desk', 'press', { id: shutId, what: 'close' }, ANDY);
+  // Every delivery to B settles before it goes down, so the restart is the only thing this checks (a delivery lost to
+  // a restart is the box's "need not be perfect", made good by the client's own resubscribe).
+  for (let i = 0; i < 40 && !toB.some(function (o) { return o && o.item && o.item.id === shutId && o.item.status === 'closed'; }); i++) await sleep(100);
+  await sleep(1000);
+  clientKid.kill();
+  await new Promise(function (r) { if (clientKid.exitCode !== null) return r(); clientKid.once('exit', r); setTimeout(r, 3000); });
+  clientKid = startClient();
+  if (!await up('deskClient')) { test.fail('the world: deskClient did not start again'); return; }
+  await sleep(1500);
+  const backFrom = waitFor(15000);
+  await sleep(500);
+  const reopened = await call('desk', 'press', { id: shutId, what: 'reopen' }, ANDY);
+  await sleep(800);
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'cw? after your restart' }, ANDY);
+  const backLines9 = await backFrom;
+  const deskLine9 = (backLines9 || []).filter(function (l) { return /^DESK andy chat\.add /.test(String(l)) && String(l).indexOf('after your restart') !== -1; });
+  const newsReopen = (backLines9 || []).filter(function (l) { return /^NEWS /.test(String(l)) && String(l).indexOf(shutId) !== -1; });
+  if (reopened.status === 200 && deskLine9.length === 1 && newsReopen.length >= 1) test.check('after its restart B woke with his line as DESK and the reopen of ' + shutId + ' as NEWS');
+  else test.fail('OWED by goal/G33.2 (news after a restart): reopen answered ' + short(reopened.body) + '; B\'s wake ended with ' + short(backLines9));
+
+  // goal/G33.2 (box v3): a general line of his (addressed to nobody, on an item nobody holds) is taken by the deskClient
+  // itself; only the agent whose deskClient's take went through is woken by it (as DESK); one whose take was refused is not.
+  test.subHeading('10. his general line wakes only the agent whose take went through');
+  // An item of its own, so no take B already holds elsewhere stands in.
+  const general = await call('desk', 'item.add', { goal: 'goal/G100', title: 'General talk' }, ANDY);
+  const generalId = String((general.body || {}).id || '');
+  const firstWait = waitFor(15000);
+  await sleep(500);
+  delayToB = 1500;
+  await call('desk', 'chat.add', { id: generalId, text: 'general line one' }, ANDY);
+  const otherTake = await call('desk', 'line.take', { id: generalId }, { key: 'MCowBQYDK2VwAyEAdeskClientPushTestAgentDDDDDDDDDDDDDDDDDDDD=', label: 'fourth' });
+  const firstLines = await firstWait;
+  delayToB = 0;
+  const tookByOther = !(firstLines || []).some(function (l) { return /^DESK /.test(String(l)) && String(l).indexOf('general line one') !== -1; });
+  const secondWait = waitFor(15000);
+  await sleep(500);
+  await call('desk', 'chat.add', { id: generalId, text: 'general line two' }, ANDY);
+  const secondLines = await secondWait;
+  const tookByB = (secondLines || []).some(function (l) { return /^DESK andy chat\.add /.test(String(l)) && String(l).indexOf('general line two') !== -1; });
+  if (otherTake.status === 200 && tookByOther && tookByB) test.check('a general line another agent took first did not wake B as its own; the next one, taken by B\'s deskClient, did');
+  else test.fail('OWED by goal/G33.2 (take wakes): the other agent\'s take answered ' + short(otherTake.body) + '; B\'s wait ended with ' + short(firstLines) + '; the next, B\'s wait ended with ' + short(secondLines));
 
   test.subHeading('2. after the desk restarts, the same');
   await stopDesk();
