@@ -1,5 +1,5 @@
 {
- "change": 95635,
+ "change": 95725,
  "goal": "goal/G33",
  "items": [
   {
@@ -17,7 +17,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.5"
+    "goal/G33.5",
+    "goal/G33.8"
    ],
    "codeOffered": false,
    "go": false,
@@ -64,9 +65,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3799,6 +3798,238 @@
      "key": "",
      "at": "2026-10-23T13:16:17.054Z",
      "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:16:31.359Z",
+     "text": "Understood. The build agent has the rule and is checking every desk answer for anything that was not asked for; each one it removes comes to you in the list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:32:59.748Z",
+     "text": "G33.7 was closed while its last two pieces were being built: your lines no longer riding on desk answers (box v11 and v12), and an ended Verify showing its outcome on the row (box v10). Both are green in my clone, 2,041 checks and no failures, but the commit check refuses a commit on a closed item.\n\nThey are this item's own box lines, so reopening it is the plainest home. Reopen G33.7 for them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:33:13.422Z",
+     "text": "Late answer to your 13:03 line, which never reached my listener (it came while my node restarted, so a line sent in that gap was lost; worth its own check).\n\nIt is not read all at once: item.get answers the item's facts only, and box, chat, checks and files each have their own read. \"Reading G33.4 whole\" was my wrong wording for that facts read, which only overflowed because of the lines riding on it, now deleted."
+    }
+   ]
+  },
+  {
+   "id": "goal/G33.8",
+   "title": "cleaning up addServer",
+   "goal": "goal/G33",
+   "status": "running",
+   "with": "claude-windows",
+   "version": 7,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 7,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:17:58.123Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:18:28.727Z",
+     "text": "Yes. It is the cleaner shape, and most of the parts exist since G33.4.\n\nWhat appServer has today:\n\n- publish(row) already goes to the node's own pages and, by peerPost, to every follower's streamListener.\n- But the server decides who follows: the desk names its recipients itself, from the agents it knows, and a follower is wired up by hand (setDesk grants the desk).\n\nWhat your split changes:\n\n- streamPublisher, the server half: a client asks to subscribe to a family's stream; its key comes from the request itself; the publisher keeps the list. publish fans out to its own pages and to every subscriber, as now.\n- streamListener, the client half: it asks a server's api and interface, subscribes to the streams it wants, and keeps what arrives in its spirit.data.\n- The desk then needs no knowledge of agents to stream; it just publishes. Any server can serve a stream, and any server can follow one.\n\nPoints to settle:\n\n- Subscribe and unsubscribe are new verbs in appServer, a core file: your yes and a grant.\n- Who may subscribe: the publisher checks the requester has a grant on that family, like any other ask.\n- What a new subscriber gets first: a hook in the publisher (the desk: the current goal's rows).\n- After a publisher restart: either it keeps its subscriber list in its own state, or every client must notice and subscribe again.\n\nMy recommendation for the last point: the publisher keeps its list, bounded, and drops a subscriber that stays unreachable. Should the subscriber list survive a publisher restart?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:25:58.436Z",
+     "text": "- subscribe and unsubscribe are granted \n- who may subscribe follows the normal grants rules/checks\n- a new subscriber gets what a server things is the best boot-strap-dataset. desk might think its cool to stream the current goal table entries, followed by what's happening as it happens, the goal row might be enough to give context to all that's published in real-time, that's the crux, just the bare-bone minimal info about the goal might be all that's needed, everything that's published afterwards will automatically have a home in the clients dataSets"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:26:21.387Z",
+     "text": "In the box (v2): subscribe and unsubscribe granted; subscribing under the normal grant checks; each server chooses its own bootstrap set, for the desk possibly no more than the bare goal row.\n\nOne point still open, the restart: should a publisher keep its subscriber list across its own restart, or should clients subscribe again?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:28:46.271Z",
+     "text": "the server has grants for subscribe already, that lasts through a restart, the client can always reconnect, i don't see a need for anything more to persist... the client might not even notice that the server was gone for a bit...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:29:06.160Z",
+     "text": "Agreed, nothing more to keep. One gap, though: a client that never noticed the restart would go on waiting for rows that no longer come, since the restarted publisher has an empty list.\n\nYour grants close it without anything new: they survive the restart, and a key granted to subscribe is exactly a subscriber. So on its start the publisher sends its bootstrap set to every key holding that grant, and they are subscribed again without noticing. A client that unsubscribes gives up the grant's use, not the grant, so it is skipped until it subscribes again.\n\nShould the publisher send its bootstrap to every granted subscriber when it starts?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:30:05.054Z",
+     "text": "no, the server always broadcasts (via peerPost) and will stop if the client disappears."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:30:28.842Z",
+     "text": "Understood, and in the box (v3): the server always broadcasts by peerPost to its subscribers, restart or not, and stops for a client that has disappeared until it subscribes again; nothing beyond the grants persists. My reading is that the subscribers after a restart are the keys holding the subscribe grant; say so if that is wrong."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:32:59.399Z",
+     "text": "I'm not sure this has to be \"perfect\" different clients may subscribe at different time, or request different things, the mirrors are never exact or complete, they are the best information available at all times... only the server holds canonical data, any request from a client may face altered state on the server and fail... it's a living mechanism, operated by flawed beings like humans and agents...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:33:41.600Z",
+     "text": "Agreed, in the box (v4): a mirror is the best information available, never exact or complete; the server alone is canonical, and a request meeting changed state may fail. That settles the restart point for me: no extra machinery, a client that lost the stream subscribes again when it notices."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:36:24.795Z",
+     "text": "we had long stretches where things went smoothly, then your deskEar acted weird etc... we still got things done, and now it's blazingly fast compared to before....\n\nall we do in this item: put things in the right place, if somethings flake, we still have a couple hours of node-logs to diagnose failures..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:40:12.442Z",
+     "text": "my question is this, i don't like the idea of a publish being re-tried in a queue for a long time, i think it's better to fail fast, although for a client that goes down for 10 minutes, the queued publishing items will still represent a nice catch-up, what it's gonna do to the servers traffic (backing it up) is what i wonder, do we have a category of peerPost that don't re-try?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:40:39.946Z",
+     "text": "It already fails fast, checked in the code just built:\n\n- peerPost retries only when the caller asks for patience (patienceMs, up to 10 minutes at the hub). Without it, it is one attempt, and publish never asks for patience.\n- publish sends to each follower one row at a time. If a delivery gets no answer within its wait (10 seconds now), the follower is marked away, everything queued for it is dropped, and later publishes skip it. Nothing piles up on the server.\n- When the client comes back and asks anything, the desk sends it the current goal again, as rows only; that is its catch-up, not a replay of what it missed.\n\nThe one cost left: while that first delivery waits its 10 seconds, the rows published meanwhile queue in memory for that follower. In this item the wait can be shortened, to 2 seconds for instance, which bounds that queue further. Your call; as it stands it is already fail-fast."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:42:48.276Z",
+     "text": "let's leave that as it is for now. no point fixing things that aren't broken (yet)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:44:30.274Z",
+     "text": "i mean we already work with peerPost across a relay and it's still very snappy... I'm pretty sure we have lets traffic and congestion now...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:44:47.287Z",
+     "text": "The numbers agree, from my deskClient's own log of asks to your desk:\n\n- the hour before the migration: 542 asks, 3.6 seconds each on average;\n- the hours since: 65 to 233 asks an hour, 0.6 to 1 second each, and those include the busy build hours.\n\nSo about a third to a tenth of the traffic, each ask several times faster."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:45:54.854Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:46:23.886Z",
+     "text": "Green. I find no contradiction; one line added (box v7) so the old way does not linger: the desk naming its own recipients and the hand wiring at setDesk both go, replaced by subscribing.\n\nG33.7's last two fixes are still waiting for a home, the question in that item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:48:07.267Z",
+     "text": "what is left of G33.7?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:48:19.789Z",
+     "text": "Of G33.7, two finished pieces that only lack their commit, because G33.7 was closed while they were built:\n\n- the desk no longer packs your lines into answers (box lines v11 and v12);\n- an ended Verify shows its outcome on the row and in the dialog: verified green, or red with the number of failing suites (v10).\n\nBoth are green in my clone, 2,041 checks and no failures. Reopen G33.7, or fold them into G33.8, and they are committed at once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:49:04.732Z",
+     "text": "fold them in here, and commit at once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:49:28.870Z",
+     "text": "Folded in, and I tried to commit at once: the commit check refuses it, since G33.8 has no Go yet (it is still in design).\n\nYour Go on G33.8 lets this commit through at once. The same Go also starts G33.8's own build, the stream publisher and listener, since its box is green."
     }
    ]
   }
