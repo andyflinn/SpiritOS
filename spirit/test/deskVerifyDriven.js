@@ -24,17 +24,21 @@
 //                                     hands runs only to its own node's verifier. At each event (a claim, a Verify press,
 //                                     a run taken, a Done press) it reads the latest state of the waiting items' suites
 //                                     through the search and keeps it in each item's facts: verified 'green', 'red'
-//                                     (verifyFailures the failure lines) or 'none' (no run yet); every event then tries
-//                                     the verifier for the oldest item still waiting with no run, whatever the switch
-//                                     says. The switch, verify-busy, only shows the verifier's last answer (verifyAnswer
-//                                     'taken' or 'busy', verifierBusy true for either) on the Verify button, and the
+//                                     (verifyFailures the failure lines) or 'none' (no run yet); only the current goal's
+//                                     items are read. ONLY HIS VERIFY PRESS STARTS A RUN (Andy: "verifies on the
+//                                     desk-node get only triggered by MY verify button. NOTHING ELSE.", and "the desk
+//                                     has no business queuing verifications"): a claim, an item coming to wait and a
+//                                     Done read the states and send no run.
+//                                     The switch, verify-busy, only shows the verifier's last answer (verifyAnswer 'taken' or
+//                                     'busy', verifierBusy true for either) on the Verify button, and the
 //                                     answer travels to every client: the publish carries it (verifier) and every row
 //                                     whose facts it changed. Done is offered as soon as an agent claims done (or its
 //                                     verifier passes a code item) and is never refused for verification; when it goes
 //                                     through on an item not verified green, the desk writes one line under the item
 //                                     saying it went over a red run (naming the failures) or a missing run.
-//   desk press {id, what: 'verify'}   his Verify button, right after Done in the item's buttons: on an item, a run of its
-//                                     suites; on a goal, a run of its items' suites. It always tries.
+//   desk press {id, what: 'verify'}   his Verify button, right after Done in the item's buttons, the one thing that
+//                                     starts a run: on an item, a run of its suites; on a goal, a run of its items'
+//                                     suites. It always tries, busy or not.
 //   the page                          the Done button of an item not verified green carries a warning mark; the first
 //                                     press arms it and says why (the failure lines, or no run yet), the second sends
 //                                     Done; verified green, one press. In the List row and the dialog alike, from the
@@ -46,16 +50,17 @@
 // WHAT IS ASSERTED
 //   0. deskVerify.js, its comments set aside, names no desk, no desk verb, no deskClient; no desk cursor, no agent and
 //      no list of work.
-//   1. a real desk and a real deskVerify on their own pipes, joined by a pretend node: an item that comes to wait is
-//      handed over as a run of its suites (no id); taken shows on the switch, and the publish carries the answer and
-//      the other rows it changed; Verify sits right after Done; his Done reads the search, green, and goes through with
-//      no line.
-//   2. while a hanging suite runs, items coming to wait are tried and answered busy, the facts say busy, now says busy,
-//      run answers busy alone, and a Verify press still asks; once stopped, each event hands over the oldest item still
-//      waiting with no run; a Done over a missing run, over a stopped run and over a red run each goes through and
-//      leaves its one line (the red naming its failure); the facts say green, red with the failures, or none; the
-//      goal's Verify hands over its items' suites; a run answers taken alone and its outcome is read through search;
-//      deskVerify asks the desk nothing and the desk never asks now; the four verify verbs are gone.
+//   1. a real desk and a real deskVerify on their own pipes, joined by a pretend node: an item coming to wait starts
+//      no run; his Verify hands it over as a run of its suites (no id); taken shows on the switch, and the publish
+//      carries the answer and the other rows it changed; Verify sits right after Done; his Done reads the search,
+//      green, goes through with no line and starts no run.
+//   2. two items coming to wait, a claim-done and a build claim read the states and start no run; his Verify, busy or
+//      not, asks deskVerify; the facts say busy, now says busy, run answers busy alone; once stopped, a Done starts no
+//      run, and an item answered busy runs on his next Verify; a Done over a missing run, over a stopped run and over a
+//      red run each goes through and leaves its one line (the red naming its failure); the facts say green, red with
+//      the failures, or none; a claim in a goal that is not current starts no run and is not read; the goal's Verify
+//      hands over its items' suites; a run answers taken alone and its outcome is read through search; deskVerify asks
+//      the desk nothing and the desk never asks now; the four verify verbs are gone; desk.js keeps no waiting order.
 //   3. deskVerify started with rows of the old shape left in verify.db (states 'queued' and 'waiting') never runs them.
 //   4. the item dialog: Verify right after Done; busy, it says so, is never disabled and a press still writes press
 //      'verify'; on the goal, press 'verify' for the goal; a Done not verified green carries the warning mark, its first
@@ -152,6 +157,13 @@ function staticHalf() {
   src.forEach(function (l, i) { if (IDLE.test(l)) idleFound.push((i + 1) + ': ' + l.trim().slice(0, 120)); });
   if (!idleFound.length) test.check('its idle hour reads no desk cursor and knows no agent, and it keeps no list of work');
   else test.fail(OWED + 'deskVerify.js still judges idleness from the desk, knows its agent or keeps a list of work, in ' + idleFound.length + ' line(s), the first: ' + short(idleFound.slice(0, 4)));
+  // THE DESK QUEUES NO VERIFICATION either (Andy: "the desk has no business queuing verifications"): no waiting order,
+  // no pick of an oldest item.
+  const deskSrc = fs.readFileSync(DESK, 'utf8');
+  const queued = deskSrc.split(/\r?\n/).map(function (l, i) { return (i + 1) + ': ' + l.trim(); })
+    .filter(function (l) { return /waitingAt|oldest (item|waiting)|oldest with no run/i.test(l); });
+  if (!queued.length) test.check('desk.js keeps no waiting order and picks no oldest item to hand over');
+  else test.fail(OWED + 'desk.js still orders waiting items: ' + short(queued.slice(0, 3)));
 }
 
 // The rows of the old shape a verify.db holds, as an old deskVerify left them: states 'queued' and 'waiting'.
@@ -276,19 +288,29 @@ async function deskAndVerify() {
       await asCW('item.files.add', { id: id, paths: FILES[id] });
     }
     for (const id of ['dv/G1.1', 'dv/G1.2', 'dv/G1.3', 'dv/G1.4']) await toVerify(id);
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dv/G2', title: 'Not current' }, items: [{ id: 'dv/G2.1', title: 'Elsewhere', blocks: ['dv/G2'] }] }) }, ANDY);
+    await d.call('press', { id: 'dv/G2', what: 'end-design' }, ANDY);
+    await d.call('press', { id: 'dv/G2.1', what: 'go' }, ANDY);
+    await asCW('item.files.add', { id: 'dv/G2.1', paths: [GREEN] });
+    await d.call('press', { id: 'dv/G1', what: 'make-current' }, ANDY);
 
     v.start();
     if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
     await sleep(2000);
 
-    // ── 1. AN ITEM THAT COMES TO WAIT IS HANDED OVER; THE SWITCH SHOWS TAKEN, EVERYWHERE ──
-    test.subHeading('1. a waiting item is handed over; the switch shows taken to every client; Verify sits right after Done');
-    const pubAt = Date.now();
+    // ── 1. AN ITEM THAT COMES TO WAIT IS NOT HANDED OVER; HIS VERIFY IS; THE SWITCH SHOWS TAKEN, EVERYWHERE ──
+    test.subHeading('1. coming to wait starts no run; his Verify does; the switch shows taken to every client; Verify sits right after Done');
+    const verify = function (id) { return d.call('press', { id: id, what: 'verify' }, ANDY); };
+    const w1 = Date.now();
     await toWaiting('dv/G1.1');
-    await waitFor(function () { return runsSent(t0).length > 0 && runsSent(t0)[0].answer; }, 10000);
-    const sent1 = runsSent(t0);
-    if (sent1.length === 1 && sameSet(sent1[0].args.suites, [GREEN]) && runOnly(sent1[0]) && sent1[0].answer && sent1[0].answer.taken === true) test.check('dv/G1.1 was handed over as deskVerify.run {suites: [its test file], commit}, with no item id, and taken');
-    else test.fail(OWED + 'the desk asked deskVerify for dv/G1.1: ' + short(sentNames(t0)));
+    await sleep(500);
+    if (!runsSent(w1).length) test.check('dv/G1.1 coming to wait started no run');
+    else test.fail(OWED + 'dv/G1.1 coming to wait sent ' + short(sentNames(w1)));
+    const pubAt = Date.now();
+    const vp1 = await verify('dv/G1.1');
+    const sent1 = runsSent(pubAt);
+    if (took(vp1) && sent1.length === 1 && sameSet(sent1[0].args.suites, [GREEN]) && runOnly(sent1[0]) && sent1[0].answer && sent1[0].answer.taken === true) test.check('his Verify on dv/G1.1 handed it over as deskVerify.run {suites: [its test file], commit}, with no item id, and taken');
+    else test.fail(OWED + 'his Verify on dv/G1.1 answered ' + short(vp1.body) + '; the desk asked ' + short(sentNames(pubAt)));
     const f1 = await get('dv/G1.1');
     if (f1.verifyAnswer === 'taken' && f1.verifierBusy === true) test.check('taken: the switch shows the verifier\'s answer, taken, on the Verify button (verifierBusy)');
     else test.fail(OWED + 'after a taken answer dv/G1.1 reads verifyAnswer ' + short(f1.verifyAnswer) + ', verifierBusy ' + short(f1.verifierBusy));
@@ -302,40 +324,41 @@ async function deskAndVerify() {
     else test.fail(OWED + 'dv/G1.1\'s buttons: ' + short(b1));
     await free();
     const searchedBefore = fromDesk.filter(function (x) { return x.verb === 'search'; }).length;
+    const d1At = Date.now();
     const d1 = await done('dv/G1.1');
     const searched1 = fromDesk.filter(function (x) { return x.verb === 'search'; }).length - searchedBefore;
-    if (took(d1) && searched1 > 0 && (await get('dv/G1.1')).status === 'done' && !(await overLines('dv/G1.1')).length) test.check('his Done read the search, green, and went through with no line');
-    else test.fail(OWED + 'Done on dv/G1.1 answered ' + short(d1.status) + ' ' + short(d1.body) + ' after ' + searched1 + ' search(es); lines ' + short(await overLines('dv/G1.1')));
+    if (took(d1) && searched1 > 0 && (await get('dv/G1.1')).status === 'done' && !(await overLines('dv/G1.1')).length && !runsSent(d1At).length) test.check('his Done read the search, green, went through with no line, and started no run');
+    else test.fail(OWED + 'Done on dv/G1.1 answered ' + short(d1.status) + ' ' + short(d1.body) + ' after ' + searched1 + ' search(es); lines ' + short(await overLines('dv/G1.1')) + '; runs ' + short(sentNames(d1At)));
 
-    // ── 2. BUSY, THE EVENTS, DONE NEVER REFUSED ──
-    test.subHeading('2. busy, items are answered busy; every event hands over the oldest waiting with no run; Done is never refused');
+    // ── 2. ONLY HIS VERIFY STARTS A RUN; DONE NEVER REFUSED ──
+    test.subHeading('2. a claim, an item coming to wait and a Done start no run; his Verify does, busy or not; Done is never refused');
     const at2 = Date.now();
     await toWaiting('dv/G1.2');
+    await verify('dv/G1.2');
     const busy = await waitFor(async function () { const n = (await v.call('now', {})).body || {}; return !!(n.running && n.running.suite === HANG); }, 20000);
-    if (busy) test.check('dv/G1.2 was handed over and its hanging suite runs');
-    else test.fail(OWED + 'dv/G1.2 waits for deskVerify and never ran; now reads ' + short((await v.call('now', {})).body) + '; asked ' + short(sentNames(at2)));
+    const r2 = runsSent(at2);
+    if (busy && r2.length === 1 && sameSet(r2[0].args.suites, [HANG])) test.check('dv/G1.2 ran on his Verify alone, and its hanging suite runs');
+    else test.fail(OWED + 'dv/G1.2: now reads ' + short((await v.call('now', {})).body) + '; asked ' + short(sentNames(at2)));
     const at3 = Date.now();
     const s3 = await toWaiting('dv/G1.3');
-    await sleep(300);
     const s4 = await toWaiting('dv/G1.4');
-    await sleep(300);
     await asCW('press', { id: 'dv/G1.5', what: 'claim-done' });
+    await asCW('claim', { id: 'dv/G1.7', phase: 'build', commit: 'abcdef1' });
     await sleep(800);
-    const tried = runsSent(at3);
-    if (busy && s3 === WAITING && s4 === WAITING && tried.length >= 3 && tried.every(function (x) { return x.answer && x.answer.busy === true && Object.keys(x.answer).every(function (k) { return k === 'busy' || k === 'taken'; }); }) && tried.every(function (x) { return sameSet(x.args.suites, [GREEN3]); })) test.check('while it runs, each event (two items coming to wait, a claim) tried the oldest waiting with no run, dv/G1.3, and was answered busy');
-    else test.fail(OWED + 'while busy: statuses ' + short([s3, s4]) + '; tries ' + short(sentNames(at3)));
+    if (busy && s3 === WAITING && s4 === WAITING && !runsSent(at3).length && fromDesk.some(function (x) { return x.verb === 'search' && x.at >= at3; })) test.check('two items coming to wait, a claim-done and a build claim: each read the states (search) and sent no run');
+    else test.fail(OWED + 'while busy: statuses ' + short([s3, s4]) + '; runs sent ' + short(sentNames(at3)));
     const nowBusy = (await v.call('now', {})).body || {};
     if (busy && nowBusy.busy === true) test.check('deskVerify.now says busy');
     else test.fail(OWED + 'deskVerify.now while the hanging suite runs: ' + short(nowBusy));
-    const facts = await get('dv/G1.3');
-    if (busy && facts.verifierBusy === true && facts.verifyAnswer === 'busy' && facts.verified === 'none') test.check('the waiting item\'s facts: the switch busy, and no run of it yet (verified none)');
-    else test.fail(OWED + 'dv/G1.3\'s facts while busy: ' + short({ verifierBusy: facts.verifierBusy, verifyAnswer: facts.verifyAnswer, verified: facts.verified }));
     const busyPressAt = Date.now();
-    const bp = await d.call('press', { id: 'dv/G1.3', what: 'verify' }, ANDY);
+    const bp = await verify('dv/G1.3');
     await sleep(500);
     const asked3 = runsSent(busyPressAt);
-    if (busy && took(bp) && asked3.length >= 1 && (await get('dv/G1.3')).status === WAITING) test.check('his Verify while busy still asked deskVerify, was answered busy, and the item stays waiting');
+    const facts = await get('dv/G1.3');
+    if (busy && took(bp) && asked3.length === 1 && sameSet(asked3[0].args.suites, [GREEN3]) && asked3[0].answer && asked3[0].answer.busy === true && facts.status === WAITING) test.check('his Verify while busy still asked deskVerify, was answered busy, and the item stays waiting');
     else test.fail(OWED + 'press verify on dv/G1.3 while busy answered ' + short(bp.status) + ' ' + short(bp.body) + '; asked ' + short(sentNames(busyPressAt)));
+    if (busy && facts.verifierBusy === true && facts.verifyAnswer === 'busy' && facts.verified === 'none') test.check('the waiting item\'s facts: the switch busy, and no run of it yet (verified none)');
+    else test.fail(OWED + 'dv/G1.3\'s facts while busy: ' + short({ verifierBusy: facts.verifierBusy, verifyAnswer: facts.verifyAnswer, verified: facts.verified }));
     const direct = await v.call('run', { suites: [GREEN], commit: '' }, ANDY);
     const db2 = direct.body || {};
     if (busy && direct.status === 200 && db2.busy === true && db2.taken !== true && Object.keys(db2).every(function (k) { return k === 'busy' || k === 'taken'; })) test.check('deskVerify.run, handed a run while one is under way, answers busy and nothing else');
@@ -343,15 +366,20 @@ async function deskAndVerify() {
 
     await v.call('stop', {});
     await free();
-    // A DONE OVER A MISSING RUN: dv/G1.5's suite never ran. It goes through, says so, and the event hands over dv/G1.3.
+    // A DONE OVER A MISSING RUN: dv/G1.5's suite never ran. It goes through, says so, and starts no run.
     const at5 = Date.now();
     const d5 = await done('dv/G1.5');
     const l5 = await overLines('dv/G1.5');
     if (took(d5) && (await get('dv/G1.5')).status === 'done' && l5.length === 1 && /missing|no run/i.test(l5[0].text)) test.check('his Done over a missing run went through, and one line says so: ' + short(l5[0].text));
     else test.fail(OWED + 'Done on dv/G1.5 with no run answered ' + short(d5.status) + ' ' + short(d5.body) + '; lines ' + short(l5));
-    const after5 = runsSent(at5);
-    if (after5.length >= 1 && sameSet(after5[0].args.suites, [GREEN3]) && after5[0].answer && after5[0].answer.taken === true) test.check('that Done, an event, handed over the oldest item waiting with no run: dv/G1.3, its spirit/test files only');
-    else test.fail(OWED + 'what the desk asked after the Done on dv/G1.5: ' + short(sentNames(at5)));
+    await sleep(500);
+    if (!runsSent(at5).length) test.check('and that Done started no run: dv/G1.3 and dv/G1.4 still wait for his Verify');
+    else test.fail(OWED + 'the Done on dv/G1.5 sent ' + short(sentNames(at5)));
+    const v3At = Date.now();
+    await verify('dv/G1.3');
+    const v3 = runsSent(v3At);
+    if (v3.length === 1 && sameSet(v3[0].args.suites, [GREEN3]) && v3[0].answer && v3[0].answer.taken === true) test.check('dv/G1.3, answered busy before, runs on his next Verify: taken');
+    else test.fail(OWED + 'his Verify on dv/G1.3 asked ' + short(sentNames(v3At)));
     await free();
     // A DONE OVER A STOPPED RUN: dv/G1.2's hanging suite was stopped, which is no green.
     const at2b = Date.now();
@@ -360,22 +388,26 @@ async function deskAndVerify() {
     if (took(d2) && (await get('dv/G1.2')).status === 'done' && l2.length === 1 && /red|stopped/i.test(l2[0].text)) test.check('his Done over the stopped run went through, and one line says it went over a red run: ' + short(l2[0].text));
     else test.fail(OWED + 'Done on the stopped dv/G1.2 answered ' + short(d2.status) + ' ' + short(d2.body) + '; lines ' + short(l2));
     const f3 = await get('dv/G1.3');
-    if (f3.verified === 'green') test.check('the event read dv/G1.3\'s run through the search: verified green');
+    if (f3.verified === 'green') test.check('the Done read dv/G1.3\'s run through the search: verified green');
     else test.fail(OWED + 'dv/G1.3 after its run: ' + short(verdict(f3)));
-    const after2b = runsSent(at2b);
-    if (after2b.length >= 1 && sameSet(after2b[0].args.suites, [RED]) && after2b[0].answer && after2b[0].answer.taken === true) test.check('and handed over the next waiting with no run, dv/G1.4');
-    else test.fail(OWED + 'what the desk asked after the Done on dv/G1.2: ' + short(sentNames(at2b)));
+    if (!runsSent(at2b).length) test.check('and started no run');
+    else test.fail(OWED + 'the Done on dv/G1.2 sent ' + short(sentNames(at2b)));
+    const v4At = Date.now();
+    await verify('dv/G1.4');
+    const v4 = runsSent(v4At);
+    if (v4.length === 1 && sameSet(v4[0].args.suites, [RED]) && v4[0].answer && v4[0].answer.taken === true) test.check('dv/G1.4 runs on his Verify: taken');
+    else test.fail(OWED + 'his Verify on dv/G1.4 asked ' + short(sentNames(v4At)));
     await free();
-    // A CLAIM IS AN EVENT TOO: it reads dv/G1.4's red run and hands over dv/G1.6.
+    // A CLAIM ON dv/G1.6 READS dv/G1.4's red run, and starts nothing; his Verify runs dv/G1.6.
     const at6 = Date.now();
     await asCW('press', { id: 'dv/G1.6', what: 'claim-done' });
     await sleep(500);
     const f4 = await get('dv/G1.4');
-    if (f4.verified === 'red' && Array.isArray(f4.verifyFailures) && f4.verifyFailures.some(function (x) { return /red probe/.test(x); })) test.check('a claim, an event, read dv/G1.4\'s run: verified red, the failure line in its facts');
+    if (f4.verified === 'red' && Array.isArray(f4.verifyFailures) && f4.verifyFailures.some(function (x) { return /red probe/.test(x); })) test.check('a claim read dv/G1.4\'s run: verified red, the failure line in its facts');
     else test.fail(OWED + 'dv/G1.4 after its run: ' + short(verdict(f4)));
-    const after6 = runsSent(at6);
-    if (after6.length >= 1 && sameSet(after6[0].args.suites, [GREEN2]) && after6[0].answer && after6[0].answer.taken === true) test.check('and handed over dv/G1.6, the one left waiting with no run');
-    else test.fail(OWED + 'what the desk asked after the claim on dv/G1.6: ' + short(sentNames(at6)));
+    if (!runsSent(at6).length) test.check('and the claim on dv/G1.6 started no run');
+    else test.fail(OWED + 'the claim on dv/G1.6 sent ' + short(sentNames(at6)));
+    await verify('dv/G1.6');
     await free();
     const d3 = await done('dv/G1.3');
     if (took(d3) && (await get('dv/G1.3')).status === 'done' && !(await overLines('dv/G1.3')).length) test.check('his Done on the green dv/G1.3 went through, no line');
@@ -387,6 +419,23 @@ async function deskAndVerify() {
     const d6 = await done('dv/G1.6');
     if (took(d6) && (await get('dv/G1.6')).status === 'done' && !(await overLines('dv/G1.6')).length) test.check('his Done on the plain dv/G1.6, its run green, went through, no line');
     else test.fail(OWED + 'Done on dv/G1.6 answered ' + short(d6.status) + ' ' + short(d6.body) + '; lines ' + short(await overLines('dv/G1.6')));
+
+    // A CLAIM IN A GOAL THAT IS NOT CURRENT: no run, its facts never rewritten (the work is the current goal's). dv/G2.1 lists GREEN, whose run is green, so a read of it would have said green.
+    const otherAt = Date.now();
+    await asCW('press', { id: 'dv/G2.1', what: 'claim-done' });
+    await done('dv/G1.7');
+    await sleep(500);
+    const fo = await get('dv/G2.1');
+    let states = [];
+    for (let n = 0, i = 0; i < 100; i++) {
+      const ch = (await d.call('changes', { n: n, line: 0 }, ANDY)).body || {};
+      const recs = ch.records || [];
+      states = states.concat(recs.filter(function (r) { return r.verb === 'verify.state' && (parse(r.body) || {}).id === 'dv/G2.1'; }));
+      if (!ch.more || !recs.length || !(Number(ch.n) > n)) break;
+      n = Number(ch.n);
+    }
+    if (!runsSent(otherAt).length && !states.length && fo.verified !== 'green') test.check('a claim in a goal that is not current: no run, its facts never rewritten (verified ' + short(fo.verified) + ')');
+    else test.fail(OWED + 'the claim on dv/G2.1 (goal not current): asked ' + short(sentNames(otherAt)) + '; verify.state records ' + states.length + '; verified ' + short(fo.verified));
 
     // THE GOAL'S VERIFY: the desk compiles the suites from its items' file lists, every spirit/test file once.
     const goalAt = Date.now();

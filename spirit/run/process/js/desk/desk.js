@@ -882,7 +882,7 @@ function apply(s, r, b, item, goalOf) {
       // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
       // change it manages....", and "yes" to its being the word on the List rows. An agent's verify pass does not
       // finish a code item: it waits for deskVerify, and the row says so instead of reading like any running item.
-      if (b.phase === 'verify' && b.pass === true && it.code && !it.done && !it.closed) { it.status = 'waiting for deskVerify'; if (!it.waitingAt) it.waitingAt = r.n; }
+      if (b.phase === 'verify' && b.pass === true && it.code && !it.done && !it.closed) it.status = 'waiting for deskVerify';
       return;
     // THE VERIFIER'S ANSWER TO A START REQUEST (goal/G33.3): the one switch, verify-busy, shows it (taken or busy) and
     // holds nothing back; a taken run is that item's verify under way, so it is not handed over again.
@@ -1177,8 +1177,6 @@ function press(s, it, what, r, goalOf, b) {
   // is consumed between 'go' and 'done'"). The line below replays the records taken before that day as they were.
   else if (what === 'claim-done') {
     it.claims[r.by] = true;
-    // goal/G33.3: a claim makes the item wait for verification, in the order it came.
-    if (!it.waitingAt) it.waitingAt = r.n;
     if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
   }
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
@@ -1944,13 +1942,15 @@ function askDeskVerify(verb, args) {
 //   read the fucking results from the fucking verifiers database, through the verifiers db-search interface."
 //
 // DECIDED BY ANDY, in the box, not this file's to widen:
-//   - Each item holds its own need for verification: from its verify-phase pass, or its claim, it waits, in that order.
+//   - Each item holds its own need for verification: from its verify-phase pass, or its claim, it waits.
 //   - The desk compiles a run's suites (an item's from its file list, a goal's from its items' lists) and hands the run
 //     to deskVerify.run. The answer, taken or busy, is the switch, verify-busy (a record, verify.answer, so every client
 //     and a restart see it); it only informs the Verify button and never holds anything back.
 //   - At each event (a claim, a Verify press, a run taken, a Done press) the desk reads the latest state of the waiting
 //     items' suites through deskVerify's search, so each item's facts say green, red with the failures, or none.
-//   - Every event tries the verifier for the oldest item still waiting with no run, whatever the switch says.
+//   - Only his Verify press hands a run over (an item's suites, or a goal's full check), whatever the switch says. Andy:
+//     "verifies on the desk-node get only triggered by MY verify button. NOTHING ELSE.", and "the desk has no business
+//     queuing verifications". A claim, an item coming to wait or a Done only reads the states.
 //   - Done is never refused for it: the page marks and arms a Done that is not verified green, and the desk writes one
 //     line under the item when Done went over a red or a missing run (doneOver). The desk keeps no arming.
 // Do not put a list of work or a result report into deskVerify for this: it is a runner, busy or not.
@@ -1966,10 +1966,12 @@ function suitesFor(s, it) {
   return Object.keys(out).sort();
 }
 // THE ITEMS WAITING FOR VERIFICATION: open items an agent claimed or its verifier passed, and goals whose items are all
-// done (their Done is offered). Their facts carry what the verifier says of their suites.
+// done (their Done is offered). Their facts carry what the verifier says of their suites. The current goal's only:
+// the work is scoped to the current goal (Andy, goal/G33.4), so a leftover claim in an older goal is never read.
 function waitingItems(s) {
   return Object.keys(s.items).map(function (id) { return s.items[id]; }).filter(function (m) {
     if (!m || m.id === GROUP_CHAT || m.done || m.closed || m.leftOut || m.subGoal) return false;
+    if (!s.current || !inGoalOf(s.current, m.id)) return false;
     if (m.goal) { const g = s.goals[m.id]; return !!g && !g.abandoned && g.members.length > 0 && g.members.every(function (id) { const x = s.items[id]; return x && (x.done || x.closed); }); }
     return Object.keys(m.claims).length > 0 || m.verified === true || m.status === WAITING;
   });
@@ -2033,21 +2035,17 @@ function handOver(id) {
     return taken ? 'taken' : 'busy';
   }, function () { return null; });
 }
-// AN EVENT, one at a time (two at once would hand the same item over twice): the waiting items' state is read, then the
-// item named (his Verify) or else the oldest waiting with no run under way is handed over, whatever the switch says; a
-// run taken is an event of its own, so the state is read again.
+// AN EVENT, one at a time (two at once would hand the same item over twice): the waiting items' state is read, and
+// only his Verify press (id given) hands an item over, whatever the switch says; a run taken is an event of its own, so
+// the state is read again. THE DESK QUEUES NO VERIFICATION AND STARTS NONE ON ITS OWN (Andy, goal/G33.3: "verifies on the
+// desk-node get only triggered by MY verify button. NOTHING ELSE."): a claim, an item coming to wait or a Done only
+// reads states.
 let verifyEvents = Promise.resolve();
 function verifyEvent(id) {
   const next = verifyEvents.then(async function () {
     if (!hasDeskVerify()) return;
     await readVerifyStates();
-    let target = String(id || '');
-    if (!target) {
-      const s = walkState();
-      const oldest = waitingItems(s).filter(function (m) { return !m.goal && String(m.verifyState || 'none') === 'none' && !m.verifyRunning && suitesFor(s, m).length; })
-        .sort(function (a, b) { return (a.waitingAt || Number.MAX_SAFE_INTEGER) - (b.waitingAt || Number.MAX_SAFE_INTEGER); })[0];
-      target = oldest ? oldest.id : '';
-    }
+    const target = String(id || '');
     if (!target) return;
     if ((await handOver(target)) === 'taken') await readVerifyStates();
   });
@@ -2882,7 +2880,7 @@ appServer.serve(withPlugins({
       const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
       }).change;
-      // AN ITEM THAT COMES TO WAIT IS AN EVENT (goal/G33.3): its state is read and the oldest with no run tried.
+      // AN ITEM THAT COMES TO WAIT IS AN EVENT (goal/G33.3): the states are read; nothing is handed over (his Verify does).
       const comesToWait = a.phase === 'verify' && a.pass === true;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
       // ONE AGENT ALONE NEEDS NO WAIVE (goal/G2.22). Andy, 2026-10-06: "add to 2.22 that the desk can waive the rule
@@ -3239,11 +3237,11 @@ appServer.serve(withPlugins({
         emptiedByPress(a);
         return { change: landed.change };
       };
-      // A CLAIM IS AN EVENT (goal/G33.3): the waiting items' state is read and the oldest with no run tried.
+      // A CLAIM IS AN EVENT (goal/G33.3): the waiting items' state is read; nothing is handed over (only his Verify does).
       if (a.what === 'claim-done') { const out = land(); return verifyEvent('').then(function () { return out; }); }
       if (a.what !== 'done') return land();
       // HIS DONE IS NEVER REFUSED FOR VERIFICATION (goal/G33.3): the state is read first, and a Done that goes over a
-      // red or a missing run says so in one line under the item (doneOver). Then it is an event like any other.
+      // red or a missing run says so in one line under the item (doneOver). It hands nothing over.
       return readVerifyStates().then(function () {
         const out = land();
         doneOver(String(a.id));
@@ -3284,7 +3282,7 @@ appServer.serve(withPlugins({
       // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
       const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
       if (phase === 'build') emptiedByPress({ id: id });
-      // A BUILD CLAIM IS AN EVENT (goal/G33.3), as the press claim-done is.
+      // A BUILD CLAIM IS AN EVENT (goal/G33.3), as the press claim-done is: the states are read, nothing handed over.
       if (phase === 'build') return verifyEvent('').then(function () { return { change: landed.change }; });
       return { change: landed.change };
     },
