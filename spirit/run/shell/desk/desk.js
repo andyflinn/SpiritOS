@@ -709,9 +709,28 @@ function deskRowHtml(row) {
   return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '"' + (row.alert ? ' data-alert="1"' : '') + ' style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + (row.alert ? ';color:#d00' : '') + '">' +
     deskRowCells(row, presses) + '</tr>';
 }
+// ONE BUTTON IN A ROW, THE NEXT ONE WANTED (goal/G33.6). Andy: "the main list may only show one single button, and it
+// is the button for the next wanted user-action, so verify button for any done button, a done button before any close
+// button. the detail shows all available buttons.", "and go before done etc....", and "just in the list, a goal offers
+// no done or closed while items are not done or closed, the goal offers those only in the detail panel anytime". The
+// buttons offered are the item's facts, one shared state with the dialog; the row only picks the first of them in this
+// order of steps, the rest after them in the item's own order.
+var DESK_STEP_ORDER = ['go', 'verify', 'done', 'close'];
+function deskNextPress(row) {
+  var goal = row.goal === '';
+  var offered = (row.buttons || []).filter(function (what) {
+    if (!deskInRow(row, what)) return false;
+    // A goal's Done and Close wait in the List until its items are done or closed (blocked: those still open).
+    if (goal && (what === 'done' || what === 'close') && (row.blocked || []).length) return false;
+    return true;
+  });
+  var stepped = DESK_STEP_ORDER.filter(function (w) { return offered.indexOf(w) !== -1; });
+  return stepped.length ? stepped[0] : (offered[0] || '');
+}
 function deskRowPresses(row) {
   var goal = row.goal === '';
-  return (row.buttons || []).filter(function (what) { return deskInRow(row, what); }).map(function (what) {
+  var next = deskNextPress(row);
+  return (next ? [next] : []).map(function (what) {
     // goal/G6.6: the Close on a goal row with open items is armed with "are you sure? N open"; the shell paints
     // data-armed red. A click on the armed button sends the press.
     var armed = goal && what === 'close' && deskArmed === 'desk-goal-close-' + row.id;
@@ -724,8 +743,8 @@ function deskRowPresses(row) {
       title = deskWarnWhy(row);
       label = armed ? 'Done anyway? ' + title : 'Done ' + DESK_WARN;
     }
-    // goal/G33.3: Verify shows the verifier's last answer; it is never disabled.
-    if (what === 'verify' && row.verifierBusy) label = 'Verify (verifier busy)';
+    // goal/G33.6: no Verify shows the verifier's busy state (Andy: "please don't show verifier-busy an any verify
+    // button, i can check that for myself").
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
       (armed ? ' data-armed="1"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
@@ -1425,12 +1444,9 @@ function deskVerifyIdleSaid() {
 function deskVerifyBar() {
   var r = deskVerifyRun;
   if (!r) return deskVerifyBarHtml(0, 'done') + '<div>Nothing measured yet on this node.</div>';
-  if (r.doing === 'idle') {
-    var pct = deskVerifyIdlePct(r.since);
-    if (pct === null) return deskVerifyBarHtml(0, 'done') + '<div>Idle; no time to count the hour from.</div>';
-    return deskVerifyBarHtml(pct, pct >= 100 ? 'done' : 'countdown') +
-      '<div>' + (pct >= 100 ? deskVerifyIdleSaid() : 'Idle, the hour filling: ' + pct + '%') + '</div>';
-  }
+  // IDLE IS NO RUN (goal/G33.6). Andy: "The desk verifier still thinks 'idling' is a run". Idle, the bar stands grey
+  // and empty and the tile says so; the idle hour is counted in words, below, and only on a verifier with chores.
+  if (r.doing === 'idle') return deskVerifyBarHtml(0, 'done') + '<div id="desk-verify-idle">Idle, nothing running</div>';
   var of = Number(r.of) || 0;
   var index = Number(r.index) || 0;
   var done = of ? (index - 1) / of : 0;
@@ -1453,20 +1469,21 @@ function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { suite: '', since: '' };
   var live = deskVerifyRun;
+  // A RUN IS A RUN, IDLE IS NOT (goal/G33.6): the newest published object says which, else the last now.
+  var running = live ? live.doing !== 'idle' : (deskVerifier.busy === true || !!run.suite);
   // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
   var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
-  var out = '<div class="stat-tile wide"><div class="label">Running now</div>' +
+  var out = '<div class="stat-tile wide"><div class="label">' + (running ? 'Running now' : 'Verifier') + '</div>' +
     (deskVerifyMissed ? '<div id="desk-verify-missing" class="job-manifest-note">deskVerify is not answering; the tab stays, and the next answer replaces this.</div>' : '') +
     deskVerifyBar() +
     (stopAsked ? '<div id="desk-verify-stopasked">Stop asked: the run ends before its next suite.</div>' : '') +
     // ONE STATUS LINE, REPLACED (goal/G8.12): the newest published line, and nothing kept behind it.
-    (live ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
-    (live && live.doing === 'idle' ? deskVerifyCountdown(live.since) : '') +
-    '<div>' +
-    (run.suite || deskVerifier.busy === true
-      ? 'Suite ' + deskEsc(run.suite || '(starting)') + (run.since ? ' · since ' + deskTime(run.since) : '')
-      : (live && live.doing !== 'idle' ? '' : 'Idle')) +
-    '</div>' +
+    (live && running ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
+    // THE IDLE HOUR ONLY WHERE IT LEADS SOMEWHERE (goal/G33.6): the verifier says whether its manifest names chores.
+    (live && !running && live.hasChores === true ? deskVerifyCountdown(live.since) : '') +
+    (live && !running && live.chores ? '<div>' + deskEsc(String(live.chores)) + '</div>' : '') +
+    (!live && !running ? '<div id="desk-verify-idle">Idle, nothing running</div>' : '') +
+    (running && !live && run.suite ? '<div>Suite ' + deskEsc(run.suite) + (run.since ? ' · since ' + deskTime(run.since) : '') + '</div>' : '') +
     (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
     // STOP, AND NOTHING ELSE (goal/G33.3): pressable whenever anything runs. A run is started from the item.
     '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button></div>' +

@@ -215,14 +215,14 @@ async function faceHalf() {
   const barOf = function (html) { const m = /<progress[^>]*>|<[^>]*role="progressbar"[^>]*>/.exec(html); return m ? m[0] : ''; };
   if (/data-phase="run"/.test(barOf(b))) test.check('during a run the bar says so: data-phase="run"');
   else test.fail(OWED + 'the bar during a run reads ' + short(barOf(b) || '(no bar)'));
-  await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 18 * 60 * 1000).toISOString() });
+  // SINCE goal/G33.6 the countdown shows only on a verifier with chores (hasChores), and idle the bar stands grey: idle is
+  // no run (Andy: "The desk verifier still thinks 'idling' is a run").
+  await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 18 * 60 * 1000).toISOString(), hasChores: true });
   const idle = body.innerHTML;
   if (/4[12]\s*min/.test(idle)) test.check('idle, it counts down to idle time: about 42 minutes left of the hour');
   else test.fail(OWED + 'no countdown when idle: ' + short(idle));
   const cd = barOf(idle);
-  const val = Number((/value="([\d.]+)"/.exec(cd) || [])[1]);
-  const max = Number((/max="([\d.]+)"/.exec(cd) || [])[1]) || 1;
-  if (/data-phase="countdown"/.test(cd) && val / max > 0.25 && val / max < 0.35) test.check('and the bar itself shows the countdown: phase countdown, about 18 of 60 minutes gone');
+  if (/data-phase="done"/.test(cd) && /value="0"/.test(cd)) test.check('and the bar stands grey and empty while it counts: idle is no run');
   else test.fail(OWED + 'the bar while counting down reads ' + short(cd || '(no bar)'));
   await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() });
   const over = barOf(body.innerHTML);

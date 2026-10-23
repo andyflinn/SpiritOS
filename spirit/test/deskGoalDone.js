@@ -1,6 +1,7 @@
 'use strict';
 
-// goal/G2.10: the goal offers Done only when every item is done. Red on today's tree.
+// goal/G2.10: the goal offers Done only when every item is done. Red on today's tree. Since goal/G33.6 that holds in the
+// List (the desk offers a goal's Done at any time, for the detail panel); the buttons below are read as the List reads them.
 //   Found by Andy, 2026-10-02 (Team line, verbatim): "right now my desk has a not-done item and the goal still offers
 //   me a done..... the goal should only offer a done button when all items are done."
 //   Checked live: goal/G2 answered buttons ["done"] with two items open. The rule (desk.js buttons()): a row offers
@@ -36,7 +37,15 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
-  const buttonsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item).buttons || []; } catch (e) { return ['?']; } };
+  // THE LIST'S VIEW OF THE GOAL (goal/G33.6): the desk offers a goal's Done and Close at any time, for the detail panel
+  // ("the goal offers those only in the detail panel anytime"), and the List holds them back while the goal's blocked
+  // (its items still open) is not empty. G2.10's rule now lives there, so the buttons read here are the List's.
+  const buttonsOf = async function (id) {
+    const r = await call('item.get', { id: id }, ANDY);
+    let f = null; try { f = JSON.parse((r.body || {}).item); } catch (e) { return ['?']; }
+    const open = f.goal === '' && (f.blocked || []).length > 0;
+    return (f.buttons || []).filter(function (b) { return !(open && (b === 'done' || b === 'close')); });
+  };
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }

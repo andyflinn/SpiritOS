@@ -137,11 +137,10 @@ function ddDoneWhy(f) {
     : 'Not verified: there is no run of its suites yet. Press Done again to send it anyway.';
 }
 // HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done button").
-// Andy: "that button will tell me if the verifier is busy." It shows the verifier's last answer and is never disabled:
-// the desk asks the verifier anyway. On a goal it runs the goal's suites.
+// It is never disabled: the desk asks the verifier anyway. On a goal it runs the goal's suites. It shows no busy state
+// (goal/G33.6, Andy: "please don't show verifier-busy an any verify button, i can check that for myself").
 function ddVerifyHtml(f) {
-  return '<button type="button" id="dd-verify" title="' + (f.verifierBusy ? 'the verifier answered ' + ddEsc(f.verifyAnswer || 'busy') + ' last; pressing asks it again' : 'hand this to the verifier') + '">' +
-    (f.verifierBusy ? 'Verify (verifier busy)' : 'Verify') + '</button>';
+  return '<button type="button" id="dd-verify" title="hand this to the verifier">Verify</button>';
 }
 
 

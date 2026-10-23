@@ -1273,17 +1273,13 @@ function buttonsOf(s, it) {
     return out;
   }
   if (!it.goal && !claimed && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
-  // A GOAL OFFERS DONE ONLY WHEN EVERY ITEM IS DONE OR CLOSED, AND NEVER ON A CLAIM (goal/G2.10). Andy: "the goal
-  // should only offer a done button when all items are done", and "the goals done button should be tied to the
-  // condition that all visible items are done" — so an item added open takes it away again, and a claim-done
-  // pressed against the goal id offers nothing by itself. An item's own rule is unchanged: a claim offers Done.
+  // A GOAL OFFERS DONE AT ANY TIME, AND NEVER ON A CLAIM (goal/G33.6, replacing goal/G2.10's "only when all items are
+  // done"). Andy: "just in the list, a goal offers no done or closed while items are not done or closed, the goal
+  // offers those only in the detail panel anytime". So the facts offer it; the List holds it back while the goal's
+  // blocked (its items still open) is not empty, and the detail panel shows it. Done is never held back for
+  // verification (goal/G33.3): the page marks it from the facts, and the desk keeps no arming.
   if (it.goal) {
-    const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
-    // DONE IS NEVER HELD BACK FOR VERIFICATION (goal/G33.3). The box: "Done is offered as soon as an agent claims done.
-    // The item's facts say whether it is verified; not verified (its suites red, or no run of them yet), the Done
-    // button carries a warning mark and re-arms in the page". So the goal's Done comes when its items are done, and the
-    // page marks it from the facts; the desk keeps no arming and refuses no Done.
-    if (allDone && !grantsOpen) out.push('done');
+    if (!grantsOpen && g && g.members.length > 0) out.push('done');
   // A CODE ITEM OFFERS DONE ON ITS VERIFIER'S PASS (goal/G5.7) OR A CLAIM; A PLAIN ITEM ON A CLAIM (goal/G33.3, as
   // above: Done is offered as soon as an agent claims done).
   } else if (!grantsOpen && ((it.code && it.verified === true) || Object.keys(it.claims).length > 0)) out.push('done');

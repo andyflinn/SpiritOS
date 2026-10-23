@@ -29,8 +29,9 @@
 //                                     desk-node get only triggered by MY verify button. NOTHING ELSE.", and "the desk
 //                                     has no business queuing verifications"): a claim, an item coming to wait and a
 //                                     Done read the states and send no run.
-//                                     The switch, verify-busy, only shows the verifier's last answer (verifyAnswer 'taken' or
-//                                     'busy', verifierBusy true for either) on the Verify button, and the
+//                                     The switch, verify-busy, keeps the verifier's last answer (verifyAnswer 'taken' or
+//                                     'busy', verifierBusy true for either) in the facts; since goal/G33.6 no button
+//                                     shows it. It holds nothing back, and the
 //                                     answer travels to every client: the publish carries it (verifier) and every row
 //                                     whose facts it changed. Done is offered as soon as an agent claims done (or its
 //                                     verifier passes a code item) and is never refused for verification; when it goes
@@ -65,7 +66,7 @@
 //   4. the item dialog: Verify right after Done; busy, it says so, is never disabled and a press still writes press
 //      'verify'; on the goal, press 'verify' for the goal; a Done not verified green carries the warning mark, its first
 //      press arms it and says why and sends nothing, its second sends Done; verified green, one press.
-//   5. the List row: the same Done arming and Verify right after it.
+//   5. the List row: the same Done arming; a row offering Done and Verify draws Verify (one button, goal/G33.6).
 //   6. the Verifier tab draws no "again" and no full-run button, and still draws what runs and Stop.
 // rule/11: through testSupport only; a pretend node; deskVerify measures a scratch folder of probe suites (its `repo`),
 // never a checkout; the pull is a probe; it stops only the processes it started.
@@ -560,7 +561,9 @@ async function dialogHalf() {
   const busyButton = button('dd-verify');
   if (busyButton && nextTo()) test.check('Verify sits right after Done in the dialog');
   else test.fail(OWED + 'the dialog\'s button bar reads ' + short(text(bar())) + ' (' + short(bar().slice(0, 300)) + ')');
-  if (busyButton && /busy/i.test(text(busyButton)) && !/\sdisabled/.test(busyButton)) test.check('with the switch busy the Verify button says so, and is not disabled: ' + short(text(busyButton)));
+  // SINCE goal/G33.6 no Verify shows the busy state (Andy: "please don't show verifier-busy an any verify button, i
+  // can check that for myself"); deskAdjustments.js asserts that. It stays never disabled.
+  if (busyButton && !/\sdisabled/.test(busyButton)) test.check('with the switch busy the Verify button is not disabled: ' + short(text(busyButton)));
   else test.fail(OWED + 'the Verify button, verifier busy, reads ' + short(busyButton || bar()));
   let n0 = calls.length;
   await click('dd-verify');
@@ -618,8 +621,11 @@ async function listHalf() {
   const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'dl/G1', status: WAITING, with: '', buttons: ['done', 'verify'], blocking: ['dl/G1'], blocked: [], asks: 0, claims: 1, verifierBusy: false, verifyAnswer: '', verified: 'none', verifyFailures: [] }, extra); };
   fake.items = [
     { id: 'dl/G1', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['dl/G1.1', 'dl/G1.2'], live: [], working: [], waiting: 0 },
-    row('dl/G1.1', { verified: 'red', verifyFailures: [RED_LINE] }),
-    row('dl/G1.2', { verified: 'green' }),
+    // SINCE goal/G33.6 a row draws one button, the next one wanted (deskAdjustments.js): with Verify offered it is
+    // Verify, so the rows whose Done is drawn here offer Done alone.
+    row('dl/G1.1', { verified: 'red', verifyFailures: [RED_LINE], buttons: ['done'] }),
+    row('dl/G1.2', { verified: 'green', buttons: ['done'] }),
+    row('dl/G1.3', { verified: 'red', verifyFailures: [RED_LINE] }),
   ];
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
@@ -644,9 +650,9 @@ async function listHalf() {
   };
   const presses = function (from) { return fake.calls.slice(from).filter(function (c) { return c.server === 'desk' && c.verb === 'press'; }); };
 
-  const r1 = rowHtml('dl/G1.1');
-  if (/<button[^>]*data-press="done"[^>]*>[^<]*<\/button>\s*<button[^>]*data-press="verify"/.test(r1)) test.check('in the row, Verify sits right after Done');
-  else test.fail(OWED + 'the row reads ' + short(r1));
+  const r1 = rowHtml('dl/G1.3');
+  if (/data-press="verify"/.test(r1) && !/data-press="done"/.test(r1)) test.check('a row offering Done and Verify draws Verify, the next step (goal/G33.6)');
+  else test.fail(OWED + 'the row offering Done and Verify reads ' + short(r1));
   if (/⚠/.test(doneOf('dl/G1.1'))) test.check('a red row\'s Done carries the warning mark');
   else test.fail(OWED + 'the red row\'s Done reads ' + short(doneOf('dl/G1.1')));
   let n0 = fake.calls.length;

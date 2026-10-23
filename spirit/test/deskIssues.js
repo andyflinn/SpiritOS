@@ -133,8 +133,11 @@ callback.listen(0, '127.0.0.1', async function () {
 
     test.subHeading('5. a goal offers Done once every item is done, no claim needed');
     // Was "once every item is closed" here; goal/G2.10 moved the line to done (Andy: "the goal should only offer a
-    // done button when all items are done"), and deskGoalDone.js holds the whole rule. Asserted here: one item done
-    // and one open offers nothing; both done offers Done with no claim; closing them keeps it.
+    // done button when all items are done"), and deskGoalDone.js holds the whole rule. SINCE goal/G33.6 it holds in the
+    // List: the desk offers a goal's Done at any time for the detail panel, and the List holds it back while the goal's
+    // blocked (its items still open) is not empty. Asserted here as the List reads it: one item done and one open
+    // offers nothing; both done offers Done with no claim; closing them keeps it.
+    const inList = function (f) { return (f.buttons || []).filter(function (b) { return !((f.blocked || []).length && (b === 'done' || b === 'close')); }); };
     await call('press', { id: 'g/G1', what: 'go-all' }, ANDY);
     await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
     await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
@@ -145,7 +148,7 @@ callback.listen(0, '127.0.0.1', async function () {
     await call('press', { id: 'g/G1.1', what: 'close' }, ANDY);
     await call('press', { id: 'g/G1.2', what: 'close' }, ANDY);
     const allClosed = await factsOf('g/G1');
-    if ((halfway.buttons || []).indexOf('done') === -1 && (allDone.buttons || []).indexOf('done') !== -1 && (allClosed.buttons || []).indexOf('done') !== -1) {
+    if (inList(halfway).indexOf('done') === -1 && inList(allDone).indexOf('done') !== -1 && inList(allClosed).indexOf('done') !== -1) {
       test.check('no Done while an item is open; Done on the goal once all are done, with no claim; still offered once closed');
     } else test.fail(OWED + 'goal buttons with one item done ' + JSON.stringify(halfway.buttons) + ', all done ' + JSON.stringify(allDone.buttons) + ', all closed ' + JSON.stringify(allClosed.buttons));
 

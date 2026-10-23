@@ -311,6 +311,7 @@ function expectedOf(rel) {
 //   stopAsked a Stop was taken and the run has not ended yet (goal/G21.3), so the tab says "stop asked"
 //   idleMs    idle: the hour the countdown counts to, this server's own (goal/G21.3), so the tab never guesses it
 //   chores    idle: what the idle chores did, one line, '' until they have run
+//   hasChores whether its manifest names any chore (goal/G33.6)
 let lastSaid = null;
 function say(o) {
   const one = {
@@ -319,6 +320,9 @@ function say(o) {
     expected: Number(o.expected) || 0, line: String(o.line || ''), since: String(o.since || ''),
     stopAsked: stopped === true,
     idleMs: IDLE_MS, chores: String(idleState.chores || ''),
+    // hasChores (goal/G33.6): whether its manifest names chores, so the tab counts down the idle hour only where it
+    // leads somewhere.
+    hasChores: CHORES.length > 0,
     // THE CONSOLE'S RUN AND HOW FAR IT HAS COME (goal/G22.3), so the tab tails it with `console`.
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };

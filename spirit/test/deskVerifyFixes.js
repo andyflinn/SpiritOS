@@ -450,7 +450,7 @@ async function faceHalf() {
   else test.fail(OWED + 'still "stop asked" when idle: ' + short(cleared));
 
   // 7. THE COUNTDOWN COUNTS TO THE SERVER'S HOUR AND SHOWS WHAT THE CHORES DID.
-  m.emit({ doing: 'idle', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 60000).toISOString(), stopAsked: false, idleMs: 600000, chores: '' });
+  m.emit({ doing: 'idle', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 60000).toISOString(), stopAsked: false, idleMs: 600000, chores: '', hasChores: true });
   await settled();
   if (/Idle in 9 min/.test(body.innerHTML)) test.check('the countdown counts to the hour deskVerify published (10 min here: 9 left)');
   else test.fail(OWED + 'the countdown with idleMs 600000 reads ' + short(body.innerHTML));

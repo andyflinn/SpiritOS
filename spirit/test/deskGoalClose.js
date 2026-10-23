@@ -2,6 +2,8 @@
 
 // goal/G6.6: a goal's Close in the List and the dialog, asking "are you sure?" while items are open (the face of G5.6).
 //   Andy, in goal/G5 (G5.6): "yes. if it has items still open it can ask me: are you sure?"
+//   SINCE goal/G33.6 the List shows a goal no Close while its items are open ("just in the list, a goal offers no done
+//   or closed while items are not done or closed"); the dialog still asks.
 //   The box: "The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the
 //   face asks "are you sure?" first, naming how many are open; yes sends the press."
 // The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.
@@ -162,6 +164,16 @@ async function asks(where, f) {
   else test.fail(OWED + where + ': after yes, ' + sent.length + ' close presses ' + JSON.stringify(sent.map(function (c) { return c.args; })));
 }
 
+// SINCE goal/G33.6 THE LIST SHOWS NO CLOSE ON A GOAL WHILE ITEMS ARE OPEN. Andy: "just in the list, a goal offers no
+// done or closed while items are not done or closed, the goal offers those only in the detail panel anytime". So the
+// question "are you sure?" is the dialog's alone now; the List holds the button back.
+async function none(where, f) {
+  await settled();
+  const btn = buttons(f.doc).filter(f.close)[0];
+  if (!btn) test.check(where + ': the goal shows no Close while two of its items are open (goal/G33.6)');
+  else test.fail(OWED + where + ': the goal shows Close while two of its items are open');
+}
+
 async function straight(where, f) {
   await settled();
   const btn = buttons(f.doc).filter(f.close)[0];
@@ -177,7 +189,7 @@ test.startTest('goal/G6.6: a goal Close asking "are you sure?" while items are o
 
 (async function () {
   test.subHeading('1. the List: the goal row');
-  await asks('List', list(true));
+  await none('List', list(true));
   await straight('List', list(false));
   test.subHeading('2. the goal\'s dialog');
   await asks('dialog', dialog(true));
