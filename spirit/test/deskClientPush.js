@@ -472,6 +472,29 @@ async function main() {
   if (otherTake.status === 200 && tookByOther && tookByB) test.check('a general line another agent took first did not wake B as its own; the next one, taken by B\'s deskClient, did');
   else test.fail('OWED by goal/G33.2 (take wakes): the other agent\'s take answered ' + short(otherTake.body) + '; B\'s wait ended with ' + short(firstLines) + '; the next, B\'s wait ended with ' + short(secondLines));
 
+  // goal/G33.2 (box v5, approved by Andy): "all" as the address at the start of his line wakes every agent: the desk
+  // addresses it to every agent it knows, and each deskClient wakes its agent with it as DESK, with no take.
+  test.subHeading('11. his "all, ..." line is addressed to every agent and wakes each');
+  const allItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'For everyone' }, ANDY);
+  const allId = String((allItem.body || {}).id || '');
+  const allFrom = toB.length;
+  const allWait = waitFor(15000);
+  await sleep(500);
+  await call('desk', 'chat.add', { id: allId, text: 'All, pull and restart' }, ANDY);
+  const allLines = await allWait;
+  const allRow = toB.slice(allFrom).filter(function (o) { return o && o.table === 'chat' && o.row && /pull and restart/.test(String(o.row.text)); })[0];
+  const allTo = allRow && Array.isArray(allRow.to) ? allRow.to : [];
+  const allDesk = (allLines || []).filter(function (l) { return /^DESK andy chat\.add /.test(String(l)) && /pull and restart/.test(String(l)); });
+  if (allTo.indexOf(B_KEY) !== -1 && allTo.indexOf(A_KEY) !== -1 && allDesk.length === 1) test.check('his "All, ..." line was addressed to both agents, and woke B with it as DESK');
+  else test.fail('OWED by goal/G33.2 (all): the line went to ' + short(allTo) + '; B\'s wait ended with ' + short(allLines));
+  // goal/G33.2 (box v6): it "entitles them to a response": each addressed agent's answer lands under the item.
+  const bAnswer = await call('deskClient', 'desk', { name: 'chat.add', json: JSON.stringify({ id: allId, text: 'B pulled and restarted' }) }, B_OWNER);
+  const aAnswer = await call('desk', 'chat.add', { id: allId, text: 'A pulled and restarted' }, A_AT_DESK);
+  const allChat = (((await call('desk', 'item.chat', { id: allId }, ANDY)).body || {}).chat) || [];
+  const landed = ['B pulled and restarted', 'A pulled and restarted'].filter(function (x) { return allChat.some(function (l) { return l.text === x; }); });
+  if (bAnswer.status === 200 && aAnswer.status === 200 && landed.length === 2) test.check('both agents answered the "all" line, and both answers landed');
+  else test.fail('OWED by goal/G33.2 (all answers): B\'s answer ' + short(bAnswer.body) + ', A\'s ' + short(aAnswer.body) + '; landed ' + short(landed));
+
   test.subHeading('2. after the desk restarts, the same');
   await stopDesk();
   const restartFrom = toB.length;

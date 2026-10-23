@@ -957,8 +957,15 @@ function shownLine(s, l) {
 // changed since. A NICK REQUEST ABOUT THE BOX is his nick-addressed line holding the word box or cap: the plainest
 // mechanical reading of "about the box" (this build's choice; the box names no wording). His "<nick>:" of goal/G4.23 is
 // one case of the rule. Returns null for a line addressed to nobody.
+// HIS "ALL" (goal/G33.2, box v5-6, approved by Andy): "all" as the address at the start of his line wakes every agent:
+// it is addressed to every agent the desk knows and that is included, with no take, and "entitles them to a response":
+// each may answer it under the item (chat.add below).
 function addressOf(s, text) {
   const t = String(text);
+  if (/^\s*all(?=[\s\p{P}\p{S}])/iu.test(t)) {
+    const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
+    return { to: known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).included; }), all: true };
+  }
   const m = /^\s*([a-z0-9]{1,8})(?=[\s\p{P}\p{S}])/iu.exec(t);
   if (m) {
     const nick = m[1].toLowerCase();
@@ -1173,6 +1180,8 @@ function apply(s, r, b, item, goalOf) {
       if (r.by === 'andy' && Array.isArray(b.to)) {
         // THE BINDING NICK (goal/G21.1): addressed at the write (addressOf), replayed from the record.
         line.to = b.to.map(String);
+        // goal/G33.2 (box v5-6): his "all" line, each addressee entitled to answer it.
+        if (b.all === true) line.all = true;
         if (b.nick && line.to[0]) {
           const key = line.to[0];
           const known = labelOfKey(s, key);
@@ -3082,7 +3091,9 @@ appServer.serve(withPlugins({
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
       // By key since goal/G21.1, so an agent bound by his nick before the desk ever heard from it answers too.
       // Since goal/G21.6 a take is per line: mine is an open take of one of his lines under the item by this agent.
-      const mine = !!(it0 && holdsTake(it0, w));
+      // goal/G33.2 (box v6): his newest line under the item is an "all" line addressed to this agent: it may answer.
+      const newestHis = it0 ? it0.chat.slice().reverse().filter(function (l) { return l.by === 'andy'; })[0] : null;
+      const mine = !!(it0 && (holdsTake(it0, w) || (newestHis && newestHis.all === true && Array.isArray(newestHis.to) && newestHis.to.indexOf(w.key) !== -1)));
       // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
       // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes."
       // THE CHAT FLOW (goal/G21.4). Andy, in the item's box: "Each of Andy's lines is taken by one agent and answered by

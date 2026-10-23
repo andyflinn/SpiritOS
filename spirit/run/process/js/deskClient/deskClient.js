@@ -409,7 +409,13 @@ function meantForAgent(row) {
   if (l.by === 'andy') {
     if (group) publishOn(body);
     // His line addressed to agents comes only to them, its row naming them (desk.js streamToClients).
-    if (Array.isArray(row.to) && row.to.length) return row.to.indexOf(SELF_KEY) !== -1 ? { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) } : null;
+    // His line addressed to this agent wakes it as its own with no take (the desk bound a nick line's take already; his
+    // "all" line needs none, goal/G33.2), and entitles it to answer there (mayChat).
+    if (Array.isArray(row.to) && row.to.length) {
+      if (row.to.indexOf(SELF_KEY) === -1) return null;
+      entitled[id] = true;
+      return { text: 'DESK andy chat.add ' + body, key: lineKeyOf(id, l) };
+    }
     if (held || nobodyHolds || group) return { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) };
     return null;
   }
@@ -580,9 +586,12 @@ function handOver(to, t0) {
 // THE BOX IS GATED THE SAME WAY (goal/G27.12, reopened): Andy, 2026-10-17, to gating box.take and box.write in deskClient
 // as chat is gated: "yes, add that". An agent that neither holds the item nor took his line there leaves its box alone.
 const GATED = ['chat.add', 'box.take', 'box.write'];
+// The items where a line of his addressed to this agent entitles it to answer (goal/G33.2, box v6).
+const entitled = {};
 function mayChat(to, verb, args) {
   if (GATED.indexOf(verb) === -1 || !args || !args.id) return Promise.resolve(true);
   const id = String(args.id);
+  if (entitled[id]) return Promise.resolve(true);
   return askDesk(to, 'item.get', { id: id }).then(function (r) {
     let it = {};
     try { it = JSON.parse((r && r.item) || '{}'); } catch (e) { it = {}; }
