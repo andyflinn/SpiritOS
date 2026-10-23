@@ -1,5 +1,5 @@
 {
- "change": 95380,
+ "change": 95458,
  "goal": "goal/G33",
  "items": [
   {
@@ -64,16 +64,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3144,6 +3142,12 @@
      "key": "",
      "at": "2026-10-23T11:12:06.003Z",
      "text": "Done went over a red run: spirit/test/deskClientPush.js not run: missing from this checkout | spirit/test/deskTables.js red: FAILURE #1.1: OWED by goal/G33.4: the log of writes is still kept: the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"] | spirit/test/deskTables.js red: FAILURE #1.2: OWED by goal/G33.4: no table keyed by goal and item for items, chat, files, box, checks, claims; the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"] | spirit/test/deskTables.js red: FAILURE #1.3: OWED by goal/G33.4: rows without a creator: no keyed tables to read | spirit/test/deskTables.js red: FAILURE #1.4: OWED by goal/G33.4: rows for the goal [], for the item [] | spirit/test/deskTables.js red: FAILURE #1.5: OWED by goal/G33.4: the box rows of the item are [] | spirit/test/deskTables.js red: FAILURE #1.6: OWED by goal/G33.4: the chat rows of the item are [] | spirit/test/deskTables.js red: FAILURE #1.7: OWED by goal/G33.4: check rows [], claim rows [] | spirit/test/deskTables.js red: FAILURE #1.8: OWED by goal/G33.4: the file rows are [] (no grant column) | spirit/test/deskTables.js red: FAILURE #1.9: OWED by goal/G33.4: after his grant the core file's row reads undefined"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:12:44.900Z",
+     "text": "Your Done went through, but the line the desk wrote under it is stale: it quotes run 13 on your verifier (3 suites before the build), not run 14 (111 suites at 5c11de1e, deskTables green, the one red the false failure since fixed). So at Done the desk used an old verified state instead of reading the newest run.\n\nThat is a bug in the new desk. It is being traced now, read-only; the fix goes into G33.7 with the rest, unless you say otherwise."
     }
    ]
   },
@@ -3385,11 +3389,9 @@
    "id": "goal/G33.7",
    "title": "Desk interface: bounded answers, no superfluous verbs",
    "goal": "goal/G33",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -3398,17 +3400,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
+   "limbo": true,
+   "design": false,
+   "fileCount": 7,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -3416,7 +3418,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyAnswer": "taken",
@@ -3428,10 +3459,148 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE DESK'S INTERFACE: BOUNDED ANSWERS, NO SUPERFLUOUS VERBS (split from goal/G33.4)\n\n- Nothing is fetched all at once. A desk client connecting starts a stream push of the current goal: the goal and its items' rows. An item's parts (box, chat, checks, files) come only when needed, fetched by the deskClient for its agent, and then stay in its cache, kept current by the push.\n- The desk's interface itself prevents oversized answers: no verb fetches a whole goal or a whole item; every verb that could answer past the payload is removed or reshaped into bounded reads, and superfluous interfaces are removed.\n- Found live: reading goal/G33.4 whole answered 8,457 bytes against the 8,377 limit. item.get answers the item's facts only, bounded; the facts themselves are bounded so a row always fits.\n- First step: an inventory of every desk and deskClient verb, each with whether its answer can pass the payload, who calls it, and keep / reshape into bounded reads / delete; Andy says yes to the list before anything is built.\n",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "THE DESK'S INTERFACE: BOUNDED ANSWERS, NO SUPERFLUOUS VERBS (split from goal/G33.4)\n\n- Nothing is fetched all at once. A desk client connecting starts a stream push of the current goal: the goal and its items' rows. An item's parts (box, chat, checks, files) come only when needed, fetched by the deskClient for its agent, and then stay in its cache, kept current by the push.\n- The desk's interface itself prevents oversized answers: no verb fetches a whole goal or a whole item; every verb that could answer past the payload is removed or reshaped into bounded reads, and superfluous interfaces are removed.\n- Found live: reading goal/G33.4 whole answered 8,457 bytes against the 8,377 limit. item.get answers the item's facts only, bounded; the facts themselves are bounded so a row always fits.\n- Found live at G33.4's Done: the desk wrote its over-a-red-run line from an older run (13) instead of the newest (14). At every event the desk reads the newest run of each suite; this case is in the red.\n- Every read asks for the precise information needed and no more; the build looks for places that fetch more than they use. Every desk table's interface has its probability search, mandatory and made by one shared component rather than written per table; the suites table's is item.suites.search, all an agent's verifier run needs.\n- searchDataSet: a cache-only search in the component that keeps the data set (spirit.data), so it serves the page and every server alike. It asks nobody and ranks by probability across every table it holds, returning the most relevant rows whatever table they are in, bounded like every search.\n\nThe verb list (approved)\n- Delete: rule.history, state.get, state.set (nothing calls them); session.set (writes a whole goal at once; its callers use goal.add and item.add); deskClient.changed (nothing sends it since the push); items.find (agents only; items.search covers it).\n- Reshape into bounded reads: item.checks (more flag); seen.get and seen.set (one row per item, not one growing document); the Stacks door list (a door search with a more flag, and a read per door); a goal row's lists of every agent ever seen (bounded, or their own read); deskClient's kept file list (filled to one answer); deskVerify's run search (one suite's part per run).\n- Add: each table's probability search, item.suites.search among them.\n- Keep, already bounded: item.get (facts only), item.box, item.chat, item.files, items.search, chat.search, and the rest.\n",
+   "version": 8,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/shell/js/desk/data.js, spirit/run/shell/js/spiritData.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T11:26:04.842Z",
+     "made": "desk"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:12:48.589Z",
+     "text": "this should need no grants i think. is it green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:13:33.276Z",
+     "text": "Green as far as I can see, with one line added (box v2): the stale run at G33.4's Done, so its fix belongs here.\n\n- Grants: most of it is in desk.js, deskClient.js and the Desk page, which need none. One core file is likely: shell/js/desk/data.js, the translator, if fetching parts on demand touches it. You would see that grant on the item before any commit.\n- The first step stays the verb list for your yes; nothing is deleted before that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:14:44.367Z",
+     "text": "i do have a pile of core-cleanups, for later, after i end design on this item and click go, i'll leave you for a couple of hour to finish this."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:14:48.915Z",
+     "text": "The stale run is explained: the verifier's search put a whole run into each row. Run 14, with 111 suites, no longer fit one answer, so the search dropped it, and the desk took the newest row that did fit, run 13. The same rule applies: the search answers, for the suite asked about, only that suite's part of each run, and the desk never falls back to an older row when the newest did not arrive.\n\nThe verb list:\n\nDelete:\n- rule.history, state.get, state.set: nothing calls them.\n- session.set: writes a whole goal at once; the Desk page and the Stacks plugin use goal.add and item.add instead.\n- deskClient.changed: nothing sends it since the push.\n- items.find: only agents use it; optional.\n\nReshape into bounded reads:\n- item.checks: filled to one answer, with a more flag.\n- seen.get and seen.set: one row per item instead of one growing document.\n- the Stacks door list: a door search with a more flag, plus a read per door.\n- a goal's row: its lists of every agent ever seen bounded, or moved to their own read.\n- deskClient's kept file list: filled to one answer, as kept chat already is.\n- deskVerify's run search: as above, one suite's part per run.\n\nKeep, already bounded: item.get (facts only now), item.box, item.chat, item.files, items.search, chat.search, and the rest of the reads and writes.\n\nYes to this list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:18:55.317Z",
+     "text": "there's probably more to be streamlined, for a verifier run on you node all you really need is item.suites.search... you dont need anything else for that, i don't know the code, but there's probably a lot of places where the precise info needed can be gotten more minimally"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:19:15.745Z",
+     "text": "Agreed, and in the box (v3): every read asks for exactly what it needs, and the build looks for places that fetch more than they use. item.suites.search joins the list as the one new verb: an agent's verifier run needs nothing else.\n\nThe list above plus item.suites.search: yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:21:10.376Z",
+     "text": "and you should probable add a searchDataSet (a cache only search, which might belong into the system component that manages the cache, and it might return the most relevant things, no matter which table something is in...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:21:32.693Z",
+     "text": "Good fit, in the box (v4): searchDataSet in the data-set component itself, cache only, ranked by probability across all its tables, bounded like every search. It reuses the desk's existing ranking rather than a new one. The component is shell/js/spiritData.js, a core file, so its grant will show on the item.\n\nStill open: yes to the verb list, with item.suites.search?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:23:04.074Z",
+     "text": "if you have a table for suites, shouldn't a probability Search of that table be an automatic or at least mandatory component of that tables interface?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:23:23.693Z",
+     "text": "Yes: every table's interface gets its probability search, mandatory, made by one shared component instead of written table by table; item.suites.search is simply the suites table's. In the box (v5).\n\nStill open: yes to the verb list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:23:50.556Z",
+     "text": "what verb list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:24:12.382Z",
+     "text": "The list of desk verbs to delete, reshape or add, which I posted further up in this chat. It is now at the end of the box (v6), under \"The verb list\", so you can read it there in one place.\n\nYes to it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:24:26.881Z",
+     "text": "the verb-elimination list, yes to that. granted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:24:45.433Z",
+     "text": "Recorded: the verb list approved (box v7). I start building at your Go, and post here when it is green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:25:34.379Z",
+     "text": "please add a grant request for shell/js/spiritData.js now. i assume that will be valid for the life cycle of this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:25:59.292Z",
+     "text": "The grant request is on the item: shell/js/spiritData.js, and with it shell/js/desk/data.js, the translator, which this item touches too. Both show grant open.\n\nYes, valid for the item's life: since G33.4 each file row holds its own grant, so adding another file later asks only for that one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:26:20.722Z",
+     "text": "god, that was snappy!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:26:25.391Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:26:52.955Z",
+     "text": "Green. Two small cleanups in the box (v8): the inventory step is gone, since you approved its list, and items.find is a plain delete, items.search covering it.\n\nWaiting on the grant for the two core files and your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:27:43.289Z",
+     "text": "grant already issued. green? have the grants not been pushed to you?\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:28:01.407Z",
+     "text": "Yes, the push brought it: my deskClient's copy shows both core files granted, the same as your desk. I wrote my last line without looking at the item's files again; my mistake, not the push's.\n\nGreen, granted: only your Go is left."
+    }
+   ]
   }
  ]
 }
