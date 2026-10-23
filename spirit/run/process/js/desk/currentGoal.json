@@ -1,5 +1,5 @@
 {
- "change": 93534,
+ "change": 93537,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -55,14 +55,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2256,10 +2258,9 @@
    "id": "goal/G33.6",
    "title": "Desk adjustments: one next button in the List, idle is no run",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
