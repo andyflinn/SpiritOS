@@ -301,6 +301,27 @@ async function main() {
   if (woke === null || !woke.length) test.check('his line and the other agent\'s answer on an item it does not hold left its wait running');
   else test.fail(OWED + 'its wait ended with ' + short(woke));
 
+  // goal/G33.8 (box v15-16; Andy: "the desk client, when it wakes its agent, hands it all the news since the last
+  // agent-wake, this is also why you never know about status changes etc... in the items or goals"): a wake hands over
+  // every line and every state change of the current goal since the agent's last wake, in order, the waking line
+  // included; news not meant for it wakes nothing on its own.
+  test.subHeading('5b. a wake hands over all the news of the goal since the last wake');
+  await waitFor(15000);
+  const sinceWait = waitFor(15000);
+  await sleep(500);
+  await call('desk', 'chat.add', { id: 'goal/G100.2', text: 'wsl note on its own item' }, A_AT_DESK);
+  await sleep(800);
+  // A state change on another item: the third agent, holding its red, says where it stands.
+  await call('desk', 'item.status', { id: jobId, word: 'testing the news' }, { key: 'MCowBQYDK2VwAyEAdeskClientPushTestAgentCCCCCCCCCCCCCCCCCCCC=', label: 'third' });
+  await sleep(800);
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'cw? the waking line' }, ANDY);
+  const sinceLines = await sinceWait;
+  const idxNote = (sinceLines || []).findIndex(function (l) { return String(l).indexOf('wsl note on its own item') !== -1; });
+  const idxWake = (sinceLines || []).findIndex(function (l) { return String(l).indexOf('cw? the waking line') !== -1; });
+  const idxState = (sinceLines || []).findIndex(function (l) { return String(l).indexOf('item.status') !== -1 && String(l).indexOf(jobId) !== -1; });
+  if (idxNote !== -1 && idxState > idxNote && idxWake > idxState && /^DESK /.test(sinceLines[idxWake]) && /^NEWS /.test(sinceLines[idxNote])) test.check('the wake handed the other agent\'s line, the state change of ' + jobId + ' and his waking line, in that order, his as DESK, the rest as NEWS');
+  else test.fail('OWED by goal/G33.8 (wake): the wait ended with ' + short(sinceLines));
+
   test.subHeading('6. deskClient calls the desk through the family interface');
   const code = fs.readFileSync(CLIENT, 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   const handRolled = /\{\s*desk\s*:\s*\{/.test(code);

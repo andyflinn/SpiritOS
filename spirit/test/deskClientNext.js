@@ -241,7 +241,9 @@ async function main() {
   await andySays('andy on my item', 'goal/G100.1');
   await sleep(1500);
   const many = await next();
-  const got = many.lines || [];
+  // goal/G33.8 (box v16): the wake hands all the news since the last wake as NEWS lines; what is the agent's own to act
+  // on comes as DESK, and that is what is judged here.
+  const got = (many.lines || []).filter(function (l) { return String(l).indexOf('NEWS ') !== 0; });
   const wanted = [function (l) { return l.indexOf('DESK andy chat.add ') === 0 && said('andy on my item')(l); }];
   const missing = wanted.filter(function (fits) { return !got.some(fits); }).length;
   const unwanted = ['"seen"', 'andy to the holder', 'chat of the other agent', 'chat of my own', 'new chat one'].filter(function (t) { return got.some(said(t)); });

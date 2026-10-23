@@ -240,9 +240,65 @@ function fromKept(name, args) {
 
 // ONE ROW OF THE DESK'S STREAM, as appServer hands it after it took it into spirit.data (onRow): if it is a line meant
 // for this agent, into what its next wait hands over; a row that holds a phase nobody holds may mean a job.
+// The lines of the goal in view since the agent's last wake (handOver), each once: { key, text }.
+// ALL THE NEWS SINCE THE LAST WAKE (goal/G33.8, box v15-16; Andy: "the desk client, when it wakes its agent, hands it
+// all the news since the last agent-wake, this is also why you never know about status changes etc... in the items or
+// goals"): every line of the goal in view and the group chat, whoever wrote it and wherever, and every change of an
+// item's or the goal's state (its phase, holder, Go, claims, verified, done, closed, a check), as the stream brought
+// them, each once, in order. They are handed with the next wake (handOver) and wake nothing by themselves. A line or
+// change meant for the agent is handed as DESK (it is the agent's to act on); the rest as NEWS. Nothing is asked of
+// the desk.
+const sinceWake = [];
+const SINCE_WAKE_MAX = 200;
+function inView(goal) {
+  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  return goal === 0 || (!!cur && goal === Number(cur[1]));
+}
+function lineKeyOf(id, l) { return String(id) + '#' + String(l.at) + '#' + String(l.key || l.by); }
+function news(key, text) {
+  if (sinceWake.some(function (x) { return x.key === key; })) return;
+  sinceWake.push({ key: key, text: text });
+  // Bounded while nobody waits: only the newest that could ever fill one answer are kept.
+  while (sinceWake.length > SINCE_WAKE_MAX) sinceWake.shift();
+}
+// Which state of a row is news: these fields, as the facts carry them.
+const STATE_FIELDS = ['status', 'phase', 'with', 'go', 'claims', 'verified', 'verifyRed', 'design', 'limbo'];
+const STATE_QUIET = ['chat.add', 'agent.state', 'seen.set', 'line.take'];
+// Each item's state as last heard, so only a change of it is news (the first heard, a bootstrap's, is only noted).
+const lastState = {};
+function keepSinceWake(row) {
+  if (row.table === 'chat') {
+    if (!row.row || row.removed) return;
+    const l = row.row;
+    if (!l.at || String(l.at) <= sinceNow || !inView(row.goal)) return;
+    if (SELF_KEY ? l.key === SELF_KEY : l.by === SELF) return;
+    if (Array.isArray(row.to) && row.to.length && row.to.indexOf(SELF_KEY) === -1) return;
+    news(lineKeyOf(row.id, l), 'NEWS ' + l.by + ' chat.add ' + JSON.stringify({ id: String(row.id), text: String(l.text) }));
+    return;
+  }
+  if (row.table === 'checks') {
+    if (!row.row || row.removed || !inView(row.goal)) return;
+    const c = row.row;
+    news('check#' + row.id + '#' + c.number + '#' + c.state, 'NEWS check ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') }));
+    return;
+  }
+  const f = row.item && typeof row.item === 'object' ? row.item : null;
+  if (!f || !f.id || STATE_QUIET.indexOf(String(row.verb || '')) !== -1) return;
+  const k = /^goal\/G(\d+)/.exec(String(f.id));
+  if (!k || !inView(Number(k[1]))) return;
+  const state = {};
+  STATE_FIELDS.forEach(function (n) { if (f[n] !== undefined && f[n] !== '' && f[n] !== false && f[n] !== 0) state[n] = f[n]; });
+  // Only a change of its state is news: a write that leaves those fields as they were (a box taken, a rename) is not.
+  const print = JSON.stringify(state);
+  if (lastState[f.id] === undefined) { lastState[f.id] = print; return; }
+  if (lastState[f.id] === print) return;
+  lastState[f.id] = print;
+  news('state#' + f.id + '#' + print, 'NEWS ' + String(row.verb || 'change') + ' ' + JSON.stringify(Object.assign({ id: String(f.id) }, state)));
+}
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
+  keepSinceWake(row);
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
@@ -332,15 +388,15 @@ function meantForAgent(row) {
   if (l.by === 'andy') {
     if (group) publishOn(body);
     // His line addressed to agents comes only to them, its row naming them (desk.js streamToClients).
-    if (Array.isArray(row.to) && row.to.length) return row.to.indexOf(SELF_KEY) !== -1 ? { text: 'DESK andy chat.add ' + body, take: id } : null;
-    if (held || nobodyHolds || group) return { text: 'DESK andy chat.add ' + body, take: id };
+    if (Array.isArray(row.to) && row.to.length) return row.to.indexOf(SELF_KEY) !== -1 ? { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) } : null;
+    if (held || nobodyHolds || group) return { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) };
     return null;
   }
   const said = String(l.text || '');
   const m = /^commit ([0-9a-f]{7,40})\b/.exec(said);
   if (m) queuePull(m[1]);
   if (l.by === 'desk' && /^message delivered, /.test(said)) return null;
-  if (held || (group && l.by === 'desk')) return { text: 'DESK ' + l.by + ' chat.add ' + body };
+  if (held || (group && l.by === 'desk')) return { text: 'DESK ' + l.by + ' chat.add ' + body, key: lineKeyOf(id, l) };
   return null;
 }
 // THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
@@ -464,24 +520,31 @@ function say(to, word) {
 }
 
 // As many waiting lines as one answer holds, oldest first.
+// EVERY LINE SINCE THE LAST WAKE (goal/G33.8, box v15; Andy: "your desk client, when it wakes you, should give you all
+// the lines that happened since your last wake"): the wake hands over the current goal's and the group chat's lines the
+// stream brought since the agent's last wake, whoever wrote them and wherever, newest last, together with what was meant
+// for it (the waking line among them, once); as many as fill one answer, the oldest left out first, and more says so.
+// Nothing is asked of the desk: they are the rows the stream brought. A line not meant for the agent wakes nothing.
 function handOver(to, t0) {
   moveSince();
+  const items = sinceWake.splice(0);
+  waiting.splice(0).forEach(function (w) {
+    const twin = w.key ? items.filter(function (x) { return x.key === w.key; })[0] : null;
+    if (twin) twin.text = w.text; else items.push({ key: '', text: w.text });
+  });
+  const all = items.map(function (x) { return x.text; });
   const lines = [];
-  let last = null;
-  while (waiting.length) {
-    const next = waiting[0];
-    if (Buffer.byteLength(JSON.stringify({ lines: lines.concat([next.text]) }), 'utf8') > ANSWER_ROOM) {
-      if (lines.length) break;
+  for (let i = all.length - 1; i >= 0; i--) {
+    let text = all[i];
+    if (!lines.length) {
       // One line too big for an answer on its own is cut to fit, never held back for ever.
-      let text = next.text;
-      while (text.length > 1 && Buffer.byteLength(JSON.stringify({ lines: [text] }), 'utf8') > ANSWER_ROOM) text = text.slice(0, Math.floor(text.length / 2));
-      next.text = text;
-    }
-    lines.push(next.text);
-    last = waiting.shift();
+      while (text.length > 1 && Buffer.byteLength(JSON.stringify({ lines: [text], more: true }), 'utf8') > ANSWER_ROOM) text = text.slice(0, Math.floor(text.length / 2));
+    } else if (Buffer.byteLength(JSON.stringify({ lines: [text].concat(lines), more: true }), 'utf8') > ANSWER_ROOM) break;
+    lines.unshift(text);
   }
   agentState = 'busy';
-  return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: lines }; });
+  const answer = lines.length < all.length ? { lines: lines, more: true } : { lines: lines };
+  return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
 }
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
@@ -630,7 +693,9 @@ const server = appServer.serve({
         if (waiting.length || !jobsMaybe) return wait();
         return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
           if (!job) return wait();
-          return ending(function () { return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: [job] }; }); });
+          // A job's wake hands the news too, the job last (goal/G33.8, box v16).
+          waiting.push({ text: job });
+          return ending(function () { return handOver(to, t0); });
         });
       }
       return Promise.resolve().then(jobOrWait);

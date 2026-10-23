@@ -188,7 +188,9 @@ async function main() {
   await andySays('goal/G100.4', 'marker for anyone');
   await sleep(POLL_MS + 100);
   const two = await nextUntil('marker for anyone');
-  if (!has(two, 'for whoever is first')) test.check('a line the other agent took first was not handed over');
+  // goal/G33.8 (box v16): the wake hands all the news of the goal (NEWS lines); a line the other agent took is never
+  // handed as this agent's own to answer (DESK).
+  if (!has(two.filter(function (l) { return String(l).indexOf('DESK ') === 0; }), 'for whoever is first')) test.check('a line the other agent took first was not handed over as its own');
   else test.fail(OWED + 'next handed over a line the other agent had taken: ' + short(two));
   if (!has(two, "this one is for the other agent")) test.check('a line addressed to the other agent was not handed over');
   else test.fail(OWED + 'next handed over a line addressed to the other agent: ' + short(two));
