@@ -896,7 +896,7 @@ function apply(s, r, b, item, goalOf) {
       if (!it) return;
       it.verifyState = String(b.verified || 'none');
       it.verifyFailures = Array.isArray(b.failures) ? b.failures.map(String) : [];
-      if (it.verifyState !== 'none') it.verifyRunning = false;
+      if (b.ended === true || (b.ended === undefined && it.verifyState !== 'none')) it.verifyRunning = false;
       if (b.ran === true && !it.done && !it.closed && (it.status === 'waiting for deskVerify' || it.status === 'handed to deskVerify' || /^verified /.test(it.status))) {
         it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
       }
@@ -1515,7 +1515,11 @@ function facts(s, it) {
     verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: Array.isArray(it.verifyFailures) ? it.verifyFailures : [],
     // THE SWITCH (goal/G33.3): the verifier's last answer to a start request, taken or busy ('' before any); the Verify
     // button shows it.
-    verifyAnswer: s.verifyAnswer || '', verifierBusy: !!s.verifyAnswer };
+    verifyAnswer: s.verifyAnswer || '', verifierBusy: !!s.verifyAnswer,
+    // A RUN OF IT UNDER WAY (goal/G33.6): the verifier took it, and no read has seen that run end yet. The page joins it
+    // with deskVerify's own publishes to show the run in the item's status (Andy: "why do i no longer see the verifier
+    // run in the items status column?").
+    verifyRunning: hasDeskVerify() && it.verifyRunning === true };
   // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
   // goal/G21.6: every agent with an open take of one of his lines.
   f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
@@ -2000,9 +2004,11 @@ async function readVerifyStates() {
     const suites = suitesFor(s, it);
     let verified = 'green';
     let failures = [];
+    let pending = false;
     if (suites.length) {
       let states;
       try { states = await suiteStates(suites, cache); } catch (e) { return; }
+      pending = states.some(function (x) { return x.outcome === 'none'; });
       const red = states.filter(function (x) { return x.outcome !== 'green' && x.outcome !== 'none'; });
       if (red.length) {
         verified = 'red';
@@ -2012,9 +2018,12 @@ async function readVerifyStates() {
         failures = failures.slice(0, FAILURES_SHOWN);
       } else if (states.some(function (x) { return x.outcome === 'none'; })) verified = 'none';
     }
-    if (String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures)) continue;
+    // Unchanged is not written, unless a run of it was under way and has now ended (goal/G33.6): the write is what ends
+    // verifyRunning, so the run leaves the item's status.
+    const ended = it.verifyRunning === true && !pending;
+    if (!ended && String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures)) continue;
     // ran: the state came from runs of its suites (an item listing none is green with nothing run, and keeps its word).
-    write('verify.state', { id: it.id, verified: verified, failures: failures, ran: suites.length > 0 && verified !== 'none', by: 'desk', key: '' });
+    write('verify.state', { id: it.id, verified: verified, failures: failures, ran: suites.length > 0 && verified !== 'none', ended: !pending, by: 'desk', key: '' });
   }
 }
 // ONE START REQUEST, its answer written as verify.answer. Answers 'taken', 'busy', or null when nothing was asked.

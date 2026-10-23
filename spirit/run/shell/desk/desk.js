@@ -581,6 +581,18 @@ function deskForgetKept() {
   if (!D || typeof D.branch !== 'function') return;
   Object.keys(D.branch('deskItem')).forEach(function (id) { D.del('deskItem/' + id); });
 }
+// THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app, as the
+// shared element is; a page without it draws the status word alone.
+var DESK_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
+function deskLoadRunStatus() {
+  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
+  if (typeof have === 'function') return;
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DESK_RUN_STATUS;
+  script.onload = function () { deskDraw(); };
+  document.body.appendChild(script);
+}
 function deskLoadSharedElement(done) {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof have === 'function') { done(); return; }
@@ -866,10 +878,14 @@ function deskOpenPlugin(app) {
   script.onerror = function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
   document.body.appendChild(script);
 }
-// THE STATUS BOX (goal/G18.5): the server's status word, green when it says passed, red when rejected or red. The run's
-// bar that stood here named the row through deskVerify's published object; since goal/G33.3 deskVerify knows no item
-// (Andy: "deskVerify has no fucking clue about desk, desk goals or desk items"), so the bar is the Verifier tab's alone.
+// THE STATUS BOX (goal/G18.5, back with goal/G33.6): while the verifier runs this item, its run; otherwise the server's
+// status word, green when it says passed, red when rejected or red. Andy: "why do i no longer see the verifier run in
+// the items status column?" deskVerify knows no item, so the row joins the desk's fact (verifyRunning) with the
+// verifier's own publish (deskVerifyRun), through the one rendering the dialog uses too (shell/shared/js/deskRunStatus.js).
 function deskStatusCell(row) {
+  var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
+  var run = els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(row, deskVerifyRun, deskEsc) : '';
+  if (run) return run;
   var word = String(row.status || '');
   var colour = /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b/i.test(word) ? '#c00' : '';
   return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
@@ -1798,6 +1814,7 @@ spirit.shell.activateApp({
     // the shared element is loaded, the List is drawn again so its rows are made as elements too.
     deskLoadSharedElement(function () { deskMountElements(); deskDraw(); });
     deskLoadData();
+    deskLoadRunStatus();
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the chats are asked for again. Lines already held are not taken twice.

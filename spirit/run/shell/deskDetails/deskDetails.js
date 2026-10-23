@@ -78,6 +78,8 @@ function ddFrame() {
     // "no rounded corners", "no margins and no padding". The status the bubble carried rides in the title bar.
     '<div id="dd-bars">' +
       '<div id="dd-name-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
+      // THE RUN, WHILE THE VERIFIER RUNS THIS ITEM (goal/G33.6): the same rendering as the List's status column.
+      '<div id="dd-run"></div>' +
     '</div>' +
     // THE UPPER HALF (goal/G30.8; Andy, 2026-10-20: "an Icon strip down the left side of the detail panel. and an upper
     // and a lower half"): fixed at 30% of the page, so nothing arriving late moves the page; the icons down its left
@@ -125,6 +127,29 @@ function ddHeader() {
 }
 
 var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
+
+// THE VERIFIER'S RUN OF THIS ITEM (goal/G33.6), as the List's status column shows it: the desk's fact (verifyRunning)
+// joined with deskVerify's own publish (ddRun), through the one shared rendering (shell/shared/js/deskRunStatus.js).
+var ddRun = null;
+var DD_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
+function ddRunHtml() {
+  var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
+  return els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(ddFacts || {}, ddRun, ddEsc) : '';
+}
+function ddHearVerifier(obj) {
+  if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
+  ddRun = obj;
+  ddSet('dd-run', ddRunHtml());
+}
+function ddLoadRunStatus() {
+  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
+  if (typeof have === 'function') return;
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DD_RUN_STATUS;
+  script.onload = function () { ddSet('dd-run', ddRunHtml()); };
+  document.body.appendChild(script);
+}
 
 // DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3). The box: "not verified (its suites red,
 // or no run of them yet), the Done button carries a warning mark and re-arms in the page: the first press arms it and
@@ -447,6 +472,7 @@ function ddSet(id, html) { var el = document.getElementById(id); if (el) el.inne
 function ddPaint() {
   var typed = ddRenaming ? ddValue('dd-name') : '';
   ddSet('dd-name-row', ddButtonsHtml());
+  ddSet('dd-run', ddRunHtml());
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddSet('dd-icons', ddIconsHtml());
@@ -768,6 +794,9 @@ spirit.shell.activateApp({
     });
     // The desk server's changes, which the shell would otherwise hand only to Desk.
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
+    // deskVerify's own run objects, for the run of this item (goal/G33.6).
+    if (typeof api.onPublished === 'function') api.onPublished(ddHearVerifier, 'deskVerify');
+    ddLoadRunStatus();
   },
 
   // Every call: which item this is. Nothing stale from the last one.
