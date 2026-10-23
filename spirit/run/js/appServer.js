@@ -423,76 +423,113 @@ function nodeUrl() {
   try { return new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { return ''; }
 }
 
-// ── publish: ONE FUNCTION FOR THE PAGES AND THE FOLLOWING SERVERS (goal/G33.4, box v43) ──────
+// ── streamPublisher: subscribe, unsubscribe, and the one publish (goal/G33.8, box v8) ──────
 //
-//   Andy: "the desk server publishes its changes to the browser with the same function that it publishes its changes
-//   to the deskClients".
+//   Andy: "js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher)
+//   interface", "the server part of it accepts connections from streamListeners in form of "ID-key.api-family" where
+//   the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it
+//   always has and to the connected peer id's via peerPosts to ID-family-streamListener"; "Subscribe and unsubscribe are
+//   verbs of the streamPublisher in js/appServer.js, approved and granted."
 //
-// publish(row) puts the row on the node's job stream for its pages, and hands the same row, as it is, to every server
-// that follows this one: a server that sends a stream names in serve() opts.streamTo = { family, recipients, waitMs },
-// the followers' family, recipients(row) -> the keys of the nodes this row goes to, and how long one delivery may take.
-// Each goes to the follower's streamListener (withStreamListener above) through its family interface over peerPost
-// (face/spirit.js forPeer: no packet built here). One delivery at a time per follower, in order. A follower that does
-// not answer is away: what was queued for it is dropped (no stale queue), and publish skips it until a row is sent to it
-// alone (publish(row, key): the follower only, no page), which is how a sender hands a returning follower what it
-// missed; listening(key) says 'on', 'away' or 'new' (never sent to). A follower whose family has no streamListener is
-// sent nothing. A server that sends follows nobody by this: it receives nothing back (box v42).
-let sendTo = null;
-const sendQueues = new Map();   // key -> { busy, rows, away }
-function deliverRow(key, row) {
+// A server that publishes a stream hands serve() opts.publisher = { family, bootstrap, waitMs }: the family its
+// subscribers listen as when it has nothing else to go by (after a restart), bootstrap(key) -> the rows a new subscriber
+// gets first (the server's own best set), and how long one delivery may take. serve() then adds two verbs:
+//   subscribe {family}   the caller's key subscribes as family (its streamListener); its bootstrap rows go to it alone
+//   unsubscribe {}       the caller's key stops being sent anything
+// Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
+// subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
+// the same row to every subscriber through its family's streamListener over peerPost (face/spirit.js forPeer: no packet
+// built here); a row naming keys in to goes to those subscribers alone. One attempt per row, in order per subscriber,
+// no patience: one that does not answer within waitMs is away, its queued rows dropped, and it is sent nothing more until
+// it subscribes again. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
+// the server's subscribers are the keys the node grants it to (auth.search), each as the server's family; nothing else
+// persists.
+let publisher = null;
+const subscribers = new Map();   // key -> { family, busy, rows, away }
+function deliverRow(key, q, row) {
   const so = require('../face/spirit.js');
-  const post = function (body) { return spirit.peerPost(key, 'api', body, { waitMs: sendTo.waitMs || 10000 }); };
-  return so.forPeer(key, post, sendTo.family).then(function (s) {
-    const fam = s[sendTo.family];
-    if (!fam || typeof fam.streamListener !== 'function') return 'no-receiver';
+  const post = function (body) { return spirit.peerPost(key, 'api', body, { waitMs: publisher.waitMs }); };
+  return so.forPeer(key, post, q.family).then(function (s) {
+    const fam = s[q.family];
+    if (!fam || typeof fam.streamListener !== 'function') return 'away';
     return so.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
 }
 function pumpTo(key) {
-  const q = sendQueues.get(key);
-  if (!q || q.busy || !q.rows.length) return;
+  const q = subscribers.get(key);
+  if (!q || q.busy || q.away || !q.rows.length) return;
   q.busy = true;
-  // The moment this delivery started: a follower found away was away since then at the latest (awaySince).
-  const startedAt = new Date(Date.now() - 1000).toISOString();
-  deliverRow(key, q.rows.shift()).then(function (said) {
+  deliverRow(key, q, q.rows.shift()).then(function (said) {
     q.busy = false;
-    if (said === 'away') {
-      q.rows = [];
-      const was = q.away;
-      if (!was) q.awaySince = startedAt;
-      q.away = true;
-      // The sender hears it (opts.streamTo.onAway), so a follower that came back while this delivery waited is not left out.
-      if (!was && typeof sendTo.onAway === 'function') { try { sendTo.onAway(key, q.awaySince); } catch (e) { /* the sender's */ } }
-      return;
-    }
-    if (said === 'no-receiver') { q.rows = []; return; }
+    if (said !== 'taken') { q.rows = []; q.away = true; return; }
     pumpTo(key);
   });
 }
-function publish(row, only) {
-  const out = only ? undefined : spirit.core.jobs.publish(row);
-  if (!sendTo) return out;
-  let keys = [];
-  if (only) keys = [String(only)];
-  else { try { keys = sendTo.recipients(row) || []; } catch (e) { keys = []; } }
-  keys.forEach(function (key) {
-    const q = sendQueues.get(key) || { busy: false, rows: [], away: false };
-    sendQueues.set(key, q);
-    if (only) q.away = false;
-    if (q.away) return;
-    q.rows.push(row);
-    pumpTo(key);
-  });
+function sendTo(key, row) {
+  const q = subscribers.get(key);
+  if (!q || q.away) return;
+  q.rows.push(row);
+  pumpTo(key);
+}
+// THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
+// that it publishes its changes to the deskClients").
+function publish(row) {
+  const out = spirit.core.jobs.publish(row);
+  const to = row && Array.isArray(row.to) ? row.to.map(String) : null;
+  subscribers.forEach(function (q, key) { if (!to || to.indexOf(key) !== -1) sendTo(key, row); });
   return out;
 }
-// Since when a follower is away ('' when it is not): what a sender hands a returning follower may start there.
-function awaySince(key) {
-  const q = sendQueues.get(String(key || ''));
-  return q && q.away ? String(q.awaySince || '') : '';
+function subscribe(key, family) {
+  const k = String(key || '');
+  const was = subscribers.get(k);
+  if (was && !was.away && was.family === family) return false;
+  subscribers.set(k, { family: family, busy: false, rows: [], away: false });
+  let rows = [];
+  try { rows = (publisher.bootstrap && publisher.bootstrap(k)) || []; } catch (e) { rows = []; }
+  rows.forEach(function (row) { sendTo(k, row); });
+  return true;
 }
-function listening(key) {
-  const q = sendQueues.get(String(key || ''));
-  return !q ? 'new' : q.away ? 'away' : 'on';
+function withPublisher(verbs, opts) {
+  if (!opts || typeof opts !== 'object') return verbs;
+  publisher = { family: String(opts.family || ''), bootstrap: typeof opts.bootstrap === 'function' ? opts.bootstrap : null, waitMs: Number(opts.waitMs) || 10000 };
+  const all = Object.assign({}, verbs);
+  const refusedNoKey = function () { return Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'a subscriber is a peer\'s key' } }); };
+  all.subscribe = {
+    request: { family: '' }, reply: { subscribed: true },
+    handler: function (a, caller) {
+      if (!caller || !caller.key) throw refusedNoKey();
+      if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its streamListener\'s' } });
+      subscribe(caller.key, String(a.family));
+      return { subscribed: true };
+    },
+  };
+  all.unsubscribe = {
+    request: {}, reply: { unsubscribed: true },
+    handler: function (a, caller) {
+      if (!caller || !caller.key) throw refusedNoKey();
+      subscribers.delete(String(caller.key));
+      return { unsubscribed: true };
+    },
+  };
+  return all;
+}
+// AFTER A RESTART THE SUBSCRIBERS ARE THE GRANTS (box v8): every key the node grants this server to, or its subscribe.
+function subscribersFromGrants(name) {
+  const base = nodeUrl();
+  if (!publisher || !base) return Promise.resolve(0);
+  const so = require('../face/spirit.js');
+  return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.search({ text: name }); })).then(function (r) {
+    const records = (r.body && Array.isArray(r.body.records)) ? r.body.records : [];
+    let n = 0;
+    records.forEach(function (g) {
+      const p = String(g.path || '');
+      if (!g.key || (p !== name && p !== name + '.subscribe') || subscribers.has(String(g.key))) return;
+      // Each handed the bootstrap set, as a new subscriber is; one that does not answer is away at once.
+      subscribe(String(g.key), publisher.family);
+      n += 1;
+    });
+    return n;
+  }, function () { return 0; });
 }
 
 // THE FAMILY FOLDER'S VERBS (introSpector.js): since goal/G30.4 its FS verbs alone, on every server, AGENTS.md or
@@ -532,11 +569,9 @@ function serve(verbs, opts) {
   // throw lands before anything listens, and the exit says why.
   // goal/G33.4: the stream a server follows, if it follows one (withStreamListener).
   const followed = new Set();
-  // goal/G33.4 (box v43): the servers this one's publish reaches, if it sends a stream.
-  const st = opts && opts.streamTo;
-  if (st && typeof st === 'object' && typeof st.recipients === 'function') sendTo = { family: String(st.family || ''), recipients: st.recipients, waitMs: Number(st.waitMs) || 10000, onAway: st.onAway };
   try {
-    verbs = withDependencies(withDebug(withAgents(withStreamListener(verbs, opts && opts.stream, followed), argv[1])), opts && opts.dependencies);
+    // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
+    verbs = withDependencies(withDebug(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed), opts && opts.publisher), argv[1])), opts && opts.dependencies);
   } catch (e) {
     console.error(e.message);
     process.exit(2);
@@ -559,11 +594,29 @@ function serve(verbs, opts) {
     spirit.core.jobs.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
+    subscribersFromGrants(name);
   });
   srv.on('error', function (e) {
     console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
     process.exit(1);
   });
+  // THE CLIENT HALF (goal/G33.8): subscribe(key, family) follows the stream of family on the node of key: its rows are
+  // heard from that key (follow, which also grants the key this server's streamListener on its own node), then the
+  // publisher is asked to subscribe this server, as this server's family, over peerPost through the publisher's family
+  // interface. Answers whether the publisher took it. Asked again whenever this server thinks it may have been dropped.
+  s.subscribe = function (key, family) {
+    const k = String(key || '');
+    const fam = String(family || '');
+    if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
+    const so = require('../face/spirit.js');
+    const post = function (body) { return spirit.peerPost(k, 'api', body, { waitMs: 10000 }); };
+    return s.follow(k).catch(function () { return false; }).then(function () {
+      return so.outcome(so.forPeer(k, post, fam).then(function (p) {
+        if (!p[fam] || typeof p[fam].subscribe !== 'function') return { ok: false };
+        return p[fam].subscribe({ family: name });
+      }));
+    }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
+  };
   // FOLLOW A SENDER'S STREAM (goal/G33.4): heard from now on, and granted the verb on this node. Answers whether the
   // node holds the grant (true when it did already).
   s.follow = function (key) {
@@ -624,10 +677,8 @@ module.exports = {
   spirit:spirit,
   // goal/G33.4: the data set a following server keeps (shell/js/spiritData.js), filled by its stream's translator.
   get data() { return dataSet(); },
-  // goal/G33.4 (box v43): the one publish, to the pages and to the following servers; and whether a follower is on.
+  // goal/G33.8: the one publish, to the pages and to the subscribers.
   publish: publish,
-  listening: listening,
-  awaySince: awaySince,
   createAppServer: createAppServer,
   serve: serve,
   matches: matches,

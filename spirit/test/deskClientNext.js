@@ -248,7 +248,10 @@ async function main() {
   if (got.length === 1 && !missing && !unwanted.length) test.check('his line on the item it holds came out; his seen press, chat on the item the other agent held, and its own line did not');
   else test.fail(OWED + 'next handed over ' + got.length + ' line(s), ' + missing + ' wanted missing, unwanted ' + JSON.stringify(unwanted) + ': ' + JSON.stringify(got).slice(0, 400));
 
-  test.subHeading('6. once, across a restart: nothing missed, nothing repeated');
+  // goal/G33.8 (box v8, Andy): "It need not be perfect: clients subscribe at different times and ask for different things,
+  // so a mirror is never exact or complete, only the best information available." A line written while it was down may
+  // be missed; nothing is handed twice, nothing from before comes back, and what follows its restart reaches it.
+  test.subHeading('6. across a restart: nothing repeated, and what follows reaches it');
   kid.kill();
   await sleep(500);
   await andySays('chat while it was down', 'goal/G100.1');
@@ -261,8 +264,9 @@ async function main() {
   await andySays('chat after the restart', 'goal/G100.1');
   const later = await waitingLater;
   const before = ['andy on my item', 'new chat one', 'before the first run'].filter(function (t) { return backLines.concat(later.lines || []).some(said(t)); });
-  if (backLines.filter(said('chat while it was down')).length === 1 && later.lines && later.lines.length === 1 && said('chat after the restart')(later.lines[0]) && !before.length) {
-    test.check('after a restart next handed over what was written while it was down, once, and nothing from before');
+  const all6 = backLines.concat(later.lines || []);
+  if (all6.filter(said('chat while it was down')).length <= 1 && all6.filter(said('chat after the restart')).length === 1 && !before.length) {
+    test.check('after a restart next handed his line after it once, the line while it was down at most once, and nothing from before');
   } else test.fail(OWED + 'after the restart next answered ' + JSON.stringify(backLines).slice(0, 300) + ', then ' + JSON.stringify(later.lines).slice(0, 200));
 
   test.subHeading('8. no poll is left');

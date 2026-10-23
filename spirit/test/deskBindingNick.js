@@ -142,6 +142,9 @@ async function theServer() {
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
+    // goal/G33.8: each agent's deskClient subscribes to the desk's stream (the desk names no recipients of its own).
+    await call('subscribe', { family: 'deskClient' }, CW);
+    await call('subscribe', { family: 'deskClient' }, WSL);
 
     test.subHeading('0. the pane\'s fields: profile.set takes included and cap, profile.get answers them');
     const p1 = await call('profile.set', { agent: CW.key, name: 'Claude Windows', nick: 'cw', included: true, cap: true }, ANDY);

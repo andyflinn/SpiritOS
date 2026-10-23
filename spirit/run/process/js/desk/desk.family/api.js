@@ -72,6 +72,10 @@ module.exports = {
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'text' },
     signoff: {},
+    // goal/G33.8: appServer's streamPublisher (js/appServer.js): the caller's key subscribes to the desk's rows, sent to
+    // its family of that name; unsubscribe stops it. Who may is the node's grant.
+    subscribe: { family: 'id' },
+    unsubscribe: {},
     // goal/G33.7: the door list as a bounded search, and one door's read (stackFrameChecks.doors went).
     'stackFrameChecks.door': { id: 'id' },
     'stackFrameChecks.doors.search': { text: 'text' },

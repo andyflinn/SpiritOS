@@ -85,6 +85,8 @@ function pretendNode(deliver, onPage) {
       { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
       // RULE 1 (goal/G3.9): each agent's node blocks the other agent, as deskClientQuiet.js has it.
       if (b.verb === 'contact.get') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, key: b.key, person: { publicKey: b.key, blocked: true } })); return; }
+      // goal/G33.8: the node's grants, as auth.search answers them: on Andy's node, B's key holds the desk.
+      if (b.verb === 'auth.search') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ records: onPage ? [{ key: B_KEY, label: 'wsl-claude', path: 'desk' }] : [], more: false })); return; }
       if (b.verb === 'jobs.update') { if (onPage && b.app) onPage(b.app); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
       if (b.verb !== 'peer.post') { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end('{"ok":false}'); return; }
       const hash = 'H' + Date.now() + Math.random();
@@ -105,9 +107,12 @@ function pretendNode(deliver, onPage) {
 // for the node's pages (jobs.update) and what it sends B's deskClient's streamListener are both written down (box v43).
 const toPages = [];
 const toB = [];
+// dropToB: how many of the desk's next rows to B this node loses (goal/G33.8: a delivery that goes unanswered).
+let dropToB = 0;
 const andysNode = pretendNode(function (to, ask) {
   if (to !== B_KEY) return null;
   const sl = ask.body && ask.body.deskClient && ask.body.deskClient.streamListener;
+  if (sl && dropToB > 0) { dropToB -= 1; return null; }
   if (sl) { try { toB.push(JSON.parse(sl.json)); } catch (e) { /* not a row */ } }
   return test.peerAnswer(client, ask.body, DESK_AT_B).then(function (r) { return { from: B_KEY, body: r && r.body }; });
 }, function (app) { toPages.push(app); });
@@ -150,7 +155,7 @@ async function main() {
   // The world (goal/G33.7: session.set went): seeded before the desk starts, which takes it in at start.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   if (!await startDesk(andysUrl)) { test.fail('the world: the desk did not start'); return; }
-  kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50 }), '--pipe', clientPipe, '--state', clientState,
+  kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50, resubscribeMs: 5000 }), '--pipe', clientPipe, '--state', clientState,
     '--node', JSON.stringify({ name: 'wsl-claude', publicKey: B_KEY })], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: agentsUrl + '/' }),
@@ -249,6 +254,43 @@ async function main() {
   else test.fail(OWED + 'phase.take answered ' + short(bTook.body) + '; B\'s wait ended with ' + short(heldLines));
   await call('desk', 'phase.done', { id: heldId, phase: 'red' }, B_AT_DESK);
 
+  // goal/G33.8 (box v8, found live at G33.8's Go, "the second time running"): a Go on an item wakes the agent it
+  // concerns, whether or not that agent already holds the item.
+  test.subHeading('4d. his Go on an item the agent already holds wakes it with the job');
+  const ownItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'Held before its Go' }, ANDY);
+  const ownId = String((ownItem.body || {}).id || '');
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  const bHolds = await call('desk', 'item.take', { id: ownId }, B_AT_DESK);
+  await waitFor(15000);
+  const ownWait = waitFor(15000);
+  await sleep(1000);
+  const ownGoAt = Date.now();
+  const ownGo = await call('desk', 'press', { id: ownId, what: 'go' }, ANDY);
+  const ownLines = await ownWait;
+  const ownMs = Date.now() - ownGoAt;
+  if (bHolds.status === 200 && ownGo.status === 200 && ownLines && ownLines.some(function (l) { return String(l).indexOf('JOB ' + ownId) === 0; }) && ownMs < 8000) test.check('his Go on ' + ownId + ', which B held already, ended B\'s wait with its job, ' + ownMs + ' ms after');
+  else test.fail('OWED by goal/G33.8: item.take answered ' + short(bHolds.body) + ', his Go ' + short(ownGo.body) + '; B\'s wait ended with ' + short(ownLines) + ' after ' + ownMs + ' ms');
+  await call('desk', 'phase.take', { id: ownId, phase: 'red' }, B_AT_DESK);
+  await call('desk', 'phase.done', { id: ownId, phase: 'red' }, B_AT_DESK);
+  await call('desk', 'item.release', { id: ownId }, B_AT_DESK);
+
+  // goal/G33.8 (box v8): the desk "stops sending to a client that has disappeared (unreachable) until that client
+  // subscribes again"; a client whose stream went quiet subscribes again, so it is not lost for good (found live: the
+  // agent holding goal/G33.8 was not woken by its Go, the second time running).
+  test.subHeading('4e. after a delivery to it went unanswered, the client subscribes again and hears what follows');
+  dropToB = 1;
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'andy lost line' }, ANDY);
+  await sleep(11000);
+  const dropFrom = asks.length;
+  await waitFor(15000);
+  const resubscribed = asks.slice(dropFrom).indexOf('subscribe') !== -1;
+  const backWait = waitFor(15000);
+  await sleep(1000);
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'andy after the drop' }, ANDY);
+  const backLines = await backWait;
+  if (resubscribed && backLines && backLines.some(function (l) { return String(l).indexOf('andy after the drop') !== -1; })) test.check('its stream silent, its wait subscribed again, and his next line reached it');
+  else test.fail('OWED by goal/G33.8: subscribed again ' + resubscribed + '; the wait after the drop ended with ' + short(backLines) + '; asked ' + short(asks.slice(dropFrom)));
+
   test.subHeading('5. no needless waking: chat between Andy and another agent on its item does not end the wait');
   await call('desk', 'item.take', { id: 'goal/G100.2' }, A_AT_DESK);
   const notMine = waitFor(15000);
@@ -286,6 +328,12 @@ async function main() {
   const second = ['jobs.publish(', 'peerPost(', 'forPeer(', 'streamListener'].filter(function (w) { return deskCode.indexOf(w) !== -1; });
   if (/appServer\.publish\(/.test(deskCode) && !second.length) test.check('desk.js publishes through appServer.publish alone: no jobs.publish, peerPost or forPeer of its own');
   else test.fail(OWED + 'desk.js has a second send path: ' + short(second));
+  // goal/G33.8 (box v8): "What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from
+  // the agents it knows) and deskClient being wired to the desk by hand at setDesk."
+  const clientCode = fs.readFileSync(CLIENT, 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  const leftovers = [/streamTo/.test(deskCode) ? 'desk.js streamTo' : '', /recipients/.test(deskCode) ? 'desk.js recipients' : '', /\.follow\(/.test(clientCode) ? 'deskClient.js follow(' : '', !/server\.subscribe\(/.test(clientCode) ? 'deskClient.js subscribes nowhere' : ''].filter(Boolean);
+  if (!leftovers.length) test.check('the desk names no recipients and deskClient is not wired by hand: it subscribes');
+  else test.fail('OWED by goal/G33.8: ' + short(leftovers));
   // His line is the agent's; the next wait hands it over at once, so section 2 starts with nothing waiting.
   await waitFor(15000);
 

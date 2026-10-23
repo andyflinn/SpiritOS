@@ -2019,19 +2019,6 @@ function whyNotOffered(st, it, what, offered) {
   return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
 }
 
-// ── WHOM THE STREAM REACHES (goal/G3.5, goal/G33.4) ──────────────────
-//
-// The deskClient of every agent heard from in the last day, not only a live one (ten minutes): an agent that has waited
-// quietly for longer than that is still one the stream is for. THE NUDGE WENT WITH goal/G33.4 (box v43, Andy: "the desk
-// server publishes its changes to the browser with the same function that it publishes its changes to the deskClients"):
-// the stream's own rows wake a client's wait, and the desk sends nothing beside its one publish.
-const NUDGE_FOR_MS = 24 * 60 * 60 * 1000;
-function nudgeKeys(s) {
-  const now = Date.now();
-  return Object.keys(s.agentsAt).filter(function (a) { return s.agentKey[a] && now - Date.parse(s.agentsAt[a]) < NUDGE_FOR_MS; })
-    .map(function (a) { return s.agentKey[a]; });
-}
-
 // Every write: checked against the state as it stands, applied, written through to exactly the rows it changed, then
 // published, each changed row on its own ("no pulling"). goal/G33.4, in the item's box: "Mirror distribution is push:
 // the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under
@@ -2047,68 +2034,27 @@ function nudgeKeys(s) {
 // A goal that becomes current is pushed whole (pushGoalWhole).
 // One object onto the desk's stream, as it is: THE ONE PUBLISH (box v43, Andy: "the desk server publishes its changes
 // to the browser with the same function that it publishes its changes to the deskClients"). appServer.publish hands it to
-// the node's pages and to every deskClient streamRecipients names; the desk has no second send path.
+// the node's pages and to every subscriber (goal/G33.8); the desk has no second send path.
 function publishOne(o) {
   return appServer.publish(o);
 }
 
-// ── THE STREAM TO THE DESK CLIENTS (goal/G33.4, box v38-39) ───────────
+// ── THE DESK ONLY PUBLISHES (goal/G33.8, box v8) ──────────────────────
 //
-//   Andy: "the desk is the server and simply pushes a stream via peerPost to its deskClients", and the box: "when a goal
-//   becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates."
+//   Andy: "What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it
+//   knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes."
 //
-// Every row the desk publishes for its current goal (and goal 0, the group chat) goes, as it is published, to the
-// deskClient of every agent the desk has heard from in the last day (nudgeKeys): appServer.publish delivers it over
-// peerPost to that client's streamListener (js/appServer.js, opts.streamTo), one at a time per client, in order, and a
-// client that does not answer is away until it writes again (backFromAway).
-// THE RECEIVER (box v40, Andy: "the streamListener verb is approved"): the verb appServer gives every server that
-// follows a stream, on the client's deskClient family.
-// The desk never acts as a client of its clients and keeps nothing from them: they write by their own asks, and their
-// own changes come back to them on this stream like anybody's (box v40). It follows no stream itself (box v42, Andy:
-// "no stream listening on the desk server!"): its serve() names no opts.stream, so it has no streamListener verb.
+// appServer's streamPublisher (js/appServer.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
+// deskClient, the node's grants deciding who may; every publish goes to each of them, a line his to some agents to those
+// alone (the row's to, goal/G21.1). A new subscriber is handed the desk's bootstrap set: the current goal's row and its
+// items' rows, and the group chat's, their facts alone; everything published afterwards has a home in its data set
+// (box v8: "for the desk that may be no more than the bare goal row"). The desk never acts as a client of its clients
+// and keeps nothing from them; it follows no stream itself (box v42).
 const CLIENT_WAIT_MS = 10000;
-function inStream(o) {
-  const id = o && (o.item && o.item.id ? o.item.id : o.id);
-  const k = numbersOf(id);
-  const cur = S && S.current ? numbersOf(S.current) : null;
-  return !!k && (k[0] === 0 || (!!cur && k[0] === cur[0]));
-}
-function streamRecipients(o) {
-  if (!S || !inStream(o)) return [];
-  // ONLY THE ADDRESSED AGENT IS HANDED HIS ADDRESSED LINE (goal/G21.1).
-  return nudgeKeys(S).filter(function (key) { return !Array.isArray(o.to) || o.to.indexOf(key) !== -1; });
-}
-// A CLIENT THAT WAS AWAY, OR IS NEW TO THIS DESK, GETS THE CURRENT GOAL (the box) when its agent asks: the goal's and its
-// items' facts go to it alone, through the same publish (box v46: the parts come when needed, pushGoalWhole).
-// When each agent's node last asked the desk anything, by key: a client marked away that asked while its last delivery
-// waited came back meanwhile (a restart), and gets what it missed at once (onAway).
-const lastAsk = Object.create(null);
-function onAway(key, since) {
-  if ((lastAsk[key] || 0) >= Date.parse(since)) backFromAway(key);
-}
-function backFromAway(key) {
-  if (!key || !S || !S.current || appServer.listening(key) === 'on') return;
-  const g = S.goals[S.current];
-  if (!g) return;
-  const since = appServer.awaySince(key);
-  [S.current].concat(g.members).forEach(function (id) {
-    const it = S.items[id];
-    if (!it) return;
-    appServer.publish(rowPublish(S, id, 'goal.whole', S.change), key);
-  });
-  // WHAT IT MISSED WHILE AWAY (goal/G3.4: "nothing missed"): the chat lines of the current goal and the group chat
-  // written since its stream stopped answering, each its own row as it was pushed then. A client new to the desk
-  // missed nothing it would hand over (its first run starts at now).
-  if (!since) return;
-  [S.current].concat(g.members, [GROUP_CHAT]).forEach(function (id) {
-    const it = S.items[id];
-    if (!it) return;
-    rowsOf(S, it).forEach(function (x) {
-      if (x.table !== 'chat' || !(String(x.cols[1]) >= since)) return;
-      if (Array.isArray(x.to) && x.to.indexOf(key) === -1) return;   // his line to other agents alone (goal/G21.1)
-      appServer.publish(sidePublish(S, id, { table: 'chat', key: x.key, x: x, removed: false }, S.change), key);
-    });
-  });
+function deskBootstrap() {
+  if (!S || !S.current || !S.goals[S.current]) return [];
+  return [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
+    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); });
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -2120,7 +2066,7 @@ function sidePublish(s, id, ch, change) {
   const k = numbersOf(id);
   const o = { change: change, table: ch.table, goal: k[0], item: k[1], id: id };
   if (ch.removed) { o.removed = true; o.at = ch.key.split('|').slice(1).join('|'); } else o.row = ch.x.out();
-  // HIS LINE ADDRESSED TO AGENTS (goal/G21.1) names them, so the stream carries it to them alone (streamRecipients).
+  // HIS LINE ADDRESSED TO AGENTS (goal/G21.1) names them, so the stream carries it to them alone (appServer.publish).
   if (ch.x && Array.isArray(ch.x.to)) o.to = ch.x.to.slice();
   return o;
 }
@@ -2178,7 +2124,7 @@ function write(verb, a, check) {
   s.change += 1;
   const r = { n: s.change, at: new Date().toISOString(), verb: verb, by: by, key: key };
   // Writers other than him and the desk itself are agents, and a write is their liveness.
-  if (by !== 'andy' && by !== 'desk') { s.agentsAt[by] = r.at; if (key) { s.agentKey[by] = key; backFromAway(key); } }
+  if (by !== 'andy' && by !== 'desk') { s.agentsAt[by] = r.at; if (key) s.agentKey[by] = key; }
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const x = item(id); return x ? (x.goal ? s.goals[x.id] : s.goals[x.goalId]) : null; };
   apply(s, r, body, item, goalOf);
@@ -2713,11 +2659,6 @@ function withPlugins(verbs) {
   Object.keys(verbs).forEach(function (verb) {
     const v = verbs[verb];
     all[verb] = Object.assign({}, v, { handler: function (a, caller) {
-      // AN AGENT'S ASK, ANY ASK, SAYS ITS CLIENT IS THERE (goal/G33.4, the box: "a client that was away gets the current
-      // goal pushed whole again"): a known agent whose client the stream has marked away, or never reached, gets the
-      // current goal whole at its first ask, a read included, so its reads are answered from what it keeps.
-      if (caller && caller.owner !== true && typeof caller.key === 'string') lastAsk[caller.key] = Date.now();
-      if (caller && caller.owner !== true && typeof caller.key === 'string' && S && nudgeKeys(S).indexOf(caller.key) !== -1) backFromAway(caller.key);
       // A PLUGIN'S GOAL BY ITS FIXED KEY (goal/G22.3: "its own private goal with a fixed key"): since goal/G33.4 the goal
       // is numbered, and plugin/<name> (or plugin/<name>.<n>, one of its items) names it still, so the page finds a
       // plugin's goal by the plugin's name.
@@ -2757,7 +2698,7 @@ appServer.serve(withPlugins({
   // log.add, log.search AND pending.get WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete
   // them."): the old lines table they read and wrote was dumped at the migration. Do not bring them back.
   // changes WENT WITH goal/G33.4 (Andy, on it: "isn't that what this item does? implement the push/broadcast concept?"):
-  // the desk streams each changed row to its clients (streamRecipients), and nothing is read back by a cursor.
+  // the desk streams each changed row to its subscribers (appServer.publish), and nothing is read back by a cursor.
   // ── WHAT THE LIST AND THE DIALOG READ (desk/G2.1) ─────────────────
   // Andy: "nice verb names! can use them an many seaches. aprooved."
   // Each label is one item's facts as JSON; the goal's row also carries
@@ -3711,9 +3652,9 @@ appServer.serve(withPlugins({
 // raise them; appServer puts "desk: " in front of each text, so the origin
 // of a refusal is plain and no other app can wear this name. The codes
 // themselves are unchanged, so nothing on the wire moved.
-// goal/G33.4 (box v43): the deskClients appServer.publish reaches (publishOne), and no opts.stream: the desk follows
-// no stream (box v42).
-{ dependencies: ['desk'], streamTo: { family: 'deskClient', recipients: function (o) { return streamRecipients(o); }, waitMs: CLIENT_WAIT_MS, onAway: function (key, since) { onAway(key, since); } }, codes: {
+// goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
+// no opts.stream: the desk follows no stream (box v42).
+{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function (key) { return deskBootstrap(key); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

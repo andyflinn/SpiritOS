@@ -75,6 +75,9 @@ const SELF_KEY = String(NODE.publicKey || '');
 // The asker is answered inside the node's 12 s; the desk is waited for as long as a held post may take to land
 // and be answered (the node holds a busy post for PATIENCE_MS, peer.post's own patienceMs).
 const HOLD_MS = 10000;
+// How long a silent stream is trusted before a wait subscribes again (goal/G33.8); the manifest value resubscribeMs.
+const RESUBSCRIBE_MS = Number(values.resubscribeMs) > 0 ? Number(values.resubscribeMs) : 60000;
+let heardAt = Date.now();
 const PATIENCE_MS = 60000;
 const WAIT_MS = PATIENCE_MS + 30000;
 const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
@@ -239,6 +242,7 @@ function fromKept(name, args) {
 // for this agent, into what its next wait hands over; a row that holds a phase nobody holds may mean a job.
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
+  heardAt = Date.now();
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
@@ -290,6 +294,12 @@ function moveSince() {
 }
 function meantForAgent(row) {
   if (!row.row || row.removed) return null;
+  // ONE GOAL IN VIEW (goal/G33.8): the desk publishes every goal's rows to its subscribers now, so what is meant for the
+  // agent is of the current goal or the group chat, or his line addressed to it, or on the item it holds.
+  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  const inView = row.goal === 0 || (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
+    heldByMe(dataSet.get('deskItems/' + String(row.id || '')));
+  if (!inView) return null;
   if ((row.table === 'chat' || row.table === 'box') && isOld(row.row.at)) return null;
   // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
   if (row.table === 'box') {
@@ -551,8 +561,8 @@ const server = appServer.serve({
       ownerOnly(caller);
       if (!a.key) throw refused('bad-request', { why: 'setDesk needs the key of the node that runs the desk' });
       putSetting.run('desk', a.key);
-      // FOLLOW THE DESK'S STREAM (goal/G33.4, box v40): its key is heard on streamListener, and granted it on this node.
-      follow(a.key);
+      // IT SUBSCRIBES TO THE DESK'S STREAM (goal/G33.8, box v8: "A client subscribes; the desk only publishes").
+      subscribeDesk(a.key);
       return { set: true };
     },
   },
@@ -568,6 +578,10 @@ const server = appServer.serve({
       const to = deskKey();
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
+      // A STREAM SILENT FOR LONG MAY HAVE DROPPED IT (goal/G33.8, box v8: the desk "stops sending to a client that has
+      // disappeared (unreachable) until that client subscribes again"): a wait after RESUBSCRIBE_MS of silence subscribes
+      // again, behind the wait, asking nothing else.
+      if (Date.now() - heardAt > RESUBSCRIBE_MS) { heardAt = Date.now(); subscribeDesk(to); }
       // Its first word makes it known to the desk, which then streams it the current goal whole (goal/G33.4).
       if (said !== 'listening') say(to, 'listening');
       // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
@@ -683,6 +697,7 @@ const server = appServer.serve({
   'signed-off': { status: 409, text: 'this agent is signed off' },
 } });
 
-// FOLLOWING THE DESK (goal/G33.4, box v40): the desk setDesk named, from the start, as setDesk follows it.
-function follow(key) { return server.follow(key).catch(function () { return false; }); }
-(function () { const d = getSetting.get('desk'); if (d && d.value) follow(d.value); }());
+// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (js/appServer.js server.subscribe): the desk setDesk
+// named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
+function subscribeDesk(key) { return server.subscribe(key, 'desk').catch(function () { return false; }); }
+(function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());

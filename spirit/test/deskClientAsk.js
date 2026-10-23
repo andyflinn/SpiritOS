@@ -183,7 +183,9 @@ async function main() {
   // Since goal/G4.19 the desk's answer itself, not a json string.
   const got = yes.body || null;
   const goalSeen = got && Array.isArray(got.items) && got.items.some(function (p) { return p.key === 'goal/G100'; });
-  if (yes.status === 200 && goalSeen && posts.length === 1 && posts[0].to === DESK_KEY && posts[0].app === 'api' && posts[0].verb === 'items.search') {
+  // goal/G33.8: its subscription to the desk's stream travels beside the asks (setDesk, a start); only the ask is counted.
+  const asked = posts.filter(function (p) { return p.verb !== 'subscribe'; });
+  if (yes.status === 200 && goalSeen && asked.length === 1 && asked[0].to === DESK_KEY && asked[0].app === 'api' && asked[0].verb === 'items.search') {
     test.check('items.search went as one api post to the desk\'s key, and its answer came back as the answer itself');
   } else test.fail(OWED + 'the ask answered ' + yes.status + ' ' + JSON.stringify(yes.body).slice(0, 200) + '; posts ' + JSON.stringify(posts));
   if (familyAsks.some(function (x) { return x.to === DESK_KEY && x.family === 'desk'; })) test.check('deskClient read the desk family interface from the desk\'s node (api {family: desk} over peerPost) and called through it');
@@ -228,7 +230,8 @@ async function main() {
   posts.length = 0;
   const after = await history();
   const again = await call('deskClient', 'desk', { name: 'items.search', json: SEARCH }, OWNER);
-  if (before > 0 && after.length === before && again.status === 200 && posts.length === 1 && posts[0].to === DESK_KEY) test.check('after a restart: the same ' + before + ' record(s), and an ask goes to the desk\'s key without setting it again');
+  const askedAgain = posts.filter(function (p) { return p.verb !== 'subscribe'; });
+  if (before > 0 && after.length === before && again.status === 200 && askedAgain.length === 1 && askedAgain[0].to === DESK_KEY) test.check('after a restart: the same ' + before + ' record(s), and an ask goes to the desk\'s key without setting it again');
   else test.fail(OWED + 'after a restart: ' + after.length + ' record(s) where there were ' + before + ', an ask answered ' + again.status + ' ' + JSON.stringify(again.body).slice(0, 120));
 
   test.subHeading('8. it asks through the kernel alone');

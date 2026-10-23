@@ -142,6 +142,9 @@ async function theServer() {
     await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
+    // goal/G33.8: each agent's deskClient subscribes to the desk's stream (the desk names no recipients of its own).
+    await call('subscribe', { family: 'deskClient' }, CW);
+    await call('subscribe', { family: 'deskClient' }, WSL);
 
     test.subHeading('1. a question mark in a chat line never makes a red Q');
     await call('item.take', { id: 'goal/G100.1' }, WSL);
