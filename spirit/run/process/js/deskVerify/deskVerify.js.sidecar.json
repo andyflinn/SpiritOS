@@ -1,0 +1,9 @@
+{
+  "face": {
+    "app": false,
+    "intrinsic": true,
+    "name": "",
+    "icon": "",
+    "description": "Keeps verify.db, a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), and beside a red its failure text, capped (goal/G21.3); every run it makes is a row too (goal/G19.3), with the line it posted. Both are read with search (goal/G21.3). Since goal/G22.3 it also runs one door of the Stacks plugin when asked (door.run, its verdict read with door.state), and keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). Started by the node; reached by its verbs on the loopback door (the flat apiDoor)."
+  }
+}
