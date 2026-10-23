@@ -1,5 +1,5 @@
 {
- "change": 95378,
+ "change": 95380,
  "goal": "goal/G33",
  "items": [
   {
@@ -64,7 +64,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -1959,10 +1959,9 @@
    "id": "goal/G33.4",
    "title": "about the desk-database",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -3139,6 +3138,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T11:11:46.356Z",
      "text": "Yes. Everything this item still had open moved to G33.7, deskClient.changed included, which goes on that verb list.\n\nIf you want the warning mark gone first: pull, restart, and press Verify once more; with the verifier fix it should read 111 of 111. Otherwise Done goes through on the second press over the one false red."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T11:12:06.003Z",
+     "text": "Done went over a red run: spirit/test/deskClientPush.js not run: missing from this checkout | spirit/test/deskTables.js red: FAILURE #1.1: OWED by goal/G33.4: the log of writes is still kept: the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"] | spirit/test/deskTables.js red: FAILURE #1.2: OWED by goal/G33.4: no table keyed by goal and item for items, chat, files, box, checks, claims; the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"] | spirit/test/deskTables.js red: FAILURE #1.3: OWED by goal/G33.4: rows without a creator: no keyed tables to read | spirit/test/deskTables.js red: FAILURE #1.4: OWED by goal/G33.4: rows for the goal [], for the item [] | spirit/test/deskTables.js red: FAILURE #1.5: OWED by goal/G33.4: the box rows of the item are [] | spirit/test/deskTables.js red: FAILURE #1.6: OWED by goal/G33.4: the chat rows of the item are [] | spirit/test/deskTables.js red: FAILURE #1.7: OWED by goal/G33.4: check rows [], claim rows [] | spirit/test/deskTables.js red: FAILURE #1.8: OWED by goal/G33.4: the file rows are [] (no grant column) | spirit/test/deskTables.js red: FAILURE #1.9: OWED by goal/G33.4: after his grant the core file's row reads undefined"
     }
    ]
   },
