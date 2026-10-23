@@ -55,7 +55,9 @@
 //                                     harness".
 //
 // WHAT IS ASSERTED
-//   0. deskVerify.js, its comments set aside, names no desk verb, no deskClient verb and no desk at all.
+//   0. deskVerify.js, its comments set aside, names no desk verb, no deskClient verb and no desk at all; and its idle
+//      hour is its own clock, an hour with no run handed to it, never a desk cursor (newestWrite, idleCursor, heldBy,
+//      lastWriteAt, agentOf go).
 //   1. a real desk and a real deskVerify, each on its own pipe and state, joined by a pretend node that only carries
 //      their verbs: an item set to wait while deskVerify is free is handed over as a run of its suites (no id) with the
 //      desk's own done verb; the switch goes busy; deskVerify calls that done once; the switch goes free; the result line
@@ -151,6 +153,13 @@ function staticHalf() {
   src.forEach(function (l, i) { PATTERNS.forEach(function (p) { if (p[0].test(l)) found.push((i + 1) + ': ' + p[1] + ': ' + l.trim().slice(0, 120)); }); });
   if (!found.length) test.check('deskVerify.js has no clue about the desk: no desk verb, no deskClient, no desk name in its code');
   else test.fail(OWED + 'deskVerify.js still reaches the desk in ' + found.length + ' line(s), the first: ' + short(found.slice(0, 4)));
+  // ITS IDLE HOUR IS ITS OWN CLOCK (Andy: "it knows it's idle for an hour because no verify-requests arrived for an
+  // hour"): no cursor over the desk's writes, no newest desk write, no items its agent holds.
+  const IDLE = /\b(newestWrite|idleCursor|heldBy|lastWriteAt|agentOf)\b/;
+  const idleFound = [];
+  src.forEach(function (l, i) { if (IDLE.test(l)) idleFound.push((i + 1) + ': ' + l.trim().slice(0, 120)); });
+  if (!idleFound.length) test.check('its idle hour reads no desk cursor: it counts from the last run handed to it');
+  else test.fail(OWED + 'deskVerify.js still judges idleness from the desk in ' + idleFound.length + ' line(s), the first: ' + short(idleFound.slice(0, 4)));
 }
 
 // The runs a verify.db holds, as a stopped deskVerify would have left them: one queued, one waiting for its commit.
