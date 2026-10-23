@@ -1,5 +1,5 @@
 {
- "change": 96166,
+ "change": 96180,
  "goal": "goal/G33",
  "items": [
   {
@@ -59,7 +59,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -67,7 +67,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4705,12 +4707,10 @@
    "id": "goal/G33.9",
    "title": "Per-node settings for chores",
    "goal": "goal/G33",
-   "status": "",
+   "status": "running",
    "with": "claude-windows",
-   "version": 1,
+   "version": 2,
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -4719,17 +4719,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
+   "limbo": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -4737,7 +4737,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -4746,13 +4775,14 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "PER-NODE SETTINGS FOR CHORES\n\n- A node keeps its own settings for the servers it runs, in its own state (relay-state), never in a tracked file: each agent's verifier chores are set on that agent's node, so no clone carries a local edit and every clone pulls clean.\n- A per-node setting overrides the server manifest's default for that node only; with none set, the manifest's default stands.\n- The same mechanism covers which servers a node runs (deskClient's runs, empty in the repo since G30.20 because Andy's desk node must not start one), so the local edits agents use today for runs go too.\n\nWhere: the node's start of its servers (js/jobs.js, which hands each server its manifest's values), and the node's state folder.",
+   "box": "PER-NODE SETTINGS FOR CHORES\n\n- A node keeps its own settings for the servers it runs, in its own state (relay-state), never in a tracked file: each agent's verifier chores are set on that agent's node, so no clone carries a local edit and every clone pulls clean.\n- A per-node setting overrides the server manifest's default for that node only; with none set, the manifest's default stands.\n- The same mechanism covers which servers a node runs (deskClient's runs, empty in the repo since G30.20 because Andy's desk node must not start one), so the local edits agents use today for runs go too.\n- The settings are one plain file in the node's state folder, written by the node's owner (by hand, or by the agent on its own node); no new verb, no interface change. A value that is not a setting the manifest names is ignored, so a typo changes nothing.\n\nWhere: the node's start of its servers (js/jobs.js, which hands each server its manifest's values), and the node's state folder.",
    "checks": [],
    "chat": [
     {
@@ -4760,6 +4790,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T21:27:18.486Z",
      "text": "Added, with its box. I wrote in the runs setting too, since it is the same mechanism and the same local edits; say if it should stay chores only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:29:32.389Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:29:56.094Z",
+     "text": "Green, with one gap closed (box v2): how a setting is set. One plain file in the node's state folder, written by its owner, no new verb and no interface change; anything the manifest does not name is ignored.\n\nIt includes runs as well as chores, as written, unless you say chores only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:30:03.202Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T21:30:29.021Z",
+     "text": "Green from me, the premise holds: jobs.js:510-511 hands each server only its manifest defaults, and jobs.js:478 decides runs from the manifest alone.\nTwo gaps: the override must also reach jobs.js:446 (a process started by hand is refused by the same manifest check), and the box should say it is for process/js servers only, since the shells read the apps' runs from the tracked manifests.\nA setting the manifest does not name: ignored silently, or named in the node log at start so a typo shows?"
     }
    ]
   }
