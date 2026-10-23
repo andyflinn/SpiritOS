@@ -125,7 +125,9 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red. THE STAR IS GONE (goal/G4.20 point 8), from the rows and the tabs alike. Andy: "ha ha, the red
 // star has no function anymore. take it out." What waits on him is the row's ICON.ERROR (facts.asks).
 // A brought-back item's mark (goal/G2.1 note 6): "the attention-grabbing error icon"; his seen clears it.
-var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">❗</span>';
+// goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): the mark stands beside the item's title and
+// id; the row keeps its colour.
+var DESK_ALERT = '<span data-alert-mark="1" style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">!</span>';
 var deskSeen = { team: 0, agents: {} };
 var deskTab = 'list';
 // THE DIRECT TABS ARE GONE (goal/G3.12). Team is the group chat alone; there is no chat inside Team to pick, no
@@ -649,12 +651,16 @@ function deskInRow(row, what) {
   if (what === 'close' && row.status !== 'done' && !(row.goal === '')) return false;
   return true;
 }
+var DESK_GOAL_ROW = 'background:rgba(127,127,127,0.18);border-top:2px solid #888';
 function deskRowHtml(row) {
   var goal = row.goal === '';
   var presses = deskRowPresses(row);
-  // A MARKED ROW IS RED (goal/G33.2). Andy: "make an item go red in the list when the phase holder posts a report or
-  // questions", "red until i open it": the desk marks it (alert) and his opening clears it.
-  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '"' + (row.alert ? ' data-alert="1"' : '') + ' style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + (row.alert ? ';color:#d00' : '') + '">' +
+  // A MARKED ITEM (goal/G33.2). Andy: "make an item go red in the list when the phase holder posts a report or
+  // questions", "red until i open it": the desk marks it (alert) and his opening clears it. Since goal/G33.8 (box v13,
+  // "it's enough to put a red ! next to the item") the mark is a red ! beside its title (deskRowCells), not a red row.
+  // THE GOAL ROW STANDS OUT (goal/G33.8, box v12; Andy: "it's really hard to tell the goal from it's items in the list"):
+  // marked data-goal, shaded (DESK_GOAL_ROW, the one style), and its icon cell holds the goal sign (deskRowCells).
+  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '"' + (goal ? ' data-goal="1"' : '') + (row.alert ? ' data-alert="1"' : '') + ' style="cursor:pointer' + (goal ? ';font-weight:bold;' + DESK_GOAL_ROW : '') + '">' +
     deskRowCells(row, presses) + '</tr>';
 }
 // ONE BUTTON IN A ROW, THE NEXT ONE WANTED (goal/G33.6). Andy: "the main list may only show one single button, and it
@@ -705,12 +711,14 @@ function deskRowCells(row, presses) {
     // THE BROUGHT-BACK MARK, THEN THE TYPE (desk/G1.12): the server says both. ICON.ERROR EXACTLY WHILE SOMETHING
     // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
     // where i need to navigate to."
-    '<td>' + (row.alert ? DESK_ALERT : '') + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
-    '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
-    '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
+    '<td>' + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
+    '<td>' + (goal ? '<span title="a goal">' + deskIcon('FOLDER') + '</span>' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
+    '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span>' + (row.alert ? ' ' + DESK_ALERT : '') + '</td>' +
     '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
-    '<td>' + deskLinks(row.blocking) + '</td>' +
+    // NO LINK TO ITS OWN GOAL (goal/G33.8, box v12): his Done meant for goal/G33.8 went to goal/G33, opened from such a
+    // link; an item's row names what else it blocks, never the goal it belongs to.
+    '<td>' + deskLinks((row.blocking || []).filter(function (b) { return goal || b !== row.goal; })) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
     '<td style="width:16em">' + deskStatusCell(row) + '</td>');
 }

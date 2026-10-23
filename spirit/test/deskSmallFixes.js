@@ -119,8 +119,10 @@ async function deskHalf() {
     if (seen.alert !== true && his.alert !== true) test.check('his seen clears it, and his own line does not mark it');
     else test.fail(G33 + 'after seen ' + seen.alert + ', after his own line ' + his.alert);
     const list = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
-    if (/row\.alert \?[^:]*(color|class)[^:]*red|alert[^\n]*desk-row-red|data-alert/.test(list)) test.check('the List draws a marked row red');
-    else test.fail(G33 + 'the List does not draw a marked row red');
+    // goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): a red ! beside the item, the row in its
+    // normal colour; drawn and asserted on the real rendering in deskAdjustments.js (f).
+    if (/data-alert-mark/.test(list) && !/row\.alert \? ';color:#d00'/.test(list)) test.check('the List marks the item with a red ! beside it, not a red row');
+    else test.fail('OWED by goal/G33.8: the List still draws a marked row red, or no red ! beside the item');
     if (!/deskVerifier\.queued/.test(list)) test.check('the Verifier tab shows no queue');
     else test.fail(G33 + 'the Verifier tab still draws its queue');
   } finally {

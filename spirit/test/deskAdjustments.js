@@ -276,6 +276,8 @@ async function runHalf() {
     // goal/G33.7 (box v10): ended runs, their outcome in the facts, the status word saying something else.
     row('goal/G103.3', { status: 'running', verified: 'red', verifyRed: 3, verifyFailures: ['spirit/test/a.js red: FAILURE #1 x'] }),
     row('goal/G103.4', { status: 'waiting for deskVerify', verified: 'green' }),
+    // goal/G33.8 (box v13): a row his attention is wanted on (the phase holder wrote).
+    row('goal/G103.5', { status: 'red', alert: true, title: 'MARKED-ITEM' }),
   ];
   const handlers = {};
   const byId = {};
@@ -324,6 +326,28 @@ async function runHalf() {
   if (/EARLIER-ROW/.test(statusOf('goal/G103.1')) && /LATER-ROW/.test(statusOf('goal/G103.2'))) test.check('an earlier write\'s row of another item, arriving last, is drawn; an older version of the same row is not');
   else test.fail('OWED by goal/G33.8: after changes 50, 49, 48 the rows read ' + short(text(statusOf('goal/G103.1'))) + ' / ' + short(text(statusOf('goal/G103.2'))));
 
+  // goal/G33.8 (box v12; Andy: "it's really hard to tell the goal from it's items in the list", and his Done meant for
+  // goal/G33.8 landed on goal/G33): (A) the goal row is clearly distinct, a goal sign in its icon cell and a shaded row;
+  // (B) an item's row carries no link to its own goal.
+  const rowRe = function (id, rest) { return new RegExp('<tr data-row="' + id.replace(/[./]/g, '\\$&') + '"' + rest); };
+  const trOf = function (id) { return (rowRe(id, '[^>]*>').exec(all()) || [''])[0]; };
+  const cellsOf = function (id) { return ((rowRe(id, '[\\s\\S]*?</tr>').exec(all()) || [''])[0]).match(/<td[^>]*>[\s\S]*?<\/td>/g) || []; };
+  const goalTr = trOf('goal/G103');
+  const itemTr = trOf('goal/G103.1');
+  const goalIcon = (cellsOf('goal/G103')[1] || '');
+  const itemIcon = (cellsOf('goal/G103.1')[1] || '');
+  if (/data-goal="1"/.test(goalTr) && /background/.test(goalTr) && !/data-goal/.test(itemTr) && !/background/.test(itemTr) && text(goalIcon).trim() && text(goalIcon) !== text(itemIcon)) test.check('the goal row is marked data-goal, shaded, with a goal sign; an item row is none of these');
+  else test.fail('OWED by goal/G33.8: the goal row ' + short(goalTr) + ' icon ' + short(goalIcon) + '; an item row ' + short(itemTr) + ' icon ' + short(itemIcon));
+  // goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): a marked row is not drawn red; a red !
+  // stands beside its title and id, the rest of the row in its normal colour.
+  const markedTr = trOf('goal/G103.5');
+  const markedTitle = (cellsOf('goal/G103.5')[2] || '');
+  if (!/#d00/.test(markedTr) && /data-alert-mark/.test(markedTitle) && /color:#d00[^>]*>!</.test(markedTitle)) test.check('a marked row keeps its colour, and a red ! stands beside its title');
+  else test.fail('OWED by goal/G33.8: the marked row ' + short(markedTr) + ', its title cell ' + short(markedTitle));
+  const itemLinks = cellsOf('goal/G103.1').join('');
+  if (!/data-open="goal\/G103"/.test(itemLinks)) test.check('an item\'s row carries no link to its own goal');
+  else test.fail('OWED by goal/G33.8: goal/G103.1\'s row links its own goal: ' + short(itemLinks));
+
   // THE DIALOG: the same rendering, in #dd-run.
   const dById = {};
   const ddoc = { getElementById: function (id) { return dById[id] || (dById[id] = fakeElement(id)); } };
@@ -355,6 +379,12 @@ async function runHalf() {
   const dIdle = ddoc.getElementById('dd-run').innerHTML;
   if (!/<progress/.test(dIdle)) test.check('and drops it on an idle publish');
   else test.fail(OWED + 'the dialog after idle reads ' + short(dIdle));
+  // goal/G33.8 (box v12): the item's dialog carries no link to its own goal either.
+  ddoc.getElementById('dd-body').fire('click', { target: target({ 'data-panel': 'blocks' }), preventDefault: function () {} });
+  await settled();
+  const dLinks = Object.keys(dById).map(function (k) { return dById[k].innerHTML; }).join('\n');
+  if (!/data-open="goal\/G103"/.test(dLinks)) test.check('the item\'s dialog carries no link to its own goal');
+  else test.fail('OWED by goal/G33.8: the dialog of goal/G103.1 links its own goal');
   if (/red: 2 suites/.test(text(dIdle))) test.check('then the dialog shows the ended run\'s outcome, the same way: ' + short(text(dIdle)));
   else test.fail('OWED by goal/G33.7: the dialog after the run reads ' + short(text(dIdle)));
 }

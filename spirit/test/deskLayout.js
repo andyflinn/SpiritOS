@@ -257,7 +257,8 @@ settle().then(function () {
     test.subHeading('T5 in the dialog: the box shows at once, and empty groups draw nothing');
     const links = seen.links;
     // And each id a way there (Andy: "the blocked and blocks lists link to the respective items").
-    if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && /data-open="goal\/G100"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and its blocking id is a link');
+    // goal/G33.8 (box v12) took the link to an item's own goal away: a Done meant for the item went to the goal.
+    if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && !/data-open="goal\/G100"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and no link goes to its own goal (goal/G33.8, box v12)');
     else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links) + ' | blocks panel ' + links.slice(0, 120));
 
     test.subHeading('T13: in a dialog, his buttons are pinned in one sticky block, above the upper half');

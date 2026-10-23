@@ -401,7 +401,8 @@ function ddLinksHtml() {
   var states = (f.blocking || []).filter(function (x) { return x !== f.goal; });
   var blocking = states.length
     ? states.map(function (x) { return line(x) + ' <button type="button" data-unblock="' + ddEsc(x) + '" title="unblock">✕</button>'; }).join(', ')
-    : (f.blocking || []).map(line).join(', ');
+    // goal/G33.8 (box v12): never a link to its own goal; that it blocks its goal goes without saying.
+    : '';
   var toggle = '<button type="button" data-fold="blocks" title="' + (ddBlocksFolded ? 'Unfold' : 'Fold') + '">' + (ddBlocksFolded ? '▸' : '▾') + '</button> ';
   if (ddBlocksFolded) return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocks</span></div>';
   var add = '<div class="start-job-form"><label class="field-label grow">Also blocks<select id="dd-block-add">' +
