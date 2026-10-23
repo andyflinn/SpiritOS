@@ -1,5 +1,5 @@
 {
- "change": 95725,
+ "change": 95809,
  "goal": "goal/G33",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.5",
-    "goal/G33.8"
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -46,6 +45,7 @@
     "spirit/test/deskVerifyQueueKept.js not run: missing from this checkout"
    ],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -58,14 +58,16 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -179,6 +181,7 @@
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -682,6 +685,7 @@
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -957,6 +961,7 @@
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -2017,6 +2022,7 @@
     "spirit/test/deskVerifyDriven.js red: SUCCESS #1.26: his Done on the red goal/G100.4 went through, and its line names the failure: Done went over a red run: spirit/test/zzDrivenRed.js red: FAILURE #1 red probe"
    ],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3179,6 +3185,7 @@
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3264,6 +3271,7 @@
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3441,6 +3449,7 @@
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3823,12 +3832,12 @@
    "id": "goal/G33.8",
    "title": "cleaning up addServer",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "done",
    "with": "claude-windows",
-   "version": 7,
+   "version": 10,
    "buttons": [
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -3837,22 +3846,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 7,
-   "green": true,
+   "fileCount": 19,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "96434530",
+   "redCommit": "96434530",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3883,9 +3892,10 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3893,11 +3903,46 @@
     "claude-windows": "claude-windows"
    },
    "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n",
-   "checks": [],
+   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n- Found live at this item's Go: the agent holding the item was not woken by the Go, the second time running. A Go on an item wakes the agent it concerns, whether or not that agent already holds the item.\n- Folded in from goal/G33.7, committed as bf1805ed: no desk answer carries his lines; an ended Verify shows its outcome on the row and in the dialog.\n- The desk sends all its data to all subscribers; each deskClient filters what reaches its agent.\n- In the item dialog's file list, the open grants and their grant buttons come first, at the top, never below the files.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-23T19:14:43.245Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T19:15:27.793Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -4030,6 +4075,84 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T13:49:28.870Z",
      "text": "Folded in, and I tried to commit at once: the commit check refuses it, since G33.8 has no Go yet (it is still in design).\n\nYour Go on G33.8 lets this commit through at once. The same Go also starts G33.8's own build, the stream publisher and listener, since its box is green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:50:12.871Z",
+     "text": "you didn't hear the this time either"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:51:03.901Z",
+     "text": "commit bf1805ed5bf15d5f2d7bc33799a1da982abf1078: The desk answers what it was asked, and an ended Verify shows its outcome (goal/G33.8)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/shared/js/deskRunStatus.js\n- spirit/test/deskAdjustments.js\n- spirit/test/deskBoundedInterface.js\n- spirit/test/deskClientPush.js\n- spirit/test/deskQuickFixes.js\n- spirit/test/deskVerifyDriven.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:51:19.426Z",
+     "text": "Committed and pushed: bf1805ed, the two pieces from G33.7. They are live after your next pull and restart.\n\nAnd no, I did not hear the Go, again: this time I already held the item, and the wake only looked at jobs offered, not at items held. In the box (v8) as a case for this item: a Go wakes the agent it concerns, holding the item or not.\n\nG33.8 started: red phase taken, red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T14:27:25.074Z",
+     "text": "G33.8 is built and green in my clone, not committed: 2,044 desk checks pass, none fail; the stream suite 8 of 8.\n\n- appServer: a server that publishes takes subscribe and unsubscribe; publish goes to its pages and to every subscriber by peerPost, one attempt, fail-fast; after a restart its subscribers are the keys holding the grant.\n- The desk only publishes; its bootstrap is the current goal's row, its items' rows and the group chat's row. The recipient choosing and the hand wiring at setDesk are gone.\n- deskClient subscribes at start, and again when its stream has been silent for a minute.\n- The missed Go: a Go on an item already held did wake the agent in the test; the live miss was a client dropped as unreachable that nothing brought back. The silence check fixes that.\n\nOne point needs your word before I commit. The desk now publishes every goal's changes to every subscriber, and each deskClient filters what reaches its agent. That works, but it widens the traffic against your scope rule from G33.4 (the current goal as the scope of work, traffic and wire). Keeping it narrow means the desk sends only rows of the current goal, the group chat and the items its subscribers hold.\n\nShould the desk publish only the current goal's rows (plus group chat and held items) to subscribers?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T19:12:35.791Z",
+     "text": "it is fine to send all the data to all subscribers."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T19:13:29.198Z",
+     "text": "Recorded (box v9): all data to all subscribers, each deskClient filters for its agent.\n\nThe commit is ready; it waits only on the grant for js/appServer.js under this item, which is on its file list now. I commit the moment it lands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T19:14:43.221Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T19:15:24.325Z",
+     "text": "damn, the red grant buttons are still at the bottom of the file list....... grrrr"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T19:15:24.344Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T19:15:58.228Z",
+     "text": "Folded into this item (box v10): open grants and their buttons go to the top of the file list. It comes in the same commit as the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T19:16:58.164Z",
+     "text": "another bug. i had to grant appServer.js twice...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T19:18:24.492Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T19:18:38.122Z",
+     "text": "Committed, pushed and claimed: 04a4f219 (the streams) and 96434530 (grant buttons at the top). The red claim names six suites: appServerStream, deskClientPush, deskDetailsPanels, deskAdjustments, deskBoundedInterface, deskVerifyDriven.\n\nFlag day again: pull and restart your node, then I restart mine.\n\nYour grant that had to be given twice: on your desk the item shows one grant check, given at 19:15, so the first press did not land. That is a bug in its own right, and I will trace it next.\n\nFiles:\n\n- js/appServer.js\n- process/js/desk/desk.js, desk.family/api.js\n- process/js/deskClient/deskClient.js, deskClient.json (resubscribeMs)\n- shell/deskDetails/deskDetails.js\n- tests: appServerStream, deskClientPush, deskDetailsPanels, deskBindingNick, deskClientAsk, deskClientNext, deskRedQOnPurpose, deskServer"
     }
    ]
   }
