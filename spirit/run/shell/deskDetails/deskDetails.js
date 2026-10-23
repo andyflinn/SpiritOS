@@ -26,6 +26,13 @@ var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
 var ddFound = null;           // the chat search's ranked lines; null while the search is empty (goal/G18.5)
 var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
+// GRANTS SENT, NOT YET PUSHED BACK (goal/G33.8, box v11; Andy: "i had to grant appServer.js twice"): a confirmed grant
+// shows granting… until the desk's pushed check row says granted; a refusal clears it. Never asked again (Andy's rule:
+// a client's change lands only via the desk's push).
+var ddPending = {};          // check number -> true
+// THE NEWEST CHANGE SEEN, PER ROW (goal/G33.8, box v11): publishes travel as their own requests and can overtake each
+// other; a row is never painted over by an older version of the same row, and an earlier write's other rows still land.
+var ddRowChange = {};        // table|id|row key -> change
 var ddRenaming = false;
 var ddNote = '';
 
@@ -291,13 +298,16 @@ function ddQsHtml() {
 // grant buttons are still at the bottom of the file list"), and the given ones in green under the files. open says which.
 function ddGrantsHtml(open) {
   // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". Armed like every grant; one write grants them all.
-  var openCount = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).length;
+  var openCount = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open' && !ddPending[c.number]; }).length;
   var armedAll = ddArmed === 'grant:all';
   var all = open && openCount > 1 ? '<div><button type="button" data-grant="all"' + (armedAll ? ' data-armed="1"' : '') +
     ' style="background:#c00;color:#fff">' + (armedAll ? 'Grant all ' + openCount + ': sure?' : 'Grant all ' + openCount) + '</button></div>' : '';
   return all + ddChecks.map(function (c) {
     if (!open && c.kind === 'G' && c.state === 'granted') {
       return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
+    }
+    if (open && c.kind === 'G' && c.state === 'open' && ddPending[c.number]) {
+      return '<div data-pending="' + ddEsc(c.number) + '"><button type="button" disabled style="background:#888;color:#fff">granting…</button> ' + ddEsc(c.words) + '</div>';
     }
     if (open && c.kind === 'G' && c.state === 'open') {
       var armed = ddArmed === 'grant:' + c.number;
@@ -498,6 +508,15 @@ function ddClear(id) { var el = document.getElementById(id); if (el) el.value = 
 // What the server published about this item, painted as it comes.
 // A change number that skips one means a publish went by unseen (desk/G3.10): the dialog asks item.get once.
 var ddLastChange = 0;
+// Which row a publish is: a side row by its table, item and own key (a check's number, a line's time and writer, a
+// file's holder and path), a List row by its item.
+function ddRowKeyOf(obj) {
+  if (!obj.table) return 'item|' + String((obj.item && obj.item.id) || '');
+  var r = obj.row || {};
+  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
+    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : obj.table === 'suites' ? String(r.path || '') : '';
+  return obj.table + '|' + String(obj.id || '') + '|' + own;
+}
 function ddTake(obj) {
   if (!obj) return;
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: reload what is shown.
@@ -505,9 +524,11 @@ function ddTake(obj) {
   var change = Number(obj.change) || 0;
   // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7): publishes travel as their own requests and can
   // overtake each other; what is shown is never painted over by what came before it.
-  if (change && ddLastChange && change < ddLastChange) return;
+  var rowKey = ddRowKeyOf(obj);
+  if (change && ddRowChange[rowKey] && change < ddRowChange[rowKey]) return;
+  if (change) ddRowChange[rowKey] = change;
   var gap = ddLastChange && change > ddLastChange + 1;
-  if (change) ddLastChange = change;
+  if (change > ddLastChange) ddLastChange = change;
   if (gap && ddId) { ddForget(ddId); ddLoad(); return; }
   // ONE ROW AT A TIME (goal/G33.4): a side row of an item, {table, id, row}, or its List row, {item: <facts>}.
   if (obj.table) { if (obj.id === ddId && ddTakeRow(obj)) ddPaint(); return; }
@@ -540,6 +561,7 @@ function ddTakeRow(obj) {
     // The panel holds the open and the decided ones, never the answered or cleared (desk.js shownChecks).
     var gone = obj.removed || !obj.row || obj.row.state === 'answered' || obj.row.state === 'cleared';
     if (gone) { if (was !== -1) ddChecks.splice(was, 1); } else if (was === -1) ddChecks.push(obj.row); else ddChecks[was] = obj.row;
+    if (gone || (obj.row && obj.row.state !== 'open')) delete ddPending[number];
     return true;
   }
   // One write's file rows ask the list once.
@@ -744,7 +766,14 @@ spirit.shell.activateApp({
           return;
         }
         ddArmed = '';
-        ddWrite('check.set', { id: ddId, check: g, state: 'granted' });
+        var sent = g === 'all' ? ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).map(function (c) { return c.number; }) : [g];
+        sent.forEach(function (n) { ddPending[n] = true; });
+        ddPaint();
+        ddWrite('check.set', { id: ddId, check: g, state: 'granted' }).then(function (ok) {
+          if (ok) return;
+          sent.forEach(function (n) { delete ddPending[n]; });
+          ddPaint();
+        });
         return;
       }
       var question = t && t.closest ? t.closest('[data-question]') : null;
@@ -846,6 +875,8 @@ spirit.shell.activateApp({
     ddFound = null;
     ddClear('dd-chat-search');
     ddArmed = '';
+    ddPending = {};
+    ddRowChange = {};
     ddRenaming = false;
     ddNote = '';
     ddLastChange = 0;

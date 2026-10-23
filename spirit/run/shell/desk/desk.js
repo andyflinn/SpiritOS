@@ -393,6 +393,16 @@ function deskSearchItems() {
 // and the List asks once.
 var deskLastChange = 0;
 var deskSearchedAt = -1;
+// THE NEWEST CHANGE SEEN, PER ROW (goal/G33.8, box v11): an older version of a row never paints over a newer one, and an
+// earlier write's rows still land when a later write's overtook them.
+var deskRowChange = {};
+function deskRowKeyOf(obj) {
+  if (!obj.table) { var it = obj.item; if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } } return 'item|' + String((it && it.id) || ''); }
+  var r = obj.row || {};
+  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
+    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : obj.table === 'suites' ? String(r.path || '') : '';
+  return obj.table + '|' + String(obj.id || '') + '|' + own;
+}
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   // What is kept of the current goal takes every publish first (goal/G33.3).
@@ -410,12 +420,14 @@ function deskOnPublished(obj) {
   var change = Number(obj.change) || 0;
   // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7). Andy: "let desk worry about its problems": publishes
   // travel as their own requests and can overtake each other; a row is never painted over by what came before.
-  if (change && deskLastChange && change < deskLastChange) return;
+  var rowKey = deskRowKeyOf(obj);
+  if (change && deskRowChange[rowKey] && change < deskRowChange[rowKey]) return;
+  if (change) deskRowChange[rowKey] = change;
   var gap = deskLastChange && change > deskLastChange + 1;
   // THE BACKUP LINE FOLLOWS THE RECORD (the stale-backup-line finding): read again once per write the desk made, since
   // the backup copies desk.db after a change. Until goal/G33.4 it followed the page's own log line.
   if (change && change > deskLastChange) deskAskBackup();
-  if (change) deskLastChange = change;
+  if (change > deskLastChange) deskLastChange = change;
   // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A gap
   // may have swallowed one, so the chat is read again with the List.
   if (gap) deskAskGroup().then(deskDraw, function () { /* shown as it stands */ });

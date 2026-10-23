@@ -96,9 +96,12 @@ function target(attrs) {
   return t;
 }
 
-function dialog(facts, checks) {
+function dialog(facts, checks, refuseSet) {
   const doc = fakeDocument();
   let dd = null;
+  // goal/G33.8 (box v11): the desk's publishes handed to the dialog as the page hands them, and the shell's disarm.
+  const heard = [];
+  let disarm = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
     { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, {});
   const asked = [];
@@ -113,11 +116,12 @@ function dialog(facts, checks) {
       if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'BOX', version: 1 } });
       if (v === 'item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
       if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [], chatMore: false } });
+      if (v === 'check.set' && refuseSet) return Promise.resolve({ status: 409, body: { ok: false, code: 'not-offered', error: 'REFUSED-GRANT' } });
       return Promise.resolve({ status: 200, body: { change: 4 } });
     },
-    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
+    onPublished: function (fn) { heard.push(fn); return function () {}; }, onPacket: function () { return function () {}; },
     setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
-    peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function (fn) { disarm = fn; },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
   dd.open({ id: facts.id, agents: {} });
@@ -126,6 +130,8 @@ function dialog(facts, checks) {
     html: function (id) { return doc.getElementById(id).innerHTML; },
     click: function (attrs) { doc.getElementById('dd-body').fire('click', { target: target(attrs), preventDefault: function () {} }); },
     sent: function (verb) { return asked.filter(function (a) { return a.verb === verb; }); },
+    publish: function (obj) { heard.forEach(function (fn) { fn(obj); }); },
+    disarm: function () { if (disarm) disarm(); },
   };
 }
 const FACTS = function (over) {
@@ -349,6 +355,46 @@ test.startTest('goal/G4.20: Desk for Andy');
   const grant = sets[0] && sets[0].args;
   if (armedOnly === 0 && sets.length === 1 && grant.id === 'goal/G100.2' && grant.check === 'G1' && grant.state === 'granted') test.check('G1: the first click arms, the second sends check.set {check: G1, state: granted}');
   else test.fail(OWED + 'grant clicks sent ' + armedOnly + ' then ' + short(sets));
+  // goal/G33.8 (box v11; Andy: "i had to grant appServer.js twice"): after the confirming press the grant shows pending
+  // until the desk's pushed check row turns it green; the shell's disarm never paints it red again.
+  dw.disarm();
+  await settled();
+  const pending = dw.html('dd-panel');
+  if (/granting/.test(pending) && !/data-grant="G1"/.test(pending)) test.check('after the confirming press, and the shell\'s disarm, G1 reads granting… and offers no Grant button');
+  else test.fail('OWED by goal/G33.8: after the confirming press and the disarm the files panel reads ' + short(pending));
+  dw.publish({ change: 4, table: 'checks', goal: 100, item: 2, id: 'goal/G100.2', row: Object.assign({ number: 'G1', kind: 'G', words: 'core grant: appServer.js', test: '', state: 'open', by: '', at: '' }, { state: 'granted', by: 'andy', at: '2026-10-23T19:15:27.000Z' }) });
+  await settled();
+  if (/data-granted="G1"/.test(dw.html('dd-panel')) && !/granting/.test(dw.html('dd-panel'))) test.check('the pushed check row turns it green');
+  else test.fail('OWED by goal/G33.8: after the pushed check row the panel reads ' + short(dw.html('dd-panel')));
+  // A refused grant shows its reason, and the button again.
+  const dr = dialog(FACTS({ asks: 1 }), [{ number: 'G1', kind: 'G', words: 'core grant: appServer.js', test: '', state: 'open', by: '', at: '' }], true);
+  await settled();
+  dr.click({ 'data-panel': 'files' });
+  await settled();
+  dr.click({ 'data-grant': 'G1' });
+  dr.click({ 'data-grant': 'G1' });
+  await settled();
+  dr.disarm();
+  await settled();
+  if (/REFUSED-GRANT/.test(dr.doc.getElementById('dd-error').textContent) && /data-grant="G1"/.test(dr.html('dd-panel')) && !/granting/.test(dr.html('dd-panel'))) test.check('a refused grant shows the reason and its button again');
+  else test.fail('OWED by goal/G33.8: after a refused grant the dialog reads ' + short(dr.html('dd-panel')));
+
+  // goal/G33.8 (box v11): publishes travel as their own requests and can overtake each other. A later write's row
+  // arriving first never makes an earlier write's row, of another row, be dropped.
+  test.subHeading('10-11b. an earlier write\'s row arriving after a later write\'s row is still applied');
+  const dO = dialog(FACTS({ asks: 1 }), [{ number: 'G1', kind: 'G', words: 'core grant: appServer.js', test: '', state: 'open', by: '', at: '' }]);
+  await settled();
+  dO.click({ 'data-panel': 'files' });
+  await settled();
+  dO.publish({ change: 4, table: 'chat', goal: 100, item: 2, id: 'goal/G100.2', row: { by: 'andy', at: '2026-10-23T19:15:30.000Z', text: 'LATER-LINE' } });
+  dO.publish({ change: 3, table: 'checks', goal: 100, item: 2, id: 'goal/G100.2', row: Object.assign({ number: 'G1', kind: 'G', words: 'core grant: appServer.js', test: '', state: 'open', by: '', at: '' }, { state: 'granted', by: 'andy', at: '2026-10-23T19:15:27.000Z' }) });
+  await settled();
+  if (/data-granted="G1"/.test(dO.html('dd-panel')) && /LATER-LINE/.test(dO.html('dd-chat'))) test.check('both rows were applied: the line of change 4 and the grant of change 3');
+  else test.fail('OWED by goal/G33.8: after change 4 then 3 the panel reads ' + short(dO.html('dd-panel')));
+  dO.publish({ change: 2, table: 'checks', goal: 100, item: 2, id: 'goal/G100.2', row: Object.assign({ number: 'G1', kind: 'G', words: 'core grant: appServer.js', test: '', state: 'open', by: '', at: '' }, { state: 'open' }) });
+  await settled();
+  if (/data-granted="G1"/.test(dO.html('dd-panel'))) test.check('and an older row of the same check, arriving last, paints nothing over it');
+  else test.fail('OWED by goal/G33.8: an older G1 row painted over the newer: ' + short(dO.html('dd-panel')));
 
   test.subHeading('9. a taken box shows red in the dialog');
   const db = dialog(FACTS({ boxTaken: 'claude-windows' }));

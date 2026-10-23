@@ -315,6 +315,15 @@ async function runHalf() {
   if (/red: 3 suites/.test(redRow) && /verified green/.test(greenRow)) test.check('ended runs show their outcome in the status column: ' + short(redRow) + ' / ' + short(greenRow));
   else test.fail('OWED by goal/G33.7: the status column of an ended red run reads ' + short(redRow) + ', of a green one ' + short(greenRow));
 
+  // goal/G33.8 (box v11): publishes can overtake each other; the List drops only an older version of the same row, so
+  // an earlier write's row of another item, arriving after a later write's, is still drawn.
+  const deskEmit = async function (o) { (handlers.desk || []).forEach(function (fn) { fn(o); }); await settled(); await sleep(20); await settled(); };
+  await deskEmit({ change: 50, verb: 'chat.add', item: row('goal/G103.2', { status: 'LATER-ROW', verified: 'none' }), listed: true, key: { goal: 103, item: 2 } });
+  await deskEmit({ change: 49, verb: 'item.status', item: row('goal/G103.1', { status: 'EARLIER-ROW' }), listed: true, key: { goal: 103, item: 1 } });
+  await deskEmit({ change: 48, verb: 'item.status', item: row('goal/G103.2', { status: 'OLDER-ROW', verified: 'none' }), listed: true, key: { goal: 103, item: 2 } });
+  if (/EARLIER-ROW/.test(statusOf('goal/G103.1')) && /LATER-ROW/.test(statusOf('goal/G103.2'))) test.check('an earlier write\'s row of another item, arriving last, is drawn; an older version of the same row is not');
+  else test.fail('OWED by goal/G33.8: after changes 50, 49, 48 the rows read ' + short(text(statusOf('goal/G103.1'))) + ' / ' + short(text(statusOf('goal/G103.2'))));
+
   // THE DIALOG: the same rendering, in #dd-run.
   const dById = {};
   const ddoc = { getElementById: function (id) { return dById[id] || (dById[id] = fakeElement(id)); } };
