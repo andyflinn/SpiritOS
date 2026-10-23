@@ -17,6 +17,10 @@
 //   e. the Verifier tab: idle is no run (no "Running now", a grey bar that does not move, "Idle, nothing running");
 //      the idle-hour countdown only when the verifier says it has chores (hasChores in what it publishes); during a run,
 //      "Running now" and a moving bar.
+//   f. the run in the status column (Andy: "why do i no longer see the verifier run in the items status column?"): the
+//      row of the item handed over (its facts: verifyRunning) shows, from deskVerify's own run publishes, "verifying",
+//      the suite running and a bar; other rows do not; after an idle publish the row shows its status word again. The
+//      dialog shows the same, from the same shared rendering (shell/shared/js/deskRunStatus.js), in #dd-run.
 // rule/11: through testSupport only; its desk has its own folder, its own environment file and a pretend node on a port
 // of its own, never 65432; it stops only the processes it started.
 
@@ -251,11 +255,95 @@ async function tabHalf() {
   else test.fail(OWED + 'the tab during a run reads ' + short(text(running)) + '; bar ' + short(barOf()));
 }
 
+// ── f. THE RUN IN THE STATUS COLUMN, AND IN THE DIALOG ──
+const RUN_STATUS = path.join(RUN, 'shell', 'shared', 'js', 'deskRunStatus.js');
+// The page loads the shared rendering once; here it is read into the window the apps are handed, as the page's would be.
+function sharedWindow(win) {
+  try { new Function('window', fs.readFileSync(RUN_STATUS, 'utf8'))(win); } catch (e) { /* not there: the apps draw without it */ }
+  return win;
+}
+const RUN_OBJ = { doing: 'run', suite: 'spirit/test/zzRunning.js', index: 1, of: 2, tests: 3, expected: 6, line: 'running zzRunning.js, suite 1 of 2', since: new Date().toISOString(), stopAsked: false, idleMs: 3600000, chores: '' };
+const IDLE_OBJ = { doing: 'idle', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle, nothing running', since: new Date().toISOString(), stopAsked: false, idleMs: 3600000, chores: '' };
+async function runHalf() {
+  test.subHeading('f. the run in the status column and in the dialog, from deskVerify\'s own publishes');
+  const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'ar/G1', status: 'handed to deskVerify', with: '', buttons: ['done', 'verify'], blocking: ['ar/G1'], blocked: [], asks: 0, claims: 1, verified: 'none', verifyFailures: [], verifyRunning: false }, extra || {}); };
+  const fake = require('./deskFake.js').create([]);
+  fake.items = [
+    { id: 'ar/G1', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['ar/G1.1', 'ar/G1.2'], live: [], working: [], waiting: 0 },
+    row('ar/G1.1', { verifyRunning: true }),
+    row('ar/G1.2', { status: 'verified green', verified: 'green' }),
+  ];
+  const handlers = {};
+  const byId = {};
+  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+  let behavior = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, sharedWindow({ spirit: {} }));
+  behavior.mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
+    onPublished: function (fn, server) { (handlers[server || 'desk'] = handlers[server || 'desk'] || []).push(fn); return function () {}; }, onPacket: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
+  const emit = async function (o) { (handlers.deskVerify || []).forEach(function (fn) { fn(o); }); await settled(); await sleep(20); await settled(); };
+  const all = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
+  const statusOf = function (id) {
+    const tr = (new RegExp('<tr data-row="' + id.replace(/[./]/g, '\\$&') + '"[\\s\\S]*?</tr>').exec(all()) || [''])[0];
+    const tds = tr.match(/<td[^>]*>[\s\S]*?<\/td>/g) || [];
+    return tds[tds.length - 1] || '';
+  };
+  await emit(RUN_OBJ);
+  const running = statusOf('ar/G1.1');
+  if (/verifying/i.test(text(running)) && /zzRunning\.js/.test(running) && /<progress/.test(running)) test.check('the row of the item handed over shows the run: ' + short(text(running)));
+  else test.fail(OWED + 'the handed-over row\'s status column reads ' + short(running));
+  const other = statusOf('ar/G1.2');
+  if (!/<progress/.test(other) && !/zzRunning/.test(other)) test.check('and no other row does');
+  else test.fail(OWED + 'another row shows the run: ' + short(other));
+  await emit(IDLE_OBJ);
+  const back = statusOf('ar/G1.1');
+  if (!/<progress/.test(back) && /handed to deskVerify/.test(back)) test.check('after an idle publish the row shows its status word again');
+  else test.fail(OWED + 'after idle the row reads ' + short(back));
+
+  // THE DIALOG: the same rendering, in #dd-run.
+  const dById = {};
+  const ddoc = { getElementById: function (id) { return dById[id] || (dById[id] = fakeElement(id)); } };
+  const dHandlers = {};
+  let dd = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, ddoc, sharedWindow(test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') })));
+  dd.mount(fakeElement('dd'), {
+    escapeHtml: kernel.core.util.escapeHtml,
+    verb: function (name, body) {
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const v = ask && Object.keys(ask)[0];
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(row('ar/G1.1', { verifyRunning: true })), version: 1, change: 1 } });
+      return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], files: [], box: '', version: 1 } });
+    },
+    onPublished: function (fn, server) { (dHandlers[server || 'desk'] = dHandlers[server || 'desk'] || []).push(fn); return function () {}; }, onPacket: function () { return function () {}; },
+    setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+  });
+  await dd.open({ id: 'ar/G1.1', agents: {} });
+  await settled();
+  const dEmit = async function (o) { (dHandlers.deskVerify || []).forEach(function (fn) { fn(o); }); await settled(); await sleep(20); await settled(); };
+  await dEmit(RUN_OBJ);
+  const dRun = ddoc.getElementById('dd-run').innerHTML;
+  if (/verifying/i.test(text(dRun)) && /zzRunning\.js/.test(dRun) && /<progress/.test(dRun)) test.check('the dialog shows the same run: ' + short(text(dRun)));
+  else test.fail(OWED + 'the dialog\'s #dd-run reads ' + short(dRun) + ' (deskVerify subscribed: ' + !!dHandlers.deskVerify + ')');
+  await dEmit(IDLE_OBJ);
+  const dIdle = ddoc.getElementById('dd-run').innerHTML;
+  if (!/<progress/.test(dIdle)) test.check('and drops it on an idle publish');
+  else test.fail(OWED + 'the dialog after idle reads ' + short(dIdle));
+}
+
 (async function () {
   await listHalf();
   await dialogHalf();
   await deskHalf();
   await tabHalf();
+  await runHalf();
 })().catch(function (e) { test.fail(OWED + 'the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   test.reportSuccessFailureCount();
