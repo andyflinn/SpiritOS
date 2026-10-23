@@ -74,11 +74,13 @@ async function verifyHalf() {
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
   const probe = path.join(scratch, 'pullProbe.js');
-  fs.writeFileSync(probe, '// a pull that changes nothing\n');
+  const pulled = path.join(scratch, 'pulled.txt');
+  // A pull that changes nothing, and leaves a mark each time it is called.
+  fs.writeFileSync(probe, "require('fs').appendFileSync(" + JSON.stringify(pulled) + ", 'pulled\\n');\n");
   const run = path.join(scratch, 'verify');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
-  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), suiteMs: 20000, pull: process.execPath + ' ' + probe }, run);
+  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), suiteMs: 20000, pull: JSON.stringify(process.execPath) + ' ' + JSON.stringify(probe) }, run);
   const rel = 'spirit/test/' + GREEN;
   // One run, handed and waited for; its outcome for the probe, read back through search.
   // The newest run by its row's key, never by time: the server's clock and this one's differ by milliseconds.
@@ -110,6 +112,13 @@ async function verifyHalf() {
     const none = await runAt('');
     if (none.one.outcome === 'green') test.check('a run handed no commit runs on what the tree holds');
     else test.fail(OWED + 'the run with no commit: ' + short(none.row));
+    // 3. A CHANGED FILE ELSEWHERE NEVER STOPS THE PULL (goal/G33.4; Andy: "it's a very bad reason for the verifier to
+    // reject a fucking run, these files are nowhere in the way of the current item's work"). The probe suite this
+    // writes into spirit/test is untracked, so every run above was on a dirty tree; each one must still have pulled.
+    test.subHeading('3. a dirty tree is pulled all the same');
+    const pulls = fs.existsSync(pulled) ? fs.readFileSync(pulled, 'utf8').split('\n').filter(Boolean).length : 0;
+    if (pulls >= 3) test.check('each of the three runs pulled first, though the tree held an uncommitted file');
+    else test.fail('OWED by goal/G33.4: the runs on a dirty tree pulled ' + pulls + ' time(s) of 3; the rows say ' + short([lacking.row && lacking.row.line, at.row && at.row.line, none.row && none.row.line]));
   } finally {
     await v.stop();
     node.close();

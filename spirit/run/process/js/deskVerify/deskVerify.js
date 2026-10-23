@@ -137,16 +137,15 @@ function forgetTree() { seen = { at: 0, commit: '', short: '', dirty: '' }; }
 
 // ── THE PULL, AND IT GOES FIRST (goal/G16.13) ────────────────────────────
 //
-// Every run pulls first, so what it measures is what was pushed. A DIRTY TREE IS NEVER PULLED: uncommitted work in
-// the clone is its owner's, and a pull over it could cost him it; a dirty tree is run as it stands, and the run's row
-// says so.
+// Every run pulls first, so what it measures is what was pushed. A DIRTY TREE IS PULLED ALL THE SAME (goal/G33.4;
+// Andy: "it's a very bad reason for the verifier to reject a fucking run, these files are nowhere in the way of the
+// current item's work"): a fast-forward pull never overwrites an uncommitted file - git refuses the pull instead, and
+// the run's row says why - so the owner's work is safe without the verifier refusing on his behalf.
 const PULL = String(values.pull === undefined ? 'git pull --ff-only' : values.pull).trim();
 async function pullFirst() {
   // READ NOW, NOT FROM THE CACHE (goal/G19.2): a file left uncommitted a moment ago must read as dirty.
   if (treeReading) await treeReading.catch(function () {});
   forgetTree();
-  const before = await tree();
-  if (before.dirty) return 'dirty, not pulled';
   if (!PULL) return 'no pull command set';
   // Spawned and awaited (goal/G21.3): a pull that waits on the network no longer freezes now and stop.
   const r = await sh(PULL, null);
