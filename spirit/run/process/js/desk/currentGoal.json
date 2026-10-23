@@ -1,5 +1,5 @@
 {
- "change": 95926,
+ "change": 96060,
  "goal": "goal/G33",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.5",
-    "goal/G33.8"
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -3973,12 +3972,12 @@
    "id": "goal/G33.8",
    "title": "cleaning up addServer",
    "goal": "goal/G33",
-   "status": "build",
+   "status": "done",
    "with": "claude-windows",
-   "version": 11,
+   "version": 14,
    "buttons": [
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -3987,12 +3986,12 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 21,
+   "fileCount": 23,
    "green": true,
    "code": true,
    "phase": "build",
@@ -4000,7 +3999,7 @@
    "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "26c36d64",
+   "claimCommit": "36844265",
    "redCommit": "96434530",
    "waived": true,
    "rules": [
@@ -4047,7 +4046,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n- Found live at this item's Go: the agent holding the item was not woken by the Go, the second time running. A Go on an item wakes the agent it concerns, whether or not that agent already holds the item.\n- Folded in from goal/G33.7, committed as bf1805ed: no desk answer carries his lines; an ended Verify shows its outcome on the row and in the dialog.\n- The desk sends all its data to all subscribers; each deskClient filters what reaches its agent.\n- In the item dialog's file list, the open grants and their grant buttons come first, at the top, never below the files.\n- Found live: a grant had to be pressed twice. After the confirming press the button says granting, never red again, until the push turns it green; and the dialog compares change numbers per row, so no pushed row is dropped because another row carried a newer number.\n",
+   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n- Found live at this item's Go: the agent holding the item was not woken by the Go, the second time running. A Go on an item wakes the agent it concerns, whether or not that agent already holds the item.\n- Folded in from goal/G33.7, committed as bf1805ed: no desk answer carries his lines; an ended Verify shows its outcome on the row and in the dialog.\n- The desk sends all its data to all subscribers; each deskClient filters what reaches its agent.\n- In the item dialog's file list, the open grants and their grant buttons come first, at the top, never below the files.\n- Found live: a grant had to be pressed twice. After the confirming press the button says granting, never red again, until the push turns it green; and the dialog compares change numbers per row, so no pushed row is dropped because another row carried a newer number.\n- The List tells a goal from its items at a glance: the goal row carries a goal sign in its icon cell and is shaded. No item row or item dialog links to the item's own goal, so a click near an item's Done cannot open the goal by accident.\n- An unread line from the phase holder marks its row with a red ! next to the item, no longer the whole row in red type.\n- Found live: work.open offered jobs from every goal, so a stale job in an old goal (G29.17) woke an agent every time it listened, and both agents filtered such jobs with hand-made skip lists. work.open offers only jobs of the current goal; the skip lists go.\n",
    "checks": [
     {
      "number": "Q1",
@@ -4336,6 +4335,144 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T20:16:37.683Z",
      "text": "commit 26c36d64abfce02c2432e63b3d9508bd6f15fb68: A confirmed grant reads granting until the push; stale updates are judged per row (goal/G33.8)\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskAdjustments.js\n- spirit/test/deskForAndy.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:20:24.600Z",
+     "text": "this item is marked with the same id as the goal on the list"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:21:13.937Z",
+     "text": "Seen. The desk itself has it right: in its tables this row is goal 33, item 8, goal/G33.8. So the page draws it wrong, either the id drawn from the numbers or the per-row keys from the last fix. Being reproduced on the real page code now, red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:21:49.889Z",
+     "text": "cw. when i closed this item the goal got closed, too. and got very confused."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:22:34.656Z",
+     "text": "I checked your desk itself: nothing was closed. G33, G33.5 and G33.8 all stand open there. So it is the page that is confused, the same fault as the wrong id on this row: the row carried the goal's id, so your Close went to, or was drawn on, the wrong row.\n\nA browser refresh shows the true state for now. Don't press Close on G33.8's row again until the fix is in; it is being built first, red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:23:59.832Z",
+     "text": "cw. i've re-opened stuff to make both, the goal and this item re-appear."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:24:36.711Z",
+     "text": "cw. and it's really hard to tell the goal from it's items in the list..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:27:09.657Z",
+     "text": "What happened, as far as the desk can tell:\n\n- Your Done at 20:17:47 landed on goal/G33 itself, not on G33.8: the desk wrote its line under the goal. Closing a goal also closes its open items, which is why both vanished. So my earlier \"nothing was closed\" was wrong; your reopen had already set it back when I looked.\n- I could not make any row show a wrong id: on the real page with your real rows, G33.8's row keeps its id and its Done goes to G33.8.\n- The likely path: every item row carries its goal as a link (Blocking), which opens the goal's dialog; a Done pressed there is the goal's.\n- The goal row today differs from its items only by bold text, easy to miss among many rows.\n\nFolded into this item, red first:\n\n- the goal row clearly marked: a goal sign in its icon cell and a shaded row;\n- no link to an item's own goal in its row or its dialog, so a click near Done cannot open the goal by accident.\n\nIf you remember whether the dialog's title read goal/G33 when you pressed Done, that would confirm it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:27:38.196Z",
+     "text": "and this items, while showing as goal on the list also is in red type face which i still don't comprehend"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:27:53.942Z",
+     "text": "The red type: I hold this item's phase, and every line I post here turns its row red until you open the item (your rule from G33.2). I have posted a lot here, so it keeps coming back red.\n\nThe goal id on this row I cannot reproduce from your data: every way I draw it, the row reads goal/G33.8. Could you copy the row's text as you see it in the List and paste it here? That shows me where the goal id comes from."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:28:48.057Z",
+     "text": "it's enough to put a red ! next to the item,"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:29:30.836Z",
+     "text": "Folded in (box v13): an unread line from the phase holder shows as a red ! next to the item, the row itself stays in normal type."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:31:03.494Z",
+     "text": "also wsl has figured out how to sign on to the desk, BUT it's harping on about some G27.7 stuff:\n\n\"I'm still listening, but through a small wrapper so the G29.17 job stops waking me. It's claude-windows's item, and the desk was handing it back every time I started listening. The wrapper skips that one job and waits a minute before listening again. Anything else, including any line from you, wakes me as usual.\n\nIt lives outside the repo, in my scratchpad: /tmp/claude-1000/-home-andy-SpiritOS/56dacf7b-af2c-42f2-9615-33407cbcdc9c/scratchpad/ear.sh.\n\nlistening on node\""
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T20:31:03.518Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:31:11.600Z",
+     "text": "commit 29d4dbab69db6ac625df9189d5db142bc9e567f0: The goal row stands out, items carry no link to their own goal, and an unread line is a red ! (goal/G33.8)\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskAdjustments.js\n- spirit/test/deskLayout.js\n- spirit/test/deskSmallFixes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:31:16.218Z",
+     "text": "Pushed and claimed: 29d4dbab. After a pull and a browser refresh:\n\n- the goal row is shaded, ruled, with a goal sign in its icon cell;\n- no item row or item dialog links to its own goal;\n- an unread line from the phase holder is a red ! beside the item, the row in normal type.\n\nFiles: shell/desk/desk.js, shell/deskDetails/deskDetails.js; tests deskAdjustments, deskLayout, deskSmallFixes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:31:44.817Z",
+     "text": "wsl is right that the job is stale, and the cause is the desk: work.open offers jobs from every goal, so G29.17, an old build of mine, is handed to whoever listens. My own listener has the same kind of skip list for old jobs; both are hacks around one bug.\n\nFolded in (box v14): work.open offers only jobs of the current goal, and both skip lists go. Red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:34:45.029Z",
+     "text": "nice touch, the folder icon next to the goal.\n\nyes fold this fix into this item"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T20:34:45.118Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:35:46.244Z",
+     "text": "commit 3684426505a02708bbee7e3ab34587db066eaefc: work.open offers only jobs of the current goal (goal/G33.8)\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskBoundedInterface.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:35:49.640Z",
+     "text": "Pushed and claimed: 36844265. work.open offers only jobs of the current goal. After a pull and a node restart, G29.17 stops waking anyone; then wsl can drop its wrapper, and I drop my skip list.\n\nFiles: process/js/desk/desk.js; test deskBoundedInterface."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:37:04.065Z",
+     "text": "my node should be running the latest code now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:39:35.476Z",
+     "text": "so can the wrappers and hacks be dropped now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:39:54.916Z",
+     "text": "Yes. Your desk runs 36844265 and offers no stale job any more (work.open answers an empty list for me). My skip list is gone: my listener is now the plain ear and nothing else. wsl can drop its wrapper the same way."
     }
    ]
   }
