@@ -446,14 +446,14 @@ var ddLastChange = 0;
 function ddTake(obj) {
   if (!obj) return;
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: reload what is shown.
-  if (obj.dropped) { if (ddId) ddLoad(); return; }
+  if (obj.dropped) { if (ddId) { ddForget(ddId); ddLoad(); } return; }
   var change = Number(obj.change) || 0;
   // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7): publishes travel as their own requests and can
   // overtake each other; what is shown is never painted over by what came before it.
   if (change && ddLastChange && change < ddLastChange) return;
   var gap = ddLastChange && change > ddLastChange + 1;
   if (change) ddLastChange = change;
-  if (gap && ddId) { ddLoad(); return; }
+  if (gap && ddId) { ddForget(ddId); ddLoad(); return; }
   if (!obj.item || obj.item.id !== ddId) return;
   ddFacts = obj.item;
   // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
@@ -573,6 +573,12 @@ function ddRename() {
 // The item as the server has it now: at open, and again after a dropped publish (desk/G3.10).
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
+// THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
+// one cache for deskClient and this page: spirit.data (shell/js/spiritData.js) with the desk's translator
+// (shell/js/desk/data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
+// are asked once, when it is first opened, and after a gap.
+function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }
+function ddForget(id) { var K = ddKept(); if (K && id) K.del('deskItem/' + id); }
 function ddLoad() {
   var id = ddId;
   return ddAsk('item.get', { id: id }).then(function (got) {
@@ -581,13 +587,23 @@ function ddLoad() {
     ddVersion = Number(got.version) || 0;
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
+    var K = ddKept();
+    var whole = K ? K.get('deskItem/' + id) : null;
+    if (whole && typeof whole.box === 'string' && Array.isArray(whole.checks) && Array.isArray(whole.chat) && Array.isArray(whole.files)) {
+      ddBox = whole.box; ddVersion = Number(whole.version) || ddVersion; ddBoxLoaded = true;
+      ddChecks = whole.checks; ddChat = whole.chat; ddChatMore = !!whole.chatMore; ddFiles = whole.files; ddFilesMore = !!whole.filesMore;
+      ddPaint();
+      return null;
+    }
     // block.targets is the blocks panel's, asked when 🪠 is pressed (goal/G30.8).
     return Promise.all([
       ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
       ddLoadFiles(id),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
-    ]);
+    ]).then(function () {
+      if (K && ddId === id) K.set('deskItem/' + id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore, files: ddFiles, filesMore: ddFilesMore });
+    });
   }).then(null, function (e) {
     ddNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
     ddPaint();

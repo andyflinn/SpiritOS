@@ -1988,7 +1988,39 @@ function changesSince(n, line, viewer) {
     out.lines.pop();
     out.line = out.lines.length ? out.lines[out.lines.length - 1].line : line;
     out.more = true;
-    return out;
+    return withRows(out, viewer);
+  }
+  return withRows(out, viewer);
+}
+// THE ROWS AND THE HELD ITEM RIDE ALONG (goal/G33.3; Andy, on how deskClient learns the rows: "A it is then"). Beside
+// its records, a changes answer carries the current facts of every item they touched (rows), and, when one of them
+// is the item the asking agent holds, that item's panels (held: box, version, checks, files), so deskClient keeps
+// them without asking again. Each is added while the answer still fits; what does not fit is said (rowsMore,
+// heldMore), and deskClient asks for it as before.
+function withRows(out, viewer) {
+  const touched = [];
+  out.records.forEach(function (r) {
+    let b = null;
+    try { b = JSON.parse(r.body || '{}'); } catch (e) { b = null; }
+    const id = b && typeof b.id === 'string' ? b.id : '';
+    if (id && touched.indexOf(id) === -1) touched.push(id);
+  });
+  if (!touched.length) return out;
+  const s = walkState();
+  const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
+  out.rows = [];
+  for (const id of touched) {
+    const it = s.items[id];
+    if (!it) continue;
+    out.rows.push(facts(s, it));
+    if (size() > ANSWER_ROOM) { out.rows.pop(); out.rowsMore = true; break; }
+  }
+  const label = viewer ? Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === viewer; }).pop() || '' : '';
+  const heldId = label ? touched.filter(function (id) { const it = s.items[id]; return it && !it.goal && it.with === label; })[0] : '';
+  if (heldId) {
+    const it = s.items[heldId];
+    out.held = { id: heldId, box: it.box, version: it.version, checks: shownChecks(it), files: filesOf(it) };
+    if (size() > ANSWER_ROOM) { delete out.held; out.heldMore = heldId; }
   }
   return out;
 }

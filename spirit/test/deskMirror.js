@@ -49,6 +49,9 @@ function translatorHalf() {
   const D = require('../run/shell/js/spiritData.js');
   try { require(TRANSLATOR); } catch (e) { test.fail(OWED + 'shell/js/desk/data.js did not load: ' + e.message); return; }
   D.seat('deskItems', [{ key: 'm/G1.1', label: JSON.stringify({ id: 'm/G1.1', title: 'One', status: 'build' }) }]);
+  // Kept whole, as the dialog or deskClient keeps the item it opened or holds; only such an item takes chat lines,
+  // since a line alone would leave a chat that is not the item's whole one.
+  D.set('deskItem/m/G1.1', { box: '', version: 0, chat: [], chatMore: false, checks: [], files: [], filesMore: false });
   D.take({ module: 'process/js/desk', data: {}, app: { change: 5, verb: 'chat.add', item: { id: 'm/G1.1', title: 'One', status: 'running' },
     chat: { by: 'claude-windows', at: '2026-10-23T00:00:00Z', text: 'a report' } } });
   const row = D.get('deskItems/m/G1.1') || {};
@@ -140,7 +143,8 @@ async function serversHalf() {
   else test.fail(OWED + 'changes carried held ' + short(body.held));
 
   test.subHeading('3. deskClient answers its agent\'s reads of the held item from what it keeps');
-  kids.push(spawn(process.execPath, [CLIENT, '{}', '--pipe', clientPipe, '--state', clientState], {
+  // Who it is, as its node hands every server it starts (--node): it knows its agent's held item by that name.
+  kids.push(spawn(process.execPath, [CLIENT, '{}', '--pipe', clientPipe, '--state', clientState, '--node', JSON.stringify({ name: 'claude-windows', publicKey: OWNER.key })], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);

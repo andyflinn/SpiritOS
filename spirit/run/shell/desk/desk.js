@@ -479,6 +479,8 @@ function deskSearchItems() {
 var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
+  // What is kept of the current goal takes every publish first (goal/G33.3).
+  if (typeof window !== 'undefined' && window.spirit && window.spirit.deskData) window.spirit.deskData.published(obj);
   // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
   // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
   // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
@@ -563,6 +565,22 @@ var deskRulesElement = null;
 // element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
 // know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
 var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
+// THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
+// deskClient keeps it in node; loaded once by the app, as the shared element is.
+var DESK_DATA = '/shell/js/desk/data.js';
+function deskLoadData() {
+  if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DESK_DATA;
+  document.body.appendChild(script);
+}
+// Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
+function deskForgetKept() {
+  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
+  if (!D || typeof D.branch !== 'function') return;
+  Object.keys(D.branch('deskItem')).forEach(function (id) { D.del('deskItem/' + id); });
+}
 function deskLoadSharedElement(done) {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof have === 'function') { done(); return; }
@@ -1799,11 +1817,12 @@ spirit.shell.activateApp({
     // goal/G27.9: the elements subscribe after the store, so each repaints from what the store has just taken; once
     // the shared element is loaded, the List is drawn again so its rows are made as elements too.
     deskLoadSharedElement(function () { deskMountElements(); deskDraw(); });
+    deskLoadData();
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the chats are asked for again. Lines already held are not taken twice.
     // goal/G22.3: the plugin goals again too, if Apps is showing; otherwise its next opening asks.
-    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskSearchItems(); deskLoad(); if (deskIsAppTab(deskTab)) deskFindPlugins(); });
+    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskForgetKept(); deskSearchItems(); deskLoad(); if (deskIsAppTab(deskTab)) deskFindPlugins(); });
     deskDraw();
     deskSearchItems();
     deskLoad();

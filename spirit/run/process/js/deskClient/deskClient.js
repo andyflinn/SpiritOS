@@ -198,6 +198,77 @@ let turn = null;
 let said = '';
 // nudged: the desk said something changed, and no poll has started since. wakers: the waits a nudge ends early.
 let nudged = false;
+
+// WHAT IT KEEPS OF THE CURRENT GOAL (goal/G33.3). Andy: "since an agent can only hold 1 phase of one item at the time,
+// deskClient focuses on fetching that items file, chat etc ... so anything the agent needs is already on hand", in "an
+// updated shared client block that handles this same for deskClient and the web-UI". The block is the page's own:
+// spirit.data (shell/js/spiritData.js) with the desk's translator (shell/js/desk/data.js), loaded here in node. Every
+// changes page read feeds it (its rows and its held item ride along, "A it is then"); a read of the item its agent
+// holds is answered from it while no nudge says the desk changed; its agent's own write drops that item, so the next
+// read is the desk's.
+const kept = require('../../../shell/js/spiritData.js');
+require('../../../shell/js/desk/data.js');
+const deskData = globalThis.spirit.deskData;
+const KEPT_READS = ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'];
+function heldByMe(row) {
+  if (!row || !row.with) return false;
+  const names = row.names || {};
+  return (names[row.with] || row.with) === SELF;
+}
+// The answer the desk would give, from what is kept of the item, or null when it is not all there.
+function fromKept(name, args) {
+  const id = String((args && args.id) || '');
+  const row = id ? kept.get('deskItems/' + id) : null;
+  const whole = id ? kept.get('deskItem/' + id) : null;
+  if (nudged || !row || !whole || !heldByMe(row)) return null;
+  if (name === 'item.get' && typeof whole.version === 'number') return { item: JSON.stringify(row), version: whole.version, change: (fetched && fetched.n) || 0 };
+  if (name === 'item.box' && typeof whole.box === 'string') return { box: whole.box, version: Number(whole.version) || 0 };
+  if (name === 'item.checks' && Array.isArray(whole.checks)) return { checks: whole.checks };
+  if (name === 'item.chat' && Array.isArray(whole.chat)) return { chat: whole.chat, chatMore: !!whole.chatMore };
+  if (name === 'item.files' && Array.isArray(whole.files) && !whole.filesMore) {
+    const under = typeof args.under === 'string' ? args.under : '';
+    return { files: whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; }), filesMore: false };
+  }
+  return null;
+}
+// FETCHED ON ITS OWN, WHILE ITS AGENT WAITS (goal/G33.3, by Andy's priorities): the current goal's rows once, then the
+// one item its agent holds, whole, so its first read is answered without the desk. One warming at a time; asked only
+// while the agent waits, as every ask of deskClient's is (goal/G3).
+let seated = false;
+let warming = null;
+function warm(to) {
+  if (warming) return warming;
+  const rows = seated ? Promise.resolve() : countedAsk(to, 'items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }).answer.then(function (got) {
+    if (got && Array.isArray(got.items)) { kept.seat('deskItems', got.items); seated = !got.more; }
+  });
+  warming = rows.then(function () {
+    const mine = kept.rows('deskItems').filter(function (r) { return r.goal !== '' && heldByMe(r); })[0];
+    const whole = mine ? kept.get('deskItem/' + mine.id) : null;
+    if (!mine || (whole && typeof whole.box === 'string' && Array.isArray(whole.chat) && Array.isArray(whole.checks) && Array.isArray(whole.files))) return null;
+    return ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'].reduce(function (chain, verb) {
+      return chain.then(function () { return countedAsk(to, verb, { id: mine.id }).answer.then(function (got) { keepRead(verb, { id: mine.id }, got); }); });
+    }, Promise.resolve());
+  }).catch(function () { /* asked again at the next wait */ }).finally(function () { warming = null; });
+  return warming;
+}
+// What the desk answered a read, kept when it is of the item this agent holds.
+function keepRead(name, args, got) {
+  const id = String((args && args.id) || '');
+  if (!id || !got || typeof got !== 'object' || got.ok === false) return;
+  if (name === 'item.get') {
+    let row = null;
+    try { row = JSON.parse(got.item); } catch (e) { row = null; }
+    if (!row || !row.id) return;
+    kept.set('deskItems/' + id, row);
+    if (heldByMe(row)) kept.merge('deskItem/' + id, { version: Number(got.version) || 0 });
+    return;
+  }
+  if (!heldByMe(kept.get('deskItems/' + id))) return;
+  if (name === 'item.box') kept.merge('deskItem/' + id, { box: String(got.box || ''), version: Number(got.version) || 0 });
+  if (name === 'item.checks' && Array.isArray(got.checks)) kept.merge('deskItem/' + id, { checks: got.checks });
+  if (name === 'item.chat' && Array.isArray(got.chat)) kept.merge('deskItem/' + id, { chat: got.chat, chatMore: !!got.chatMore });
+  if (name === 'item.files' && Array.isArray(got.files) && !args.under) kept.merge('deskItem/' + id, { files: got.files, filesMore: !!got.filesMore });
+}
 // THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
 let agentState = 'connected';
 const wakers = [];
@@ -428,6 +499,7 @@ function readOn(to) {
       ms += r.ms; bytes += r.bytes;
       // A poll the desk did not answer moves nothing: what it had read is read again next time.
       if (!r.ok) { record('changes', outcomeOf(r.got), ms, bytes, 1); return null; }
+      deskData.takeChanges(r.got);
       raw += r.got.records.length + r.got.lines.length;
       const meant = meantForAgent(r.got, at);
       at = { n: r.got.n, line: r.got.line };
@@ -552,9 +624,15 @@ appServer.serve({
       if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
       // CHAT IS GATED (goal/G27.6; Andy 2026-10-16): on an item this agent holds, or where it has taken a line, its chat may
       // be written; anywhere else it may only reply to lines it successfully took. If the desk cannot say, it is refused.
+      // A READ OF THE HELD ITEM, FROM WHAT IS KEPT (goal/G33.3): nothing asked of the desk.
+      const reading = KEPT_READS.indexOf(a.name) !== -1;
+      if (reading) { const ready = fromKept(a.name, args); if (ready) return ready; }
+      // ITS AGENT'S OWN WRITE drops the item it touched: the next read is the desk's answer, its change included.
+      if (!reading && typeof args.id === 'string' && args.id) { kept.del('deskItem/' + args.id); kept.del('deskItems/' + args.id); }
       return mayChat(to, a.name, args).then(function (ok) {
         if (!ok) throw refused('not-taken', { why: 'this agent holds neither the item nor a line it took here' });
         const one = countedAsk(to, a.name, args);
+        if (reading) one.answer.then(function (got) { keepRead(a.name, args, got); }, function () { /* nothing kept */ });
         // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
         const answer = one.answer.then(function (got) {
           if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
@@ -591,6 +669,7 @@ appServer.serve({
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
       if (said !== 'listening') say(to, 'listening');
+      warm(to);
       // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
       // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
       // line, with the rules recorded on its item at his Go; else the wait goes on as before.
