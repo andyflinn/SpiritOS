@@ -27,17 +27,20 @@ const VERIFY_PORT = (function () {
   return Number.isInteger(p) && p > 0 ? p : 0;
 })();
 const SUITE = require('path').basename(String(process.argv[1] || ''));
+// The fetch that reports to deskVerify, taken when this loads: a suite that removes the global fetch to prove its own
+// code asks nobody (spiritDataSearch.js) must not take the verifier's reporting with it (goal/G33.7).
+const send = typeof fetch === 'function' ? fetch : null;
 // WHAT HAS NOT COME BACK YET, so a suite that exits right after its report does not take its last records with it.
 const pending = new Set();
 // THE WHY OF A RED TRAVELS WITH IT (goal/G21.3): Andy's box, "deskVerify keeps, beside each failing test's outcome, its
 // failure text (capped), so the why is in the record." `failure` is what fail printed, title and detail; deskVerify
 // caps it, the one gate. The title alone is still the key.
 function record(title, outcome, failure) {
-  if (!VERIFY_PORT || !title) return;
+  if (!VERIFY_PORT || !title || !send) return;
   const rec = { suite: SUITE, title: String(title), outcome: outcome };
   if (outcome === 'red' && failure) rec.failure = String(failure);
   pending.add(rec);
-  fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
+  send('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
     method: 'POST', headers: { 'content-type': 'application/json' }, // the verb by name with its args beside it, as kernel.core.ask sends it: a node answers a body with no
     // verb 'no such verb' (found by claude-windows verifying c3935558, on a real node). deskVerify.record on the flat apiDoor (goal/G30.6).
     body: JSON.stringify(Object.assign({ verb: 'deskVerify.record' }, rec)),
