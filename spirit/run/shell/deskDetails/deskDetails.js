@@ -287,18 +287,19 @@ function ddQsHtml() {
   }).join('');
   return (qs || '<div class="job-manifest-note">No red Q is open.</div>') + cs;
 }
-// The grants, open ones as his armed button, given ones in green, under the files they cover.
-function ddGrantsHtml() {
+// The grants: the open ones as his armed buttons, FIRST, above the files they cover (goal/G33.8, box v10, Andy: "the red
+// grant buttons are still at the bottom of the file list"), and the given ones in green under the files. open says which.
+function ddGrantsHtml(open) {
   // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". Armed like every grant; one write grants them all.
-  var open = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).length;
+  var openCount = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).length;
   var armedAll = ddArmed === 'grant:all';
-  var all = open > 1 ? '<div><button type="button" data-grant="all"' + (armedAll ? ' data-armed="1"' : '') +
-    ' style="background:#c00;color:#fff">' + (armedAll ? 'Grant all ' + open + ': sure?' : 'Grant all ' + open) + '</button></div>' : '';
+  var all = open && openCount > 1 ? '<div><button type="button" data-grant="all"' + (armedAll ? ' data-armed="1"' : '') +
+    ' style="background:#c00;color:#fff">' + (armedAll ? 'Grant all ' + openCount + ': sure?' : 'Grant all ' + openCount) + '</button></div>' : '';
   return all + ddChecks.map(function (c) {
-    if (c.kind === 'G' && c.state === 'granted') {
+    if (!open && c.kind === 'G' && c.state === 'granted') {
       return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
     }
-    if (c.kind === 'G' && c.state === 'open') {
+    if (open && c.kind === 'G' && c.state === 'open') {
       var armed = ddArmed === 'grant:' + c.number;
       return '<div><button type="button" data-grant="' + ddEsc(c.number) + '"' + (armed ? ' data-armed="1"' : '') +
         ' style="background:#c00;color:#fff">' + (armed ? 'Grant ' + ddEsc(c.number) + ': sure?' : 'Grant ' + ddEsc(c.number)) + '</button> ' + ddEsc(c.words) + '</div>';
@@ -309,7 +310,7 @@ function ddGrantsHtml() {
 function ddPanelHtml() {
   if (ddPanelSel === 'qs') return ddQsHtml();
   if (ddPanelSel === 'blocks') return ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>';
-  if (ddPanelSel === 'files') return (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml();
+  if (ddPanelSel === 'files') return ddGrantsHtml(true) + (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false);
   return ddBoxHtml();
 }
 

@@ -67,7 +67,7 @@ function dialog(answer) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
         if (v === 'block.targets') return Promise.resolve({ status: 200, body: { items: [] } });
-        if (v === 'item.get' || v === 'item.box' || v === 'item.checks' || v === 'item.chat') return Promise.resolve({ status: 200, body: answer });
+        if (v === 'item.get' || v === 'item.box' || v === 'item.checks' || v === 'item.chat' || v === 'item.files') return Promise.resolve({ status: 200, body: answer });
         return Promise.resolve({ status: 200, body: { change: 1 } });
       }
       return Promise.resolve({ status: 200, body: {} });
@@ -85,7 +85,9 @@ function dialog(answer) {
 const facts = JSON.stringify({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: '', buttons: ['done'],
   blocking: ['t/G1'], blocked: [], files: [{ path: 'spirit/run/js/hub.js', by: 'claude-windows', core: true }] });
 function answer(checks) {
-  return { item: facts, box: 'BOX-TEXT', version: 2, change: 7, checks: checks, chat: [{ by: 'andy', at: '2026-10-20T10:00:00Z', text: 'CHAT-HELLO' }] };
+  // goal/G33.8: item.files answers the file the grant covers, so the files panel draws both.
+  return { item: facts, box: 'BOX-TEXT', version: 2, change: 7, checks: checks, chat: [{ by: 'andy', at: '2026-10-20T10:00:00Z', text: 'CHAT-HELLO' }],
+    files: [{ path: 'spirit/run/js/hub.js', by: 'claude-windows', core: true }], filesMore: false };
 }
 
 (async function () {
@@ -143,6 +145,13 @@ function answer(checks) {
   await settled();
   if (/hub\.js/.test(d.html('dd-panel')) && /data-grant="G1"/.test(d.html('dd-panel'))) test.check('📂 shows the files with their grants');
   else test.fail(OWED + 'after 📂: ' + short(d.html('dd-panel')));
+  // goal/G33.8 (box v10, Andy: "the red grant buttons are still at the bottom of the file list"): the open grants and their
+  // buttons come first, at the top, before the files.
+  const filesPanel = d.html('dd-panel');
+  const firstGrant = filesPanel.indexOf('data-grant=');
+  const firstFile = filesPanel.indexOf('data-file=');
+  if (firstGrant !== -1 && firstFile !== -1 && firstGrant < firstFile) test.check('the open grant\'s button comes before the first file');
+  else test.fail('OWED by goal/G33.8: in the files panel the first grant button is at ' + firstGrant + ', the first file at ' + firstFile);
 
   test.subHeading('4. the icons say what waits on him');
   const blinkOf = function (dd, p) { return new RegExp('data-panel="' + p + '"[^>]*class="[^"]*dd-blink|class="[^"]*dd-blink[^"]*"[^>]*data-panel="' + p + '"').test(dd.html('dd-icons')); };
