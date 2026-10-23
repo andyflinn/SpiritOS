@@ -60,6 +60,8 @@ let kid = null;
 
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Realtime' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] });
   kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', deskState], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-realtime-server', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.address().port + '/api/spirit' }),
@@ -67,8 +69,8 @@ async function main() {
   let up = false;
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: the desk did not start'); return; }
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Realtime' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) }, ANDY);
-  if (set.status !== 200) { test.fail('the world: no session: ' + short(set.body)); return; }
+  const set = await call('item.get', { id: 'goal/G100.1' }, ANDY);
+  if (set.status !== 200) { test.fail('the world: the seeded item is not there: ' + short(set.body)); return; }
 
   test.subHeading('3. guard: an item write publishes its facts');
   let n = published.length;

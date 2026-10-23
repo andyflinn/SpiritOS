@@ -57,12 +57,12 @@ async function listed(includeClosed) {
 }
 
 async function server() {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // A fresh goal arrives in design mode; goal/G100.1 blocks goal/G100.2.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Deletes' }, items: [
+  // A fresh goal arrives in design mode; goal/G100.1 blocks goal/G100.2. The world is seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Deletes' }, items: [
     { id: 'goal/G100.1', title: 'To delete', blocks: ['goal/G100', 'goal/G100.2'] }, { id: 'goal/G100.2', title: 'Waits on it', blocks: ['goal/G100'] },
-    { id: 'goal/G100.3', title: 'Kept', blocks: ['goal/G100'] }] }) }, ANDY);
+    { id: 'goal/G100.3', title: 'Kept', blocks: ['goal/G100'] }] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   await call('box.write', { id: 'goal/G100.1', text: 'Its own words.', version: 0 }, CW);
   const g = await facts('goal/G100');
   if (g.design === true && ((await facts('goal/G100.2')).blocked || []).indexOf('goal/G100.1') !== -1) test.check('the world: goal/G100 in design mode, goal/G100.2 waits on goal/G100.1');

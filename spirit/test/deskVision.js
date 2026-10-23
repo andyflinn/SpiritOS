@@ -100,8 +100,10 @@ async function serverHalf() {
   else test.fail(OWED + 'the item reads code ' + short(fa2 && fa2.code) + ', phase ' + short(fa2 && fa2.phase));
   // THE CODE TOGGLE IS NOT OFFERED (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
   // items." The dialog draws its Code toggle from the facts' codeOffered, which the plugin's refusal sets false.
-  const ord = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) });
-  const fo = await factsOf('goal/G100.1');
+  // An ordinary goal and item, through goal.add and item.add (goal/G33.7: session.set went), the desk naming the ids.
+  const og = await call('goal.add', { title: 'Ordinary' });
+  const ord = await call('item.add', { goal: String((og && og.id) || ''), title: 'one' });
+  const fo = await factsOf(String((ord && ord.id) || ''));
   if (fa2 && fa2.codeOffered === false && fo && fo.codeOffered === true) test.check('a vision item carries codeOffered false; an ordinary item true');
   else test.fail(OWED + 'codeOffered reads ' + short([fa2 && fa2.codeOffered, fo && fo.codeOffered]) + ' (session ' + short(ord) + ')');
   const rn = await call('item.rename', { id: a.id, title: 'A city for people' });

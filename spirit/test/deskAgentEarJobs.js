@@ -177,6 +177,9 @@ async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // A code item whose box names a core path (code) and no shell path (not ui).
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Jobs' }, items: [{ id: 'goal/G100.1', title: 'A code job', blocks: ['goal/G100'], code: true }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   if (!await up('desk')) { test.fail('the desk server did not start'); return; }
@@ -187,9 +190,6 @@ async function main() {
   const uiRule = await newRule('ui', 'UI rule');
   if (!deskRule || !codeRule || !uiRule) { test.fail('the world: rules could not be made: ' + short([deskRule, codeRule, uiRule])); return; }
 
-  // A code item whose box names a core path (code) and no shell path (not ui).
-  // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Jobs' }, items: [{ id: 'goal/G100.1', title: 'A code job', blocks: ['goal/G100'], code: true }] }) }, ANDY);
   const box = await desk('item.box', { id: 'goal/G100.1' }, ANDY);
   await desk('box.write', { id: 'goal/G100.1', text: 'Change spirit/run/js/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
   await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);

@@ -34,6 +34,12 @@ module.exports = {
     'item.box': { id: 'id' },
     'item.chat': { id: 'id' },
     'item.checks': { id: 'id' },
+    // goal/G33.7: each table's search, one component (desk.js tableSearch), ranked by text, bounded, more.
+    'item.box.search': { id: 'id', text: 'text' },
+    'item.checks.search': { id: 'id', text: 'text' },
+    'item.claims.search': { id: 'id', text: 'text' },
+    'item.files.search': { id: 'id', text: 'text' },
+    'item.suites.search': { id: 'id', text: 'text' },
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
     'item.files': { id: 'id', under: 'text?' },
@@ -44,7 +50,7 @@ module.exports = {
     'item.rename': { id: 'id', title: 'text' },
     'item.status': { id: 'id', word: 'text' },
     'item.take': { id: 'id' },
-    'items.find': { text: 'text', by: 'text', since: 'text', before: 'text' },
+    'agents.search': { text: 'text' },
     'items.search': { text: 'text', currentGoalOnly: 'bool', goalsOnly: 'bool', includeClosed: 'bool' },
     'line.take': { id: 'id' },
     // pass and why only for a verify; red and build send neither.
@@ -60,22 +66,20 @@ module.exports = {
     'rule.add': { type: 'id', label: 'name', text: 'paragraph' },
     'rule.draft': { key: 'id', text: 'paragraph' },
     'rule.get': { key: 'id' },
-    'rule.history': { key: 'id' },
     'rule.version': { key: 'id', text: 'paragraph', status: 'id' },
     'rules.search': { text: 'text', types: 'list', statuses: 'list' },
-    'seen.get': {},
-    // A JSON object, as text.
-    'seen.set': { json: 'id' },
-    'session.set': { json: 'id' },
+    // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
+    'seen.get': { id: 'id' },
+    'seen.set': { id: 'id', at: 'text' },
     signoff: {},
-    'stackFrameChecks.doors': {},
+    // goal/G33.7: the door list as a bounded search, and one door's read (stackFrameChecks.doors went).
+    'stackFrameChecks.door': { id: 'id' },
+    'stackFrameChecks.doors.search': { text: 'text' },
     'stackFrameChecks.make': { gate: 'id', endpoint: 'id', paths: 'list', suites: 'list' },
     'stackFrameChecks.remove': { id: 'id' },
     'stackFrameChecks.run': { id: 'id' },
     'stackFrameChecks.runState': { id: 'id' },
     'stackFrameChecks.update': { id: 'id', gate: 'id', endpoint: 'id', paths: 'list', suites: 'list' },
-    'state.get': {},
-    'state.set': { json: 'id' },
     unblock: { id: 'id', blocks: 'id' },
     // why may be '': the desk words a rejection without one.
     'work.open': {},

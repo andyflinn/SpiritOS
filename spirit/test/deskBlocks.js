@@ -58,13 +58,14 @@ const refusedWith = function (r, re) { return r && r.ok === false && re.test(Str
 let kid = null;
 
 async function serverHalf() {
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  const items = []; for (let n = 1; n <= 8; n++) items.push({ id: I(n), title: 'item ' + n, blocks: [G] });
+  test.seedDesk(deskState, { goal: { id: G, title: 'Blocks' }, items: items });
   kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: the desk did not start'); return; }
-  const items = []; for (let n = 1; n <= 8; n++) items.push({ id: I(n), title: 'item ' + n, blocks: [G] });
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Blocks' }, items: items }) });
-  if (set.ok === false) { test.fail('the world: no session: ' + short(set)); return; }
+  if (!(await facts(I(8))).id) { test.fail('the world: the seeded goal did not come in'); return; }
 
   test.subHeading('R1, R4. block, and the goal fallback goes once it blocks something');
   const b12 = await call('block', { id: I(1), blocks: I(2) });

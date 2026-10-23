@@ -43,7 +43,7 @@ test.startTest('goal/G33.3: Desk clients keep the current goal, one cache for tw
 
 // ── 1. THE TRANSLATOR, IN NODE ───────────────────────────────────────────────────────────────────────────────────
 function translatorHalf() {
-  test.subHeading('1. the desk translator fills spirit.data from a search, a publish and a goal pushed whole');
+  test.subHeading('1. the desk translator fills spirit.data from a search, a publish, a goal pushed and a part read');
   if (!fs.existsSync(TRANSLATOR)) { test.fail(OWED + 'there is no shell/js/desk/data.js'); return; }
   const D = require('../run/shell/js/spiritData.js');
   try { require(TRANSLATOR); } catch (e) { test.fail(OWED + 'shell/js/desk/data.js did not load: ' + e.message); return; }
@@ -60,14 +60,20 @@ function translatorHalf() {
   const lines = Array.isArray(panels.chat) ? panels.chat : [];
   if (row.status === 'running' && lines.length && lines[lines.length - 1].text === 'a report') test.check('a publish replaces the row and adds its line to the item\'s chat');
   else test.fail(OWED + 'after the publish the row reads ' + short(row) + ', the item ' + short(panels));
-  // goal/G33.4: `changes` and takeChanges are gone. A goal becoming current is pushed whole: each item's row with verb
-  // goal.whole, then its side rows; the item is then kept whole, panels and all.
+  // goal/G33.7 (box v46, Andy: "a new deskClient connect should start a stream-push of the goal, and the items, the box
+  // and other parts will come when needed and stay"): a goal becoming current brings its items' rows alone; a part is
+  // kept once it was read (took), and the side rows keep it current from then on.
   D.take({ module: 'process/js/desk', data: {}, app: { change: 6, verb: 'goal.whole', item: { id: 'goal/G100.2', goal: 'goal/G100', title: 'Two', status: 'design' }, key: { goal: 100, item: 2 } } });
   D.take({ module: 'process/js/desk', data: {}, app: { change: 6, table: 'box', goal: 100, item: 2, id: 'goal/G100.2', row: { text: 'the box', version: 3 } } });
   const two = D.get('deskItems/goal/G100.2') || {};
+  const unread = D.get('deskItem/goal/G100.2');
+  if (two.title === 'Two' && !(unread && typeof unread.box === 'string')) test.check('a goal pushed brings the item\'s row, and a box row of an item whose box was never read is not kept');
+  else test.fail(OWED + 'after the goal was pushed the row reads ' + short(two) + ', the item ' + short(unread));
+  globalThis.spirit.deskData.took('item.box', { id: 'goal/G100.2' }, { box: 'the box', version: 3 });
+  D.take({ module: 'process/js/desk', data: {}, app: { change: 7, table: 'box', goal: 100, item: 2, id: 'goal/G100.2', row: { text: 'the box, again', version: 4 } } });
   const held = D.get('deskItem/goal/G100.2') || {};
-  if (two.title === 'Two' && held.box === 'the box' && held.version === 3) test.check('a goal pushed whole brings the item\'s row and its panels');
-  else test.fail(OWED + 'after the goal was pushed whole the row reads ' + short(two) + ', the item ' + short(held));
+  if (held.box === 'the box, again' && held.version === 4 && held.chat === undefined) test.check('the box read once is kept, and the next box row keeps it current; the chat, never read, is not kept');
+  else test.fail(OWED + 'after the read and a box row the item reads ' + short(held));
 }
 
 // ── 2. THE DESK'S PUBLISHED ROWS, AND 3. DESKCLIENT ANSWERING FROM ITS KEEPING ────────────────────────────────────
@@ -130,10 +136,12 @@ async function up(app) {
 async function serversHalf() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // The world (goal/G33.7: session.set went), seeded before the desk starts; the desk pushes it, its current goal, at
+  // start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Mirror' }, items: [{ id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   if (!await up('desk')) { test.fail('the world: the desk did not start'); return; }
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Mirror' }, items: [{ id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'] }] }) }, ANDY);
   await call('desk', 'item.take', { id: 'goal/G100.1' }, AGENT);
 
   // goal/G33.4: `changes` is gone; the desk publishes each row a write touched, and a goal made current whole.
@@ -148,7 +156,7 @@ async function serversHalf() {
   const lineOn = function (id, text) { return rows.some(function (o) { return o.table === 'chat' && o.id === id && o.row && o.row.text === text; }); };
   if (rowIds.indexOf('goal/G100.1') !== -1 && rowIds.indexOf('goal/G100.2') !== -1 && lineOn('goal/G100.1', 'his line on the held item') && lineOn('goal/G100.2', 'his line on another')) test.check('the desk published the facts of both items its writes touched, and each line as its own row');
   else test.fail(OWED + 'the desk published ' + short(rows));
-  // The session made goal/G100 current, so it went out whole; a panel written since goes out as its own row.
+  // goal/G100 is current, so the desk's start pushed its rows; a panel written since goes out as its own row.
   const boxFrom = published.length;
   const wrote = await call('desk', 'box.write', { id: 'goal/G100.1', text: 'THE HELD BOX', version: 0 }, ANDY);
   await sleep(500);
@@ -164,7 +172,10 @@ async function serversHalf() {
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);
   const ask = function (verb, args) { return call('deskClient', 'desk', { name: verb, json: JSON.stringify(args) }, OWNER); };
+  // Its first ask makes it known to the desk, which pushes it the current goal's rows (goal/G33.7); the box read once
+  // after that is kept.
   await ask('item.get', { id: 'goal/G100.1' });
+  await sleep(1000);
   await ask('item.box', { id: 'goal/G100.1' });
   await sleep(300);
   const sent = posts.length;
@@ -173,7 +184,7 @@ async function serversHalf() {
   await sleep(300);
   let facts = null;
   try { facts = JSON.parse((again.body || {}).item); } catch (e) { facts = null; }
-  if (facts && facts.id === 'goal/G100.1' && typeof (boxAgain.body || {}).box === 'string' && posts.length === sent) test.check('a second read of the held item is answered from deskClient, nothing posted to the desk');
+  if (facts && facts.id === 'goal/G100.1' && typeof (boxAgain.body || {}).box === 'string' && posts.length === sent) test.check('a second read of the held item is answered from deskClient, nothing posted to the desk (the first read of the box fetched it)');
   else test.fail(OWED + 'the second reads posted ' + short(posts.slice(sent)) + '; item.get answered ' + short(again.body) + ', item.box ' + short(boxAgain.body));
 }
 

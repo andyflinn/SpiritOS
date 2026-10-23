@@ -452,9 +452,19 @@ function pumpTo(key) {
   const q = sendQueues.get(key);
   if (!q || q.busy || !q.rows.length) return;
   q.busy = true;
+  // The moment this delivery started: a follower found away was away since then at the latest (awaySince).
+  const startedAt = new Date(Date.now() - 1000).toISOString();
   deliverRow(key, q.rows.shift()).then(function (said) {
     q.busy = false;
-    if (said === 'away') { q.rows = []; q.away = true; return; }
+    if (said === 'away') {
+      q.rows = [];
+      const was = q.away;
+      if (!was) q.awaySince = startedAt;
+      q.away = true;
+      // The sender hears it (opts.streamTo.onAway), so a follower that came back while this delivery waited is not left out.
+      if (!was && typeof sendTo.onAway === 'function') { try { sendTo.onAway(key, q.awaySince); } catch (e) { /* the sender's */ } }
+      return;
+    }
     if (said === 'no-receiver') { q.rows = []; return; }
     pumpTo(key);
   });
@@ -474,6 +484,11 @@ function publish(row, only) {
     pumpTo(key);
   });
   return out;
+}
+// Since when a follower is away ('' when it is not): what a sender hands a returning follower may start there.
+function awaySince(key) {
+  const q = sendQueues.get(String(key || ''));
+  return q && q.away ? String(q.awaySince || '') : '';
 }
 function listening(key) {
   const q = sendQueues.get(String(key || ''));
@@ -519,7 +534,7 @@ function serve(verbs, opts) {
   const followed = new Set();
   // goal/G33.4 (box v43): the servers this one's publish reaches, if it sends a stream.
   const st = opts && opts.streamTo;
-  if (st && typeof st === 'object' && typeof st.recipients === 'function') sendTo = { family: String(st.family || ''), recipients: st.recipients, waitMs: Number(st.waitMs) || 10000 };
+  if (st && typeof st === 'object' && typeof st.recipients === 'function') sendTo = { family: String(st.family || ''), recipients: st.recipients, waitMs: Number(st.waitMs) || 10000, onAway: st.onAway };
   try {
     verbs = withDependencies(withDebug(withAgents(withStreamListener(verbs, opts && opts.stream, followed), argv[1])), opts && opts.dependencies);
   } catch (e) {
@@ -612,6 +627,7 @@ module.exports = {
   // goal/G33.4 (box v43): the one publish, to the pages and to the following servers; and whether a follower is on.
   publish: publish,
   listening: listening,
+  awaySince: awaySince,
   createAppServer: createAppServer,
   serve: serve,
   matches: matches,

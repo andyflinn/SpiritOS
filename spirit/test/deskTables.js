@@ -322,13 +322,13 @@ async function freshDesk() {
   const sy = await A.call('item.add', { goal: sgid, title: 'Beside it' }, ANDY);
   const sxid = took(sx) ? String(sx.body.id) : '';
   const syid = took(sy) ? String(sy.body.id) : '';
-  const nsn = numbersOf(syid);
-  const fresh = nsn ? 'goal/G' + nsn[0] + '.' + (nsn[1] + 1) : '';
-  await A.call('session.set', { json: JSON.stringify({ goal: { id: sgid, title: 'Split' }, split: [sxid],
-    items: [{ id: sxid, title: 'Split me', blocks: [sgid] }, { id: syid, title: 'Beside it', blocks: [sgid] }, { id: fresh, title: 'Split off', blocks: [sxid] }] }) }, ANDY);
+  // A split (goal/G33.7: session.set went) is an item.add blocking the item it was split from.
+  const so = await A.call('item.add', { goal: sgid, title: 'Split off', blocks: sxid }, ANDY);
+  const soid = took(so) ? String(so.body.id) : '';
   const split = await A.facts(sxid);
-  if (split && split.subGoal !== true && split.codeOffered === true) test.check('a split leaves the item an item: no sub-goal, its Code toggle still offered');
-  else test.fail(OWED + 'after a split the item reads subGoal ' + short(split && split.subGoal) + ', codeOffered ' + short(split && split.codeOffered));
+  const off = soid ? await A.facts(soid) : null;
+  if (split && split.subGoal !== true && split.codeOffered === true && off && (off.blocking || []).indexOf(sxid) !== -1 && syid) test.check('a split leaves the item an item: no sub-goal, its Code toggle still offered, the split-off item blocking it');
+  else test.fail(OWED + 'after a split the item reads subGoal ' + short(split && split.subGoal) + ', codeOffered ' + short(split && split.codeOffered) + '; the split-off item ' + short(off && off.blocking));
 
   test.subHeading('3. design mode on goal and item level; a new item arrives in design mode');
   const dg = await A.call('goal.add', { title: 'Design' }, ANDY);
@@ -410,7 +410,8 @@ async function freshDesk() {
   const noPieces = after.every(function (p) { return p.piece === undefined && p.pieces === undefined; });
   if (took(wrote) && wholeBox.length === 1 && namesRow(wholeBox[0], N, M) && bytesOf(wholeBox[0]) <= PAYLOAD_MAX && noPieces && !overMax(after).length) test.check('a box just under the bound is taken and pushed whole, in one publish under PAYLOAD_MAX');
   else test.fail(OWED + 'the box just under the bound answered ' + short(wrote.body) + '; pushed whole ' + wholeBox.length + ' time(s), no pieces ' + noPieces + ', over the limit ' + overMax(after).length);
-  // A goal becoming current is pushed whole: every item's row, its box and its chat.
+  // A goal becoming current is pushed: every item's row, and since goal/G33.7 (box v46, Andy: "the box and other parts
+  // will come when needed and stay") none of its parts: no box, no chat line.
   const pg = await A.call('goal.add', { title: 'Pushed' }, ANDY);
   const pgid = took(pg) ? String(pg.body.id) : '';
   const p1 = await A.call('item.add', { goal: pgid, title: 'Pushed one' }, ANDY);
@@ -429,15 +430,15 @@ async function freshDesk() {
   await A.call('press', { id: pgid, what: 'make-current' }, ANDY);
   await settle(1500);
   const madeCurrent = whole(published.slice(n0));
-  if (madeCurrent.ok && madeCurrent.box && madeCurrent.line && !madeCurrent.over) test.check('a goal made current is pushed whole: every item\'s row, its box and its chat, each under PAYLOAD_MAX');
+  if (madeCurrent.ok && !madeCurrent.box && !madeCurrent.line && !madeCurrent.over) test.check('a goal made current is pushed: every item\'s row under PAYLOAD_MAX, and no box or chat line (they come when needed)');
   else test.fail(OWED + 'making the goal current pushed ' + short(madeCurrent));
-  // A client that was away: after the desk's own restart every client is one, and the current goal comes whole again.
+  // A client that was away: after the desk's own restart every client is one, and the current goal's rows come again.
   await A.stop();
   n0 = published.length;
   if (!await A.start({})) { test.fail('the world: the fresh desk did not start again: ' + short(A.err)); return; }
   await settle(3000);
   const again = whole(published.slice(n0));
-  if (again.ok && again.box && again.line && !again.over) test.check('after the desk is back, the current goal is pushed whole again, unasked');
+  if (again.ok && !again.box && !again.line && !again.over) test.check('after the desk is back, the current goal\'s rows are pushed again, unasked, and no part of them');
   else test.fail(OWED + 'after the restart the desk pushed ' + short(again));
   await A.stop();
 }

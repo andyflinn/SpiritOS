@@ -1,38 +1,23 @@
 'use strict';
 
 // spirit/test/deskItemsFind.js
-// goal/G3.13: a search over items for agents, with the chat's filters, matched against the items' lines on the desk
-// server. RED on today's tree: the desk server has no verb items.find; items.search matches text against an item's
-// id and title only (desk.js searchItems), never a line.
+// goal/G3.13, as goal/G33.7 leaves it: finding items by their lines. items.find WENT WITH goal/G33.7 (the approved verb
+// list: "items.find (agents only; items.search covers it)"), so what this suite asserts is that items.search covers it.
 //
-//   Andy, 2026-10-03 (the musing, verbatim): "2. Complete search architecture for Agents - There are two main main
-//   search vectors for Agents, items and chats, - items can be searched with filters akin to the ones the current
-//   chat-search has - addition to chat search filters: lines by contributor."; then under the item: "OPEN: yes the
-//   item search should consider searching chat items, on the deskServer side, and the resulting item titles (or
-//   keys) should be returned. Is this what you mean?", "the implication: Server-Side searches can expand to
-//   chat-lines without cost to the wire", "returned is only the item itself, but now the searching agent already
-//   knows the chat was matched against the search criteria...", and, asked widened items.search or a second verb:
-//   "items.find". His Go is his go-all on goal/G3 (2026-10-03).
+//   Andy, 2026-10-03 (goal/G3.13): "the item search should consider searching chat items, on the deskServer side, and
+//   the resulting item titles (or keys) should be returned", "Server-Side searches can expand to chat-lines without cost
+//   to the wire"; and goal/G18.5: "the item search must probability search the chat-lines, and weigh the chat lines in
+//   the item result as 50% overall."
 //
-// THE CONTRACT (claude-windows's shape, in the box of goal/G3.13; wsl-claude builds). One verb on the desk server,
-// process/js/desk/desk.js; no core module.
-//   1. items.find {text, by, since, before} -> {items: [{key, label}], more}: each label an item's facts as
-//      items.search answers them (key its id), through the same bucket as every search, in half an answer
-//      (SEARCH_ROOM, as chat.search: deskClient packs the answer once more). A read: it writes no record. An
-//      argument it does not name is refused no-such-argument.
-//   2. What matches. by, since and before are filters on an item's chat lines, as chat.search reads them (by the
-//      writer, since from that time on, before earlier than it). text is found whatever the case in a line, or in
-//      the item's id or title. An item is answered when ONE of its lines passes every filter set together; with no
-//      line filter set (by, since, before all empty), also when text is in its id or title. Nothing set: every item
-//      the search may answer.
-//   3. Which items. Every goal's items, goals too, abandoned goals' never; CLOSED ITEMS ARE ANSWERED (unlike
-//      items.search, which hides them in an open goal): a search is not the List, and the lines worth finding are
-//      mostly under closed items. Andy: "close is more of an 'visibility' issue than a process issue".
-//   4. Order: by the time of the newest line that matched, newest first; an item matched by its id or title alone
-//      after those, newest written first. Cut to fit, more says so; nothing pages (Andy, goal/G3.11: "none of this
-//      joing shit").
-// Not asserted, the builder's: what the order is among items matched the same instant; how the bucket cuts.
-// Not proven: the suite has run only against the missing verb.
+// WHAT IS ASSERTED
+//   1. items.find is refused no-such-verb, and no interface names it.
+//   2. items.search ranks items by text in a title or a line: the item titled Rails and the item with a RAILS line,
+//      whatever the case, ahead of the items with neither; with no text every item, goal too, each label its facts;
+//      a closed item is answered when includeClosed asks for it.
+//   3. A search is a read: it writes no record; an argument it does not name is refused no-such-argument.
+//   4. Cut: with 90 items matching by a line, the answer fits one answer and says more, a filler first.
+// No longer asserted, with items.find gone: the line filters by, since and before over items (chat.search keeps them over
+// lines, deskChatSearch.js), and the order by the newest matching line.
 
 const fs = require('fs');
 const os = require('os');
@@ -41,10 +26,10 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
 
-const OWED = 'OWED by goal/G3.13: ';
+const OWED = 'OWED by goal/G3.13 (goal/G33.7): ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
+const ROOM = appClient.ANSWER_MAX - 512;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -52,7 +37,7 @@ const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskItemsFindTestDeskNodeAAAAA
 const CW = { key: 'MCowBQYDK2VwAyEAdeskItemsFindTestPeerCWAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskItemsFindTestPeerWSLAAAAAAAAAAAAA=', label: 'wsl-claude' };
 
-test.startTest('goal/G3.13: items.find, a search over items by their lines');
+test.startTest('goal/G3.13: items are found by their lines through items.search (items.find went with goal/G33.7)');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskitemsfind-'));
 const deskState = path.join(scratch, 'desk-state');
 fs.mkdirSync(deskState, { recursive: true });
@@ -65,17 +50,16 @@ const call = function (verb, args, caller) {
   const q = {}; q[verb] = args;
   return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
-const NONE = { text: '', by: '', since: '', before: '' };
+const NONE = { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false };
 // One search, as an agent asks it: { status, code, ids, facts, more, bytes }.
 async function find(f, caller) {
-  const r = await call('items.find', Object.assign({}, NONE, f), caller || CW);
+  const r = await call('items.search', Object.assign({}, NONE, f), caller || CW);
   const items = (r.body && Array.isArray(r.body.items)) ? r.body.items : [];
   const facts = items.map(function (p) { try { return JSON.parse(p.label); } catch (e) { return {}; } });
   return { status: r.status, code: (r.body || {}).code, ids: items.map(function (p) { return p.key; }), facts: facts, more: (r.body || {}).more, body: r.body,
     bytes: Buffer.byteLength(JSON.stringify(r.body || null), 'utf8') };
 }
 const say = function (id, text, who) { return call('chat.add', { id: id, text: text }, who); };
-async function lastAt(id) { const r = await call('item.chat', { id: id }, ANDY); const c = (r.body && r.body.chat) || []; return c.length ? c[c.length - 1].at : ''; }
 async function up() {
   for (let i = 0; i < 60; i++) {
     await sleep(150);
@@ -86,123 +70,70 @@ async function up() {
 async function changeNow() { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return (r.body || {}).change; }
 
 async function main() {
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
-  const tree = await up() || {};
-
-  test.subHeading('1. the verb and its shape');
-  if (JSON.stringify(tree['items.find'] || null) !== JSON.stringify({ request: { text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
-    test.fail(OWED + 'the desk server answered items.find ' + JSON.stringify(tree['items.find'] || null) + ', where {text, by, since, before} -> {items, more} is owed');
-    ['2. text in a title or a line', '3. by, since, before on lines', '4. filters together on one line', '5. closed items answered, abandoned never',
-      '6. a read, and an unknown argument refused', '7. order and cut'].forEach(function (what) { test.fail(OWED + what + ': the desk server has no verb items.find'); });
-    return;
-  }
-  test.check('items.find {text, by, since, before} -> {items: [{key, label}], more}');
-
-  // The world: one goal, four items; a second goal abandoned with a matching line.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Finding' }, items: [
+  // The world: one goal, four items, written by the owner (goal/G29.21), seeded before the desk starts (goal/G33.7:
+  // session.set went).
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Finding' }, items: [
     { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'Rails for the List', blocks: ['goal/G100'] },
     { id: 'goal/G100.3', title: 'Third', blocks: ['goal/G100'] },
     { id: 'goal/G100.4', title: 'Closed early', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
-  if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
+  ] });
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  const tree = await up() || {};
+
+  test.subHeading('1. items.find is gone');
+  const gone = await call('items.find', { text: '', by: '', since: '', before: '' }, CW);
+  const iface = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'api.js'), 'utf8');
+  if (!tree['items.find'] && gone.body && gone.body.code === 'no-such-verb' && iface.indexOf("'items.find'") === -1 && !fs.existsSync(path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'items.find.json'))) test.check('items.find is refused no-such-verb, and neither the interface nor a verb file names it');
+  else test.fail(OWED + 'items.find answered ' + JSON.stringify(gone.body) + '; in the tree ' + !!tree['items.find']);
+
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await say('goal/G100.1', 'first word, nothing special', ANDY);
-  await sleep(30);
   await say('goal/G100.3', 'the RAILS line sits here, by andy', ANDY);
-  const t1 = await lastAt('goal/G100.3');
-  await sleep(30);
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude and
-  // claude-windows each take the line of his they answer, and wsl-claude holds goal/G100.4, where he wrote nothing.
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
   await call('line.take', { id: 'goal/G100.3' }, WSL);
   await say('goal/G100.3', 'wsl answers, nothing of the sort in it', WSL);
-  await sleep(30);
   await call('item.take', { id: 'goal/G100.4' }, WSL);
   await say('goal/G100.4', 'closed later, but it says rails too', WSL);
-  const t2 = await lastAt('goal/G100.4');
-  await sleep(30);
-  await call('line.take', { id: 'goal/G100.1' }, CW);
-  await say('goal/G100.1', 'claude-windows on the plain item', CW);
-  const t3 = await lastAt('goal/G100.1');
-  // goal/G100.4 closes before Go (goal/G3.9), and stays findable.
+  // goal/G100.4 closes before Go (goal/G3.9), and stays findable when closed items are asked for.
   await call('press', { id: 'goal/G100.4', what: 'close' }, ANDY);
   const n0 = await changeNow();
 
   test.subHeading('2. text in a title or a line');
   const rails = await find({ text: 'rails' });
-  // goal/G18.5: the text ranks, it no longer filters. Every item is answered; the ones that match come first.
+  // goal/G18.5: the text ranks, it does not filter. Every item is answered; the ones that match come first.
   const at = function (id) { const i = rails.ids.indexOf(id); return i === -1 ? Infinity : i; };
   if (rails.status === 200 && Math.max(at('goal/G100.2'), at('goal/G100.3')) < Math.min(at('goal/G100.1'), at('goal/G100'))) test.check('text ranks: the item titled Rails and the item with a RAILS line, whatever the case, ahead of the items with neither');
   else test.fail(OWED + 'text rails answered ' + rails.status + ' ' + JSON.stringify(rails.ids) + ' ' + JSON.stringify(rails.body).slice(0, 160));
   const all = await find({});
-  if (all.status === 200 && ['goal/G100', 'goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4'].every(function (id) { return all.ids.indexOf(id) !== -1; }) && all.facts.every(function (f) { return f && f.id && typeof f.status === 'string' && Array.isArray(f.buttons); })) test.check('nothing set: every item, goal too, each label its facts');
+  if (all.status === 200 && ['goal/G100', 'goal/G100.1', 'goal/G100.2', 'goal/G100.3'].every(function (id) { return all.ids.indexOf(id) !== -1; }) && all.facts.every(function (f) { return f && f.id && typeof f.status === 'string' && Array.isArray(f.buttons); })) test.check('nothing set: every open item, goal too, each label its facts');
   else test.fail(OWED + 'nothing set answered ' + JSON.stringify(all.ids) + '; a label: ' + JSON.stringify(all.facts[0]).slice(0, 120));
+  const hidden = await find({ text: 'rails' });
+  const closed = await find({ text: 'rails', includeClosed: true });
+  if (hidden.ids.indexOf('goal/G100.4') === -1 && closed.ids.indexOf('goal/G100.4') !== -1 && closed.ids.indexOf('goal/G100.4') < closed.ids.indexOf('goal/G100.1')) test.check('goal/G100.4, closed: left out by default, found by its rails line when includeClosed asks for it');
+  else test.fail(OWED + 'closed goal/G100.4: by default ' + JSON.stringify(hidden.ids) + ', with includeClosed ' + JSON.stringify(closed.ids));
 
-  test.subHeading('3. by, since, before on lines');
-  const byWsl = await find({ by: 'wsl-claude' });
-  if (byWsl.status === 200 && byWsl.ids.indexOf('goal/G100.3') !== -1 && byWsl.ids.indexOf('goal/G100.4') !== -1 && byWsl.ids.indexOf('goal/G100.1') === -1 && byWsl.ids.indexOf('goal/G100.2') === -1) test.check('by wsl-claude: the two items it wrote under, not the others');
-  else test.fail(OWED + 'by wsl-claude answered ' + JSON.stringify(byWsl.ids));
-  const since = await find({ since: t2 });
-  if (since.status === 200 && since.ids.indexOf('goal/G100.4') !== -1 && since.ids.indexOf('goal/G100.1') !== -1 && since.ids.indexOf('goal/G100.3') === -1 && since.ids.indexOf('goal/G100.2') === -1) test.check('since: items with a line from that time on, the item whose lines are all older left out');
-  else test.fail(OWED + 'since ' + t2 + ' answered ' + JSON.stringify(since.ids));
-  const before = await find({ before: t2 });
-  if (before.status === 200 && before.ids.indexOf('goal/G100.1') !== -1 && before.ids.indexOf('goal/G100.3') !== -1 && before.ids.indexOf('goal/G100.4') === -1 && before.ids.indexOf('goal/G100.2') === -1) test.check('before: items with a line earlier than that time; an item titled to match but without a line is not one');
-  else test.fail(OWED + 'before ' + t2 + ' answered ' + JSON.stringify(before.ids));
-
-  test.subHeading('4. filters together on one line');
-  const andyRails = await find({ text: 'rails', by: 'andy' });
-  const wslRails = await find({ text: 'rails', by: 'wsl-claude' });
-  const window = await find({ by: 'wsl-claude', since: t1, before: t3, text: 'rails' });
-  // goal/G18.5: by, since and before still filter; the text only orders what they keep.
-  if (andyRails.ids.join() === 'goal/G100.3,goal/G100.1' && wslRails.ids.join() === 'goal/G100.4,goal/G100.3' && window.ids.join() === 'goal/G100.4,goal/G100.3') test.check('filters filter, text ranks: rails by andy is goal/G100.3 then goal/G100.1, rails by wsl-claude goal/G100.4 then goal/G100.3; all four together goal/G100.4 then goal/G100.3');
-  else test.fail(OWED + 'together: rails+andy ' + JSON.stringify(andyRails.ids) + ', rails+wsl ' + JSON.stringify(wslRails.ids) + ', all four ' + JSON.stringify(window.ids));
-  const titleOnly = await find({ text: 'rails', by: 'claude-windows' });
-  if (titleOnly.status === 200 && titleOnly.ids.join() === 'goal/G100.1') test.check('a line filter keeps only items with such a line: rails by claude-windows is goal/G100.1 alone, not goal/G100.2 titled Rails');
-  else test.fail(OWED + 'rails by claude-windows answered ' + JSON.stringify(titleOnly.ids));
-
-  test.subHeading('5. closed items answered, abandoned never');
-  const listed = await call('items.search', { text: 'rails', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, CW);
-  const listedIds = ((listed.body && listed.body.items) || []).map(function (p) { return p.key; });
-  if (listedIds.indexOf('goal/G100.4') === -1 && wslRails.ids.indexOf('goal/G100.4') !== -1) test.check('goal/G100.4, closed: hidden from items.search, answered by items.find');
-  else test.fail(OWED + 'closed goal/G100.4: items.search ' + JSON.stringify(listedIds) + ', items.find ' + JSON.stringify(wslRails.ids));
-  // A second goal with a matching line, then abandoned: its items are gone from every search.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Left' }, items: [{ id: 'goal/G101.1', title: 'Also rails', blocks: ['goal/G101'] }] }) }, ANDY);
-  await say('goal/G101.1', 'rails here too', ANDY);
-  const seen = await find({ text: 'rails' });
-  await call('press', { id: 'goal/G101', what: 'abandon' }, ANDY);
-  const gone = await find({ text: 'rails' });
-  if (seen.ids.indexOf('goal/G101.1') !== -1 && gone.ids.indexOf('goal/G101.1') === -1 && gone.ids.indexOf('goal/G100.3') !== -1) test.check('an item of another goal is found until its goal is abandoned; the first goal\'s items still are');
-  else test.fail(OWED + 'before abandon ' + JSON.stringify(seen.ids) + ', after ' + JSON.stringify(gone.ids));
-
-  test.subHeading('6. a read, and an unknown argument refused');
+  test.subHeading('3. a read, and an unknown argument refused');
   const n1 = await changeNow();
-  const extra = await call('items.find', Object.assign({}, NONE, { currentGoalOnly: true }), CW);
-  // n0 was read before this heading's own writes; the finds between n1 and now wrote nothing.
+  const extra = await call('items.search', Object.assign({}, NONE, { by: 'andy' }), CW);
   const n2 = await changeNow();
-  if (n1 === n2 && typeof n0 === 'number' && extra.body && extra.body.ok === false && extra.body.code === 'no-such-argument') test.check('finds write no record (change ' + n1 + ' before and after); an argument it does not name is refused no-such-argument');
+  if (n1 === n2 && typeof n0 === 'number' && extra.body && extra.body.ok === false && extra.body.code === 'no-such-argument') test.check('searches write no record (change ' + n1 + ' before and after); an argument it does not name is refused no-such-argument');
   else test.fail(OWED + 'change ' + n1 + ' -> ' + n2 + ' across reads; the unknown argument answered ' + JSON.stringify(extra.body).slice(0, 120));
 
-  test.subHeading('7. order and cut');
-  // The newest matching line first: goal/G100.4's rails line (t2) is newer than goal/G100.3's (t1); then the title-only match.
-  const order = await find({ text: 'rails' });
-  if (order.ids.slice(0, 3).join() === ['goal/G100.4', 'goal/G100.3', 'goal/G100.2'].join()) test.check('newest matching line first: goal/G100.4, goal/G100.3, then goal/G100.2 matched by its title alone');
-  else test.fail(OWED + 'text rails came in the order ' + JSON.stringify(order.ids));
-  // Many items with a matching line: the answer fits half a room and more says the rest were left out. The fillers
+  test.subHeading('4. the cut');
+  // Many items with a matching line: the answer fits one answer and more says the rest were left out. The fillers
   // differ only in their number, so they rank by probability, not by age (goal/G18.5).
-  const many = [];
-  for (let i = 0; i < 90; i++) many.push({ id: 'goal/G100.' + (10 + i), title: 'Filler ' + i + ' with a long enough title to take room in the answer', blocks: ['goal/G100'] });
-  const base = [{ id: 'goal/G100.1', title: 'Plain' }, { id: 'goal/G100.2', title: 'Rails for the List' }, { id: 'goal/G100.3', title: 'Third' }, { id: 'goal/G100.4', title: 'Closed early' }].map(function (x) { x.blocks = ['goal/G100']; return x; });
-  // goal/G29.21: an agent's session adds no item without his words, so the owner writes it.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Finding' }, items: base.concat(many) }) }, ANDY);
-  for (let i = 0; i < 90; i++) await say('goal/G100.' + (10 + i), 'filler line ' + i + ' says sideways', ANDY);
+  const fillers = [];
+  for (let i = 0; i < 90; i++) {
+    const r = await call('item.add', { goal: 'goal/G100', title: 'Filler ' + i + ' with a long enough title to take room in the answer' }, ANDY);
+    if (r.body && r.body.id) { fillers.push(r.body.id); await say(r.body.id, 'filler line ' + i + ' says sideways', ANDY); }
+  }
   const cut = await find({ text: 'sideways' });
-  if (cut.status === 200 && cut.more === true && cut.ids.length > 0 && cut.ids.length < 90 && cut.bytes <= ROOM && /^goal\/G100\.\d\d$/.test(cut.ids[0])) test.check('90 matching items: ' + cut.ids.length + ' came back in ' + cut.bytes + ' bytes (half a room is ' + ROOM + '), a filler first, more true');
-  else test.fail(OWED + '90 matching items answered ' + cut.status + ', ' + cut.ids.length + ' item(s), ' + cut.bytes + ' bytes, more ' + cut.more + ', first ' + cut.ids[0]);
+  if (fillers.length === 90 && cut.status === 200 && cut.more === true && cut.ids.length > 0 && cut.ids.length < 94 && cut.bytes <= ROOM + 512 && fillers.indexOf(cut.ids[0]) !== -1) test.check('90 matching items: ' + cut.ids.length + ' came back in ' + cut.bytes + ' bytes (one answer is ' + appClient.ANSWER_MAX + '), a filler first, more true');
+  else test.fail(OWED + '90 matching items (' + fillers.length + ' added) answered ' + cut.status + ', ' + cut.ids.length + ' item(s), ' + cut.bytes + ' bytes, more ' + cut.more + ', first ' + cut.ids[0]);
 }
 
-main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
+main().catch(function (e) { test.fail(OWED + 'the suite itself tripped: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }

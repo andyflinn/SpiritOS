@@ -528,6 +528,55 @@ const test = {
     // A PRETEND PEER'S api {family} (goal/G33.4): what a far node's apiDoor answers the packet {api: {family}} that the
     // spirit object over peerPost sends (face/spirit.js forPeer): the family's interface, as nodeApi gives it. null for
     // any other body.
+    // A DESK'S WORLD WITHOUT session.set (goal/G33.7: the verb went; "its callers use goal.add and item.add").
+    // seedDesk(stateDir, sessions): before a desk starts on stateDir, its desk.db holds the old record of each session
+    // ({goal: {id, title}, items: [{id, title, blocks, code}]}, written by andy, in order), which the desk migrates into
+    // its tables at start (desk.js migrate()): the goal and item ids stay as written, the last new goal is current, and
+    // the items are out of design (the goal's design mode is its own). Plugins' goals are numbered after them.
+    seedDesk: function (stateDir, sessions) {
+      const { DatabaseSync } = require('node:sqlite');
+      require('fs').mkdirSync(stateDir, { recursive: true });
+      const db = new DatabaseSync(require('path').join(stateDir, 'desk.db'));
+      db.exec("CREATE TABLE IF NOT EXISTS records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL, key TEXT NOT NULL DEFAULT '')");
+      const add = db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)');
+      let t = Date.now() - 60000;
+      (Array.isArray(sessions) ? sessions : [sessions]).forEach(function (s) { t += 10; add.run(new Date(t).toISOString(), 'session.set', 'andy', '', JSON.stringify({ session: s })); });
+      db.close();
+    },
+    // deskSession(ask, spec, caller): what a session.set did, on a running desk, through the verbs that remain. ask(verb,
+    // args, caller) -> Promise<{status, body}>. A goal the desk does not hold is goal.add'ed and an item it does not hold
+    // item.add'ed (with its blocks), each minted id checked against the spec's (the desk names ids: a spec that names
+    // another than the next one fails the world, so name them in order); a held item's title is renamed; an item of the
+    // goal the spec leaves out is deleted (closed, as a session closed it); code: true presses code on a new item that
+    // is not code. Answers { ok, why }.
+    deskSession: async function (ask, spec, caller) {
+      const ok = function (r) { return !!r && r.status === 200 && !!r.body && r.body.ok !== false; };
+      const gid = String(spec.goal.id);
+      const g = await ask('item.get', { id: gid }, caller);
+      if (!ok(g)) {
+        const made = await ask('goal.add', { title: String(spec.goal.title || gid) }, caller);
+        if (!ok(made) || made.body.id !== gid) return { ok: false, why: 'goal.add made ' + JSON.stringify(made.body) + ', the spec names ' + gid };
+      } else if (spec.goal.title) await ask('item.rename', { id: gid, title: String(spec.goal.title) }, caller);
+      const want = (spec.items || []).map(function (x) { return String(x.id); });
+      for (const x of (spec.items || [])) {
+        const id = String(x.id);
+        const blocks = Array.isArray(x.blocks) ? x.blocks[0] : x.blocks;
+        const has = await ask('item.get', { id: id }, caller);
+        if (ok(has)) { if (x.title) await ask('item.rename', { id: id, title: String(x.title) }, caller); continue; }
+        const args = { goal: gid, title: String(x.title || id) };
+        if (blocks && blocks !== gid) args.blocks = String(blocks);
+        const made = await ask('item.add', args, caller);
+        if (!ok(made) || made.body.id !== id) return { ok: false, why: 'item.add made ' + JSON.stringify(made.body) + ', the spec names ' + id };
+        const f = await ask('item.get', { id: id }, caller);
+        let facts = {}; try { facts = JSON.parse(f.body.item); } catch (e) { facts = {}; }
+        if ((x.code === true) !== (facts.code === true)) await ask('press', { id: id, what: 'code' }, caller);
+      }
+      const all = await ask('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, caller);
+      const held = ((all.body && all.body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } })
+        .filter(function (f) { return f && f.goal === gid && want.indexOf(f.id) === -1; });
+      for (const f of held) await ask('item.delete', { id: f.id }, caller);
+      return { ok: true, why: '' };
+    },
     // peerAnswer(client, body, caller) -> Promise<{status, body}>: a pretend peer's answer to a decoded api packet, as its
     // apiDoor gives it: api {family} by peerFamily, any other body by the servers (client.ask), as the caller.
     peerAnswer: function (client, body, caller) {

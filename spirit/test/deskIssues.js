@@ -109,16 +109,18 @@ callback.listen(0, '127.0.0.1', async function () {
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
+  // goal/G29.21: an agent's session creates no goal, so he writes the world; since goal/G33.7 (session.set went) it is
+  // seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
+    { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + callback.address().port + '/' }),
   });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so he writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
-      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
-    if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
+    const set = await call('item.get', { id: 'goal/G100.2' }, ANDY);
+    if (set.status !== 200) { test.fail(OWED + 'the seeded world was not taken: ' + JSON.stringify(set.body)); return; }
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
     test.subHeading('3. no star after an agent line or his answer (the star is gone, goal/G4.20)');

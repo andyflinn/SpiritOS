@@ -154,11 +154,11 @@ async function verifyHalf() {
 // ── 4. THE DESK ─────────────────────────────────────────────────────────
 async function deskHalf() {
   test.subHeading('4. the desk refuses a listed path with a .. segment');
+  // The world (goal/G33.7: session.set went), seeded where server() keeps the desk's state, before it starts.
+  test.seedDesk(path.join(scratch, 'desk', 'state'), { goal: { id: 'goal/G100', title: 'Paths' }, items: [{ id: 'goal/G100.1', title: 'Listed', blocks: ['goal/G100'] }] });
   const d = server(DESK, 'desk');
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Paths' }, items: [{ id: 'goal/G100.1', title: 'Listed', blocks: ['goal/G100'] }] }) }, ANDY);
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await d.call('item.take', { id: 'goal/G100.1' }, CW);

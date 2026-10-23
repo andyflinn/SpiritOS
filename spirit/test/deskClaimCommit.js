@@ -91,6 +91,14 @@ async function deskHalf() {
   const whyOf = function (r) { return String((r.body && r.body.extra && r.body.extra.why) || ''); };
   // A refusal by the verb itself, saying why: not an unknown verb, not a shape the door refused before the handler.
   const refusedSaying = function (r) { return !took(r) && r.body && r.body.code !== 'no-such-verb' && !!whyOf(r); };
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
+  // starts (session.set went), and the desk takes it in at start.
+  test.seedDesk(path.join(scratch, 'desk', 'state'), { goal: { id: 'goal/G100', title: 'Claims' }, items: [
+    { id: 'goal/G100.1', title: 'Code with Go', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'Plain with Go', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Code without Go', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.4', title: 'Plain without Go', blocks: ['goal/G100'] },
+  ] });
   try {
     d.start();
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
@@ -101,13 +109,6 @@ async function deskHalf() {
     if (api.claim && described) test.check('the api lists claim, and its verb file tells the agents of it (claim.json, read by FS.loadJsonValue)');
     else test.fail(OWED + 'the api lists ' + short(Object.keys(api).filter(function (k) { return /claim/.test(k); })) + ', claim.json read as ' + short(claimFile.body));
 
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Claims' }, items: [
-      { id: 'goal/G100.1', title: 'Code with Go', blocks: ['goal/G100'], code: true },
-      { id: 'goal/G100.2', title: 'Plain with Go', blocks: ['goal/G100'] },
-      { id: 'goal/G100.3', title: 'Code without Go', blocks: ['goal/G100'], code: true },
-      { id: 'goal/G100.4', title: 'Plain without Go', blocks: ['goal/G100'] },
-    ] }) }, ANDY);
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await d.call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);

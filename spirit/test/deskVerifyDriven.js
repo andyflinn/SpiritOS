@@ -100,6 +100,11 @@ const GREEN2 = 'spirit/test/zzDrivenGreen2.js';
 const GREEN3 = 'spirit/test/zzDrivenGreen3.js';
 const GREEN4 = 'spirit/test/zzDrivenGreen4.js';
 const RED = 'spirit/test/zzDrivenRed.js';
+// goal/G33.4 (live, 2026-10-23): two red suites whose failure lines are long, as a real suite's are; goal/G33.4's own
+// item.get went to 8457 bytes on Andy's desk with lines like these. Each run's row stays readable at deskVerify; the
+// item's facts gather the lines of both.
+const FATA = 'spirit/test/zzDrivenFatA.js';
+const FATB = 'spirit/test/zzDrivenFatB.js';
 const HANG = 'spirit/test/zzDrivenHang.js';
 // A commit no tree holds, for the run left waiting in verify.db.
 const NOWHERE = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
@@ -194,6 +199,7 @@ function probes() {
   fs.writeFileSync(path.join(repo, GREEN3), "'use strict';\n// startTest(\nconsole.log('SUCCESS #1 green three');\n");
   fs.writeFileSync(path.join(repo, GREEN4), "'use strict';\n// startTest(\nconsole.log('SUCCESS #1 green four');\n");
   fs.writeFileSync(path.join(repo, RED), "'use strict';\n// startTest(\nconsole.log('FAILURE #1 red probe');\n");
+  [FATA, FATB].forEach(function (p) { fs.writeFileSync(path.join(repo, p), "'use strict';\n// startTest(\nfor (let i = 1; i <= 5; i++) console.log('FAILURE #' + i + ': ' + '\\u274c'.repeat(280));\n"); });
   fs.writeFileSync(path.join(repo, HANG), "'use strict';\n// startTest(\nsetInterval(function () {}, 1000);\n");
   return repo;
 }
@@ -278,9 +284,9 @@ async function deskAndVerify() {
   const FILES = { 'goal/G100.1': [GREEN], 'goal/G100.2': [HANG], 'goal/G100.3': [GREEN3, 'spirit/run/js/kernel.js'], 'goal/G100.4': [RED], 'goal/G100.5': [GREEN4], 'goal/G100.6': [GREEN2], 'goal/G100.7': [GREEN], 'goal/G100.8': [GREEN], 'goal/G100.9': [GREEN2] };
 
   try {
-    d.start();
-    if (!await d.up()) { test.fail('the world: the desk did not start'); return; }
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Driven' }, items: [
+    // goal/G33.7: session.set went. Both goals are seeded before the desk starts (which takes them in at start), and his
+    // make-current stands where each session made its goal current.
+    test.seedDesk(path.join(scratch, 'desk', 'state'), [{ goal: { id: 'goal/G100', title: 'Driven' }, items: [
       { id: 'goal/G100.1', title: 'Checked when free', blocks: ['goal/G100'], code: true },
       { id: 'goal/G100.2', title: 'Hangs', blocks: ['goal/G100'], code: true },
       { id: 'goal/G100.3', title: 'Waits first', blocks: ['goal/G100'], code: true },
@@ -292,7 +298,11 @@ async function deskAndVerify() {
       { id: 'goal/G100.8', title: 'Left over too', blocks: ['goal/G100'], code: true },
       { id: 'goal/G100.9', title: 'In its build, not waiting', blocks: ['goal/G100'], code: true },
       { id: 'goal/G100.10', title: 'Its suites from its red claim', blocks: ['goal/G100'], code: true },
-    ] }) }, ANDY);
+      { id: 'goal/G100.11', title: 'Red with long failure lines', blocks: ['goal/G100'], code: true },
+    ] }, { goal: { id: 'goal/G101', title: 'Not current' }, items: [{ id: 'goal/G101.1', title: 'Elsewhere', blocks: ['goal/G101'] }] }]);
+    d.start();
+    if (!await d.up()) { test.fail('the world: the desk did not start'); return; }
+    await d.call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     for (const id of Object.keys(FILES)) {
       await d.call('press', { id: id, what: 'go' }, ANDY);
@@ -303,7 +313,7 @@ async function deskAndVerify() {
     await d.call('press', { id: 'goal/G100.10', what: 'go' }, ANDY);
     await asCW('item.files.add', { id: 'goal/G100.10', paths: [GREEN4, RED] });
     for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) await toVerify(id);
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Not current' }, items: [{ id: 'goal/G101.1', title: 'Elsewhere', blocks: ['goal/G101'] }] }) }, ANDY);
+    await d.call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
     await asCW('item.files.add', { id: 'goal/G101.1', paths: [GREEN] });
@@ -486,13 +496,42 @@ async function deskAndVerify() {
     else test.fail('OWED by goal/G33.4: after a file list change his Verify on goal/G100.10 asked ' + short(sentNames(v10bAt)));
     await free();
 
+    // ── 2d. A RED RUN'S FAILURES NEVER PUSH AN ITEM PAST ONE ANSWER (goal/G33.4, live on Andy's desk: goal/G33.4's
+    // item.get answered app-answer-too-large, 8457 bytes). Andy's rule: no row or answer past PAYLOAD_MAX; too big means
+    // split, never chunked. The item's row, its item.get, its items.search row and its pushed rows all stay under one
+    // answer however many and however long its failure lines are.
+    test.subHeading('2d. a red run with many long failure lines: item.get, items.search and the pushed row stay under one answer');
+    await d.call('press', { id: 'goal/G100.11', what: 'go' }, ANDY);
+    await redWith('goal/G100.11', [FATA, FATB]);
+    const fatAt = Date.now();
+    // Each suite red in a run of its own, then a build claim: the desk reads the states of both (an event).
+    await v.call('run', { suites: [FATA], commit: '' }, ANDY); await free();
+    await v.call('run', { suites: [FATB], commit: '' }, ANDY); await free();
+    await asCW('claim', { id: 'goal/G100.11', phase: 'build', commit: 'abcdef1' });
+    await waitFor(async function () { const r = await d.call('item.get', { id: 'goal/G100.11' }, ANDY); const f = r.status === 200 ? parse((r.body || {}).item) || {} : {}; return r.status !== 200 || f.verified === 'red'; }, 30000);
+    await free();
+    const fatGet = await d.call('item.get', { id: 'goal/G100.11' }, CW);
+    const fatFacts = fatGet.status === 200 ? parse((fatGet.body || {}).item) || {} : {};
+    const fatBytes = Buffer.byteLength(JSON.stringify(fatGet.body || {}), 'utf8');
+    if (fatGet.status === 200 && fatFacts.verified === 'red' && fatBytes <= appClient.ANSWER_MAX && Array.isArray(fatFacts.verifyFailures) && fatFacts.verifyFailures.length >= 1 && fatFacts.verifyFailuresMore === true) test.check('item.get of the red item answered ' + fatBytes + ' bytes, under ' + appClient.ANSWER_MAX + ', with the failure lines that fit (' + fatFacts.verifyFailures.length + ') and more said');
+    else test.fail('OWED by goal/G33.4: item.get of goal/G100.11 answered ' + fatGet.status + ' ' + short(fatGet.body) + ' (' + fatBytes + ' bytes, the answer limit ' + appClient.ANSWER_MAX + ')');
+    const fatSearch = await d.call('items.search', { text: 'Red with long failure lines', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, CW);
+    const fatRow = ((fatSearch.body || {}).items || []).filter(function (x) { return x.key === 'goal/G100.11'; })[0];
+    if (fatSearch.status === 200 && fatRow && Buffer.byteLength(JSON.stringify(fatSearch.body), 'utf8') <= appClient.ANSWER_MAX) test.check('items.search found its row, and the answer is under one answer');
+    else test.fail('OWED by goal/G33.4: items.search for goal/G100.11 answered ' + fatSearch.status + ' ' + short(fatSearch.body));
+    const fatPushed = published.filter(function (p) { return p.at >= fatAt && p.app && p.app.item && p.app.item.id === 'goal/G100.11'; });
+    const PAYLOAD_MAX = require('../run/js/limits.js').PAYLOAD_MAX;
+    const tooBig = fatPushed.filter(function (p) { return Buffer.byteLength(JSON.stringify(p.app), 'utf8') > PAYLOAD_MAX; });
+    if (fatPushed.length && !tooBig.length) test.check('each of its ' + fatPushed.length + ' pushed rows is under PAYLOAD_MAX');
+    else test.fail('OWED by goal/G33.4: of goal/G100.11\'s pushed rows ' + tooBig.length + ' of ' + fatPushed.length + ' pass PAYLOAD_MAX');
+
     // THE GOAL'S VERIFY: the desk compiles the suites from its items' suites tables, every suite once; goal/G100.10's
     // file list adds nothing to it (goal/G33.4, box v44-45).
     const goalAt = Date.now();
     const gp = await d.call('press', { id: 'goal/G100', what: 'verify' }, ANDY);
     await waitFor(function () { return runsSent(goalAt).length > 0; }, 10000);
     const gr = runsSent(goalAt);
-    if (took(gp) && gr.length >= 1 && sameSet(gr[0].args.suites, [GREEN, GREEN2, GREEN3, GREEN4, RED, HANG]) && runOnly(gr[0])) test.check('his Verify on the goal hands over one run of its items\' suites tables, compiled by the desk: ' + short(gr[0].args.suites));
+    if (took(gp) && gr.length >= 1 && sameSet(gr[0].args.suites, [GREEN, GREEN2, GREEN3, GREEN4, RED, HANG, FATA, FATB]) && runOnly(gr[0])) test.check('his Verify on the goal hands over one run of its items\' suites tables, compiled by the desk: ' + short(gr[0].args.suites));
     else test.fail(OWED + 'press verify on goal/G100 answered ' + short(gp.status) + ' ' + short(gp.body) + '; asked ' + short(sentNames(goalAt)));
     await sleep(1500);
     await v.call('stop', {});
@@ -507,7 +546,9 @@ async function deskAndVerify() {
     await waitFor(async function () {
       const n = (await v.call('now', {})).body || {};
       if (n.busy !== false) return false;
-      const items = (((await v.call('search', { over: 'runs', suite: RED }, ANDY)).body || {}).items) || [];
+      // goal/G33.7: a search naming a suite answers that suite's part of each run alone, so the run naming both is
+      // found among the runs searched with no suite named.
+      const items = (((await v.call('search', { over: 'runs' }, ANDY)).body || {}).items) || [];
       row = items.map(function (i) { return parse(String(i.label || '')); }).filter(function (lab) { const t = JSON.stringify(lab); return t.indexOf(GREEN) !== -1 && t.indexOf(RED) !== -1 && t.indexOf(HANG) === -1; })[0] || null;
       return !!row;
     }, 15000);

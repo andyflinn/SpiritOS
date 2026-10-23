@@ -92,6 +92,9 @@ let kid = null;
 let client = null;
 const call = function (verb, a) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, ANDY).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
 const why = function (r) { return r && r.ok === false && r.extra ? String(r.extra.why || '') : ''; };
+// THE DOORS, by the plugin's bounded search (goal/G33.7: stackFrameChecks.doors went); this world's few doors fit one
+// answer.
+async function doorsList() { return (((await call('stackFrameChecks.doors.search', { text: '' })).items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean); }
 async function factsOf(id) { const r = await call('item.get', { id: id }); try { return JSON.parse(r.item); } catch (e) { return null; } }
 
 async function serverHalf() {
@@ -114,7 +117,8 @@ async function serverHalf() {
   gitIn(work, ['push', '-q', 'origin', 'master:master']);
   const listFile = path.join(work, 'stackFrameList.json');
   // D8's WORLD: two old doors from before the plugin, both naming one item outside the Stacks goal, as d1 and d2 name
-  // goal/G19.14 on his tree. goal/G100.1 is made by the session below, after the first mount: at that mount this desk does
+  // goal/G19.14 on his tree. goal/G100.1 is made by the item.add below, after the first mount (goal/G33.7: session.set went;
+  // its goal, goal/G100, is seeded empty before the desk starts): at that mount this desk does
   // not know it yet, as a suite's scratch desk does not know his items, and must leave the list alone.
   const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'goal/G100.1' },
     { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'goal/G100.1' }];
@@ -136,17 +140,20 @@ async function serverHalf() {
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     return up;
   };
+  // The ordinary goal (goal/G33.7: session.set went), seeded empty before the desk first starts; its item comes after.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Ordinary' }, items: [] });
   if (!await startDesk()) { test.fail('the world: the desk did not start'); return; }
   await sleep(500);
   GOAL = ((await factsOf('plugin/stackFrameChecks')) || {}).id || GOAL;
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) });
+  const one = await call('item.add', { goal: 'goal/G100', title: 'one' });
+  const set = one && one.id === 'goal/G100.1' ? one : { ok: false, made: one };
   const set2 = await call('goal.add', { title: 'Another ordinary goal' });
   if (set.ok === false) { test.fail('the world: no ordinary goal: ' + short(set)); return; }
 
   test.subHeading('D4. the stacks goal owns its door items');
   const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END, paths: [], suites: [] });
   const item = made.id;
-  const doors = ((await call('stackFrameChecks.doors', {})).doors || []);
+  const doors = (await doorsList());
   const door = doors.filter(function (d) { return d.item === item; })[0];
   if (!item || !door) { test.fail('the world: make answered ' + short(made) + ', doors ' + short(doors)); return; }
   const closeIt = await call('press', { id: item, what: 'close' });
@@ -176,7 +183,7 @@ async function serverHalf() {
   test.subHeading('D4. removing the door deletes its item');
   // A second door, its item untouched by the presses above, so the delete is the remove's own.
   const made2 = await call('stackFrameChecks.make', { gate: 'spirit/run/js/peerPost.js::postMessage', endpoint: END, paths: [], suites: [] });
-  const door2 = ((await call('stackFrameChecks.doors', {})).doors || []).filter(function (d) { return d.item === made2.id; })[0];
+  const door2 = (await doorsList()).filter(function (d) { return d.item === made2.id; })[0];
   const open2 = await factsOf(made2.id);
   if (!door2 || !open2 || open2.status === 'closed') { test.fail('the world: a second door was not made open: ' + short(made2)); return; }
   const removed = await call('stackFrameChecks.remove', { id: door2.id });
@@ -207,7 +214,7 @@ async function serverHalf() {
   else test.fail('the world: a press on the current goal shared nothing (current is ' + short(other) + ')');
 
   test.subHeading('D8. a door naming an item this desk does not know is left alone');
-  const firstDoors = ((await call('stackFrameChecks.doors', {})).doors || []).filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
+  const firstDoors = (await doorsList()).filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
   if (firstDoors.length === 2 && firstDoors.every(function (d) { return d.item === 'goal/G100.1'; })) test.check('at the first mount, before this desk held goal/G100.1, the old doors kept it: no scratch desk rewrites his list');
   else test.fail(OWED + 'at the first mount the old doors read ' + short(firstDoors.map(function (d) { return d.id + '->' + d.item; })));
 
@@ -239,7 +246,7 @@ async function serverHalf() {
 
   test.subHeading('D8. every door has its own item in the Stacks goal');
   // At this second mount the desk knows goal/G100.1, an item outside the Stacks goal that both old doors share.
-  const allDoors = ((await call('stackFrameChecks.doors', {})).doors || []);
+  const allDoors = (await doorsList());
   const olds = allDoors.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
   const oldItems = olds.map(function (d) { return d.item; });
   const oldFacts = [];
@@ -286,7 +293,7 @@ async function paneHalf() {
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
-    ask: function (verb, a) { asked.push([verb, a]); if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: [DOOR] }); return Promise.resolve({ change: 1, items: [], more: false }); },
+    ask: function (verb, a) { asked.push([verb, a]); if (verb === 'stackFrameChecks.doors.search') return Promise.resolve({ items: [{ key: DOOR.id, label: JSON.stringify(DOOR) }], more: false }); return Promise.resolve({ change: 1, items: [], more: false }); },
     onPublished: function () { return function () {}; }, chat: function () {},
     callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); },
   });
@@ -325,7 +332,7 @@ async function dialogHalf() {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push([v, ask && ask[v]]);
-      if (v === 'stackFrameChecks.doors') return Promise.resolve({ status: 200, body: { doors: [DOOR] } });
+      if (v === 'stackFrameChecks.door') return Promise.resolve({ status: 200, body: DOOR });
       if (v === 'stackFrameChecks.runState') return Promise.resolve({ status: 200, body: { id: 'd1', running: false, queued: false, verdict: { ran: true, green: false, around: 1, of: 3, paths: ['a path around'], why: '' } } });
       if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [{ by: 'andy', at: '', text: 'about this door', taken: '', key: '' }], chatMore: false } });
       return Promise.resolve({ status: 200, body: { change: 1 } });

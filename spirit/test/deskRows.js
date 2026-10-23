@@ -106,6 +106,9 @@ const CW = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerCWAAAAAAAAAAAAAAAAAA=', label
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskRowsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
+  // The world (goal/G33.7: session.set went), seeded before the desk starts: A blocks B; B blocks the goal.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
+    { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.2'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + callback.address().port + '/' }),
@@ -113,11 +116,8 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     test.subHeading('the server: one publish carries every row the press changed');
-    // A blocks B; B blocks the goal.
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
-      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.2'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
-    if (set.status !== 200) test.fail('the session was not taken: ' + JSON.stringify(set));
+    const seeded = await call('item.get', { id: 'goal/G100.2' }, ANDY);
+    if (seeded.status !== 200) test.fail('the world: the seeded goal is not on the desk: ' + JSON.stringify(seeded));
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await sleep(300);
     published.length = 0;

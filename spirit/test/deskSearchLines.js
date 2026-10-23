@@ -49,14 +49,15 @@ test.startTest('goal/G4.24 point 2: the List search matches chat lines and the b
     return { status: r.status, items: ((r.body || {}).items || []) };
   };
   const keys = function (r) { return r.items.map(function (x) { return x.key; }); };
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // session is seeded before the desk starts, and the desk takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Search' }, items: [
+    { id: 'goal/G100.1', title: 'Alpha', blocks: ['goal/G100'] },
+    { id: 'goal/G100.2', title: 'Beta', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Gamma', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Search' }, items: [
-      { id: 'goal/G100.1', title: 'Alpha', blocks: ['goal/G100'] },
-      { id: 'goal/G100.2', title: 'Beta', blocks: ['goal/G100'] },
-      { id: 'goal/G100.3', title: 'Gamma', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     await call('item.take', { id: 'goal/G100.2' }, CW);
     await call('chat.add', { id: 'goal/G100.2', text: 'we tested the fs-watch library here' }, CW);

@@ -59,12 +59,12 @@ function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
 async function server() {
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world. goal/G33.7: session.set went; the world
+  // is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G13', title: 'Old' }, items: [{ id: 'goal/G13.1', title: 'One', blocks: ['goal/G13'] }] },
+    { goal: { id: 'goal/G15', title: 'Elsewhere' }, items: [{ id: 'goal/G15.1', title: 'Other goal', blocks: ['goal/G15'] }] }]);
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G13', title: 'Old' }, items: [
-    { id: 'goal/G13.1', title: 'One', blocks: ['goal/G13'] }] }) }, ANDY);
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G15', title: 'Elsewhere' }, items: [
-    { id: 'goal/G15.1', title: 'Other goal', blocks: ['goal/G15'] }] }) }, ANDY);
   const plain = await call('item.add', { goal: 'goal/G13', title: 'Plain' }, ANDY);
   if (took(plain) && same((await facts(plain.body.id)).blocking, ['goal/G13'])) test.check('the world: item.add without blocks blocks its goal (goal/G9.9)');
   else { test.fail('the world: a plain item.add answered ' + plain.status + ' ' + short(plain.body)); return; }

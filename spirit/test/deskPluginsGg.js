@@ -38,7 +38,8 @@
 //      {gate: spirit/run/<file>.js::<function>, endpoint: spirit/run/<file>.js} refuses a gate without its function
 //      (saying it is cheating), an endpoint naming a function, a file that is not there and a function its file does
 //      not hold, and adds the door to the list with no suites (an empty run is its red) and the item that asked;
-//      stackFrameChecks.doors reads the list back. Here the list is a scratch file, named by the suite-only value
+//      the list is read back (since goal/G33.7 by stackFrameChecks.doors.search, bounded with more, and
+//      stackFrameChecks.door for one door; stackFrameChecks.doors went). Here the list is a scratch file, named by the suite-only value
 //      stackFrameList, so the tree's own list is never written by a suite. The UI's inputs carry data-field="gate"
 //      and data-field="endpoint", say a wrong form as typed with Make off, and the UI shows the doors.
 //   h. THE PLUGIN RUNS THE SHOW (goal/G22.3). Andy, 2026-10-13, in the item's box: "I want this plugin to RUN the show,
@@ -277,6 +278,8 @@ function clickTab(el, tab) {
   };
   let kid = start();
   const call = function (verb, a, caller) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
+  // THE DOORS READ BACK (goal/G33.7): the bounded search, every door of this world fitting one answer.
+  const doorsOf = async function (caller) { return { doors: (((await call('stackFrameChecks.doors.search', { text: '' }, caller)).items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean) }; };
   const landed = function (r) { return !!(r && r.change); };
   const why = function (r) { return r && r.ok === false && r.extra && typeof r.extra.why === 'string' ? r.extra.why : ''; };
   const rows = async function (q) {
@@ -298,8 +301,8 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'no stackFrameChecks.js and .json under process/js/desk/plugins/js/stackFrameChecks/');
     if (tree['stackFrameChecks.make']) test.check('the real plugin is mounted: desk answers stackFrameChecks.make');
     else test.fail(OWED + 'desk declares no stackFrameChecks.make');
-    if (tree['stackFrameChecks.doors']) test.check('and stackFrameChecks.doors, the list of doors read back');
-    else test.fail(OWED + 'desk declares no stackFrameChecks.doors');
+    if (tree['stackFrameChecks.doors.search'] && tree['stackFrameChecks.door'] && !tree['stackFrameChecks.doors']) test.check('and stackFrameChecks.doors.search and stackFrameChecks.door, the doors read back bounded (goal/G33.7)');
+    else test.fail(OWED + 'desk declares ' + short(Object.keys(tree).filter(function (k) { return /^stackFrameChecks\.door/.test(k); })));
     if (tree['ggEcho.ping']) test.check('a scratch plugin in a further folder is mounted too: desk answers ggEcho.ping');
     else test.fail(OWED + 'desk declares no ggEcho.ping from the scratch plugin folder');
     if (!tree['ggNoManifest.ping']) test.check('a folder without its .json is no plugin and is not mounted');
@@ -331,10 +334,13 @@ function clickTab(el, tab) {
 
     test.subHeading('c. the plugin sees a call first');
     // An ordinary goal beside it, its items closed and done as they always are.
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [
-      { id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) }, ANDY);
-    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
+    // through goal.add and item.add, the desk naming the ids, each item a plain one.
+    const OG = String((await call('goal.add', { title: 'Ordinary' }, ANDY)).id || '');
+    const O1 = String((await call('item.add', { goal: OG, title: 'One' }, ANDY)).id || '');
+    const O2 = String((await call('item.add', { goal: OG, title: 'Two' }, ANDY)).id || '');
+    for (const o of [O1, O2]) { const fo = await factsOf(o); if (fo && fo.code === true) await call('press', { id: o, what: 'code' }, ANDY); }
+    await call('press', { id: OG, what: 'end-design' }, ANDY);
     const tries = [[GOAL, 'close'], [GOAL, 'done'], [GOAL, 'abandon']];
     for (const t of tries) {
       const r = await call('press', { id: t[0], what: t[1] }, ANDY);
@@ -346,12 +352,14 @@ function clickTab(el, tab) {
     if (g && g.status !== 'closed' && !shown.some(function (b) { return ['close', 'done'].indexOf(b) !== -1; })) {
       test.check('the goal stays open and offers neither Close nor Done: ' + short(shown));
     } else test.fail(OWED + 'the goal reads ' + short(g && [g.status, g.buttons]));
+    // A session over its goal would have closed its door items as left out; session.set went with goal/G33.7, so no
+    // call can.
     const sess = await call('session.set', { json: JSON.stringify({ goal: { id: GOAL, title: 'Stack-frame checks' }, items: [] }) }, A);
-    if (!landed(sess) && /stackFrameChecks/.test(why(sess))) test.check('a session over its goal, which would close its door items as left out, is refused: ' + why(sess));
+    if (!landed(sess) && sess.code === 'no-such-verb') test.check('a session over its goal, which would close its door items as left out, cannot be written: session.set is no verb');
     else test.fail(OWED + 'a session.set over ' + GOAL + ' answered ' + short(sess));
-    const oDone = await call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
-    const oClose = await call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
-    const oAbandon = await call('press', { id: 'goal/G100', what: 'abandon' }, ANDY);
+    const oDone = await call('press', { id: O1, what: 'done' }, ANDY);
+    const oClose = await call('press', { id: O2, what: 'close' }, ANDY);
+    const oAbandon = await call('press', { id: OG, what: 'abandon' }, ANDY);
     if (landed(oDone) && landed(oClose) && landed(oAbandon)) test.check('on an ordinary goal Done, Close and abandon still land');
     else test.fail('the ordinary presses answered ' + short([oDone, oClose, oAbandon]));
 
@@ -381,8 +389,8 @@ function clickTab(el, tab) {
     const door = Array.isArray(listed) ? listed.filter(function (x) { return x && x.gate === GATE && x.endpoint === END; })[0] : null;
     if (door && Array.isArray(door.suites) && door.suites.length === 0 && door.item === made.id) test.check('the door is added to the list, its suites empty (an empty run is its red), its item ' + door.item);
     else test.fail(OWED + 'the scratch list reads ' + short(listed));
-    const back = await call('stackFrameChecks.doors', {}, A);
-    if (Array.isArray(back.doors) && back.doors.some(function (x) { return x.gate === GATE && x.endpoint === END && x.item === made.id; })) test.check('stackFrameChecks.doors reads it back');
+    const back = await doorsOf(A);
+    if (Array.isArray(back.doors) && back.doors.some(function (x) { return x.gate === GATE && x.endpoint === END && x.item === made.id; })) test.check('stackFrameChecks.doors.search reads it back');
     else test.fail(OWED + 'stackFrameChecks.doors answered ' + short(back));
     const bad = [
       ['an empty gate', { gate: '', endpoint: END }],
@@ -450,7 +458,7 @@ function clickTab(el, tab) {
       else test.fail(OWED + t[0] + ' answered ' + short(r));
     }
     const madeB = await call('stackFrameChecks.make', RELAY, ANDY);
-    const doorsB = await call('stackFrameChecks.doors', {}, A);
+    const doorsB = await doorsOf(A);
     const dB = (doorsB.doors || []).filter(function (x) { return x.endpoint === RELAY.endpoint; })[0];
     const idB = dB && dB.id ? dB.id : '';
     if (madeB.id && dB && idB && idB !== idA && JSON.stringify(dB.paths) === JSON.stringify(RELAY.paths) && JSON.stringify(dB.suites) === JSON.stringify(RELAY.suites)) {
@@ -493,7 +501,8 @@ function clickTab(el, tab) {
     const kept = path.join(state, 'plugins', 'stackFrameChecks', 'runs');
     if (fs.existsSync(path.join(kept, idA + '.json'))) test.check('the plugin keeps the run under the desk\'s --state: runs/' + idA + '.json');
     else test.fail(OWED + 'no runs/' + idA + '.json under ' + kept);
-    const dA = ((await call('stackFrameChecks.doors', {}, A)).doors || []).filter(function (x) { return x.id === idA; })[0];
+    // goal/G33.7: one door's own read.
+    const dA = await call('stackFrameChecks.door', { id: idA }, A);
     if (dA && dA.last && dA.last.endedAt === st2.endedAt && dA.last.running === false) test.check('the door list carries that last run');
     else test.fail(OWED + 'the door read back after its run: ' + short(dA));
 
@@ -517,7 +526,7 @@ function clickTab(el, tab) {
 
     // update lands and clears the door's last verdict; the other door keeps its own.
     const upOk = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['deskServer.js', 'oneDoorStacks.js'] }), ANDY);
-    const after2 = (await call('stackFrameChecks.doors', {}, A)).doors || [];
+    const after2 = (await doorsOf(A)).doors;
     const dB2 = after2.filter(function (x) { return x.id === idB; })[0];
     const dA2 = after2.filter(function (x) { return x.id === idA; })[0];
     if (!why(upOk) && dB2 && JSON.stringify(dB2.suites) === '["deskServer.js","oneDoorStacks.js"]' && dB2.item === madeB.id) test.check('update changes the door in place, under its id and its item');
@@ -767,7 +776,7 @@ function clickTab(el, tab) {
     const dialogs = [];
     ui.open(box, { goal: GOAL, ask: function (verb, a) {
       asked.push([verb, a]);
-      if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: DOORS });
+      if (verb === 'stackFrameChecks.doors.search') return Promise.resolve({ items: DOORS.map(function (d) { return { key: d.id, label: JSON.stringify(d) }; }), more: false });
       if (verb === 'stackFrameChecks.run') return Promise.resolve({ queued: true, said: 'queued with deskVerify; its output is in the Verifier tab\'s console' });
       if (verb === 'stackFrameChecks.runState') return Promise.resolve(runState);
       return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
@@ -782,7 +791,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'the UI\'s inputs read ' + short(inputs));
     const doorsEl = doc.getElementById('sfc-doors');
     if (/peerPost\.js::holdStreams/.test(doorsEl.innerHTML) && /node:http\+https\+fetch/.test(doorsEl.innerHTML) && /\/api\/relay\//.test(doorsEl.innerHTML) && /goal\/G22\.2/.test(doorsEl.innerHTML)) {
-      test.check('the UI shows the list of doors, read with stackFrameChecks.doors: each gate, endpoint, paths and item');
+      test.check('the UI shows the list of doors, read with stackFrameChecks.doors.search: each gate, endpoint, paths and item');
     } else test.fail(OWED + 'the doors drawn: ' + short(doorsEl.innerHTML));
     const typed = function (id, v) {
       doc.getElementById(id).value = v;
@@ -805,7 +814,7 @@ function clickTab(el, tab) {
     const sent = asked.filter(function (x) { return x[0] === 'stackFrameChecks.make'; })[0];
     if (sent && sent[1].gate === 'spirit/run/js/peerPost.js::post' && sent[1].endpoint === 'spirit/run/js/postQueue.js') test.check('Make sends stackFrameChecks.make with the gate and the endpoint');
     else test.fail(OWED + 'Make asked ' + short(asked));
-    if (asked.filter(function (x) { return x[0] === 'stackFrameChecks.doors'; }).length >= 2) test.check('a made door reads the list of doors again');
+    if (asked.filter(function (x) { return x[0] === 'stackFrameChecks.doors.search'; }).length >= 2) test.check('a made door reads the list of doors again');
     else test.fail(OWED + 'after Make the doors were not read again');
 
     test.subHeading('i. the door list, the add form, the door\'s dialog');
@@ -906,7 +915,7 @@ function clickTab(el, tab) {
         const v = q && Object.keys(q)[0];
         dAsked.push([v, q && q[v]]);
         let out = { change: 1 };
-        if (v === 'stackFrameChecks.doors') out = { doors: DOORS };
+        if (v === 'stackFrameChecks.door') out = DOORS.filter(function (d) { return d.id === (q[v] || {}).id; })[0] || { ok: false, code: 'bad-request' };
         if (v === 'stackFrameChecks.run') out = { started: true, already: false, said: 'Door d2 is running now, here; its verdict shows when it lands, and goes to deskVerify as a record.' };
         if (v === 'stackFrameChecks.runState') out = runState;
         if (v === 'item.chat') out = { chat: [], chatMore: false };
@@ -986,7 +995,7 @@ function clickTab(el, tab) {
     asked.length = 0;
     uiPublished.forEach(function (x) { x.fn({ plugin: 'stackFrameChecks', data: { what: 'run', id: 'd2' } }); });
     await sleep(20);
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.doors'; })) test.check('and the pane reads the door list again, so its row shows the new verdict');
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.doors.search'; })) test.check('and the pane reads the door list again, so its row shows the new verdict');
     else test.fail(OWED + 'a published run did not read the doors again');
     if (uiPublished.every(function (x) { return x.server !== 'deskVerify'; })) test.check('the pane subscribes to no deskVerify stream');
     else test.fail(OWED + 'the pane subscribed to ' + short(uiPublished.map(function (x) { return x.server; })));

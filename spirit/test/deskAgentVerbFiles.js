@@ -35,11 +35,13 @@ const DESK_JS = path.join(DESK_DIR, 'desk.js');
 const FAMILY_DIR = path.join(DESK_DIR, 'desk.family'); // the verb files, <module>.family since goal/G30.4
 const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'tools.js');
 
-const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'chat.search', 'items.find', 'rule.get', 'rules.search', 'profile.get'];
+const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'chat.search', 'rule.get', 'rules.search', 'profile.get'];
 // log.search, log.add and pending.get went with goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."):
 // the fifteen left, and the three are not in the excluded list either, since the desk no longer has them. changes went
-// with them (goal/G33.4: the desk's stream replaces it), so fourteen.
-const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
+// with them (goal/G33.4: the desk's stream replaces it), so fourteen. items.find went with goal/G33.7 (the approved
+// verb list: "agents only; items.search covers it"), so thirteen; session.set and rule.history went with it too, and
+// stay in the excluded list so no file comes back for them.
+const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history', 'items.find'];
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sameKeys(a, b) { return JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b || {}).sort()); }
@@ -48,8 +50,11 @@ test.startTest('goal/G24.1: the desk verbs cw uses daily are described to agents
 
 const source = fs.readFileSync(DESK_JS, 'utf8');
 // The declared request of one verb, read from the source.
+// goal/G33.7: a table's search is made by tableSearch({ request: {...} }), which adds text to the request it names.
 function declaredRequest(verb) {
-  const at = source.indexOf("\n  '" + verb + "': {");
+  let at = source.indexOf("\n  '" + verb + "': {");
+  const made = at === -1 ? source.indexOf("\n  '" + verb + "': tableSearch({") : -1;
+  if (made !== -1) at = made;
   if (at === -1) return null;
   const r = source.indexOf('request:', at);
   if (r === -1) return null;
@@ -60,7 +65,9 @@ function declaredRequest(verb) {
     if (source[i] === '{') depth++;
     else if (source[i] === '}') { depth--; if (depth === 0) break; }
   }
-  try { return Function('return (' + source.slice(from, i + 1) + ');')(); } catch (e) { return null; }
+  let req = null;
+  try { req = Function('return (' + source.slice(from, i + 1) + ');')(); } catch (e) { return null; }
+  return made !== -1 ? Object.assign({ text: '' }, req) : req;
 }
 function fileOf(verb) { try { return JSON.parse(fs.readFileSync(path.join(FAMILY_DIR, verb + '.json'), 'utf8')); } catch (e) { return null; } }
 

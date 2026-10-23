@@ -69,9 +69,10 @@ async function settled(pick) { for (let i = 0; i < 40; i++) { if (published.some
 (async function () {
   await new Promise(function (r) { door.listen(0, '127.0.0.1', r); });
   const url = 'http://127.0.0.1:' + door.address().port + '/api/spirit';
-  if (!await start(url)) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rule chat' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Rule chat' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
+  if (!await start(url)) { test.fail('the desk server did not start'); return; }
 
   test.subHeading('A. the other rule verbs publish the rule key (the contrast, green today)');
   const added = await call('rule.add', { type: 'desk', label: 'Questions as checks', text: 'A question goes on its item as a Q check.' }, CW);

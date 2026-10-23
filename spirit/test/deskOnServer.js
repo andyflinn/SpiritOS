@@ -32,7 +32,7 @@
 //   - T6: scrolling #desk-team to its top asks log.search {todo:
 //     'team/chat', before: <the oldest line shown>} and shows what comes.
 //   - T3: what arrives is recorded by log.add; what he types by voice.add;
-//     state and seen by state.set and seen.set; api.fs.saveFile is never
+//     seen by seen.set {id, at} (goal/G33.7: state went); api.fs.saveFile is never
 //     called for any of them.
 //   - T7 (moved from G1.7): it asks backup's status.get and shows the last
 //     check and last copy in #desk-backup, marked job-start-error when an
@@ -113,12 +113,12 @@ async function serverPart(scratch) {
 
   const kid = await start();
   test.subHeading('goal/G100.6: the server never reads Desk\'s old files in shell/desk');
-  const st = await call('state.get', {});
-  const sn = await call('seen.get', {});
+  // goal/G33.7: state.get went and seen is one value per item; the group chat's (goal/G0) is what seen.json held.
+  const sn = await call('seen.get', { id: 'goal/G0' });
   const voiceFile = path.join(state, 'voice.jsonl');
-  const imported = /IMPORTED/.test((st.json || '') + (sn.json || '')) || fs.existsSync(voiceFile);
-  if (!imported) test.check('old log, state, seen and voice files planted; the server started with none of them');
-  else test.fail(G16 + 'state ' + JSON.stringify(st).slice(0, 60) + ', voice file ' + fs.existsSync(voiceFile));
+  const imported = /IMPORTED/.test(JSON.stringify(sn)) || !!sn.at || fs.existsSync(voiceFile);
+  if (!imported && typeof sn.at === 'string') test.check('old log, state, seen and voice files planted; the server started with none of them');
+  else test.fail(G16 + 'seen of goal/G0 ' + JSON.stringify(sn).slice(0, 80) + ', voice file ' + fs.existsSync(voiceFile));
   const planted = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl', 'voice/voice-2.jsonl'];
   const gone = planted.filter(function (f) { return !fs.existsSync(path.join(app, ...f.split('/'))); });
   if (!gone.length) test.check('and deleted none of them');
@@ -193,6 +193,8 @@ async function deskPart() {
   log.push(row('andy', 'answer', 'closed.', 'goal/G101.2'));
 
   const fake = deskFake.create(log);
+  // An agent's line in the group chat: with no seen kept yet, Desk marks it seen at load and keeps that (seen.set).
+  fake.groupChat.push({ by: 'wsl-claude', at: new Date(T0).toISOString(), text: 'an agent in the group chat', taken: '' });
   fake.backup = { lastCheck: new Date(T0 + 10 * 60000).toISOString(), lastCopy: new Date(T0 + 9 * 60000).toISOString(), lastError: '' };
   const files = {};
   const saved = [];
@@ -236,9 +238,11 @@ async function deskPart() {
   // NO voice.add ANY MORE (goal/G2.1 note 8): his typed line is in the log; nothing is sent to a voice file.
   if (!fake.voice.length) test.check('nothing of his typed line went to voice.add');
   else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
-  const sets = fake.calls.filter(function (c) { return c.verb === 'state.set' || c.verb === 'seen.set'; });
-  if (!saved.length && sets.length) test.check('state and seen went by state.set / seen.set; api.fs.saveFile was never called');
-  else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; state/seen sets ' + sets.length);
+  // goal/G33.7: state.set went; seen goes by seen.set {id, at}, one value per item (the group chat's on goal/G0).
+  const sets = fake.calls.filter(function (c) { return c.verb === 'seen.set' && c.args && c.args.id === 'goal/G0' && typeof c.args.at === 'string'; });
+  const stateSets = fake.calls.filter(function (c) { return c.verb === 'state.set'; });
+  if (!saved.length && sets.length && !stateSets.length) test.check('seen went by seen.set {id: goal/G0, at}; no state.set; api.fs.saveFile was never called');
+  else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; seen sets ' + sets.length + ', state sets ' + stateSets.length);
 
   // The red mark for "an item closed after the check" read Andy's "closed."
   // line, and a close is a press since desk/G2.6: that mark waits on the desk

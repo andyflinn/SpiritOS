@@ -71,11 +71,9 @@ const db = new DatabaseSync(path.join(STATE, 'desk.db'));
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
 // THE OLD LINES TABLE WENT WITH goal/G33.4 (Andy, in the item's box: "Records with no goal or item are dumped at
-// migration: agent.state, scope.set and the old lines table."); migrate() below drops it. docs stays: his page's own
-// two documents (state, seen), no record of anybody's work.
-db.exec('CREATE TABLE IF NOT EXISTS docs (name TEXT PRIMARY KEY, json TEXT NOT NULL);');
-const getDoc = db.prepare('SELECT json FROM docs WHERE name = ?');
-const putDoc = db.prepare('INSERT INTO docs (name, json) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET json = excluded.json');
+// migration: agent.state, scope.set and the old lines table."); migrate() below drops it. THE DOCS TABLE WENT WITH goal/G33.7:
+// state had no reader, and seen is one value per item (seen.set), so nothing grows as one document.
+db.exec('DROP TABLE IF EXISTS docs;');
 
 // One answer must travel back as one packet (appClient.ANSWER_MAX); the
 // wrapper around the lines is small, and this leaves it room.
@@ -216,6 +214,39 @@ function ranked(walk, room) {
   }
   const r = bucket.serialize(null, room);
   return { items: r.items, more: r.more || more };
+}
+
+// ── EVERY TABLE'S SEARCH, FROM ONE COMPONENT (goal/G33.7) ──────────────
+//
+//   The box: "Every desk table's interface has its probability search, mandatory and made by one shared component
+//   rather than written per table; the suites table's is item.suites.search".
+//
+// tableSearch(spec) makes the verb: spec.request (the arguments beside text, each '' or its kind), spec.rows(a, st,
+// caller) -> [{ key, fields, label, probability? }] in the walk's order (newest first where there is an order), and
+// spec.room (ANSWER_ROOM unless said). Each row ranks by text against its fields (probabilityStringObjectMatch) unless
+// it brings its own probability; every row goes through ranked(), so the answer fills one room and says more. With no
+// text every probability is 0 and the walk's order stands. A table's verb is this and nothing else.
+function tableSearch(spec) {
+  return {
+    request: Object.assign({ text: '' }, spec.request || {}), reply: { items: [{ key: '', label: '' }], more: false },
+    accepts: spec.accepts,
+    handler: function (a, caller) {
+      const text = String((a && a.text) || '').trim();
+      const rows = spec.rows(a || {}, walkState(), caller, text);
+      return ranked(rows.map(function (r) {
+        const p = typeof r.probability === 'number' ? r.probability : text ? probabilityStringObjectMatch(text, r.fields || {}) : 0;
+        return { probability: p, pair: { key: String(r.key), label: typeof r.label === 'string' ? r.label : JSON.stringify(r.label) } };
+      }), spec.room || ANSWER_ROOM);
+    },
+  };
+}
+// Every version of an item's box, newest first (the box table keeps them all).
+const boxVersionsOf = { all: function (g, i) { return db.prepare('SELECT version, creator, at, text FROM box WHERE goal = ? AND item = ? ORDER BY version DESC').all(g, i); } };
+// The item a table's search is about: by id, refused when there is none.
+function itemFor(st, a) {
+  const it = st.items[String((a && a.id) || '')];
+  if (!it) throw refused('no-such-item');
+  return it;
 }
 
 // ── THE STATE, IN TABLES KEYED BY GOAL AND ITEM (goal/G33.4) ─────────
@@ -1228,6 +1259,7 @@ function apply(s, r, b, item, goalOf) {
       if (!it) return;
       it.verifyState = String(b.verified || 'none');
       it.verifyFailures = Array.isArray(b.failures) ? b.failures.map(String) : [];
+      it.verifyFailuresMore = b.failuresMore === true;
       if (b.ended === true || (b.ended === undefined && it.verifyState !== 'none')) { it.verifyRunning = false; it.verifyHanded = false; }
       if (b.ran === true && !it.done && !it.closed && (it.status === 'waiting for deskVerify' || it.status === 'handed to deskVerify' || /^verified /.test(it.status))) {
         it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
@@ -1422,6 +1454,7 @@ function apply(s, r, b, item, goalOf) {
     // claim-done, applied by the same press() so the two can never drift, and the item keeps the commit it was claimed
     // at; a red claim changes nothing but the commit kept ("they should be red. at the time"). The refusals are at the
     // verb, so a replay only records.
+    case 'seen.set': if (it) it.seenAt = String(b.at || ''); return;
     case 'claim':
       if (!it) return;
       if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
@@ -1812,7 +1845,8 @@ function filesOf(it) {
 
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
-    with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
+    // goal/G33.4 (box v46): the box's version, so a client answers item.get from the facts the push brought.
+    with: it.with, version: Number(it.version) || 0, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
     // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
     // items." The dialog draws its Code toggle from this: an item (never a goal or sub-goal) whose plugin, if any, does
     // not refuse the code press.
@@ -1846,7 +1880,9 @@ function facts(s, it) {
     rules: Array.isArray(it.rules) ? it.rules : [],
     // WHETHER IT IS VERIFIED (goal/G33.3), as the desk last read the verifier's search: 'green', 'red' (verifyFailures
     // the failure lines) or 'none' (no run yet); '' where no deskVerify answers on this node, so no mark is drawn.
-    verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: Array.isArray(it.verifyFailures) ? it.verifyFailures : [],
+    verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: boundFailures(it.verifyFailures).lines,
+    // goal/G33.4: more failure lines than the row holds; the verifier's search has them all.
+    verifyFailuresMore: it.verifyFailuresMore === true || boundFailures(it.verifyFailures).more,
     // THE SWITCH (goal/G33.3): the verifier's last answer to a start request, taken or busy ('' before any); the Verify
     // button shows it.
     verifyAnswer: s.verifyAnswer || '', verifierBusy: !!s.verifyAnswer,
@@ -1898,8 +1934,21 @@ function facts(s, it) {
     f.agents = {};
     Object.keys(s.agentKey).sort().forEach(function (a) { f.agents[a] = s.agentKey[a]; });
   }
+  // A ROW ALWAYS FITS ONE ANSWER (goal/G33.4, box v46: "Bound the facts themselves ... so a row always fits"). Measured
+  // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way, failure
+  // lines first, then the rules recorded at his Go, each saying more.
+  const travel = function () { return Buffer.byteLength(JSON.stringify({ item: JSON.stringify(f), version: 0, change: 0 }), 'utf8'); };
+  while (travel() > FACTS_ROOM && f.verifyFailures.length) { f.verifyFailures = f.verifyFailures.slice(0, -1); f.verifyFailuresMore = true; }
+  while (travel() > FACTS_ROOM && f.rules.length) { f.rules = f.rules.slice(0, -1); f.rulesMore = true; }
+  // A goal's agents (goal/G4.29: every agent the desk knows) give way too, the one heard from longest ago first, and
+  // agentsMore says agents.search has them all (the approved list: "a goal row's lists of every agent ever seen").
+  if (f.agents) {
+    const byAge = Object.keys(f.agents).sort(function (x, y) { const ax = String(s.agentsAt[x] || ''); const ay = String(s.agentsAt[y] || ''); return ax < ay ? -1 : ax > ay ? 1 : 0; });
+    while (travel() > FACTS_ROOM && byAge.length) { delete f.agents[byAge.shift()]; f.agentsMore = true; }
+  }
   return f;
 }
+const FACTS_ROOM = ANSWER_ROOM - 512;
 
 // (matchesText, the substring filter of items.search, went with goal/G18.5: items are ranked, not filtered.)
 
@@ -1935,42 +1984,6 @@ function searchItems(a) {
   return out;
 }
 
-// ITEMS FOUND BY THEIR LINES (goal/G3.13), for the agents. Andy, 2026-10-03: "items can be searched with filters
-// akin to the ones the current chat-search has", "the item search should consider searching chat items, on the
-// deskServer side, and the resulting item titles (or keys) should be returned", "Server-Side searches can expand
-// to chat-lines without cost to the wire", and "items.find" when asked for a second verb beside items.search.
-// by, since and before are chat.search's filters on a line; text is found in a line, or, with no line filter set,
-// in the item's id or title. Every goal's items and the goals, closed ones too (a search is not the List; Andy:
-// "close is more of an 'visibility' issue than a process issue"), an abandoned goal's never. Ordered by the newest
-// line that matched, newest first; an item matched by id or title alone comes after those, newest written first.
-// SINCE goal/G18.5 THE TEXT RANKS, THE FILTERS STAY FILTERS: by, since and before still choose which lines count, and an
-// item with none of them left is not offered while a line filter is set; the text gives each item its probability, the
-// chat half over the lines the filters let through. Offered newest first, so among equal probabilities the newest leads.
-function findItems(a) {
-  const s = walkState();
-  const text = String(a.text || '').trim();
-  const lineFilter = !!(a.by || a.since || a.before);
-  const lineMatches = function (l) {
-    if (a.by && l.by !== a.by) return false;
-    if (a.since && !(String(l.at) >= a.since)) return false;
-    if (a.before && !(String(l.at) < a.before)) return false;
-    return true;
-  };
-  const found = [];
-  Object.keys(s.goals).forEach(function (gid) {
-    if (s.goals[gid].abandoned) return;
-    [gid].concat(s.goals[gid].members).forEach(function (id) {
-      const it = s.items[id];
-      if (!it) return;
-      const lines = it.chat.filter(lineMatches);
-      if (lineFilter && !lines.length) return;
-      const newest = lines.length ? String(lines[lines.length - 1].at) : String(it.at || '');
-      found.push({ at: newest, it: it, probability: itemProbability(text, it, lines) });
-    });
-  });
-  const newestFirst = function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; };
-  return found.sort(newestFirst).map(function (w) { return { probability: w.probability, json: JSON.stringify(facts(s, w.it)) }; });
-}
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
 // A REFUSAL SAYS WHY (goal/G10.10). Andy, 2026-10-12: "all refusals everywhere should say why." A bare bad-request
@@ -2064,17 +2077,36 @@ function streamRecipients(o) {
   // ONLY THE ADDRESSED AGENT IS HANDED HIS ADDRESSED LINE (goal/G21.1).
   return nudgeKeys(S).filter(function (key) { return !Array.isArray(o.to) || o.to.indexOf(key) !== -1; });
 }
-// A CLIENT THAT WAS AWAY, OR IS NEW TO THIS DESK, GETS THE CURRENT GOAL WHOLE (the box) when its agent writes: every row
-// of the current goal goes to it alone, through the same publish.
+// A CLIENT THAT WAS AWAY, OR IS NEW TO THIS DESK, GETS THE CURRENT GOAL (the box) when its agent asks: the goal's and its
+// items' facts go to it alone, through the same publish (box v46: the parts come when needed, pushGoalWhole).
+// When each agent's node last asked the desk anything, by key: a client marked away that asked while its last delivery
+// waited came back meanwhile (a restart), and gets what it missed at once (onAway).
+const lastAsk = Object.create(null);
+function onAway(key, since) {
+  if ((lastAsk[key] || 0) >= Date.parse(since)) backFromAway(key);
+}
 function backFromAway(key) {
   if (!key || !S || !S.current || appServer.listening(key) === 'on') return;
   const g = S.goals[S.current];
   if (!g) return;
+  const since = appServer.awaySince(key);
   [S.current].concat(g.members).forEach(function (id) {
     const it = S.items[id];
     if (!it) return;
     appServer.publish(rowPublish(S, id, 'goal.whole', S.change), key);
-    rowsOf(S, it).forEach(function (x) { if (x.table !== 'items') appServer.publish(sidePublish(S, id, { table: x.table, key: x.key, x: x, removed: false }, S.change), key); });
+  });
+  // WHAT IT MISSED WHILE AWAY (goal/G3.4: "nothing missed"): the chat lines of the current goal and the group chat
+  // written since its stream stopped answering, each its own row as it was pushed then. A client new to the desk
+  // missed nothing it would hand over (its first run starts at now).
+  if (!since) return;
+  [S.current].concat(g.members, [GROUP_CHAT]).forEach(function (id) {
+    const it = S.items[id];
+    if (!it) return;
+    rowsOf(S, it).forEach(function (x) {
+      if (x.table !== 'chat' || !(String(x.cols[1]) >= since)) return;
+      if (Array.isArray(x.to) && x.to.indexOf(key) === -1) return;   // his line to other agents alone (goal/G21.1)
+      appServer.publish(sidePublish(S, id, { table: 'chat', key: x.key, x: x, removed: false }, S.change), key);
+    });
   });
 }
 // An item's facts as a List row publish.
@@ -2091,10 +2123,13 @@ function sidePublish(s, id, ch, change) {
   if (ch.x && Array.isArray(ch.x.to)) o.to = ch.x.to.slice();
   return o;
 }
-// A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk
-// pushes it whole onto every desk client; from then on it pushes only that goal's updates." Every row of it: each item's
-// facts, its newest box, every chat line, every check, every file, every claim, each its own publish. Also at start, the
-// current goal: every client was away from a desk that was not there (this build's reading of "a client that was away").
+// A GOAL BECOMING CURRENT IS PUSHED (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk pushes
+// it whole onto every desk client; from then on it pushes only that goal's updates." Since box v46 that is the goal's and
+// its items' facts, one publish each, and no part of an item. Andy: "getting it all at once, hmmm sounds like a bad idea,
+// maybe a new deskClient connect should start a stream-push of the goal, and the items, the box and other parts will come
+// when needed and stay". An item's box, chat, checks and files are each read by the client that needs them, each its own
+// answer under the payload, and kept current by the side rows every write pushes. Also at start, the current goal: every
+// client was away from a desk that was not there.
 function pushGoalWhole(gid) {
   const s = S;
   const g = s.goals[gid];
@@ -2103,7 +2138,6 @@ function pushGoalWhole(gid) {
     const it = s.items[id];
     if (!it) return;
     publishOne(rowPublish(s, id, 'goal.whole', s.change));
-    rowsOf(s, it).forEach(function (x) { if (x.table !== 'items') publishOne(sidePublish(s, id, { table: x.table, key: x.key, x: x, removed: false }, s.change)); });
   });
 }
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
@@ -2406,6 +2440,21 @@ function waitingItems(s) {
 // THE LATEST STATE OF SOME SUITES, from the verifier's search: for each, the newest run that ran it (by its row, never
 // by time: the verifier's clock is not this one's).
 const FAILURES_SHOWN = 10;
+// THE FAILURE LINES AN ITEM'S ROW CARRIES ARE BOUNDED IN BYTES (goal/G33.4, live: goal/G33.4's item.get answered
+// app-answer-too-large, 8457 bytes, its ten failure lines the bulk of it). Andy's rule: no row or answer past
+// PAYLOAD_MAX; too big means split, never chunked. So the row keeps the first lines that fit FAILURES_BYTES, measured as
+// they travel (the facts are JSON inside an answer's JSON, so twice escaped), and says more; the verifier's own search
+// holds every line.
+const FAILURES_BYTES = 1536;
+function boundFailures(list) {
+  const lines = [];
+  const all = Array.isArray(list) ? list.map(String) : [];
+  for (const l of all) {
+    if (Buffer.byteLength(JSON.stringify(JSON.stringify(lines.concat([l]))), 'utf8') > FAILURES_BYTES) break;
+    lines.push(l);
+  }
+  return { lines: lines, more: lines.length < all.length };
+}
 async function suiteStates(suites, cache) {
   const out = [];
   for (const suite of suites) {
@@ -2434,6 +2483,7 @@ async function readVerifyStates() {
     const suites = suitesFor(s, it);
     let verified = 'green';
     let failures = [];
+    let failuresMore = false;
     let pending = false;
     if (suites.length) {
       let states;
@@ -2446,14 +2496,17 @@ async function readVerifyStates() {
           (x.failures.length ? x.failures : ['']).forEach(function (f) { failures.push((x.suite + ' ' + x.outcome + (f ? ': ' + f : '')).slice(0, 300)); });
         });
         failures = failures.slice(0, FAILURES_SHOWN);
+        const bounded = boundFailures(failures);
+        failuresMore = bounded.more;
+        failures = bounded.lines;
       } else if (states.some(function (x) { return x.outcome === 'none'; })) verified = 'none';
     }
     // Unchanged is not written, unless a run of it was under way and has now ended (goal/G33.6): the write is what ends
     // verifyRunning, so the run leaves the item's status.
     const ended = it.verifyRunning === true && !pending;
-    if (!ended && String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures)) continue;
+    if (!ended && String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures) && (it.verifyFailuresMore === true) === failuresMore) continue;
     // ran: the state came from runs of its suites (an item listing none is green with nothing run, and keeps its word).
-    write('verify.state', { id: it.id, verified: verified, failures: failures, ran: suites.length > 0 && verified !== 'none', ended: !pending, by: 'desk', key: '' });
+    write('verify.state', { id: it.id, verified: verified, failures: failures, failuresMore: failuresMore, ran: suites.length > 0 && verified !== 'none', ended: !pending, by: 'desk', key: '' });
   }
 }
 // ONE START REQUEST, its answer written as verify.answer. Answers 'taken', 'busy', or null when nothing was asked.
@@ -2551,15 +2604,6 @@ function writerOf(caller) {
   return { by: label || require('../../../js/kernel.js').keyTail(caller.key), key: caller.key };
 }
 
-function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
-function saveDoc(name, json) {
-  parsed(json);
-  const bytes = Buffer.byteLength(JSON.stringify({ json: String(json) }), 'utf8');
-  if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
-  putDoc.run(name, String(json));
-  return { saved: true };
-}
-
 // ── MOUNTING THE PLUGINS (goal/G22.3) ────────────────────────────────
 //
 //   Andy, 2026-10-13, in the item's box: "Mount every plugin in desk's plugin folder, organized with the same pattern as
@@ -2585,18 +2629,11 @@ function pluginRefusal(p, verb, a, ids) {
   if (typeof p.refuses !== 'function') return '';
   return String(p.refuses(verb, a || {}, ids || idsOfCall(verb, a)) || '');
 }
-// The item and goal ids a call names: id, goal and blocks, and a session's goal and items.
+// The item and goal ids a call names: id, goal and blocks (session.set, which named many, went with goal/G33.7).
 function idsOfCall(verb, a) {
   const out = [];
   if (!a || typeof a !== 'object') return out;
   ['id', 'goal', 'blocks'].forEach(function (k) { if (typeof a[k] === 'string' && a[k]) out.push(a[k]); });
-  if (verb === 'session.set') {
-    try {
-      const sess = JSON.parse(String(a.json));
-      if (sess && sess.goal && sess.goal.id) out.push(String(sess.goal.id));
-      (sess && Array.isArray(sess.items) ? sess.items : []).forEach(function (x) { if (x && x.id) out.push(String(x.id)); });
-    } catch (e) { /* the handler refuses it */ }
-  }
   return out;
 }
 // What a plugin is handed: its name and goal, and the desk's own writes and rules. write is the desk's write as the desk
@@ -2703,6 +2740,7 @@ function withPlugins(verbs) {
       // AN AGENT'S ASK, ANY ASK, SAYS ITS CLIENT IS THERE (goal/G33.4, the box: "a client that was away gets the current
       // goal pushed whole again"): a known agent whose client the stream has marked away, or never reached, gets the
       // current goal whole at its first ask, a read included, so its reads are answered from what it keeps.
+      if (caller && caller.owner !== true && typeof caller.key === 'string') lastAsk[caller.key] = Date.now();
       if (caller && caller.owner !== true && typeof caller.key === 'string' && S && nudgeKeys(S).indexOf(caller.key) !== -1) backFromAway(caller.key);
       // A PLUGIN'S GOAL BY ITS FIXED KEY (goal/G22.3: "its own private goal with a fixed key"): since goal/G33.4 the goal
       // is numbered, and plugin/<name> (or plugin/<name>.<n>, one of its items) names it still, so the page finds a
@@ -2748,22 +2786,14 @@ appServer.serve(withPlugins({
   // Andy: "nice verb names! can use them an many seaches. aprooved."
   // Each label is one item's facts as JSON; the goal's row also carries
   // design mode, the waiting-on-you count and the live agents.
-  'items.search': {
-    request: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      return ranked(searchItems(a).map(function (x) { return { probability: x.probability, pair: { key: JSON.parse(x.json).id, label: x.json } }; }), ANSWER_ROOM);
-    },
-  },
+  'items.search': tableSearch({
+    request: { currentGoalOnly: false, goalsOnly: false, includeClosed: false },
+    rows: function (a) { return searchItems(a).map(function (x) { return { key: JSON.parse(x.json).id, label: x.json, probability: x.probability }; }); },
+  }),
   // EACH PANEL ITS OWN ANSWER. Andy: "what kind of app doesn't measure the sum of its packets?" and "lazy load the
   // panels when thy open". item.get is the item's facts; its box, checks and chat are asked for each on its own, so
   // no answer carries the sum of them and each fits one answer by itself.
-  // A SEARCH FOR THE AGENTS (goal/G3.13): items by their lines, half a room like chat.search, a read.
-  'items.find': {
-    request: { text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      return ranked(findItems(a).map(function (x) { return { probability: x.probability, pair: { key: JSON.parse(x.json).id, label: x.json } }; }), SEARCH_ROOM);
-    },
-  },
+  // items.find WENT WITH goal/G33.7 (the approved verb list: "agents only; items.search covers it").
   'item.get': {
     request: { id: '' }, reply: { item: '', version: 0, change: 0 },
     handler: function (a) {
@@ -2804,14 +2834,62 @@ appServer.serve(withPlugins({
       return { files: files, filesMore: files.length < order.length };
     },
   },
+  // goal/G33.7 (the approved list: "item.checks (more flag)"): the panel's checks in their order, as many as fill one
+  // answer, and checksMore when some were left out.
   'item.checks': {
-    request: { id: '' }, reply: { checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }] },
+    request: { id: '' }, reply: { checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], checksMore: false },
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      return { checks: shownChecks(it) };
+      const shown = shownChecks(it);
+      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ checksMore: true }), 'utf8');
+      const found = walked(shown.map(function (c, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(shown[i]) }; }, room);
+      const checks = found.items.map(function (p) { return JSON.parse(p.label); });
+      return { checks: checks, checksMore: checks.length < shown.length };
     },
   },
+  // ── EACH TABLE'S SEARCH (goal/G33.7), from tableSearch: an item's suites, checks, files, claims and box versions, and
+  // the agents. Each answers {items: [{key, label}], more}, ranked by text, newest first among equals.
+  'item.suites.search': tableSearch({
+    request: { id: '' },
+    rows: function (a, st) { const it = itemFor(st, a); return (it.suites || []).map(function (p, i) { return { key: String(p), fields: { path: String(p) }, label: { path: String(p), pos: i } }; }); },
+  }),
+  'item.checks.search': tableSearch({
+    request: { id: '' },
+    rows: function (a, st) {
+      const it = itemFor(st, a);
+      return (it.checks || []).slice().reverse().map(function (c) { return { key: String(c.number), fields: { number: String(c.number), kind: String(c.kind || ''), words: String(c.words || ''), state: String(c.state || '') }, label: c }; });
+    },
+  }),
+  'item.files.search': tableSearch({
+    request: { id: '' },
+    rows: function (a, st) { const it = itemFor(st, a); return filesOf(it).map(function (e) { return { key: e.by + '|' + e.path, fields: { path: e.path, by: e.by }, label: e }; }); },
+  }),
+  'item.claims.search': tableSearch({
+    request: { id: '' },
+    rows: function (a, st) {
+      const it = itemFor(st, a);
+      return Object.keys(it.claims || {}).map(function (label) { const at = String((it.claimAt && it.claimAt[label]) || ''); return { key: label, fields: { by: label }, label: { by: label, at: at } }; })
+        .sort(function (x, y) { return x.label.at < y.label.at ? 1 : x.label.at > y.label.at ? -1 : 0; });
+    },
+  }),
+  'item.box.search': tableSearch({
+    request: { id: '' },
+    rows: function (a, st) {
+      const it = itemFor(st, a);
+      const k = numbersOf(it.id);
+      return boxVersionsOf.all(k[0], k[1]).map(function (r) { return { key: String(r.version), fields: { text: String(r.text) }, label: { version: r.version, by: String(r.creator), at: String(r.at), text: String(r.text) } }; });
+    },
+  }),
+  'agents.search': tableSearch({
+    rows: function (a, st) {
+      return Object.keys(st.agentKey).map(function (label) {
+        const key = st.agentKey[label];
+        const name = nameOfKey(st, key) || '';
+        return { key: label, at: String(st.agentsAt[label] || ''), fields: { label: label, name: name }, label: { label: label, key: key, name: name, at: String(st.agentsAt[label] || ''), word: String(st.agentWord[label] || '') } };
+      }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; });
+    },
+  }),
   // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
   // stuff?" Its newest lines, through the same bucket, in a whole answer of its own; oldest first.
   'item.chat': {
@@ -2847,10 +2925,10 @@ appServer.serve(withPlugins({
   // goal/G29.21: scope '' or 'goal' searches the id's own chat; 'items' on a goal searches the goal's chat and every
   // one of its items' chats, ranked together. Each line's label carries item, the id it was said in, which the goal
   // dialog draws as a link to that item; across chats the key is item#index, so keys stay unique.
-  'chat.search': {
-    request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const st = walkState();
+  'chat.search': tableSearch({
+    request: { id: '', by: '', since: '', before: '', scope: '' },
+    room: SEARCH_ROOM,
+    rows: function (a, st) {
       const id = String(a.id);
       const it = st.items[id];
       if (!it) throw refused('no-such-item');
@@ -2875,50 +2953,25 @@ appServer.serve(withPlugins({
       });
       if (across) lines.sort(function (x, y) { return x.l.at < y.l.at ? 1 : x.l.at > y.l.at ? -1 : 0; });
       // goal/G21.1: the writer's key and name ride with its label; with a scope, the item it was said in too.
-      const walk = lines.map(function (x) {
+      return lines.map(function (x) {
         const l = x.l;
         const label = { by: l.by, key: String(l.key || ''), name: nameOfKey(st, l.key), at: l.at, text: l.text };
         if (scope) label.item = x.item;
-        return { probability: lineProbability(text, l), pair: { key: across ? x.item + '#' + x.i : String(x.i), label: JSON.stringify(label) } };
+        return { key: across ? x.item + '#' + x.i : String(x.i), label: label, probability: lineProbability(text, l) };
       });
-      return ranked(walk, SEARCH_ROOM);
     },
-  },
+  }),
   // ── THE WRITES: no verb takes `by` any more (apiAuth/G1.13) — the
   // writer is the caller the door forwarded and appServer handed in,
   // so nobody names their own writer. A by argument fails the request
   // shape and is refused no-such-argument, which is the point.
-  'session.set': {
-    request: { json: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const sess = parsed(a.json);
-      if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
-      // AN ID IS TWO NUMBERS (goal/G33.4, the box: "the cute little ID string you display ('goal/G45.765') can be
-      // rendered from those two keys"): the session's goal is goal/G<n>, each item goal/G<n>.<m> of that goal.
-      const gk = numbersOf(sess.goal.id);
-      if (!gk || gk[1] !== 0) throw refusedWhy('bad-request', 'a goal id is goal/G<n>, not ' + JSON.stringify(String(sess.goal.id)));
-      const bad = sess.items.map(function (x) { return String((x && x.id) || ''); }).filter(function (id) { const k = numbersOf(id); return !k || k[0] !== gk[0] || k[1] === 0; });
-      if (bad.length) throw refusedWhy('bad-request', 'an item id of ' + sess.goal.id + ' is ' + sess.goal.id + '.<m>, not ' + bad.slice(0, 3).join(', '));
-      // A special goal (the group chat, a plugin's) is never a session's: a session closes what it leaves out.
-      const sg = walkState().goals[String(sess.goal.id)];
-      if (sg && sg.special) throw refusedWhy('bad-request', sess.goal.id + ' is a special goal, never written by a session');
-      return { change: write('session.set', { session: sess, by: w.by, key: w.key }, function (st) {
-        // goal/G29.21, decided by Andy: an agent's session creates no goal, and the new items it brings need his
-        // "add item" (one) or "add items" (several), as item.add does (addGrantOf).
-        if (w.by === 'andy') return;
-        if (!st.goals[String(sess.goal.id)]) throw refusedWhy('not-granted', 'an agent creates a goal only through goal.add, while Andy\'s newest line says "add goal"');
-        const fresh = newItemsOf(st, sess);
-        const here = st.addGrantGoal === String(sess.goal.id);
-        if (fresh && !(here && (st.addGrant === -1 || (st.addGrant === 1 && fresh === 1)))) throw refusedWhy('not-granted', 'this session brings ' + fresh + ' new item(s); an agent adds items only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several)');
-      }).change };
-    },
-  },
+  // session.set WENT WITH goal/G33.7 (the approved verb list: "writes a whole goal at once; its callers use goal.add and
+  // item.add"). A goal is made by goal.add, its items by item.add (a split: item.add blocking the parent), one each.
   // ONE GOAL, ONE ITEM, AND THE DESK NAMES IT (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and
   // item ID's.", and "why should the agents need to, they can use the same api's the user needs to create them." So the
   // same two verbs serve him and the agents, the id comes back in the answer, and nobody sends one: an `id` argument is
-  // refused by the door as no-such-argument. Decided by Andy; rule/9 governs when the bulk session.set may be used
-  // instead. An add never moves the current goal (goal/G9.13).
+  // refused by the door as no-such-argument. Decided by Andy; the bulk session.set went with goal/G33.7.
+  // An add never moves the current goal (goal/G9.13).
   'goal.add': {
     request: { title: '' }, reply: { id: '', change: 0 },
     handler: function (a, caller) {
@@ -3349,37 +3402,22 @@ appServer.serve(withPlugins({
       return { key: r.key };
     },
   },
-  // Its older versions, newest first, through the bucket; more says there were more, nothing pages.
-  'rule.history': {
-    request: { key: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const rows = ruleRows.all(String(a.key));
-      if (!rows.length) throw refused('no-such-item');
-      const older = rows.slice(1);
-      return walked(older, function (r) {
-        return { key: String(r.n), label: JSON.stringify({ at: r.at, by: r.by, type: r.type, label: r.label, status: r.status, text: r.text }) };
-      });
-    },
-  },
+  // rule.history WENT WITH goal/G33.7 (the approved verb list: nothing calls it).
   // THE LIST'S SEARCH (FACE.md): "searchable for deskClient and UI, with the type and status values as filters,
   // and label and text being searched. search results with bring back key, label, type and status."
-  'rules.search': {
-    request: { text: '', types: [''], statuses: [''] }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      // goal/G29.21: the text ranks the rules by title and text (probabilityStringObjectMatch), the types and statuses
-      // still filter; newest first among equals, so no words reads every rule newest first.
-      const text = String(a.text || '').trim();
+  'rules.search': tableSearch({
+    request: { types: [''], statuses: [''] },
+    rows: function (a) {
+      // goal/G29.21: the text ranks the rules by title and text, the types and statuses still filter; newest first among
+      // equals, so no words reads every rule newest first.
       const types = (Array.isArray(a.types) ? a.types : []).filter(Boolean);
       const statuses = (Array.isArray(a.statuses) ? a.statuses : []).filter(Boolean);
-      const walk = newestRules.all().filter(function (r) {
+      return newestRules.all().filter(function (r) {
         if (types.length && types.indexOf(r.type) === -1) return false;
         return !(statuses.length && statuses.indexOf(r.status) === -1);
-      }).map(function (r) {
-        return { probability: text ? probabilityStringObjectMatch(text, { label: String(r.label), text: String(r.text || '') }) : 0, pair: { key: r.key, label: JSON.stringify({ label: r.label, type: r.type, status: r.status }) } };
-      });
-      return ranked(walk, ANSWER_ROOM);
+      }).map(function (r) { return { key: r.key, fields: { label: String(r.label), text: String(r.text || '') }, label: { label: r.label, type: r.type, status: r.status } }; });
     },
-  },
+  }),
   'agent.state': {
     request: { word: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -3661,10 +3699,27 @@ appServer.serve(withPlugins({
       return { change: landed.change };
     },
   },
-  'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },
-  'state.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('state', a.json); } },
-  'seen.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('seen') }; } },
-  'seen.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('seen', a.json); } },
+  // state.get and state.set WENT WITH goal/G33.7 (the approved verb list: nothing calls them).
+  // SEEN, ONE ROW PER ITEM (goal/G33.7, the approved list: "one row per item, not one growing document"): the arrival
+  // time of the newest thing he has looked at under the item (the group chat's is goal/G0's), kept in the item's row.
+  'seen.get': {
+    request: { id: '' }, reply: { at: '' },
+    handler: function (a) { return { at: String(itemFor(walkState(), a).seenAt || '') }; },
+  },
+  'seen.set': {
+    request: { id: '', at: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const it = itemFor(walkState(), a);
+      // A time, as the desk writes them (ISO 8601), and nothing else: a seen value never grows. One past a time's size is
+      // refused as too large, as every write of text is.
+      const atBytes = Buffer.byteLength(String(a.at || ''), 'utf8');
+      if (atBytes > 64) throw tooLarge(atBytes, 64);
+      if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/.test(String(a.at || ''))) throw refusedWhy('bad-request', 'at is a time like 2026-10-23T12:00:00.000Z');
+      if (String(a.at || '') <= String(it.seenAt || '')) return { change: walkState().change };
+      return { change: write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change };
+    },
+  },
 // goal/G22.3: the table closes here, and withPlugins hands every verb of it to the plugins first.
 }),
 
@@ -3682,7 +3737,7 @@ appServer.serve(withPlugins({
 // themselves are unchanged, so nothing on the wire moved.
 // goal/G33.4 (box v43): the deskClients appServer.publish reaches (publishOne), and no opts.stream: the desk follows
 // no stream (box v42).
-{ dependencies: ['desk'], streamTo: { family: 'deskClient', recipients: function (o) { return streamRecipients(o); }, waitMs: CLIENT_WAIT_MS }, codes: {
+{ dependencies: ['desk'], streamTo: { family: 'deskClient', recipients: function (o) { return streamRecipients(o); }, waitMs: CLIENT_WAIT_MS, onAway: function (key, since) { onAway(key, since); } }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

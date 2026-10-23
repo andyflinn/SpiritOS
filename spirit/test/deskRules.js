@@ -312,6 +312,15 @@ async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Rules' }, items: [
+    // goal/G100.1 blocks goal/G100.2, so his go-all on the goal never reaches goal/G100.2 (wsl-claude's review of the first red).
+    { id: 'goal/G100.1', title: 'Gone by his press', blocks: ['goal/G100.2'] },
+    { id: 'goal/G100.2', title: 'Never gone', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Gone by go-all', blocks: ['goal/G100'] },
+    { id: 'goal/G100.4', title: 'Closed before Go', blocks: ['goal/G100'] },
+  ] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/api/spirit' }) }));
   await up('desk');
@@ -326,16 +335,9 @@ async function main() {
   else test.fail(OWED + 'FS.loadFile of AGENTS.md served ' + served.status + ', the file matched: ' + (text === onDisk) + ', sentences found at ' + JSON.stringify(at) + ', first section at ' + firstSection);
 
   test.subHeading('B. the desk: go is his press; a claim before Go is refused; Close before Go');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rules' }, items: [
-    // goal/G100.1 blocks goal/G100.2, so his go-all on the goal never reaches goal/G100.2 (wsl-claude's review of the first red).
-    { id: 'goal/G100.1', title: 'Gone by his press', blocks: ['goal/G100.2'] },
-    { id: 'goal/G100.2', title: 'Never gone', blocks: ['goal/G100'] },
-    { id: 'goal/G100.3', title: 'Gone by go-all', blocks: ['goal/G100'] },
-    { id: 'goal/G100.4', title: 'Closed before Go', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
-  if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
-  // A session arrives in design mode, where nothing offers Go (desk/G3.1); his end-design opens the goal.
+  const set = await desk('item.get', { id: 'goal/G100.4' }, ANDY);
+  if (set.status !== 200) { test.fail(OWED + 'the seeded desk has no goal/G100.4: ' + JSON.stringify(set.body)); return; }
+  // The seeded goal is in design mode, where nothing offers Go (desk/G3.1); his end-design opens the goal.
   await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   let f1 = await factsOf('goal/G100.1');
   const before = f1 && f1.go === false && f1.buttons.indexOf('go') !== -1;

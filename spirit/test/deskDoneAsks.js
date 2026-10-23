@@ -45,13 +45,13 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item) || {}; } catch (e) { return {}; } };
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Done' }, items: [
+    { id: 'goal/G100.1', title: 'Two takers', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Nobody took it', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Only Go', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Done' }, items: [
-      { id: 'goal/G100.1', title: 'Two takers', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Nobody took it', blocks: ['goal/G100'] },
-      { id: 'goal/G100.3', title: 'Only Go', blocks: ['goal/G100'] }] }) }, ANDY);
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
     test.subHeading('3. an offered Go counts nothing');

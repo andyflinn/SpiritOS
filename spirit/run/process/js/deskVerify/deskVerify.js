@@ -501,6 +501,25 @@ function rowsOf(sql, params) {
   return typeof st.iterate === 'function' ? st.iterate.apply(st, params) : st.all.apply(st, params);
 }
 function likeEscaped(s) { return String(s).replace(/[\\%_]/g, '\\$&'); }
+// A run's suite matches the suite asked for by its path, or by its file name when no folder is given (as the LIKE above).
+function suiteMatches(p, suite) { return suite.indexOf('/') === -1 ? path.basename(p) === suite : p === suite; }
+// One run's row when no suite is named: a third of an answer, so a listing of runs holds several.
+const RUN_LABEL_ROOM = Math.floor(SEARCH_ROOM / 3);
+// A suite's entry cut to fit: its failure lines while ok(entry) holds, each line cut to fit when even one is too long,
+// and failuresMore when any was left out.
+function fitted(x, ok) {
+  const all = Array.isArray(x && x.failures) ? x.failures.map(String) : [];
+  const out = Object.assign({}, x, { failures: [], failuresMore: all.length > 0 });
+  for (const l of all) {
+    let line = l;
+    while (line.length > 1 && !ok(Object.assign({}, out, { failures: out.failures.concat([line]) }))) line = line.slice(0, Math.floor(line.length / 2));
+    if (!ok(Object.assign({}, out, { failures: out.failures.concat([line]) }))) break;
+    out.failures.push(line);
+    if (line !== l) break;
+  }
+  out.failuresMore = out.failures.length < all.length || (out.failures.length > 0 && out.failures[out.failures.length - 1] !== all[out.failures.length - 1]);
+  return out;
+}
 async function search(a) {
   const over = String(a.over || '');
   if (over !== 'tests' && over !== 'runs') throw refusedWhy('search needs over: "tests" or "runs"');
@@ -521,12 +540,34 @@ async function search(a) {
     if (since) { where.push('startedAt >= ?'); params.push(since); }
     const sql = 'SELECT rowid, state, outcome, startedAt, endedAt, "commit" AS commitAt, dirty, suites, line FROM runs' +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
+    // ONE SUITE'S PART PER RUN (goal/G33.7, box v9: "The desk's interface itself prevents oversized answers"). Found
+    // live: a run of 111 suites held 8,229 characters of them, its row could not come back, and the desk read an older
+    // run. A search naming a suite answers, per run, the run's own facts and that suite's entry alone. One naming none
+    // answers each run with as many suites as fit RUN_LABEL_ROOM (a third of an answer, so several runs come), then
+    // suitesTotal and suitesMore. Either way an entry whose
+    // failure lines alone pass the room keeps the lines that fit and says failuresMore (fitted), so a row always comes.
     const runRows = [];
     for (const r of rowsOf(sql, params)) {
       let suites = [];
       try { suites = JSON.parse(String(r.suites || '[]')); } catch (e) { suites = []; }
-      runRows.push({ probability: 0, pair: { key: String(r.rowid), label: JSON.stringify({ state: r.state, outcome: r.outcome, started: r.startedAt,
-        ended: r.endedAt, commit: r.commitAt || '', dirty: Number(r.dirty) === 1, suites: suites, line: r.line || '' }) } });
+      if (!Array.isArray(suites)) suites = [];
+      const head = { state: r.state, outcome: r.outcome, started: r.startedAt, ended: r.endedAt, commit: r.commitAt || '', dirty: Number(r.dirty) === 1, line: r.line || '' };
+      let label = '';
+      if (suite) {
+        const mine = suites.filter(function (x) { return x && suiteMatches(String(x.path || ''), suite); });
+        const fits = function (list) { return searchBytes(r.rowid, JSON.stringify(Object.assign({}, head, { suites: list }))) <= SEARCH_ROOM; };
+        label = JSON.stringify(Object.assign({}, head, { suites: fits(mine) ? mine : mine.slice(0, 1).map(function (x) { return fitted(x, function (e) { return fits([e]); }); }) }));
+      } else {
+        const kept = [];
+        const fits = function (list) { return searchBytes(r.rowid, JSON.stringify(Object.assign({}, head, { suites: list, suitesTotal: suites.length, suitesMore: true }))) <= RUN_LABEL_ROOM; };
+        for (const x of suites) {
+          if (fits(kept.concat([x]))) { kept.push(x); continue; }
+          if (!kept.length) kept.push(fitted(x, function (e) { return fits([e]); }));
+          break;
+        }
+        label = JSON.stringify(Object.assign({}, head, { suites: kept, suitesTotal: suites.length, suitesMore: kept.length < suites.length }));
+      }
+      runRows.push({ probability: 0, pair: { key: String(r.rowid), label: label } });
     }
     // HOW MANY (goal/G27.14): every match counted, beside the bucket.
     const outRuns = rankedRows(runRows[Symbol.iterator]());

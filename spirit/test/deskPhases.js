@@ -76,16 +76,17 @@ async function open(caller) {
 }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Queue' }, items: [
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // session is seeded before the desk starts, and the desk takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Queue' }, items: [
     { id: 'goal/G100.1', title: 'Code item', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'A decision', blocks: ['goal/G100'] },
     { id: 'goal/G100.3', title: 'One agent alone', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.4', title: 'Goes stale', blocks: ['goal/G100'], code: true },
-  ] }) }, ANDY);
-  // A GOAL A session.set MAKES STARTS IN DESIGN (desk.js session.set), and Go is held back while it is on: end it first,
-  // as deskLimbo does. Found by claude-windows building against e4bd1acb.
+  ] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
+  // A NEW GOAL STARTS IN DESIGN, and Go is held back while it is on: end it first, as deskLimbo does. Found by
+  // claude-windows building against e4bd1acb.
   const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
   for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);

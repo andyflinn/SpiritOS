@@ -67,14 +67,15 @@ const QUESTION = 'wsl: should the keys stay in the owner row, or move to the who
 const PLAIN = 'wsl: the keys stay in the owner row for now.';
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Questions' }, items: [
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Questions' }, items: [
     { id: 'goal/G100.1', title: 'Asked', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'Not asked', blocks: ['goal/G100'] },
     { id: 'goal/G100.3', title: 'Twice', blocks: ['goal/G100'] },
     { id: 'goal/G100.4', title: 'His own', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
+  ] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   // SINCE goal/G18.8 AN AGENT WRITES ONLY WHERE IT HOLDS THE ITEM OR THE TAKE OF HIS LINE: wsl-claude holds the items
   // it asks under; on goal/G100.3 claude-windows answers a line of his it has taken.
   // Since goal/G21.4 an agent holds one task at a time: wsl-claude takes each item as it gets to it (hold), letting the

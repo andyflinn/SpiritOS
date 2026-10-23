@@ -1,9 +1,0 @@
-{
-  "description": "Find items by their chat lines: text, by, since, before; more when cut.",
-  "request": {
-    "text": "",
-    "by": "",
-    "since": "",
-    "before": ""
-  }
-}

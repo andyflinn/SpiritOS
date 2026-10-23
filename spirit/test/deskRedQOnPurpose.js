@@ -131,10 +131,15 @@ async function theServer() {
     });
   };
   try {
-    if (!await start()) { test.fail('the world: the desk did not start'); return; }
     const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6', 'goal/G100.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Red Qs' }, items: items }) }, ANDY);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
+    // goals are seeded before the desk starts, and his make-current brings each up in its turn (goal/G100 first).
+    test.seedDesk(state, [
+      { goal: { id: 'goal/G100', title: 'Red Qs' }, items: items },
+      { goal: { id: 'goal/G101', title: 'Press' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] },
+    ]);
+    if (!await start()) { test.fail('the world: the desk did not start'); return; }
+    await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
 
@@ -242,8 +247,8 @@ async function theServer() {
     else test.fail(OWED + 'an agent\'s "Q:clear" cleared ' + short(await qsOf('goal/G100.6')));
 
     test.subHeading('6. an open red Q holds a press until it is cleared');
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Press' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] }) }, ANDY);
+    // goal/G33.7: the second goal, seeded, made current as its session made it.
+    await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await ask('goal/G101.1', 'Is the shape settled?', WSL);
     const held = await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     await call('chat.add', { id: 'goal/G101.1', text: 'Q1:clear' }, ANDY);

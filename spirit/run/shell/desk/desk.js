@@ -144,7 +144,8 @@ function deskNewestTeamLine() {
 }
 function deskSaveSeen() {
   if (!deskLoaded) return;
-  deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
+  // goal/G33.7: seen is one value per item; the group chat's is goal/G0's, the arrival time of the newest line he saw.
+  if (deskSeen.team) deskAsk('seen.set', { id: DESK_GROUP, at: new Date(deskSeen.team).toISOString() }).catch(function () { /* only a marker */ });
 }
 function deskMarkTeamSeen() {
   var newest = deskNewestTeamLine();
@@ -1194,7 +1195,7 @@ var deskLoaded = false;
 function deskLoad() {
   var seenRaw = '';
   var reads = [
-    deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
+    deskAsk('seen.get', { id: DESK_GROUP }).then(function (r) { seenRaw = r.at ? JSON.stringify({ team: Date.parse(r.at) || 0 }) : ''; }, function () { seenRaw = ''; }),
     deskAskGroup(),
     deskAskBackup(),
   ];

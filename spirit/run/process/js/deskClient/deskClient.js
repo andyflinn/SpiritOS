@@ -22,7 +22,7 @@
 //   - WHO IT IS, name and key, is what its node hands a server it starts (--node, jobs.js): no ask and no file.
 //   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4): the desk sends each changed row of its current goal to the deskClient
 //     of every agent it knows (appServer streamListener), so deskClient asks the desk nothing to learn what changed.
-//     changed, the desk's old nudge (goal/G3.5), is still a verb here, but the desk no longer sends it.
+//     changed, the desk's old nudge (goal/G3.5), went with goal/G33.7.
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
 //     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
 //     its own, never the desk's busy replies, never Andy's direct line to the other agent.
@@ -187,8 +187,6 @@ const waiting = [];
 let said = '';
 // The waits a line or a nudge ends early.
 const wakers = [];
-// nudged: the desk said something changed (deskClient.changed); a wait it lands in asks for a job once.
-let nudged = false;
 // Whether a job may have opened since the last ask of work.open: set by a row the stream brought that holds a phase
 // nobody holds, and by a nudge; a wait asks work.open only then, so a quiet wait asks nothing.
 let jobsMaybe = true;
@@ -208,8 +206,9 @@ function fromKept(name, args) {
   const id = String((args && args.id) || '');
   const row = id ? dataSet.get('deskItems/' + id) : null;
   const whole = id ? dataSet.get('deskItem/' + id) : null;
+  // The facts came with the push (goal/G33.4, box v46); a part only once it was read (took, below).
+  if (name === 'item.get' && row && typeof row.version === 'number') return { item: JSON.stringify(row), version: row.version, change: Number(dataSet.get('desk/change')) || 0 };
   if (!row || !whole) return null;
-  if (name === 'item.get' && typeof whole.version === 'number') return { item: JSON.stringify(row), version: whole.version, change: Number(dataSet.get('desk/change')) || 0 };
   if (name === 'item.box' && typeof whole.box === 'string') return { box: whole.box, version: Number(whole.version) || 0 };
   if (name === 'item.checks' && Array.isArray(whole.checks)) return { checks: whole.checks };
   if (name === 'item.chat' && Array.isArray(whole.chat)) {
@@ -221,9 +220,17 @@ function fromKept(name, args) {
     }
     return { chat: out, chatMore: out.length < whole.chat.length };
   }
+  // goal/G33.7 (the approved list: "deskClient's kept file list (filled to one answer)"): as many as fit one answer, in
+  // the desk's order, and filesMore when some were left out; the push only ever adds to what is kept.
   if (name === 'item.files' && Array.isArray(whole.files) && !whole.filesMore) {
     const under = typeof args.under === 'string' ? args.under : '';
-    return { files: whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; }), filesMore: false };
+    const all = whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; });
+    const out = [];
+    for (const f of all) {
+      if (Buffer.byteLength(JSON.stringify({ files: out.concat([f]), filesMore: true }), 'utf8') > ANSWER_ROOM) break;
+      out.push(f);
+    }
+    return { files: out, filesMore: out.length < all.length };
   }
   return null;
 }
@@ -524,6 +531,9 @@ const server = appServer.serve({
         // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
         const answer = one.answer.then(function (got) {
           if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
+          // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
+          // into spirit.data through the desk's translator, which the push keeps current from now on.
+          if (reading && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(a.name, args, got);
           return got;
         });
         let timer = null;
@@ -597,16 +607,19 @@ const server = appServer.serve({
         return within(woken, deadline - now).then(function () {
           const i = wakers.indexOf(wake);
           if (i !== -1) wakers.splice(i, 1);
-          return wait();
+          return jobOrWait();
         });
       }
-      return Promise.resolve().then(function () {
-        if (waiting.length) return wait();
+      // A JOB WAKES IT TOO (goal/G33.7, found live at G33.7's Go: "the agent was not woken"): a row the stream brought
+      // that may open a job (jobsMaybe) has work.open asked at once, mid-wait as at its start, and a job ends the wait.
+      function jobOrWait() {
+        if (waiting.length || !jobsMaybe) return wait();
         return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
           if (!job) return wait();
           return ending(function () { return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: [job] }; }); });
         });
-      });
+      }
+      return Promise.resolve().then(jobOrWait);
     },
   },
   // SIGNOFF (goal/G27.12). Desk sends the order; deskClient persists signed off and confirms it back to desk, whatever
@@ -633,19 +646,8 @@ const server = appServer.serve({
       return { cleared: true, status: agentState };
     },
   },
-  // THE DESK'S NUDGE (goal/G3.5): something changed there. The desk's alone, by the key setDesk named. It asks
-  // nothing itself: a waiting agent's wait does, at once, and with nobody waiting the next wait will.
-  'changed': {
-    request: {}, reply: { heard: true },
-    handler: function (a, caller) {
-      const to = getSetting.get('desk');
-      if (!caller || !to || !to.value || caller.key !== to.value) throw refused('not-granted');
-      // Since goal/G33.4 the stream brings the lines and the rows a job shows in; a nudge only wakes a wait.
-      nudged = true;
-      wakers.splice(0).forEach(function (wake) { wake(); });
-      return { heard: true };
-    },
-  },
+  // changed, the desk's nudge (goal/G3.5), WENT WITH goal/G33.7 (the approved verb list: "nothing sends it since the
+  // push"): the stream's own rows wake a wait.
   // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first), the text ranks each record by
   // its verb and outcome (goal/G29.21, probabilityStringObjectMatch), newest first among equals; the cut and `more`
   // are the probability bucket's. The record is bounded (historyMax), so every row is weighed.
@@ -672,7 +674,7 @@ const server = appServer.serve({
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'js', 'desk', 'data.js'), onRow: streamed },
-  dependencies: ['deskClient.changed', 'deskClient.streamListener'], codes: {
+  dependencies: ['deskClient.streamListener'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
   // The chat and box gate (goal/G27.6, goal/G27.12): undeclared, both reached the agent as handler-failed.

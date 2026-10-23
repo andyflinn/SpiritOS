@@ -54,12 +54,12 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); t
 function ok(r) { return r && r.status === 200; }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Takes' }, items: [
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Takes' }, items: [
     { id: 'goal/G100.1', title: 'Taken plainly, then phased', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'Taken plainly, then left', blocks: ['goal/G100'], code: true },
-  ] }) }, ANDY);
+  ] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
   for (const id of ['goal/G100.1', 'goal/G100.2']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);

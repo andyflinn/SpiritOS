@@ -152,11 +152,10 @@ async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const port = node.address().port;
   const nodeUrl = 'http://127.0.0.1:' + port;
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Asked' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
-  await up('desk');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Asked' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, OWNER);
-  if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
+  if (!await up('desk')) { test.fail(OWED + 'the test desk did not start'); return; }
   let kid = startClient(nodeUrl);
 
   test.subHeading('2. its verbs');
@@ -189,7 +188,8 @@ async function main() {
   } else test.fail(OWED + 'the ask answered ' + yes.status + ' ' + JSON.stringify(yes.body).slice(0, 200) + '; posts ' + JSON.stringify(posts));
   if (familyAsks.some(function (x) { return x.to === DESK_KEY && x.family === 'desk'; })) test.check('deskClient read the desk family interface from the desk\'s node (api {family: desk} over peerPost) and called through it');
   else test.fail('OWED by goal/G33.4: deskClient never asked the desk node for the desk family interface: ' + JSON.stringify(familyAsks));
-  const no = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'goal/G101' }) }, OWNER);
+  // A goal the desk does not hold (goal/G33.7: the seeded world's plugin goals are numbered after goal/G100).
+  const no = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'goal/G999' }) }, OWNER);
   const refusedBody = no.body || null;
   if (no.status === 200 && refusedBody && refusedBody.ok === false && refusedBody.code === 'no-such-item') test.check('the desk\'s refusal comes back as its answer: no-such-item as the body');
   else test.fail(OWED + 'a refused ask answered ' + no.status + ' ' + JSON.stringify(no.body).slice(0, 200));

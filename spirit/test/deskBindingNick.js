@@ -110,6 +110,9 @@ async function theServer() {
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
   const andysNode = streamNode();
   await new Promise(function (r) { andysNode.server.listen(0, '127.0.0.1', r); });
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world; since goal/G33.7 (session.set went) it is
+  // seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Binding' }, items: ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; }) });
   const kid = spawn(process.execPath, [SERVER, JSON.stringify({ boxHoldMs: HOLD_MS }), '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + andysNode.server.address().port + '/' }),
@@ -137,9 +140,6 @@ async function theServer() {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
-    const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
-    // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Binding' }, items: items }) }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
 

@@ -23,6 +23,7 @@
 //      reads desk.json and hands the defaults over as the node would, with the file's path replaced by its own.
 //   2. WHEN. The file is written whole on his go, go-all and done, and on session.set (his open point, taken as
 //      yes unless he said no); a chat line, a box write, a claim or a press of another kind leave it as it was.
+//      Since goal/G33.7 session.set is gone: the switch to a goal (his make-current) writes it in its place.
 //   3. WHAT. One JSON object: `change`, the desk's change number at that moment (since goal/G33.4, with
 //      `changes` gone, what was written after it carries a later number on the desk's stream); `goal`, the current goal's id;
 //      `items`, every item of the current goal INCLUDING the goal's own row and the closed ones, each with its facts
@@ -73,10 +74,12 @@ function fileArgName(defaults) {
   return Object.keys(defaults).filter(function (k) { return /currentGoal\.json$/.test(String(defaults[k])); })[0] || '';
 }
 
-// One desk server, with the arguments given; its door, its state.
-async function server(name, args) {
+// One desk server, with the arguments given; its door, its state. goal/G33.7 (session.set went): its world, seeded
+// before it starts, which it takes in at start.
+async function server(name, args, seed) {
   const state = path.join(scratch, name, 'state');
   fs.mkdirSync(state, { recursive: true });
+  if (seed) test.seedDesk(state, seed);
   const pipe = win ? appClient.pipePathFor(path.join(scratch, name), 'desk', 'win32', 'process') : path.join(scratch, name, 'desk.sock');
   const client = appClient.createAppClient({ rootDir: path.join(scratch, name) });
   client.register('desk', pipe);
@@ -103,9 +106,8 @@ async function main() {
   const repoBytesBefore = bytesOf(REPO_FILE);
 
   test.subHeading('2. a server with no value writes no file');
-  const quiet = await server('quiet', {});
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await quiet.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Quiet' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
+  const quiet = await server('quiet', {}, { goal: { id: 'goal/G100', title: 'Quiet' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] });
   await quiet.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await quiet.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await sleep(200);
@@ -113,24 +115,25 @@ async function main() {
   if (!quietFiles.length && bytesOf(REPO_FILE) === repoBytesBefore) test.check('spawned with {}: no currentGoal.json in its folders, and the repo file untouched');
   else test.fail(OWED + 'spawned with {} the server wrote ' + JSON.stringify(quietFiles) + '; repo file changed: ' + (bytesOf(REPO_FILE) !== repoBytesBefore));
 
-  test.subHeading('3. written on Go, go-all, Done and session.set; left alone by a line');
+  test.subHeading('3. written on Go, go-all, Done and the switch to a goal; left alone by a line');
   // SINCE goal/G4.21 the desk writes the file into its own state folder, never the checkout, and goalShare.js
   // commits it from there (goalShare.js holds that half). goalPath names its place in the repo; set, sharing is on.
   const args = Object.assign({}, defaults);
   if (argName) args[argName] = 'spirit/run/process/js/desk/currentGoal.json';
-  const d = await server('written', args);
-  const file = path.join(d.state, 'currentGoal.json');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Written' }, items: [
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: seeded, goal/G101 and a
+  // second goal after it (so goal/G102 is current at start), and his make-current switches to goal/G101.
+  const d = await server('written', args, [{ goal: { id: 'goal/G101', title: 'Written' }, items: [
     { id: 'goal/G101.1', title: 'First', blocks: ['goal/G101'] },
     { id: 'goal/G101.2', title: 'Second', blocks: ['goal/G101'] },
     { id: 'goal/G101.3', title: 'Closed early', blocks: ['goal/G101'] },
-  ] }) }, ANDY);
-  if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
+  ] }, { goal: { id: 'goal/G102', title: 'Before the switch' }, items: [{ id: 'goal/G102.1', title: 'Elsewhere', blocks: ['goal/G102'] }] }]);
+  const file = path.join(d.state, 'currentGoal.json');
+  const set = await d.call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
+  if (set.status !== 200) { test.fail(OWED + 'make-current goal/G101 answered ' + JSON.stringify(set.body)); return; }
   await sleep(200);
   const afterSet = readJson(file);
-  if (afterSet && afterSet.goal === 'goal/G101' && afterSet.change === set.body.change) test.check('session.set writes it: goal goal/G101, change ' + set.body.change + ' (his open point, taken as yes)');
-  else test.fail(OWED + 'after session.set the file is ' + JSON.stringify(afterSet).slice(0, 160) + ' (session.set answered change ' + (set.body || {}).change + ')');
+  if (afterSet && afterSet.goal === 'goal/G101' && afterSet.change === set.body.change) test.check('the switch to goal/G101 writes it: goal goal/G101, change ' + set.body.change);
+  else test.fail(OWED + 'after make-current the file is ' + JSON.stringify(afterSet).slice(0, 160) + ' (make-current answered change ' + (set.body || {}).change + ')');
   await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
   await d.call('box.write', { id: 'goal/G101.1', text: 'THE-BOX-OF-FIRST', version: 0 }, CW);
   await d.call('chat.add', { id: 'goal/G101.1', text: 'a line under first', by: 'claude-windows' }, CW);
@@ -189,7 +192,7 @@ async function main() {
   if (later.status === 200 && (later.body || {}).change === doc.change + 1 && stillDoc.change === doc.change && seen) test.check('the line written after the file is change ' + (doc.change + 1) + ', the file still says ' + doc.change + ', and item.chat has the line');
   else test.fail(OWED + 'after the file\'s change ' + doc.change + ' the line was change ' + (later.body || {}).change + '; the file says ' + stillDoc.change + '; item.chat has it: ' + seen);
   const bytes = bytesOf(file);
-  await d.call('items.find', { text: 'first', by: '', since: '', before: '' }, CW);
+  await d.call('items.search', { text: 'first', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, CW);
   await d.call('item.get', { id: 'goal/G101.1' }, CW);
   await d.call('item.chat', { id: 'goal/G101.1' }, CW);
   await sleep(100);

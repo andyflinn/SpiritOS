@@ -19,8 +19,9 @@
 //      refused handler-failed. A request stays exact: a key more or less is refused no-such-argument, as today.
 //      A reply prototype {} therefore takes any object.
 //   2. deskClient.desk declares its reply {} and hands back the desk's answer as it is, an object: no json string.
-//   3. A desk read near the desk's room comes back whole through deskClient.desk: a changes read from the start of a
-//      long desk is answered, not refused app-answer-too-large.
+//   3. A desk read near the desk's room comes back whole through deskClient.desk: an item.chat read of a long chat
+//      is answered, not refused app-answer-too-large (goal/G33.7: changes went with goal/G33.4, item.chat is the read
+//      that fills the room).
 //   4. deskAgentEar prints the desk's answer as JSON and exits 0, a big read too.
 // NOT ASSERTED, the builder's: how deskClient.desk passes a desk refusal on (deskAgentEar must still exit 1 on one);
 // deskClientAsk.js, which reads today's {json} shape, moves with the change.
@@ -141,10 +142,10 @@ const node = http.createServer(function (req, res) {
     const hash = 'H' + Date.now() + Math.random();
     let asked = null;
     try { asked = packet.decode(b.text); } catch (e) { asked = null; }
-    const desk = (asked && asked.body && asked.body.desk) || {};
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, AGENT).then(function (r) {
+    // goal/G33.7: the family ask {api: {family}} and the call itself, as a far apiDoor answers them (testSupport).
+    test.peerAnswer(client, asked && asked.body, AGENT).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
       streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
@@ -177,12 +178,12 @@ async function theDeskPath() {
   fs.mkdirSync(clientState, { recursive: true });
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const port = node.address().port;
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Big' }, items: [{ id: 'goal/G100.1', title: 'Long chat', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Big' }, items: [{ id: 'b/G1.1', title: 'Long chat', blocks: ['b/G1'] }] }) }, OWNER);
   // A desk with more records than one answer holds: forty lines of three hundred characters.
-  for (let i = 0; i < 40; i++) await call('desk', 'chat.add', { id: 'b/G1.1', text: 'line ' + i + ' "quoted" ' + 'x'.repeat(290) }, AGENT);
+  for (let i = 0; i < 40; i++) await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'line ' + i + ' "quoted" ' + 'x'.repeat(290) }, OWNER);
   kids.push(spawn(process.execPath, [CLIENT, '{}', '--pipe', clientPipe, '--state', clientState], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + port + '/' }),
@@ -194,25 +195,25 @@ async function theDeskPath() {
   if (shape === '{}') test.check('deskClient.desk declares its reply {}');
   else test.fail(OWED + 'deskClient.desk declares its reply ' + shape);
 
-  const one = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'b/G1.1' }) }, OWNER);
+  const one = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'goal/G100.1' }) }, OWNER);
   const b1 = one.body || {};
   if (one.status === 200 && typeof b1.item === 'string' && b1.json === undefined) test.check('item.get comes back as the desk\'s answer itself, {item, version, change}, no json string');
   else test.fail(OWED + 'deskClient.desk item.get answered ' + one.status + ' with keys ' + JSON.stringify(Object.keys(b1)));
 
-  const big = await call('deskClient', 'desk', { name: 'changes', json: JSON.stringify({ n: 0, line: 0 }) }, OWNER);
+  const big = await call('deskClient', 'desk', { name: 'item.chat', json: JSON.stringify({ id: 'goal/G100.1' }) }, OWNER);
   const bb = big.body || {};
   const bigBytes = Buffer.byteLength(JSON.stringify(bb), 'utf8');
-  if (big.status === 200 && Array.isArray(bb.records) && bb.records.length > 0 && !isError(bb, 'app-answer-too-large')) test.check('a changes read from the start comes back whole (' + bigBytes + ' bytes, ' + bb.records.length + ' records)');
-  else test.fail(OWED + 'a changes read from the start answered ' + big.status + ' ' + JSON.stringify(bb).slice(0, 200));
+  if (big.status === 200 && Array.isArray(bb.chat) && bb.chat.length > 0 && bb.chatMore === true && !isError(bb, 'app-answer-too-large')) test.check('an item.chat read of the long chat comes back whole (' + bigBytes + ' bytes, ' + bb.chat.length + ' lines, more)');
+  else test.fail(OWED + 'an item.chat read of the long chat answered ' + big.status + ' ' + JSON.stringify(bb).slice(0, 200));
 
-  const e1 = await ear(port, 'item.get', JSON.stringify({ id: 'b/G1.1' }));
+  const e1 = await ear(port, 'item.get', JSON.stringify({ id: 'goal/G100.1' }));
   let p1 = null; try { p1 = JSON.parse(e1.out); } catch (e) { p1 = null; }
   if (e1.code === 0 && p1 && typeof p1.item === 'string') test.check('deskAgentEar item.get prints the desk\'s answer as JSON and exits 0');
   else test.fail(OWED + 'deskAgentEar item.get exited ' + e1.code + ': ' + (e1.out || e1.err).trim().slice(0, 200));
-  const e2 = await ear(port, 'changes', JSON.stringify({ n: 0, line: 0 }));
+  const e2 = await ear(port, 'item.chat', JSON.stringify({ id: 'goal/G100.1' }));
   let p2 = null; try { p2 = JSON.parse(e2.out); } catch (e) { p2 = null; }
-  if (e2.code === 0 && p2 && Array.isArray(p2.records) && p2.records.length > 0) test.check('deskAgentEar changes from the start prints the big answer whole and exits 0');
-  else test.fail(OWED + 'deskAgentEar changes exited ' + e2.code + ': ' + (e2.out || e2.err).trim().slice(0, 200));
+  if (e2.code === 0 && p2 && Array.isArray(p2.chat) && p2.chat.length > 0) test.check('deskAgentEar item.chat of the long chat prints the big answer whole and exits 0');
+  else test.fail(OWED + 'deskAgentEar item.chat exited ' + e2.code + ': ' + (e2.out || e2.err).trim().slice(0, 200));
 }
 
 async function main() {

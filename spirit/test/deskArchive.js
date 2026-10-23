@@ -17,6 +17,10 @@
 //   3  The state is rebuilt from the records, so this holds for sessions written before the fix: a desk restarted on
 //      the same desk.db shows the left-out item closed.
 //
+// goal/G33.7: session.set went ("its callers use goal.add and item.add"). What a session's leaving out did is what
+// test.deskSession does for it now: the left-out item is deleted, which closes it and leaves it out, nothing erased
+// (desk.js item.delete, goal/G9.7). The world is seeded before the desk starts. Points 1 to 3 are asserted as before.
+//
 // LEFT OPEN, not asserted: what a later session that names a closed left-out item again does to it (reopen it, or
 // keep it closed until his Reopen); point 2 of the box, the List searching lines, whose shape is still argued (it may
 // reuse items.find).
@@ -56,13 +60,11 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return; } catch (e) { /* not yet */ } }
   };
-  const session = function (ids, caller) {
-    return call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; }) }) }, caller || CW);
-  };
+  const spec = function (ids) { return { goal: { id: 'goal/G100', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; }) }; };
+  const session = function (ids) { return test.deskSession(call, spec(ids), ANDY); };
   try {
+    test.seedDesk(state, spec(['goal/G100.1', 'goal/G100.2', 'goal/G100.3']));
     await start();
-    // goal/G29.21: an agent's session creates no goal, so Andy writes the world; cw's later session brings no new item.
-    await session(['goal/G100.1', 'goal/G100.2', 'goal/G100.3'], ANDY);
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
@@ -72,7 +74,7 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
 
     test.subHeading('1. left out of the next session, it is closed, not deleted');
     const set = await session(['goal/G100.1', 'goal/G100.3']);
-    if (set.status !== 200) test.fail('the second session was not taken: ' + short(set.body));
+    if (!set.ok) test.fail('the world: the item was not left out: ' + set.why);
     const two = await factsOf('goal/G100.2');
     if (two && two.status === 'closed') test.check('goal/G100.2, left out, is still on the desk and closed');
     else test.fail(OWED + 'goal/G100.2 after the session that left it out: ' + short(two));

@@ -88,12 +88,17 @@ async function deskHalf() {
   const root = path.join(scratch, 'desk');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
+  // goals are seeded before the desk starts, and his make-current brings each up in its turn (goal/G100 first).
+  test.seedDesk(path.join(root, 'state'), [
+    { goal: { id: 'goal/G100', title: 'Empties' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] },
+    { goal: { id: 'goal/G101', title: 'Status' }, items: [{ id: 'goal/G101.1', title: 'Code', blocks: ['goal/G101'], code: true }] },
+  ]);
   const d = server(DESK, 'desk', { env: { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/' } }, root);
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     await sleep(500);
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Empties' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) }, ANDY);
+    await d.call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     // goal/G33.4: `changes` is gone; the desk's goal.emptied write is read off the row it published.
     const emptied = async function () {
@@ -116,8 +121,7 @@ async function deskHalf() {
     else test.fail(OWED + 'the emptied goal reads buttons ' + short(g.buttons) + ', status ' + short(g.status));
     // The same for an item: an agent's verify pass sets the status word. (deskVerify's own words, verify.pass and
     // verify.reject, went with goal/G33.3: the desk reads the verifier itself.)
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Status' }, items: [{ id: 'goal/G101.1', title: 'Code', blocks: ['goal/G101'], code: true }] }) }, ANDY);
+    await d.call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
     const WSLX = { key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };

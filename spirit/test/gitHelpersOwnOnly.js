@@ -226,17 +226,21 @@ test.startTest('goal/G19.6: the git helpers touch only what they put there thems
     const pipe = process.platform === 'win32' ? appClient.pipePathFor(d, 'desk', 'win32', 'process') : path.join(d, 'door.sock');
     const client = appClient.createAppClient({ rootDir: d });
     client.register('desk', pipe);
+    // The world (goal/G33.7: session.set went), seeded before the desk starts; his press on the current goal writes the
+    // goal file.
+    test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Same' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
     const kid = spawn(process.execPath, [DESK, JSON.stringify({ goalRepo: scratch, goalPath: 'currentGoal.json' }), '--pipe', pipe, '--state', state], {
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + port + '/api/spirit' }),
     });
     try {
       for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-      await client.ask({ desk: { 'session.set': { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Same' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }] }) } } }, ANDY).catch(function () { return null; });
+      // His close of the current goal's item is one of the presses that write it (desk.js writeGoalFile).
+      await client.ask({ desk: { press: { id: 'goal/G100.1', what: 'close' } } }, ANDY).catch(function () { return null; });
       const file = path.join(state, 'currentGoal.json');
       for (let i = 0; i < 30 && !fs.existsSync(file); i++) await sleep(100);
       let doc = null;
       try { doc = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { doc = null; }
-      if (doc && doc.goal === 'g/G1') test.check('session.set wrote the goal file (goal g/G1)');
+      if (doc && doc.goal === 'goal/G100') test.check('his press on the current goal wrote the goal file (goal goal/G100)');
       else test.fail('the world: no goal file at ' + file);
       if (doc && !('writtenAt' in doc)) test.check('it holds no writtenAt: ' + short(Object.keys(doc)));
       else test.fail(OWED + 'the goal file holds ' + short(doc && Object.keys(doc)));

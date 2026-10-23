@@ -173,14 +173,16 @@ async function main() {
   await new Promise(function (r) { andysNode.server.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + agentsNode.server.address().port;
   const andysUrl = 'http://127.0.0.1:' + andysNode.server.address().port;
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
+  // it is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Heard' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: andysUrl + '/' }),
   }));
   await up('desk');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Heard' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
-  if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
+  const set = await call('desk', 'item.get', { id: 'goal/G100.2' }, ANDY);
+  if (set.status !== 200) { test.fail(OWED + 'the test desk took no seeded world: ' + JSON.stringify(set.body)); return; }
   // What the desk holds before deskClient ever runs: a first run must not hand it over.
   await andySays('old chat, before the first run');
   let kid = startClient(nodeUrl);

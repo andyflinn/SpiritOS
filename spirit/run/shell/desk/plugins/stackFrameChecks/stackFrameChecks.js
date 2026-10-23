@@ -82,18 +82,23 @@
   }
   // THE DOOR LIST (goal/G22.3), the main list: each door's gate, endpoint (with its paths), suites, last verdict and the
   // item that asked for it, and one button, Open, for its dialog.
+  // A BOUNDED SEARCH SINCE goal/G33.7 (Andy's approved verb list: "the Stacks door list (a door search with a more flag,
+  // and a read per door)"): the doors that fit one answer, ranked by the text in its field; more says there are others.
   function readDoors() {
     if (!ctx) return;
-    Promise.resolve(ctx.ask('stackFrameChecks.doors', {})).then(function (r) {
-      doors = (r && Array.isArray(r.doors)) ? r.doors : [];
+    var box = document.getElementById('sfc-door-text');
+    var text = box && typeof box.value === 'string' ? box.value : '';
+    Promise.resolve(ctx.ask('stackFrameChecks.doors.search', { text: text })).then(function (r) {
+      doors = ((r && Array.isArray(r.items)) ? r.items : []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
       var el = document.getElementById('sfc-doors');
       if (!el) return;
-      el.innerHTML = doors.length ? '<table class="jobs-table"><tbody>' + doors.map(function (d) {
+      var more = r && r.more ? '<div class="job-manifest-note">More doors than one answer holds: search to find the others.</div>' : '';
+      el.innerHTML = (doors.length ? '<table class="jobs-table"><tbody>' + doors.map(function (d) {
         var paths = Array.isArray(d.paths) && d.paths.length ? ' <span class="job-manifest-note">on ' + esc(d.paths.join(', ')) + '</span>' : '';
         var suites = Array.isArray(d.suites) && d.suites.length ? esc(d.suites.join(', ')) : '<span class="job-start-error">no suites measured yet</span>';
         return '<tr data-door="' + esc(d.id) + '"><td>' + esc(d.gate) + '</td><td>' + esc(d.endpoint) + paths + '</td><td>' + suites + '</td><td>' +
           lastHtml(d.last) + '</td><td>' + esc(d.item) + '</td><td><button type="button" data-open="' + esc(d.id) + '" style="margin-right:1em">Open</button></td></tr>';
-      }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No doors yet.</div>';
+      }).join('') + '</tbody></table>' : '<div class="job-manifest-note">' + (text ? 'No door matches.' : 'No doors yet.') + '</div>') + more;
     }, function () { /* the list stays as it was */ });
   }
   // THE DOOR'S DIALOG (goal/G27.2, D1): the shell's, opened through the face's ctx; the list is read again when it closes.
@@ -144,7 +149,8 @@
           '&lt;endpoint&gt;"); open one to edit it, run its check alone, read the paths around its gate, or remove it.</div></div>' +
         '<div id="sfc-form" class="start-job-form card" style="margin-top:1em">' + formHtml() + '</div>' +
         '<div id="sfc-note" class="job-start-error" style="margin-top:1em"></div>' +
-        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">The doors</div><div id="sfc-doors"></div></div>' +
+        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">The doors</div>' +
+          '<input id="sfc-door-text" type="search" placeholder="Search the doors" style="margin-bottom:0.5em"><div id="sfc-doors"></div></div>' +
         '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Its items</div><div id="sfc-items"></div></div>' +
         // ITS GOAL'S CHAT, BELOW THE LIST (goal/G22.3). Andy, 2026-10-13: "in Stack: the chat is missing, below the
         // inputs, after what will be the list". The desk face draws it, Team's chat taking this goal (ctx.chat).
@@ -156,6 +162,7 @@
           var t = e && e.target;
           var F = fields();
           var f = t && t.getAttribute ? t.getAttribute('data-field') : null;
+          if (t && t.id === 'sfc-door-text') { readDoors(); return; }
           if (F && F.FIELDS.indexOf(f) !== -1) F.check(PRE, 'sfc-make');
         });
         container.addEventListener('click', function (e) {

@@ -179,14 +179,14 @@ test.startTest('goal/G4.20: Desk for Andy');
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item) || {}; } catch (e) { return {}; } };
   const checksOf = async function (id) { const r = await call('item.checks', { id: id }, ANDY); return (r.body || {}).checks || []; };
   const codeOf = function (r) { return (r.body || {}).code || ''; };
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(state, { goal: { id: 'goal/G101', title: 'Round' }, items: [
+    { id: 'goal/G101.1', title: 'Asks', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'Claimed', blocks: ['goal/G101'] },
+    { id: 'goal/G101.3', title: 'Hidden', blocks: ['goal/G101'] }, { id: 'goal/G101.4', title: 'Boxed', blocks: ['goal/G101'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Round' }, items: [
-      { id: 'goal/G101.1', title: 'Asks', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'Claimed', blocks: ['goal/G101'] },
-      { id: 'goal/G101.3', title: 'Hidden', blocks: ['goal/G101'] }, { id: 'goal/G101.4', title: 'Boxed', blocks: ['goal/G101'] }] }) }, ANDY);
-    if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + short(set.body)); return; }
+    if (!(await factsOf('goal/G101.4')).id) { test.fail(OWED + 'the seeded world is not on the desk'); return; }
 
     test.subHeading('10-11. the waiting list: G and Q checks, asks, and Close alone counts nothing');
     const design = await factsOf('goal/G101.1');

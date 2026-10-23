@@ -52,10 +52,11 @@ async function limboLines(id) {
 }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Limbo' }, items: [
-    { id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'], code: true }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'], code: true }] }) }, ANDY);
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Limbo' }, items: [
+    { id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'], code: true }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'], code: true }] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const go = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await call('agent.state', { word: 'working' }, CW);

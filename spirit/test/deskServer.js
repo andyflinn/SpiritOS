@@ -20,8 +20,8 @@
 //     both; the server never works out its own folder).
 //   (log.add, log.search and pending.get went with goal/G33.4, Andy: "log.add, log.search and pending.get: delete
 //   them."; the old lines table they wrote and read was dumped at the migration. T2 holds that they are gone.)
-//   state.get  {} -> {json};  state.set {json} -> {saved: true}
-//   seen.get   {} -> {json};  seen.set  {json} -> {saved: true}
+//   (state.get and state.set went with goal/G33.7, nothing called them; seen became one value per item.)
+//   seen.get   {id} -> {at};  seen.set  {id, at} -> {change}
 //   (voice.add, a line in <state>/voice.jsonl, left with goal/G2.1)
 //   desk.<verb> POST /api/spirit {verb: 'desk.<verb>', ...args} -> appClient.ask's
 //              status and body, through verbTable's door (its in-process
@@ -67,7 +67,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // goal/G21.4 added item.release {id}: an agent lets go of the one task it holds (its own suite is deskChatFlowOneTask.js).
 // Since goal/G22.3: the desk mounts every plugin in process/js/desk/plugins/js/ and serves their verbs beside its own;
 // the stackFrameChecks plugin brings stackFrameChecks.make {gate, endpoint} (its own suite is deskPluginsGg.js), and
-// since its list of doors (goal/G22.3) stackFrameChecks.doors, the list read back; since Andy's "RUN the show"
+// since its list of doors (goal/G22.3) the list read back, since goal/G33.7 as stackFrameChecks.doors.search (bounded, more) and stackFrameChecks.door (one door); since Andy's "RUN the show"
 // (goal/G22.3, 2026-10-13) make takes {gate, endpoint, paths, suites}, and update, remove, run and runState join; stop
 // went when the runs became deskVerify's (Andy, 2026-10-13: "every run here should report to deskVerify.").
 // SINCE goal/G30.4 the AGENTS family is gone: every server carries its family folder's FS verbs instead (FS.loadFile,
@@ -76,7 +76,8 @@ const SCRIPT = path.join(DIR, 'desk.js');
 const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAnnotations', 'FS.loadFile', 'FS.loadJsonValue', 'FS.saveFile', 'FS.saveJsonValue', 'FS.search', 'FS.statFile'];
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
-const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'work.open'];
+// goal/G33.7: items.find, rule.history, session.set, state.get and state.set went; every table has its search.
+const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'agents.search', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.box.search', 'item.chat', 'item.checks', 'item.checks.search', 'item.claims.search', 'item.delete', 'item.files', 'item.files.add', 'item.files.search', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.suites.search', 'item.take', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'signoff', 'stackFrameChecks.door', 'stackFrameChecks.doors.search', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update', 'unblock', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');
@@ -155,15 +156,18 @@ function freePort() {
   if (!namers.length && fs.existsSync(SCRIPT)) test.check('no code outside process/js/desk names desk.db');
   else test.fail(OWED + (fs.existsSync(SCRIPT) ? 'desk.db named in ' + namers.join(', ') : 'no process/js/desk/desk.js'));
 
-  // State, seen, voice.
-  const s1 = up ? await call('state.set', { json: JSON.stringify({ decided: { 'desk/G1.3': 'go' } }) }) : {};
-  const sg = up ? await call('state.get', {}) : {};
-  const n1 = up ? await call('seen.set', { json: JSON.stringify({ team: 5 }) }) : {};
-  const ng = up ? await call('seen.get', {}) : {};
-  if (s1.saved === true && n1.saved === true && sg.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } }) && ng.json === JSON.stringify({ team: 5 })) {
-    test.check('state and seen are saved and read back as the JSON text given');
+  // Seen, voice. goal/G33.7: state.get and state.set went (nothing called them), and seen is one value per item: the
+  // arrival time of the newest thing he looked at under it, the group chat's on goal/G0.
+  const SEEN = '2026-10-23T05:00:00.000Z';
+  const sGone = up ? [await call('state.set', { json: '{}' }), await call('state.get', {})] : [];
+  // A write needs its writer (apiAuth/G1.13): his own seen, written as the owner.
+  const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskServerTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+  const n1 = up ? await client.ask({ desk: { 'seen.set': { id: 'goal/G0', at: SEEN } } }, ANDY).then(function (r) { return r.body || {}; }) : {};
+  const ng = up ? await call('seen.get', { id: 'goal/G0' }) : {};
+  if (sGone.length && sGone.every(function (r) { return r.code === 'no-such-verb'; }) && typeof n1.change === 'number' && ng.at === SEEN) {
+    test.check('state.get and state.set are no-such-verb; seen of goal/G0 is saved and read back as the time given');
   } else {
-    test.fail(OWED + 'state/seen answered ' + JSON.stringify([s1, sg, n1, ng]));
+    test.fail(OWED + 'state/seen answered ' + JSON.stringify(sGone.concat([n1, ng])));
   }
   // voice.add IS GONE (goal/G2.1 note 8): it appended {text, day} to <state>/voice.jsonl, the hack Andy named;
   // the brain reads his lines through the desk api now, and the vault's own tool keeps his corpus.
@@ -171,18 +175,18 @@ function freePort() {
   if (v.code === 'no-such-verb' && !fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('voice.add is no-such-verb, and no voice.jsonl is written');
   else test.fail('OWED by goal/G2.1: voice.add answered ' + JSON.stringify(v) + ', file present ' + fs.existsSync(path.join(state, 'voice.jsonl')));
 
-  // Tightened after the mutation run: a state that is not JSON is refused too.
-  const badState = up ? await call('state.set', { json: 'not json' }) : {};
-  if (badState.ok === false) test.check('a state that is not JSON is refused, by an error');
-  else test.fail(OWED + 'a non-JSON state answered ' + JSON.stringify(badState));
+  // Tightened after the mutation run: a seen of an item the desk does not hold is refused too.
+  const badSeen = up ? await client.ask({ desk: { 'seen.set': { id: 'goal/G999', at: SEEN } } }, ANDY).then(function (r) { return r.body || {}; }) : {};
+  if (badSeen.ok === false) test.check('a seen of no item is refused, by an error');
+  else test.fail(OWED + 'a seen of no item answered ' + JSON.stringify(badSeen));
 
   // It survives its own restart: the node brings it back, desk.db holds.
   await stop(kid);
   kid = start();
   const again = kid ? await waitFor(function () { return ask('api').then(function (r) { return r.body && r.body.desk && r.body.desk.ok !== false; }); }) : false;
-  const sAgain = again ? await call('state.get', {}) : {};
-  if (again && sAgain.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('after a restart its state is still there');
-  else test.fail(OWED + 'after a restart: search ' + again + ', state ' + JSON.stringify(sAgain));
+  const sAgain = again ? await call('seen.get', { id: 'goal/G0' }) : {};
+  if (again && sAgain.at === SEEN) test.check('after a restart its seen is still there');
+  else test.fail(OWED + 'after a restart: search ' + again + ', seen ' + JSON.stringify(sAgain));
 
   // ── T4 ──────────────────────────────────────────────────────────────
   test.subHeading('T4: a known member\'s packet {desk: ...} reaches it');
@@ -200,18 +204,18 @@ function freePort() {
     log: function () {},
   });
   // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
-  const ask4 = packet.encode('api', { desk: { 'state.get': {} } }).text;
+  const ask4 = packet.encode('api', { desk: { 'seen.get': { id: 'goal/G0' } } }).text;
   if (door) await door({ text: ask4, envelope: arrivals.envelopeOf(ask4), fromKey: 'MEMBER', hash: 'H4' });
   await waitFor(function () { return posted.length > 0; }, 4000);
   const r4 = posted[0] ? packet.decode(posted[0].text) : null;
-  if (r4 && r4.re === 'H4' && r4.body && r4.body.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('the member\'s packet reached the desk server; its state came back as an answer to it');
+  if (r4 && r4.re === 'H4' && r4.body && r4.body.at === SEEN) test.check('the member\'s packet reached the desk server; its seen came back as an answer to it');
   else test.fail(OWED + 'the member got ' + JSON.stringify(r4));
 
   // ── T3 ──────────────────────────────────────────────────────────────
   test.subHeading('T3: desk.<verb> on the loopback door reaches it');
   const flat = require('../run/js/verbTable.js').createVerbTable().door(client);
-  const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', {}) : null;
-  if (shared && shared.status === 200 && shared.body && shared.body.json === JSON.stringify({ team: 5 })) test.check('the flat door /api/spirit runs (door.call(desk.seen.get)) reached the desk server');
+  const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', { id: 'goal/G0' }) : null;
+  if (shared && shared.status === 200 && shared.body && shared.body.at === SEEN) test.check('the flat door /api/spirit runs (door.call(desk.seen.get)) reached the desk server');
   else test.fail(OWED + 'door.call ' + (flat && flat.call ? 'answered ' + JSON.stringify(shared) : 'is missing'));
   await stop(kid);
 
@@ -237,14 +241,14 @@ function freePort() {
   };
   let whole = null;
   await waitFor(function () {
-    return flatAsk({ verb: 'desk.state.get' }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.json === 'string'; });
+    return flatAsk({ verb: 'desk.seen.get', id: 'goal/G0' }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.at === 'string'; });
   }, 15000);
   const listed = await flatAsk({ verb: 'api' }).catch(function () { return null; });
-  if (whole && whole.status === 200 && whole.body && typeof whole.body.json === 'string' &&
+  if (whole && whole.status === 200 && whole.body && typeof whole.body.at === 'string' &&
       listed && listed.body && listed.body.desk && verbsOf(listed.body.desk).join(',') === VERBS.join(',') && familyNamesVerbs(listed.body.desk)) {
-    test.check('a planted node started its desk server; the verb api listed its verbs and desk.state.get answered');
+    test.check('a planted node started its desk server; the verb api listed its verbs and desk.seen.get answered');
   } else {
-    test.fail(OWED + 'desk.state.get answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
+    test.fail(OWED + 'desk.seen.get answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
   }
   if (fs.existsSync(path.join(home, 'relay-state', 'process', 'desk', 'desk.db'))) test.check('its desk.db is in the planted node\'s relay-state/process/desk');
   else test.fail(OWED + 'the planted node has no relay-state/process/desk/desk.db');

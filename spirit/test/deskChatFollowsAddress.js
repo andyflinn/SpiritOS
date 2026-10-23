@@ -111,10 +111,10 @@ async function takenByOther(id, text) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Posts' }, items: [{ id: 'goal/G100.1', title: 'a code item', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'a plain item', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
-  await up('desk');
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Posts' }, items: [{ id: 'goal/G100.1', title: 'a code item', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'a plain item', blocks: ['goal/G100'] }] }) }, ANDY);
-  if (set.status !== 200) { test.fail('the world: the test desk took no session: ' + short(set.body)); return; }
+  if (!await up('desk')) { test.fail('the world: the test desk did not start'); return; }
   await call('desk', 'profile.set', { agent: SELF_KEY, name: 'claude-windows', nick: 'cw' }, ANDY);
   await call('desk', 'profile.set', { agent: OTHER_KEY, name: 'wsl-claude', nick: 'wsl' }, ANDY);
   await call('desk', 'profile.set', { agent: THIRD_KEY, name: 'levant-local', nick: 'lev' }, ANDY);

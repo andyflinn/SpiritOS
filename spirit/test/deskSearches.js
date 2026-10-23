@@ -3,7 +3,7 @@
 // spirit/test/deskSearches.js
 // goal/G29.21: every Desk-related search and list on the probability modules, and a goal's chats searched at once. Red
 // on today's tree; claude-windows writes it and builds it (one agent). The item's box (v2):
-//   - desk: walked() (pending.get, work.open, rule.history) and item.chat cut by bytes through the probability bucket;
+//   - desk: walked() (pending.get, work.open, rule.history; the first and the last since gone, goal/G33.4 and goal/G33.7) and item.chat cut by bytes through the probability bucket;
 //     rules.search ranks rules by title and text; chat.search on a goal takes scope: goal (its own chat only) or items
 //     (the goal's chat and every one of its items' chats, ranked together); each line found carries the item it was said
 //     in, and the goal dialog draws it as a link to that item; block.targets in goal order through the probability bucket.
@@ -55,6 +55,8 @@ async function main() {
   if (/ddAsk\('chat\.search', \{[^}]*scope:/.test(details) && /data-open-item/.test(details)) test.check('the dialog asks chat.search with a scope and draws a found line\'s item as a link');
   else test.fail(OWED + 'deskDetails neither asks a scope nor links a found line to its item');
 
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'A goal' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   let tree = null;
   for (let i = 0; i < 60 && !tree; i++) {
@@ -64,10 +66,11 @@ async function main() {
   try {
     test.subHeading('1. chat.search takes a scope');
     const want = { request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false } };
-    if (tree && JSON.stringify(tree['chat.search'] || null) === JSON.stringify(want)) test.check('chat.search {id, text, by, since, before, scope}');
+    // The shape, its keys in any order (goal/G33.7: the searches are made by one component, which puts text first).
+    const sorted = function (x) { return x && typeof x === 'object' && !Array.isArray(x) ? Object.keys(x).sort().reduce(function (o, k) { o[k] = sorted(x[k]); return o; }, {}) : Array.isArray(x) ? x.map(sorted) : x; };
+    if (tree && JSON.stringify(sorted(tree['chat.search'] || null)) === JSON.stringify(sorted(want))) test.check('chat.search {id, text, by, since, before, scope}');
     else test.fail(OWED + 'chat.search is ' + short(tree && tree['chat.search']));
 
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'A goal' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) });
     await call('chat.add', { id: 'goal/G100', text: 'the harbour plan for the goal' });
     await sleep(15);
     await call('chat.add', { id: 'goal/G100.1', text: 'a harbour wall in item one' });

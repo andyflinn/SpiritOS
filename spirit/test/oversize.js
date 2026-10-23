@@ -45,22 +45,23 @@ const refusals = [];
 let kid = null;
 
 (async function () {
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went; since goal/G33.4 an id is goal/G<n>.<m>).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Goal' }, items: [{ id: 'goal/G100.1', title: 'Item', blocks: ['goal/G100'] }] });
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Goal' }, items: [{ id: 'o/G1.1', title: 'Item', blocks: ['o/G1'] }] }) }, ANDY);
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude holds o/G1.1.
-  await call('item.take', { id: 'o/G1.1' }, WSL);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude holds goal/G100.1.
+  await call('item.take', { id: 'goal/G100.1' }, WSL);
 
   // ── THE EDGE: the largest accepted comes back whole, one more is refused ──
   test.subHeading('the edge: the largest chat line and box come back whole; one character more is refused');
   for (const kind of ['chat', 'box']) {
     const write = function (n, version) {
       const text = 'y'.repeat(n);
-      return kind === 'chat' ? call('chat.add', { id: 'o/G1.1', text: text }, WSL)
-        : call('box.write', { id: 'o/G1.1', text: text, version: version }, WSL);
+      return kind === 'chat' ? call('chat.add', { id: 'goal/G100.1', text: text }, WSL)
+        : call('box.write', { id: 'goal/G100.1', text: text, version: version }, WSL);
     };
-    const version = async function () { return ((await call('item.get', { id: 'o/G1.1' })).body || {}).version || 0; };
+    const version = async function () { return ((await call('item.get', { id: 'goal/G100.1' })).body || {}).version || 0; };
     // The largest n the server takes, by halving (a refusal stores nothing, so probing is safe).
     let lo = 1;
     let hi = appClient.ANSWER_MAX;
@@ -71,7 +72,7 @@ let kid = null;
     }
     const at = await write(lo, await version());
     const over = await write(lo + 1, await version());
-    const back = kind === 'chat' ? await call('item.chat', { id: 'o/G1.1' }) : await call('item.box', { id: 'o/G1.1' });
+    const back = kind === 'chat' ? await call('item.chat', { id: 'goal/G100.1' }) : await call('item.box', { id: 'goal/G100.1' });
     const whole = kind === 'chat'
       ? ((back.body || {}).chat || []).some(function (l) { return String(l.text).length === lo; })
       : String((back.body || {}).box || '').length === lo;
@@ -84,36 +85,35 @@ let kid = null;
   // ── EVERY OTHER WRITE THAT STORES TEXT ──────────────────────────────────
   test.subHeading('every write that stores text refuses what could not come back, and keeps nothing');
   const writes = [
-    ['log.add', { json: JSON.stringify({ key: 'big1', at: '2026-09-30T00:00:00Z', text: BIG }) }],
-    // goal/G29.21: an agent's session creates no goal, so his session carries the oversized title.
-    ['session.set', { json: JSON.stringify({ goal: { id: 'o/G2', title: BIG }, items: [] }) }, ANDY],
-    ['check.add', { id: 'o/G1.1', kind: 'C', words: BIG, test: '' }, WSL],
-    ['item.rename', { id: 'o/G1.1', title: BIG }, ANDY],
-    ['item.status', { id: 'o/G1.1', word: BIG }, WSL],
-    ['state.set', { json: JSON.stringify({ big: BIG }) }],
-    ['seen.set', { json: JSON.stringify({ big: BIG }) }],
+    // log.add went with goal/G33.4, session.set with goal/G33.7: a goal is made by goal.add, the owner's.
+    ['goal.add', { title: BIG }, ANDY],
+    ['check.add', { id: 'goal/G100.1', kind: 'C', words: BIG, test: '' }, WSL],
+    ['item.rename', { id: 'goal/G100.1', title: BIG }, ANDY],
+    ['item.status', { id: 'goal/G100.1', word: BIG }, WSL],
+    // state.set went with goal/G33.7; seen is one value per item (seen.set {id, at}).
+    ['seen.set', { id: 'goal/G100.1', at: BIG }, ANDY],
   ];
   for (const w of writes) {
     const r = await call(w[0], w[1], w[2]);
     if (tooLarge(r)) { test.check(w[0] + ' refuses it, ' + r.body.code); refusals.push(r); }
     else test.fail(OWED + w[0] + ' with an oversized value answered ' + said(r));
   }
-  const facts = JSON.parse(((await call('item.get', { id: 'o/G1.1' })).body || {}).item || '{}');
-  const checks = ((await call('item.checks', { id: 'o/G1.1' })).body || {}).checks || [];
-  const goals = (((await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false })).body || {}).items || []).map(function (i) { return i.key; });
-  const st = await call('state.get', {});
+  const facts = JSON.parse(((await call('item.get', { id: 'goal/G100.1' })).body || {}).item || '{}');
+  const checks = ((await call('item.checks', { id: 'goal/G100.1' })).body || {}).checks || [];
+  const goals = (((await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false })).body || {}).items || []).map(function (i) { return String(i.label); });
+  const st = await call('seen.get', { id: 'goal/G100.1' }, ANDY);
   const kept = [];
   if (facts.title !== 'Item') kept.push('the title');
   if (String(facts.status || '').length > 100) kept.push('the status word');
   if (checks.length) kept.push('the check');
-  if (goals.indexOf('o/G2') !== -1) kept.push('the goal');
-  if (st.status !== 200 || String((st.body || {}).json || '').indexOf(BIG) !== -1) kept.push('the state');
+  if (goals.some(function (l) { return l.indexOf(BIG) !== -1; })) kept.push('the goal');
+  if (st.status !== 200 || String((st.body || {}).at || '').indexOf(BIG) !== -1) kept.push('the seen time');
   if (!kept.length) test.check('none of the refused values was kept, and every read still answers');
   else test.fail(OWED + 'kept or broken after a refusal: ' + kept.join(', '));
 
   // ── A REQUEST TOO LARGE FOR ANY SERVER, AND AN ANSWER TOO LARGE TO RETURN ──
   test.subHeading('a request too large for any server, and an answer too large to return');
-  const huge = await call('chat.add', { id: 'o/G1.1', text: 'z'.repeat(limits.BODY_MAX + 1) }, WSL);
+  const huge = await call('chat.add', { id: 'goal/G100.1', text: 'z'.repeat(limits.BODY_MAX + 1) }, WSL);
   if (tooLarge(huge) || (huge.status === 0 && /too large/i.test(String(huge.error)))) test.check('a request over BODY_MAX is refused by name');
   else test.fail(OWED + 'a request over BODY_MAX answered ' + said(huge) + ' ' + (huge.error || ''));
   if (huge.body) refusals.push(huge);

@@ -62,13 +62,16 @@ async function currentGoal() {
 }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
   // TWO GOALS, the second written last, so it is the current one by today's only rule.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'First' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Second' }, items: [{ id: 'goal/G101.1', title: 'Two', blocks: ['goal/G101'] }] }) }, ANDY);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // two sessions are seeded before the desk starts, and the desk takes them in at start, the last one current.
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G100', title: 'First' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] },
+    { goal: { id: 'goal/G101', title: 'Second' }, items: [{ id: 'goal/G101.1', title: 'Two', blocks: ['goal/G101'] }] },
+  ]);
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   const opened = await currentGoal();
-  if (opened === 'goal/G101') test.check('the goal written last is the current one, as session.set leaves it');
+  if (opened === 'goal/G101') test.check('the goal written last is the current one, as the seeded sessions leave it');
   else { test.fail('the world: the current goal reads ' + short(opened) + ', expected goal/G101'); return; }
 
   test.subHeading('1. the older goal offers make-current, the current one does not');
@@ -136,15 +139,21 @@ async function currentGoal() {
   const twoPipe = process.platform === 'win32' ? appClient.pipePathFor(two, 'desk', 'win32', 'process') : path.join(two, 'door.sock');
   const twoClient = appClient.createAppClient({ rootDir: two });
   twoClient.register('desk', twoPipe);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded (session.set went).
+  test.seedDesk(twoState, [
+    { goal: { id: 'goal/G102', title: 'First' }, items: [{ id: 'goal/G102.1', title: 'One', blocks: ['goal/G102'] }] },
+    { goal: { id: 'goal/G103', title: 'Second' }, items: [{ id: 'goal/G103.1', title: 'Two', blocks: ['goal/G103'] }] },
+  ]);
   const kid2 = spawn(process.execPath, [SERVER, JSON.stringify(shared), '--pipe', twoPipe, '--state', twoState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await twoClient.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
   const ask = function (verb, args, caller) { const q = {}; q[verb] = args; return twoClient.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const goalFile = path.join(twoState, 'currentGoal.json');
   const readFile = function () { try { return JSON.parse(fs.readFileSync(goalFile, 'utf8')); } catch (e) { return null; } };
   try {
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'goal/G102', title: 'First' }, items: [{ id: 'goal/G102.1', title: 'One', blocks: ['goal/G102'] }] }) }, ANDY);
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'goal/G103', title: 'Second' }, items: [{ id: 'goal/G103.1', title: 'Two', blocks: ['goal/G103'] }] }) }, ANDY);
+    // The seeded sessions were taken in at start, before any write, so the file comes with his first switch; two of them
+    // leave goal/G103 current again, the goal written last.
+    await ask('press', { id: 'goal/G102', what: 'make-current' }, ANDY);
+    await ask('press', { id: 'goal/G103', what: 'make-current' }, ANDY);
     await sleep(300);
     const before = readFile();
     if (before && before.goal === 'goal/G103') test.check('the file names the goal written last, goal/G103');

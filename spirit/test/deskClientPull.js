@@ -148,12 +148,12 @@ async function main() {
 
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Pulled' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'], code: true }] });
   // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-pull-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Pulled' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'], code: true }] }) }, OWNER);
   // goal/G33.4 (box v37): another agent's line reaches this agent on the item this agent holds. So the other agent wrote
   // the item's red (a phase holder posts under it at any time, goal/G27.10), and this agent holds the item now: the
   // other's commit lines land under the item this agent holds.

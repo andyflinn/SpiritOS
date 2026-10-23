@@ -16,6 +16,9 @@
 // WHAT IS ASSERTED: an item new in a split session blocks exactly the parent, whether the session named the parent,
 // named nothing, or named the implicit ones too; the parent keeps what it blocked; what the parent blocks is not
 // told about the new item.
+// SINCE goal/G33.7 session.set is gone (the approved verb list: "its callers use goal.add and item.add"), so a split is
+// item.add naming the parent in blocks, one new item each; it names one item, so the session's other two ways (nothing
+// named, the implicit ones named too) have no form left. What G9.4 holds is asserted of the split as it is now made.
 
 const fs = require('fs');
 const os = require('os');
@@ -61,24 +64,22 @@ const BASE = [
 ];
 
 (async function () {
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
+  // starts, and the desk takes it in at start.
+  test.seedDesk(state, { goal: { id: G, title: 'Split' }, items: BASE });
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, items: BASE }) }, ANDY);
   const p0 = await facts(P);
   if (same(p0.blocking, [G, Q])) test.check('the world: ' + P + ' blocks the goal and ' + Q);
   else { test.fail('the world: ' + P + ' blocks ' + short(p0.blocking)); return; }
 
-  // THE SPLIT: three new items, sent the three ways a session can send them.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const res = await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, split: [P], items: BASE.concat([
-    { id: 'goal/G100.3', title: 'New, the parent named', blocks: [P] },
-    { id: 'goal/G100.4', title: 'New, nothing named' },
-    { id: 'goal/G100.5', title: 'New, the implicit ones named too', blocks: [P, G, Q] },
-  ]) }) }, ANDY);
+  // THE SPLIT: three new items, each an item.add naming the parent (goal/G33.7).
+  const res = [];
+  for (const title of ['New, first', 'New, second', 'New, third']) res.push(await call('item.add', { goal: G, title: title, blocks: P }, ANDY));
+  const ids = res.map(function (r) { return String((r.body || {}).id || ''); });
   const marked = await facts(P);
   // goal/G33.4: no sub-goals; a split adds its blocking relation and leaves the parent an item.
-  if (res.status === 200 && marked.id === P && marked.subGoal === undefined) test.check('the split lands: ' + P + ' stays an item');
-  else { test.fail('the split did not land: ' + res.status + ' ' + short(res.body) + '; ' + P + ' ' + short(marked)); return; }
+  if (ids.join() === 'goal/G100.3,goal/G100.4,goal/G100.5' && marked.id === P && marked.subGoal === undefined) test.check('the split lands: goal/G100.3 to .5 are added and ' + P + ' stays an item');
+  else { test.fail('the split did not land: ' + short(res.map(function (r) { return r.body; })) + '; ' + P + ' ' + short(marked)); return; }
 
   test.subHeading('1. each new item blocks the parent, and nothing else');
   for (const id of ['goal/G100.3', 'goal/G100.4', 'goal/G100.5']) {

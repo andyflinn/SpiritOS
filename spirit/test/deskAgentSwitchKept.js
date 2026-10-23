@@ -34,7 +34,7 @@ const AGENT = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'de
 const NODE_NAME = 'ollama agent node';
 const MODEL = 'gpt-test';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: MODEL, answerTokens: 100, bytesPerToken: 4 };
-const READS = ['AGENTS', 'item.get', 'item.box', 'item.chat', 'items.search', 'items.find', 'chat.search', 'rule.get', 'profile.get'];
+const READS = ['AGENTS', 'item.get', 'item.box', 'item.chat', 'items.search', 'chat.search', 'rule.get', 'profile.get'];
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

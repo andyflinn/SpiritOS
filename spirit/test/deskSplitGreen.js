@@ -10,7 +10,7 @@
 //
 // THE SHAPES (the box's):
 //   1  a session that adds a new item blocking an existing one marks nothing; session.set takes split: [id], and only
-//      the item it names is marked sub-goal.
+//      the item it names is marked sub-goal. (Since goal/G33.7 session.set is gone: an add with blocks is the split.)
 //   2  the split clears that item's code mark, and a later session cannot mark it code again; the mark stays.
 //   3  an item is design-green when it has no open red question: facts.green.
 //   4  a box.write with an OPEN section is refused.
@@ -60,12 +60,9 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.body.item); } catch (e) { return {}; } }
 async function boxOf(id) { const r = await call('item.box', { id: id }, ANDY); return r.body || {}; }
 function ok(r) { return r && r.status === 200; }
-function session(gid, items, split) {
-  const s = { goal: { id: gid, title: gid }, items: items };
-  if (split) s.split = split;
-  // goal/G29.21: an agent's session creates no goal and adds no item without his words, so Andy writes the sessions.
-  return call('session.set', { json: JSON.stringify(s) }, ANDY);
-}
+// goal/G33.7: session.set went. The goals are seeded before the desk starts; an item added since is an item.add (one
+// naming the item it blocks is a split), and each goal is made current where its session stood.
+function add(gid, title, blocks) { return call('item.add', { goal: gid, title: title, blocks: blocks }, ANDY); }
 async function ask(id, words) {
   await call('check.add', { id: id, kind: 'Q', words: words, test: '' }, CW);
   const checks = ((await call('item.checks', { id: id }, ANDY)).body || {}).checks || [];
@@ -75,47 +72,43 @@ async function ask(id, words) {
 function answer(id, check) { return call('check.set', { id: id, check: check, state: 'passed' }, ANDY); }
 
 (async function () {
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G100', title: 'goal/G100' }, items: [{ id: 'goal/G100.1', title: 'Gets a blocker in front', blocks: ['goal/G100'] },
+      { id: 'goal/G100.5', title: 'He splits this one', blocks: ['goal/G100'], code: true }] },
+    { goal: { id: 'goal/G101', title: 'goal/G101' }, items: [{ id: 'goal/G101.1', title: 'Asks him', blocks: ['goal/G101'] },
+      { id: 'goal/G101.2', title: 'Asks nothing', blocks: ['goal/G101'] },
+      { id: 'goal/G101.3', title: 'Asked later', blocks: ['goal/G101'] }] },
+    { goal: { id: 'goal/G102', title: 'goal/G102' }, items: [{ id: 'goal/G102.1', title: 'Code, Go before design restarts', blocks: ['goal/G102'], code: true }] }]);
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
 
   // goal/G33.4 REMOVED THE SUB-GOAL (Andy, in its box: "No sub-goals and no goal tree: an item never becomes a goal ...;
   // the sub-goal mechanism is removed."). Sections 1 and 2 hold that now: a split marks nothing and keeps the code mark.
   test.subHeading('1. a new blocker marks nothing, and nor does a split (goal/G33.4: no sub-goals)');
-  await session('goal/G100', [{ id: 'goal/G100.1', title: 'Gets a blocker in front', blocks: ['goal/G100'] },
-    { id: 'goal/G100.5', title: 'He splits this one', blocks: ['goal/G100'], code: true }]);
   const before = await facts('goal/G100.5');
-  await session('goal/G100', [{ id: 'goal/G100.1', title: 'Gets a blocker in front', blocks: ['goal/G100'] },
-    { id: 'goal/G100.5', title: 'He splits this one', blocks: ['goal/G100'], code: true },
-    { id: 'goal/G100.2', title: 'A blocker added, no split', blocks: ['goal/G100.1'] }]);
+  const blocker = String(((await add('goal/G100', 'A blocker added, no split', 'goal/G100.1')).body || {}).id || '');
   const front = await facts('goal/G100.1');
-  if (front.subGoal === undefined && (front.blocked || []).indexOf('goal/G100.2') !== -1) test.check('goal/G100.1 got a new blocker without a split: its facts carry no sub-goal mark');
+  if (blocker && front.subGoal === undefined && (front.blocked || []).indexOf(blocker) !== -1) test.check('goal/G100.1 got a new blocker (' + blocker + ') without a split: its facts carry no sub-goal mark');
   else test.fail(OWED + 'a blocker added without a split marked the item: ' + short({ subGoal: front.subGoal, blocked: front.blocked }));
 
-  await session('goal/G100', [{ id: 'goal/G100.1', title: 'Gets a blocker in front', blocks: ['goal/G100'] },
-    { id: 'goal/G100.5', title: 'He splits this one', blocks: ['goal/G100'], code: true },
-    { id: 'goal/G100.2', title: 'A blocker added, no split', blocks: ['goal/G100.1'] },
-    { id: 'goal/G100.6', title: 'Split part one', blocks: ['goal/G100.5'] },
-    { id: 'goal/G100.7', title: 'Split part two', blocks: ['goal/G100.5'] }], ['goal/G100.5']);
+  await add('goal/G100', 'Split part one', 'goal/G100.5');
+  await add('goal/G100', 'Split part two', 'goal/G100.5');
   const split = await facts('goal/G100.5');
   const stillPlain = await facts('goal/G100.1');
-  if (split.subGoal === undefined && stillPlain.subGoal === undefined && (split.blocked || []).length === 2) test.check('split: [goal/G100.5] marks nothing: goal/G100.5 stays an item, blocked by its two parts');
+  if (split.subGoal === undefined && stillPlain.subGoal === undefined && (split.blocked || []).length === 2) test.check('the split of goal/G100.5 marks nothing: it stays an item, blocked by its two parts');
   else test.fail(OWED + 'after split: [goal/G100.5]: ' + short({ 'goal/G100.5': split.subGoal, 'goal/G100.1': stillPlain.subGoal }));
 
   test.subHeading('2. the split keeps the code mark (goal/G33.4)');
   if (before.code === true && split.code === true) test.check('goal/G100.5 was marked code before the split and still is after it');
   else test.fail(OWED + 'code mark across the split: ' + short({ before: before.code, after: split.code }));
-  const again = await session('goal/G100', [{ id: 'goal/G100.1', title: 'Gets a blocker in front', blocks: ['goal/G100'] },
-    { id: 'goal/G100.5', title: 'He splits this one', blocks: ['goal/G100'], code: true },
-    { id: 'goal/G100.2', title: 'A blocker added, no split', blocks: ['goal/G100.1'] },
-    { id: 'goal/G100.6', title: 'Split part one', blocks: ['goal/G100.5'] },
-    { id: 'goal/G100.7', title: 'Split part two', blocks: ['goal/G100.5'] }]);
+  // A later write on it (session.set went with goal/G33.7: his rename stands for the later session).
+  const again = await call('item.rename', { id: 'goal/G100.5', title: 'He split this one' }, ANDY);
   const later = await facts('goal/G100.5');
-  if (later.subGoal === undefined && later.code === true) test.check('a later session leaves goal/G100.5 an item and code (session answered ' + again.status + ')');
-  else test.fail(OWED + 'a later session on the split item: ' + short({ subGoal: later.subGoal, code: later.code, status: again.status }));
+  if (later.subGoal === undefined && later.code === true) test.check('a later write leaves goal/G100.5 an item and code (rename answered ' + again.status + ')');
+  else test.fail(OWED + 'a later write on the split item: ' + short({ subGoal: later.subGoal, code: later.code, status: again.status }));
 
   test.subHeading('3. design-green: an item with an open red question is not green');
-  await session('goal/G101', [{ id: 'goal/G101.1', title: 'Asks him', blocks: ['goal/G101'] },
-    { id: 'goal/G101.2', title: 'Asks nothing', blocks: ['goal/G101'] },
-    { id: 'goal/G101.3', title: 'Asked later', blocks: ['goal/G101'] }]);
+  await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
   const q1 = await ask('goal/G101.1', 'an open point, as a red question');
   const asking = await facts('goal/G101.1');
   const quiet = await facts('goal/G101.2');
@@ -160,7 +153,7 @@ function answer(id, check) { return call('check.set', { id: id, check: check, st
   else test.fail(OWED + 'go-all over a non-green goal: ' + short({ refused: allRefused.status, siblingGo: sibling.go, afterAnswer: allOk.status, siblingAfter: sibling2.go }));
 
   test.subHeading('7. no phase is taken while design is on');
-  await session('goal/G102', [{ id: 'goal/G102.1', title: 'Code, Go before design restarts', blocks: ['goal/G102'], code: true }]);
+  await call('press', { id: 'goal/G102', what: 'make-current' }, ANDY);
   await call('press', { id: 'goal/G102', what: 'end-design' }, ANDY);
   const goP = await call('press', { id: 'goal/G102.1', what: 'go' }, ANDY);
   const restarted = await call('press', { id: 'goal/G102', what: 'start-design' }, ANDY);

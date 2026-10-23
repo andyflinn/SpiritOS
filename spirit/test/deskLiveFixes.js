@@ -75,6 +75,15 @@ async function serverHalf() {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
+  // goals are seeded before the desk starts, goal/G100 made current first, goal/G101 where its session stood.
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G100', title: 'Live' }, items: [{ id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Core', blocks: ['goal/G100'] }] },
+    { goal: { id: 'goal/G101', title: 'Search' }, items: [
+      { id: 'goal/G101.1', title: 'Apples and pears', blocks: ['goal/G101'] },
+      { id: 'goal/G101.2', title: 'zebra crossing', blocks: ['goal/G101'] },
+      { id: 'goal/G101.3', title: 'Plums', blocks: ['goal/G101'] },
+    ] }]);
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
   const call = function (verb, a, caller) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
@@ -83,8 +92,7 @@ async function serverHalf() {
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Live' }, items: [{ id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Core', blocks: ['goal/G100'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
@@ -126,12 +134,7 @@ async function serverHalf() {
     test.subHeading('4. the desk searches rank by probability');
     const psm = require('../run/js/probabilityStringMatch.js').probabilityStringMatch;
     const psom = require('../run/js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Search' }, items: [
-      { id: 'goal/G101.1', title: 'Apples and pears', blocks: ['goal/G101'] },
-      { id: 'goal/G101.2', title: 'zebra crossing', blocks: ['goal/G101'] },
-      { id: 'goal/G101.3', title: 'Plums', blocks: ['goal/G101'] },
-    ] }) }, ANDY);
+    await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     // Since goal/G21.4 an agent holds one task at a time: claude-windows lets goal/G100.2 go before it takes goal/G101.3.
     await call('item.release', { id: 'goal/G100.2' }, CW);

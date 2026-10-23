@@ -147,9 +147,9 @@ async function main() {
   await new Promise(function (r) { agentsNode.server.listen(0, '127.0.0.1', r); });
   const andysUrl = 'http://127.0.0.1:' + andysNode.server.address().port;
   const agentsUrl = 'http://127.0.0.1:' + agentsNode.server.address().port;
+  // The world (goal/G33.7: session.set went): seeded before the desk starts, which takes it in at start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   if (!await startDesk(andysUrl)) { test.fail('the world: the desk did not start'); return; }
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
-  if (set.status !== 200) { test.fail('the world: no session: ' + short(set.body)); return; }
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50 }), '--pipe', clientPipe, '--state', clientState,
     '--node', JSON.stringify({ name: 'wsl-claude', publicKey: B_KEY })], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
@@ -181,15 +181,56 @@ async function main() {
   if ((quiet === null || !quiet.length) && quietAsks.length === 0) test.check('a whole quiet wait of its agent: it ended with nothing, and no ask reached the desk');
   else test.fail(OWED + 'over a quiet wait deskClient asked the desk ' + short(quietAsks) + ' (the wait ended with ' + short(quiet) + ')');
 
-  test.subHeading('4. fingertips: reads of the current goal are answered from what the push brought');
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Others', blocks: ['goal/G100'] }] }) }, ANDY);
+  // goal/G33.4 (box v46). Andy: "maybe a new deskClient connect should start a stream-push of the goal, and the items, the
+  // box and other parts will come when needed and stay". So the push brings the goal and its items' facts; an item's
+  // box and chat are each read from the desk once, when first needed, and then answered from what deskClient keeps,
+  // which the push keeps current.
+  test.subHeading('4. fingertips: the facts come with the push; a part is read once when needed, then kept and kept current');
+  const added = await test.deskSession(function (v, a, c) { return call('desk', v, a, c); }, { goal: { id: 'goal/G100', title: 'Pushed' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Others', blocks: ['goal/G100'] }] }, ANDY);
+  if (!added.ok) { test.fail('the world: ' + added.why); return; }
+  await call('desk', 'box.write', { id: 'goal/G100.2', text: 'THE FIRST BOX', version: 0 }, ANDY);
   await sleep(1500);
-  const readFrom = asks.length;
-  const reads = [];
-  for (const v of ['item.get', 'item.box', 'item.chat']) reads.push(await call('deskClient', 'desk', { name: v, json: JSON.stringify({ id: 'goal/G100.2' }) }, B_OWNER));
-  const readAsks = asks.slice(readFrom);
-  if (reads.every(function (r) { return r.status === 200; }) && readAsks.length === 0) test.check('item.get, item.box and item.chat of a current-goal item it does not hold: answered, no desk ask');
-  else test.fail(OWED + 'the reads answered ' + short(reads.map(function (r) { return r.status; })) + ' and asked the desk ' + short(readAsks));
+  const readOf = function (v) { return call('deskClient', 'desk', { name: v, json: JSON.stringify({ id: 'goal/G100.2' }) }, B_OWNER); };
+  const getFrom = asks.length;
+  const facts = await readOf('item.get');
+  const getAsks = asks.slice(getFrom);
+  if (facts.status === 200 && getAsks.length === 0) test.check('item.get of a current-goal item it does not hold: the facts the push brought, no desk ask');
+  else test.fail(OWED + 'item.get answered ' + facts.status + ' and asked the desk ' + short(getAsks));
+  const firstFrom = asks.length;
+  const box1 = await readOf('item.box');
+  const chat1 = await readOf('item.chat');
+  const firstAsks = asks.slice(firstFrom);
+  const againFrom = asks.length;
+  const box2 = await readOf('item.box');
+  const chat2 = await readOf('item.chat');
+  const againAsks = asks.slice(againFrom);
+  if (box1.status === 200 && (box1.body || {}).box === 'THE FIRST BOX' && chat1.status === 200 && firstAsks.join() === 'item.box,item.chat' && (box2.body || {}).box === 'THE FIRST BOX' && chat2.status === 200 && againAsks.length === 0) test.check('its box and chat were each read from the desk once, when first needed, and answered from what it keeps after');
+  else test.fail(OWED + 'the first reads asked the desk ' + short(firstAsks) + ' (box ' + short(box1.body) + '), the second ' + short(againAsks) + ' (box ' + short(box2.body) + ')');
+  await call('desk', 'box.write', { id: 'goal/G100.2', text: 'THE SECOND BOX', version: 1 }, ANDY);
+  await sleep(1500);
+  const pushedFrom = asks.length;
+  const box3 = await readOf('item.box');
+  if ((box3.body || {}).box === 'THE SECOND BOX' && asks.length === pushedFrom) test.check('his box write since came with the push: the kept box reads the new text, no desk ask');
+  else test.fail(OWED + 'after his box write the read answered ' + short(box3.body) + ' and asked ' + short(asks.slice(pushedFrom)));
+
+  // goal/G33.7 (box v9, found live at G33.7's Go: "the agent was not woken"): a Go, a job offered to an agent, is meant
+  // for that agent and wakes it like a line addressed to it.
+  test.subHeading('4b. his Go on a code item wakes the waiting agent with the job');
+  const jobItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'A job' }, ANDY);
+  const jobId = String((jobItem.body || {}).id || '');
+  // A new item is a code item already; code is a toggle, so it is not pressed here.
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await waitFor(15000);
+  const jobWait = waitFor(15000);
+  await sleep(1000);
+  const goAt = Date.now();
+  const go = await call('desk', 'press', { id: jobId, what: 'go' }, ANDY);
+  const jobLines = await jobWait;
+  const jobMs = Date.now() - goAt;
+  if (go.status === 200 && jobLines && jobLines.some(function (l) { return String(l).indexOf('JOB ' + jobId) === 0; }) && jobMs < 8000) test.check('his Go on ' + jobId + ' ended the agent\'s wait with its job, ' + jobMs + ' ms after');
+  else test.fail(OWED + 'his Go on ' + short(jobId) + ' answered ' + go.status + ' ' + short(go.body) + '; the wait ended with ' + short(jobLines) + ' after ' + jobMs + ' ms');
+  // A third agent takes the red phase, so no job is open to this one and its next waits start quiet again.
+  await call('desk', 'phase.take', { id: jobId, phase: 'red' }, { key: 'MCowBQYDK2VwAyEAdeskClientPushTestAgentCCCCCCCCCCCCCCCCCCCC=', label: 'third' });
 
   test.subHeading('5. no needless waking: chat between Andy and another agent on its item does not end the wait');
   await call('desk', 'item.take', { id: 'goal/G100.2' }, A_AT_DESK);
@@ -241,8 +282,14 @@ async function main() {
 
   test.subHeading('2. after the desk restarts, the same');
   await stopDesk();
+  const restartFrom = toB.length;
   if (!await startDesk(andysUrl)) { test.fail('the world: the desk did not start again'); return; }
   await sleep(1500);
+  // goal/G33.4 (box v46): what a desk start pushes is the goal and its items' facts, never their parts.
+  const restartRows = toB.slice(restartFrom);
+  const parts = restartRows.filter(function (o) { return o && o.table; });
+  if (restartRows.some(function (o) { return o && o.verb === 'goal.whole'; }) && !parts.length) test.check('the desk\'s start pushed the current goal\'s facts (' + restartRows.length + ' rows) and no box, chat, check or file row');
+  else test.fail(OWED + 'the desk\'s start pushed ' + restartRows.length + ' rows, ' + parts.length + ' of them parts: ' + short(parts.map(function (o) { return o.table + ' ' + o.id; })));
   const waiting2 = waitFor(15000);
   await sleep(500);
   await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'andy push two' }, ANDY);

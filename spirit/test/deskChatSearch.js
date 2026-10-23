@@ -126,12 +126,17 @@ async function main() {
   // The desk runs on the pretend node too, so what it publishes is seen (goal/G33.4).
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // An ordinary goal with an item, whose chat must never be answered (goal/G33.7: session.set went; seeded before the
+  // desk starts, which takes it in at start).
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   const tree = await up('desk') || {};
+  // The shape compared whatever the order of its keys (goal/G33.7: chat.search is made by tableSearch, text first).
+  const sorted = function (o) { return o && typeof o === 'object' && !Array.isArray(o) ? Object.keys(o).sort().reduce(function (x, k) { x[k] = sorted(o[k]); return x; }, {}) : Array.isArray(o) ? o.map(sorted) : o; };
 
   test.subHeading('1. the verb');
-  if (JSON.stringify(tree['chat.search'] || null) !== JSON.stringify({ request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
+  if (JSON.stringify(sorted(tree['chat.search'] || null)) !== JSON.stringify(sorted({ request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false } }))) {
     test.fail(OWED + 'the desk server answered chat.search ' + JSON.stringify(tree['chat.search'] || null) + ', where {id, text, by, since, before} -> {items, more} is owed');
     ['2. the chat lines of the item named and nothing else', '3. each line as {by, at, text}, the newest first', '4. the four filters, alone and together', '5. a read',
       '6. brief: cut to fit, and whole through deskClient', '7. narrowing brings the next older lines'].forEach(function (what) { test.fail(OWED + what + ': the desk server has no verb chat.search'); });
@@ -139,10 +144,7 @@ async function main() {
   }
   test.check('chat.search {id, text, by, since, before} -> {items: [{key, label}], more}');
 
-  // An ordinary goal with an item, whose chat must never be answered; then four lines in the group chat, each at
-  // its own moment.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
+  // Four lines in the group chat, each at its own moment.
   await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:

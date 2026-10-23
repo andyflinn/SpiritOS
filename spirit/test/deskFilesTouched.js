@@ -74,10 +74,11 @@ async function openGrants(id) {
 }
 
 async function server() {
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; it is
+  // seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Files' }, items: [
+    { id: 'goal/G100.1', title: 'Touches files', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Touches no core', blocks: ['goal/G100'] }] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Files' }, items: [
-    { id: 'goal/G100.1', title: 'Touches files', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Touches no core', blocks: ['goal/G100'] }] }) }, ANDY);
   if ((await facts('goal/G100.1')).id === 'goal/G100.1') test.check('the world: two items');
   else { test.fail('the world did not land'); return; }
 

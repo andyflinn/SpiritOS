@@ -22,7 +22,7 @@
 //      holding desk.js) and goalPath (the file's path in that repo; default spirit/run/process/js/desk/currentGoal.json).
 //      goalFile goes: the desk never writes into the checkout again. A server spawned with {} (every suite) shares
 //      nothing, as today it writes nothing.
-//   3  On go, go-all, done, reopen, close and session.set the desk writes the goal document to <its --state
+//   3  On go, go-all, done, reopen and close (session.set went with goal/G33.7) the desk writes the goal document to <its --state
 //      folder>/currentGoal.json and asks its node (SPIRIT_CALLBACK_URL) jobs.create {command: node, args: [<path of
 //      goalShare.js>, '--repo', goalRepo, '--path', goalPath, '--from', <that state file>]}.
 //
@@ -168,10 +168,12 @@ async function theDesk(root, repo) {
   });
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const callback = 'http://localhost:' + node.address().port + '/api/spirit';
-  const run = async function (values, label) {
+  // goal/G33.7: session.set went; a desk's world is seeded before it starts (seed), which it takes in at start.
+  const run = async function (values, label, seed) {
     const scratch = fs.mkdtempSync(path.join(root, label + '-'));
     const state = path.join(scratch, 'state');
     fs.mkdirSync(state, { recursive: true });
+    if (seed) test.seedDesk(state, seed);
     const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
     const client = appClient.createAppClient({ rootDir: scratch });
     client.register('desk', pipe);
@@ -191,35 +193,35 @@ async function theDesk(root, repo) {
 
   const checkoutFile = path.join(repo, GOAL_PATH);
   const checkoutBefore = fs.readFileSync(checkoutFile, 'utf8');
-  const d = await run({ goalRepo: repo, goalPath: GOAL_PATH }, 'shared');
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  const d = await run({ goalRepo: repo, goalPath: GOAL_PATH }, 'shared', { goal: { id: 'goal/G100', title: 'Round' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   try {
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
     await settleJobs(1);
     const onSession = created.length;
-    await d.call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
-    await d.call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
+    await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await settleJobs(onSession + 1);
     const onGo = created.length;
     const job = shareOf(created[created.length - 1]);
     let held = null; try { held = JSON.parse(fs.readFileSync(job.from, 'utf8')); } catch (e) { held = null; }
-    const g11 = held && (held.items || []).filter(function (x) { return x.id === 'g/G1.1'; })[0];
-    if (onSession >= 1 && onGo === onSession + 1) test.check('session.set asked one jobs.create, his go one more');
-    else test.fail(OWED + 'jobs.create asked ' + onSession + ' after session.set and ' + onGo + ' after his go');
+    const g11 = held && (held.items || []).filter(function (x) { return x.id === 'goal/G100.1'; })[0];
+    // session.set went with goal/G33.7: the seeded world is no press, and his go asks one.
+    if (onGo === onSession + 1) test.check('his go asked one jobs.create');
+    else test.fail(OWED + 'jobs.create asked ' + onSession + ' after the world was seeded and ' + onGo + ' after his go');
     if (path.basename(job.script) === 'goalShare.js' && path.resolve(job.repo) === path.resolve(repo) && job.path === GOAL_PATH && job.from && path.resolve(path.dirname(job.from)) === path.resolve(d.state)) {
       test.check('the job is goalShare.js --repo <goalRepo> --path <goalPath> --from <the desk\'s state folder>/…');
     } else test.fail(OWED + 'the job asked was ' + short(created[created.length - 1]));
-    if (held && held.goal === 'g/G1' && g11 && g11.go === true) test.check('the --from file holds the goal as his go left it (g/G1.1 go true)');
+    if (held && held.goal === 'goal/G100' && g11 && g11.go === true) test.check('the --from file holds the goal as his go left it (goal/G100.1 go true)');
     else test.fail(OWED + 'the --from file held ' + short(held));
-    await d.call('press', { id: 'g/G1.2', what: 'close' }, ANDY);
+    await d.call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
     await settleJobs(onGo + 1);
     const onClose = created.length;
-    await d.call('press', { id: 'g/G1.2', what: 'reopen' }, ANDY);
+    await d.call('press', { id: 'goal/G100.2', what: 'reopen' }, ANDY);
     await settleJobs(onClose + 1);
     const onReopen = created.length;
     if (onClose === onGo + 1 && onReopen === onClose + 1) test.check('close and reopen each asked one jobs.create too');
     else test.fail(OWED + 'close and reopen asked ' + (onClose - onGo) + ' and ' + (onReopen - onClose) + ' jobs.create');
-    await d.call('chat.add', { id: 'g/G1.1', text: 'a line is no status change' }, CW);
+    await d.call('chat.add', { id: 'goal/G100.1', text: 'a line is no status change' }, CW);
     await sleep(500);
     if (created.length === onReopen) test.check('a chat line asks none');
     else test.fail(OWED + 'a chat line asked ' + (created.length - onReopen) + ' jobs.create');
@@ -227,13 +229,11 @@ async function theDesk(root, repo) {
     else test.fail('the desk wrote into the checkout\'s ' + GOAL_PATH);
   } finally { d.stop(); }
 
-  const bare = await run({}, 'bare');
+  const n0 = created.length;
+  const bare = await run({}, 'bare', { goal: { id: 'goal/G100', title: 'Quiet' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   try {
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const n0 = created.length;
-    await bare.call('session.set', { json: JSON.stringify({ goal: { id: 'h/G1', title: 'Quiet' }, items: [{ id: 'h/G1.1', title: 'A', blocks: ['h/G1'] }] }) }, ANDY);
-    await bare.call('press', { id: 'h/G1', what: 'end-design' }, ANDY);
-    await bare.call('press', { id: 'h/G1.1', what: 'go' }, ANDY);
+    await bare.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await bare.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await sleep(800);
     if (created.length === n0) test.check('a desk spawned with {} asks no jobs.create: every suite\'s desk shares nothing');
     else test.fail(OWED + 'a desk spawned with {} asked ' + (created.length - n0) + ' jobs.create');

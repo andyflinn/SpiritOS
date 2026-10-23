@@ -116,13 +116,15 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
   const chatOf = async function (id) { const r = await call('item.chat', { id: id }, ANDY); return (r.body && r.body.chat) || []; };
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
+  // starts (session.set went), and the desk takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G101', title: 'Round' }, items: [
+    { id: 'goal/G101.1', title: 'A', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'B', blocks: ['goal/G101'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Round' }, items: [
-      { id: 'goal/G101.1', title: 'A', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'B', blocks: ['goal/G101'] }] }) }, ANDY);
-    if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
+    const seeded = await factsOf('goal/G101.2');
+    if (seeded.id !== 'goal/G101.2') { test.fail(OWED + 'the seeded world was not taken: goal/G101.2 reads ' + JSON.stringify(seeded)); return; }
 
     test.subHeading('1a. the item says how full its box is: half from 50%, full from 75%');
     const max = appClient.ANSWER_MAX;

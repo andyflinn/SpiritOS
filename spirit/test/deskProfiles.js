@@ -51,11 +51,11 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const codeOf = function (r) { return (r.body || {}).code || ''; };
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Profiles' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Profiles' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude answers a line
     // of his it has taken.
     await call('chat.add', { id: 'goal/G100.1', text: 'anyone here?' }, ANDY);

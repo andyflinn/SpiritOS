@@ -125,13 +125,13 @@ function answerFor(buttons) {
 }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Waive' }, items: [
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G101', title: 'Waive' }, items: [
     { id: 'goal/G101.1', title: 'One agent', blocks: ['goal/G101'], code: true },
     { id: 'goal/G101.2', title: 'His press', blocks: ['goal/G101'], code: true },
     { id: 'goal/G101.3', title: 'While the build runs', blocks: ['goal/G101'], code: true },
-    { id: 'goal/G101.4', title: 'No red yet', blocks: ['goal/G101'], code: true }] }) }, ANDY);
+    { id: 'goal/G101.4', title: 'No red yet', blocks: ['goal/G101'], code: true }] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
   for (const id of ['goal/G101.1', 'goal/G101.2', 'goal/G101.3', 'goal/G101.4']) await call('press', { id: id, what: 'go' }, ANDY);
 

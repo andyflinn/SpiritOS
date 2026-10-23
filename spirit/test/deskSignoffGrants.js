@@ -66,12 +66,12 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // A goal with one code item, his Go on it, and both agents live by having written.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Signoff' }, items: [
+  // A goal with one code item, his Go on it, and both agents live by having written. goal/G33.7: session.set went; the
+  // world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Signoff' }, items: [
     { id: 'goal/G100.1', title: 'A code item', blocks: ['goal/G100'], code: true },
-    { id: 'goal/G100.2', title: 'Another', blocks: ['goal/G100'], code: true }] }) }, ANDY);
+    { id: 'goal/G100.2', title: 'Another', blocks: ['goal/G100'], code: true }] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await call('agent.state', { word: 'working' }, CW);

@@ -20,6 +20,7 @@
 //      === false otherwise. Since goal/G29.10 the desk posts no line for
 //      it ("The limbo posts go.").
 //   2 and 3 WENT WITH goal/G33.4, which removed the sub-goal; their sections now hold that a split marks nothing.
+//   (goal/G33.7: session.set went; a split is item.add naming the parent in blocks, and the world is seeded.)
 //   2  A split sets facts.subGoal === true on the parent: a session.set
 //      that names the parent in split: [id] (goal/G6.8; before it, any
 //      new item blocking the parent marked it). The mark survives on
@@ -64,16 +65,19 @@ test.startTest('goal/G5.4: limbo marker; since goal/G33.4 a split marks no sub-g
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item) || {}; } catch (e) { return {}; } };
   const chatOf = async function (id) { const r = await call('item.chat', { id: id }, ANDY); return ((r.body || {}).chat) || []; };
+  // The world (goal/G33.7: session.set went), seeded before the desk starts: goal/G101 first, so goal/G100, the last
+  // new goal, is the current one.
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G101', title: 'Split' }, items: [{ id: 'goal/G101.1', title: 'Parent, soon to be split', blocks: ['goal/G101'] }] },
+    { goal: { id: 'goal/G100', title: 'Limbo' }, items: [
+      { id: 'goal/G100.1', title: 'Sits in limbo', blocks: ['goal/G100'] },
+      { id: 'goal/G100.2', title: 'Taken and working', blocks: ['goal/G100'] },
+      { id: 'goal/G100.3', title: 'Has an open Q', blocks: ['goal/G100'] }] }]);
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
 
     test.subHeading('1. limbo marker: go on record, no Done, no open G/Q, nobody working');
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Limbo' }, items: [
-      { id: 'goal/G100.1', title: 'Sits in limbo', blocks: ['goal/G100'] },
-      { id: 'goal/G100.2', title: 'Taken and working', blocks: ['goal/G100'] },
-      { id: 'goal/G100.3', title: 'Has an open Q', blocks: ['goal/G100'] }] }) }, ANDY);
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
 
@@ -107,14 +111,10 @@ test.startTest('goal/G5.4: limbo marker; since goal/G33.4 a split marks no sub-g
     // no goal tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed."), so
     // they hold that it is gone: a split item is an item like any other, blocked by its parts, its Go no cascade.
     test.subHeading('2. a split marks no sub-goal (goal/G33.4)');
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Split' }, items: [
-      { id: 'goal/G101.1', title: 'Parent, soon to be split', blocks: ['goal/G101'] }] }) }, ANDY);
     await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Split' }, split: ['goal/G101.1'], items: [
-      { id: 'goal/G101.1', title: 'Parent, soon to be split', blocks: ['goal/G101'] },
-      { id: 'goal/G101.2', title: 'First blocker', blocks: ['goal/G101.1'] },
-      { id: 'goal/G101.3', title: 'Second blocker', blocks: ['goal/G101.1'] }] }) }, ANDY);
+    // The split (goal/G33.7: session.set went): each part an item.add blocking the parent (goal/G9.10).
+    await call('item.add', { goal: 'goal/G101', title: 'First blocker', blocks: 'goal/G101.1' }, ANDY);
+    await call('item.add', { goal: 'goal/G101', title: 'Second blocker', blocks: 'goal/G101.1' }, ANDY);
     const parentAfter = await factsOf('goal/G101.1');
     if (parentAfter.id === 'goal/G101.1' && parentAfter.subGoal === undefined && (parentAfter.blocked || []).length === 2) test.check('goal/G101.1 after the split: an item blocked by its two parts, no sub-goal mark');
     else test.fail('goal/G33.4: parent after the split: subGoal is ' + short(parentAfter.subGoal) + ' and blocked ' + short(parentAfter.blocked));

@@ -55,17 +55,18 @@ async function listed(includeClosed) {
 }
 
 async function server() {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G100.1 a plain item never gone, goal/G100.2 a code item whose red claude-windows will hold, goal/G100.3 a plain item an
-  // agent claims done, goal/G100.4 a code item whose red is done and whose build nobody holds yet. goal/G100.1 blocks goal/G100.5.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Deletes out of design' }, items: [
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Deletes out of design' }, items: [
     { id: 'goal/G100.1', title: 'No longer serves', blocks: ['goal/G100', 'goal/G100.5'] },
     { id: 'goal/G100.2', title: 'Red held', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.3', title: 'Claimed done', blocks: ['goal/G100'] },
     { id: 'goal/G100.4', title: 'Build open, unheld', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.5', title: 'Waits on goal/G100.1', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
+  ] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G100.1 a plain item never gone, goal/G100.2 a code item whose red claude-windows will hold, goal/G100.3 a plain item an
+  // agent claims done, goal/G100.4 a code item whose red is done and whose build nobody holds yet. goal/G100.1 blocks goal/G100.5.
   await call('box.write', { id: 'goal/G100.1', text: 'Its own words.', version: 0 }, CW);
   await call('item.take', { id: 'goal/G100.1' }, CW);
   await call('chat.add', { id: 'goal/G100.1', text: 'claude-windows: a line under it.' }, CW);

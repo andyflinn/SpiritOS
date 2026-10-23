@@ -194,13 +194,14 @@ async function deskHalf() {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
+  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  test.seedDesk(state, { goal: { id: 'goal/G102', title: 'Open' }, items: [{ id: 'goal/G102.1', title: 'Still open', blocks: ['goal/G102'] }] });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   const call = function (verb, a) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };
   try {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G102', title: 'Open' }, items: [{ id: 'goal/G102.1', title: 'Still open', blocks: ['goal/G102'] }] }) });
     await call('press', { id: 'goal/G102', what: 'end-design' });
     const g = parse(((await call('item.get', { id: 'goal/G102' })).body || {}).item) || {};
     const b = g.buttons || [];

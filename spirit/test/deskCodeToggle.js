@@ -113,22 +113,18 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 async function item(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
 (async function () {
-  if (!await start()) { test.fail('the desk server did not start'); return; }
   // THE WORLD: a goal with a plain item, a code item, and one he has split. goal/G33.4 removed the sub-goal: the split
   // item stays an item, so the code mark is his to toggle on it too.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Code toggle' }, items: [
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // goal is seeded before the desk starts, and the split is an item.add naming the item it blocks.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Code toggle' }, items: [
     { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.3', title: 'Split later', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Code toggle' }, split: ['goal/G100.3'], items: [
-    { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
-    { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
-    { id: 'goal/G100.3', title: 'Split later', blocks: ['goal/G100'] },
-    { id: 'goal/G100.4', title: 'Split off it' },
-  ] }) }, ANDY);
+  ] });
+  if (!await start()) { test.fail('the desk server did not start'); return; }
+  const split = await call('item.add', { goal: 'goal/G100', title: 'Split off it', blocks: 'goal/G100.3' }, ANDY);
+  if (!took(split) || split.body.id !== 'goal/G100.4') { test.fail('the world: the split item.add answered ' + short(split.body)); return; }
   const w1 = await item('goal/G100.1'); const w2 = await item('goal/G100.2'); const w3 = await item('goal/G100.3');
   if (w1.code === false && w2.code === true && w3.id === 'goal/G100.3' && w3.subGoal === undefined) test.check('the world: a plain item, a code item, and a split item that is still an item');
   else { test.fail('the world did not land: ' + short({ plain: w1.code, code: w2.code, sub: w3.subGoal })); return; }

@@ -4,7 +4,7 @@
 // DECIDED BY ANDY, 2026-10-17, in goal/G27.2's box, not this file's to undo:
 //   D1. the door's detail is this shell dialog, opened from the Stacks pane with
 //       callDialog('shell/stackFrameCheckDetail', { id }); the pane draws no detail of its own.
-//   D2. it reads and writes the door only through the plugin's verbs (stackFrameChecks.doors, update, run, runState,
+//   D2. it reads and writes the door only through the plugin's verbs (stackFrameChecks.door, update, run, runState,
 //       remove), by name (desk.<verb>) to the desk server, as deskDetails asks.
 //   D3. its chat is the chat of the door's item (the door's `item`), the shared chat element (shell/shared/js/deskChat.js).
 //   D5. Run runs this one door at once, in the plugin, never by deskVerify; the plugin hands the verdict to
@@ -138,12 +138,12 @@ function sdReadRun() {
     sdTick();
   }, function (e) { if (sdId === id) sdSay('Its run could not be read: ' + sdErr(e)); });
 }
-// The door as the plugin holds it, read from its list.
+// The door as the plugin holds it: its own read (goal/G33.7: one door, never the whole list).
 function sdReadDoor() {
   var id = sdId;
-  return sdAsk('stackFrameChecks.doors', {}).then(function (r) {
+  return sdAsk('stackFrameChecks.door', { id: id }).then(function (r) {
     if (sdId !== id) return;
-    sdDoor = ((r && r.doors) || []).filter(function (d) { return d && d.id === id; })[0] || null;
+    sdDoor = r && r.id === id ? r : null;
     if (!sdDoor) { sdSay('The list has no door ' + id + ' any more.'); return; }
     sdFill();
     sdMountChat();

@@ -32,6 +32,9 @@ test.startTest('each panel of an item its own answer');
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Panels' }, items: [] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
@@ -40,8 +43,6 @@ const CW = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerCWAAAAAAAAAAAAAAAAAA=', lab
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPanelsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Panels' }, items: [] }) }, ANDY);
     await call('box.write', { id: 'goal/G100', text: 'B'.repeat(6000), version: 0 }, CW);
     await call('check.add', { id: 'goal/G100', kind: 'C', words: 'look', test: '' }, CW);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

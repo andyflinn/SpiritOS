@@ -47,11 +47,12 @@ function call(verb, args, headers) {
 }
 
 (async function () {
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; it is
+  // seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); const r = await pipeRequest(pipe, 'POST', '/', '"api"', { type: 'application/json', timeoutMs: 1000 }).catch(function () { return null; }); if (r && r.status === 200) break; }
 
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, OWNER);
 
   test.subHeading('a member\'s write is tracked by its key and shown by its label');
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

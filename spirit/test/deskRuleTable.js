@@ -18,7 +18,9 @@
 //      1 rule.add {type, label, text}: rule/N, proposed; an agent may add one. Type and status from their lists, the
 //        label by the label rule, the text a paragraph: anything else refused.
 //      2 rule.draft {key, text}: Andy alone; rule.get shows it; it writes no history.
-//      3 rule.version {key, text, status}: Andy alone; one new version, the older one in rule.history.
+//      3 rule.version {key, text, status}: Andy alone; one new version, the older one kept. Since goal/G33.7 rule.history
+//        is gone (the approved verb list: nothing called it); the older versions stay rows of the rules table, read
+//        here from desk.db, read-only.
 //      4 rules.search {text, types, statuses}: label and text matched, the newest row per rule, answering key, label,
 //        type and status (never the text).
 //      5 a rule's chat: chat.add and item.chat under rule/N.
@@ -35,6 +37,7 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G5.5: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const fieldRules = require('../run/js/fieldRules.js');
+const { DatabaseSync } = require('node:sqlite');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskRulesTestCWAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskRulesTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -81,11 +84,23 @@ async function start() {
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return true; } catch (e) { /* not yet */ } }
   return false;
 }
+// A rule's older versions, newest first, as the rules table keeps them (goal/G33.7: rule.history went).
+function historyOf(key) {
+  const m = /^rule\/(\d+)$/.exec(String(key || ''));
+  if (!m) return [];
+  try {
+    const db = new DatabaseSync(path.join(state, 'desk.db'), { readOnly: true });
+    const rows = db.prepare('SELECT text, status FROM rules WHERE rule = ? ORDER BY n DESC').all(Number(m[1]));
+    db.close();
+    return rows.slice(1);
+  } catch (e) { return []; }
+}
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
 
 (async function () {
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Rules' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rules' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, CW);
 
   test.subHeading('B1. rule.add: proposed, by an agent too, checked at the door');
   const added = await call('rule.add', { type: 'code', label: 'Tests first', text: 'Red on today\'s tree.\nThe writer never builds.' }, CW);
@@ -100,10 +115,10 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   else test.fail(OWED + 'refusals: type ' + badType.status + ', label ' + badLabel.status + ', text ' + badText.status);
 
   test.subHeading('B2. rule.draft: his alone, no history');
-  const histBefore = k1 ? listOf((await call('rule.history', { key: k1 }, ANDY)).body, ['history', 'items', 'rows']).length : -1;
+  const histBefore = k1 ? historyOf(k1).length : -1;
   const draft = k1 ? await call('rule.draft', { key: k1, text: 'Red first.\nThe writer never builds it.' }, ANDY) : {};
   const g2 = k1 ? ruleOf((await call('rule.get', { key: k1 }, CW)).body) : {};
-  const histAfter = k1 ? listOf((await call('rule.history', { key: k1 }, ANDY)).body, ['history', 'items', 'rows']).length : -2;
+  const histAfter = k1 ? historyOf(k1).length : -2;
   const agentDraft = k1 ? await call('rule.draft', { key: k1, text: 'mine' }, CW) : {};
   if (draft.status === 200 && g2.draft === 'Red first.\nThe writer never builds it.' && g2.text === g1.text && histAfter === histBefore && agentDraft.status !== 200) test.check('his draft is kept and read by an agent, the rule unchanged, no history row; an agent\'s draft refused');
   else test.fail(OWED + 'rule.draft answered ' + draft.status + '; rule.get ' + short(g2) + '; history ' + histBefore + ' then ' + histAfter + '; agent draft ' + agentDraft.status);
@@ -111,10 +126,10 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   test.subHeading('B3. rule.version: his one button, the old row kept');
   const ver = k1 ? await call('rule.version', { key: k1, text: 'Red first.\nThe writer never builds it.', status: 'active' }, ANDY) : {};
   const g3 = k1 ? ruleOf((await call('rule.get', { key: k1 }, ANDY)).body) : {};
-  const hist = k1 ? listOf((await call('rule.history', { key: k1 }, ANDY)).body, ['history', 'items', 'rows']) : [];
+  const hist = k1 ? historyOf(k1) : [];
   const older = hist.some(function (h) { return h && h.text === 'Red on today\'s tree.\nThe writer never builds.' && h.status === 'proposed'; });
   const agentVer = k1 ? await call('rule.version', { key: k1, text: 'x', status: 'deleted' }, CW) : {};
-  if (ver.status === 200 && g3.status === 'active' && g3.text === 'Red first.\nThe writer never builds it.' && older && agentVer.status !== 200) test.check('rule.version makes it active with the new text; the proposed text is in rule.history; an agent\'s version refused');
+  if (ver.status === 200 && g3.status === 'active' && g3.text === 'Red first.\nThe writer never builds it.' && older && agentVer.status !== 200) test.check('rule.version makes it active with the new text; the proposed text is kept as an older version; an agent\'s version refused');
   else test.fail(OWED + 'rule.version answered ' + ver.status + ' ' + short(ver.body) + '; rule.get ' + short(g3) + '; history ' + short(hist) + '; agent version ' + agentVer.status);
 
   test.subHeading('B4. rules.search: newest row, filtered, no text');
@@ -134,7 +149,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   test.subHeading('B6. rules outlive a restart and a new goal');
   await stop();
   await start();
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Next' }, items: [] }) }, CW);
+  await call('goal.add', { title: 'Next' }, ANDY);
   const g6 = k1 ? ruleOf((await call('rule.get', { key: k1 }, ANDY)).body) : {};
   if (g6.status === 'active' && g6.text === 'Red first.\nThe writer never builds it.') test.check(k1 + ' is still active with its text after a restart and a new goal');
   else test.fail(OWED + 'after a restart and a new goal rule.get reads ' + short(g6));

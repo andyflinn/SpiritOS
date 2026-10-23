@@ -143,14 +143,16 @@ async function lineOf(id, text) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['goal/G100'] }; });
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Quiet' }, items: items });
   // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-quiet-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');
-  const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['goal/G100'] }; });
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Quiet' }, items: items }) }, ANDY);
-  if (set.status !== 200) { test.fail('the world: the test desk took no session: ' + short(set.body)); return; }
+  const set = await call('desk', 'item.get', { id: 'goal/G100.5' }, ANDY);
+  if (set.status !== 200) { test.fail('the world: the seeded desk has no goal/G100.5: ' + short(set.body)); return; }
   // Both agents known to the desk by key, name and nick, as Andy's profiles hold them, so his "wsl:" line is addressed.
   await call('desk', 'profile.set', { agent: SELF_KEY, name: 'claude-windows', nick: 'cw' }, ANDY);
   await call('desk', 'profile.set', { agent: OTHER_KEY, name: 'wsl-claude', nick: 'wsl' }, ANDY);

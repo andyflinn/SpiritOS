@@ -72,6 +72,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desklinetake-'));
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return true; } catch (e) { /* not yet */ } }
     return false;
   };
+  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Line takes' }, items: items });
   let kid = start();
   const call = function (verb, a, caller) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
   const say = function (id, text, who) { return call('chat.add', { id: id, text: text }, who); };
@@ -82,9 +85,6 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desklinetake-'));
   try {
     if (!await waitUp()) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
-    const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Line takes' }, items: items }) }, ANDY);
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('agent.state', { word: 'listening' }, A);
     await call('agent.state', { word: 'listening' }, B);

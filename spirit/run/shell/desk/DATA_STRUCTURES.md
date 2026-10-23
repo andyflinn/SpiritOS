@@ -14,8 +14,7 @@ server as `--state`:
 | where | what | Desk reaches it by |
 |---|---|---|
 | `desk.db`, tables `items`, `chat`, `box`, `checks`, `files`, `claims` | Since goal/G33.4 the desk's state, keyed by goal and item number, every row with its creator; the old table `lines` and its verbs (`log.add`, `log.search`, `pending.get`) are gone. | `items.search`, `item.get`, `item.box`, `item.chat`, `item.checks`, `item.files` and the writes |
-| `desk.db`, table `docs`, `state` | What Desk has decided (below), as JSON text. | `state.get`, `state.set {json}` |
-| `desk.db`, table `docs`, `seen` | `{ rows, team, agents, folds }`: when Andy last saw each item and chat, for the red `*` marks, and his folds. | `seen.get`, `seen.set {json}` |
+| `desk.db`, the item's row, `seenAt` | When Andy last saw the newest thing under the item (the group chat's on goal/G0), for the unseen marks; one value per item (goal/G33.7: the docs table and state went). | `seen.get {id}`, `seen.set {id, at}` |
 | `voice.jsonl` | Andy's own typed lines, `{text, day}`, one per line, a plain file he moves to his vault by hand. | `voice.add {text, day}` |
 
 Desk reads only what it shows: the newest session, each open item's own

@@ -46,13 +46,15 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     const open = f.goal === '' && (f.blocked || []).length > 0;
     return (f.buttons || []).filter(function (b) { return !(open && (b === 'done' || b === 'close')); });
   };
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
+    { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
-      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
-    if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
+    const set = await call('item.get', { id: 'goal/G100.2' }, ANDY);
+    if (set.status !== 200) { test.fail(OWED + 'the seeded world is not there: ' + JSON.stringify(set.body)); return; }
     // Out of design mode, so items offer Go and the goal's buttons are the ordinary ones.
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
@@ -88,13 +90,13 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
     await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
     const beforeNew = await buttonsOf('goal/G100');
-    // goal/G29.21: an agent's session adds no item without his words, so the owner writes it.
-    const grown = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
-      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }, { id: 'goal/G100.3', title: 'C', blocks: ['goal/G100'] }] }) }, ANDY);
+    // goal/G29.21: an agent's session adds no item without his words, so the owner writes it (goal/G33.7: by item.add).
+    const grown = await call('item.add', { goal: 'goal/G100', title: 'C' }, ANDY);
+    if (!(grown.body && grown.body.id === 'goal/G100.3')) { test.fail(OWED + 'the third item came as ' + JSON.stringify(grown.body)); return; }
     const withNew = await buttonsOf('goal/G100');
     if (beforeNew.indexOf('done') !== -1 && grown.status === 200 && withNew.indexOf('done') === -1) {
       test.check('Done offered with every item done; a third item added open: Done gone');
-    } else test.fail(OWED + 'goal buttons with every item done ' + JSON.stringify(beforeNew) + ', after an open item was added ' + JSON.stringify(withNew) + ' (session.set ' + grown.status + ')');
+    } else test.fail(OWED + 'goal buttons with every item done ' + JSON.stringify(beforeNew) + ', after an open item was added ' + JSON.stringify(withNew) + ' (item.add ' + grown.status + ')');
     await call('press', { id: 'goal/G100.3', what: 'claim-done' }, CW);
     await call('press', { id: 'goal/G100.3', what: 'done' }, ANDY);
 

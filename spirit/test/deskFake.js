@@ -27,7 +27,9 @@ const ROOM = appClient.ANSWER_MAX - 512;
 
 function create(rows) {
   const lines = (rows || []).map(function (r) { return typeof r === 'string' ? JSON.parse(r) : r; });
-  const docs = { state: '', seen: '' };
+  // goal/G33.7: the docs table and state went; seen is one value per item. The fake keeps the group chat's (goal/G0)
+  // as the page's own seen document, {team}, so a suite that plants seen.json goes on working.
+  const docs = { seen: '' };
   const voice = [];
   const calls = [];
   const held = [];
@@ -50,10 +52,16 @@ function create(rows) {
   }
   const desk = {
     // log.add, log.search and pending.get went with goal/G33.4, as on the real server.
-    'state.get': function () { return { json: docs.state }; },
-    'state.set': function (a) { docs.state = a.json; return { saved: true }; },
-    'seen.get': function () { return { json: docs.seen }; },
-    'seen.set': function (a) { docs.seen = a.json; return { saved: true }; },
+    // state.get and state.set went with goal/G33.7, as on the real server; seen is seen.get {id} -> {at}, seen.set {id, at}.
+    'seen.get': function (a) {
+      if (a.id !== 'goal/G0') return { at: '' };
+      let held = null; try { held = JSON.parse(docs.seen || 'null'); } catch (e) { held = null; }
+      return { at: held && Number(held.team) > 0 ? new Date(Number(held.team)).toISOString() : '' };
+    },
+    'seen.set': function (a) {
+      if (a.id === 'goal/G0') docs.seen = JSON.stringify({ team: Date.parse(a.at) || 0 });
+      return { change: calls.length };
+    },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
     // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
     'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
@@ -109,13 +117,11 @@ function fromFiles(files) {
   try { rows = JSON.parse(files['log/log.json'] || '[]'); } catch (e) { rows = []; }
   const fake = create(rows);
   if (files['seen.json']) fake.docs.seen = files['seen.json'];
-  if (files['state.json']) fake.docs.state = files['state.json'];
   const ask = fake.verb;
   fake.verb = function (name, body) {
     return ask(name, body).then(function (r) {
       files['log/log.json'] = JSON.stringify(fake.lines);
       if (fake.docs.seen) files['seen.json'] = fake.docs.seen;
-      if (fake.docs.state) files['state.json'] = fake.docs.state;
       return r;
     });
   };

@@ -117,6 +117,10 @@ const VIOLATORS_BYTES = 2000;
 // /api/relay/key, bypassing createPeerPost". Andy, 2026-10-13: "much better, gimme that when i press run:". The rule
 // is violators.js's header.
 const { violators } = require('./violators.js');
+// THE DOOR SEARCH'S COMPONENTS (goal/G33.7): the desk's own, the probability match and the bucket that fills one answer.
+const createProbabilityBucket = require('../../../../../../js/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const DOORS_ROOM = require('../../../../../../js/appClient.js').ANSWER_MAX - 512;
 
 // AN ITEM NAMED BEFORE THE IDS BECAME NUMBERS (goal/G33.4): plugin/stackFrameChecks.<n> in the list is read as this
 // plugin's goal's item, by the desk's own reading (desk.idOf, set at mount); the list keeps what it says until written.
@@ -428,6 +432,13 @@ module.exports = function (desk) {
         startedAt: s.startedAt, endedAt: s.endedAt, stopped: s.stopped };
     });
   }
+  // One door as its UI reads it: the list's fields (paths on a node: endpoint) and its last run as the plugin keeps it.
+  function doorOut(d, last) {
+    const out = { id: String(d.id), gate: String(d.gate || ''), endpoint: String(d.endpoint || ''),
+      suites: Array.isArray(d.suites) ? d.suites.map(String) : [], item: String(d.item || ''), last: last };
+    if (Array.isArray(d.paths)) out.paths = d.paths.map(String);
+    return out;
+  }
   function doorById(list, id, what) {
     const d = list.filter(function (x) { return x.id === id; })[0];
     if (!d) throw desk.refused('bad-request', 'the list has no door ' + JSON.stringify(id) + (what ? ' to ' + what : ''));
@@ -617,19 +628,36 @@ module.exports = function (desk) {
       'stackFrameChecks.remove': { request: { id: '' }, reply: { id: '', commit: '' }, handler: remove },
       'stackFrameChecks.run': { request: { id: '' }, reply: { started: true, already: false, said: '' }, handler: run },
       'stackFrameChecks.runState': { request: { id: '' }, reply: { id: '', running: true, queued: true, startedAt: '', endedAt: '', stopped: true, commit: '', verdict: VERDICT }, handler: runState },
-      // THE LIST READ BACK, for its UI: every door as the list holds it (paths on a node: endpoint), with its last run
-      // as the plugin keeps it.
-      'stackFrameChecks.doors': { request: {}, reply: { doors: [{ id: '', gate: '', endpoint: '', suites: [''], item: '',
-        last: { running: true, queued: true, ran: true, green: true, around: 0, of: 0, startedAt: '', endedAt: '', stopped: true } }] }, handler: function () {
+      // THE LIST READ BACK, BOUNDED (goal/G33.7). Andy, in the item's box: "no verb fetches a whole goal or a whole item;
+      // every verb that could answer past the payload is removed or reshaped into bounded reads", and in the approved verb
+      // list: "the Stacks door list (a door search with a more flag, and a read per door)". stackFrameChecks.doors, every
+      // door in one answer, is gone; its UI reads the search for the list and the door for one door's dialog.
+      //   doors.search {text}: every door ranked by text (probabilityStringObjectMatch over its id, gate, endpoint, item
+      //   and suites; with no text the list's order), each row the door with its last run, filled to one answer by the
+      //   bucket; more says some were left out, a door too large to be sent alone among them.
+      'stackFrameChecks.doors.search': { request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: function (a) {
+        const text = String(a.text || '').trim();
         const list = doorsWithIds();
         return Promise.all(list.map(function (d) { return lastOf(String(d.id)); })).then(function (lasts) {
-          return { doors: list.map(function (d, i) {
-            const out = { id: String(d.id), gate: String(d.gate || ''), endpoint: String(d.endpoint || ''),
-              suites: Array.isArray(d.suites) ? d.suites.map(String) : [], item: String(d.item || ''), last: lasts[i] };
-            if (Array.isArray(d.paths)) out.paths = d.paths.map(String);
-            return out;
-          }) };
+          const bucket = createProbabilityBucket(list.length || 1);
+          let more = false;
+          list.forEach(function (d, i) {
+            const row = doorOut(d, lasts[i]);
+            const pair = { key: row.id, label: JSON.stringify(row) };
+            if (Buffer.byteLength(JSON.stringify({ items: [pair], more: true }), 'utf8') > DOORS_ROOM) { more = true; return; }
+            const p = text ? probabilityStringObjectMatch(text, { id: row.id, gate: row.gate, endpoint: row.endpoint, item: row.item, suites: row.suites.join(' ') }) : 0;
+            bucket.seatFor(p, pair);
+          });
+          const r = bucket.serialize(null, DOORS_ROOM);
+          return { items: r.items, more: !!r.more || more };
         });
+      } },
+      //   door {id}: the one door, as the list holds it, with its last run (its dialog's read).
+      'stackFrameChecks.door': { request: { id: '' }, reply: { id: '', gate: '', endpoint: '', suites: [''], item: '',
+        last: { running: true, queued: true, ran: true, green: true, around: 0, of: 0, startedAt: '', endedAt: '', stopped: true } }, handler: function (a) {
+        const id = String(a.id || '');
+        const d = doorById(doorsWithIds(), id, 'read');
+        return lastOf(id).then(function (last) { return doorOut(d, last); });
       } },
     },
   };

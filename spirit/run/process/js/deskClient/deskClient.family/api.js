@@ -7,8 +7,6 @@
 // here, in the same commit.
 module.exports = {
   verbs: {
-    // The desk's nudge; the caller is the desk's key, checked by the handler.
-    changed: {},
     // agent names the persona the desk lifts or gives the signoff for; the handler keeps one state, whoever is named.
     clearSignoff: { agent: 'text?' },
     // One ask of the desk: name the desk verb, json its arguments as a JSON object ('{}' when left out).

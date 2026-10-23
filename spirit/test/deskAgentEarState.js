@@ -69,14 +69,15 @@ const node = http.createServer(function (req, res) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  // The world, written by the owner (goal/G29.21), seeded before the desk starts (goal/G33.7: session.set went).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Ears' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }),
   }));
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ears' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
-  if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
+  const set = await call('item.get', { id: 'goal/G100.1' }, ANDY);
+  if (set.status !== 200) { test.fail(OWED + 'the seeded world is not there: ' + JSON.stringify(set.body)); return; }
 
   test.subHeading('1. agent.state takes listening or working from the caller, nothing else');
   const w = await call('agent.state', { word: 'working' }, CW);

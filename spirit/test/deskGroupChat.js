@@ -71,6 +71,8 @@ async function factsOf(id) {
 }
 const labels = function (r) { return ((r.body || {}).items || []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return {}; } }); };
 
+// The ordinary goal's id, as goal.add named it (goal/G33.7).
+let ORDINARY = '';
 async function server() {
   await start();
 
@@ -97,14 +99,18 @@ async function server() {
     return;
   }
   // A goal of the ordinary kind, set as every goal is: it is the current one, and goal/G0 is not in its way.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // goal is made by goal.add (the desk names it), its item by item.add, and his make-current makes it the current one.
+  const made = await call('goal.add', { title: 'An ordinary goal' }, ANDY);
+  ORDINARY = String((made.body || {}).id || '');
+  await call('item.add', { goal: ORDINARY, title: 'A' }, ANDY);
+  await call('press', { id: ORDINARY, what: 'make-current' }, ANDY);
   const current = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   const open = labels(await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   // Since goal/G22.3: a fresh desk mounts its plugins, and each plugin's first mount writes its private goal (and the
   // stackFrameChecks plugin its rerun item), special goals of the desk's own. Those are the only rows a fresh desk
   // writes beside goal/G0, which the desk itself holds and nobody writes.
-  if (written && Array.isArray(written.session) && written.session.length === 0 && written.lines === 0 && written.creator === 'desk' && current.indexOf('goal/G100') !== -1 && current.indexOf(CHAT) === -1 && open.indexOf(CHAT) === -1) {
+  if (written && Array.isArray(written.session) && written.session.length === 0 && written.lines === 0 && written.creator === 'desk' && !!ORDINARY && current.indexOf(ORDINARY) !== -1 && current.indexOf(CHAT) === -1 && open.indexOf(CHAT) === -1) {
     test.check('the fresh desk wrote its plugins\' goals alone, goal/G0 its own and lineless; an ordinary goal is the current one, and goal/G0 is not among the open goals');
   } else test.fail(OWED + 'the fresh desk wrote ' + JSON.stringify(written).slice(0, 200) + '; the current goal lists ' + JSON.stringify(current) + ', the open goals ' + JSON.stringify(open));
 
@@ -147,7 +153,7 @@ async function server() {
   const chat2 = ((await call('item.chat', { id: CHAT }, ANDY)).body || {}).chat || [];
   const box2 = (await call('item.box', { id: CHAT }, ANDY)).body || {};
   const current2 = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
-  if (after.item && after.item.status === 'closed' && chat2.length === 4 && box2.box === RULES && current2.indexOf('goal/G100') !== -1 && current2.indexOf(CHAT) === -1) {
+  if (after.item && after.item.status === 'closed' && chat2.length === 4 && box2.box === RULES && !!ORDINARY && current2.indexOf(ORDINARY) !== -1 && current2.indexOf(CHAT) === -1) {
     test.check('after a restart: still closed, its four lines and its box intact, and the ordinary goal still the current one');
   } else test.fail(OWED + 'after a restart: status ' + JSON.stringify(after.item && after.item.status) + ', ' + chat2.length + ' line(s), box ' + JSON.stringify(box2.box).slice(0, 60) + ', current goal lists ' + JSON.stringify(current2));
 }

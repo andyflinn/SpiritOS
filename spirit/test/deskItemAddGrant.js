@@ -7,7 +7,9 @@
 //     items" (several items) in sequence. The grant ends with his next line. Proposing items stays free.
 //   - A new item is kind code unless said otherwise.
 //   - The item grant holds only in the goal his line is in; "add goal" grants one more goal, no items; an agent's
-//     session.set creates no goal, and its new items count against the item grant.
+//     session.set creates no goal, and its new items count against the item grant. Since goal/G33.7 there is no
+//     session.set (the approved verb list: "its callers use goal.add and item.add"), so no bulk path goes around the
+//     grant: every new item is an item.add, counted one by one.
 // NAMED HERE where the box names none: his newest line is his newest chat line anywhere in Desk; the words match
 // whatever the case; his own adds need no grant; "code" is the item's code mark (item.get's code), and an item whose
 // plugin refuses the code press (codeOffered false) is not marked.
@@ -107,21 +109,22 @@ async function main() {
     if (took(hisGoal)) test.check('his own goal.add needs no grant');
     else test.fail('his own goal.add answered ' + hisGoal.status + ' ' + short(hisGoal.body));
 
-    test.subHeading('6. session.set by an agent creates no goal, and its new items need the grant');
-    const sess = function (goal, items) { return call('session.set', { json: JSON.stringify({ goal: { id: goal, title: 'Bulk' }, items: items.map(function (x) { return { id: x, title: 'Bulk ' + x, blocks: [goal] }; }) }) }, CW); };
+    // goal/G33.7: session.set went, so no bulk write goes around the grant; the grant counts item.add one by one.
+    test.subHeading('6. no bulk path around the grant: session.set is gone, and the grant counts each add');
     await say(gid, 'add items, all of them');
-    const bulkGoal = await sess('goal/G100', ['goal/G100.1']);
-    if (bulkGoal.status >= 400) test.check('an agent\'s session.set naming a new goal is refused, even under "add items"');
-    else test.fail(OWED + 'an agent\'s session.set made goal goal/G100: ' + bulkGoal.status + ' ' + short(bulkGoal.body));
+    const bulk = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Bulk' }, items: [{ id: 'goal/G100.1', title: 'Bulk', blocks: ['goal/G100'] }] }) }, CW);
+    const stray = await call('item.get', { id: 'goal/G100' }, ANDY);
+    if (bulk.body && bulk.body.code === 'no-such-verb' && stray.status !== 200) test.check('an agent\'s session.set is refused no-such-verb even under "add items", and no goal came of it');
+    else test.fail(OWED + 'an agent\'s session.set answered ' + bulk.status + ' ' + short(bulk.body) + '; goal/G100 reads ' + stray.status);
     await say(gid, 'thanks');
-    const bulkItem = await sess(gid, [gid + '.90']);
-    if (bulkItem.status >= 400) test.check('an agent\'s session.set bringing a new item with no grant is refused');
-    else test.fail(OWED + 'an agent\'s session.set added an item with no grant: ' + bulkItem.status + ' ' + short(bulkItem.body));
+    const ungranted = await add(gid, 'Bulk ninety', CW);
+    if (ungranted.status >= 400 && !took(ungranted)) test.check('with no grant its new item is refused, the one way an item comes in');
+    else test.fail(OWED + 'with no grant an item.add answered ' + ungranted.status + ' ' + short(ungranted.body));
     await say(gid, 'add item');
-    const bulkTwo = await sess(gid, [gid + '.90', gid + '.91']);
-    const bulkOne = await sess(gid, [gid + '.90']);
-    if (bulkTwo.status >= 400 && bulkOne.status === 200) test.check('under "add item" a session.set may bring one new item, not two');
-    else test.fail(OWED + 'under "add item" session.set answered ' + bulkTwo.status + ' for two and ' + bulkOne.status + ' for one');
+    const firstOne = await add(gid, 'Bulk ninety', CW);
+    const secondOne = await add(gid, 'Bulk ninety-one', CW);
+    if (took(firstOne) && secondOne.status >= 400 && !took(secondOne)) test.check('under "add item" one new item comes in, not two');
+    else test.fail(OWED + 'under "add item" the adds answered ' + firstOne.status + ' then ' + secondOne.status);
 
     test.subHeading('7. the item grant holds only in the goal his line is in');
     const other = await call('goal.add', { title: 'Another goal of his' }, ANDY);

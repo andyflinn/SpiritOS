@@ -60,9 +60,10 @@ async function taker(id) { const r = await call('item.get', { id: id }, ANDY); r
 async function version(id) { const r = await call('item.box', { id: id }, ANDY); return Number(r.body && r.body.version) || 0; }
 
 async function server() {
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (goal/G33.7: session.set went).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Boxes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Boxes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
   const first = await call('box.write', { id: 'goal/G100.1', text: 'First text.', version: 0 }, CW);
   if (took(first)) test.check('the world: goal/G100.1 has a box, version 1');
   else { test.fail('the world: the first box.write answered ' + first.status + ' ' + short(first.body)); return; }

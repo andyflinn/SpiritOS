@@ -90,8 +90,66 @@
     (watchers[type] || []).slice().forEach(function (fn) { try { fn(type, undefined); } catch (e) { /* one reader's fault */ } });
   }
 
+  // ── searchDataSet (goal/G33.7, box v9) ──────────────────────────────────────────────────────────────────────────
+  //   Andy, in the item's box: "a cache-only search in the component that keeps the data set (spirit.data), so it
+  //   serves the page and every server alike. It asks nobody and ranks by probability across every table it holds,
+  //   returning the most relevant rows whatever table they are in, bounded like every search."
+  //
+  // search({ text, branches?, room? }) -> { items: [{ key: '<branch>/<key>', label: <the row as JSON>, probability }],
+  // more }. Every row of every branch (or of the branches named) is weighed by the desk's own ranking: the text against
+  // the row's key and its fields (probabilityStringObjectMatch), seated in a probabilityBucket, best first, an equal one
+  // behind those already in. Bounded like the desk's searches: the items fill one answer (room, by default the answer
+  // limit less 512 bytes, as the desk's ANSWER_ROOM), and more says some were left out. It asks nobody and writes
+  // nothing.
+  var SEARCH_SCANNED = 1000;
+  function ranking() {
+    if (typeof require === 'function' && typeof module !== 'undefined' && module) {
+      return { match: require('../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
+        bucket: require('../../js/probabilityBucket.js').createProbabilityBucket, limits: require('../../js/limits.js') };
+    }
+    var p = (root.spirit && root.spirit.probability) || {};
+    return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };
+  }
+  function defaultRoom(limits) {
+    // appClient.ANSWER_MAX is half a sealed packet; the desk's ANSWER_ROOM leaves 512 bytes of it for the envelope.
+    return limits && limits.SEALED_MAX ? Math.floor(limits.SEALED_MAX / 2) - 512 : 7865;
+  }
+  // Sizes in bytes, never characters (Andy, 2026-10-10: "every size check in bytes").
+  function utf8Bytes(s) { return unescape(encodeURIComponent(String(s))).length; }
+  function weighed(text, key, value) {
+    var fields = { key: String(key) };
+    if (value && typeof value === 'object' && !Array.isArray(value)) Object.keys(value).forEach(function (k) { fields[k] = value[k]; });
+    else if (value !== undefined) fields.value = String(value);
+    return fields;
+  }
+  function search(q) {
+    var R = ranking();
+    if (typeof R.match !== 'function' || typeof R.bucket !== 'function') return { items: [], more: false };
+    var text = String((q && q.text) || '');
+    var only = q && Array.isArray(q.branches) ? q.branches.map(String) : null;
+    var room = q && Number(q.room) > 0 ? Number(q.room) : defaultRoom(R.limits);
+    var bucket = R.bucket(SEARCH_SCANNED);
+    var more = false;
+    Object.keys(data).forEach(function (type) {
+      if (only && only.indexOf(type) === -1) return;
+      var b = data[type];
+      Object.keys(b).forEach(function (k) {
+        var label = JSON.stringify(b[k] === undefined ? null : b[k]);
+        var one = { key: type + '/' + k, label: label };
+        // One row too big for the room alone is left out and said by more, as the desk's ranked() does.
+        if (utf8Bytes(JSON.stringify({ items: [one], more: false })) > room) { more = true; return; }
+        var p = text ? R.match(text, weighed(text, k, b[k])) : 0;
+        one.probability = p;
+        bucket.seatFor(typeof p === 'number' && p >= 0 && p <= 1 ? p : 0, one);
+      });
+    });
+    // The room is for the answer { items, more }: the bucket measures the items' array, so the envelope is kept aside.
+    var r = bucket.serialize(null, room - utf8Bytes(JSON.stringify({ items: [], more: false })));
+    return { items: r.items, more: r.more || more };
+  }
+
   var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
-    translate: translate, quietly: quietly, ready: ready, branch: branch,
+    translate: translate, quietly: quietly, ready: ready, branch: branch, search: search,
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 

@@ -33,9 +33,9 @@ const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const CORE = path.join(RUN, 'js', 'coreFiles.js');
 
-const SELF_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestSelfAAAAAAAAAAAAAAAAAAAA=';
-const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestOtherAAAAAAAAAAAAAAAAAAA=';
-const DESK_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestDeskNodeAAAAAAAAAAAAAAAA=';
+const SELF_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestSelfAAAAAAAAAAAAAAAAAAAAAAAAA=';
+const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestOtherAAAAAAAAAAAAAAAAAAAAAAAA=';
+const DESK_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestDeskNodeAAAAAAAAAAAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const SELF_AT_DESK = { key: SELF_KEY, label: 'claude-windows' };
 const OTHER_AT_DESK = { key: OTHER_KEY, label: 'wsl-claude' };
@@ -86,11 +86,13 @@ const node = http.createServer(function (req, res) {
     if (b.verb !== 'peer.post') return json(400, { ok: false, code: 'no-such-verb' });
     const hash = 'H' + Date.now() + Math.random();
     let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
-    const want = (ask && ask.body && ask.body.desk) || {};
     json(200, { ok: true, hash: hash });
-    test.peerAnswer(client, ask && ask.body, SELF_AT_DESK).then(function (r) {
+    // goal/G33.7: the desk's stream (a post to this agent's key) goes into deskClient as the desk's call, so what
+    // deskClient keeps of the item stays current; anything else is this agent's ask of the desk.
+    const fromDesk = String(b.to || '') === SELF_KEY;
+    test.peerAnswer(client, ask && ask.body, fromDesk ? { key: DESK_KEY, label: 'andy' } : SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: fromDesk ? SELF_KEY : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
   });
 });
@@ -123,10 +125,12 @@ async function commitWith(cwd, file, text, message) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
+  // starts (session.set went), and the desk takes it in at start.
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Scopes' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Scopes' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
   await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
 

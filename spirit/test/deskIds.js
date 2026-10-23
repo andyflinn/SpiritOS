@@ -14,6 +14,9 @@
 // Nobody names an id: an `id` argument is refused. A new item blocks its goal (the List's plain case; G9.10 adds the
 // blocking-item form). The same verbs serve him and the agents. An add never moves the current goal (goal/G9.13).
 // Not asserted: whether session.set mints too; G9.9's box leaves the bulk call to rule/9.
+// goal/G33.7: session.set went, so the world is built by goal.add and item.add too. A fresh desk numbers its special
+// goals first, so the world's goal is the first free number, G below (goal/G13 in the old reading), and every id this
+// suite expects is counted from it: G+1, G+2 the goals added after it.
 
 const fs = require('fs');
 const os = require('os');
@@ -57,50 +60,55 @@ async function currentGoal() {
   return rows.length ? String(rows[0].id) : '';
 }
 
+let G = 13;
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // THE WORLD, written the old way: goal/G13 with two items. Since goal/G33.4 a goal is a number, minted past every goal
-  // the desk holds (its special goals 0 to 3 among them), so there is no other area to keep apart.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G13', title: 'Old' }, items: [
-    { id: 'goal/G13.1', title: 'One', blocks: ['goal/G13'] }, { id: 'goal/G13.2', title: 'Two', blocks: ['goal/G13'] }] }) }, ANDY);
-  if ((await facts('goal/G13.2')).id === 'goal/G13.2' && await currentGoal() === 'goal/G13') test.check('the world: goal/G13 with two items, current');
-  else { test.fail('the world did not land: ' + short(await facts('goal/G13.2'))); return; }
+  // THE WORLD: a goal with two items, made current. Since goal/G33.4 a goal is a number, minted past every goal the desk
+  // holds (its special goals among them), so there is no other area to keep apart.
+  const w = await call('goal.add', { title: 'Old' }, ANDY);
+  const m = /^goal\/G(\d+)$/.exec(String((w.body || {}).id || ''));
+  if (!m) { test.fail('the world: goal.add answered ' + short(w.body)); return; }
+  G = Number(m[1]);
+  await call('item.add', { goal: 'goal/G' + G, title: 'One' }, ANDY);
+  await call('item.add', { goal: 'goal/G' + G, title: 'Two' }, ANDY);
+  await call('press', { id: 'goal/G' + G, what: 'make-current' }, ANDY);
+  if ((await facts(`goal/G${G}.2`)).id === `goal/G${G}.2` && await currentGoal() === `goal/G${G}`) test.check('the world: goal/G13 with two items, current');
+  else { test.fail('the world did not land: ' + short(await facts(`goal/G${G}.2`))); return; }
 
   test.subHeading('1. goal.add mints the next goal id and answers it');
   const g = await call('goal.add', { title: 'Made by him' }, ANDY);
   const gid = g.body && g.body.id;
-  if (took(g) && gid === 'goal/G14') test.check('his goal.add answers goal/G14, one past goal/G13');
+  if (took(g) && gid === `goal/G${G + 1}`) test.check('his goal.add answers goal/G14, one past goal/G13');
   else test.fail(OWED + 'goal.add answered ' + g.status + ' ' + short(g.body));
-  const gf = await facts('goal/G14');
-  if (gf.id === 'goal/G14' && gf.title === 'Made by him' && gf.goal === '') test.check('goal/G14 is a goal, with his title');
-  else test.fail(OWED + 'goal/G14 reads ' + short(gf));
-  await call('chat.add', { id: 'goal/G14', text: 'add goal' }, ANDY); // goal/G29.21: an agent's goal needs his "add goal"
+  const gf = await facts(`goal/G${G + 1}`);
+  if (gf.id === `goal/G${G + 1}` && gf.title === 'Made by him' && gf.goal === '') test.check(`goal/G${G + 1} is a goal, with his title`);
+  else test.fail(OWED + `goal/G${G + 1} reads ` + short(gf));
+  await call('chat.add', { id: `goal/G${G + 1}`, text: 'add goal' }, ANDY); // goal/G29.21: an agent's goal needs his "add goal"
   const g2 = await call('goal.add', { title: 'Made by an agent' }, CW);
-  if (took(g2) && g2.body.id === 'goal/G15') test.check('an agent\'s goal.add answers goal/G15: the same verb, the next id');
+  if (took(g2) && g2.body.id === `goal/G${G + 2}`) test.check('an agent\'s goal.add answers goal/G15: the same verb, the next id');
   else test.fail(OWED + 'the agent\'s goal.add answered ' + g2.status + ' ' + short(g2.body));
 
   test.subHeading('2. item.add mints the next item id in that goal and answers it');
-  const i1 = await call('item.add', { goal: 'goal/G13', title: 'Third' }, ANDY);
-  if (took(i1) && i1.body.id === 'goal/G13.3') test.check('item.add in goal/G13 answers goal/G13.3');
+  const i1 = await call('item.add', { goal: `goal/G${G}`, title: 'Third' }, ANDY);
+  if (took(i1) && i1.body.id === `goal/G${G}.3`) test.check('item.add in goal/G13 answers goal/G13.3');
   else test.fail(OWED + 'item.add answered ' + i1.status + ' ' + short(i1.body));
-  const f3 = await facts('goal/G13.3');
-  if (f3.goal === 'goal/G13' && f3.title === 'Third' && (f3.blocking || []).join() === 'goal/G13') test.check('goal/G13.3 is goal/G13\'s, titled, and blocks its goal');
-  else test.fail(OWED + 'goal/G13.3 reads ' + short({ goal: f3.goal, title: f3.title, blocking: f3.blocking }));
-  await call('chat.add', { id: 'goal/G14', text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words
-  const i2 = await call('item.add', { goal: 'goal/G14', title: 'First of the new goal' }, CW);
-  if (took(i2) && i2.body.id === 'goal/G14.1') test.check('the first item of goal/G14 is goal/G14.1, added by an agent');
+  const f3 = await facts(`goal/G${G}.3`);
+  if (f3.goal === `goal/G${G}` && f3.title === 'Third' && (f3.blocking || []).join() === `goal/G${G}`) test.check('goal/G13.3 is goal/G13\'s, titled, and blocks its goal');
+  else test.fail(OWED + `goal/G${G}.3 reads ` + short({ goal: f3.goal, title: f3.title, blocking: f3.blocking }));
+  await call('chat.add', { id: `goal/G${G + 1}`, text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words
+  const i2 = await call('item.add', { goal: `goal/G${G + 1}`, title: 'First of the new goal' }, CW);
+  if (took(i2) && i2.body.id === `goal/G${G + 1}.1`) test.check('the first item of goal/G14 is goal/G14.1, added by an agent');
   else test.fail(OWED + 'item.add in goal/G14 answered ' + i2.status + ' ' + short(i2.body));
 
   test.subHeading('3. a closed member still counts, so an id is never handed out twice');
-  await call('press', { id: 'goal/G13.3', what: 'close' }, ANDY);
-  const i3 = await call('item.add', { goal: 'goal/G13', title: 'After a close' }, ANDY);
-  if (took(i3) && i3.body.id === 'goal/G13.4') test.check('after goal/G13.3 is closed the next add is goal/G13.4');
+  await call('press', { id: `goal/G${G}.3`, what: 'close' }, ANDY);
+  const i3 = await call('item.add', { goal: `goal/G${G}`, title: 'After a close' }, ANDY);
+  if (took(i3) && i3.body.id === `goal/G${G}.4`) test.check('after goal/G13.3 is closed the next add is goal/G13.4');
   else test.fail(OWED + 'after the close item.add answered ' + i3.status + ' ' + short(i3.body));
 
   test.subHeading('4. nobody names an id');
-  const named = await call('item.add', { goal: 'goal/G13', title: 'Named', id: 'goal/G13.99' }, CW);
-  if (refusedByVerb(named) && !(await facts('goal/G13.99')).id) test.check('item.add with an id is refused, and goal/G13.99 does not exist');
+  const named = await call('item.add', { goal: `goal/G${G}`, title: 'Named', id: `goal/G${G}.99` }, CW);
+  if (refusedByVerb(named) && !(await facts(`goal/G${G}.99`)).id) test.check('item.add with an id is refused, and goal/G13.99 does not exist');
   else test.fail(OWED + 'item.add with an id answered ' + named.status + ' ' + short(named.body));
   const namedGoal = await call('goal.add', { title: 'Named', id: 'goal/G99' }, ANDY);
   if (refusedByVerb(namedGoal) && !(await facts('goal/G99')).id) test.check('goal.add with an id is refused');
@@ -111,7 +119,7 @@ async function currentGoal() {
 
   test.subHeading('5. an add moves nothing he chose (goal/G9.13)');
   const cur = await currentGoal();
-  if (cur === 'goal/G13' && took(i1)) test.check('after every add above, goal/G13 is still the current goal');
+  if (cur === `goal/G${G}` && took(i1)) test.check('after every add above, goal/G13 is still the current goal');
   else test.fail(OWED + (took(i1) ? 'the adds moved the current goal to ' + short(cur) : 'no add landed, so nothing was held to it'));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();

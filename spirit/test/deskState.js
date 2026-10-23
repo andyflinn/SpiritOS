@@ -6,7 +6,7 @@
 // The contract the builder follows (names from claude-windows's proposal under desk/G2.1, each write carrying `by`):
 //   reads   items.search {text, currentGoalOnly, goalsOnly} -> {items: [{key, label}], more}, each label JSON
 //           {id, title, status, buttons, blocking, blocked, ...}; item.get {id} -> {item, version, change}; item.box, item.checks, item.chat {id} one panel each
-//   writes  session.set {json, by}; box.write {id, text, version, by}; check.add {id, kind, words, test, by};
+//   writes  goal.add {title}, item.add {goal, title} (session.set went with goal/G33.7); box.write {id, text, version, by}; check.add {id, kind, words, test, by};
 //           check.set {id, check, state, by}; chat.add {id, text, by}; item.rename {id, title, by};
 //           item.status {id, word, by}; item.take {id, by}; press {id, what, by}
 //   rules   Go! only after 'end-design' and only for an item nothing open blocks; Done after one agent's
@@ -24,7 +24,7 @@ const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by desk/G2.1: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const WRITES = ['session.set', 'box.write', 'check.add', 'check.set', 'chat.add', 'item.rename', 'item.status', 'item.take', 'press'];
+const WRITES = ['goal.add', 'item.add', 'box.write', 'check.add', 'check.set', 'chat.add', 'item.rename', 'item.status', 'item.take', 'press'];
 const READS = ['items.search', 'item.get', 'item.box', 'item.checks', 'item.chat'];
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -79,26 +79,26 @@ const btns = function (it) { return (it && Array.isArray(it.buttons) ? it.button
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.slice().sort()); };
 
 (async function () {
+  const session = { goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
+    { id: 'goal/G101.1', title: 'Alpha', blocks: ['goal/G101.2'] },
+    { id: 'goal/G101.2', title: 'Beta', blocks: ['goal/G101'] },
+  ] };
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
+  // it is seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, session);
   const api = await start();
   test.subHeading('its verbs');
   const names = Object.keys(api || {});
   const missing = READS.concat(WRITES).filter(function (v) { return names.indexOf(v) === -1; });
   if (!missing.length) test.check('it answers ' + READS.concat(WRITES).join(', '));
   else test.fail(OWED + 'missing verbs: ' + missing.join(', '));
-  if (names.indexOf('fresh.get') === -1) test.check('fresh.get is gone');
-  else test.fail(OWED + 'fresh.get is still served');
-
-  const session = { goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
-    { id: 'goal/G101.1', title: 'Alpha', blocks: ['goal/G101.2'] },
-    { id: 'goal/G101.2', title: 'Beta', blocks: ['goal/G101'] },
-  ] };
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify(session) }, ANDY);
+  if (names.indexOf('fresh.get') === -1 && names.indexOf('session.set') === -1) test.check('fresh.get and session.set (goal/G33.7) are gone');
+  else test.fail(OWED + 'fresh.get or session.set is still served');
 
   test.subHeading('the session: rows, and nothing from before the redesign');
   let by = await items();
-  if (by['goal/G101.1'] && by['goal/G101.1'].title === 'Alpha' && by['goal/G101.2']) test.check('session.set puts its items on the list');
-  else test.fail(OWED + 'after session.set, items.search answered ' + JSON.stringify(Object.keys(by)));
+  if (by['goal/G101.1'] && by['goal/G101.1'].title === 'Alpha' && by['goal/G101.2']) test.check('the seeded session\'s items are on the list');
+  else test.fail(OWED + 'after the seeded session, items.search answered ' + JSON.stringify(Object.keys(by)));
   if (!by['goal/G100.1'] && !JSON.stringify(by).includes('OLD-')) test.check('an item from an old session line is not served');
   else test.fail(OWED + 'an old item was served');
 

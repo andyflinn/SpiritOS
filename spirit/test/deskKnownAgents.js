@@ -66,10 +66,11 @@ async function theServer() {
   };
   const stop = function (kid) { return new Promise(function (r) { kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); };
   let row = null;
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; it is
+  // seeded before the desk starts, which takes it in at start.
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Known' }, items: [{ id: 'goal/G100.1', title: 'Talk', blocks: ['goal/G100'] }] });
   let kid = await start();
   try {
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Known' }, items: [{ id: 'goal/G100.1', title: 'Talk', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     await call('item.take', { id: 'goal/G100.1' }, GEMMA);
     await call('chat.add', { id: 'goal/G100.1', text: 'gemma here, then gone' }, GEMMA);

@@ -56,14 +56,19 @@ const press = function (id, what, who) { return call('press', { id: id, what: wh
 const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.buttons.indexOf(b) !== -1); };
 
 (async function () {
-  if (!(await start())) { test.fail('the desk server did not start'); return; }
-
   // ── G3.4: Go all ──────────────────────────────────────────────────────
   // A goal with three items: A and B unblocked, C blocked by A.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Fixing round' }, items: [
-    { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.3'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }, { id: 'goal/G100.3', title: 'C', blocks: ['goal/G100'] },
-  ] }) }, ANDY);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
+  // three goals this suite works through are seeded before the desk starts, and his make-current brings each one up in
+  // its turn, as a new session's goal became current.
+  test.seedDesk(state, [
+    { goal: { id: 'goal/G100', title: 'Fixing round' }, items: [
+      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.3'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }, { id: 'goal/G100.3', title: 'C', blocks: ['goal/G100'] }] },
+    { goal: { id: 'goal/G101', title: 'Dropped' }, items: [{ id: 'goal/G101.1', title: 'D', blocks: ['goal/G101'] }] },
+    { goal: { id: 'goal/G102', title: 'Short round' }, items: [{ id: 'goal/G102.1', title: 'E', blocks: ['goal/G102'] }] },
+  ]);
+  if (!(await start())) { test.fail('the desk server did not start'); return; }
+  await press('goal/G100', 'make-current');
   test.subHeading('G3.4: the goal offers Go all only once design has ended');
   let by = await items();
   if (by['goal/G100'] && !has(by['goal/G100'], 'go-all')) test.check('in design mode the goal offers no Go all');
@@ -118,8 +123,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   else test.fail(G32 + 'with the current goal closed the List holds ' + JSON.stringify(ids.map(function (id) { return [id, by[id].status, by[id].buttons]; })));
 
   test.subHeading('G3.2: an abandoned goal stays invisible');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Dropped' }, items: [{ id: 'goal/G101.1', title: 'D', blocks: ['goal/G101'] }] }) }, ANDY);
+  await press('goal/G101', 'make-current');
   await press('goal/G101', 'abandon');
   by = await items();
   if (!by['goal/G101'] && !by['goal/G101.1']) test.check('the abandoned current goal and its item are not listed');
@@ -129,8 +133,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   // Andy pressed desk/G2's Go! and asked what it meant (claude-windows, records 48-50); desk/G3 offered it again.
   test.subHeading('G3.7: a goal never offers Go!, even with every item done');
   const G37 = 'OWED by desk/G3.7: ';
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G102', title: 'Short round' }, items: [{ id: 'goal/G102.1', title: 'E', blocks: ['goal/G102'] }] }) }, ANDY);
+  await press('goal/G102', 'make-current');
   await press('goal/G102', 'end-design');
   await press('goal/G102.1', 'go');
   await press('goal/G102.1', 'claim-done', WSL);
