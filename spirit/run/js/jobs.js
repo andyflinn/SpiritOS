@@ -420,10 +420,17 @@ module.exports = function installJobs(spirit, port) {
   // a process that does not never runs, so Jobs never shows it. Refused by
   // name, process-not-included, before anything is spawned. The include list
   // that said this before (slim/G1.3) is deleted; the manifest is the one place.
+  // A NODE'S OWN SETTING OVERRIDES IT (goal/G33.9). The box: "A per-node setting overrides the server manifest's default
+  // for that node only; with none set, the manifest's default stands", and "The same mechanism covers which servers a
+  // node runs". relay-state/node.json's servers entry (js/nodeSettings.js), by the server's name: its runs, when it
+  // names one, is this node's. An intrinsic server runs whatever it says.
   function runsHome(root, name) {
     try {
       const m = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
-      return m.intrinsic === true || (Array.isArray(m.runs) && m.runs.indexOf('home') !== -1);
+      if (m.intrinsic === true) return true;
+      const own = require('./nodeSettings').serverSettings(root, name);
+      const runs = Array.isArray(own.runs) ? own.runs : m.runs;
+      return Array.isArray(runs) && runs.indexOf('home') !== -1;
     } catch (e) { return false; }
   }
   // A script under <root>/process/js/<name>/, read as {root, name}; null for
@@ -474,6 +481,18 @@ module.exports = function installJobs(spirit, port) {
     const base = path.join(rootDir, 'process', 'js');
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
+    // A SETTING THE MANIFEST DOES NOT NAME is ignored, and named once in the node log here, at the start (goal/G33.9:
+    // "so a typo shows"): a server this node has no process/js manifest for, or a value that is neither runs nor one
+    // of its manifest's arguments.
+    const own = require('./nodeSettings').load(rootDir).servers;
+    Object.keys(own).forEach(function (name) {
+      const m = manifestOf(path.join(base, name, name + '.js'));
+      if (!m) { console.error('node.json: servers.' + name + ' names no server under process/js; ignored'); return; }
+      const known = ['runs'].concat((m.args || []).map(function (a) { return a && a.name; }));
+      Object.keys(own[name] || {}).forEach(function (k) {
+        if (known.indexOf(k) === -1) console.error('node.json: servers.' + name + '.' + k + ' is not a setting of ' + name + '; ignored');
+      });
+    });
     // ONLY WHAT RUNS AT HOME (goal/G30.20): its manifest's runs says so.
     names = names.filter(function (name) { return runsHome(rootDir, name); });
     const pipePathFor = require('./appClient').pipePathFor;
@@ -509,6 +528,9 @@ module.exports = function installJobs(spirit, port) {
       if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return;
       const values = {};
       (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
+      // This node's value for an argument the manifest names (goal/G33.9), over the manifest's default.
+      const mine = require('./nodeSettings').serverSettings(rootDir, name);
+      (m.args || []).forEach(function (a) { if (a && a.name && Object.prototype.hasOwnProperty.call(mine, a.name)) values[a.name] = mine[a.name]; });
       const pipe = pipePathFor(rootDir, name, process.platform, 'process');
       // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): relay-state/process/<name>/,
       // handed over as --state, so a process never works out its own folder.

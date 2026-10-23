@@ -117,8 +117,18 @@ function load(rootDir) {
     }
   }
 
+  // THE SERVERS' OWN SETTINGS ON THIS NODE (goal/G33.9): { "<server>": { "runs": [...], "<argument>": value } }, read
+  // by js/jobs.js, which judges each against its server's manifest. Not an object, or none: no settings.
+  settings.servers = parsed_ && parsed_.servers && typeof parsed_.servers === 'object' && !Array.isArray(parsed_.servers) ? parsed_.servers : {};
+
   read_.set(key, settings);
   return settings;
+}
+
+// One server's settings on this node, {} for none.
+function serverSettings(rootDir, name) {
+  const s = load(rootDir).servers[name];
+  return s && typeof s === 'object' && !Array.isArray(s) ? s : {};
 }
 
 function searchMemoryRows(rootDir) {
@@ -133,6 +143,7 @@ module.exports = {
   load: load,
   cacheMaxBytes: cacheMaxBytes,
   searchMemoryRows: searchMemoryRows,
+  serverSettings: serverSettings,
   filePath: filePath,
   DEFAULT_CACHE_MAX_MB: DEFAULT_CACHE_MAX_MB,
   MIN_CACHE_MAX_MB: MIN_CACHE_MAX_MB,
