@@ -1,5 +1,5 @@
 {
- "change": 93537,
+ "change": 93775,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -55,7 +55,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -1945,11 +1945,9 @@
    "id": "goal/G33.4",
    "title": "about the desk-database",
    "goal": "goal/G33",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete",
     "verify"
    ],
@@ -1958,17 +1956,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1976,7 +1974,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyAnswer": "taken",
@@ -1988,8 +2015,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The point of all of it: narrowing the scope of work, traffic, wire and context to the current goal.\n\n- there is a need for two numberic MAIN key fields for desk goals and items.\n- the first key must be the goal-number\n- the second key must be the item number (always zero for a goal)\n- this will easily bound searches within a goal (current goal only mode of searches)\n- the cute little ID string you display ('goal/G45.765') can be rendered from those two keys\n- searches within the current goal won't catch garbage from other goals anymore.\n- No sub-goals and no goal tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed.\n- Design mode on goal level AND on item level, so further items can be designed while other items of the same goal already go through their implementation phases.\n- A new item always arrives in design mode.\n- Tables keyed by goal number and item number: goals and items, chat, and files; each file row holds its grant status.\n- The other tables carry the two keys too (the log of writes, the lines, the rules, the docs), so every read is bounded by goal and item; a row about no goal carries goal 0.\n- Each side table has its own probability search, filtered by goal or by item.\n- The box is a side table of its own, keyed by goal, item and version: each version a row, so the box can grow larger. A client never culls or modifies the data set it mirrors.\n- If a bound is needed, the data set bounds itself: a maximum size (about 132 MB) past which it culls its own oldest entries. That is a SpiritOS-wide feature of the data set, managed by no app and no server. The size is one constant, set in a single place.\n- Mirror distribution is push: the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under PAYLOAD_MAX, so a desk client never grabs anything. A row larger than the payload travels in numbered pieces.\n- Reach: when a goal becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates. An agent's held item lies in the current goal, so it needs no push of its own.\n- A cap is then just one revised box version: the agent writes it, and the desk pushes it like any other change.\n",
-   "version": 15,
+   "box": "The point of all of it: narrowing the scope of work, traffic, wire and context to the current goal.\n\n- there is a need for two numberic MAIN key fields for desk goals and items.\n- the first key must be the goal-number\n- the second key must be the item number (always zero for a goal)\n- this will easily bound searches within a goal (current goal only mode of searches)\n- the cute little ID string you display ('goal/G45.765') can be rendered from those two keys\n- searches within the current goal won't catch garbage from other goals anymore.\n- No sub-goals and no goal tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed.\n- Design mode on goal level AND on item level, so further items can be designed while other items of the same goal already go through their implementation phases.\n- A new item always arrives in design mode.\n- Tables keyed by goal number and item number: goals and items, chat, and files; each file row holds its grant status.\n- Agents' work and chat is always tied to a goal or an item, and every state row keeps its attribution (who wrote it) until it is shed. Records with no goal or item are dumped at migration: agent.state, scope.set and the old lines table. What is about an agent (its profile, signed off) is keyed by the agent, and the desk rules by their rule number. Goal 0 is the group chat (desk/G0.0 today): chat that belongs to no other goal lives there, so every chat line has a goal.\n- Each side table has its own probability search, filtered by goal or by item.\n- The box is a side table of its own, keyed by goal, item and version: each version a row, so the box can grow larger. A client never culls or modifies the data set it mirrors.\n- If a bound is needed, the data set bounds itself: a maximum size (about 132 MB) past which it culls its own oldest entries. That is a SpiritOS-wide feature of the data set, managed by no app and no server. The size is one constant, set in a single place.\n- Mirror distribution is push: the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under PAYLOAD_MAX, so a desk client never grabs anything. A row larger than the payload travels in numbered pieces.\n- Reach: when a goal becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates. An agent's held item lies in the current goal, so it needs no push of its own.\n- A cap is then just one revised box version: the agent writes it, and the desk pushes it like any other change.\n- The desk keeps state only: the keyed tables are the store, and the log of writes goes. The most recent history is found in the node's bounded logs. History is git's job, not the desk's: the desk keeps no ever-growing heap. An agent's listening or working is one current value per agent, never a row per word.\n- Each special goal (each plugin goal such as Stacks, and the group chat) has a goal number of its own, minted like any goal; its goal row marks it special. With design on item level, a special goal is simply always open: its new items are designed while others are built.\n- Checks (the Q and G lines) and claims are side tables keyed by goal and item like the others.\n- Migration: today's database is migrated into the tables once; each id string becomes its two numbers (goal/G33.4 becomes 33 and 4).\n- The desk database sheds by itself past a boundary size, one constant set in a single place, 16 MB. It sheds in whole goal chunks: first the goal untouched the longest, with all its items and every row of theirs (file, chat, box, checks, claims), since nothing could reach them any more; then the next. The current goal is never shed. Special goals are exempt. Shedding is goal by goal, nothing finer.\n- Every row in the desk database carries a creator reference: who wrote it. A chat line is keyed by goal, item, timestamp and the writer's id.\n",
+   "version": 30,
    "checks": [],
    "chat": [
     {
@@ -2201,6 +2228,294 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T03:43:43.418Z",
      "text": "A measurement for this item, from my deskClient's own log of its asks to your desk over the last two hours:\n\n- Every desk ask takes 3 to 6 seconds on average, even the smallest: a box release 2.6 s, a chat line 6.4 s, the longest 12.5 s, past what my side waits. That is where my timeouts and your duplicate lines come from, not from the new cache.\n- The cause matches this item: each of those asks replays the whole log of writes, 93,000 rows now.\n- 63,000 of those rows, two thirds, are agent.state: an agent saying listening or working each time it waits. They are kept forever and replayed on every ask.\n\nSo the keyed tables would cure the wait, and agent.state needs no row in the log at all; it is a live state, not a record."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:37:57.763Z",
+     "text": "how does this design look for now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:38:44.092Z",
+     "text": "It holds together: I find no contradiction in the box. It is not complete yet; these points are still unsettled:\n\n- The log's role: does the log of writes stay the record, with the tables rebuilt from it when lost, or do the tables become the store and the log goes?\n- agent.state: two thirds of today's log is agents saying listening or working. It is a live state; it should get no row anywhere.\n- The special goals need a number: the plugin goals (Stacks) and the group chat. Goal 0 for all of them, or one number each?\n- Checks (the Q and G lines) and claims are not named yet; they would be side tables keyed the same way.\n- A client that was away: the plainest catch-up is that the desk pushes the current goal whole again when it comes back.\n- Moving today's 93,000 rows into the tables is a one-time step, and each goal/G33.4 string becomes 33 and 4.\n- A new persist shape needs the team review before it is built.\n\nFirst: does the log of writes stay the record, or do the tables replace it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:39:58.948Z",
+     "text": "we will only maintain state, the most recent logs can be found in the bounded node-logs"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:40:36.557Z",
+     "text": "we don't need more ever-growing heaps of junk"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:41:31.110Z",
+     "text": "In the box (v16): the desk keeps state only; the keyed tables are the store, the log of writes goes, and recent history is in the node's bounded logs. An agent's listening or working becomes one current value per agent.\n\nThat also settles the catch-up: a client that was away gets the current goal pushed whole again, since there is no log to replay.\n\nNext: the special goals, the plugin goals like Stacks and the group chat. Goal 0 for all of them, or one number each?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:41:36.339Z",
+     "text": "git already captures history, not our job"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:44:44.614Z",
+     "text": "one number each, how else can we address them with the current scheme?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:45:19.670Z",
+     "text": "it gives us the attaches chats for free and most other things"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:45:54.847Z",
+     "text": "In the box (v18): one number each for the special goals, minted like any goal, their row marked special. Also boxed as statements: checks and claims become keyed side tables too, and today's rows move into the tables once.\n\nThe box is green as far as I can see. What is left is the team review a new persist shape needs, which with one agent is you and me on this box.\n\nIs this item ready for its red?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:46:29.821Z",
+     "text": "and now that design can be item-level, the special goals can always be open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:47:15.260Z",
+     "text": "In the box (v19): a special goal is simply always open, since design now lives on each item. That removes the plugin goal's own exception today (a goal \"always open while actually closed\")."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:48:00.416Z",
+     "text": "Correction: that line is not in the box yet. You hold the box right now, so my write was refused. I add it once you release it, on top of your version."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:48:48.084Z",
+     "text": "I'm not holding the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:49:57.679Z",
+     "text": "Right, the hold was stale: the desk still named you as holding it, and it has run out since. The line is in the box now (v19): a special goal is simply always open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:50:12.585Z",
+     "text": "does the box account for the following?\n\n- the database needs to be migrated\n- the database needs to auto-shed at some boundary-size"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:51:39.003Z",
+     "text": "Migration was in, now named as such. Shedding was not: it covered only a client's data set, not the desk's own database. Both are in the box now (v20).\n\n- The desk database sheds by itself past a boundary size: oldest closed goals first, each goal whole with all its rows; the size is one constant in a single place.\n\nWhat boundary size should the desk database shed at?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:52:24.131Z",
+     "text": "what is the boundary size? how large is the database now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:53:24.570Z",
+     "text": "There is no boundary yet; it is the open number. Measured on your desk now:\n\n- The file is 45.5 MB, plus 4 MB of write-ahead log.\n- The data in it is about 21 MB: the log of writes 12.4 MB (every box version ever written 5.9 MB, chat 4.4 MB, agent states 1.2 MB) and the old lines table 8.7 MB. The rest is indexes and space never reclaimed.\n- Kept as state only, the newest box version per item, the chat, files and checks, it would be a few MB.\n\nFor comparison, the node's own database sheds at 16 MB (nodeStore.js).\n\nMy recommendation: 16 MB, the same as the node's database, one constant. Shall the desk database shed at 16 MB?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:53:57.444Z",
+     "text": "we cap at 32MB for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:54:57.644Z",
+     "text": "32 MB, in the box (v21). Every open point I raised is settled now; the box is green as far as I can see.\n\nReady for its red when you say Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:55:07.558Z",
+     "text": "so 16MB will be enough"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:55:39.553Z",
+     "text": "Yes, state only should stay within a few MB, so 16 MB is enough with room to spare.\n\nThe box says 32 MB now: change it to 16 MB?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:57:20.216Z",
+     "text": "yes. change to 16MB, i decided that after understanding your measurements a little better"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:58:19.536Z",
+     "text": "16 MB, in the box (v22)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:02:11.092Z",
+     "text": "this:\n\n\"a row about no goal carries goal 0.\"\n\nwe have such rows, i know we have a goal 0, but apart from that? do we have rows without a goal or item? Can not just dump them during migration?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:03:11.816Z",
+     "text": "Counted on your desk. Rows about no goal or item:\n\n- agent.state, 63,491 rows: agents saying listening or working. Dump; it becomes one current value per agent.\n- scope.set, 22 rows: agent scopes, removed in G10.8. Dump.\n- the old lines table, 8,284 rows, the last one written on 2026-10-11: nothing has written it since. Dump.\n- profile.set 58 and signoff 45: each agent's profile and whether it is signed off. That is current state about an agent, not a goal: it stays as one row per agent, keyed by the agent.\n- the rules (31, with 7 drafts and 42 rule chat lines): desk-wide, keyed by their rule number.\n\nSo nothing needs goal 0: what is not about a goal is either dumped or keyed by what it is about (an agent, a rule). The goal 0 line in the box would go.\n\nDump those three and drop goal 0 from the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:05:54.063Z",
+     "text": "agents working/chatting should always be associated with a goal or item, any records not showing such an association, we dump. we WILL keep agents attribution with those state-items we hold, before shedding."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:06:54.238Z",
+     "text": "agents will always chat or work within the context of a goal / item no? even if its' goal 0. no?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:07:30.771Z",
+     "text": "In the box (v23): agents' work and chat always tied to a goal or item; records without one dumped at migration; attribution kept on every state row until shed. Agent profiles and the rules stay, keyed by the agent and by the rule number, since they are not work or chat; goal 0 is gone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:08:39.806Z",
+     "text": "Yes, and I had goal 0 wrong: it exists already, as the group chat (desk/G0.0 in the code today). So every chat line has a goal, the group chat being goal 0. Corrected in the box (v24)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:09:03.117Z",
+     "text": "a chat log will always be keyed by: goal,item,timestamp and writing ID, no? why not but a creator reference on every item in the desk-db?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:10:15.521Z",
+     "text": "Yes to both, in the box (v25): a chat line is keyed by goal, item, timestamp and the writer's id, and every row in the desk database carries its creator."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:10:20.064Z",
+     "text": "\"special goals and their items cannot be shed until closed.\""
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:10:45.613Z",
+     "text": "chat lines can always be shed...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:11:03.819Z",
+     "text": "...straight by date, for all of them..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:11:26.242Z",
+     "text": "In the box (v26), in the shedding line: special goals and their items cannot be shed until closed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:12:34.499Z",
+     "text": "In the box (v27): chat lines can always be shed, straight by date, oldest first, in every goal, special goals included. So shedding has two kinds: chat by date first, then whole closed goals."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:12:40.504Z",
+     "text": "if an item is shed, all it's chat lines go with it. if a goal is shed, all its item and all of the associated chat lines are shed, since they won't be reachable anymore anyways."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:13:27.260Z",
+     "text": "shedding with be done in complete goal-chunks"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:13:52.170Z",
+     "text": "In the box (v28): a shed item takes all its rows with it, chat included, and a shed goal all its items and theirs. With the two keys on every row that is one delete per table."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:14:26.035Z",
+     "text": "That clashes with your line just before it, now in the box: chat lines can always be shed, straight by date, in every goal.\n\n- Goal chunks only: the desk sheds whole closed goals, oldest first, each with everything in it; no chat line goes on its own, and an open goal's chat stays however old.\n- Both: chat by date first, then whole goals.\n\nShould shedding be whole goal chunks only, with the chat-by-date line removed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:16:37.083Z",
+     "text": "special goal are exempt, but our shedding strategy is simple, we first shed the goal row that has been the longest untouched, with all it's item and all the associated file, chat, box etc... rows....."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:17:01.320Z",
+     "text": "it's simpler to shed goal-by-goal"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:17:47.994Z",
+     "text": "Rewritten as one line in the box (v29), replacing the earlier shedding lines:\n\n- whole goal chunks, the goal untouched the longest first, with all its items and every row of theirs;\n- the current goal is never shed;\n- special goals are exempt from goal shedding, and their chat lines alone are shed by date, oldest first.\n\nThe last point is my reading of your two lines together, so the special goals' chat cannot grow forever; say so if it should go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:18:08.360Z",
+     "text": "...otherwise we end up with lots of dangling garbage..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:18:56.972Z",
+     "text": "Goal by goal, nothing finer: the chat-by-date part is gone, special goals exempt. Box v30."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T05:19:24.869Z",
+     "text": "thanks, sorry about changing my mind."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T05:19:51.094Z",
+     "text": "No need: that is what the design phase is for, and the box only ever holds the final statement. G33.4 is green and ready for its red when you say Go."
     }
    ]
   },
