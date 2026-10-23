@@ -2179,14 +2179,17 @@ function write(verb, a, check) {
   if (!now) { out.item = null; delete out.listed; delete out.key; }
   // THE SWITCH TRAVELS TO EVERY CLIENT (goal/G33.3): the verifier's answer is one desk fact, said with the publish.
   if (verb === 'verify.answer') out.verifier = { answer: s.verifyAnswer };
-  publishOne(out);
+  // WHO WROTE IT (goal/G33.9, box v4): every row a write publishes names its writer, label and key, so a client tells a
+  // change its own agent made from one made by Andy, another agent or the desk.
+  const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); return o; };
+  publishOne(byWriter(out));
   shownGoals.forEach(function (g) {
     goalIds(s, g).forEach(function (id) {
       if (now && id === now.id) return;
-      if (s.items[id] && seen(id) !== before[id]) publishOne(rowPublish(s, id, verb, r.n));
+      if (s.items[id] && seen(id) !== before[id]) publishOne(byWriter(rowPublish(s, id, verb, r.n)));
     });
   });
-  side.forEach(publishOne);
+  side.forEach(function (o) { publishOne(byWriter(o)); });
   writeGoalFile(s, verb, a, s.change);
   // A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4).
   if (s.current && s.current !== currentBefore) pushGoalWhole(s.current);

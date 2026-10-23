@@ -279,8 +279,10 @@ function keepSinceWake(row) {
   if (row.table === 'checks') {
     if (!row.row || row.removed || !inView(row.goal)) return;
     const c = row.row;
-    news('check#' + row.id + '#' + c.number + '#' + c.state, 'NEWS check ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') }));
-    return;
+    const checkKey = 'check#' + row.id + '#' + c.number + '#' + c.state;
+    const checkText = 'check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') });
+    news(checkKey, 'NEWS ' + checkText);
+    return { id: String(row.id), key: checkKey, text: checkText };
   }
   const f = row.item && typeof row.item === 'object' ? row.item : null;
   if (!f || !f.id || STATE_QUIET.indexOf(String(row.verb || '')) !== -1) return;
@@ -293,12 +295,32 @@ function keepSinceWake(row) {
   if (lastState[f.id] === undefined) { lastState[f.id] = print; return; }
   if (lastState[f.id] === print) return;
   lastState[f.id] = print;
-  news('state#' + f.id + '#' + print, 'NEWS ' + String(row.verb || 'change') + ' ' + JSON.stringify(Object.assign({ id: String(f.id) }, state)));
+  const stateKey = 'state#' + f.id + '#' + print;
+  const stateText = String(row.verb || 'change') + ' ' + JSON.stringify(Object.assign({ id: String(f.id) }, state));
+  news(stateKey, 'NEWS ' + stateText);
+  return { id: String(f.id), key: stateKey, text: stateText };
+}
+// ITS OWN ITEM'S CHANGES WAKE IT (goal/G33.9, box v4; Andy: "my issuing the grant didn't reach/wake the phase-holder",
+// and "your deskClient knows that you hold the current phase of the item, and wakes you [on] that item's status
+// changes"): a change of the state or the checks of an item this agent holds (its holder or its phase holder, now or
+// just before the change) wakes it as its own (DESK), whoever made it, Andy, another agent or the desk, but itself.
+const heldIds = {};
+function holdsItem(f) { return !!f && (heldByMe(f) || (!!f.phaseWith && f.phaseWith === SELF)); }
+function wakeOnHeld(row, change) {
+  const f = row.item && typeof row.item === 'object' ? row.item : null;
+  const id = String((f && f.id) || row.id || '');
+  const now = f ? holdsItem(f) : holdsItem(dataSet.get('deskItems/' + id));
+  const mine = now || heldIds[id] === true;
+  if (f) heldIds[id] = now;
+  if (!change || !mine) return;
+  if (SELF_KEY ? row.byKey === SELF_KEY : row.by === SELF) return;
+  waiting.push({ text: 'DESK ' + String(row.by || 'desk') + ' ' + change.text, key: change.key });
+  wakers.splice(0).forEach(function (wake) { wake(); });
 }
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
-  keepSinceWake(row);
+  wakeOnHeld(row, keepSinceWake(row));
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
@@ -690,8 +712,9 @@ const server = appServer.serve({
       // A JOB WAKES IT TOO (goal/G33.7, found live at G33.7's Go: "the agent was not woken"): a row the stream brought
       // that may open a job (jobsMaybe) has work.open asked at once, mid-wait as at its start, and a job ends the wait.
       function jobOrWait() {
-        if (waiting.length || !jobsMaybe) return wait();
+        if (!jobsMaybe) return wait();
         return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
+          // A wake already waiting (a line, its own item's change) goes on without a job; with one, the job comes last.
           if (!job) return wait();
           // A job's wake hands the news too, the job last (goal/G33.8, box v16).
           waiting.push({ text: job });

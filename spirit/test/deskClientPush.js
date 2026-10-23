@@ -291,6 +291,41 @@ async function main() {
   if (resubscribed && backLines && backLines.some(function (l) { return String(l).indexOf('andy after the drop') !== -1; })) test.check('its stream silent, its wait subscribed again, and his next line reached it');
   else test.fail('OWED by goal/G33.8: subscribed again ' + resubscribed + '; the wait after the drop ended with ' + short(backLines) + '; asked ' + short(asks.slice(dropFrom)));
 
+  // goal/G33.9 (box v4; Andy: "my issuing the grant didn't reach/wake the phase-holder"): a press or state change BY HIM on
+  // an item the agent holds wakes it as its own (DESK), as a line addressed to it does.
+  test.subHeading('4f. his grant on the item the agent holds wakes it');
+  const grantItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'Held with a grant' }, ANDY);
+  const grantId = String((grantItem.body || {}).id || '');
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await call('desk', 'press', { id: grantId, what: 'go' }, ANDY);
+  await call('desk', 'phase.take', { id: grantId, phase: 'red' }, B_AT_DESK);
+  const raised = await call('desk', 'check.add', { id: grantId, kind: 'G', words: 'core grant: spirit/run/js/kernel.js', test: '' }, B_AT_DESK);
+  await waitFor(15000);
+  const grantWait = waitFor(15000);
+  await sleep(1000);
+  const grantAt = Date.now();
+  const granted = await call('desk', 'check.set', { id: grantId, check: 'G1', state: 'granted' }, ANDY);
+  const grantLines = await grantWait;
+  const grantMs = Date.now() - grantAt;
+  const grantDesk = (grantLines || []).filter(function (l) { return /^DESK andy check\.set /.test(String(l)) && String(l).indexOf(grantId) !== -1 && /granted/.test(String(l)); });
+  if (raised.status === 200 && granted.status === 200 && grantDesk.length === 1 && grantMs < 8000) test.check('his grant of G1 on ' + grantId + ', whose red B holds, woke B with it as DESK, ' + grantMs + ' ms after');
+  else test.fail('OWED by goal/G33.9 (grant wake): check.add ' + short(raised.body) + ', check.set ' + short(granted.body) + '; B\'s wait ended with ' + short(grantLines) + ' after ' + grantMs + ' ms');
+  // Another agent's change on it wakes it too; its own change does not.
+  const otherWait = waitFor(15000);
+  await sleep(1000);
+  const otherAdd = await call('desk', 'check.add', { id: grantId, kind: 'C', words: 'checked by the other agent', test: '' }, A_AT_DESK);
+  const otherLines = await otherWait;
+  const otherDesk = (otherLines || []).filter(function (l) { return /^DESK claude-windows check\.set /.test(String(l)) && String(l).indexOf(grantId) !== -1; });
+  if (otherAdd.status === 200 && otherDesk.length === 1) test.check('another agent\'s check on ' + grantId + ' woke B with it as DESK');
+  else test.fail('OWED by goal/G33.9 (held item wake): the other agent\'s check.add answered ' + short(otherAdd.body) + '; B\'s wait ended with ' + short(otherLines));
+  const ownWait2 = waitFor(15000);
+  await sleep(1000);
+  await call('desk', 'check.add', { id: grantId, kind: 'C', words: 'B checks its own item', test: '' }, B_AT_DESK);
+  const ownLines2 = await ownWait2;
+  if (!(ownLines2 || []).some(function (l) { return /^DESK /.test(String(l)); })) test.check('B\'s own change on its item did not wake it');
+  else test.fail('OWED by goal/G33.9 (held item wake): B\'s own check woke it: ' + short(ownLines2));
+  await call('desk', 'phase.done', { id: grantId, phase: 'red' }, B_AT_DESK);
+
   test.subHeading('5. no needless waking: chat between Andy and another agent on its item does not end the wait');
   await call('desk', 'item.take', { id: 'goal/G100.2' }, A_AT_DESK);
   const notMine = waitFor(15000);
