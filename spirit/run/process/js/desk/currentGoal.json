@@ -1,5 +1,5 @@
 {
- "change": 91990,
+ "change": 92203,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -53,7 +53,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -118,7 +120,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -601,10 +603,9 @@
    "id": "goal/G33.2",
    "title": "small desk issues",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -862,10 +863,10 @@
    "id": "goal/G33.3",
    "title": "Desk clients keep the current goal: one cache, two clients",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "waiting for deskVerify",
    "with": "",
    "buttons": [
-    "delete"
+    "done"
    ],
    "blocking": [
     "goal/G33"
@@ -874,22 +875,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "fileCount": 0,
+   "fileCount": 6,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "c0b20b15",
+   "redCommit": "cfc30b09",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -931,12 +932,22 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "DESK CLIENTS KEEP THE CURRENT GOAL: ONE CACHE, TWO CLIENTS\n\n- A desk search answers what the List's rows show: each item's facts, the trunk and main branches of the current goal's data tree.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient fetches on its own, by priority: the current goal's rows first, then the one item its agent holds a phase of (an agent holds one at a time), whole: its box, its newest chat, its checks and its files, so anything the agent needs is on hand; the agent's reads are answered from it, and only writes go to the desk.\n- The Desk app in the browser keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js, the faceless layer the face apps keep their data in, with one desk translator; deskClient loads the two in node, the Desk app in the page.\n- Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step on the path that makes Desk a face app too: the cache is the face's own layer, and its calls go through the spirit object, which the face already has.\n\nWhere: shell/js/spiritData.js (as it is), a desk translator beside it, process/js/deskClient, shell/desk, shell/deskDetails. Blocked by goal/G33.2.",
-   "version": 2,
-   "checks": [],
+   "box": "DESK CLIENTS KEEP THE CURRENT GOAL: ONE CACHE, TWO CLIENTS\n\n- A desk search answers what the List's rows show: each item's facts, the trunk and main branches of the current goal's data tree.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient fetches on its own, by priority: the current goal's rows first, then the one item its agent holds a phase of (an agent holds one at a time), whole: its box, its newest chat, its checks and its files, so anything the agent needs is on hand; the agent's reads are answered from it, and only writes go to the desk.\n- deskClient takes the rows from the desk's changes answer, the one it already reads while its agent waits and the one that catches it up after a gap: beside its records, that answer carries the current facts of the items they touched, and the held item's panels when one of them is it.\n- The Desk app in the browser keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js, the faceless layer the face apps keep their data in, with one desk translator; deskClient loads the two in node, the Desk app in the page.\n- Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step on the path that makes Desk a face app too: the cache is the face's own layer, and its calls go through the spirit object, which the face already has.\n\nWhere: shell/js/spiritData.js (as it is), a desk translator beside it, process/js/deskClient, shell/desk, shell/deskDetails. Blocked by goal/G33.2.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/shell/js/desk/data.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T00:01:09.677Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -949,6 +960,90 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-22T23:11:50.807Z",
      "text": "Yes, two presses:\n\n- Done on G33.2 (claimed and verified at de087633; your node takes a pull and restart to show it)\n- then Go on G33.3, which G33.2 blocks until it is done"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:15:19.519Z",
+     "text": "Taken. What I found first: your Desk app already keeps its List rows as a mirror (one items.search, then the published rows, a new ask only after a gap); the dialog asks its panels anew each time it opens, and deskClient answers every read by asking the desk.\n\nOne thing the box leaves open: deskClient gets no published rows. It reads the desk's changes (the bare records: verb, writer, arguments), and the desk's nudge says only that something changed. Two ways to hand it the rows:\n\n- A: the changes answer carries, beside its records, the current facts of the items they touched, and the held item's panels when one of them is it; deskClient already reads changes while its agent waits, and the same answer covers a gap\n- B: the nudge carries what the desk publishes to your page\n\nI recommend A. A or B?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:15:33.713Z",
+     "text": "Taken. What I found first: your Desk app already keeps its List rows as a mirror (one items.search, then the published rows, a new ask only after a gap); the dialog asks its panels anew each time it opens, and deskClient answers every read by asking the desk.\n\nOne thing the box leaves open: deskClient gets no published rows. It reads the desk's changes (the bare records: verb, writer, arguments), and the desk's nudge says only that something changed. Two ways to hand it the rows:\n\n- A: the changes answer carries, beside its records, the current facts of the items they touched, and the held item's panels when one of them is it; deskClient already reads changes while its agent waits, and the same answer covers a gap\n- B: the nudge carries what the desk publishes to your page\n\nI recommend A. A or B?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T23:19:45.307Z",
+     "text": "your recommendation? B?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:20:34.200Z",
+     "text": "A. deskClient already reads changes whenever its agent waits, and that same answer is how it catches up after a gap; with the rows in it there is one way in, not two. B would add a second path (the nudge) and still need A for the gap.\n\nGo with A?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T23:21:05.542Z",
+     "text": "A it is then"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T23:21:07.855Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:23:46.771Z",
+     "text": "commit cfc30b095ad889618f3dcc12938b0140c7e00d1f: goal/G33.3: the red for Desk clients keeping the current goal: the desk translator fills spirit.data from a search, a publish and a changes answer; changes carries the touched rows and the held item; \n- spirit/test/deskMirror.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T23:24:00.230Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-22T23:29:33.408Z",
+     "text": "need me?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-22T23:29:35.812Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-22T23:30:19.415Z",
+     "text": "Not yet. G33.3 is built and its red is green (6 of 6); the sweep of 188 suites against the last commit is running. Then a grant (the face files it touches are core: none, I expect; I will say) and the commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:00:47.843Z",
+     "text": "G33.3 is built: the red is green (6 of 6) and the sweep of 188 suites matches the last commit.\n\nOne core file: the translator, shell/js/desk/data.js, lives in shell/js. Press G1 and I commit, push and claim."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:02:08.739Z",
+     "text": "commit c0b20b15d94064445e12b6d8bb6ce49de0b3c827: Desk clients keep the current goal, one cache for deskClient and the Desk app (goal/G33.3)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/js/desk/data.js\n- spirit/test/deskMirror.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:02:48.843Z",
+     "text": "G33.3 claimed and verified at c0b20b15, pushed.\n\n- files: shell/js/desk/data.js (the translator), process/js/desk/desk.js, process/js/deskClient/deskClient.js, shell/deskDetails/deskDetails.js, shell/desk/desk.js, test/deskMirror.js (6 of 6)\n- no relay tag: nothing the face serves changed; your node takes a pull and restart (the desk server and the Desk app), and mine is restarted on it\n\nDone is yours."
     }
    ]
   }
