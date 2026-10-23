@@ -1,5 +1,5 @@
 {
- "change": 93331,
+ "change": 93534,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -10,15 +10,15 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
+    "verify",
     "go-all",
-    "close",
-    "verify"
+    "close"
    ],
    "blocking": [],
    "blocked": [
     "goal/G33.4",
-    "goal/G33.5",
-    "goal/G33.6"
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -44,6 +44,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": true,
    "names": {
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
@@ -54,7 +55,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -176,6 +177,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -675,6 +677,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -947,6 +950,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -1975,6 +1979,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -2237,6 +2242,7 @@
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {},
    "asks": 0,
    "half": false,
@@ -2250,11 +2256,11 @@
    "id": "goal/G33.6",
    "title": "Desk adjustments: one next button in the List, idle is no run",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "done",
    "with": "claude-windows",
    "buttons": [
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -2264,21 +2270,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "fileCount": 0,
+   "fileCount": 1,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "00069b5f",
+   "redCommit": "da93947e",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -2317,25 +2323,126 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyAnswer": "taken",
    "verifierBusy": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "ADJUSTMENTS TO THE DESK'S BUTTONS AND THE VERIFIER TAB, after goal/G33.3\n\nThe List\n- A List row shows one button only: the next action wanted from him, in the item's own order of steps (Go before Verify, Verify before Done, Done before Close, and so on).\n- In the List a goal offers no Done or Close while any of its items is not done or closed.\n- The item's detail panel shows every button available, a goal's Done and Close at any time.\n\nThe Verify button\n- No Verify button shows the verifier's busy state, in the List or the dialog.\n\nThe Verifier tab\n- Idle is not a run: the tile says Running now, and the bar moves, only while a run runs.\n- Idle reads: Idle, nothing running, with a grey bar.\n- The idle-hour countdown shows only on a verifier whose manifest names chores.\n\nWhere: shell/desk/desk.js, shell/deskDetails/deskDetails.js, process/js/desk/desk.js.",
-   "version": 1,
-   "checks": [],
+   "box": "ADJUSTMENTS TO THE DESK'S BUTTONS AND THE VERIFIER TAB, after goal/G33.3\n\nThe List\n- A List row shows one button only: the next action wanted from him, in the item's own order of steps (Go before Verify, Verify before Done, Done before Close, and so on).\n- In the List a goal offers no Done or Close while any of its items is not done or closed.\n- The item's detail panel shows every button available, a goal's Done and Close at any time.\n\nThe Verify button\n- No Verify button shows the verifier's busy state, in the List or the dialog.\n- The run is back on the item's row: while the item his Verify handed over runs, its status column shows the suite and a progress bar, live from the verifier, and its status word again when the run ends; the detail panel shows the same.\n\nThe Verifier tab\n- Idle is not a run: the tile says Running now, and the bar moves, only while a run runs.\n- Idle reads: Idle, nothing running, with a grey bar.\n- The idle-hour countdown shows only on a verifier whose manifest names chores.\n\nWhere: shell/desk/desk.js, shell/deskDetails/deskDetails.js, process/js/desk/desk.js.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/process/js/deskVerify/deskVerify.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T04:22:06.357Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T03:52:38.073Z",
      "text": "Added, with every adjustment you named in its box. Sorry for the extra step: next time, adjustments to an item just done go straight into it or the next open item, without asking.\n\nGo?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:53:43.822Z",
+     "text": "Taken. The red comes first, a new suite asserting what you will see in the List, the dialog and the Verifier tab; then the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:04:05.621Z",
+     "text": "somebody take the code phase yet?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:04:57.574Z",
+     "text": "Yes, I hold it: the red phase is taken (status red) and its suite is being written now; I take the build phase right after the red is claimed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:16:29.894Z",
+     "text": "commit da93947ed34320259e24496eaff7dcc758eda307: goal/G33.6: the red for the desk adjustments: one next button per List row in step order, a goal row without Done or Close while items are open, every button in the dialog, no busy on Verify, idle no \n- spirit/test/deskAdjustments.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T04:16:38.880Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:16:56.755Z",
+     "text": "The red is pushed and claimed (da93947e): 5 pass, 11 fail on today's code, for the reasons in the box. The build is green in my clone (16 of 16), and I hold the build phase.\n\nOne core file needs your grant before I can commit: process/js/deskVerify/deskVerify.js. It gains one published field, hasChores, so the Verifier tab shows the idle countdown only when the verifier names chores; it is not a verb.\n\nThe grant is on the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:22:41.084Z",
+     "text": "commit e2c8dff7f09f942cc0eee9e4408e4a59ae73ccab: Desk adjustments: one next button per List row, idle is no run (goal/G33.6)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskGoalClose.js\n- spirit/test/deskGoalDone.js\n- spirit/test/deskIssues.js\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVerifyFixes.js\n- spirit/test/deskVerifyLive.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:23:08.846Z",
+     "text": "Built, pushed and claimed: commit e2c8dff7. The item's red: 16 of 16 green.\n\nAfter a pull and a node restart you should see:\n\n- one button per List row, the next step: Go, then Verify, then Done, then Close;\n- a goal row with open items shows no Done or Close; its detail panel shows them always;\n- no busy state on any Verify button;\n- the Verifier tab, idle: Idle, nothing running, a grey bar, and no countdown, since your verifier names no chores.\n\nFiles:\n\n- process/js/desk/desk.js, process/js/deskVerify/deskVerify.js (hasChores)\n- shell/desk/desk.js, shell/deskDetails/deskDetails.js\n- tests: deskAdjustments (new), deskVerifyDriven, deskVerifyFixes, deskVerifyLive, deskGoalDone, deskGoalClose, deskIssues, the last six updated to your new button rules\n\nYour Verify on the item runs its suites on your node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:27:27.081Z",
+     "text": "why do i no longer see the verifier run in the items status column?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T04:27:29.468Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:28:16.362Z",
+     "text": "Because the row's run display (the progress bar in the status column, G18.5) went out with the old watcher in G33.3. I listed it then as gone unless you wanted it back, and let it drop instead of asking.\n\nFolding it back into this item: the row of the item your Verify handed over shows the run in its status column, suite and progress, live from the verifier, until the run ends. The verifier still knows no item; the desk knows which item it handed over."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T04:28:58.161Z",
+     "text": "put it back, in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:29:47.858Z",
+     "text": "Under way, in this item; in the box (v2). The red for it comes first, then the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:33:54.446Z",
+     "text": "commit da2c0e76c1a84f0c4cc84412ee9cc21f6ca69054: goal/G33.6: the red for the run on the item's row: the handed-over item's status column and dialog show the verifier's run, other rows do not, an idle publish brings the status word back\n- spirit/test/deskAdjustments.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T04:34:02.666Z",
+     "text": "The run is back on the row: pushed and claimed, commit 00069b5f. The item's red: 21 of 21.\n\nAfter a pull, a node restart and a browser refresh: press Verify on an item, and its status column shows verifying, the suite running and a progress bar, until the run ends; its dialog shows the same.\n\nFiles: shell/shared/js/deskRunStatus.js (new, one rendering for row and dialog), shell/desk/desk.js, shell/deskDetails/deskDetails.js, process/js/desk/desk.js, test deskAdjustments."
     }
    ]
   }
