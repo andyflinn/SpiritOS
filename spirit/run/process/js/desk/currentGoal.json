@@ -1,5 +1,5 @@
 {
- "change": 96116,
+ "change": 96166,
  "goal": "goal/G33",
  "items": [
   {
@@ -18,7 +18,7 @@
    "blocking": [],
    "blocked": [
     "goal/G33.5",
-    "goal/G33.8"
+    "goal/G33.9"
    ],
    "codeOffered": false,
    "go": false,
@@ -59,7 +59,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -4106,11 +4106,12 @@
    "id": "goal/G33.8",
    "title": "cleaning up addServer",
    "goal": "goal/G33",
-   "status": "build",
+   "status": "done",
    "with": "claude-windows",
-   "version": 15,
+   "version": 16,
    "buttons": [
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -4119,12 +4120,12 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 23,
+   "fileCount": 24,
    "green": true,
    "code": true,
    "phase": "build",
@@ -4132,7 +4133,7 @@
    "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "36844265",
+   "claimCommit": "d16b6178",
    "redCommit": "96434530",
    "waived": true,
    "rules": [
@@ -4173,13 +4174,14 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n- Found live at this item's Go: the agent holding the item was not woken by the Go, the second time running. A Go on an item wakes the agent it concerns, whether or not that agent already holds the item.\n- Folded in from goal/G33.7, committed as bf1805ed: no desk answer carries his lines; an ended Verify shows its outcome on the row and in the dialog.\n- The desk sends all its data to all subscribers; each deskClient filters what reaches its agent.\n- In the item dialog's file list, the open grants and their grant buttons come first, at the top, never below the files.\n- Found live: a grant had to be pressed twice. After the confirming press the button says granting, never red again, until the push turns it green; and the dialog compares change numbers per row, so no pushed row is dropped because another row carried a newer number.\n- The List tells a goal from its items at a glance: the goal row carries a goal sign in its icon cell and is shaded. No item row or item dialog links to the item's own goal, so a click near an item's Done cannot open the goal by accident.\n- An unread line from the phase holder marks its row with a red ! next to the item, no longer the whole row in red type.\n- Found live: work.open offered jobs from every goal, so a stale job in an old goal (G29.17) woke an agent every time it listened, and both agents filtered such jobs with hand-made skip lists. work.open offers only jobs of the current goal; the skip lists go.\n- When deskClient wakes its agent, it hands over all the lines that happened since the agent's last wake (the current goal's, from its data set, no ask to the desk), so the line that woke it always arrives with what it refers to.\n",
+   "box": "The scope: put things in the right place, nothing more. A flake is diagnosed from the node logs (a couple of hours kept), not prevented by extra machinery.\n\n- doesn't js/appServer.js provide the publish() interface as well?\n- then it should be the \"publish\" interface that pushes peerPosts to connected clients.\n- so the js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher) interface.... This seems to be the next big cleanup for the SpiritOS system architecture....\n- the client interface does the api queries, and the interface fetches, and request streams to listen to, and the server part of it accepts connections from streamListeners in form of \"ID-key.api-family\" where the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it always has and to the connected peer id's via peerPosts to ID-family-streamListener....\n- Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.\n- Who may subscribe follows the normal grant rules and checks.\n- A new subscriber gets what the publishing server thinks is the best bootstrap data set; for the desk that may be no more than the bare goal row, since everything published afterwards automatically has a home in the client's data set.\n- No subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers, restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again. Nothing else persists.\n- It need not be perfect: clients subscribe at different times and ask for different things, so a mirror is never exact or complete, only the best information available. The server alone holds canonical state; any client request may meet changed state there and fail, and that is fine.\n- Publishing stays fail-fast as it is: one attempt per row, no patience; a follower that does not answer within the delivery wait is marked away and its queued rows are dropped. The wait stays as it is.\n- What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes.\n- Found live at this item's Go: the agent holding the item was not woken by the Go, the second time running. A Go on an item wakes the agent it concerns, whether or not that agent already holds the item.\n- Folded in from goal/G33.7, committed as bf1805ed: no desk answer carries his lines; an ended Verify shows its outcome on the row and in the dialog.\n- The desk sends all its data to all subscribers; each deskClient filters what reaches its agent.\n- In the item dialog's file list, the open grants and their grant buttons come first, at the top, never below the files.\n- Found live: a grant had to be pressed twice. After the confirming press the button says granting, never red again, until the push turns it green; and the dialog compares change numbers per row, so no pushed row is dropped because another row carried a newer number.\n- The List tells a goal from its items at a glance: the goal row carries a goal sign in its icon cell and is shaded. No item row or item dialog links to the item's own goal, so a click near an item's Done cannot open the goal by accident.\n- An unread line from the phase holder marks its row with a red ! next to the item, no longer the whole row in red type.\n- Found live: work.open offered jobs from every goal, so a stale job in an old goal (G29.17) woke an agent every time it listened, and both agents filtered such jobs with hand-made skip lists. work.open offers only jobs of the current goal; the skip lists go.\n- When deskClient wakes its agent, it hands over all the news since the agent's last wake: every line, and every status change of the goal and its items (phase, claim, verify, done, close, Go, grants), from its data set with no ask to the desk, so the agent always knows what changed and the line that woke it arrives with what it refers to.\n",
    "checks": [
     {
      "number": "Q1",
@@ -4211,6 +4213,18 @@
      "state": "cleared",
      "by": "andy",
      "at": "2026-10-23T19:59:51.048Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-23T21:19:29.488Z",
      "made": "desk",
      "placedBy": "desk",
      "placedKey": ""
@@ -4606,6 +4620,146 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T20:39:54.916Z",
      "text": "Yes. Your desk runs 36844265 and offers no stale job any more (work.open answers an empty list for me). My skip list is gone: my listener is now the plain ear and nothing else. wsl can drop its wrapper the same way."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T20:58:50.522Z",
+     "text": "cw. fix the desk client issue, in this item, the desk client, when it wakes its agent, hands it all the news since the last agent-wake, this is also why you  never know about status changes etc... in the items or goals."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T20:59:15.743Z",
+     "text": "In this item, as you say (box v16): a wake hands over all the news since my last wake, every line and every status change of the goal and its items, from deskClient's data set. Building it now, red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:04:45.381Z",
+     "text": "yup, we're still not taking full advantage of the data cache in clients generally, this is a learning curve"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:18:21.494Z",
+     "text": "commit d16b6178272df3b7eb45ed89035c4ea8d54ebb41: A wake hands the agent all the news since its last wake (goal/G33.8)\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskClientPush.js\n- spirit/test/deskClientQuiet.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:18:35.683Z",
+     "text": "Pushed and claimed: d16b6178, and my node runs it now.\n\nWhen deskClient wakes me, it hands over everything since my last wake: every line in the current goal and the group chat, and every status change of the goal and its items. What is mine to act on comes as DESK, the rest as NEWS, the waking line last. NEWS never wakes me by itself. All of it from deskClient's own data, nothing asked of the desk.\n\nFiles: process/js/deskClient/deskClient.js; tests deskClientPush, deskClientNext, deskClientQuiet.\n\nwsl gets it after a pull and a restart of its node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:19:29.465Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:21:06.241Z",
+     "text": "wsl. this time you definitely need to pull and restart your node. for the fixes in deskClient that hand you all the latest news with every wake...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T21:21:31.293Z",
+     "text": "Pulled, at d16b6178. But deskClient.json still says runs [] (since G30.20), so after a restart my node starts no deskClient and I am off Desk, with the fix unused.\nShall I restart with deskClient's runs set to home in my clone, or does the repo change it first?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:22:09.170Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:22:24.440Z",
+     "text": "On wsl's question, deskClient's runs:\n\n- The repo says runs nowhere since G30.20, because your desk node must not start a deskClient, while every agent's node must. One tracked file cannot say both.\n- Today I run mine through a local edit (runs set to home, hidden from git in my clone). wsl can do the same to get back on Desk now; that is the quick way.\n- The real fix is a per-node setting kept in the node's own state, overriding the manifest: each node says what it runs, and the repo stays clean. The same answers wsl's earlier question about each agent's chores. It changes the node itself, so it wants its own item.\n\nMy recommendation: wsl uses the local edit now, and the per-node setting becomes an item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:24:31.579Z",
+     "text": "wsl. this from cw.\n\nclaude-windows 23:22 On wsl's question, deskClient's runs:\nThe repo says runs nowhere since G30.20, because your desk node must not start a deskClient, while every agent's node must. One tracked file cannot say both.\nToday I run mine through a local edit (runs set to home, hidden from git in my clone). wsl can do the same to get back on Desk now; that is the quick way.\nThe real fix is a per-node setting kept in the node's own state, overriding the manifest: each node says what it runs, and the repo stays clean. The same answers wsl's earlier question about each agent's chores. It changes the node itself, so it wants its own item.\n\nMy recommendation: wsl uses the local edit now, and the per-node setting becomes an item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T21:25:00.559Z",
+     "text": "Done: deskClient runs home in my clone only, hidden from git; node 45441 restarted at d16b6178, deskClient up."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:26:49.041Z",
+     "text": "add item: per node settings for chores."
+    }
+   ]
+  },
+  {
+   "id": "goal/G33.9",
+   "title": "Per-node settings for chores",
+   "goal": "goal/G33",
+   "status": "",
+   "with": "claude-windows",
+   "version": 1,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "PER-NODE SETTINGS FOR CHORES\n\n- A node keeps its own settings for the servers it runs, in its own state (relay-state), never in a tracked file: each agent's verifier chores are set on that agent's node, so no clone carries a local edit and every clone pulls clean.\n- A per-node setting overrides the server manifest's default for that node only; with none set, the manifest's default stands.\n- The same mechanism covers which servers a node runs (deskClient's runs, empty in the repo since G30.20 because Andy's desk node must not start one), so the local edits agents use today for runs go too.\n\nWhere: the node's start of its servers (js/jobs.js, which hands each server its manifest's values), and the node's state folder.",
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:27:18.486Z",
+     "text": "Added, with its box. I wrote in the runs setting too, since it is the same mechanism and the same local edits; say if it should stay chores only."
     }
    ]
   }
