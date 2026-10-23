@@ -1,5 +1,5 @@
 {
- "change": 95458,
+ "change": 95635,
  "goal": "goal/G33",
  "items": [
   {
@@ -8,6 +8,7 @@
    "goal": "",
    "status": "",
    "with": "",
+   "version": 1,
    "buttons": [
     "done",
     "verify",
@@ -16,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.5",
-    "goal/G33.7"
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -41,20 +41,13 @@
    "rules": [],
    "verified": "red",
    "verifyFailures": [
-    "spirit/test/deskClientPush.js not run: missing from this checkout",
-    "spirit/test/deskTables.js red: FAILURE #1.1: OWED by goal/G33.4: the log of writes is still kept: the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"]",
-    "spirit/test/deskTables.js red: FAILURE #1.2: OWED by goal/G33.4: no table keyed by goal and item for items, chat, files, box, checks, claims; the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"]",
-    "spirit/test/deskTables.js red: FAILURE #1.3: OWED by goal/G33.4: rows without a creator: no keyed tables to read",
-    "spirit/test/deskTables.js red: FAILURE #1.4: OWED by goal/G33.4: rows for the goal [], for the item []",
-    "spirit/test/deskTables.js red: FAILURE #1.5: OWED by goal/G33.4: the box rows of the item are []",
-    "spirit/test/deskTables.js red: FAILURE #1.6: OWED by goal/G33.4: the chat rows of the item are []",
-    "spirit/test/deskTables.js red: FAILURE #1.7: OWED by goal/G33.4: check rows [], claim rows []",
-    "spirit/test/deskTables.js red: FAILURE #1.8: OWED by goal/G33.4: the file rows are [] (no grant column)",
-    "spirit/test/deskTables.js red: FAILURE #1.9: OWED by goal/G33.4: after his grant the core file's row reads undefined"
+    "spirit/test/deskVerifyDriven.js red: SUCCESS #1.26: his Done on the red goal/G100.4 went through, and its line names the failure: Done went over a red run: spirit/test/zzDrivenRed.js red: FAILURE #1 red probe",
+    "spirit/test/deskVerifyQueueKept.js not run: missing from this checkout"
    ],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows",
     "claude-ubuntu": "claude-ubuntu",
@@ -71,7 +64,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -79,7 +74,6 @@
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
    "box": "- while the icons app works mostly nice, it now has started to refuse me more icons-adds. This applet is the one that should be feeding a NEW icon dropdown in face-apps, it doesn't. Apps, still uses the legacy icon dropdown, with the hard-coded table from kernel.js. \n\n- kernel.js is still sticking about in face-apps?\n\n",
-   "version": 1,
    "checks": [],
    "chat": [
     {
@@ -126,6 +120,7 @@
    "goal": "goal/G33",
    "status": "closed",
    "with": "",
+   "version": 1,
    "buttons": [
     "reopen"
    ],
@@ -184,6 +179,7 @@
    ],
    "verified": "none",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -194,7 +190,6 @@
    "half": false,
    "full": false,
    "box": "ICONS ON THE FACE: A REFUSAL SAYS WHY, AND ADDING WORKS\n\n- On the face, adding an icon in the Icons app says not saved: refused, for every icon; at home the same save is taken.\n- A refusal on its way to the face keeps its reason: where the node, the face door or the relay answers with words and no code, the spirit object carries the words, and the Icons app shows them beside Add.\n- Then the cause the words name is fixed, so an icon added on the face is saved and shows in every icon list.\n- The Icons app keeps writing the one set it owns, shell/icons/iconSet.json; a set too large to travel is not the answer to cut.\n\nWhere: face/spirit.js, shell/icons/icons.js, and the hop the reason names.",
-   "version": 1,
    "checks": [
     {
      "number": "G1",
@@ -628,6 +623,7 @@
    "goal": "goal/G33",
    "status": "closed",
    "with": "claude-windows",
+   "version": 1,
    "buttons": [
     "reopen"
    ],
@@ -686,6 +682,7 @@
    ],
    "verified": "none",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -697,7 +694,6 @@
    "half": false,
    "full": false,
    "box": "SMALL DESK ISSUES\n\n- The Verifier tab shows no queue: the list of waiting runs under its own elements (goal/G19.3) goes, and with it whatever only fed it.\n- An item turns red in the List when the agent holding its phase posts a line under it, a report or a question, so his attention is caught when something happens; it stays red until he opens the item.\n- Discussed, not built here: Desk's searches changed so a Desk client keeps what it has learned of the current goal, as the face apps keep their data, instead of asking again.\n\nWhere: shell/desk/desk.js, the desk server's facts for the List, deskDetails.",
-   "version": 1,
    "checks": [],
    "chat": [
     {
@@ -894,6 +890,7 @@
    "goal": "goal/G33",
    "status": "closed",
    "with": "claude-windows",
+   "version": 24,
    "buttons": [
     "reopen"
    ],
@@ -960,6 +957,7 @@
    ],
    "verified": "green",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -971,7 +969,6 @@
    "half": true,
    "full": false,
    "box": "DESK CLIENTS KEEP THE CURRENT GOAL; THE DESK DRIVES VERIFICATION\n\nOne cache, two clients\n- A desk search answers what the List's rows show: each item's facts.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient takes the rows from the desk's changes answer, which carries, beside its records, the current facts of the items they touched and the held item's panels when one of them is it.\n- deskClient fetches on its own, while its agent waits: the current goal's rows, then the one item its agent holds, whole (box, newest chat, checks, files); the agent's reads of it are answered from what it keeps, and only writes go to the desk.\n- The Desk app keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js with one desk translator, in node and in the page. Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step towards Desk as a face app.\n\nThe desk drives verification\n- Each item holds its own need for verification, and the desk knows every item's state.\n- deskVerify knows nothing of the desk, its goals or its items. It is busy or it is not. It is handed a run (the suites, and the commit to run at), answers taken or busy, and keeps each suite's outcome in its own database; it reports to no one. It keeps no list of work; old rows in verify.db are never read as work. Its idle hour is its own: an hour in which no run was handed to it; its idle chores start from that, never from the desk. On its idle hour it runs the chores its own manifest names (each agent configures its own verifier's), handing each its node's port, and nothing more; each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file it writes today moves into the publish chore).\n- The desk hands runs only to the verifier on its own node. An agent starts the verifier on its own node itself, to make sure its work is green there before it claims.\n- The desk compiles a run's suites: an item's from its file list, a goal's from its items' lists.\n- The desk and its user drive everything; verifying runs only when it is required. The desk keeps one switch, verify-busy, showing the verifier's last answer to a start request, taken or busy; it only informs the Verify button and never holds anything back. Taken tells the desk that item's run is under way and needs no new start.\n- At each event (a claim, a Verify press, a run taken, a Done press) the desk reads the latest state of the current goal's waiting items' suites through the verifier's search, so each item's facts say whether it is verified: green, red with the failures, or no run yet. Done is never refused for that; it carries the warning mark instead.\n- The desk queues no verification and starts none on its own: on the desk node a run is started only by his Verify button, nothing else. A claim, an item coming to wait or a Done only reads the verifier's state. Only the current goal's items count as waiting; leftover claims in older goals are never read.\n- A Verify button on the item, right next to its Done button, has the desk hand it over; it shows the switch and still tries when the switch says busy. On the goal, the same button runs the goal's full check.\n- Done is offered as soon as an agent claims done. The item's facts say whether it is verified; not verified (its suites red, or no run of them yet), the Done button carries a warning mark and re-arms in the page: the first press arms it and says why, the second sends Done, and the chat records that it went over a red or missing run. Verified green, one press does it. The desk keeps no arming.\n- Interface: the verifier's search drops its item and kind arguments; the desk's verify.pass, verify.reject, verify.regress and verify.again are deleted.\n- The Verifier tab shows only what runs now, its console, and Stop.\n\nWhere: shell/js/desk/data.js, process/js/desk/desk.js, process/js/deskClient/deskClient.js, process/js/deskVerify/deskVerify.js, shell/desk/desk.js, shell/deskDetails/deskDetails.js.",
-   "version": 24,
    "checks": [
     {
      "number": "G1",
@@ -1959,6 +1956,7 @@
    "goal": "goal/G33",
    "status": "closed",
    "with": "claude-windows",
+   "version": 48,
    "buttons": [
     "reopen"
    ],
@@ -2017,20 +2015,12 @@
    ],
    "verified": "red",
    "verifyFailures": [
-    "spirit/test/deskClientPush.js not run: missing from this checkout",
-    "spirit/test/deskTables.js red: FAILURE #1.1: OWED by goal/G33.4: the log of writes is still kept: the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"]",
-    "spirit/test/deskTables.js red: FAILURE #1.2: OWED by goal/G33.4: no table keyed by goal and item for items, chat, files, box, checks, claims; the tables are [\"lines\",\"docs\",\"records\",\"rules\",\"rule_drafts\"]",
-    "spirit/test/deskTables.js red: FAILURE #1.3: OWED by goal/G33.4: rows without a creator: no keyed tables to read",
-    "spirit/test/deskTables.js red: FAILURE #1.4: OWED by goal/G33.4: rows for the goal [], for the item []",
-    "spirit/test/deskTables.js red: FAILURE #1.5: OWED by goal/G33.4: the box rows of the item are []",
-    "spirit/test/deskTables.js red: FAILURE #1.6: OWED by goal/G33.4: the chat rows of the item are []",
-    "spirit/test/deskTables.js red: FAILURE #1.7: OWED by goal/G33.4: check rows [], claim rows []",
-    "spirit/test/deskTables.js red: FAILURE #1.8: OWED by goal/G33.4: the file rows are [] (no grant column)",
-    "spirit/test/deskTables.js red: FAILURE #1.9: OWED by goal/G33.4: after his grant the core file's row reads undefined"
+    "spirit/test/deskVerifyDriven.js red: SUCCESS #1.26: his Done on the red goal/G100.4 went through, and its line names the failure: Done went over a red run: spirit/test/zzDrivenRed.js red: FAILURE #1 red probe"
    ],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -2039,7 +2029,6 @@
    "half": true,
    "full": true,
    "box": "The point of all of it: narrowing the scope of work, traffic, wire and context to the current goal. The item delivers on two promises, or it is not done: 1) less load on the desk server; 2) up-to-date information at every agent's and desk client's fingertips, kept by the push into its own mirror through the new family interfaces, without waking an agent to read messages not meant for it or just to keep up.\n\n- there is a need for two numberic MAIN key fields for desk goals and items.\n- the first key must be the goal-number\n- the second key must be the item number (always zero for a goal)\n- this will easily bound searches within a goal (current goal only mode of searches)\n- the cute little ID string you display ('goal/G45.765') can be rendered from those two keys\n- searches within the current goal won't catch garbage from other goals anymore.\n- No sub-goals and no goal tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed.\n- Design mode on goal level AND on item level, so further items can be designed while other items of the same goal already go through their implementation phases.\n- A new item always arrives in design mode.\n- Tables keyed by goal number and item number: goals and items, chat, and files; each file row holds its grant status.\n- Agents' work and chat is always tied to a goal or an item, and every state row keeps its attribution (who wrote it) until it is shed. Records with no goal or item are dumped at migration: agent.state, scope.set and the old lines table. What is about an agent (its profile, signed off) is keyed by the agent, and the desk rules by their rule number. Goal 0 is the group chat (desk/G0.0 today): chat that belongs to no other goal lives there, so every chat line has a goal.\n- Each side table has its own probability search, filtered by goal or by item.\n- The box is a side table of its own, keyed by goal, item and version: each version a row. Fetched and pushed separately, as its own sub-piece of the item, the box gets the whole payload to itself; that is its extra space. It stays under PAYLOAD_MAX, a larger box is refused, and nothing is ever chunked: it travels by peerPost, with no compromise there. No sub-protocol of any kind: an item too big for one box is split: another full item is added, since a problem that complex should not be dealt with at once. A client never culls or modifies the data set it mirrors.\n- If a bound is needed, the data set bounds itself: a maximum size (about 132 MB) past which it culls its own oldest entries. That is a SpiritOS-wide feature of the data set, managed by no app and no server. The size is one constant, set in a single place.\n- Mirror distribution is push: the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under PAYLOAD_MAX, so a desk client never grabs anything. Every row fits under the payload.\n- Reach: when a goal becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates. An agent's held item lies in the current goal, so it needs no push of its own.\n- A cap is then just one revised box version: the agent writes it, and the desk pushes it like any other change.\n- The desk keeps state only: the keyed tables are the store, and the log of writes goes. The most recent history is found in the node's bounded logs. History is git's job, not the desk's: the desk keeps no ever-growing heap. An agent's listening or working is one current value per agent, never a row per word.\n- Each special goal (each plugin goal such as Stacks, and the group chat) has a goal number of its own, minted like any goal; its goal row marks it special. With design on item level, a special goal is simply always open: its new items are designed while others are built.\n- Checks (the Q and G lines) and claims are side tables keyed by goal and item like the others.\n- Migration: today's database is migrated into the tables once; each id string becomes its two numbers (goal/G33.4 becomes 33 and 4).\n- The desk database sheds by itself past a boundary size, one constant set in a single place, 16 MB. It sheds in whole goal chunks: first the goal untouched the longest, with all its items and every row of theirs (file, chat, box, checks, claims), since nothing could reach them any more; then the next. The current goal is never shed. Special goals are exempt. Shedding is goal by goal, nothing finer.\n- Every row in the desk database carries a creator reference: who wrote it. A chat line is keyed by goal, item, timestamp and the writer's id.\n- Interface: the desk verbs log.add, log.search and pending.get are deleted with the old lines table, and changes is deleted: in this item the push replaces it, and deskClient and the Desk page take what the desk pushes instead of asking for changes.\n- The model, always: the desk is the server and pushes a stream by peerPost to its desk clients. It publishes each change to the browser and to the desk clients with one and the same function.\n- The push reaches each agent's node: the receiving verb is streamListener, a common component built into appServer (js/appServer.js), so any server can be a true client of another server's stream; a server told whose stream it follows grants that sender streamListener automatically. deskClient has no verb of its own for it. appServer also keeps the data set in the server's spirit object (spirit.data with the stream's translator, as a face app keeps it in the page), fed by streamListener, so no server writes mirror code of its own. The desk knows every participating agent and, on every state change, pushes the changed row to all connected desk clients.\n- The desk holds the canonical state. An agent asks the desk to apply a change (a cap, a chat line); the desk refuses and does nothing more, or applies it and pushes it to every desk client, the one that asked included: a change lands in a client's cache only by the desk's push.\n- No stream listening on the desk server: it follows no stream at all. The desk server never acts as a client and accumulates nothing from its clients: clients only peerPost their changes, and the return stream updates their cache data set.\n- The desk reaches each deskClient through the family interface over peerPost: it asks the agent's node for the deskClient family's api and interface, as any caller does, and deskClient reaches the desk the same way.\n- Each item has a table of its suites, keyed by goal and item like the others, supplied by the red writer when it claims its red done: the red claim carries the suites (claim gains a suites argument); a Verify runs exactly those suites, never a guess from the file list.\n",
-   "version": 48,
    "checks": [
     {
      "number": "G1",
@@ -3157,6 +3146,7 @@
    "goal": "goal/G33",
    "status": "",
    "with": "",
+   "version": 2,
    "buttons": [
     "go",
     "close",
@@ -3189,6 +3179,7 @@
    "rules": [],
    "verified": "none",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3197,7 +3188,6 @@
    "half": false,
    "full": false,
    "box": "this is about the documentation generated by agents desk-verifiers, after a configured idle-time\n\n- the readme should start with the section \"How to get started\", immediately followed by the section \"What a box holds\", but retitled more usefully\n- i committed and pushed a more appropriate draft version of the repo-README.md\n- the section \"What a box holds\" in the repo's README is NOT to my liking\n- \"A 1 GB VPS with 10 GB of disc holds live connections for about 27,000 members.\" is complete BULLSHIT. such a box, when we configure it's relay for 512MB of RAM, holds live streams for about \"2439\" members. THAT is the only relevant number i want to see. NOT the number of streams held, that is detailed information that belongs in every agents auto-generated set. No long paragraph full of blah blah, only a link to the fanned out measurement-doc tree.\n- every agents README.md in the measurement tree. completely useless. The title, the agents name is fine, then MUST come under the first sub-heading, \"Machine Description\", a full account if the actual system the measurements were taken on, including OS/platform, total RAM and RAM used at the time the agents, README.md was generated, the release and identity of the installed node.js, the number of node servers running on that system at the time of generating the agents README.md etc... \n- under the second sub-heading \"Summary\", in bullet points. first: bullet, the number of members that can be served with a 512MB allotment of RAM. second bullet, the number of streams that implies with 3 live streams per member, naming what the streams are for. third bullet: how many peers can be remembers with also 512 MB allotted disk-space.\n- Then under a third sub-heading, \"Measurements\" comes that little table that now is the content of the agents README.md and represents the detailed measurement files.",
-   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -3207,6 +3197,7 @@
    "goal": "goal/G33",
    "status": "closed",
    "with": "claude-windows",
+   "version": 2,
    "buttons": [
     "reopen"
    ],
@@ -3273,6 +3264,7 @@
    ],
    "verified": "green",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3284,7 +3276,6 @@
    "half": false,
    "full": false,
    "box": "ADJUSTMENTS TO THE DESK'S BUTTONS AND THE VERIFIER TAB, after goal/G33.3\n\nThe List\n- A List row shows one button only: the next action wanted from him, in the item's own order of steps (Go before Verify, Verify before Done, Done before Close, and so on).\n- In the List a goal offers no Done or Close while any of its items is not done or closed.\n- The item's detail panel shows every button available, a goal's Done and Close at any time.\n\nThe Verify button\n- No Verify button shows the verifier's busy state, in the List or the dialog.\n- The run is back on the item's row: while the item his Verify handed over runs, its status column shows the suite and a progress bar, live from the verifier, and its status word again when the run ends; the detail panel shows the same.\n\nThe Verifier tab\n- Idle is not a run: the tile says Running now, and the bar moves, only while a run runs.\n- Idle reads: Idle, nothing running, with a grey bar.\n- The idle-hour countdown shows only on a verifier whose manifest names chores.\n\nWhere: shell/desk/desk.js, shell/deskDetails/deskDetails.js, process/js/desk/desk.js.",
-   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -3389,11 +3380,11 @@
    "id": "goal/G33.7",
    "title": "Desk interface: bounded answers, no superfluous verbs",
    "goal": "goal/G33",
-   "status": "running",
-   "with": "",
+   "status": "closed",
+   "with": "claude-windows",
+   "version": 12,
    "buttons": [
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -3402,22 +3393,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 7,
+   "fileCount": 106,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "4bb7870c",
+   "redCommit": "4bb7870c",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3448,19 +3439,20 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
+   "verifyFailuresMore": false,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE DESK'S INTERFACE: BOUNDED ANSWERS, NO SUPERFLUOUS VERBS (split from goal/G33.4)\n\n- Nothing is fetched all at once. A desk client connecting starts a stream push of the current goal: the goal and its items' rows. An item's parts (box, chat, checks, files) come only when needed, fetched by the deskClient for its agent, and then stay in its cache, kept current by the push.\n- The desk's interface itself prevents oversized answers: no verb fetches a whole goal or a whole item; every verb that could answer past the payload is removed or reshaped into bounded reads, and superfluous interfaces are removed.\n- Found live: reading goal/G33.4 whole answered 8,457 bytes against the 8,377 limit. item.get answers the item's facts only, bounded; the facts themselves are bounded so a row always fits.\n- Found live at G33.4's Done: the desk wrote its over-a-red-run line from an older run (13) instead of the newest (14). At every event the desk reads the newest run of each suite; this case is in the red.\n- Every read asks for the precise information needed and no more; the build looks for places that fetch more than they use. Every desk table's interface has its probability search, mandatory and made by one shared component rather than written per table; the suites table's is item.suites.search, all an agent's verifier run needs.\n- searchDataSet: a cache-only search in the component that keeps the data set (spirit.data), so it serves the page and every server alike. It asks nobody and ranks by probability across every table it holds, returning the most relevant rows whatever table they are in, bounded like every search.\n\nThe verb list (approved)\n- Delete: rule.history, state.get, state.set (nothing calls them); session.set (writes a whole goal at once; its callers use goal.add and item.add); deskClient.changed (nothing sends it since the push); items.find (agents only; items.search covers it).\n- Reshape into bounded reads: item.checks (more flag); seen.get and seen.set (one row per item, not one growing document); the Stacks door list (a door search with a more flag, and a read per door); a goal row's lists of every agent ever seen (bounded, or their own read); deskClient's kept file list (filled to one answer); deskVerify's run search (one suite's part per run).\n- Add: each table's probability search, item.suites.search among them.\n- Keep, already bounded: item.get (facts only), item.box, item.chat, item.files, items.search, chat.search, and the rest.\n",
-   "version": 8,
+   "box": "THE DESK'S INTERFACE: BOUNDED ANSWERS, NO SUPERFLUOUS VERBS (split from goal/G33.4)\n\n- Nothing is fetched all at once. A desk client connecting starts a stream push of the current goal: the goal and its items' rows. An item's parts (box, chat, checks, files) come only when needed, fetched by the deskClient for its agent, and then stay in its cache, kept current by the push.\n- The desk's interface itself prevents oversized answers: no verb fetches a whole goal or a whole item; every verb that could answer past the payload is removed or reshaped into bounded reads, and superfluous interfaces are removed.\n- Found live: reading goal/G33.4 whole answered 8,457 bytes against the 8,377 limit. item.get answers the item's facts only, bounded; the facts themselves are bounded so a row always fits.\n- Found live at G33.4's Done: the desk wrote its over-a-red-run line from an older run (13) instead of the newest (14). At every event the desk reads the newest run of each suite; this case is in the red.\n- Every read asks for the precise information needed and no more; the build looks for places that fetch more than they use. Every desk table's interface has its probability search, mandatory and made by one shared component rather than written per table; the suites table's is item.suites.search, all an agent's verifier run needs.\n- searchDataSet: a cache-only search in the component that keeps the data set (spirit.data), so it serves the page and every server alike. It asks nobody and ranks by probability across every table it holds, returning the most relevant rows whatever table they are in, bounded like every search.\n- Found live at this item's Go: the agent was not woken. A Go, a job offered to an agent, is meant for that agent and wakes it like a line addressed to it.\n- The outcome of a Verify is visible on the item itself: once a run ends, the row's status column and the dialog say verified green, or red with the number of failing suites, until the next run.\n- Every desk verb answers what it was asked, and nothing else. No desk answer carries his lines any more: the push brings them to every deskClient, so the old join of his recent lines onto a phase holder's answers (G29.10) is removed.\n\nThe verb list (approved)\n- Delete: rule.history, state.get, state.set (nothing calls them); session.set (writes a whole goal at once; its callers use goal.add and item.add); deskClient.changed (nothing sends it since the push); items.find (agents only; items.search covers it).\n- Reshape into bounded reads: item.checks (more flag); seen.get and seen.set (one row per item, not one growing document); the Stacks door list (a door search with a more flag, and a read per door); a goal row's lists of every agent ever seen (bounded, or their own read); deskClient's kept file list (filled to one answer); deskVerify's run search (one suite's part per run).\n- Add: each table's probability search, item.suites.search among them.\n- Keep, already bounded: item.get (facts only), item.box, item.chat, item.files, items.search, chat.search, and the rest.\n",
    "checks": [
     {
      "number": "G1",
@@ -3470,6 +3462,40 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-23T11:26:04.842Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-23T12:27:59.770Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-23T12:28:03.648Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js, spirit/run/shell/js/desk/data.js, spirit/run/shell/js/spiritData.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T12:49:58.946Z",
      "made": "desk"
     }
    ],
@@ -3599,6 +3625,180 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T11:28:01.407Z",
      "text": "Yes, the push brought it: my deskClient's copy shows both core files granted, the same as your desk. I wrote my last line without looking at the item's files again; my mistake, not the push's.\n\nGreen, granted: only your Go is left."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:28:44.514Z",
+     "text": "the go should have woken you up..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T11:29:36.012Z",
+     "text": "It should have, and it did not: my deskClient wakes me now only for lines meant for me, and a Go on an item nobody holds yet fell outside that. Taken now, red phase. In the box (v9): a Go, a job offered to an agent, wakes it like a line addressed to it; this is fixed in this item, red first with the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T11:30:07.570Z",
+     "text": "TTYL"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T12:27:59.750Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T12:28:03.471Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T12:28:03.486Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T12:49:57.737Z",
+     "text": "G33.7 is built and green in my clone: 157 desk, deskClient and deskVerify suites, 2,038 checks pass and none fail (before: 2,021).\n\n- Every read is bounded: item.get facts only, parts read when needed and then kept, item.checks with a more flag, seen one value per item, the goal row's agent lists trimmed.\n- The approved verbs are deleted: rule.history, state.get, state.set, session.set, items.find, deskClient.changed, and the old Stacks door list, replaced by a door search and a per-door read.\n- Every table has its probability search from one shared component; item.suites.search among them. searchDataSet searches the cache only, ranked across all it holds.\n- The verifier's run search answers one suite's part per run, so the newest run always fits; the stale-run case is in the red.\n- Your Go now wakes the agent: about 60 ms after the press in the test.\n\nOne core file needs your grant before the commit: js/appServer.js. It gains the moment a delivery to a follower started failing, so a client coming back gets what it missed. The grant is on the item.\n\nFor later, not blocking: suites build their test worlds through the migration now that session.set is gone; and seen marks from the old document start fresh, so the page shows everything as seen once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T12:52:50.912Z",
+     "text": "granted for a while now"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T12:53:53.008Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T12:54:20.934Z",
+     "text": "Committed, pushed and claimed: 4bb7870c. The red claim names its nine suites, now in the item's suites table: appServerStream, deskBoundedInterface, deskClientPush, deskMirror, deskStacksDoorSearch, deskTables, deskVerifyDriven, deskVerifyRunsSearch, spiritDataSearch.\n\nAgain a flag day: pull and restart your node, then I restart mine, so the two match; until then my posts may fail. Your Verify then runs exactly those nine suites.\n\nFiles:\n\n- process/js/desk: desk.js, desk.family/api.js (items.find.json deleted), plugins/js/stackFrameChecks/stackFrameChecks.js\n- process/js/deskClient: deskClient.js, deskClient.family/api.js\n- process/js/deskVerify/deskVerify.js\n- js/appServer.js; shell/js/spiritData.js; shell/js/desk/data.js\n- shell/desk/desk.js, DATA_STRUCTURES.md, plugins/stackFrameChecks/stackFrameChecks.js; shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- tests: 4 new suites, testSupport.js, 87 suites updated"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:00:27.120Z",
+     "text": "i restarted, running verify now"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:00:46.444Z",
+     "text": "My node is restarted on 4bb7870c too. Reading G33.4 whole is now its facts only and fits; its 129-file list answers in one bounded page."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:00:52.772Z",
+     "text": "Correction: my line above is wrong. Reading G33.4 whole still answers too large, 8,930 bytes; I posted before checking the answer. Tracing it now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:03:53.615Z",
+     "text": "why would you read any item all at once, i just don't get it.... isn't that exactly what you're NOT supposed to do?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:04:01.031Z",
+     "text": "***   SUCCESS #1.1: \"walrus harbour\" answered the contact first, then the walrus item, ahead of the rows that do not match: [\"contacts/key-one\",\"files/docs/walrus.txt\",\"deskItems/goal/G1.2\",\"deskItems/goal/G1.1\"] ✅\nD:\\SpiritOS\\spirit\\test\\testSupport.js:40\n  fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {\n  ^\n\nReferenceError: fetch is not defined\n    at record (D:\\SpiritOS\\spirit\\test\\testSupport.js:40:3)\n    at Object.check (D:\\SpiritOS\\spirit\\test\\testSupport.js:331:9)\n    at Object.<anonymous> (D:\\SpiritOS\\spirit\\test\\spiritDataSearch.js:44:69)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n\nNode.js v24.20.0"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T13:04:01.051Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:05:02.453Z",
+     "text": "commit 411eb95883dbceff9fade13b60933d3fa4668f00: testSupport reports to deskVerify with the fetch it took at load (goal/G33.7)\n- spirit/test/testSupport.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:05:07.686Z",
+     "text": "Found: spiritDataSearch.js removes the global fetch to prove the search asks nobody, and the test support used that same fetch to report each result to your verifier, so it crashed under your Verify (run alone it passes, which is why the build missed it).\n\n- Fixed: the test support keeps its own fetch from load time. Reproduced the crash the way the verifier runs it, then green. Pushed as 411eb958.\n- Your verifier pulls on its next run, so a new Verify needs no restart.\n\nThe too-large read of G33.4 is still being traced."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:07:53.650Z",
+     "text": "The too-large read is traced. It is the desk on your node: when the agent holding an item's phase asks the desk, the answer carries your lines typed since the take (G29.10). It did that on reads too, and filled those lines up to a fixed 8 KB without counting the answer they ride on. G33.4 has a long chat, so its read came to 8,930 bytes.\n\nThe fix, being built red first: reads carry none of your lines, and on writes your lines fill only the room the answer leaves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:10:20.664Z",
+     "text": "i have no way of telling if verify succeeds, or is the whole table row in red typeface an indicator?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:11:06.861Z",
+     "text": "No, the red typeface is something else: it marks a line from the phase holder you have not opened yet (G33.2).\n\nToday the only sign of a Verify's outcome is the Done button: with the warning mark it is not green, without it is green, and its first press says why. That is too hidden.\n\nFolded into this item (box v10): once a run ends, the row's status column and the dialog say verified green, or red with the number of failing suites, until the next run."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:13:14.192Z",
+     "text": "\"the answer carries your lines typed\"\n\nwhy? my lines are streamed to deskClient without any further assistance....???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:14:00.302Z",
+     "text": "You are right: it is a leftover from before the push (G29.10), and now pure duplication. It goes entirely, not bounded: no desk answer carries your lines; they reach the agent by the stream alone. In the box (v11)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:14:20.274Z",
+     "text": "why on earth would an unrelated verb feel the need to pack in a chatline of mine, i JUST DON?T GET IT.."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T13:14:20.297Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T13:14:35.953Z",
+     "text": "The history, briefly: before the push, an agent heard your lines only when it stopped to wait and polled. An agent deep in a build could write for an hour past your \"stop\". G29.10 patched that by tucking your newest lines into the answer to whatever the agent wrote next, so it would see them at once.\n\nWith the push that patch has no reason left, and it was never bounded, which is what broke here. It is being deleted, not repaired."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:15:13.767Z",
+     "text": "the desk should answer what it was asked. period. don't get fancy, it always backfires."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T13:16:17.036Z",
+     "text": "god! please don't solve problem by hacking, it's just a really bad habit..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T13:16:17.054Z",
+     "text": "message delivered, claude-windows busy"
     }
    ]
   }
