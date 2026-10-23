@@ -1,16 +1,19 @@
 {
- "change": 95923,
+ "change": 95926,
  "goal": "goal/G33",
  "items": [
   {
    "id": "goal/G33",
    "title": "Small fixes in existing apps.",
    "goal": "",
-   "status": "closed",
+   "status": "",
    "with": "",
    "version": 1,
    "buttons": [
-    "reopen"
+    "done",
+    "verify",
+    "go-all",
+    "close"
    ],
    "blocking": [],
    "blocked": [
@@ -19,7 +22,7 @@
    ],
    "codeOffered": false,
    "go": false,
-   "alone": true,
+   "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -56,7 +59,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 0,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
