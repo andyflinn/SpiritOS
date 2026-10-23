@@ -54,32 +54,32 @@ async function limboLines(id) {
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'lh/G1', title: 'Limbo' }, items: [
-    { id: 'lh/G1.1', title: 'Held', blocks: ['lh/G1'], code: true }, { id: 'lh/G1.2', title: 'Other', blocks: ['lh/G1'], code: true }] }) }, ANDY);
-  await call('press', { id: 'lh/G1', what: 'end-design' }, ANDY);
-  const go = await call('press', { id: 'lh/G1.1', what: 'go' }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Limbo' }, items: [
+    { id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'], code: true }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'], code: true }] }) }, ANDY);
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  const go = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await call('agent.state', { word: 'working' }, CW);
-  const take = await call('phase.take', { id: 'lh/G1.1', phase: 'red' }, CW);
-  const f0 = await facts('lh/G1.1');
-  if (took(go) && took(take) && f0.with === 'claude-windows' && f0.limbo === false) test.check('the world: Go on lh/G1.1, claude-windows holds its red and is working, so it is not limbo');
+  const take = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const f0 = await facts('goal/G100.1');
+  if (took(go) && took(take) && f0.with === 'claude-windows' && f0.limbo === false) test.check('the world: Go on goal/G100.1, claude-windows holds its red and is working, so it is not limbo');
   else { test.fail('the world: go ' + go.status + ', take ' + take.status + ' ' + short(take.body) + ', facts ' + short({ with: f0.with, limbo: f0.limbo, phase: f0.phase })); return; }
 
   test.subHeading('1. the holder going back to listening leaves the item out of limbo');
-  const before = await limboLines('lh/G1.1');
+  const before = await limboLines('goal/G100.1');
   await call('agent.state', { word: 'listening' }, CW);
-  await call('chat.add', { id: 'lh/G1.2', text: 'any write, so the desk looks again' }, CW);
-  const f1 = await facts('lh/G1.1');
-  if (f1.limbo === false) test.check('lh/G1.1 is not limbo while claude-windows holds its red and listens');
-  else test.fail(OWED + 'lh/G1.1 reads limbo ' + short(f1.limbo) + ' with its red held by ' + short(f1.with));
-  const after = await limboLines('lh/G1.1');
+  await call('chat.add', { id: 'goal/G100.2', text: 'any write, so the desk looks again' }, CW);
+  const f1 = await facts('goal/G100.1');
+  if (f1.limbo === false) test.check('goal/G100.1 is not limbo while claude-windows holds its red and listens');
+  else test.fail(OWED + 'goal/G100.1 reads limbo ' + short(f1.limbo) + ' with its red held by ' + short(f1.with));
+  const after = await limboLines('goal/G100.1');
   if (after === before) test.check('and the desk posted no limbo line under it');
   else test.fail(OWED + 'the desk posted ' + (after - before) + ' limbo line(s) under a held item');
 
   test.subHeading('2. nobody holding the phase is still limbo');
   await call('agent.state', { word: 'working' }, CW);
-  const done = await call('phase.done', { id: 'lh/G1.1', phase: 'red' }, CW);
-  const f2 = await facts('lh/G1.1');
-  if (took(done) && f2.phase === 'build' && !f2.with && f2.limbo === true) test.check('once the red is done and its build is free, lh/G1.1 is limbo, its taker working or not');
+  const done = await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const f2 = await facts('goal/G100.1');
+  if (took(done) && f2.phase === 'build' && !f2.with && f2.limbo === true) test.check('once the red is done and its build is free, goal/G100.1 is limbo, its taker working or not');
   else test.fail(OWED + 'with nobody holding the build: ' + short({ done: done.status, phase: f2.phase, with: f2.with, limbo: f2.limbo }));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();

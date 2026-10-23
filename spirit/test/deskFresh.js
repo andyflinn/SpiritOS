@@ -40,10 +40,10 @@ function line(min, from, kind, text, todo) {
   return { key: 'f' + String(n).padStart(4, '0'), at: at(min), dir: dir, peer: LEAD,
     outcome: dir === 'in' ? 'received' : 'sent', from: from, kind: kind, text: text, todo: todo };
 }
-function session(items) { return JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: items }); }
-const A = { id: 't/G1.1', title: 'Alpha', description: 'first words', blocks: ['t/G1'] };
-const B = { id: 't/G1.2', title: 'Beta', description: 'beta', blocks: ['t/G1'], inPlace: [{ what: 'x', where: 'a.js:1' }] };
-const C = { id: 't/G1.3', title: 'Gamma', description: 'gamma', blocks: ['t/G1.1'] };
+function session(items) { return JSON.stringify({ goal: { id: 'goal/G100', title: 'The goal' }, rules: [], items: items }); }
+const A = { id: 'goal/G100.1', title: 'Alpha', description: 'first words', blocks: ['goal/G100'] };
+const B = { id: 'goal/G100.2', title: 'Beta', description: 'beta', blocks: ['goal/G100'], inPlace: [{ what: 'x', where: 'a.js:1' }] };
+const C = { id: 'goal/G100.3', title: 'Gamma', description: 'gamma', blocks: ['goal/G100.1'] };
 
 function fakeElement(id) {
   let html = '';
@@ -79,11 +79,11 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   const listLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat')];
   const fake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(listLog) });
   // The rows are the desk server's labels (desk/G2.6).
-  const lab = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
-  fake.items = [lab({ id: 't/G1.1', title: 'Alpha', blocked: ['t/G1.3'] }), lab({ id: 't/G1.3', title: 'Gamma', blocking: ['t/G1.1'] })];
+  const lab = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+  fake.items = [lab({ id: 'goal/G100.1', title: 'Alpha', blocked: ['goal/G100.3'] }), lab({ id: 'goal/G100.3', title: 'Gamma', blocking: ['goal/G100.1'] })];
   // Even a server that still answered one: the List draws no 'update?'.
-  const answerFresh = { items: [{ key: 't/G1.3', label: JSON.stringify({ id: 't/G1.3', changedAt: at(1), updateRequested: true }) },
-    { key: 't/G1.2', label: JSON.stringify({ id: 't/G1.2', changedAt: at(1) }) }], more: false };
+  const answerFresh = { items: [{ key: 'goal/G100.3', label: JSON.stringify({ id: 'goal/G100.3', changedAt: at(1), updateRequested: true }) },
+    { key: 'goal/G100.2', label: JSON.stringify({ id: 'goal/G100.2', changedAt: at(1) }) }], more: false };
   const verb = function (name, body) {
     // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
     const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
@@ -105,8 +105,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   else test.fail(OWED + 'the List still shows update?: ' + JSON.stringify(rowOf('Gamma').replace(/\s+/g, ' ').slice(0, 200)));
 
   test.subHeading('L2: the List\'s blocks and waits-on cells link to their items');
-  if (rowOf('Gamma').indexOf('data-open="t/G1.1"') !== -1 && rowOf('Alpha').indexOf('data-open="t/G1.3"') !== -1) {
-    test.check('Gamma\'s blocks cell links t/G1.1; Alpha\'s waits-on cell links t/G1.3');
+  if (rowOf('Gamma').indexOf('data-open="goal/G100.1"') !== -1 && rowOf('Alpha').indexOf('data-open="goal/G100.3"') !== -1) {
+    test.check('Gamma\'s blocks cell links goal/G100.1; Alpha\'s waits-on cell links goal/G100.3');
   } else test.fail(OWED + 'Gamma row ' + JSON.stringify(rowOf('Gamma').replace(/\s+/g, ' ').slice(0, 160)) +
     ' | Alpha row ' + JSON.stringify(rowOf('Alpha').replace(/\s+/g, ' ').slice(0, 160)));
 

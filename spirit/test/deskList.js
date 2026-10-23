@@ -57,13 +57,13 @@ function target(attrs) {
 }
 
 const label = function (over) {
-  return JSON.stringify(Object.assign({ id: 't/G1.1', title: 'Alpha', goal: 't/G1', status: '', with: '', buttons: ['go'],
-    blocking: ['t/G1.2'], blocked: [], alone: false, star: false }, over || {}));
+  return JSON.stringify(Object.assign({ id: 'goal/G100.1', title: 'Alpha', goal: 'goal/G100', status: '', with: '', buttons: ['go'],
+    blocking: ['goal/G100.2'], blocked: [], alone: false, star: false }, over || {}));
 };
 const LIST = { items: [
-  { key: 't/G1', label: label({ id: 't/G1', title: 'The goal', goal: '', buttons: [], blocking: [], blocked: ['t/G1.2'], design: false, waiting: 2, live: ['claude-windows'] }) },
-  { key: 't/G1.1', label: label() },
-  { key: 't/G1.2', label: label({ id: 't/G1.2', title: 'Beta', status: 'done', buttons: ['close', 'reopen'], blocking: ['t/G1'], blocked: ['t/G1.1'] }) },
+  { key: 'goal/G100', label: label({ id: 'goal/G100', title: 'The goal', goal: '', buttons: [], blocking: [], blocked: ['goal/G100.2'], design: false, waiting: 2, live: ['claude-windows'] }) },
+  { key: 'goal/G100.1', label: label() },
+  { key: 'goal/G100.2', label: label({ id: 'goal/G100.2', title: 'Beta', status: 'done', buttons: ['close', 'reopen'], blocking: ['goal/G100'], blocked: ['goal/G100.1'] }) },
 ], more: false };
 
 function list() {
@@ -124,27 +124,27 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   const p0 = l.page();
   const alpha = rowOf(p0, 'Alpha');
   const beta = rowOf(p0, 'Beta');
-  if (/data-press="go"/.test(alpha) && /data-id="t\/G1\.1"/.test(alpha)) test.check('Alpha, buttons [go], shows a Go! press for t/G1.1');
+  if (/data-press="go"/.test(alpha) && /data-id="goal\/G100\.1"/.test(alpha)) test.check('Alpha, buttons [go], shows a Go! press for goal/G100.1');
   else test.fail(OWED + 'Alpha\'s row: ' + JSON.stringify(alpha.slice(0, 300)));
   // desk/G3.6, Andy: Reopen is never shown in the List; the dialog keeps it. The server still offers it.
   if (/data-press="close"/.test(beta) && !/data-press="go"/.test(beta)) test.check('Beta, done, shows Close and no Go!');
   else test.fail(OWED + 'Beta\'s row: ' + JSON.stringify(beta.slice(0, 300)));
   if (!/data-press="reopen"/.test(beta)) test.check('and no Reopen: the List never shows it (desk/G3.6)');
   else test.fail('OWED by desk/G3.6: the List shows Reopen on Beta');
-  if (/data-open="t\/G1\.2"/.test(alpha)) test.check('Alpha\'s blocking id links to its item');
+  if (/data-open="goal\/G100\.2"/.test(alpha)) test.check('Alpha\'s blocking id links to its item');
   else test.fail(OWED + 'Alpha\'s blocking is not a data-open link');
 
   test.subHeading('a press goes to the server as a press, and the row waits for the publish');
   l.arrive('claude-windows', AGENT_KEY);
   await settled();
-  l.click('desk-top', { 'data-press': 'go', 'data-id': 't/G1.1' });
+  l.click('desk-top', { 'data-press': 'go', 'data-id': 'goal/G100.1' });
   await settled();
   const pressed = l.asked.filter(function (a) { return a.verb === 'press'; })[0];
-  if (pressed && pressed.args.id === 't/G1.1' && pressed.args.what === 'go' && !('by' in pressed.args)) test.check('Go! sends press {id: t/G1.1, what: go}, no by (apiAuth/G1.13)');
+  if (pressed && pressed.args.id === 'goal/G100.1' && pressed.args.what === 'go' && !('by' in pressed.args)) test.check('Go! sends press {id: goal/G100.1, what: go}, no by (apiAuth/G1.13)');
   else test.fail(OWED + 'Go! sent ' + JSON.stringify(pressed || null));
   if (/data-press="go"/.test(rowOf(l.page(), 'Alpha'))) test.check('until the server publishes, Alpha still shows Go!');
   else test.fail(OWED + 'the row changed before the server published');
-  // goal/G3.8: the page's nudge is gone; the desk server nudges (goal/G3.5, deskNudge.js). deskPageNoNudge.js has the rest.
+  // goal/G3.8: the page's nudge is gone; the desk server reaches the agents (since goal/G33.4 by its stream, deskClientPush.js). deskPageNoNudge.js has the rest.
   const nudge = l.posted.filter(function (p) { return p.body && p.body.kind === 'changed'; });
   if (!nudge.length) test.check('after the server answered, the page sent no changed packet: the server nudges (goal/G3.8)');
   else test.fail('OWED by goal/G3.8: the page still nudges: ' + JSON.stringify(nudge));
@@ -159,7 +159,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   const p1 = l.page();
   if (rowOf(p1, 'Alpha renamed') && !/data-press="go"/.test(rowOf(p1, 'Alpha renamed'))) test.check('a published press and rename repaint Alpha: new title, no Go!');
   else test.fail(OWED + 'after the publishes Alpha\'s row: ' + JSON.stringify(rowOf(p1, 'Alpha').slice(0, 300)));
-  l.publish({ change: 14, verb: 'press', item: JSON.parse(label({ id: 't/G1.2', title: 'Beta', status: 'done', buttons: [] })), listed: false });
+  l.publish({ change: 14, verb: 'press', item: JSON.parse(label({ id: 'goal/G100.2', title: 'Beta', status: 'done', buttons: [] })), listed: false });
   await settled();
   if (beta && !rowOf(l.page(), 'Beta')) test.check('a published close (listed: false) takes Beta off the List');
   else test.fail(OWED + 'Beta is still on the List after listed: false');
@@ -169,7 +169,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   // an item the List did not hold made it ask items.search again. With the search box empty, a row of the current goal
   // the List does not hold is drawn from what the publish carries, after the last row of its goal, and nothing is asked.
   const before = l.searches().length;
-  l.publish({ change: 14.5, verb: 'item.add', item: JSON.parse(label({ id: 't/G1.9', title: 'NEW-ON-THE-LIST' })), listed: true });
+  l.publish({ change: 14.5, verb: 'item.add', item: JSON.parse(label({ id: 'goal/G100.9', title: 'NEW-ON-THE-LIST' })), listed: true });
   await settled();
   if (/NEW-ON-THE-LIST/.test(l.page()) && l.searches().length === before) test.check('a publish for an item not on the List draws its row from the publish, and asks nothing (goal/G24.6)');
   else test.fail('OWED by goal/G24.6: a publish for a new item: shown ' + /NEW-ON-THE-LIST/.test(l.page()) + ', searches ' + (l.searches().length - before));
@@ -204,7 +204,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   // press {id: <goal>, what: 'go-all', by: 'andy'}.
   test.subHeading('desk/G3.4: Go all sits at the right of the bar while the goal offers it');
   const G34 = 'OWED by desk/G3.4: ';
-  l.publish({ change: 16, verb: 'press', item: JSON.parse(label({ id: 't/G1', title: 'The goal', goal: '', buttons: ['go-all'], blocking: [], blocked: [] })) });
+  l.publish({ change: 16, verb: 'press', item: JSON.parse(label({ id: 'goal/G100', title: 'The goal', goal: '', buttons: ['go-all'], blocking: [], blocked: [] })) });
   await settled();
   const bar = l.doc.getElementById('desk-go-all');
   const goalRow = rowOf(l.page(), 'The goal');
@@ -218,9 +218,9 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   l.click('desk-go-all', { id: 'desk-go-all' });
   await settled();
   const all = goAlls()[0];
-  if (armedFirst && goAlls().length === 1 && all.args.id === 't/G1' && !('by' in all.args)) test.check('the first press arms it; the second sends press {id: t/G1, what: go-all}, no by (apiAuth/G1.13)');
+  if (armedFirst && goAlls().length === 1 && all.args.id === 'goal/G100' && !('by' in all.args)) test.check('the first press arms it; the second sends press {id: goal/G100, what: go-all}, no by (apiAuth/G1.13)');
   else test.fail(G34 + 'Go all: sent after one press ' + !armedFirst + ', after two ' + JSON.stringify(goAlls()));
-  l.publish({ change: 17, verb: 'press', item: JSON.parse(label({ id: 't/G1', title: 'The goal', goal: '', buttons: [], blocking: [], blocked: [] })) });
+  l.publish({ change: 17, verb: 'press', item: JSON.parse(label({ id: 'goal/G100', title: 'The goal', goal: '', buttons: [], blocking: [], blocked: [] })) });
   await settled();
   if (l.doc.getElementById('desk-go-all').hidden) test.check('once the goal no longer offers it, Go all hides');
   else test.fail(G34 + 'Go all still shows after the goal stopped offering it');

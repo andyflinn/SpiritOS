@@ -92,11 +92,11 @@ function mountPage(file, answers) {
 // The box is the panel every open shows first (#dd-panel, goal/G30.8; #dd-box before it).
 function boxLook(doc) { const el = doc.all['dd-panel']; return el ? el.innerHTML + ' ' + JSON.stringify(el.style) : ''; }
 function itemFacts(over) {
-  return Object.assign({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: 'wsl-claude',
-    buttons: [], blocking: ['t/G1'], blocked: [], alone: false, star: false, half: false, full: false }, over || {});
+  return Object.assign({ id: 'goal/G100.2', title: 'Beta', goal: 'goal/G100', status: 'running', with: 'wsl-claude',
+    buttons: [], blocking: ['goal/G100'], blocked: [], alone: false, star: false, half: false, full: false }, over || {});
 }
 function goalRow(live, agents) {
-  return { id: 'g/G1', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
+  return { id: 'goal/G101', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
     design: false, waiting: 0, live: live, working: [], agents: agents || {} };
 }
 function logLine(key, from, peer) {
@@ -120,51 +120,51 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Round' }, items: [
+      { id: 'goal/G101.1', title: 'A', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'B', blocks: ['goal/G101'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
 
     test.subHeading('1a. the item says how full its box is: half from 50%, full from 75%');
     const max = appClient.ANSWER_MAX;
-    const small = await factsOf('g/G1.1');
-    let v = ((await call('item.box', { id: 'g/G1.1' }, CW)).body || {}).version || 0;
+    const small = await factsOf('goal/G101.1');
+    let v = ((await call('item.box', { id: 'goal/G101.1' }, CW)).body || {}).version || 0;
     const halfText = 'h'.repeat(Math.floor(max * 0.55));
-    const w1 = await call('box.write', { id: 'g/G1.1', text: halfText, version: v }, CW);
-    const half = await factsOf('g/G1.1');
+    const w1 = await call('box.write', { id: 'goal/G101.1', text: halfText, version: v }, CW);
+    const half = await factsOf('goal/G101.1');
     v = (w1.body || {}).version || v;
     const fullText = 'f'.repeat(Math.floor(max * 0.8));
-    const w2 = await call('box.write', { id: 'g/G1.1', text: fullText, version: v }, CW);
-    const full = await factsOf('g/G1.1');
+    const w2 = await call('box.write', { id: 'goal/G101.1', text: fullText, version: v }, CW);
+    const full = await factsOf('goal/G101.1');
     if (w1.status === 200 && w2.status === 200 && small.half === false && small.full === false
       && half.half === true && half.full === false && full.half === true && full.full === true) {
       test.check('empty: neither; 55% of one answer: half; 80%: full — and both writes were taken');
     } else test.fail(OWED + 'facts read empty ' + JSON.stringify([small.half, small.full]) + ', at 55% ' + JSON.stringify([half.half, half.full]) + ' (write ' + w1.status + '), at 80% ' + JSON.stringify([full.half, full.full]) + ' (write ' + w2.status + ')');
 
     test.subHeading('2a. an agent takes his line; the other waits until the taker answers');
-    const noLine = await call('line.take', { id: 'g/G1.2' }, CW);
-    await call('chat.add', { id: 'g/G1.2', text: 'who can tell me?' }, ANDY);
-    const first = await call('line.take', { id: 'g/G1.2' }, CW);
-    const second = await call('line.take', { id: 'g/G1.2' }, WSL);
-    const chat = await chatOf('g/G1.2');
+    const noLine = await call('line.take', { id: 'goal/G101.2' }, CW);
+    await call('chat.add', { id: 'goal/G101.2', text: 'who can tell me?' }, ANDY);
+    const first = await call('line.take', { id: 'goal/G101.2' }, CW);
+    const second = await call('line.take', { id: 'goal/G101.2' }, WSL);
+    const chat = await chatOf('goal/G101.2');
     const his = chat.filter(function (l) { return l.text === 'who can tell me?'; })[0] || {};
     if (noLine.status !== 200 && (noLine.body || {}).code === 'no-row' && first.status === 200 && typeof (first.body || {}).change === 'number'
       && second.status !== 200 && (second.body || {}).code === 'taken' && his.taken === 'claude-windows') {
       test.check('no line, no take (no-row); the first take wins and the line shows taken: claude-windows; the second is refused taken');
     } else test.fail(OWED + 'take with no line ' + JSON.stringify((noLine.body || {}).code) + ', first ' + first.status + ', second ' + JSON.stringify((second.body || {}).code) + ', line taken ' + JSON.stringify(his.taken));
 
-    const other = await call('chat.add', { id: 'g/G1.2', text: 'I will answer too' }, WSL);
-    const himself = await call('chat.add', { id: 'g/G1.2', text: 'and more from me' }, ANDY);
-    const taker = await call('chat.add', { id: 'g/G1.2', text: 'here is my answer' }, CW);
+    const other = await call('chat.add', { id: 'goal/G101.2', text: 'I will answer too' }, WSL);
+    const himself = await call('chat.add', { id: 'goal/G101.2', text: 'and more from me' }, ANDY);
+    const taker = await call('chat.add', { id: 'goal/G101.2', text: 'here is my answer' }, CW);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: once freed, wsl-claude takes
     // his newer line, a take the standing one would have refused taken, and answers.
-    const freeTake = await call('line.take', { id: 'g/G1.2' }, WSL);
-    const freed = await call('chat.add', { id: 'g/G1.2', text: 'my opinion, since you ask' }, WSL);
+    const freeTake = await call('line.take', { id: 'goal/G101.2' }, WSL);
+    const freed = await call('chat.add', { id: 'goal/G101.2', text: 'my opinion, since you ask' }, WSL);
     if (other.status !== 200 && (other.body || {}).code === 'taken' && himself.status === 200 && taker.status === 200 && freeTake.status === 200 && freed.status === 200) {
       test.check('the other agent is refused taken while the take stands; his own line is never refused; the taker\'s answer frees the item');
     } else test.fail(OWED + 'other ' + JSON.stringify((other.body || {}).code) + ', his own ' + himself.status + ', taker ' + taker.status + ', take after ' + freeTake.status + ', after ' + freed.status);
 
     test.subHeading('6a. the goal row names its live agents with their keys');
-    const g = await factsOf('g/G1');
+    const g = await factsOf('goal/G101');
     const live = Array.isArray(g.live) ? g.live : [];
     const agents = g.agents && typeof g.agents === 'object' ? g.agents : {};
     if (live.indexOf('claude-windows') !== -1 && live.indexOf('wsl-claude') !== -1
@@ -185,7 +185,7 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
     const f = itemFacts(state2 === 'none' ? {} : state2 === 'half' ? { half: true } : { half: true, full: true });
     const d = mountPage(DETAILS, { 'item.get': { item: JSON.stringify(f), version: 1, change: 3 }, 'item.box': { box: 'BOX-TEXT', version: 1 },
       'item.checks': { checks: [] }, 'item.chat': { chat: [], chatMore: false } });
-    d.app.open({ id: 't/G1.2' });
+    d.app.open({ id: 'goal/G100.2' });
     await settled();
     looks[state2] = boxLook(d.doc);
   }
@@ -201,7 +201,7 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   test.subHeading('6b. a bubble for every live agent, lines or none, from the goal row');
   const keys = {}; keys['claude-windows'] = CW.key; keys['wsl-claude'] = WSL.key;
   const p = mountPage(DESK, {
-    'items.search': { items: [{ key: 'g/G1', label: JSON.stringify(goalRow(['claude-windows', 'wsl-claude'], keys)) }], more: false },
+    'items.search': { items: [{ key: 'goal/G101', label: JSON.stringify(goalRow(['claude-windows', 'wsl-claude'], keys)) }], more: false },
     'log.search': { items: [{ key: 'l1', label: JSON.stringify(logLine('l1', 'claude-windows', CW.key)) }], more: false },
   });
   await settled();

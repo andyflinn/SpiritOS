@@ -121,7 +121,7 @@ function clickTarget(attrs) {
   else test.fail(G31 + 'the List sent ' + JSON.stringify(fake.calls.filter(function (c) { return c.verb === 'press'; })));
 
   // G3.2 lists a closed current goal at startup; its row is not an open goal, so Start design still starts a new one.
-  fake.items = [{ id: 'old/G1', title: 'Closed goal', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false }];
+  fake.items = [{ id: 'goal/G100', title: 'Closed goal', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false }];
   fake.calls.length = 0;
   behavior.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
@@ -141,13 +141,13 @@ function clickTarget(attrs) {
 
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }) }, ANDY);
-  await call('box.write', { id: 't/G1.1', text: 'the box', version: 0 }, CW);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [{ id: 'goal/G101.1', title: 'Talky', blocks: ['goal/G101'] }] }) }, ANDY);
+  await call('box.write', { id: 'goal/G101.1', text: 'the box', version: 0 }, CW);
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-  for (const id of ['t/G1.1', 't/G1']) await call('item.take', { id: id }, WSL);
-  for (let i = 0; i < n; i++) await call('chat.add', { id: 't/G1.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000) }, i % 2 ? ANDY : WSL);
-  const got = await whole('t/G1.1');
+  for (const id of ['goal/G101.1', 'goal/G101']) await call('item.take', { id: id }, WSL);
+  for (let i = 0; i < n; i++) await call('chat.add', { id: 'goal/G101.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000) }, i % 2 ? ANDY : WSL);
+  const got = await whole('goal/G101.1');
   const body = got.body || {};
   const chat = body.chat || [];
   const newest = 'LINE-' + String(n - 1).padStart(3, '0');
@@ -158,14 +158,14 @@ function clickTarget(attrs) {
   else test.fail(G33 + 'chatMore ' + JSON.stringify(body.chatMore) + ', ' + chat.length + ' of ' + n + ' lines');
   if (got.status === 200 && Buffer.byteLength(JSON.stringify(body), 'utf8') <= appClient.ANSWER_MAX) test.check('the answer fits one answer');
   else test.fail(G33 + 'the answer is ' + Buffer.byteLength(JSON.stringify(body), 'utf8') + ' bytes');
-  const short = await whole('t/G1');
+  const short = await whole('goal/G101');
   if (short.status === 200 && (short.body || {}).chatMore === false) test.check('a short chat says chatMore false');
   else test.fail(G33 + 'a short chat answered chatMore ' + JSON.stringify((short.body || {}).chatMore));
   // Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD". A line too long to come back whole in
   // an item.get is refused when it is written (line-too-large), and the sender slices it; the chat keeps what it had.
-  await call('chat.add', { id: 't/G1', text: 'SMALL-OLDER' }, WSL);
-  const tooLong = await call('chat.add', { id: 't/G1', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400) }, WSL);
-  const huge = await whole('t/G1');
+  await call('chat.add', { id: 'goal/G101', text: 'SMALL-OLDER' }, WSL);
+  const tooLong = await call('chat.add', { id: 'goal/G101', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400) }, WSL);
+  const huge = await whole('goal/G101');
   const hc = (huge.body || {}).chat || [];
   if (tooLong.status === 413 && tooLong.body && tooLong.body.code === 'line-too-large') test.check('chat.add refuses a line too long to be sent back, as line-too-large');
   else test.fail(G33 + 'a too-long chat line answered ' + JSON.stringify({ status: tooLong.status, code: tooLong.body && tooLong.body.code }));

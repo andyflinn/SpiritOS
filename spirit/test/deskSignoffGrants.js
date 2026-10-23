@@ -23,9 +23,9 @@
 // here because they bite once the build lands, and they are not evidence of anything now; the six reds are the work.
 //
 // NOT ASSERTED, and why: the third change in the box, telling deskVerify when a status moves, needs nothing built.
-// The desk already answers `changes {n, line}` to a loopback caller (desk.js:1322), which is how every deskClient
-// already follows the desk, and deskVerify runs on the desk's own node where that door is open. A verb that exists
-// is not work owed, so this suite asserts it is there rather than owing it.
+// Since goal/G33.4 deskVerify follows no desk: it asks the desk nothing, and the desk reads the verifier's results
+// through its search (`changes`, which this suite asserted here before, is gone). Nothing is owed, so this suite
+// asserts that rather than owing it.
 
 const fs = require('fs');
 const os = require('os');
@@ -69,74 +69,79 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // A goal with one code item, his Go on it, and both agents live by having written.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'sg/G1', title: 'Signoff' }, items: [
-    { id: 'sg/G1.1', title: 'A code item', blocks: ['sg/G1'], code: true },
-    { id: 'sg/G1.2', title: 'Another', blocks: ['sg/G1'], code: true }] }) }, ANDY);
-  await call('press', { id: 'sg/G1', what: 'end-design' }, ANDY);
-  await call('press', { id: 'sg/G1.1', what: 'go' }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Signoff' }, items: [
+    { id: 'goal/G100.1', title: 'A code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'Another', blocks: ['goal/G100'], code: true }] }) }, ANDY);
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await call('agent.state', { word: 'working' }, CW);
   await call('agent.state', { word: 'listening' }, WSL);
-  const g0 = await facts('sg/G1');
-  if ((g0.live || []).indexOf('claude-windows') !== -1 && (g0.live || []).indexOf('wsl-claude') !== -1) test.check('the world: both agents are live, and sg/G1.1 has his Go');
+  const g0 = await facts('goal/G100');
+  if ((g0.live || []).indexOf('claude-windows') !== -1 && (g0.live || []).indexOf('wsl-claude') !== -1) test.check('the world: both agents are live, and goal/G100.1 has his Go');
   else { test.fail('the world: live reads ' + short(g0.live)); return; }
 
   test.subHeading('1. signoff takes an agent out at once');
-  await call('phase.take', { id: 'sg/G1.1', phase: 'red' }, CW);
-  const held = await facts('sg/G1.1');
-  if (held.with === 'claude-windows') test.check('the world: claude-windows holds the red of sg/G1.1');
+  await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const held = await facts('goal/G100.1');
+  if (held.with === 'claude-windows') test.check('the world: claude-windows holds the red of goal/G100.1');
   else { test.fail('the world: the phase reads ' + short({ with: held.with, phase: held.phase })); return; }
   const bye = await call('signoff', {}, CW);
   if (took(bye)) test.check('signoff is taken');
   else test.fail(OWED + 'signoff answered ' + bye.status + ' ' + short(bye.body));
-  const g1 = await facts('sg/G1');
+  const g1 = await facts('goal/G100');
   if ((g1.live || []).indexOf('claude-windows') === -1) test.check('the goal stops naming it live, though it wrote a moment ago');
   else test.fail(OWED + 'live still reads ' + short(g1.live));
   if ((g1.working || []).indexOf('claude-windows') === -1) test.check('and stops naming it working');
   else test.fail(OWED + 'working still reads ' + short(g1.working));
 
   test.subHeading('2. a gone agent holds no step');
-  const freed = await facts('sg/G1.1');
+  const freed = await facts('goal/G100.1');
   if (!freed.with) test.check('the phase it held is free');
   else test.fail(OWED + 'the phase is still with ' + short(freed.with));
-  const mine = await call('phase.take', { id: 'sg/G1.1', phase: 'red' }, WSL);
-  if (took(mine) && (await facts('sg/G1.1')).with === 'wsl-claude') test.check('the other agent takes that phase');
+  const mine = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, WSL);
+  if (took(mine) && (await facts('goal/G100.1')).with === 'wsl-claude') test.check('the other agent takes that phase');
   else test.fail(OWED + 'the take answered ' + mine.status + ' ' + short(mine.body));
 
   test.subHeading('3. its next write brings it back');
   await call('agent.state', { word: 'listening' }, CW);
-  const g2 = await facts('sg/G1');
+  const g2 = await facts('goal/G100');
   if ((g2.live || []).indexOf('claude-windows') !== -1) test.check('a write after a signoff makes it live again');
   else test.fail(OWED + 'after writing again, live reads ' + short(g2.live));
 
   test.subHeading('4. Done waits on every grant');
-  // sg/G1.2 gets his Go, a red, a build and a verify pass, so Done rests on nothing but the grant.
-  await call('press', { id: 'sg/G1.2', what: 'go' }, ANDY);
-  // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets the red of sg/G1.1 (section 2) go first.
-  await call('item.release', { id: 'sg/G1.1' }, WSL);
-  await call('phase.take', { id: 'sg/G1.2', phase: 'red' }, CW);
-  await call('phase.done', { id: 'sg/G1.2', phase: 'red' }, CW);
-  await call('phase.take', { id: 'sg/G1.2', phase: 'build' }, WSL);
-  await call('phase.done', { id: 'sg/G1.2', phase: 'build' }, WSL);
-  await call('phase.take', { id: 'sg/G1.2', phase: 'verify' }, CW);
-  await call('phase.done', { id: 'sg/G1.2', phase: 'verify', pass: true }, CW);
-  const ready = await facts('sg/G1.2');
-  if ((ready.buttons || []).indexOf('done') !== -1) test.check('the world: with its verify passed, sg/G1.2 offers Done');
-  else { test.fail('the world: sg/G1.2 offers ' + short(ready.buttons)); return; }
-  await call('check.add', { id: 'sg/G1.2', kind: 'G', words: 'core grant: spirit/run/js/kernel.js', test: '' }, CW);
-  const withGrant = await facts('sg/G1.2');
+  // goal/G100.2 gets his Go, a red, a build and a verify pass, so Done rests on nothing but the grant.
+  await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+  // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets the red of goal/G100.1 (section 2) go first.
+  await call('item.release', { id: 'goal/G100.1' }, WSL);
+  await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
+  await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW);
+  await call('phase.take', { id: 'goal/G100.2', phase: 'build' }, WSL);
+  await call('phase.done', { id: 'goal/G100.2', phase: 'build' }, WSL);
+  await call('phase.take', { id: 'goal/G100.2', phase: 'verify' }, CW);
+  await call('phase.done', { id: 'goal/G100.2', phase: 'verify', pass: true }, CW);
+  const ready = await facts('goal/G100.2');
+  if ((ready.buttons || []).indexOf('done') !== -1) test.check('the world: with its verify passed, goal/G100.2 offers Done');
+  else { test.fail('the world: goal/G100.2 offers ' + short(ready.buttons)); return; }
+  await call('check.add', { id: 'goal/G100.2', kind: 'G', words: 'core grant: spirit/run/js/kernel.js', test: '' }, CW);
+  const withGrant = await facts('goal/G100.2');
   if ((withGrant.buttons || []).indexOf('done') === -1) test.check('an open grant takes Done away');
   else test.fail(OWED + 'with a grant open it still offers ' + short(withGrant.buttons));
-  const g = await call('item.checks', { id: 'sg/G1.2' }, ANDY);
+  const g = await call('item.checks', { id: 'goal/G100.2' }, ANDY);
   const number = (((g.body && g.body.checks) || []).filter(function (c) { return c.kind === 'G'; })[0] || {}).number;
-  await call('check.set', { id: 'sg/G1.2', check: number, state: 'granted' }, ANDY);
-  const granted = await facts('sg/G1.2');
+  await call('check.set', { id: 'goal/G100.2', check: number, state: 'granted' }, ANDY);
+  const granted = await facts('goal/G100.2');
   if ((granted.buttons || []).indexOf('done') !== -1) test.check('granted, Done is offered again');
   else test.fail(OWED + 'after the grant it offers ' + short(granted.buttons));
 
-  test.subHeading('5. what deskVerify needs to follow the desk is already there');
+  // goal/G33.4: `changes` is gone (the desk streams its rows), and deskVerify follows no desk at all: it asks the desk
+  // nothing, and the desk reads the verifier's results through its search. So nothing is owed for following either.
+  test.subHeading('5. deskVerify needs nothing to follow the desk');
   const ch = await call('changes', { n: 0, line: 0 }, ANDY);
-  if (took(ch) && ch.body && Array.isArray(ch.body.records)) test.check('changes answers a loopback caller, so nothing new is owed for the nudge');
-  else test.fail('changes answered ' + ch.status + ' ' + short(ch.body));
+  const verifier = fs.readFileSync(path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js'), 'utf8')
+    .split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  const asksDesk = /forNode\([^)]*['"]desk['"]|forPeer\([^)]*['"]desk['"]|\{\s*desk\s*:\s*\{/.test(verifier);
+  if (!took(ch) && ch.body && ch.body.code === 'no-such-verb' && !asksDesk) test.check('changes is gone from the desk, and deskVerify asks the desk nothing');
+  else test.fail('changes answered ' + ch.status + ' ' + short(ch.body) + '; deskVerify asks the desk: ' + asksDesk);
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
   setTimeout(function () {

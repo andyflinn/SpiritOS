@@ -166,7 +166,9 @@ async function suite() {
   // verify.again went with goal/G33.3 (Andy's yes, "box this and continue").
   const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'claim',
     'line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may',
-    'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get',
+    // log.search and pending.get went with goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."), and
+    // changes with it (Andy: "isn't that what this item does? implement the push/broadcast concept?").
+    'chat.search', 'items.find', 'rule.get', 'rules.search', 'profile.get',
     // goal/G27.5, R9: agents arrange dependencies, so block, unblock and block.targets are described to them too.
     'block', 'unblock', 'block.targets']);
   let family = null;
@@ -183,7 +185,7 @@ async function suite() {
     });
   } catch (e) { /* listed stays as far as it got */ }
   listed.sort();
-  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the thirty-three, no stale file (desk.json and currentGoal.json stay beside the script)');
+  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the thirty-one, no stale file (desk.json and currentGoal.json stay beside the script)');
   else test.fail(OWED + 'the family lists ' + listed.join(',') + '; stale ' + short(family && family.stale));
 
   // ── 2. THE OBJECT WITH A DESK ROUTE ─────────────────────────────────────

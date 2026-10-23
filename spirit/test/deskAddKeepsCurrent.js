@@ -64,37 +64,37 @@ function session(goal, title, items) {
   // THE WORLD: two goals, and his press making the first one current, so the current goal is his choice and not the
   // order things were written in.
   // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-  await call('session.set', session('kc/G1', 'Current', [['kc/G1.1', 'One']]), ANDY);
-  await call('session.set', session('kc/G2', 'Other', [['kc/G2.1', 'Two']]), ANDY);
-  const press = await call('press', { id: 'kc/G1', what: 'make-current' }, ANDY);
+  await call('session.set', session('goal/G100', 'Current', [['goal/G100.1', 'One']]), ANDY);
+  await call('session.set', session('goal/G101', 'Other', [['goal/G101.1', 'Two']]), ANDY);
+  const press = await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
   const before = await currentGoal();
-  if (took(press) && before === 'kc/G1') test.check('the world: his make-current leaves kc/G1 current');
+  if (took(press) && before === 'goal/G100') test.check('the world: his make-current leaves goal/G100 current');
   else { test.fail('the world: make-current answered ' + press.status + ' ' + short(press.body) + '; current reads ' + short(before)); return; }
 
   test.subHeading('1. an item added to another goal leaves the current goal where it is');
-  // goal/G29.21: cw's add needs his "add item", written in kc/G2.
-  await call('chat.add', { id: 'kc/G2', text: 'add item' }, ANDY);
-  const add = await call('session.set', session('kc/G2', 'Other', [['kc/G2.1', 'Two'], ['kc/G2.2', 'Added']]), CW);
-  const added = await factsOf('kc/G2.2');
-  if (took(add) && added.id === 'kc/G2.2' && added.goal === 'kc/G2') test.check('the add itself lands: kc/G2.2 is an item of kc/G2');
-  else test.fail('the add did not land, so nothing below means anything: ' + add.status + ' ' + short(add.body) + '; kc/G2.2 reads ' + short(added));
+  // goal/G29.21: cw's add needs his "add item", written in goal/G101.
+  await call('chat.add', { id: 'goal/G101', text: 'add item' }, ANDY);
+  const add = await call('session.set', session('goal/G101', 'Other', [['goal/G101.1', 'Two'], ['goal/G101.2', 'Added']]), CW);
+  const added = await factsOf('goal/G101.2');
+  if (took(add) && added.id === 'goal/G101.2' && added.goal === 'goal/G101') test.check('the add itself lands: goal/G101.2 is an item of goal/G101');
+  else test.fail('the add did not land, so nothing below means anything: ' + add.status + ' ' + short(add.body) + '; goal/G101.2 reads ' + short(added));
   const after = await currentGoal();
-  if (after === 'kc/G1') test.check('kc/G1 is still the current goal after the add to kc/G2');
-  else test.fail(OWED + 'the add to kc/G2 moved the current goal to ' + short(after));
+  if (after === 'goal/G100') test.check('goal/G100 is still the current goal after the add to goal/G101');
+  else test.fail(OWED + 'the add to goal/G101 moved the current goal to ' + short(after));
 
   test.subHeading('2. the goal added to does not take make-current away from him');
-  const f2 = await factsOf('kc/G2');
-  if ((f2.buttons || []).indexOf('make-current') !== -1) test.check('kc/G2, not current, still offers him make-current');
-  else test.fail(OWED + 'after the add kc/G2 offers ' + short(f2.buttons) + ', as if it were current');
+  const f2 = await factsOf('goal/G101');
+  if ((f2.buttons || []).indexOf('make-current') !== -1) test.check('goal/G101, not current, still offers him make-current');
+  else test.fail(OWED + 'after the add goal/G101 offers ' + short(f2.buttons) + ', as if it were current');
 
   test.subHeading('3. an add to the current goal itself keeps it current');
-  // goal/G29.21: cw's add needs his "add item", written in kc/G1.
-  await call('chat.add', { id: 'kc/G1', text: 'add item' }, ANDY);
-  await call('session.set', session('kc/G1', 'Current', [['kc/G1.1', 'One'], ['kc/G1.2', 'Also added']]), CW);
+  // goal/G29.21: cw's add needs his "add item", written in goal/G100.
+  await call('chat.add', { id: 'goal/G100', text: 'add item' }, ANDY);
+  await call('session.set', session('goal/G100', 'Current', [['goal/G100.1', 'One'], ['goal/G100.2', 'Also added']]), CW);
   const same = await currentGoal();
-  const g12 = await factsOf('kc/G1.2');
-  if (same === 'kc/G1' && g12.id === 'kc/G1.2') test.check('kc/G1.2 lands and kc/G1 stays current');
-  else test.fail('an add to the current goal: current reads ' + short(same) + ', kc/G1.2 reads ' + short(g12));
+  const g12 = await factsOf('goal/G100.2');
+  if (same === 'goal/G100' && g12.id === 'goal/G100.2') test.check('goal/G100.2 lands and goal/G100 stays current');
+  else test.fail('an add to the current goal: current reads ' + short(same) + ', goal/G100.2 reads ' + short(g12));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
   setTimeout(function () {

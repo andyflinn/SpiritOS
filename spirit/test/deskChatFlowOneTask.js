@@ -89,16 +89,16 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
     const items = [
-      { id: 'cf/G1.1', title: 'Asked, held' }, { id: 'cf/G1.2', title: 'Code, phases', code: true },
-      { id: 'cf/G1.3', title: 'Agents only' }, { id: 'cf/G1.4', title: 'One' }, { id: 'cf/G1.5', title: 'Two' },
-      { id: 'cf/G1.6', title: 'Code two', code: true }, { id: 'cf/G1.7', title: 'Claimed' }, { id: 'cf/G1.8', title: 'Closed' },
-      { id: 'cf/G1.9', title: 'Done' }, { id: 'cf/G1.10', title: 'Excluded' }, { id: 'cf/G1.11', title: 'Code three', code: true },
-      { id: 'cf/G1.12', title: 'Spare' },
-    ].map(function (x) { return Object.assign({ blocks: ['cf/G1'] }, x); });
+      { id: 'goal/G100.1', title: 'Asked, held' }, { id: 'goal/G100.2', title: 'Code, phases', code: true },
+      { id: 'goal/G100.3', title: 'Agents only' }, { id: 'goal/G100.4', title: 'One' }, { id: 'goal/G100.5', title: 'Two' },
+      { id: 'goal/G100.6', title: 'Code two', code: true }, { id: 'goal/G100.7', title: 'Claimed' }, { id: 'goal/G100.8', title: 'Closed' },
+      { id: 'goal/G100.9', title: 'Done' }, { id: 'goal/G100.10', title: 'Excluded' }, { id: 'goal/G100.11', title: 'Code three', code: true },
+      { id: 'goal/G100.12', title: 'Spare' },
+    ].map(function (x) { return Object.assign({ blocks: ['goal/G100'] }, x); });
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'cf/G1', title: 'Chat flow' }, items: items }) }, ANDY);
-    await call('press', { id: 'cf/G1', what: 'end-design' }, ANDY);
-    for (const id of ['cf/G1.2', 'cf/G1.6', 'cf/G1.7', 'cf/G1.11']) {
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Chat flow' }, items: items }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    for (const id of ['goal/G100.2', 'goal/G100.6', 'goal/G100.7', 'goal/G100.11']) {
       const g = await call('press', { id: id, what: 'go' }, ANDY);
       if (!landed(g)) test.fail('the world: his Go on ' + id + ' answered ' + short(g));
     }
@@ -108,14 +108,14 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     await call('agent.state', { word: 'listening' }, UBI);
 
     test.subHeading('1. the holder\'s work notes are not stopped by another agent\'s take');
-    await call('item.take', { id: 'cf/G1.1' }, UBI);
-    await say('cf/G1.1', 'what is the plan here?', ANDY);
-    const tookLine = await call('line.take', { id: 'cf/G1.1' }, LEV);
+    await call('item.take', { id: 'goal/G100.1' }, UBI);
+    await say('goal/G100.1', 'what is the plan here?', ANDY);
+    const tookLine = await call('line.take', { id: 'goal/G100.1' }, LEV);
     if (!landed(tookLine)) test.fail('the world: the ollama agent\'s take answered ' + short(tookLine));
-    const note = await say('cf/G1.1', 'taking: building the first part', UBI);
+    const note = await say('goal/G100.1', 'taking: building the first part', UBI);
     if (landed(note)) test.check('the agent holding the item posts its work note while another agent holds the take of his line');
     else test.fail(OWED + 'the holder\'s note was refused while another held the take: ' + short(note));
-    const answer = await say('cf/G1.1', 'the plan is one part at a time', LEV);
+    const answer = await say('goal/G100.1', 'the plan is one part at a time', LEV);
     if (landed(answer)) test.check('the taker answers his line');
     else test.fail(OWED + 'the taker\'s answer answered ' + short(answer));
 
@@ -123,86 +123,86 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     // a phase of the item earlier posts its work notes and reports at any time, so the red writer is no longer refused
     // after another agent took and answered his line. The rest of this section stands.
     test.subHeading('2. an earlier phase holder posts its notes, before and after a take (goal/G27.10)');
-    const red = await call('phase.take', { id: 'cf/G1.2', phase: 'red' }, CW);
-    const redDone = await call('phase.done', { id: 'cf/G1.2', phase: 'red' }, CW);
-    if (!landed(red) || !landed(redDone)) test.fail('the world: the red of cf/G1.2 answered ' + short([red, redDone]));
-    await say('cf/G1.2', 'how far is it?', ANDY);
-    const before = await say('cf/G1.2', 'red: written, waiting for a builder', CW);
+    const red = await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
+    const redDone = await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW);
+    if (!landed(red) || !landed(redDone)) test.fail('the world: the red of goal/G100.2 answered ' + short([red, redDone]));
+    await say('goal/G100.2', 'how far is it?', ANDY);
+    const before = await say('goal/G100.2', 'red: written, waiting for a builder', CW);
     if (landed(before)) test.check('the red\'s writer posts its note while his latest line is not taken');
     else test.fail(OWED + 'the red writer\'s note before any take answered ' + short(before));
-    const levTake = await call('line.take', { id: 'cf/G1.2' }, LEV);
-    const levAnswer = await say('cf/G1.2', 'the red is done, build is open', LEV);
+    const levTake = await call('line.take', { id: 'goal/G100.2' }, LEV);
+    const levAnswer = await say('goal/G100.2', 'the red is done, build is open', LEV);
     if (!landed(levTake) || !landed(levAnswer)) test.fail('the world: the ollama agent\'s take and answer answered ' + short([levTake, levAnswer]));
-    const chime = await say('cf/G1.2', 'to add to that: the red has four sections', CW);
+    const chime = await say('goal/G100.2', 'to add to that: the red has four sections', CW);
     if (landed(chime)) test.check('after the ollama agent took and answered his line, the red\'s writer still posts its note (goal/G27.10, R2)');
     else test.fail('OWED by goal/G27.10: the red writer was refused its note after the take: ' + short(chime));
-    const whileTaken = await say('cf/G1.1', 'an answer of mine too', CW);
+    const whileTaken = await say('goal/G100.1', 'an answer of mine too', CW);
     if (why(whileTaken)) test.check('an agent holding nothing on the item is refused there');
     else test.fail(OWED + 'a stranger to the item answered ' + short(whileTaken));
 
     test.subHeading('3. an agent\'s answer is never taken');
-    const second = await call('line.take', { id: 'cf/G1.2' }, CW);
+    const second = await call('line.take', { id: 'goal/G100.2' }, CW);
     if (second.ok === false && /answer/i.test(why(second)) && /nam/i.test(why(second))) test.check('a take after his line was answered is refused, and says a second answer comes when he names the agent: ' + why(second));
     else test.fail(OWED + 'a take of the answered line answered ' + short(second));
-    await call('item.release', { id: 'cf/G1.1' }, UBI);
-    await call('item.take', { id: 'cf/G1.3' }, UBI);
-    await say('cf/G1.3', 'taking: a note of mine', UBI);
-    const agentsOnly = await call('line.take', { id: 'cf/G1.3' }, LEV);
+    await call('item.release', { id: 'goal/G100.1' }, UBI);
+    await call('item.take', { id: 'goal/G100.3' }, UBI);
+    await say('goal/G100.3', 'taking: a note of mine', UBI);
+    const agentsOnly = await call('line.take', { id: 'goal/G100.3' }, LEV);
     if (agentsOnly.ok === false && /only/i.test(why(agentsOnly))) test.check('under an item with agents\' lines only, a take is refused: ' + why(agentsOnly));
     else test.fail(OWED + 'a take where only an agent wrote answered ' + short(agentsOnly));
-    await call('item.release', { id: 'cf/G1.3' }, UBI);
+    await call('item.release', { id: 'goal/G100.3' }, UBI);
 
     test.subHeading('4. one item and one phase at a time');
-    const one = await call('item.take', { id: 'cf/G1.4' }, CW);
-    const two = await call('item.take', { id: 'cf/G1.5' }, CW);
-    if (landed(one) && two.ok === false && /cf\/G1\.4/.test(why(two))) test.check('a second item is refused while the first is held, naming it: ' + why(two));
+    const one = await call('item.take', { id: 'goal/G100.4' }, CW);
+    const two = await call('item.take', { id: 'goal/G100.5' }, CW);
+    if (landed(one) && two.ok === false && /goal\/G100\.4/.test(why(two))) test.check('a second item is refused while the first is held, naming it: ' + why(two));
     else test.fail(OWED + 'a second item.take answered ' + short(two) + ' (the first ' + short(one) + ')');
-    const phase = await call('phase.take', { id: 'cf/G1.6', phase: 'red' }, CW);
-    if (phase.ok === false && /cf\/G1\.4/.test(why(phase))) test.check('a phase of another item is refused while an item is held: ' + why(phase));
+    const phase = await call('phase.take', { id: 'goal/G100.6', phase: 'red' }, CW);
+    if (phase.ok === false && /goal\/G100\.4/.test(why(phase))) test.check('a phase of another item is refused while an item is held: ' + why(phase));
     else test.fail(OWED + 'a phase take while holding an item answered ' + short(phase));
-    const again = await call('item.take', { id: 'cf/G1.4' }, CW);
+    const again = await call('item.take', { id: 'goal/G100.4' }, CW);
     if (landed(again)) test.check('taking the item it holds again is no second task');
     else test.fail(OWED + 'taking its own item again answered ' + short(again));
 
     test.subHeading('5. what frees an agent');
-    const released = await call('item.release', { id: 'cf/G1.4' }, CW);
-    const f4 = await facts('cf/G1.4');
-    const afterRelease = await call('item.take', { id: 'cf/G1.7' }, CW);
+    const released = await call('item.release', { id: 'goal/G100.4' }, CW);
+    const f4 = await facts('goal/G100.4');
+    const afterRelease = await call('item.take', { id: 'goal/G100.7' }, CW);
     if (landed(released) && !f4.with && landed(afterRelease)) test.check('item.release frees it: its with is empty and another item is taken');
     else test.fail(OWED + 'release: ' + short({ released: released, with: f4.with, next: afterRelease }));
-    const claimed = await call('press', { id: 'cf/G1.7', what: 'claim-done' }, CW);
-    const afterClaim = await call('phase.take', { id: 'cf/G1.6', phase: 'red' }, CW);
+    const claimed = await call('press', { id: 'goal/G100.7', what: 'claim-done' }, CW);
+    const afterClaim = await call('phase.take', { id: 'goal/G100.6', phase: 'red' }, CW);
     if (landed(claimed) && landed(afterClaim)) test.check('its claim frees it: a phase of another item is taken');
     else test.fail(OWED + 'claim: ' + short({ claimed: claimed, next: afterClaim }));
-    const phaseDone = await call('phase.done', { id: 'cf/G1.6', phase: 'red' }, CW);
-    const afterPhase = await call('item.take', { id: 'cf/G1.8' }, CW);
+    const phaseDone = await call('phase.done', { id: 'goal/G100.6', phase: 'red' }, CW);
+    const afterPhase = await call('item.take', { id: 'goal/G100.8' }, CW);
     if (landed(phaseDone) && landed(afterPhase)) test.check('a finished phase frees it');
     else test.fail(OWED + 'phase done: ' + short({ done: phaseDone, next: afterPhase }));
-    const closed = await call('press', { id: 'cf/G1.8', what: 'close' }, ANDY);
-    const afterClose = await call('item.take', { id: 'cf/G1.9' }, CW);
+    const closed = await call('press', { id: 'goal/G100.8', what: 'close' }, ANDY);
+    const afterClose = await call('item.take', { id: 'goal/G100.9' }, CW);
     if (landed(closed) && landed(afterClose)) test.check('his close frees it');
     else test.fail(OWED + 'close: ' + short({ closed: closed, next: afterClose }));
-    const done = await call('press', { id: 'cf/G1.9', what: 'done' }, ANDY);
-    const afterDone = await call('item.take', { id: 'cf/G1.12' }, CW);
+    const done = await call('press', { id: 'goal/G100.9', what: 'done' }, ANDY);
+    const afterDone = await call('item.take', { id: 'goal/G100.12' }, CW);
     if (landed(done) && landed(afterDone)) test.check('his done frees it');
     else test.fail(OWED + 'done: ' + short({ done: done, next: afterDone }));
-    const notHeld = await call('item.release', { id: 'cf/G1.5' }, CW);
+    const notHeld = await call('item.release', { id: 'goal/G100.5' }, CW);
     if (notHeld.ok === false && why(notHeld)) test.check('a release of an item it does not hold is refused: ' + why(notHeld));
     else test.fail(OWED + 'a release of an item not held answered ' + short(notHeld));
-    await call('item.release', { id: 'cf/G1.12' }, CW);
+    await call('item.release', { id: 'goal/G100.12' }, CW);
 
     test.subHeading('6. his exclusion frees what the agent holds');
-    const uRed = await call('phase.take', { id: 'cf/G1.11', phase: 'red' }, UBI);
-    await say('cf/G1.10', 'who looks at this?', ANDY);
-    const uLine = await call('line.take', { id: 'cf/G1.10' }, UBI);
+    const uRed = await call('phase.take', { id: 'goal/G100.11', phase: 'red' }, UBI);
+    await say('goal/G100.10', 'who looks at this?', ANDY);
+    const uLine = await call('line.take', { id: 'goal/G100.10' }, UBI);
     if (!landed(uRed) || !landed(uLine)) test.fail('the world: claude-ubuntu\'s phase and line takes answered ' + short([uRed, uLine]));
     const off = await call('profile.set', { agent: UBI.key, name: '', nick: '', included: false }, ANDY);
     if (!landed(off)) test.fail('the world: his exclusion answered ' + short(off));
-    const f11 = await facts('cf/G1.11');
+    const f11 = await facts('goal/G100.11');
     if (!f11.with) test.check('excluded: the item it held is with nobody');
     else test.fail(OWED + 'after his exclusion the item is still with ' + short(f11.with));
-    const cwRed = await call('phase.take', { id: 'cf/G1.11', phase: 'red' }, CW);
-    const levLine = await call('line.take', { id: 'cf/G1.10' }, LEV);
+    const cwRed = await call('phase.take', { id: 'goal/G100.11', phase: 'red' }, CW);
+    const levLine = await call('line.take', { id: 'goal/G100.10' }, LEV);
     if (landed(cwRed) && landed(levLine)) test.check('another agent takes the freed phase, and the freed line');
     else test.fail(OWED + 'after his exclusion the freed phase answered ' + short(cwRed) + ', the freed line ' + short(levLine));
   } finally {

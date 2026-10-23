@@ -67,24 +67,24 @@ async function main() {
     if (tree && JSON.stringify(tree['chat.search'] || null) === JSON.stringify(want)) test.check('chat.search {id, text, by, since, before, scope}');
     else test.fail(OWED + 'chat.search is ' + short(tree && tree['chat.search']));
 
-    await call('session.set', { json: JSON.stringify({ goal: { id: 's/G1', title: 'A goal' }, items: [{ id: 's/G1.1', title: 'One', blocks: ['s/G1'] }, { id: 's/G1.2', title: 'Two', blocks: ['s/G1'] }] }) });
-    await call('chat.add', { id: 's/G1', text: 'the harbour plan for the goal' });
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'A goal' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) });
+    await call('chat.add', { id: 'goal/G100', text: 'the harbour plan for the goal' });
     await sleep(15);
-    await call('chat.add', { id: 's/G1.1', text: 'a harbour wall in item one' });
+    await call('chat.add', { id: 'goal/G100.1', text: 'a harbour wall in item one' });
     await sleep(15);
-    await call('chat.add', { id: 's/G1.2', text: 'nothing about water here' });
+    await call('chat.add', { id: 'goal/G100.2', text: 'nothing about water here' });
     const ask = function (id, text, scope) { return call('chat.search', { id: id, text: text, by: '', since: '', before: '', scope: scope }).then(listed); };
 
     test.subHeading('2. a goal\'s chats, at once');
-    const goalOnly = await ask('s/G1', 'harbour', 'goal');
-    if (goalOnly.status === 200 && goalOnly.rows.length && goalOnly.rows.every(function (r) { return r.item === 's/G1'; }) && /harbour plan/.test(goalOnly.rows[0].text)) test.check('scope goal: the goal\'s own chat only');
+    const goalOnly = await ask('goal/G100', 'harbour', 'goal');
+    if (goalOnly.status === 200 && goalOnly.rows.length && goalOnly.rows.every(function (r) { return r.item === 'goal/G100'; }) && /harbour plan/.test(goalOnly.rows[0].text)) test.check('scope goal: the goal\'s own chat only');
     else test.fail(OWED + 'scope goal answered ' + goalOnly.status + ' ' + short(goalOnly.rows));
-    const withItems = await ask('s/G1', 'harbour', 'items');
+    const withItems = await ask('goal/G100', 'harbour', 'items');
     const items = withItems.rows.map(function (r) { return r.item; });
-    if (withItems.status === 200 && items.indexOf('s/G1') !== -1 && items.indexOf('s/G1.1') !== -1 && withItems.rows.slice(0, 2).every(function (r) { return /harbour/.test(r.text); }) && new Set(withItems.keys).size === withItems.keys.length) {
+    if (withItems.status === 200 && items.indexOf('goal/G100') !== -1 && items.indexOf('goal/G100.1') !== -1 && withItems.rows.slice(0, 2).every(function (r) { return /harbour/.test(r.text); }) && new Set(withItems.keys).size === withItems.keys.length) {
       test.check('scope items: the goal\'s chat and its items\' chats ranked together, the harbour lines first, each carrying its item (' + items.join(', ') + ')');
     } else test.fail(OWED + 'scope items answered ' + withItems.status + ' ' + short(withItems.rows));
-    const plain = await ask('s/G1.1', 'harbour', '');
+    const plain = await ask('goal/G100.1', 'harbour', '');
     if (plain.status === 200 && plain.rows.length === 1 && /harbour wall/.test(plain.rows[0].text)) test.check('no scope on an item: that item\'s chat, as always');
     else test.fail(OWED + 'chat.search on an item answered ' + short(plain.rows));
 

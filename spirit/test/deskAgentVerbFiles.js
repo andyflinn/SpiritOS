@@ -35,8 +35,11 @@ const DESK_JS = path.join(DESK_DIR, 'desk.js');
 const FAMILY_DIR = path.join(DESK_DIR, 'desk.family'); // the verb files, <module>.family since goal/G30.4
 const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'tools.js');
 
-const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get'];
-const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'log.add', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
+const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'chat.search', 'items.find', 'rule.get', 'rules.search', 'profile.get'];
+// log.search, log.add and pending.get went with goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."):
+// the fifteen left, and the three are not in the excluded list either, since the desk no longer has them. changes went
+// with them (goal/G33.4: the desk's stream replaces it), so fourteen.
+const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sameKeys(a, b) { return JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b || {}).sort()); }

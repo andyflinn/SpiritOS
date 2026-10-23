@@ -119,108 +119,108 @@ function dialog(answer) {
   return { dd: dd, asked: asked, page: page, click: click };
 }
 function answerFor(buttons) {
-  return { item: JSON.stringify({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: 'claude-windows', buttons: buttons,
-    blocking: ['t/G1'], blocked: [], go: true, code: true, phase: 'build', red: 'claude-windows', waived: false, claims: 0, asks: 0 }),
+  return { item: JSON.stringify({ id: 'goal/G100.2', title: 'Beta', goal: 'goal/G100', status: 'running', with: 'claude-windows', buttons: buttons,
+    blocking: ['goal/G100'], blocked: [], go: true, code: true, phase: 'build', red: 'claude-windows', waived: false, claims: 0, asks: 0 }),
     box: 'BOX', version: 1, change: 3, checks: [], chat: [] };
 }
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'w/G1', title: 'Waive' }, items: [
-    { id: 'w/G1.1', title: 'One agent', blocks: ['w/G1'], code: true },
-    { id: 'w/G1.2', title: 'His press', blocks: ['w/G1'], code: true },
-    { id: 'w/G1.3', title: 'While the build runs', blocks: ['w/G1'], code: true },
-    { id: 'w/G1.4', title: 'No red yet', blocks: ['w/G1'], code: true }] }) }, ANDY);
-  await call('press', { id: 'w/G1', what: 'end-design' }, ANDY);
-  for (const id of ['w/G1.1', 'w/G1.2', 'w/G1.3', 'w/G1.4']) await call('press', { id: id, what: 'go' }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Waive' }, items: [
+    { id: 'goal/G101.1', title: 'One agent', blocks: ['goal/G101'], code: true },
+    { id: 'goal/G101.2', title: 'His press', blocks: ['goal/G101'], code: true },
+    { id: 'goal/G101.3', title: 'While the build runs', blocks: ['goal/G101'], code: true },
+    { id: 'goal/G101.4', title: 'No red yet', blocks: ['goal/G101'], code: true }] }) }, ANDY);
+  await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
+  for (const id of ['goal/G101.1', 'goal/G101.2', 'goal/G101.3', 'goal/G101.4']) await call('press', { id: id, what: 'go' }, ANDY);
 
   test.subHeading('1. facts carry waived, and no waive before there is a red writer');
-  const f4 = await factsOf('w/G1.4');
-  if (f4.go === true && f4.code === true && f4.waived === false) test.check('w/G1.4 after Go: facts carry waived false');
-  else test.fail(OWED + 'w/G1.4 after Go reads waived ' + short(f4.waived) + ' (go ' + short(f4.go) + ', code ' + short(f4.code) + ')');
+  const f4 = await factsOf('goal/G101.4');
+  if (f4.go === true && f4.code === true && f4.waived === false) test.check('goal/G101.4 after Go: facts carry waived false');
+  else test.fail(OWED + 'goal/G101.4 after Go reads waived ' + short(f4.waived) + ' (go ' + short(f4.go) + ', code ' + short(f4.code) + ')');
   if (f4.phase === 'red' && (f4.buttons || []).indexOf('waive') === -1) test.check('while the red is still being written, no waive is offered');
-  else test.fail(OWED + 'w/G1.4 in phase ' + short(f4.phase) + ' offers ' + short(f4.buttons));
-  const fg = await factsOf('w/G1');
+  else test.fail(OWED + 'goal/G101.4 in phase ' + short(f4.phase) + ' offers ' + short(f4.buttons));
+  const fg = await factsOf('goal/G101');
   if ((fg.buttons || []).indexOf('waive') === -1) test.check('the goal never offers waive');
   else test.fail(OWED + 'the goal offers waive: ' + short(fg.buttons));
 
   // FIRST, BEFORE wsl-claude HAS WRITTEN ANYTHING: liveness lasts ten minutes, so this is the only moment in the run
   // when one agent is alone.
   test.subHeading('2. one agent live: the desk waives when the red is done, and says so');
-  await call('phase.take', { id: 'w/G1.1', phase: 'red' }, CW);
-  const redDone = await call('phase.done', { id: 'w/G1.1', phase: 'red' }, CW);
-  const f1 = await factsOf('w/G1.1');
-  const live = (await factsOf('w/G1')).live || [];
-  if (!took(redDone)) test.fail('phase.done red on w/G1.1 answered ' + redDone.status + ' ' + short(redDone.body));
+  await call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW);
+  const redDone = await call('phase.done', { id: 'goal/G101.1', phase: 'red' }, CW);
+  const f1 = await factsOf('goal/G101.1');
+  const live = (await factsOf('goal/G101')).live || [];
+  if (!took(redDone)) test.fail('phase.done red on goal/G101.1 answered ' + redDone.status + ' ' + short(redDone.body));
   else if (live.length !== 1 || live[0] !== 'claude-windows') test.fail('the goal\'s live agents are ' + short(live) + ', expected claude-windows alone');
-  else if (f1.waived === true) test.check('with claude-windows alone live, w/G1.1 is waived as its red is done');
-  else test.fail(OWED + 'with one agent live, w/G1.1 after its red reads waived ' + short(f1.waived) + ' (phase ' + short(f1.phase) + ')');
-  const chat1 = ((await call('item.chat', { id: 'w/G1.1' }, ANDY)).body || {}).chat || [];
+  else if (f1.waived === true) test.check('with claude-windows alone live, goal/G101.1 is waived as its red is done');
+  else test.fail(OWED + 'with one agent live, goal/G101.1 after its red reads waived ' + short(f1.waived) + ' (phase ' + short(f1.phase) + ')');
+  const chat1 = ((await call('item.chat', { id: 'goal/G101.1' }, ANDY)).body || {}).chat || [];
   if (chat1.some(function (l) { return l.by === 'desk' && /waiv/i.test(String(l.text)); })) test.check('the desk says so in the item\'s chat');
-  else test.fail(OWED + 'no desk line about the waive under w/G1.1: ' + short(chat1));
+  else test.fail(OWED + 'no desk line about the waive under goal/G101.1: ' + short(chat1));
   if ((f1.buttons || []).indexOf('waive') === -1) test.check('an item the desk waived offers no waive');
-  else test.fail(OWED + 'the waived w/G1.1 still offers waive: ' + short(f1.buttons));
-  const build1 = await call('phase.take', { id: 'w/G1.1', phase: 'build' }, CW);
+  else test.fail(OWED + 'the waived goal/G101.1 still offers waive: ' + short(f1.buttons));
+  const build1 = await call('phase.take', { id: 'goal/G101.1', phase: 'build' }, CW);
   if (took(build1)) test.check('the red writer may take the build now');
-  else test.fail(OWED + 'the red writer\'s build take on w/G1.1 was refused: ' + short(build1.body));
+  else test.fail(OWED + 'the red writer\'s build take on goal/G101.1 was refused: ' + short(build1.body));
   // HIS RULING, asked why the desk cannot simply do it: "contradiction or not. autowaive when only one agent is
   // present." So no handover stalls while one agent is alone, the build's as little as the red's: one agent takes
   // every phase of the item and its Done is offered at the end, without a press of his anywhere.
-  await call('phase.done', { id: 'w/G1.1', phase: 'build' }, CW);
-  const verify1 = await call('phase.take', { id: 'w/G1.1', phase: 'verify' }, CW);
-  const passed1 = took(verify1) ? await call('phase.done', { id: 'w/G1.1', phase: 'verify', pass: true }, CW) : {};
-  const f1end = await factsOf('w/G1.1');
+  await call('phase.done', { id: 'goal/G101.1', phase: 'build' }, CW);
+  const verify1 = await call('phase.take', { id: 'goal/G101.1', phase: 'verify' }, CW);
+  const passed1 = took(verify1) ? await call('phase.done', { id: 'goal/G101.1', phase: 'verify', pass: true }, CW) : {};
+  const f1end = await factsOf('goal/G101.1');
   if (took(verify1) && took(passed1) && (f1end.buttons || []).indexOf('done') !== -1) test.check('alone, one agent takes red, build and verify, and Done is offered without a press of his');
   else test.fail(OWED + 'alone, the verify take answered ' + short(verify1.status) + ' and the item ends offering ' + short(f1end.buttons));
 
   // FROM HERE ON BOTH AGENTS ARE LIVE, so nothing is waived but by his press.
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-  await call('item.take', { id: 'w/G1.2' }, WSL);
-  await call('chat.add', { id: 'w/G1.2', text: 'wsl: here.' }, WSL);
+  await call('item.take', { id: 'goal/G101.2' }, WSL);
+  await call('chat.add', { id: 'goal/G101.2', text: 'wsl: here.' }, WSL);
 
   test.subHeading('3. two agents live: the red done offers his waive, and nothing waives itself');
-  await call('phase.take', { id: 'w/G1.2', phase: 'red' }, CW);
-  await call('phase.done', { id: 'w/G1.2', phase: 'red' }, CW);
-  const f2 = await factsOf('w/G1.2');
-  const live2 = (await factsOf('w/G1')).live || [];
-  const refused2 = await call('phase.take', { id: 'w/G1.2', phase: 'build' }, CW);
-  if (live2.length === 2 && f2.waived === false && !took(refused2)) test.check('with two agents live, w/G1.2 stays unwaived and the red writer\'s build take is refused');
-  else test.fail(OWED + 'with ' + short(live2) + ' live, w/G1.2 reads waived ' + short(f2.waived) + '; build take ' + (took(refused2) ? 'taken' : 'refused'));
-  if (f2.phase === 'build' && (f2.buttons || []).indexOf('waive') !== -1) test.check('its red written and nobody building, w/G1.2 offers waive');
-  else test.fail(OWED + 'w/G1.2 in phase ' + short(f2.phase) + ' offers ' + short(f2.buttons));
+  await call('phase.take', { id: 'goal/G101.2', phase: 'red' }, CW);
+  await call('phase.done', { id: 'goal/G101.2', phase: 'red' }, CW);
+  const f2 = await factsOf('goal/G101.2');
+  const live2 = (await factsOf('goal/G101')).live || [];
+  const refused2 = await call('phase.take', { id: 'goal/G101.2', phase: 'build' }, CW);
+  if (live2.length === 2 && f2.waived === false && !took(refused2)) test.check('with two agents live, goal/G101.2 stays unwaived and the red writer\'s build take is refused');
+  else test.fail(OWED + 'with ' + short(live2) + ' live, goal/G101.2 reads waived ' + short(f2.waived) + '; build take ' + (took(refused2) ? 'taken' : 'refused'));
+  if (f2.phase === 'build' && (f2.buttons || []).indexOf('waive') !== -1) test.check('its red written and nobody building, goal/G101.2 offers waive');
+  else test.fail(OWED + 'goal/G101.2 in phase ' + short(f2.phase) + ' offers ' + short(f2.buttons));
 
   test.subHeading('3b. his press waives; an agent\'s is refused');
-  const byAgent = await call('press', { id: 'w/G1.2', what: 'waive' }, CW);
-  const fA = await factsOf('w/G1.2');
+  const byAgent = await call('press', { id: 'goal/G101.2', what: 'waive' }, CW);
+  const fA = await factsOf('goal/G101.2');
   if (!took(byAgent) && fA.waived === false) test.check('an agent\'s waive is refused and changes nothing');
   else test.fail(OWED + 'an agent\'s waive answered ' + byAgent.status + ' ' + short(byAgent.body) + '; waived ' + short(fA.waived));
-  const byHim = await call('press', { id: 'w/G1.2', what: 'waive' }, ANDY);
-  const fB = await factsOf('w/G1.2');
+  const byHim = await call('press', { id: 'goal/G101.2', what: 'waive' }, ANDY);
+  const fB = await factsOf('goal/G101.2');
   if (took(byHim) && fB.waived === true && (fB.buttons || []).indexOf('waive') === -1) test.check('his waive: waived true, the button gone');
   else test.fail(OWED + 'his waive answered ' + byHim.status + ' ' + short(byHim.body) + '; facts waived ' + short(fB.waived) + ', buttons ' + short(fB.buttons));
-  const build2 = await call('phase.take', { id: 'w/G1.2', phase: 'build' }, CW);
+  const build2 = await call('phase.take', { id: 'goal/G101.2', phase: 'build' }, CW);
   if (took(build2)) test.check('after his waive the red writer may build');
   else test.fail(OWED + 'after his waive the build take was refused: ' + short(build2.body));
 
   // HIS CHOICE: "only when it's blocked on me". A build somebody holds is not blocked on him, so the button goes.
   test.subHeading('4. a build somebody holds is not blocked on him, so no waive is offered');
-  // Since goal/G21.4 an agent holds one task at a time: claude-windows lets the build of w/G1.2 go first.
-  await call('item.release', { id: 'w/G1.2' }, CW);
-  await call('phase.take', { id: 'w/G1.3', phase: 'red' }, CW);
-  await call('phase.done', { id: 'w/G1.3', phase: 'red' }, CW);
-  const f3before = await factsOf('w/G1.3');
-  if (f3before.phase === 'build' && (f3before.buttons || []).indexOf('waive') !== -1) test.check('its red done and nobody holding the build, w/G1.3 offers waive');
-  else test.fail(OWED + 'w/G1.3 in phase ' + short(f3before.phase) + ' with nobody building offers ' + short(f3before.buttons));
-  const tookBuild = await call('phase.take', { id: 'w/G1.3', phase: 'build' }, WSL);
-  const f3 = await factsOf('w/G1.3');
-  if (!took(tookBuild)) test.fail('wsl-claude\'s build take on w/G1.3 was refused: ' + short(tookBuild.body));
-  else if (f3.builder === 'wsl-claude' && (f3.buttons || []).indexOf('waive') === -1) test.check('once wsl-claude holds the build, w/G1.3 offers no waive');
-  else test.fail(OWED + 'w/G1.3 with builder ' + short(f3.builder) + ' offers ' + short(f3.buttons));
+  // Since goal/G21.4 an agent holds one task at a time: claude-windows lets the build of goal/G101.2 go first.
+  await call('item.release', { id: 'goal/G101.2' }, CW);
+  await call('phase.take', { id: 'goal/G101.3', phase: 'red' }, CW);
+  await call('phase.done', { id: 'goal/G101.3', phase: 'red' }, CW);
+  const f3before = await factsOf('goal/G101.3');
+  if (f3before.phase === 'build' && (f3before.buttons || []).indexOf('waive') !== -1) test.check('its red done and nobody holding the build, goal/G101.3 offers waive');
+  else test.fail(OWED + 'goal/G101.3 in phase ' + short(f3before.phase) + ' with nobody building offers ' + short(f3before.buttons));
+  const tookBuild = await call('phase.take', { id: 'goal/G101.3', phase: 'build' }, WSL);
+  const f3 = await factsOf('goal/G101.3');
+  if (!took(tookBuild)) test.fail('wsl-claude\'s build take on goal/G101.3 was refused: ' + short(tookBuild.body));
+  else if (f3.builder === 'wsl-claude' && (f3.buttons || []).indexOf('waive') === -1) test.check('once wsl-claude holds the build, goal/G101.3 offers no waive');
+  else test.fail(OWED + 'goal/G101.3 with builder ' + short(f3.builder) + ' offers ' + short(f3.buttons));
 
   test.subHeading('5. the dialog: Waive armed like Close, sent as press {id, what: waive}');
   const d = dialog(answerFor(['waive', 'close']));
-  d.dd.open({ id: 't/G1.2' });
+  d.dd.open({ id: 'goal/G100.2' });
   await settled();
   if (d.page().indexOf('id="dd-waive"') !== -1) test.check('with waive among the buttons the dialog shows #dd-waive');
   else test.fail(OWED + 'no #dd-waive with buttons [waive, close]');
@@ -232,10 +232,10 @@ function answerFor(buttons) {
   d.click('dd-waive');
   await settled();
   const sent = presses();
-  if (sent.length === 1 && sent[0].args.id === 't/G1.2' && sent[0].args.what === 'waive') test.check('the second click sends press {id, what: waive}');
+  if (sent.length === 1 && sent[0].args.id === 'goal/G100.2' && sent[0].args.what === 'waive') test.check('the second click sends press {id, what: waive}');
   else test.fail(OWED + 'the second click sent ' + short(sent.map(function (p) { return p.args; })));
   const e = dialog(answerFor(['close']));
-  e.dd.open({ id: 't/G1.2' });
+  e.dd.open({ id: 'goal/G100.2' });
   await settled();
   if (e.page().indexOf('id="dd-waive"') === -1) test.check('without waive among the buttons there is no #dd-waive');
   else test.fail(OWED + '#dd-waive shows with buttons [close]');

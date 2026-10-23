@@ -47,7 +47,9 @@ const VERIFY = path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js');
 // on its window first, as a page that loaded them holds them.
 const SHARED = ['deskDoorFields.js', 'deskChat.js'].map(function (f) { return path.join(RUN, 'shell', 'shared', 'js', f); });
 function withShared(doc, win) { SHARED.forEach(function (f) { if (fs.existsSync(f)) new Function('document', 'window', fs.readFileSync(f, 'utf8'))(doc, win); }); return win; }
-const GOAL = 'plugin/stackFrameChecks';
+// SINCE goal/G33.4 the plugin's goal is numbered like any goal; plugin/stackFrameChecks (its fixed key) still names it
+// at every verb, and the numbered id is read from the desk once it is up.
+let GOAL = 'plugin/stackFrameChecks';
 const GATE = 'spirit/run/js/peerPost.js::post';
 const END = 'spirit/run/js/presenceNode.js';
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStacksDialogOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' };
@@ -112,10 +114,10 @@ async function serverHalf() {
   gitIn(work, ['push', '-q', 'origin', 'master:master']);
   const listFile = path.join(work, 'stackFrameList.json');
   // D8's WORLD: two old doors from before the plugin, both naming one item outside the Stacks goal, as d1 and d2 name
-  // goal/G19.14 on his tree. or/G1.1 is made by the session below, after the first mount: at that mount this desk does
+  // goal/G19.14 on his tree. goal/G100.1 is made by the session below, after the first mount: at that mount this desk does
   // not know it yet, as a suite's scratch desk does not know his items, and must leave the list alone.
-  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'or/G1.1' },
-    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'or/G1.1' }];
+  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'goal/G100.1' },
+    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'goal/G100.1' }];
   fs.writeFileSync(listFile, JSON.stringify(OLD, null, 2) + '\n');
   gitIn(work, ['add', 'stackFrameList.json']);
   gitIn(work, ['commit', '-q', '--no-verify', '-m', 'two old doors']);
@@ -136,7 +138,8 @@ async function serverHalf() {
   };
   if (!await startDesk()) { test.fail('the world: the desk did not start'); return; }
   await sleep(500);
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'or/G1', title: 'Ordinary' }, items: [{ id: 'or/G1.1', title: 'one', blocks: ['or/G1'] }] }) });
+  GOAL = ((await factsOf('plugin/stackFrameChecks')) || {}).id || GOAL;
+  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) });
   const set2 = await call('goal.add', { title: 'Another ordinary goal' });
   if (set.ok === false) { test.fail('the world: no ordinary goal: ' + short(set)); return; }
 
@@ -195,7 +198,7 @@ async function serverHalf() {
   await call('press', { id: GOAL + '.1', what: 'reopen' });
   await sleep(600);
   const s1 = shares();
-  await call('press', { id: 'or/G1.1', what: 'close' });
+  await call('press', { id: 'goal/G100.1', what: 'close' });
   await sleep(600);
   const s2 = shares();
   if (s1 === s0) test.check('presses on another goal and on the plugin goal start no goal share');
@@ -205,7 +208,7 @@ async function serverHalf() {
 
   test.subHeading('D8. a door naming an item this desk does not know is left alone');
   const firstDoors = ((await call('stackFrameChecks.doors', {})).doors || []).filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
-  if (firstDoors.length === 2 && firstDoors.every(function (d) { return d.item === 'or/G1.1'; })) test.check('at the first mount, before this desk held or/G1.1, the old doors kept it: no scratch desk rewrites his list');
+  if (firstDoors.length === 2 && firstDoors.every(function (d) { return d.item === 'goal/G100.1'; })) test.check('at the first mount, before this desk held goal/G100.1, the old doors kept it: no scratch desk rewrites his list');
   else test.fail(OWED + 'at the first mount the old doors read ' + short(firstDoors.map(function (d) { return d.id + '->' + d.item; })));
 
   test.subHeading('D9. the Stacks subsystem stands alone: deskVerify runs no stack check');
@@ -235,7 +238,7 @@ async function serverHalf() {
   else test.fail(OWED + 'after the restart ' + GOAL + ' still holds ' + left.id + ', ' + RERUN);
 
   test.subHeading('D8. every door has its own item in the Stacks goal');
-  // At this second mount the desk knows or/G1.1, an item outside the Stacks goal that both old doors share.
+  // At this second mount the desk knows goal/G100.1, an item outside the Stacks goal that both old doors share.
   const allDoors = ((await call('stackFrameChecks.doors', {})).doors || []);
   const olds = allDoors.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
   const oldItems = olds.map(function (d) { return d.item; });

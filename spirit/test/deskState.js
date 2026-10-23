@@ -39,7 +39,7 @@ const kids = [];
 const db = new DatabaseSync(path.join(state, 'desk.db'));
 db.exec('CREATE TABLE IF NOT EXISTS lines (key TEXT PRIMARY KEY, at TEXT, todo TEXT, sender TEXT, kind TEXT, body TEXT, line TEXT NOT NULL);' +
   'CREATE TABLE IF NOT EXISTS docs (name TEXT PRIMARY KEY, json TEXT NOT NULL);');
-const oldSession = JSON.stringify({ goal: { id: 'old/G1', title: 'An old goal' }, rules: [], items: [{ id: 'old/G1.1', title: 'OLD-ITEM', description: 'OLD-TEXT', blocks: ['old/G1'] }] });
+const oldSession = JSON.stringify({ goal: { id: 'goal/G100', title: 'An old goal' }, rules: [], items: [{ id: 'goal/G100.1', title: 'OLD-ITEM', description: 'OLD-TEXT', blocks: ['goal/G100'] }] });
 const oldLine = { key: 'o1', at: '2026-09-29T08:00:00.000Z', dir: 'in', from: 'claude-windows', kind: 'session', text: oldSession, todo: 'team/chat' };
 db.prepare('INSERT INTO lines (key, at, todo, sender, kind, body, line) VALUES (?, ?, ?, ?, ?, ?, ?)')
   .run(oldLine.key, oldLine.at, oldLine.todo, oldLine.from, oldLine.kind, oldLine.text, JSON.stringify(oldLine));
@@ -88,117 +88,117 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (names.indexOf('fresh.get') === -1) test.check('fresh.get is gone');
   else test.fail(OWED + 'fresh.get is still served');
 
-  const session = { goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [
-    { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1.2'] },
-    { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'] },
+  const session = { goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
+    { id: 'goal/G101.1', title: 'Alpha', blocks: ['goal/G101.2'] },
+    { id: 'goal/G101.2', title: 'Beta', blocks: ['goal/G101'] },
   ] };
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify(session) }, ANDY);
 
   test.subHeading('the session: rows, and nothing from before the redesign');
   let by = await items();
-  if (by['t/G1.1'] && by['t/G1.1'].title === 'Alpha' && by['t/G1.2']) test.check('session.set puts its items on the list');
+  if (by['goal/G101.1'] && by['goal/G101.1'].title === 'Alpha' && by['goal/G101.2']) test.check('session.set puts its items on the list');
   else test.fail(OWED + 'after session.set, items.search answered ' + JSON.stringify(Object.keys(by)));
-  if (!by['old/G1.1'] && !JSON.stringify(by).includes('OLD-')) test.check('an item from an old session line is not served');
+  if (!by['goal/G100.1'] && !JSON.stringify(by).includes('OLD-')) test.check('an item from an old session line is not served');
   else test.fail(OWED + 'an old item was served');
 
   test.subHeading('Go! only after design ends, and only for an unblocked item');
-  await call('press', { id: 't/G1', what: 'start-design' }, ANDY);
+  await call('press', { id: 'goal/G101', what: 'start-design' }, ANDY);
   by = await items();
-  if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('go')) test.check('in design mode, no Go!');
-  else test.fail(OWED + 'in design mode Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1', what: 'end-design' }, ANDY);
+  if (btns(by['goal/G101.1']) && !btns(by['goal/G101.1']).includes('go')) test.check('in design mode, no Go!');
+  else test.fail(OWED + 'in design mode Alpha has ' + JSON.stringify(by['goal/G101.1']));
+  await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
   by = await items();
-  if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('go')) test.check('after end-design, Alpha (unblocked) shows Go!');
-  else test.fail(OWED + 'after end-design Alpha has ' + JSON.stringify(by['t/G1.1']));
-  if (btns(by['t/G1.2']) && !btns(by['t/G1.2']).includes('go')) test.check('Beta, blocked by open Alpha, shows no Go!');
-  else test.fail(OWED + 'Beta has ' + JSON.stringify(by['t/G1.2']));
+  if (btns(by['goal/G101.1']) && btns(by['goal/G101.1']).includes('go')) test.check('after end-design, Alpha (unblocked) shows Go!');
+  else test.fail(OWED + 'after end-design Alpha has ' + JSON.stringify(by['goal/G101.1']));
+  if (btns(by['goal/G101.2']) && !btns(by['goal/G101.2']).includes('go')) test.check('Beta, blocked by open Alpha, shows no Go!');
+  else test.fail(OWED + 'Beta has ' + JSON.stringify(by['goal/G101.2']));
 
   test.subHeading('Done after one agent\'s claim; Close and Reopen after done; closed leaves the list');
-  await call('press', { id: 't/G1.1', what: 'go' }, ANDY);
+  await call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
   by = await items();
-  if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('done') && !btns(by['t/G1.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
-  else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1.1', what: 'claim-done' }, WSL);
+  if (btns(by['goal/G101.1']) && !btns(by['goal/G101.1']).includes('done') && !btns(by['goal/G101.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
+  else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['goal/G101.1']));
+  await call('press', { id: 'goal/G101.1', what: 'claim-done' }, WSL);
   // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
   by = await items();
-  if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
-  else test.fail(OWED + 'after one claim Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1.1', what: 'done' }, ANDY);
+  if (btns(by['goal/G101.1']) && btns(by['goal/G101.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
+  else test.fail(OWED + 'after one claim Alpha has ' + JSON.stringify(by['goal/G101.1']));
+  await call('press', { id: 'goal/G101.1', what: 'done' }, ANDY);
   by = await items();
-  if (same(btns(by['t/G1.1']) || [], ['close', 'reopen'])) test.check('after done: Close and Reopen');
-  else test.fail(OWED + 'after done Alpha has ' + JSON.stringify(by['t/G1.1']));
-  if (btns(by['t/G1.2']) && btns(by['t/G1.2']).includes('go')) test.check('Beta, no longer blocked, now shows Go!');
-  else test.fail(OWED + 'Beta after Alpha done has ' + JSON.stringify(by['t/G1.2']));
-  await call('press', { id: 't/G1.1', what: 'close' }, ANDY);
+  if (same(btns(by['goal/G101.1']) || [], ['close', 'reopen'])) test.check('after done: Close and Reopen');
+  else test.fail(OWED + 'after done Alpha has ' + JSON.stringify(by['goal/G101.1']));
+  if (btns(by['goal/G101.2']) && btns(by['goal/G101.2']).includes('go')) test.check('Beta, no longer blocked, now shows Go!');
+  else test.fail(OWED + 'Beta after Alpha done has ' + JSON.stringify(by['goal/G101.2']));
+  await call('press', { id: 'goal/G101.1', what: 'close' }, ANDY);
   by = await items();
-  if (!by['t/G1.1'] && by['t/G1.2']) test.check('a closed item leaves the list');
+  if (!by['goal/G101.1'] && by['goal/G101.2']) test.check('a closed item leaves the list');
   else test.fail(OWED + 'after close the list holds ' + JSON.stringify(Object.keys(by)));
 
   test.subHeading('the one box: the first text wins, alterations name their version');
-  const w1 = await call('box.write', { id: 't/G1.2', text: 'FIRST', version: 0 }, CW);
-  const g1 = (await whole('t/G1.2')).body || {};
+  const w1 = await call('box.write', { id: 'goal/G101.2', text: 'FIRST', version: 0 }, CW);
+  const g1 = (await whole('goal/G101.2')).body || {};
   if (g1.box === 'FIRST' && g1.version >= 1) test.check('the first write becomes the box');
   else test.fail(OWED + 'after the first write: ' + JSON.stringify({ w1: w1.body, g1: g1 }));
-  const stale = await call('box.write', { id: 't/G1.2', text: 'SECOND-ON-STALE', version: 0 }, WSL);
-  const g2 = (await whole('t/G1.2')).body || {};
+  const stale = await call('box.write', { id: 'goal/G101.2', text: 'SECOND-ON-STALE', version: 0 }, WSL);
+  const g2 = (await whole('goal/G101.2')).body || {};
   if (stale.status >= 400 && g2.box === 'FIRST') test.check('an alteration against an old version is refused, and the box keeps its text');
   else test.fail(OWED + 'a stale alteration: ' + JSON.stringify({ status: stale.status, box: g2.box }));
-  await call('box.write', { id: 't/G1.2', text: 'MERGED', version: g2.version }, WSL);
-  const g3 = (await whole('t/G1.2')).body || {};
+  await call('box.write', { id: 'goal/G101.2', text: 'MERGED', version: g2.version }, WSL);
+  const g3 = (await whole('goal/G101.2')).body || {};
   if (g3.box === 'MERGED') test.check('an alteration against the current version replaces it');
   else test.fail(OWED + 'after a current alteration the box is ' + JSON.stringify(g3.box));
 
   test.subHeading('checks, chat, rename and status');
-  await call('check.add', { id: 't/G1.2', kind: 'C', words: 'look at it', test: '' }, CW);
-  const c0 = ((await whole('t/G1.2')).body || {}).checks || [];
+  await call('check.add', { id: 'goal/G101.2', kind: 'C', words: 'look at it', test: '' }, CW);
+  const c0 = ((await whole('goal/G101.2')).body || {}).checks || [];
   const first = c0[0] || {};
-  await call('check.set', { id: 't/G1.2', check: first.number || 'C1', state: 'passed' }, ANDY);
-  const c1 = ((await whole('t/G1.2')).body || {}).checks || [];
+  await call('check.set', { id: 'goal/G101.2', check: first.number || 'C1', state: 'passed' }, ANDY);
+  const c1 = ((await whole('goal/G101.2')).body || {}).checks || [];
   if (c1.length === 1 && c1[0].state === 'passed' && /C1/.test(String(c1[0].number))) test.check('a C check is added as C1, and its tick is recorded');
   else test.fail(OWED + 'checks: ' + JSON.stringify(c1));
-  await call('chat.add', { id: 't/G1.2', text: 'a line' }, ANDY);
-  await call('item.rename', { id: 't/G1.2', title: 'Beta renamed' }, ANDY);
-  await call('item.status', { id: 't/G1.2', word: 'coding' }, WSL);
-  const g4 = (await whole('t/G1.2')).body || {};
+  await call('chat.add', { id: 'goal/G101.2', text: 'a line' }, ANDY);
+  await call('item.rename', { id: 'goal/G101.2', title: 'Beta renamed' }, ANDY);
+  await call('item.status', { id: 'goal/G101.2', word: 'coding' }, WSL);
+  const g4 = (await whole('goal/G101.2')).body || {};
   by = await items();
   const chatOk = (g4.chat || []).some(function (l) { return l.text === 'a line'; });
-  if (chatOk && by['t/G1.2'] && by['t/G1.2'].title === 'Beta renamed' && by['t/G1.2'].status === 'coding') test.check('chat, rename and status word all show');
-  else test.fail(OWED + 'chat ' + chatOk + ', item ' + JSON.stringify(by['t/G1.2']));
+  if (chatOk && by['goal/G101.2'] && by['goal/G101.2'].title === 'Beta renamed' && by['goal/G101.2'].status === 'coding') test.check('chat, rename and status word all show');
+  else test.fail(OWED + 'chat ' + chatOk + ', item ' + JSON.stringify(by['goal/G101.2']));
 
   test.subHeading('filters, searched by the server');
   const goals = await items({ goalsOnly: true });
-  if (goals['t/G1'] && !goals['t/G1.2']) test.check('goalsOnly answers the goal and no items');
+  if (goals['goal/G101'] && !goals['goal/G101.2']) test.check('goalsOnly answers the goal and no items');
   else test.fail(OWED + 'goalsOnly answered ' + JSON.stringify(Object.keys(goals)));
   const found = await items({ text: 'renamed' });
   // goal/G18.5: the text ranks, it no longer filters; what matches comes first.
-  if (Object.keys(found)[0] === 't/G1.2') test.check('text search ranks what matches first');
+  if (Object.keys(found)[0] === 'goal/G101.2') test.check('text search ranks what matches first');
   else test.fail(OWED + 'search "renamed" answered ' + JSON.stringify(Object.keys(found)));
 
   // Owner presses are Andy's (G2.1 review): go, done, reopen, close, abandon, start-design, end-design, and the
   // rename ("rename (you)"). An agent's press of one is refused and changes nothing.
   test.subHeading('owner presses are refused to an agent');
-  const beforeOwner = JSON.stringify((await items())['t/G1.2']);
+  const beforeOwner = JSON.stringify((await items())['goal/G101.2']);
   const tries = ['done', 'close', 'abandon', 'start-design', 'end-design'];
   const answered = [];
-  for (const what of tries) answered.push((await call('press', { id: 't/G1.2', what: what }, WSL)).status);
-  answered.push((await call('item.rename', { id: 't/G1.2', title: 'AGENT-RENAME' }, WSL)).status);
-  const afterOwner = JSON.stringify((await items())['t/G1.2']);
+  for (const what of tries) answered.push((await call('press', { id: 'goal/G101.2', what: what }, WSL)).status);
+  answered.push((await call('item.rename', { id: 'goal/G101.2', title: 'AGENT-RENAME' }, WSL)).status);
+  const afterOwner = JSON.stringify((await items())['goal/G101.2']);
   if (answered.every(function (st) { return st >= 400; }) && afterOwner === beforeOwner) test.check('an agent\'s done, close, abandon, start/end-design and rename are refused, and Beta is unchanged');
   else test.fail(OWED + 'agent owner-presses answered ' + JSON.stringify(answered) + ', Beta ' + (afterOwner === beforeOwner ? 'unchanged' : 'changed: ' + afterOwner));
   // goal/G3.9: a claim before his Go is refused, so his Go comes first (Beta is unblocked since Alpha closed).
-  await call('press', { id: 't/G1.2', what: 'go' }, ANDY);
-  const claim = await call('press', { id: 't/G1.2', what: 'claim-done' }, WSL);
+  await call('press', { id: 'goal/G101.2', what: 'go' }, ANDY);
+  const claim = await call('press', { id: 'goal/G101.2', what: 'claim-done' }, WSL);
   if (claim.status === 200) test.check('an agent\'s claim-done still passes');
   else test.fail('an agent\'s claim-done was refused: ' + JSON.stringify(claim));
 
   // THE STAR IS GONE (goal/G4.20 point 8, Andy: "ha ha, the red star has no function anymore. take it out."):
   // an agent's line and his seen leave no star in the facts.
   test.subHeading('no star: neither an agent line nor his seen puts one in the facts');
-  await call('chat.add', { id: 't/G1.2', text: 'agent says' }, WSL);
-  const starred = (await items())['t/G1.2'] || {};
-  await call('press', { id: 't/G1.2', what: 'seen' }, ANDY);
-  const cleared = (await items())['t/G1.2'] || {};
+  await call('chat.add', { id: 'goal/G101.2', text: 'agent says' }, WSL);
+  const starred = (await items())['goal/G101.2'] || {};
+  await call('press', { id: 'goal/G101.2', what: 'seen' }, ANDY);
+  const cleared = (await items())['goal/G101.2'] || {};
   const noStar = function (f) { return f.id && !Object.prototype.hasOwnProperty.call(f, 'star'); };
   if (noStar(starred) && noStar(cleared)) test.check('an agent\'s new line and Andy\'s seen leave no star in the facts');
   else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
@@ -212,7 +212,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   else test.fail('OWED by goal/G2.1: the desk server still writes voice.jsonl');
 
   test.subHeading('an unknown press is refused by name');
-  const odd = await call('press', { id: 't/G1.2', what: 'fly' }, ANDY);
+  const odd = await call('press', { id: 'goal/G101.2', what: 'fly' }, ANDY);
   if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');
   else test.fail(OWED + 'press what:fly answered ' + JSON.stringify(odd));
 
@@ -236,8 +236,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   await stop(kids[kids.length - 1]);
   await start();
   by = await items();
-  const g5 = (await whole('t/G1.2')).body || {};
-  if (!by['t/G1.1'] && by['t/G1.2'] && by['t/G1.2'].title === 'Beta renamed' && g5.box === 'MERGED') test.check('after a restart: Alpha still closed, Beta renamed, its box kept');
+  const g5 = (await whole('goal/G101.2')).body || {};
+  if (!by['goal/G101.1'] && by['goal/G101.2'] && by['goal/G101.2'].title === 'Beta renamed' && g5.box === 'MERGED') test.check('after a restart: Alpha still closed, Beta renamed, its box kept');
   else test.fail(OWED + 'after a restart: ' + JSON.stringify({ keys: Object.keys(by), box: g5.box }));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(async function () {
   for (const k of kids) await stop(k);

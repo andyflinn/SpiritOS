@@ -17,7 +17,6 @@ module.exports = {
     'box.take': { id: 'id' },
     // An empty box is a box: text may be ''.
     'box.write': { id: 'id', text: 'text', version: 'number' },
-    changes: { n: 'number', line: 'number' },
     'chat.add': { id: 'id', text: 'text' },
     // Each filter left '' filters nothing; scope is '', goal or items.
     'chat.search': { id: 'id', text: 'text', by: 'text', since: 'text', before: 'text', scope: 'text' },
@@ -25,8 +24,9 @@ module.exports = {
     'check.add': { id: 'id', kind: 'id', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
     'check.set': { id: 'id', check: 'id', state: 'id' },
-    // commit may be '' only for a plain item's build claim.
-    claim: { id: 'id', phase: 'id', commit: 'text' },
+    // commit may be '' only for a plain item's build claim. suites (goal/G33.4, box v44-45): the red claim's spirit/test/
+    // paths, the item's suites table; a build claim takes none.
+    claim: { id: 'id', phase: 'id', commit: 'text', suites: 'list?' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'id' },
     // The title passes the label rule (fieldWhy); blocks may be left out or '' (the goal).
@@ -47,10 +47,6 @@ module.exports = {
     'items.find': { text: 'text', by: 'text', since: 'text', before: 'text' },
     'items.search': { text: 'text', currentGoalOnly: 'bool', goalsOnly: 'bool', includeClosed: 'bool' },
     'line.take': { id: 'id' },
-    // A JSON object carrying its key.
-    'log.add': { json: 'id' },
-    'log.search': { text: 'text', todo: 'text', since: 'text', kind: 'text', before: 'text' },
-    'pending.get': { who: 'text' },
     // pass and why only for a verify; red and build send neither.
     'phase.done': { id: 'id', phase: 'id', pass: 'bool?', why: 'text?' },
     'phase.may': { id: 'id' },

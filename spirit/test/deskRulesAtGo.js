@@ -87,58 +87,58 @@ function session(goal, title, items) {
   if (!design || !desk || !code || !ui || !gone || !(proposed && proposed.key)) { test.fail('the world: the rules were not made, ' + short([design, desk, code, ui, gone, proposed])); return; }
 
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', session('r/G1', 'Rules at Go', [
-    { id: 'r/G1.1', title: 'A plain item', blocks: ['r/G1'] },
-    { id: 'r/G1.2', title: 'A face item', blocks: ['r/G1'] },
+  await call('session.set', session('goal/G100', 'Rules at Go', [
+    { id: 'goal/G100.1', title: 'A plain item', blocks: ['goal/G100'] },
+    { id: 'goal/G100.2', title: 'A face item', blocks: ['goal/G100'] },
   ]), ANDY);
   // The box is what names the paths a type is drawn from, so each item gets one before his Go.
-  await call('box.write', { id: 'r/G1.1', version: 0, text: 'A decision, no path named at all.' }, CW);
-  await call('box.write', { id: 'r/G1.2', version: 0, text: 'Where: spirit/run/shell/chatter/chatter.js' }, CW);
-  await call('press', { id: 'r/G1', what: 'end-design' }, ANDY);
+  await call('box.write', { id: 'goal/G100.1', version: 0, text: 'A decision, no path named at all.' }, CW);
+  await call('box.write', { id: 'goal/G100.2', version: 0, text: 'Where: spirit/run/shell/chatter/chatter.js' }, CW);
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
   test.subHeading('1. a design rule reaches an item whose box names no path at all');
-  const go1 = await call('press', { id: 'r/G1.1', what: 'go' }, ANDY);
-  const f1 = await factsOf('r/G1.1');
+  const go1 = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+  const f1 = await factsOf('goal/G100.1');
   const k1 = keysOf(f1);
-  if (!took(go1)) test.fail('his Go on r/G1.1 answered ' + go1.status + ' ' + short(go1.body));
+  if (!took(go1)) test.fail('his Go on goal/G100.1 answered ' + go1.status + ' ' + short(go1.body));
   else if (k1.indexOf(design) !== -1) test.check('the design rule ' + design + ' is on an item that names no path');
-  else test.fail(OWED + 'r/G1.1 carries ' + short(k1) + ', without the design rule ' + design);
+  else test.fail(OWED + 'goal/G100.1 carries ' + short(k1) + ', without the design rule ' + design);
   if (k1.indexOf(desk) !== -1) test.check('the desk rule is on it too, as it always was');
-  else test.fail(OWED + 'r/G1.1 carries ' + short(k1) + ', without the desk rule ' + desk);
+  else test.fail(OWED + 'goal/G100.1 carries ' + short(k1) + ', without the desk rule ' + desk);
 
   test.subHeading('2. a proposed rule and a deleted one are stamped on nothing; ui still needs a face path');
   if (k1.indexOf(String(proposed.key)) === -1 && k1.indexOf(gone) === -1) test.check('neither the proposed rule nor the deleted one is stamped');
-  else test.fail(OWED + 'r/G1.1 carries ' + short(k1) + ', with the proposed or the deleted rule');
+  else test.fail(OWED + 'goal/G100.1 carries ' + short(k1) + ', with the proposed or the deleted rule');
   if (k1.indexOf(ui) === -1 && k1.indexOf(code) === -1) test.check('a ui rule and a code rule stay off an item that names neither kind of path');
-  else test.fail(OWED + 'r/G1.1 carries ' + short(k1) + ', with the ui or code rule although its box names no path');
-  await call('press', { id: 'r/G1.2', what: 'go' }, ANDY);
-  const k2 = keysOf(await factsOf('r/G1.2'));
+  else test.fail(OWED + 'goal/G100.1 carries ' + short(k1) + ', with the ui or code rule although its box names no path');
+  await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+  const k2 = keysOf(await factsOf('goal/G100.2'));
   if (k2.indexOf(ui) !== -1 && k2.indexOf(design) !== -1 && k2.indexOf(desk) !== -1) test.check('an item whose box names a face path carries the ui rule, and the design and desk rules with it');
   else test.fail(OWED + 'the face item carries ' + short(k2));
 
   test.subHeading('3. an item added to a reopened goal carries the rules active now');
-  await call('press', { id: 'r/G1', what: 'close' }, ANDY);
+  await call('press', { id: 'goal/G100', what: 'close' }, ANDY);
   const late = await activeRule('design', 'Plain english', 'Plain english is always preferred by this user.');
   if (!late) { test.fail('the world: the late rule was not made'); return; }
-  await call('press', { id: 'r/G1', what: 'reopen' }, ANDY);
+  await call('press', { id: 'goal/G100', what: 'reopen' }, ANDY);
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', session('r/G1', 'Rules at Go', [
-    { id: 'r/G1.1', title: 'A plain item', blocks: ['r/G1'] },
-    { id: 'r/G1.2', title: 'A face item', blocks: ['r/G1'] },
-    { id: 'r/G1.3', title: 'Added after the reopening', blocks: ['r/G1'] },
+  await call('session.set', session('goal/G100', 'Rules at Go', [
+    { id: 'goal/G100.1', title: 'A plain item', blocks: ['goal/G100'] },
+    { id: 'goal/G100.2', title: 'A face item', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Added after the reopening', blocks: ['goal/G100'] },
   ]), ANDY);
-  await call('box.write', { id: 'r/G1.3', version: 0, text: 'Added while the goal was closed and reopened.' }, CW);
-  await call('press', { id: 'r/G1', what: 'end-design' }, ANDY);
-  const go3 = await call('press', { id: 'r/G1.3', what: 'go' }, ANDY);
-  const k3 = keysOf(await factsOf('r/G1.3'));
-  if (!took(go3)) test.fail('his Go on r/G1.3 answered ' + go3.status + ' ' + short(go3.body));
+  await call('box.write', { id: 'goal/G100.3', version: 0, text: 'Added while the goal was closed and reopened.' }, CW);
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  const go3 = await call('press', { id: 'goal/G100.3', what: 'go' }, ANDY);
+  const k3 = keysOf(await factsOf('goal/G100.3'));
+  if (!took(go3)) test.fail('his Go on goal/G100.3 answered ' + go3.status + ' ' + short(go3.body));
   else if (k3.indexOf(late) !== -1 && k3.indexOf(design) !== -1) test.check('the item added after the reopening carries the rule activated while the goal was closed, ' + late);
-  else test.fail(OWED + 'r/G1.3 carries ' + short(k3) + ', without the late rule ' + late);
+  else test.fail(OWED + 'goal/G100.3 carries ' + short(k3) + ', without the late rule ' + late);
 
   test.subHeading('4. the older items keep the stamp of their own Go');
-  const k1again = keysOf(await factsOf('r/G1.1'));
-  if (k1again.indexOf(late) === -1) test.check('r/G1.1 keeps the rules of its own Go, without the later one');
-  else test.fail(OWED + 'r/G1.1 now carries the later rule ' + late + ': ' + short(k1again));
+  const k1again = keysOf(await factsOf('goal/G100.1'));
+  if (k1again.indexOf(late) === -1) test.check('goal/G100.1 keeps the rules of its own Go, without the later one');
+  else test.fail(OWED + 'goal/G100.1 now carries the later rule ' + late + ': ' + short(k1again));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
   setTimeout(function () {

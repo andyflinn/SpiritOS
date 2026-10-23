@@ -45,13 +45,13 @@ function load(script, doc) {
 }
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 
-const SESSION = JSON.stringify({ goal: { id: 't/G1', title: 'The goal title', description: 'GOAL-DESCRIPTION-TEXT' }, rules: [],
-  items: [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT', tests: ['ITEM-TEST-T1'] }] });
+const SESSION = JSON.stringify({ goal: { id: 'goal/G100', title: 'The goal title', description: 'GOAL-DESCRIPTION-TEXT' }, rules: [],
+  items: [{ id: 'goal/G100.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT', tests: ['ITEM-TEST-T1'] }] });
 const log = [{ key: 'k1', at: new Date(Date.now() - 60000).toISOString(), dir: 'in', peer: LEAD, outcome: 'received', from: 'claude-windows', kind: 'session', text: SESSION, todo: 'team/chat' }];
 
 // The goal row is the desk server's (desk/G2.6).
 function withGoal(fake) {
-  fake.items = [{ id: 't/G1', title: 'The goal title', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 0 }];
+  fake.items = [{ id: 'goal/G100', title: 'The goal title', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 0 }];
   return fake;
 }
 function mountDesk(files) {
@@ -77,7 +77,7 @@ settle().then(function () {
   // its fold live in the goal's own dialog (deskExplainTop.js).
   test.subHeading('T1: the top of Team is the goal line alone, which opens the goal');
   const bubble = doc.getElementById('desk-session').innerHTML;
-  if (/The goal title/.test(bubble) && /data-open="t\/G1"/.test(bubble) && !/GOAL-DESCRIPTION-TEXT/.test(bubble) && !/ITEM-ONE-TITLE/.test(bubble)) {
+  if (/The goal title/.test(bubble) && /data-open="goal\/G100"/.test(bubble) && !/GOAL-DESCRIPTION-TEXT/.test(bubble) && !/ITEM-ONE-TITLE/.test(bubble)) {
     test.check('one line, the goal id and title, and a click opens the goal');
   } else test.fail('the top of Team: ' + bubble.slice(0, 160));
 

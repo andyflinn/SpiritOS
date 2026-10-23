@@ -58,54 +58,10 @@ function deskIcon(name) {
   var set = (typeof spirit !== 'undefined' && spirit.core && spirit.core.const && spirit.core.const.ICON) || {};
   return set[name] || '';
 }
-var deskMessages = [];      // decoded agents messages, in log order
-var deskByHash = Object.create(null);
 var deskError = '';
-// THE LEAD (deskLead) stood here, learned from whoever posted the session: the direct chat to the lead was its
-// home. Gone with the direct line (goal/G3.12); the desk server knows the agents by their keys.
-// WHO THE AGENTS ARE, from the packets of the agents-app era still on record: newest key per name. Nothing on the
-// page sends to these keys any more (goal/G3.8, G3.12); the bubbles are drawn from the goal row, not from here.
-var deskAgents = Object.create(null);
-
-// One arrival (onPacket's body and message) -> one agents message, or null
-// when it is not one.
-function deskArrival(body, message) {
-  if (!body || !message) return null;
-  var at = String(message.sentAt || new Date().toISOString());
-  // A REPORT CARRIES A WHOLE MESSAGE BETWEEN AGENTS (agents.js reportOf),
-  // read here as that message, from its own sender. That is what makes
-  // this log Andy's "overall record of our activities", and it is how
-  // one agent's `taking`, sent to the other, still reaches the column.
-  if (body.kind === 'report') {
-    var inner = null;
-    try { inner = JSON.parse(body.text); } catch (e) { inner = null; }
-    if (!inner || inner.v !== 1 || !inner.kind) return null;
-    return {
-      key: String(message.hash || ''), at: at, dir: 'in', peer: '', outcome: String(inner.outcome || ''),
-      from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
-      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '', reported: true,
-    };
-  }
-  return {
-    key: String(message.hash || ''), at: at, dir: 'in', peer: String(message.fromKey || ''), outcome: 'received',
-    from: String(body.from || ''), kind: String(body.kind || ''),
-    text: String(body.text || ''), todo: body.todo ? String(body.todo) : '',
-  };
-}
-
-// One of Andy's own lines, as it went. Keyed by the hash the node signed
-// it under, or by a key of its own when nothing crossed and there is no
-// hash: folding failed sends by an empty hash would merge them into one.
-var deskOutCount = 0;
-function deskOutgoing(to, body, r, e) {
-  deskOutCount += 1;
-  return {
-    key: (r && r.hash) || ('out-' + Date.now() + '-' + deskOutCount),
-    at: new Date().toISOString(), dir: 'out', peer: String(to || ''),
-    outcome: e ? 'undelivered: ' + e.message : (r && r.ok ? 'sent' : 'undelivered: ' + ((r && (r.error || r.status)) || 'no answer')),
-    from: 'andy', kind: String(body.kind || ''), text: String(body.text || ''), todo: body.todo ? String(body.todo) : '',
-  };
-}
+// THE LEGACY AGENTS-PACKET LOG WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."): the page
+// no longer records arrivals of the agents app's era nor reads them back; the desk server knows the agents by their keys
+// (the goal row's agents), and the group chat is goal/G0's chat.
 
 // ── DESK'S RECORD IS THE DESK SERVER'S (desk/G1.4) ──────────────────
 //
@@ -118,7 +74,7 @@ function deskOutgoing(to, body, r, e) {
 // the desk server (process/js/desk), reached by its verbs (desk.<verb>) on the loopback
 // door (D4; through the flat apiDoor since goal/G30.6). It reads only what it shows: the newest session, each open
 // item's own lines, a chat's newest page, never the whole log. Desk still
-// folds what it reads (deskFold); the server is storage and bounded search.
+// keeps only what it shows; the server is storage and bounded search.
 // Each id a link to its item, as the dialog's are (Andy: "the blocked and
 // blocks lists link to the respective items").
 function deskLinks(ids) {
@@ -142,22 +98,6 @@ function deskRefusalText(body) {
   // THE WHY TOO (goal/G18.10): every refusal carries its reason since goal/G10.10, and the page showed the code alone.
   return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (x.why ? ': ' + x.why : '') + (body.error ? ' (' + body.error + ')' : '');
 }
-// One bounded search; the server answers newest first in the shared search
-// shape, {items: [{key, label}], more}, a line being its label (slim/G1.2).
-// Every key is sent, as the server matches them exactly (appPair D8).
-function deskSearch(q) {
-  return deskAsk('log.search', { text: q.text || '', todo: q.todo || '', since: q.since || '', kind: q.kind || '', before: q.before || '' })
-    .then(function (r) {
-      var lines = (r.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
-      return { lines: lines, partial: !!r.more };
-    });
-}
-// Lines come newest first; they are folded oldest first, and the whole held
-// record is kept in time order for the chats.
-function deskTake(lines) {
-  lines.slice().reverse().forEach(deskFold);
-  deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
-}
 function deskWriteError(what) {
   return function (e) { deskError = 'Desk could not ' + what + ': ' + ((e && e.message) || e); deskDraw(); };
 }
@@ -165,30 +105,6 @@ function deskWriteError(what) {
 // WHAT ANDY TYPES IS NO LONGER SENT TO A VOICE FILE (goal/G2.1 note 8). The desk server kept a plain file of
 // his lines (desk/G1.4) for his vault; since apiAuth/G1's close the brain reads them through the desk api, and the
 // vault's own tool (claude/voiceFromDesk.js) keeps his corpus. Nothing here writes it, and nothing may.
-
-// Onto the screen and into the server's log. Only what is new to this page
-// is added, and the server keeps a key once, so a replay writes nothing twice.
-function deskRecord(msgs) {
-  var fresh = msgs.filter(function (m) { return m && m.key && !deskByHash[m.key]; });
-  fresh.forEach(deskFold);
-  deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
-  deskDraw();
-  return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
-    // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
-    // (Andy: "last check 12:55" while it had copied at 13:26).
-    .then(function () { if (fresh.length) return deskAskBackup(); })
-    // Says whether it was kept, so a caller can hold on to what he typed (desk/G3.9 review).
-    .then(function () { return true; }, function (e) { deskWriteError('keep its log')(e); return false; });
-}
-
-// Folds one message in by its key; one already held is not taken twice. It
-// keeps the chats and who the agents are; the List is the desk server's (desk/G2.6).
-function deskFold(msg) {
-  if (!msg || !msg.key || deskByHash[msg.key]) return;
-  deskByHash[msg.key] = msg;
-  deskMessages.push(msg);
-  if (msg.dir === 'in' && !msg.reported && msg.from && msg.peer) deskAgents[msg.from] = { key: msg.peer, at: Date.parse(msg.at) || 0 };
-}
 
 function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 
@@ -216,14 +132,12 @@ var deskTab = 'list';
 // line to one agent and no direct line's unseen mark. Andy, 2026-10-03: "the The team tab will only show the team
 // chat interface (Chat of goal 'desk/G0.0')". deskSeen keeps its agents field so an older seen.json still parses.
 
-function deskIsTeamLine(m) { return m.todo === DESK_TEAM && m.kind !== 'board'; }
-
-// The newest arrival (never his own line) that `pred` accepts.
-function deskNewest(pred) {
+// The newest line of the group chat (goal/G0) not his own, as the page holds it (goal/G33.4: the legacy log went).
+function deskNewestTeamLine() {
   var newest = 0;
-  deskMessages.forEach(function (m) {
-    if (m.dir !== 'in' || !pred(m)) return;
-    var at = Date.parse(m.at) || 0;
+  (deskGroup || []).forEach(function (l) {
+    if (!l || l.by === 'andy') return;
+    var at = Date.parse(l.at) || 0;
     if (at > newest) newest = at;
   });
   return newest;
@@ -233,7 +147,7 @@ function deskSaveSeen() {
   deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
 }
 function deskMarkTeamSeen() {
-  var newest = deskNewest(deskIsTeamLine);
+  var newest = deskNewestTeamLine();
   if (newest <= (deskSeen.team || 0)) return;
   deskSeen.team = newest;
   deskSaveSeen();
@@ -247,7 +161,7 @@ function deskLoadSeen(raw) {
     deskSeen = { team: Number(held.team) || 0, agents: held.agents && typeof held.agents === 'object' ? held.agents : {} };
     return;
   }
-  deskSeen = { team: deskNewest(deskIsTeamLine), agents: {} };
+  deskSeen = { team: deskNewestTeamLine(), agents: {} };
   deskSaveSeen();
 }
 
@@ -469,7 +383,7 @@ function deskSearchItems() {
   return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
     .then(function (r) { deskItems = deskLabels(r); deskNotePlugins(deskItems); deskDraw(); }, deskWriteError('read its list'));
 }
-// A published change: {change, verb, item: <facts>, listed, rows}. A new session
+// A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
 // asks again, since it adds and drops whole rows. A row the List does not hold
 // is drawn from the publish since goal/G24.6 (below); only while text is in the
 // search box does it still ask again.
@@ -477,6 +391,7 @@ function deskSearchItems() {
 // go unseen here (an oversize drop notice, a stream reconnect); a change number that skips one means exactly that,
 // and the List asks once.
 var deskLastChange = 0;
+var deskSearchedAt = -1;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   // What is kept of the current goal takes every publish first (goal/G33.3).
@@ -496,27 +411,35 @@ function deskOnPublished(obj) {
   // travel as their own requests and can overtake each other; a row is never painted over by what came before.
   if (change && deskLastChange && change < deskLastChange) return;
   var gap = deskLastChange && change > deskLastChange + 1;
+  // THE BACKUP LINE FOLLOWS THE RECORD (the stale-backup-line finding): read again once per write the desk made, since
+  // the backup copies desk.db after a change. Until goal/G33.4 it followed the page's own log line.
+  if (change && change > deskLastChange) deskAskBackup();
   if (change) deskLastChange = change;
   // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A gap
   // may have swallowed one, so the chat is read again with the List.
   if (gap) deskAskGroup().then(deskDraw, function () { /* shown as it stands */ });
-  var said = obj.item;
-  if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
-  if (!gap && obj.verb === 'chat.add' && said && said.id === DESK_GROUP && obj.chat) {
-    if (deskGroup && !deskGroup.some(function (l) { return deskSameLine(l, obj.chat); })) deskGroup.push(obj.chat);
-    // goal/G27.9: the team chat's own element repaints it; without the element the whole face is drawn, as before.
-    if (deskTeamElement) deskDrawTabs(); else deskDraw();
+  // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
+  // drawn here, the rest is the dialog's and the kept items' (shell/js/desk/data.js).
+  if (obj.table) {
+    if (!gap && obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
+      if (deskGroup) {
+        var at = -1;
+        deskGroup.forEach(function (l, i) { if (deskSameLine(l, obj.row)) at = i; });
+        if (at === -1) deskGroup.push(obj.row); else deskGroup[at] = obj.row;
+      }
+      // goal/G27.9: the team chat's own element repaints it; without the element the whole face is drawn, as before.
+      if (deskTeamElement) deskDrawTabs(); else deskDraw();
+    }
     return;
   }
-  if (gap || obj.verb === 'session.set') { deskSearchItems(); return; }
-  // Every row it changed (desk/G3.10), else the one item as before.
-  var rows = Array.isArray(obj.rows) && obj.rows.length ? obj.rows : null;
-  if (!rows) {
-    var it = obj.item;
-    if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
-    if (!it || !it.id) return;
-    rows = [Object.assign({}, it, { listed: obj.listed !== false })];
-  }
+  // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write.
+  if (gap || obj.verb === 'session.set') { if (deskSearchedAt !== change || !change) { deskSearchedAt = change; deskSearchItems(); } return; }
+  // ITS ONE ROW (goal/G33.4: every row a write changed is its own publish).
+  var it = obj.item;
+  if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
+  // The group chat's goal is on no List (goal/G3.10): its row publish draws nothing here.
+  if (!it || !it.id || it.id === DESK_GROUP) return;
+  var rows = [Object.assign({}, it, { listed: obj.listed !== false })];
   var unknown = false;
   var moved = false;
   // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
@@ -610,7 +533,6 @@ function deskMakeElement(o) {
 // The ids a publish changes rows of.
 function deskRowIdsOf(obj) {
   if (!obj || typeof obj !== 'object') return [];
-  if (Array.isArray(obj.rows) && obj.rows.length) return obj.rows.map(function (r) { return r && r.id; });
   var it = obj.item;
   if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
   return it && it.id ? [it.id] : [];
@@ -635,7 +557,7 @@ function deskMountRowElements() {
 // The team chat and the rule list, made once at mount.
 function deskMountElements() {
   deskTeamElement = deskMakeElement({
-    wants: function (obj) { return !!(obj && obj.verb === 'chat.add' && deskRowIdsOf(obj)[0] === DESK_GROUP); },
+    wants: function (obj) { return !!(obj && obj.table === 'chat' && obj.id === DESK_GROUP); },
     paint: function () {
       var team = document.getElementById('desk-team');
       if (team) team.innerHTML = deskGroupChat();
@@ -702,7 +624,8 @@ function deskWarnWhy(row) {
 // itself stays in the goal's Details (deskDetails), and the row only says there is one to make.
 // DELETE IS NEVER IN THE ROW (goal/G8.8). Andy, 2026-10-09: "oh, and the Delete button never should show in the
 // list. only in the detals." It was drawn in every row of a goal in design mode until then, which was G9.7's miss.
-var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete'];
+// goal/G33.4: an item's own End design is its Details' alone.
+var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete', 'end-design'];
 var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">' + deskIcon('SWORD') + '</span>';
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
@@ -984,14 +907,8 @@ function deskLineHtml(m) {
 //   yet." — "call it "team"" — "so we don't pullute a requirement with
 //   out-of scope talks".
 //
-// The design-mode proposal (AGENTS-UI.md) cut down to what he asked for:
-// a chat and nothing else. It rides as an ordinary thread whose todo is
-// DESK_TEAM, which is on no board, so the List never shows it. His line
-// goes to every agent heard from in the last day. An agent answers under
-// the same todo to Andy AND to the other agent, so its line reaches Andy
-// twice (once direct, once as the report of the agent-to-agent copy), and
-// the chat folds that to one.
-var DESK_TEAM = 'team/chat';
+// The design-mode proposal (AGENTS-UI.md) cut down to what he asked for: a chat and nothing else. Since goal/G3.10 it
+// is the group chat's goal (goal/G0 since goal/G33.4); the old thread under team/chat went with the legacy log.
 
 // ── THE GROUP CHAT, UNDER ALL (goal/G3.10) ──────────────────────────
 //
@@ -1007,7 +924,8 @@ var DESK_TEAM = 'team/chat';
 // and posted his line to each agent as a packet; with the agents app gone
 // no agent could answer there. Read once (item.chat), then drawn from what
 // the server publishes ("no pulling").
-var DESK_GROUP = 'desk/G0.0';
+// goal/G33.4: goal 0, rendered from its two numbers.
+var DESK_GROUP = 'goal/G0';
 var deskGroup = null;   // its lines as the server holds them, oldest first; null until read
 function deskSameLine(a, b) { return a.by === b.by && a.at === b.at && a.text === b.text; }
 function deskAskGroup() {
@@ -1271,18 +1189,13 @@ function deskOpenRow(id) {
 //   "the list only loads key/title, and the rest lazy loads".
 //
 // The List is items.search's answer (deskSearchItems). The chats read their
-// newest page. The lines under DESK_TEAM are still read, once: who the agents
-// and the lead are is learned from them (deskFold); they are drawn nowhere
-// since the All tab became the group chat (goal/G3.10), so nothing reads older
-// ones any more.
+// newest page. The old lines under team/chat are read no more: they went with goal/G33.4.
 var deskLoaded = false;
 function deskLoad() {
   var seenRaw = '';
   var reads = [
     deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
-    deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); }),
     deskAskGroup(),
-    deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
     deskAskBackup(),
   ];
   return Promise.all(reads.map(function (p) { return p.catch(function (e) { deskError = 'Desk could not read: ' + ((e && e.message) || e); }); }))
@@ -1304,7 +1217,9 @@ var deskBackup = null;
 function deskAskBackup() {
   return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
     deskBackup = r && r.status === 200 && r.body && r.body.ok !== false ? r.body : null;
-    deskDraw();
+    // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
+    var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('desk-backup') : null;
+    if (el && deskLoaded) el.innerHTML = deskBackupHtml(); else deskDraw();
   }, function () { deskBackup = null; });
 }
 function deskBackupHtml() {
@@ -1802,11 +1717,6 @@ spirit.shell.activateApp({
       var id = el && el.getAttribute && el.getAttribute('data-open');
       if (id) deskOpenRow(id);
     });
-    // Its own log first, then every arrival into it. Subscribed once, at
-    // mount, and kept while Desk is hidden behind its dialog, so what
-    // arrives while a row is open is logged too.
-    // Scrolled to its top, Team reads the page before (T6).
-    deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes.
     deskApi.onPublished(deskOnPublished);

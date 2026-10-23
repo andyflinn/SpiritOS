@@ -49,7 +49,6 @@ async function serverHalf() {
   test.subHeading('1. deskVerify: now and stop');
   fs.writeFileSync(path.join(__dirname, SLOW), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('tab slow probe');\nsetTimeout(function () { test.check('slow'); test.reportSuccessFailureCount(); process.exit(0); }, 8000);\n");
   const asks = [];
-  const records = [];
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = '';
@@ -64,14 +63,11 @@ async function serverHalf() {
         else if (flatCall && flatCall.desk) {
           const verb = Object.keys(flatCall.desk)[0];
           const a = flatCall.desk[verb] || {};
-          if (verb === 'changes') {
-            const rest = records.filter(function (r) { return r.n > (Number(a.n) || 0); });
-            out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : Number(a.n) || 0, line: 0, more: false };
-          }
-          else {
+          // (Its answer to the desk's `changes` went with goal/G33.4: the verb is gone, and deskVerify never asked it.)
+          {
             asks.push({ verb: verb, args: a });
-            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }) || {}).files ? (({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
-            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }) || {}).files ? (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'goal/G100', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
@@ -160,7 +156,7 @@ async function mount(fake) {
 
 async function faceHalf() {
   test.subHeading('2. the face: a Verifier tab after Musings, only while deskVerify answers');
-  const goal = { id: 'tb/G1', title: 'Tab', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 };
+  const goal = { id: 'goal/G100', title: 'Tab', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 };
 
   const without = require('./deskFake.js').create([]);
   without.items = [goal];

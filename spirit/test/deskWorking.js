@@ -61,7 +61,7 @@ function mount(answers) {
 }
 // A goal row as the server labels it; `working` is the field this red fixes.
 function goalRow(working) {
-  return { id: 'g/G1', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
+  return { id: 'goal/G100', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
     design: false, waiting: 0, live: ['claude-windows', 'wsl-claude'], working: working };
 }
 function line(key, from, peer) {
@@ -72,7 +72,7 @@ test.startTest('goal/G2.4: the Team tab shows who is working');
 
 (async function () {
   const list = mount({
-    'items.search': { items: [{ key: 'g/G1', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
+    'items.search': { items: [{ key: 'goal/G100', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
     'log.search': { items: [
       { key: 'l1', label: JSON.stringify(line('l1', 'claude-windows', CW_KEY)) },
       { key: 'l2', label: JSON.stringify(line('l2', 'wsl-claude', WSL_KEY)) }], more: false },

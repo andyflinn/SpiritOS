@@ -76,19 +76,19 @@ async function openGrants(id) {
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'ft/G1', title: 'Files' }, items: [
-    { id: 'ft/G1.1', title: 'Touches files', blocks: ['ft/G1'] }, { id: 'ft/G1.2', title: 'Touches no core', blocks: ['ft/G1'] }] }) }, ANDY);
-  if ((await facts('ft/G1.1')).id === 'ft/G1.1') test.check('the world: two items');
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Files' }, items: [
+    { id: 'goal/G100.1', title: 'Touches files', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Touches no core', blocks: ['goal/G100'] }] }) }, ANDY);
+  if ((await facts('goal/G100.1')).id === 'goal/G100.1') test.check('the world: two items');
   else { test.fail('the world did not land'); return; }
 
   test.subHeading('1. an agent adds the files it touched, and the item carries them');
-  const add = await call('item.files.add', { id: 'ft/G1.1', paths: [PLAIN, CORE] }, CW);
+  const add = await call('item.files.add', { id: 'goal/G100.1', paths: [PLAIN, CORE] }, CW);
   if (took(add)) test.check('item.files.add {id, paths} is taken');
   else test.fail(OWED + 'item.files.add answered ' + add.status + ' ' + short(add.body));
-  const f1 = await files('ft/G1.1');
+  const f1 = await files('goal/G100.1');
   if (JSON.stringify(listOf(f1)) === JSON.stringify(['claude-windows:' + CORE, 'claude-windows:' + PLAIN].sort())) test.check('item.files answers both paths, written by claude-windows');
   else test.fail('OWED by goal/G32.2: item.files reads ' + short(f1));
-  if (!('files' in (await facts('ft/G1.1')))) test.check('and the item\'s facts carry no file list');
+  if (!('files' in (await facts('goal/G100.1')))) test.check('and the item\'s facts carry no file list');
   else test.fail('OWED by goal/G32.2: item.get still carries files');
   const core = (f1 || []).filter(function (e) { return e && e.path === CORE; })[0] || {};
   const plain = (f1 || []).filter(function (e) { return e && e.path === PLAIN; })[0] || {};
@@ -96,53 +96,53 @@ async function server() {
   else test.fail(OWED + 'core marks read ' + short({ core: core.core, plain: plain.core }));
 
   test.subHeading('2. the list is the item\'s: each writer replaces its own entries, never another\'s');
-  await call('item.files.add', { id: 'ft/G1.1', paths: [PLAIN2] }, WSL);
-  await call('item.files.add', { id: 'ft/G1.1', paths: [CORE, CORE2] }, CW);
-  const f2 = await files('ft/G1.1');
+  await call('item.files.add', { id: 'goal/G100.1', paths: [PLAIN2] }, WSL);
+  await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, CORE2] }, CW);
+  const f2 = await files('goal/G100.1');
   const want = ['claude-windows:' + CORE, 'claude-windows:' + CORE2, 'wsl-claude:' + PLAIN2].sort();
   if (JSON.stringify(listOf(f2)) === JSON.stringify(want)) test.check('claude-windows\'s second list replaced its first; wsl-claude\'s entry stands');
   else test.fail(OWED + 'after both writers the list reads ' + short(listOf(f2)));
 
   test.subHeading('3. one grant for all the core files, and none without them');
-  const g = await openGrants('ft/G1.1');
+  const g = await openGrants('goal/G100.1');
   if (g.length === 1 && g[0].words.indexOf(CORE) !== -1 && g[0].words.indexOf(CORE2) !== -1) test.check('one open G check names both core files');
   else test.fail(OWED + 'the open grants read ' + short(g.map(function (c) { return c.words; })));
   // GROWN IN THE VERIFY (claude-windows): a list he has granted, sent again unchanged, asks him nothing new. Each call
   // carries the writer's whole list, so agents re-send it as they work; a fresh red grant for files he already granted
   // would make him grant the same list over and over.
   const g1 = g[0] && g[0].number;
-  await call('check.set', { id: 'ft/G1.1', check: g1, state: 'granted' }, ANDY);
-  await call('item.files.add', { id: 'ft/G1.1', paths: [CORE, CORE2] }, CW);
-  const again = await openGrants('ft/G1.1');
+  await call('check.set', { id: 'goal/G100.1', check: g1, state: 'granted' }, ANDY);
+  await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, CORE2] }, CW);
+  const again = await openGrants('goal/G100.1');
   if (g1 && !again.length) test.check('the same list sent again after his grant raises no new grant');
   else test.fail(OWED + 'after his grant, the unchanged list raised ' + short(again.map(function (c) { return c.number + ' ' + c.words; })));
-  await call('item.files.add', { id: 'ft/G1.2', paths: [PLAIN] }, CW);
-  const none = await openGrants('ft/G1.2');
-  if (!none.length && listOf(await files('ft/G1.2')).length === 1) test.check('a list with no core file raises no grant');
-  else test.fail(OWED + 'ft/G1.2 has grants ' + short(none.map(function (c) { return c.words; })) + ' and list ' + short(listOf(await files('ft/G1.2'))));
+  await call('item.files.add', { id: 'goal/G100.2', paths: [PLAIN] }, CW);
+  const none = await openGrants('goal/G100.2');
+  if (!none.length && listOf(await files('goal/G100.2')).length === 1) test.check('a list with no core file raises no grant');
+  else test.fail(OWED + 'goal/G100.2 has grants ' + short(none.map(function (c) { return c.words; })) + ' and list ' + short(listOf(await files('goal/G100.2'))));
 
   test.subHeading('3b. a list larger than one answer is taken, and answered core first (goal/G32.2)');
   // G32.2 listed 142 files, 64 of them core: the list in the facts made every write to the item too large to come back.
   const many = [];
   for (let i = 0; i < 150; i++) many.push(i % 3 ? 'spirit/test/manyFilesSuite' + String(i).padStart(3, '0') + '.js' : 'spirit/run/js/manyCore' + String(i).padStart(3, '0') + '.js');
-  const big = await call('item.files.add', { id: 'ft/G1.2', paths: many }, CW);
-  const bigAnswer = await filesAnswer('ft/G1.2');
+  const big = await call('item.files.add', { id: 'goal/G100.2', paths: many }, CW);
+  const bigAnswer = await filesAnswer('goal/G100.2');
   const shown = bigAnswer.files || [];
   const firstPlain = shown.findIndex(function (e) { return !e.core; });
   const coreFirst = shown.length && shown.slice(firstPlain === -1 ? shown.length : firstPlain).every(function (e) { return !e.core; });
   if (took(big) && shown.length > 10 && bigAnswer.filesMore === true && coreFirst && Buffer.byteLength(JSON.stringify(bigAnswer), 'utf8') <= appClient.ANSWER_MAX) test.check('150 paths are taken; item.files answers ' + shown.length + ' of them in one answer, core first, with filesMore');
   else test.fail('OWED by goal/G32.2: 150 paths answered ' + big.status + ' ' + short(big.body) + '; item.files ' + shown.length + ' files, filesMore ' + bigAnswer.filesMore + ', core first ' + coreFirst);
-  const grantsBig = await openGrants('ft/G1.2');
+  const grantsBig = await openGrants('goal/G100.2');
   if (grantsBig.length === 1) test.check('and its 50 core files ask one grant');
   else test.fail('OWED by goal/G32.2: the 150 paths left ' + grantsBig.length + ' open grants');
 
   test.subHeading('4. what it refuses');
-  const notList = await call('item.files.add', { id: 'ft/G1.1', paths: PLAIN }, CW);
+  const notList = await call('item.files.add', { id: 'goal/G100.1', paths: PLAIN }, CW);
   if (refusedByVerb(notList)) test.check('paths that is not a list is refused');
   else test.fail(OWED + 'a string for paths answered ' + notList.status + ' ' + short(notList.body));
-  const ghost = await call('item.files.add', { id: 'ft/G1.99', paths: [PLAIN] }, CW);
+  const ghost = await call('item.files.add', { id: 'goal/G100.99', paths: [PLAIN] }, CW);
   if (refusedByVerb(ghost)) test.check('an item the desk does not hold is refused');
-  else test.fail(OWED + 'item.files.add on ft/G1.99 answered ' + ghost.status + ' ' + short(ghost.body));
+  else test.fail(OWED + 'item.files.add on goal/G100.99 answered ' + ghost.status + ' ' + short(ghost.body));
 }
 
 // ── THE PAGES ──────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ function fakeElement(id) {
   Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
   return el;
 }
-const label = function (o) { return Object.assign({ goal: 't/G1', status: 'running', with: '', buttons: [], blocking: ['t/G1'], blocked: [], star: false, asks: 0 }, o); };
+const label = function (o) { return Object.assign({ goal: 'goal/G101', status: 'running', with: '', buttons: [], blocking: ['goal/G101'], blocked: [], star: false, asks: 0 }, o); };
 
 async function pages() {
   test.subHeading('5. the Details draws the list, core files marked');
@@ -168,7 +168,7 @@ async function pages() {
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
     { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, { spirit: {}, addEventListener: function () {} });
-  const item = label({ id: 't/G1.2', title: 'Second' });
+  const item = label({ id: 'goal/G101.2', title: 'Second' });
   const itemFiles = [{ path: CORE, by: 'claude-windows', core: true }, { path: PLAIN, by: 'wsl-claude', core: false }];
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
@@ -185,7 +185,7 @@ async function pages() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 't/G1.2', agents: {} });
+  dd.open({ id: 'goal/G101.2', agents: {} });
   for (let i = 0; i < 6; i++) await sleep(20);
   // The files are the files panel's since goal/G30.8 (#dd-files before it): its icon (📂) is pressed first.
   doc.getElementById('dd-body').fire('click', { target: { getAttribute: function (n) { return n === 'data-panel' ? 'files' : null; }, closest: function () { return null; } }, preventDefault: function () {} });
@@ -200,7 +200,7 @@ async function pages() {
 
   test.subHeading('6. the List never draws Delete; the Details still does');
   const fake = require('./deskFake.js').create([]);
-  fake.items = [label({ id: 't/G1', title: 'Goal', goal: '', buttons: ['close'] }), label({ id: 't/G1.3', title: 'In design', buttons: ['delete'] })];
+  fake.items = [label({ id: 'goal/G101', title: 'Goal', goal: '', buttons: ['close'] }), label({ id: 'goal/G101.3', title: 'In design', buttons: ['delete'] })];
   const ldoc = { byId: {}, getElementById: function (id) { return this.byId[id] || (this.byId[id] = fakeElement(id)); } };
   let desk = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(
@@ -214,10 +214,10 @@ async function pages() {
   });
   for (let i = 0; i < 6; i++) await sleep(20);
   const all = Object.keys(ldoc.byId).map(function (k) { return ldoc.byId[k].innerHTML; }).join('\n');
-  const at = all.indexOf('<tr data-row="t/G1.3"');
+  const at = all.indexOf('<tr data-row="goal/G101.3"');
   const row = at === -1 ? '' : all.slice(at, all.indexOf('</tr>', at));
   if (row && !/data-press="delete"/.test(row)) test.check('the row of an item offering delete draws no Delete');
-  else test.fail(OWED + (row ? 'the List draws Delete: ' + short(row) : 'the List drew no row for t/G1.3'));
+  else test.fail(OWED + (row ? 'the List draws Delete: ' + short(row) : 'the List drew no row for goal/G101.3'));
 }
 
 (async function () {

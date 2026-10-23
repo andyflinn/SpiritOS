@@ -84,22 +84,22 @@ async function serverHalf() {
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'lf/G1', title: 'Live' }, items: [{ id: 'lf/G1.1', title: 'Plain', blocks: ['lf/G1'] }, { id: 'lf/G1.2', title: 'Core', blocks: ['lf/G1'] }] }) }, ANDY);
-    await call('press', { id: 'lf/G1', what: 'end-design' }, ANDY);
-    await call('press', { id: 'lf/G1.1', what: 'go' }, ANDY);
-    await call('press', { id: 'lf/G1.2', what: 'go' }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Live' }, items: [{ id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Core', blocks: ['goal/G100'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
 
     test.subHeading('1. a claim waiting on deskVerify is not limbo');
     await call('agent.state', { word: 'working' }, CW);
-    await call('item.take', { id: 'lf/G1.1' }, CW);
-    await call('press', { id: 'lf/G1.1', what: 'claim-done' }, CW);
+    await call('item.take', { id: 'goal/G100.1' }, CW);
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
     const limboLines = async function () {
-      const ch = (await call('item.chat', { id: 'lf/G1.1' }, ANDY)).body || {};
+      const ch = (await call('item.chat', { id: 'goal/G100.1' }, ANDY)).body || {};
       return (ch.chat || []).filter(function (l) { return l.by === 'desk' && /^limbo:/.test(String(l.text)); }).length;
     };
     const before = await limboLines();
     for (const word of ['listening', 'working', 'listening', 'working', 'listening']) await call('agent.state', { word: word }, CW);
-    const f = parse(((await call('item.get', { id: 'lf/G1.1' }, ANDY)).body || {}).item) || {};
+    const f = parse(((await call('item.get', { id: 'goal/G100.1' }, ANDY)).body || {}).item) || {};
     const after = await limboLines();
     // SINCE goal/G33.3 Done is offered on the claim, and his press reads the verifier (deskVerifyDriven.js).
     if (f.claims > 0 && (f.buttons || []).indexOf('done') !== -1) test.check('the world: claimed, Done offered, its press to read the verifier (deskVerify on the node)');
@@ -109,11 +109,12 @@ async function serverHalf() {
 
     test.subHeading('2. a write that changes the checks publishes them');
     published.length = 0;
-    await call('item.take', { id: 'lf/G1.2' }, CW);
-    await call('item.files.add', { id: 'lf/G1.2', paths: ['spirit/run/js/zzLiveFixesCore.js'] }, CW);
+    await call('item.take', { id: 'goal/G100.2' }, CW);
+    await call('item.files.add', { id: 'goal/G100.2', paths: ['spirit/run/js/zzLiveFixesCore.js'] }, CW);
     await sleep(500);
-    const pub = published.filter(function (o) { return o && o.item && o.item.id === 'lf/G1.2' && o.verb === 'item.files.add'; }).pop();
-    const grant = pub && Array.isArray(pub.checks) && pub.checks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; })[0];
+    // goal/G33.4: each check is a row of its own, pushed on its own.
+    const pub = published.filter(function (o) { return o && o.table === 'checks' && o.id === 'goal/G100.2' && o.row; }).map(function (o) { return o.row; });
+    const grant = pub.filter(function (c) { return c.kind === 'G' && c.state === 'open'; })[0];
     if (grant && /core grant/.test(grant.words)) test.check('item.files.add raising a core grant publishes the checks with it: ' + grant.number + ' "' + grant.words + '"');
     else test.fail(OWED + 'item.files.add published ' + short(pub));
 
@@ -126,35 +127,35 @@ async function serverHalf() {
     const psm = require('../run/js/probabilityStringMatch.js').probabilityStringMatch;
     const psom = require('../run/js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'sr/G1', title: 'Search' }, items: [
-      { id: 'sr/G1.1', title: 'Apples and pears', blocks: ['sr/G1'] },
-      { id: 'sr/G1.2', title: 'zebra crossing', blocks: ['sr/G1'] },
-      { id: 'sr/G1.3', title: 'Plums', blocks: ['sr/G1'] },
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Search' }, items: [
+      { id: 'goal/G101.1', title: 'Apples and pears', blocks: ['goal/G101'] },
+      { id: 'goal/G101.2', title: 'zebra crossing', blocks: ['goal/G101'] },
+      { id: 'goal/G101.3', title: 'Plums', blocks: ['goal/G101'] },
     ] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-    // Since goal/G21.4 an agent holds one task at a time: claude-windows lets lf/G1.2 go before it takes sr/G1.3.
-    await call('item.release', { id: 'lf/G1.2' }, CW);
-    await call('item.take', { id: 'sr/G1.3' }, CW);
-    await call('chat.add', { id: 'sr/G1.3', text: 'a zebra came by' }, CW);
-    await call('chat.add', { id: 'sr/G1.3', text: 'nothing else' }, CW);
+    // Since goal/G21.4 an agent holds one task at a time: claude-windows lets goal/G100.2 go before it takes goal/G101.3.
+    await call('item.release', { id: 'goal/G100.2' }, CW);
+    await call('item.take', { id: 'goal/G101.3' }, CW);
+    await call('chat.add', { id: 'goal/G101.3', text: 'a zebra came by' }, CW);
+    await call('chat.add', { id: 'goal/G101.3', text: 'nothing else' }, CW);
     const found = ((await call('items.search', { text: 'zebra', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY)).body || {}).items || [];
-    const order = found.map(function (p) { return p.key; }).filter(function (k) { return /^sr\//.test(k); });
+    const order = found.map(function (p) { return p.key; }).filter(function (k) { return /^goal\/G101(\.|$)/.test(k); });
     const item = function (id, title, lines) {
       const fields = psom('zebra', { id: id, title: title, box: '' });
       const chat = lines.length ? lines.reduce(function (n, l) { return n + psm('zebra', l); }, 0) / lines.length : 0;
       return 0.5 * fields + 0.5 * chat;
     };
-    const want = [['sr/G1.1', item('sr/G1.1', 'Apples and pears', [])], ['sr/G1.2', item('sr/G1.2', 'zebra crossing', [])], ['sr/G1.3', item('sr/G1.3', 'Plums', ['a zebra came by', 'nothing else'])], ['sr/G1', item('sr/G1', 'Search', [])]]
+    const want = [['goal/G101.1', item('goal/G101.1', 'Apples and pears', [])], ['goal/G101.2', item('goal/G101.2', 'zebra crossing', [])], ['goal/G101.3', item('goal/G101.3', 'Plums', ['a zebra came by', 'nothing else'])], ['goal/G101', item('goal/G101', 'Search', [])]]
       .sort(function (x, y) { return y[1] - x[1]; }).map(function (x) { return x[0]; });
     if (order.length === 4 && order[0] === want[0] && order[1] === want[1]) test.check('items.search ranks by the item probability (fields half, chat half), best first: ' + order.join(', '));
     else test.fail(OWED + 'items.search for zebra answered ' + JSON.stringify(order) + ', the rulings give ' + JSON.stringify(want));
-    if (order.indexOf('sr/G1.1') !== -1) test.check('and drops nothing: an item that matches not at all is still in the answer, last');
+    if (order.indexOf('goal/G101.1') !== -1) test.check('and drops nothing: an item that matches not at all is still in the answer, last');
     else test.fail(OWED + 'items.search dropped the non-matching item: ' + JSON.stringify(order));
     const plain = ((await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY)).body || {}).items || [];
-    const plainOrder = plain.map(function (p) { return p.key; }).filter(function (k) { return /^sr\//.test(k); });
-    if (JSON.stringify(plainOrder) === JSON.stringify(['sr/G1', 'sr/G1.1', 'sr/G1.2', 'sr/G1.3'])) test.check('with no text every item is 0 and keeps its order, the goal and then its items, as the List needs');
+    const plainOrder = plain.map(function (p) { return p.key; }).filter(function (k) { return /^goal\/G101(\.|$)/.test(k); });
+    if (JSON.stringify(plainOrder) === JSON.stringify(['goal/G101', 'goal/G101.1', 'goal/G101.2', 'goal/G101.3'])) test.check('with no text every item is 0 and keeps its order, the goal and then its items, as the List needs');
     else test.fail(OWED + 'items.search with no text answered ' + JSON.stringify(plainOrder));
-    const lines = ((await call('chat.search', { id: 'sr/G1.3', text: 'zebra', by: '', since: '', before: '', scope: '' }, ANDY)).body || {}).items || [];
+    const lines = ((await call('chat.search', { id: 'goal/G101.3', text: 'zebra', by: '', since: '', before: '', scope: '' }, ANDY)).body || {}).items || [];
     const texts = lines.map(function (p) { return (parse(p.label) || {}).text; });
     if (texts.length === 2 && texts[0] === 'a zebra came by' && texts[1] === 'nothing else') test.check('chat.search ranks the lines by probability, the non-matching one kept, last');
     else test.fail(OWED + 'chat.search for zebra answered ' + JSON.stringify(texts));
@@ -186,9 +187,9 @@ async function listHalf() {
   new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))(
     { shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, { spirit: {} });
   const fake = require('./deskFake.js').create([]);
-  const goal = { id: 'lv/G1', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['lv/G1.1', 'lv/G1.2', 'lv/G1.3'], live: [], working: [], waiting: 0 };
-  const row = function (id, status) { return { id: id, title: id, goal: 'lv/G1', status: status, with: '', buttons: [], blocking: ['lv/G1'], blocked: [], asks: 0 }; };
-  fake.items = [goal, row('lv/G1.1', 'claimed, waiting for deskVerify'), row('lv/G1.2', 'deskVerify passed'), row('lv/G1.3', 'deskVerify rejected it')];
+  const goal = { id: 'goal/G102', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['goal/G102.1', 'goal/G102.2', 'goal/G102.3'], live: [], working: [], waiting: 0 };
+  const row = function (id, status) { return { id: id, title: id, goal: 'goal/G102', status: status, with: '', buttons: [], blocking: ['goal/G102'], blocked: [], asks: 0 }; };
+  fake.items = [goal, row('goal/G102.1', 'claimed, waiting for deskVerify'), row('goal/G102.2', 'deskVerify passed'), row('goal/G102.3', 'deskVerify rejected it')];
   fake.verifier = { now: function () { return { running: { id: '', suite: '', since: '' }, queued: [] }; } };
   behavior.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
@@ -213,20 +214,20 @@ async function listHalf() {
   // Verifier tab's alone. The row keeps its status word.
   subs.deskVerify({ doing: 'run', suite: 'spirit/test/zzA.js', index: 1, of: 2, tests: 3, expected: 6, line: 'running zzA.js, suite 1 of 2', since: new Date().toISOString() });
   await settled(); await sleep(20); await settled();
-  const running = cellOf('lv/G1.1');
+  const running = cellOf('goal/G102.1');
   if (!/<progress/.test(running) && /waiting for deskVerify/.test(running)) test.check('while deskVerify runs, a row keeps its status word: ' + short(running.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')));
   else test.fail(OWED + 'the row\'s status cell during a run reads ' + short(running));
 
   subs.deskVerify({ doing: 'idle', id: '', line: 'idle', since: new Date().toISOString() });
   await settled(); await sleep(20); await settled();
-  const green = cellOf('lv/G1.2');
-  const red = cellOf('lv/G1.3');
+  const green = cellOf('goal/G102.2');
+  const red = cellOf('goal/G102.3');
   if (/color:\s*#1a7f37|color:\s*green/i.test(green) && /deskVerify passed/.test(green)) test.check('passed reads green');
   else test.fail(OWED + 'the passed row reads ' + short(green));
   if (/color:\s*#c00|color:\s*red|color:\s*#d00/i.test(red) && /rejected/.test(red)) test.check('rejected reads red');
   else test.fail(OWED + 'the rejected row reads ' + short(red));
-  if (!/<progress/.test(cellOf('lv/G1.1'))) test.check('once the run is idle, the progress is gone from the row');
-  else test.fail(OWED + 'progress stays after idle: ' + short(cellOf('lv/G1.1')));
+  if (!/<progress/.test(cellOf('goal/G102.1'))) test.check('once the run is idle, the progress is gone from the row');
+  else test.fail(OWED + 'progress stays after idle: ' + short(cellOf('goal/G102.1')));
 }
 
 function fakeElement(id) {
@@ -260,7 +261,7 @@ async function dialogHalf() {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'lv/G1.2', title: 'Second', goal: 'lv/G1', status: 'running', with: '', buttons: [], blocking: ['lv/G1'], blocked: [], asks: 0 }), version: 1, change: 1 } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'goal/G102.2', title: 'Second', goal: 'goal/G102', status: 'running', with: '', buttons: [], blocking: ['goal/G102'], blocked: [], asks: 0 }), version: 1, change: 1 } });
       if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [{ by: 'andy', at: '2026-10-12T09:00:00.000Z', text: 'the plain chat line' }], chatMore: false } });
       if (v === 'chat.search') return Promise.resolve({ status: 200, body: { items: [line(2, 'wsl-claude', 'a zebra came by'), line(1, 'andy', 'nothing striped here')], more: false } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], box: '', version: 1 } });
@@ -270,7 +271,7 @@ async function dialogHalf() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'lv/G1.2', agents: {} });
+  dd.open({ id: 'goal/G102.2', agents: {} });
   await settled(); await sleep(20); await settled();
   const body = doc.getElementById('dd-body');
   const frame = body.innerHTML;
@@ -285,7 +286,7 @@ async function dialogHalf() {
   body.fire('input', { target: target });
   await settled(); await sleep(20); await settled();
   const sent = calls.slice(n0).filter(function (c) { return c.verb === 'chat.search'; });
-  if (sent.length && JSON.stringify(sent[sent.length - 1].args) === JSON.stringify({ id: 'lv/G1.2', text: 'zebra', by: '', since: '', before: '', scope: '' })) test.check('typing in it sends chat.search {id, text} for this item');
+  if (sent.length && JSON.stringify(sent[sent.length - 1].args) === JSON.stringify({ id: 'goal/G102.2', text: 'zebra', by: '', since: '', before: '', scope: '' })) test.check('typing in it sends chat.search {id, text} for this item');
   else test.fail(OWED + 'typing zebra sent ' + short(calls.slice(n0)));
   const shown = doc.getElementById('dd-chat').innerHTML;
   const a = shown.indexOf('a zebra came by');

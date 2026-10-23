@@ -75,7 +75,7 @@ test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is 
 
 (async function () {
   const fake = require('./deskFake.js').create([]);
-  fake.items = [{ id: 'ag/G1', title: 'The current one', goal: '', design: true, status: '', with: '',
+  fake.items = [{ id: 'goal/G100', title: 'The current one', goal: '', design: true, status: '', with: '',
     buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   const byId = {};
   liveById = byId;
@@ -94,7 +94,7 @@ test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is 
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'goal.add' || v === 'press') added.push({ verb: v, args: ask[v] });
-      if (v === 'goal.add') return Promise.resolve({ status: 200, body: { id: 'ag/G2', change: 7 } });
+      if (v === 'goal.add') return Promise.resolve({ status: 200, body: { id: 'goal/G101', change: 7 } });
       return realVerb(name, body);
     },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
@@ -133,7 +133,7 @@ test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is 
   if (add.length === 1 && add[0].args.title === 'A goal of his own' && add[0].args.id === undefined) test.check('it sent goal.add {title}, naming no id');
   else test.fail(OWED + 'it sent ' + short(added));
   const press = added.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'make-current'; });
-  if (press.length === 1 && press[0].args.id === 'ag/G2') test.check('and make-current on ag/G2, the id the desk answered');
+  if (press.length === 1 && press[0].args.id === 'goal/G101') test.check('and make-current on goal/G101, the id the desk answered');
   else test.fail(OWED + 'the presses were ' + short(added.filter(function (c) { return c.verb === 'press'; })));
   if (doc.getElementById('desk-goal-title').value === '') test.check('the title box clears once the goal is taken');
   else test.fail(OWED + 'the box still holds ' + short(doc.getElementById('desk-goal-title').value));

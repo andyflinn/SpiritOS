@@ -376,6 +376,110 @@ function withDependencies(verbs, paths) {
   return all;
 }
 
+// ── streamListener: A SERVER FOLLOWS ANOTHER SERVER'S STREAM (goal/G33.4, box v40) ──────
+//
+//   Andy, approving it: "the streamListener verb is approved", a common component "built into the appServer module
+//   rather than the application server itself, ... allowing appServers to be true clients to any other appServer".
+//
+// A server that follows a stream hands serve() opts.stream = { module, translator, onRow }: the module the sender
+// publishes as (process/js/<name>), the stream's translator (its shell/js/<type>/data.js), and, if it wants one, a
+// handler for each row. serve() then adds the verb streamListener {json} -> {heard: true}: one row, as its sender
+// publishes it, JSON. Each row goes straight into the server's spirit.data (shell/js/spiritData.js) through the
+// translator, exactly as a face app keeps it in the page (box v41: "appServer also maintains the data set in the
+// server's spirit object"), and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror
+// of its own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
+// follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
+// spirit object on the node's loopback door), so the sender's peerPost passes the node's gate; a grant the node holds
+// already is no fault. The sender reaches it through this server's family interface over peerPost (face/spirit.js
+// forPeer), as any call.
+let streamData = null;
+function dataSet() {
+  if (!streamData) streamData = require('../shell/js/spiritData.js');
+  return streamData;
+}
+function withStreamListener(verbs, stream, followed) {
+  if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
+  const D = dataSet();
+  if (stream.translator) require(path.resolve(String(stream.translator)));
+  const moduleName = String(stream.module || '');
+  const onRow = typeof stream.onRow === 'function' ? stream.onRow : function () {};
+  const all = Object.assign({}, verbs);
+  all.streamListener = {
+    request: { json: '' }, reply: { heard: true },
+    handler: function (a, caller) {
+      if (!caller || caller.owner === true || !followed.has(String(caller.key || ''))) throw Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'this server follows no stream from this key' } });
+      let row = null;
+      try { row = JSON.parse(String(a.json)); } catch (e) { row = null; }
+      if (!isPlain(row)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a row is one JSON object' } });
+      // Into the data set first, as the page takes a publish; then the server's own word on it.
+      D.take({ module: moduleName, data: {}, app: row });
+      return Promise.resolve(onRow(row, String(caller.key))).then(function () { return { heard: true }; });
+    },
+  };
+  return all;
+}
+// The node's loopback door, as the node handed it to this process (SPIRIT_CALLBACK_URL's origin).
+function nodeUrl() {
+  try { return new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { return ''; }
+}
+
+// ── publish: ONE FUNCTION FOR THE PAGES AND THE FOLLOWING SERVERS (goal/G33.4, box v43) ──────
+//
+//   Andy: "the desk server publishes its changes to the browser with the same function that it publishes its changes
+//   to the deskClients".
+//
+// publish(row) puts the row on the node's job stream for its pages, and hands the same row, as it is, to every server
+// that follows this one: a server that sends a stream names in serve() opts.streamTo = { family, recipients, waitMs },
+// the followers' family, recipients(row) -> the keys of the nodes this row goes to, and how long one delivery may take.
+// Each goes to the follower's streamListener (withStreamListener above) through its family interface over peerPost
+// (face/spirit.js forPeer: no packet built here). One delivery at a time per follower, in order. A follower that does
+// not answer is away: what was queued for it is dropped (no stale queue), and publish skips it until a row is sent to it
+// alone (publish(row, key): the follower only, no page), which is how a sender hands a returning follower what it
+// missed; listening(key) says 'on', 'away' or 'new' (never sent to). A follower whose family has no streamListener is
+// sent nothing. A server that sends follows nobody by this: it receives nothing back (box v42).
+let sendTo = null;
+const sendQueues = new Map();   // key -> { busy, rows, away }
+function deliverRow(key, row) {
+  const so = require('../face/spirit.js');
+  const post = function (body) { return spirit.peerPost(key, 'api', body, { waitMs: sendTo.waitMs || 10000 }); };
+  return so.forPeer(key, post, sendTo.family).then(function (s) {
+    const fam = s[sendTo.family];
+    if (!fam || typeof fam.streamListener !== 'function') return 'no-receiver';
+    return so.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
+  }, function () { return 'away'; });
+}
+function pumpTo(key) {
+  const q = sendQueues.get(key);
+  if (!q || q.busy || !q.rows.length) return;
+  q.busy = true;
+  deliverRow(key, q.rows.shift()).then(function (said) {
+    q.busy = false;
+    if (said === 'away') { q.rows = []; q.away = true; return; }
+    if (said === 'no-receiver') { q.rows = []; return; }
+    pumpTo(key);
+  });
+}
+function publish(row, only) {
+  const out = only ? undefined : spirit.core.jobs.publish(row);
+  if (!sendTo) return out;
+  let keys = [];
+  if (only) keys = [String(only)];
+  else { try { keys = sendTo.recipients(row) || []; } catch (e) { keys = []; } }
+  keys.forEach(function (key) {
+    const q = sendQueues.get(key) || { busy: false, rows: [], away: false };
+    sendQueues.set(key, q);
+    if (only) q.away = false;
+    if (q.away) return;
+    q.rows.push(row);
+    pumpTo(key);
+  });
+  return out;
+}
+function listening(key) {
+  const q = sendQueues.get(String(key || ''));
+  return !q ? 'new' : q.away ? 'away' : 'on';
+}
+
 // THE FAMILY FOLDER'S VERBS (introSpector.js): since goal/G30.4 its FS verbs alone, on every server, AGENTS.md or
 // not. A verb file naming a verb this server never declared is said at boot. A server that declares a name itself
 // keeps its own.
@@ -411,8 +515,13 @@ function serve(verbs, opts) {
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   // A malformed dependency stops the start, by name (apiAuth/G1.10): the
   // throw lands before anything listens, and the exit says why.
+  // goal/G33.4: the stream a server follows, if it follows one (withStreamListener).
+  const followed = new Set();
+  // goal/G33.4 (box v43): the servers this one's publish reaches, if it sends a stream.
+  const st = opts && opts.streamTo;
+  if (st && typeof st === 'object' && typeof st.recipients === 'function') sendTo = { family: String(st.family || ''), recipients: st.recipients, waitMs: Number(st.waitMs) || 10000 };
   try {
-    verbs = withDependencies(withDebug(withAgents(verbs, argv[1])), opts && opts.dependencies);
+    verbs = withDependencies(withDebug(withAgents(withStreamListener(verbs, opts && opts.stream, followed), argv[1])), opts && opts.dependencies);
   } catch (e) {
     console.error(e.message);
     process.exit(2);
@@ -440,6 +549,20 @@ function serve(verbs, opts) {
     console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
     process.exit(1);
   });
+  // FOLLOW A SENDER'S STREAM (goal/G33.4): heard from now on, and granted the verb on this node. Answers whether the
+  // node holds the grant (true when it did already).
+  s.follow = function (key) {
+    const k = String(key || '');
+    if (!k || !verbs.streamListener) return Promise.resolve(false);
+    followed.add(k);
+    const base = nodeUrl();
+    if (!base) return Promise.resolve(false);
+    const so = require('../face/spirit.js');
+    return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.grant({ key: k, path: name + '.streamListener' }); })).then(function (r) {
+      return r.status === 200 || (r.body && r.body.code === 'already-granted');
+    });
+  };
+  s.unfollow = function (key) { followed.delete(String(key || '')); };
   return s;
 }
 
@@ -484,6 +607,11 @@ try {
 
 module.exports = {
   spirit:spirit,
+  // goal/G33.4: the data set a following server keeps (shell/js/spiritData.js), filled by its stream's translator.
+  get data() { return dataSet(); },
+  // goal/G33.4 (box v43): the one publish, to the pages and to the following servers; and whether a follower is on.
+  publish: publish,
+  listening: listening,
   createAppServer: createAppServer,
   serve: serve,
   matches: matches,

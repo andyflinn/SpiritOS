@@ -88,19 +88,19 @@ async function sayYes(f) {
   await settled();
 }
 
-const label = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, asks: 0 }, o); };
+const label = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, asks: 0 }, o); };
 function goalItems(open) {
-  const items = [label({ id: 't/G1.3', title: 'Third', status: 'done', buttons: ['close', 'reopen'] })];
+  const items = [label({ id: 'goal/G100.3', title: 'Third', status: 'done', buttons: ['close', 'reopen'] })];
   if (open) {
-    items.unshift(label({ id: 't/G1.1', title: 'First', status: 'running', with: 'claude-windows' }),
-      label({ id: 't/G1.2', title: 'Second', status: 'blocked', blocked: ['t/G1.1'] }));
+    items.unshift(label({ id: 'goal/G100.1', title: 'First', status: 'running', with: 'claude-windows' }),
+      label({ id: 'goal/G100.2', title: 'Second', status: 'blocked', blocked: ['goal/G100.1'] }));
   }
   return items;
 }
 
 function list(open) {
   const fake = require('./deskFake.js').create([]);
-  fake.items = [label({ id: 't/G1', title: 'Goal', goal: '', status: 'running', buttons: ['close'], blocked: open ? ['t/G1.1', 't/G1.2'] : [] })].concat(goalItems(open));
+  fake.items = [label({ id: 'goal/G100', title: 'Goal', goal: '', status: 'running', buttons: ['close'], blocked: open ? ['goal/G100.1', 'goal/G100.2'] : [] })].concat(goalItems(open));
   const doc = fakeDocument();
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
@@ -110,7 +110,7 @@ function list(open) {
     callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
   });
   const presses = function () { return fake.calls.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'close'; }); };
-  const close = function (b) { return b.attrs['data-press'] === 'close' && b.attrs['data-id'] === 't/G1'; };
+  const close = function (b) { return b.attrs['data-press'] === 'close' && b.attrs['data-id'] === 'goal/G100'; };
   return { doc: doc, presses: presses, close: close, roots: ['desk-top'] };
 }
 
@@ -127,8 +127,8 @@ function dialog(open) {
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if (v === 'item.get') {
-        return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 't/G1', title: 'Goal', goal: '', status: 'running', buttons: ['close'],
-          blocked: open ? ['t/G1.1', 't/G1.2'] : [] })), box: 'GOAL-BOX', version: 1, change: 3, chatMore: false, checks: [], chat: [] } });
+        return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'goal/G100', title: 'Goal', goal: '', status: 'running', buttons: ['close'],
+          blocked: open ? ['goal/G100.1', 'goal/G100.2'] : [] })), box: 'GOAL-BOX', version: 1, change: 3, chatMore: false, checks: [], chat: [] } });
       }
       if (v === 'items.search') {
         return Promise.resolve({ status: 200, body: { items: items.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false } });
@@ -140,7 +140,7 @@ function dialog(open) {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 't/G1', agents: {} });
+  dd.open({ id: 'goal/G100', agents: {} });
   const presses = function () { return calls.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'close'; }); };
   const close = function (b) { return b.attrs.id === 'dd-close'; };
   return { doc: doc, presses: presses, close: close, roots: ['dd-body'] };
@@ -160,7 +160,7 @@ async function asks(where, f) {
   } else test.fail(OWED + where + ': after Close, question shown ' + question + ', presses sent ' + f.presses().length);
   await sayYes(f);
   const sent = f.presses();
-  if (question && sent.length === 1 && sent[0].args.id === 't/G1') test.check(where + ': yes sends press {id: t/G1, what: close}');
+  if (question && sent.length === 1 && sent[0].args.id === 'goal/G100') test.check(where + ': yes sends press {id: goal/G100, what: close}');
   else test.fail(OWED + where + ': after yes, ' + sent.length + ' close presses ' + JSON.stringify(sent.map(function (c) { return c.args; })));
 }
 
@@ -181,7 +181,7 @@ async function straight(where, f) {
   click(btn, f.doc, f.roots);
   await settled();
   const sent = f.presses();
-  if (sent.length === 1 && sent[0].args.id === 't/G1' && !/are you sure\?/i.test(screen(f.doc))) test.check(where + ': with nothing open, one Close sends the press at once, no question');
+  if (sent.length === 1 && sent[0].args.id === 'goal/G100' && !/are you sure\?/i.test(screen(f.doc))) test.check(where + ': with nothing open, one Close sends the press at once, no question');
   else test.fail(OWED + where + ': with nothing open, one Close sent ' + sent.length + ' presses');
 }
 

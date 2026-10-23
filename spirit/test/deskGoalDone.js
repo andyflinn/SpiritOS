@@ -50,34 +50,34 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
+      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
     // Out of design mode, so items offer Go and the goal's buttons are the ordinary ones.
-    await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
     test.subHeading('1. a claim against the goal id offers nothing by itself');
-    const b0 = await buttonsOf('g/G1');
-    const claimed = await call('press', { id: 'g/G1', what: 'claim-done' }, CW);
-    const b1 = await buttonsOf('g/G1');
+    const b0 = await buttonsOf('goal/G100');
+    const claimed = await call('press', { id: 'goal/G100', what: 'claim-done' }, CW);
+    const b1 = await buttonsOf('goal/G100');
     if (b0.indexOf('done') === -1 && b1.indexOf('done') === -1) {
       test.check('two open items: no Done before the claim, none after it (claim ' + claimed.status + ')');
     } else test.fail(OWED + 'goal buttons before a claim ' + JSON.stringify(b0) + ', after a claim against the goal id ' + JSON.stringify(b1));
 
     test.subHeading('2. Done once every item is done or closed, none open');
-    await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
-    const oneDone = await buttonsOf('g/G1');
-    await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
-    const bothDone = await buttonsOf('g/G1');
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
+    const oneDone = await buttonsOf('goal/G100');
+    await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
+    const bothDone = await buttonsOf('goal/G100');
     if (oneDone.indexOf('done') === -1 && bothDone.indexOf('done') !== -1) {
       test.check('one item done, one open: no Done; both done: Done offered');
     } else test.fail(OWED + 'goal buttons with one item done ' + JSON.stringify(oneDone) + ', both done ' + JSON.stringify(bothDone));
-    await call('press', { id: 'g/G1.1', what: 'close' }, ANDY);
-    const oneClosed = await buttonsOf('g/G1');
-    await call('press', { id: 'g/G1.2', what: 'reopen' }, ANDY);
-    const reopened = await buttonsOf('g/G1');
+    await call('press', { id: 'goal/G100.1', what: 'close' }, ANDY);
+    const oneClosed = await buttonsOf('goal/G100');
+    await call('press', { id: 'goal/G100.2', what: 'reopen' }, ANDY);
+    const reopened = await buttonsOf('goal/G100');
     if (oneClosed.indexOf('done') !== -1 && reopened.indexOf('done') === -1) {
       test.check('one closed, one done: still offered; an item reopened: taken away again');
     } else test.fail(OWED + 'goal buttons with one closed and one done ' + JSON.stringify(oneClosed) + ', after a reopen ' + JSON.stringify(reopened));
@@ -85,23 +85,23 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     test.subHeading('3. a new open item takes the goal\'s Done away again');
     // Andy (Team line): "when all items are done and the done button appears on the goal, then a new item is
     // added, not done, the goals done button should disappear." — "tied to the condition that all visible items are done."
-    await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
-    const beforeNew = await buttonsOf('g/G1');
+    await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
+    const beforeNew = await buttonsOf('goal/G100');
     // goal/G29.21: an agent's session adds no item without his words, so the owner writes it.
-    const grown = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] }] }) }, ANDY);
-    const withNew = await buttonsOf('g/G1');
+    const grown = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
+      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }, { id: 'goal/G100.3', title: 'C', blocks: ['goal/G100'] }] }) }, ANDY);
+    const withNew = await buttonsOf('goal/G100');
     if (beforeNew.indexOf('done') !== -1 && grown.status === 200 && withNew.indexOf('done') === -1) {
       test.check('Done offered with every item done; a third item added open: Done gone');
     } else test.fail(OWED + 'goal buttons with every item done ' + JSON.stringify(beforeNew) + ', after an open item was added ' + JSON.stringify(withNew) + ' (session.set ' + grown.status + ')');
-    await call('press', { id: 'g/G1.3', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.3', what: 'done' }, ANDY);
+    await call('press', { id: 'goal/G100.3', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.3', what: 'done' }, ANDY);
 
     test.subHeading('4. the goal\'s own Done still works once offered');
-    const offered = await buttonsOf('g/G1');
-    const pressed = await call('press', { id: 'g/G1', what: 'done' }, ANDY);
-    const after = await buttonsOf('g/G1');
+    const offered = await buttonsOf('goal/G100');
+    const pressed = await call('press', { id: 'goal/G100', what: 'done' }, ANDY);
+    const after = await buttonsOf('goal/G100');
     if (offered.indexOf('done') !== -1 && pressed.status === 200 && after.indexOf('close') !== -1) {
       test.check('offered, pressed, and the goal is done (close offered)');
     } else test.fail('goal Done: offered ' + JSON.stringify(offered) + ', press ' + pressed.status + ', after ' + JSON.stringify(after));

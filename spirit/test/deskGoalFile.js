@@ -23,11 +23,11 @@
 //      reads desk.json and hands the defaults over as the node would, with the file's path replaced by its own.
 //   2. WHEN. The file is written whole on his go, go-all and done, and on session.set (his open point, taken as
 //      yes unless he said no); a chat line, a box write, a claim or a press of another kind leave it as it was.
-//   3. WHAT. One JSON object: `change` and `line`, the desk's two cursors as `changes` answers them at that
-//      moment (so an agent asks changes {n: change, line} for everything since); `goal`, the current goal's id;
+//   3. WHAT. One JSON object: `change`, the desk's change number at that moment (since goal/G33.4, with
+//      `changes` gone, what was written after it carries a later number on the desk's stream); `goal`, the current goal's id;
 //      `items`, every item of the current goal INCLUDING the goal's own row and the closed ones, each with its facts
 //      (as item.get gives them: id, title, status, buttons, go, ...) and its `box`, `version`, `checks` and `chat`
-//      (the lines as item.chat gives them: by, at, text). The group chat desk/G0.0 is not in it.
+//      (the lines as item.chat gives them: by, at, text). The group chat goal/G0 is not in it.
 //   4. THE FILE IN THE REPO. spirit/run/process/js/desk/currentGoal.json is tracked by git (committed at birth,
 //      so the lab suites, which refuse an untracked file under spirit/, keep running) and parses as that object.
 //   5. A read is a read: the finds, the chats and item.get write nothing to it (its bytes stay as they were).
@@ -48,7 +48,7 @@ const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
 const DESK = path.join(DESK_DIR, 'desk.js');
 const MANIFEST = path.join(DESK_DIR, 'desk.json');
 const REPO_FILE = path.join(DESK_DIR, 'currentGoal.json');
-const GROUP = 'desk/G0.0';
+const GROUP = 'goal/G0';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskGoalFileTestDeskNodeAAAAAAAAAAAAA=', label: 'andy' };
@@ -105,9 +105,9 @@ async function main() {
   test.subHeading('2. a server with no value writes no file');
   const quiet = await server('quiet', {});
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await quiet.call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Quiet' }, items: [{ id: 'q/G1.1', title: 'One', blocks: ['q/G1'] }] }) }, ANDY);
-  await quiet.call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
-  await quiet.call('press', { id: 'q/G1.1', what: 'go' }, ANDY);
+  await quiet.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Quiet' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
+  await quiet.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await quiet.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   await sleep(200);
   const quietFiles = fs.readdirSync(path.join(scratch, 'quiet')).concat(fs.readdirSync(quiet.state)).filter(function (f) { return /currentGoal/.test(f); });
   if (!quietFiles.length && bytesOf(REPO_FILE) === repoBytesBefore) test.check('spawned with {}: no currentGoal.json in its folders, and the repo file untouched');
@@ -121,40 +121,40 @@ async function main() {
   const d = await server('written', args);
   const file = path.join(d.state, 'currentGoal.json');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await d.call('session.set', { json: JSON.stringify({ goal: { id: 'w/G1', title: 'Written' }, items: [
-    { id: 'w/G1.1', title: 'First', blocks: ['w/G1'] },
-    { id: 'w/G1.2', title: 'Second', blocks: ['w/G1'] },
-    { id: 'w/G1.3', title: 'Closed early', blocks: ['w/G1'] },
+  const set = await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Written' }, items: [
+    { id: 'goal/G101.1', title: 'First', blocks: ['goal/G101'] },
+    { id: 'goal/G101.2', title: 'Second', blocks: ['goal/G101'] },
+    { id: 'goal/G101.3', title: 'Closed early', blocks: ['goal/G101'] },
   ] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   await sleep(200);
   const afterSet = readJson(file);
-  if (afterSet && afterSet.goal === 'w/G1' && afterSet.change === set.body.change) test.check('session.set writes it: goal w/G1, change ' + set.body.change + ' (his open point, taken as yes)');
+  if (afterSet && afterSet.goal === 'goal/G101' && afterSet.change === set.body.change) test.check('session.set writes it: goal goal/G101, change ' + set.body.change + ' (his open point, taken as yes)');
   else test.fail(OWED + 'after session.set the file is ' + JSON.stringify(afterSet).slice(0, 160) + ' (session.set answered change ' + (set.body || {}).change + ')');
-  await d.call('press', { id: 'w/G1', what: 'end-design' }, ANDY);
-  await d.call('box.write', { id: 'w/G1.1', text: 'THE-BOX-OF-FIRST', version: 0 }, CW);
-  await d.call('chat.add', { id: 'w/G1.1', text: 'a line under first', by: 'claude-windows' }, CW);
+  await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
+  await d.call('box.write', { id: 'goal/G101.1', text: 'THE-BOX-OF-FIRST', version: 0 }, CW);
+  await d.call('chat.add', { id: 'goal/G101.1', text: 'a line under first', by: 'claude-windows' }, CW);
   await d.call('chat.add', { id: GROUP, text: 'a group line, not of the goal' }, ANDY);
-  await d.call('press', { id: 'w/G1.3', what: 'close' }, ANDY);
+  await d.call('press', { id: 'goal/G101.3', what: 'close' }, ANDY);
   await sleep(200);
   const beforeGo = readJson(file);
-  const go = await d.call('press', { id: 'w/G1.1', what: 'go' }, ANDY);
+  const go = await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
   await sleep(200);
   const afterGo = readJson(file);
   if (go.status === 200 && afterGo && afterGo.change === go.body.change && beforeGo && beforeGo.change < afterGo.change) test.check('his Go writes it: change ' + afterGo.change + ', the Go\'s own record');
   else test.fail(OWED + 'after his Go: ' + JSON.stringify(afterGo).slice(0, 160) + '; go answered ' + JSON.stringify(go.body));
-  const line = await d.call('chat.add', { id: 'w/G1.1', text: 'a line after the Go' }, ANDY);
+  const line = await d.call('chat.add', { id: 'goal/G101.1', text: 'a line after the Go' }, ANDY);
   await sleep(200);
   const afterLine = readJson(file);
   if (line.status === 200 && afterLine && afterLine.change === afterGo.change) test.check('a chat line leaves the file as it was (change still ' + afterGo.change + ')');
   else test.fail(OWED + 'after a chat line the file says change ' + (afterLine || {}).change + ', the line was record ' + (line.body || {}).change);
-  await d.call('press', { id: 'w/G1.1', what: 'claim-done' }, CW);
-  const done = await d.call('press', { id: 'w/G1.1', what: 'done' }, ANDY);
+  await d.call('press', { id: 'goal/G101.1', what: 'claim-done' }, CW);
+  const done = await d.call('press', { id: 'goal/G101.1', what: 'done' }, ANDY);
   await sleep(200);
   const afterDone = readJson(file);
   if (done.status === 200 && afterDone && afterDone.change === done.body.change) test.check('his Done writes it: change ' + afterDone.change);
   else test.fail(OWED + 'after his Done: ' + JSON.stringify(afterDone).slice(0, 160) + '; done answered ' + JSON.stringify(done.body));
-  const goAll = await d.call('press', { id: 'w/G1', what: 'go-all' }, ANDY);
+  const goAll = await d.call('press', { id: 'goal/G101', what: 'go-all' }, ANDY);
   await sleep(200);
   const afterGoAll = readJson(file);
   if (goAll.status === 200 && afterGoAll && afterGoAll.change === goAll.body.change) test.check('his go-all writes it: change ' + afterGoAll.change);
@@ -166,29 +166,32 @@ async function main() {
   const byId = {};
   items.forEach(function (it) { if (it && it.id) byId[it.id] = it; });
   const ids = Object.keys(byId).sort();
-  if (ids.join() === ['w/G1', 'w/G1.1', 'w/G1.2', 'w/G1.3'].join()) test.check('items: the goal\'s row and its three items, the closed one included');
+  if (ids.join() === ['goal/G101', 'goal/G101.1', 'goal/G101.2', 'goal/G101.3'].join()) test.check('items: the goal\'s row and its three items, the closed one included');
   else test.fail(OWED + 'items in the file: ' + JSON.stringify(ids) + (byId[GROUP] ? ' (the group chat is in it)' : ''));
-  if (!byId[GROUP] && JSON.stringify(doc).indexOf('a group line, not of the goal') === -1) test.check('the group chat desk/G0.0 and its line are not in it');
+  if (!byId[GROUP] && JSON.stringify(doc).indexOf('a group line, not of the goal') === -1) test.check('the group chat goal/G0 and its line are not in it');
   else test.fail(OWED + 'the file carries the group chat');
-  const first = byId['w/G1.1'] || {};
+  const first = byId['goal/G101.1'] || {};
   const facts = first.status === 'done' && Array.isArray(first.buttons) && first.go === true && first.title === 'First';
   const chat = Array.isArray(first.chat) && first.chat.some(function (l) { return l && l.text === 'a line after the Go' && l.by === 'andy' && typeof l.at === 'string'; });
-  if (facts && first.box === 'THE-BOX-OF-FIRST' && first.version === 1 && Array.isArray(first.checks) && chat) test.check('w/G1.1 carries its facts (done, go true, buttons), its box and version, its checks and its chat lines {by, at, text}');
-  else test.fail(OWED + 'w/G1.1 in the file: ' + JSON.stringify(first).slice(0, 300));
-  if ((byId['w/G1.3'] || {}).status === 'closed') test.check('w/G1.3, closed and off the List, is in the file as closed');
-  else test.fail(OWED + 'w/G1.3 in the file: ' + JSON.stringify(byId['w/G1.3'] || null).slice(0, 120));
+  if (facts && first.box === 'THE-BOX-OF-FIRST' && first.version === 1 && Array.isArray(first.checks) && chat) test.check('goal/G101.1 carries its facts (done, go true, buttons), its box and version, its checks and its chat lines {by, at, text}');
+  else test.fail(OWED + 'goal/G101.1 in the file: ' + JSON.stringify(first).slice(0, 300));
+  if ((byId['goal/G101.3'] || {}).status === 'closed') test.check('goal/G101.3, closed and off the List, is in the file as closed');
+  else test.fail(OWED + 'goal/G101.3 in the file: ' + JSON.stringify(byId['goal/G101.3'] || null).slice(0, 120));
 
-  test.subHeading('5. the cursors: changes {n: change, line} answers everything since, and nothing before');
-  const later = await d.call('chat.add', { id: 'w/G1.2', text: 'the line after the file' }, ANDY);
-  const since = await d.call('changes', { n: doc.change, line: doc.line }, CW);
-  const recs = (since.body && since.body.records) || [];
-  const texts = recs.map(function (r) { return String(r.body); });
-  if (typeof doc.line === 'number' && since.status === 200 && recs.length === 1 && /the line after the file/.test(texts[0]) && recs[0].n === (later.body || {}).change) test.check('from the file\'s change ' + doc.change + ' and line ' + doc.line + ', changes answers the one record written since');
-  else test.fail(OWED + 'changes from the file\'s cursors answered ' + recs.length + ' record(s): ' + JSON.stringify(texts).slice(0, 200) + '; line in file: ' + JSON.stringify(doc.line));
+  // goal/G33.4: `changes` is gone (the desk streams each row it writes, with its change number). The file's change is
+  // still the desk's count at that moment: the next write is numbered right after it, and the file is not rewritten.
+  test.subHeading('5. the file\'s change: the next write is numbered right after it');
+  const later = await d.call('chat.add', { id: 'goal/G101.2', text: 'the line after the file' }, ANDY);
+  await sleep(200);
+  const stillDoc = readJson(file) || {};
+  const read = await d.call('item.chat', { id: 'goal/G101.2' }, CW);
+  const seen = ((read.body || {}).chat || []).some(function (l) { return l && l.text === 'the line after the file'; });
+  if (later.status === 200 && (later.body || {}).change === doc.change + 1 && stillDoc.change === doc.change && seen) test.check('the line written after the file is change ' + (doc.change + 1) + ', the file still says ' + doc.change + ', and item.chat has the line');
+  else test.fail(OWED + 'after the file\'s change ' + doc.change + ' the line was change ' + (later.body || {}).change + '; the file says ' + stillDoc.change + '; item.chat has it: ' + seen);
   const bytes = bytesOf(file);
   await d.call('items.find', { text: 'first', by: '', since: '', before: '' }, CW);
-  await d.call('item.get', { id: 'w/G1.1' }, CW);
-  await d.call('item.chat', { id: 'w/G1.1' }, CW);
+  await d.call('item.get', { id: 'goal/G101.1' }, CW);
+  await d.call('item.chat', { id: 'goal/G101.1' }, CW);
   await sleep(100);
   if (bytes && bytesOf(file) === bytes) test.check('reads write nothing to it');
   else test.fail(OWED + 'a read changed the file');

@@ -67,7 +67,7 @@ function load(script, doc) {
     { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, { addEventListener: function () {} });
   return b;
 }
-const facts = function (o) { return Object.assign({ id: '', title: '', goal: 'ct/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], claims: 0, code: false, asks: 0 }, o); };
+const facts = function (o) { return Object.assign({ id: '', title: '', goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], claims: 0, code: false, asks: 0 }, o); };
 // The dialog opened on one item, and what it sent: {html, presses}.
 async function dialogOn(item) {
   const doc = fakeDocument();
@@ -114,48 +114,49 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // THE WORLD: a goal with a plain item, a code item, and one he has split into a sub-goal.
+  // THE WORLD: a goal with a plain item, a code item, and one he has split. goal/G33.4 removed the sub-goal: the split
+  // item stays an item, so the code mark is his to toggle on it too.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'ct/G1', title: 'Code toggle' }, items: [
-    { id: 'ct/G1.1', title: 'Plain', blocks: ['ct/G1'] },
-    { id: 'ct/G1.2', title: 'A code item', blocks: ['ct/G1'], code: true },
-    { id: 'ct/G1.3', title: 'Split later', blocks: ['ct/G1'] },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Code toggle' }, items: [
+    { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
+    { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.3', title: 'Split later', blocks: ['goal/G100'] },
   ] }) }, ANDY);
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'ct/G1', title: 'Code toggle' }, split: ['ct/G1.3'], items: [
-    { id: 'ct/G1.1', title: 'Plain', blocks: ['ct/G1'] },
-    { id: 'ct/G1.2', title: 'A code item', blocks: ['ct/G1'], code: true },
-    { id: 'ct/G1.3', title: 'Split later', blocks: ['ct/G1'] },
-    { id: 'ct/G1.4', title: 'Under the sub-goal' },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Code toggle' }, split: ['goal/G100.3'], items: [
+    { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
+    { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.3', title: 'Split later', blocks: ['goal/G100'] },
+    { id: 'goal/G100.4', title: 'Split off it' },
   ] }) }, ANDY);
-  const w1 = await item('ct/G1.1'); const w2 = await item('ct/G1.2'); const w3 = await item('ct/G1.3');
-  if (w1.code === false && w2.code === true && w3.subGoal === true) test.check('the world: a plain item, a code item, and a sub-goal');
+  const w1 = await item('goal/G100.1'); const w2 = await item('goal/G100.2'); const w3 = await item('goal/G100.3');
+  if (w1.code === false && w2.code === true && w3.id === 'goal/G100.3' && w3.subGoal === undefined) test.check('the world: a plain item, a code item, and a split item that is still an item');
   else { test.fail('the world did not land: ' + short({ plain: w1.code, code: w2.code, sub: w3.subGoal })); return; }
 
   test.subHeading('1. his press marks an item code, and marks it back');
-  const on = await call('press', { id: 'ct/G1.1', what: 'code' }, ANDY);
-  if (took(on) && (await item('ct/G1.1')).code === true) test.check('press code on ct/G1.1 marks it code');
-  else test.fail(OWED + 'press code answered ' + on.status + ' ' + short(on.body) + '; code reads ' + short((await item('ct/G1.1')).code));
-  const off = await call('press', { id: 'ct/G1.2', what: 'code' }, ANDY);
-  if (took(off) && (await item('ct/G1.2')).code === false) test.check('press code on the code item takes the mark off: it is a toggle');
-  else test.fail(OWED + 'press code answered ' + off.status + ' ' + short(off.body) + '; code reads ' + short((await item('ct/G1.2')).code));
+  const on = await call('press', { id: 'goal/G100.1', what: 'code' }, ANDY);
+  if (took(on) && (await item('goal/G100.1')).code === true) test.check('press code on goal/G100.1 marks it code');
+  else test.fail(OWED + 'press code answered ' + on.status + ' ' + short(on.body) + '; code reads ' + short((await item('goal/G100.1')).code));
+  const off = await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
+  if (took(off) && (await item('goal/G100.2')).code === false) test.check('press code on the code item takes the mark off: it is a toggle');
+  else test.fail(OWED + 'press code answered ' + off.status + ' ' + short(off.body) + '; code reads ' + short((await item('goal/G100.2')).code));
 
   test.subHeading('2. it is his press alone');
-  const agent = await call('press', { id: 'ct/G1.1', what: 'code' }, CW);
-  if (refusedByPress(agent) && (await item('ct/G1.1')).code === true) test.check('an agent\'s press code is refused and changes nothing');
+  const agent = await call('press', { id: 'goal/G100.1', what: 'code' }, CW);
+  if (refusedByPress(agent) && (await item('goal/G100.1')).code === true) test.check('an agent\'s press code is refused and changes nothing');
   else test.fail(OWED + 'the agent\'s press code answered ' + agent.status + ' ' + short(agent.body));
 
-  test.subHeading('3. a sub-goal still takes no code mark (goal/G6.8)');
-  const sub = await call('press', { id: 'ct/G1.3', what: 'code' }, ANDY);
-  if (refusedByPress(sub) && (await item('ct/G1.3')).code !== true) test.check('press code on a sub-goal is refused');
-  else test.fail(OWED + 'press code on the sub-goal answered ' + sub.status + ' ' + short(sub.body) + '; code reads ' + short((await item('ct/G1.3')).code));
-  const goal = await call('press', { id: 'ct/G1', what: 'code' }, ANDY);
-  if (refusedByPress(goal) && (await item('ct/G1')).code !== true) test.check('and press code on the goal itself is refused');
+  test.subHeading('3. a split item takes the code mark (goal/G33.4: no sub-goals); a goal never does');
+  const sub = await call('press', { id: 'goal/G100.3', what: 'code' }, ANDY);
+  if (took(sub) && (await item('goal/G100.3')).code === true) test.check('press code on the split item marks it code');
+  else test.fail('goal/G33.4: press code on the split item answered ' + sub.status + ' ' + short(sub.body) + '; code reads ' + short((await item('goal/G100.3')).code));
+  const goal = await call('press', { id: 'goal/G100', what: 'code' }, ANDY);
+  if (refusedByPress(goal) && (await item('goal/G100')).code !== true) test.check('and press code on the goal itself is refused');
   else test.fail(OWED + 'press code on the goal answered ' + goal.status + ' ' + short(goal.body));
 
   test.subHeading('4. the dialog draws the toggle from the item\'s own code field');
-  const plain = await dialogOn(facts({ id: 'ct/G1.1', title: 'Plain', code: false, buttons: ['close'] }));
-  const marked = await dialogOn(facts({ id: 'ct/G1.2', title: 'A code item', code: true, buttons: ['close'] }));
+  const plain = await dialogOn(facts({ id: 'goal/G100.1', title: 'Plain', code: false, buttons: ['close'] }));
+  const marked = await dialogOn(facts({ id: 'goal/G100.2', title: 'A code item', code: true, buttons: ['close'] }));
   // The control: the bar painted at all, so a missing toggle is a missing toggle and not an unpainted dialog.
   if (/id="dd-rename"/.test(plain.html())) test.check('the world: the item\'s button bar is painted');
   else { test.fail('the world: the dialog painted no button bar: ' + plain.html().replace(/\s+/g, ' ').slice(0, 300)); return; }
@@ -172,25 +173,25 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
   plain.doc.getElementById('dd-code').fire('click', codeClick);
   plain.doc.getElementById('dd-body').fire('click', codeClick);
   await settled();
-  const sent = plain.presses.filter(function (p) { return p && p.what === 'code' && p.id === 'ct/G1.1'; });
+  const sent = plain.presses.filter(function (p) { return p && p.what === 'code' && p.id === 'goal/G100.1'; });
   if (sent.length === 1) test.check('a click sends press {id, what: code} once');
   else test.fail(OWED + 'the dialog sent ' + short(plain.presses));
 
   test.subHeading('6. marked code after his Go, the item starts at red (goal/G8.10)');
-  // ct/G1.2 lost its mark in section 1, so his Go lands on a plain item and sets no phase. Marking it code afterwards
+  // goal/G100.2 lost its mark in section 1, so his Go lands on a plain item and sets no phase. Marking it code afterwards
   // used to leave it with no phase at all: nothing to take, no Done, and no Close either. Andy, 2026-10-09: "go".
-  await call('press', { id: 'ct/G1', what: 'end-design' }, ANDY); // a goal starts in design mode, where nothing goes.
-  const went = await call('press', { id: 'ct/G1.2', what: 'go' }, ANDY);
-  const before = await item('ct/G1.2');
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY); // a goal starts in design mode, where nothing goes.
+  const went = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+  const before = await item('goal/G100.2');
   if (took(went) && before.go === true && !before.phase) test.check('the world: his Go on a plain item, and no phase');
   else { test.fail('the world: go answered ' + short(went.body) + '; item reads ' + short(before)); return; }
-  const late = await call('press', { id: 'ct/G1.2', what: 'code' }, ANDY);
-  const after = await item('ct/G1.2');
+  const late = await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
+  const after = await item('goal/G100.2');
   if (took(late) && after.code === true && after.phase === 'red') test.check('the code mark starts its red, as his Go would have');
   else test.fail('OWED by goal/G8.10: press code answered ' + short(late.body) + '; item reads ' + short({ code: after.code, phase: after.phase }));
 
   test.subHeading('7. a goal has no code state, so its Details draws no toggle');
-  const g = await dialogOn(facts({ id: 'ct/G1', title: 'Code toggle', goal: '', buttons: ['close'] }));
+  const g = await dialogOn(facts({ id: 'goal/G100', title: 'Code toggle', goal: '', buttons: ['close'] }));
   if (!/id="dd-code"/.test(g.html())) test.check('the goal\'s Details draws no #dd-code');
   else test.fail(OWED + 'the goal\'s Details drew a Code toggle');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {

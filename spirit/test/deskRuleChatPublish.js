@@ -71,7 +71,7 @@ async function settled(pick) { for (let i = 0; i < 40; i++) { if (published.some
   const url = 'http://127.0.0.1:' + door.address().port + '/api/spirit';
   if (!await start(url)) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'rc/G1', title: 'Rule chat' }, items: [{ id: 'rc/G1.1', title: 'Work', blocks: ['rc/G1'] }] }) }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rule chat' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
 
   test.subHeading('A. the other rule verbs publish the rule key (the contrast, green today)');
   const added = await call('rule.add', { type: 'desk', label: 'Questions as checks', text: 'A question goes on its item as a Q check.' }, CW);
@@ -99,12 +99,12 @@ async function settled(pick) { for (let i = 0; i < 40; i++) { if (published.some
 
   test.subHeading('D. an item\'s chat line is published as before, with no rule key');
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-  await call('item.take', { id: 'rc/G1.1' }, CW);
+  await call('item.take', { id: 'goal/G100.1' }, CW);
   published.length = 0;
-  const item = await call('chat.add', { id: 'rc/G1.1', text: 'a line under an item' }, CW);
+  const item = await call('chat.add', { id: 'goal/G100.1', text: 'a line under an item' }, CW);
   await settled(function (o) { return o.verb === 'chat.add'; });
   const ofItem = published.filter(function (o) { return o.verb === 'chat.add'; });
-  if (item.status === 200 && ofItem.length && ofItem.every(function (o) { return !('rule' in o) && o.item && o.item.id === 'rc/G1.1'; })) test.check('an item line publishes its item and no rule');
+  if (item.status === 200 && ofItem.length && ofItem.every(function (o) { return !('rule' in o) && o.item && o.item.id === 'goal/G100.1'; })) test.check('an item line publishes its item and no rule');
   else test.fail('an item line answered ' + item.status + '; published ' + short(ofItem));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();

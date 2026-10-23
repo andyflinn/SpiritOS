@@ -100,8 +100,8 @@ async function serverHalf() {
   else test.fail(OWED + 'the item reads code ' + short(fa2 && fa2.code) + ', phase ' + short(fa2 && fa2.phase));
   // THE CODE TOGGLE IS NOT OFFERED (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
   // items." The dialog draws its Code toggle from the facts' codeOffered, which the plugin's refusal sets false.
-  const ord = await call('session.set', { json: JSON.stringify({ goal: { id: 'or/G1', title: 'Ordinary' }, items: [{ id: 'or/G1.1', title: 'one', blocks: ['or/G1'] }] }) });
-  const fo = await factsOf('or/G1.1');
+  const ord = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) });
+  const fo = await factsOf('goal/G100.1');
   if (fa2 && fa2.codeOffered === false && fo && fo.codeOffered === true) test.check('a vision item carries codeOffered false; an ordinary item true');
   else test.fail(OWED + 'codeOffered reads ' + short([fa2 && fa2.codeOffered, fo && fo.codeOffered]) + ' (session ' + short(ord) + ')');
   const rn = await call('item.rename', { id: a.id, title: 'A city for people' });
@@ -202,7 +202,7 @@ async function faceHalf() {
     const d2 = { getElementById: function (id) { return ids[id] || (ids[id] = fakeElement(id)); } };
     let app = null;
     new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
-    const f = { id: 'x/G1.1', title: 'an item', goal: 'x/G1', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
+    const f = { id: 'goal/G101.1', title: 'an item', goal: 'goal/G101', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
     app.mount(fakeElement('dd'), { escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
       verb: function (n, body) { const q = (test.foldAsk(Object.assign({}, body, { verb: n })) || {}).desk; const v = q && Object.keys(q)[0];
         if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
@@ -211,7 +211,7 @@ async function faceHalf() {
         if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: '', version: 1 } });
         return Promise.resolve({ status: 200, body: { items: [], more: false } }); },
       onPublished: function () { return function () {}; }, closeDialog: function () {}, armUntilElsewhere: function () {}, setScreenTitle: function () {}, setDialogResult: function () {} });
-    await app.open({ id: 'x/G1.1' });
+    await app.open({ id: 'goal/G101.1' });
     await sleep(20);
     return Object.keys(ids).map(function (k) { return ids[k].innerHTML; }).join('\n');
   };

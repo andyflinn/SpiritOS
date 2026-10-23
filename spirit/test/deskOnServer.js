@@ -14,7 +14,7 @@
 // build; Desk walks and folds, the server is storage plus bounded search):
 //
 //   THE SERVER (process/js/desk/desk.js)
-//   - It never reads Desk's old files in shell/desk (cleanup/G1.6).
+//   - It never reads Desk's old files in shell/desk (goal/G100.6).
 //   - log.search gains two filters, both '' for any: kind, and before (only
 //     lines older than it); every caller sends all five keys (the helper
 //     matches keys exactly, D8). todo '-' means lines with no todo (an
@@ -40,6 +40,8 @@
 //
 // The suites that mount Desk with a log/log.json fixture move onto
 // deskFake.js (a desk server in memory) with the build.
+// SINCE goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them.") the server keeps no log of lines and
+// Desk reads and records none: T6 (server) went, and T5b and T3 hold that the old lines are neither read nor recorded.
 
 const fs = require('fs');
 const os = require('os');
@@ -51,7 +53,7 @@ const appClient = require('../run/js/appClient.js');
 const deskFake = require('./deskFake.js');
 
 const OWED = 'OWED by desk/G1.4: ';
-const G16 = 'OWED by cleanup/G1.6: ';
+const G16 = 'OWED by goal/G100.6: ';
 const SCRIPT = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
@@ -108,47 +110,21 @@ async function serverPart(scratch) {
     return kid;
   }
   function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
-  const keysOf = function (res) { return (res.items || []).map(function (i) { try { return JSON.parse(i.label).key; } catch (e) { return '?'; } }); };
-  // EVERY PAGE, newest first (slim/G1.2): one answer holds what fits, and
-  // `before` (the oldest line's at) asks for the next until more is false.
-  async function everything() {
-    let res = { items: [], more: false };
-    let before = '';
-    for (let page = 0; page < 20; page++) {
-      const r = await call('log.search', { text: '', todo: '', since: '', kind: '', before: before });
-      res.items = res.items.concat(r.items || []);
-      if (!r.more || !(r.items || []).length) break;
-      before = JSON.parse(r.items[r.items.length - 1].label).at;
-    }
-    return res;
-  }
 
   const kid = await start();
-  test.subHeading('cleanup/G1.6: the server never reads Desk\'s old files in shell/desk');
-  const got = keysOf(await everything());
+  test.subHeading('goal/G100.6: the server never reads Desk\'s old files in shell/desk');
   const st = await call('state.get', {});
   const sn = await call('seen.get', {});
   const voiceFile = path.join(state, 'voice.jsonl');
-  const imported = got.length || /IMPORTED/.test((st.json || '') + (sn.json || '')) || fs.existsSync(voiceFile);
+  const imported = /IMPORTED/.test((st.json || '') + (sn.json || '')) || fs.existsSync(voiceFile);
   if (!imported) test.check('old log, state, seen and voice files planted; the server started with none of them');
-  else test.fail(G16 + got.length + ' lines, state ' + JSON.stringify(st).slice(0, 60) + ', voice file ' + fs.existsSync(voiceFile));
+  else test.fail(G16 + 'state ' + JSON.stringify(st).slice(0, 60) + ', voice file ' + fs.existsSync(voiceFile));
   const planted = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl', 'voice/voice-2.jsonl'];
   const gone = planted.filter(function (f) { return !fs.existsSync(path.join(app, ...f.split('/'))); });
   if (!gone.length) test.check('and deleted none of them');
   else test.fail(G16 + 'the server deleted ' + JSON.stringify(gone));
   if (!/'shell', 'desk'|shell\/desk/.test(fs.readFileSync(SCRIPT, 'utf8'))) test.check('process/js/desk/desk.js no longer names shell/desk');
   else test.fail(G16 + 'process/js/desk/desk.js still names shell/desk');
-
-  for (const m of old) await call('log.add', { json: JSON.stringify(m) });
-
-  test.subHeading('T6 (server): log.search filters by kind, and by before');
-  await call('log.add', { json: JSON.stringify(row('claude-windows', 'session', '{"goal":{"id":"t/G1","title":"G"},"items":[]}', 'team/chat')) });
-  const sessions = keysOf(await call('log.search', { text: '', todo: '', since: '', kind: 'session', before: '' }));
-  const cut = old[10].at;
-  const before = keysOf(await call('log.search', { text: '', todo: 'team/chat', since: '', kind: '', before: cut }));
-  if (sessions.length === 1 && before.length === 10 && before[0] === old[9].key && before[9] === old[0].key) {
-    test.check('kind: session finds the one session; before: finds the 10 older lines, newest first');
-  } else test.fail(OWED + 'kind: ' + JSON.stringify(sessions) + ', before ' + cut + ': ' + before.length + ' lines, first ' + before[0]);
 
   await stop(kid);
 }
@@ -196,25 +172,25 @@ function mount(fake, files, saved) {
 }
 
 async function deskPart() {
-  // Two sessions: the older names t/G1.1 and t/G1.2; the newest names t/G1.1
-  // and t/G1.3, so t/G1.2 is closed and must never be searched.
-  const s1 = JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [
-    { id: 't/G1.1', title: 'ITEM-ONE' }, { id: 't/G1.2', title: 'ITEM-TWO-CLOSED' }] });
-  const s2 = JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [
-    { id: 't/G1.1', title: 'ITEM-ONE', inPlace: [{ what: 'x', where: 'a.js:1 x' }] }, { id: 't/G1.3', title: 'ITEM-THREE' }] });
+  // Two sessions: the older names goal/G101.1 and goal/G101.2; the newest names goal/G101.1
+  // and goal/G101.3, so goal/G101.2 is closed and must never be searched.
+  const s1 = JSON.stringify({ goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
+    { id: 'goal/G101.1', title: 'ITEM-ONE' }, { id: 'goal/G101.2', title: 'ITEM-TWO-CLOSED' }] });
+  const s2 = JSON.stringify({ goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
+    { id: 'goal/G101.1', title: 'ITEM-ONE', inPlace: [{ what: 'x', where: 'a.js:1 x' }] }, { id: 'goal/G101.3', title: 'ITEM-THREE' }] });
   const log = [
     row('claude-windows', 'session', s1, 'team/chat'),
-    row('claude-windows', 'note', 'about two', 't/G1.2'),
+    row('claude-windows', 'note', 'about two', 'goal/G101.2'),
     row('claude-windows', 'session', s2, 'team/chat'),
-    row('wsl-claude', 'note', 'IN PLACE VERIFIED t/G1.1 at abc', 't/G1.1'),
-    row('claude-windows', 'ask', 'Go on one?', 't/G1.1'),
-    row('wsl-claude', 'note', 'STATUS: coding', 't/G1.3'),
+    row('wsl-claude', 'note', 'IN PLACE VERIFIED goal/G101.1 at abc', 'goal/G101.1'),
+    row('claude-windows', 'ask', 'Go on one?', 'goal/G101.1'),
+    row('wsl-claude', 'note', 'STATUS: coding', 'goal/G101.3'),
   ];
   // Then a long Team chat, far more than one answer holds: an approach that
   // read only the newest lines of everything would never see the ask above.
   for (let i = 0; i < 60; i++) log.push(row(i % 2 ? 'andy' : 'claude-windows', 'note', 'TEAMLINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(260), 'team/chat'));
-  // Andy closed t/G1.2 after the backup's last check (T7).
-  log.push(row('andy', 'answer', 'closed.', 't/G1.2'));
+  // Andy closed goal/G101.2 after the backup's last check (T7).
+  log.push(row('andy', 'answer', 'closed.', 'goal/G101.2'));
 
   const fake = deskFake.create(log);
   fake.backup = { lastCheck: new Date(T0 + 10 * 60000).toISOString(), lastCopy: new Date(T0 + 9 * 60000).toISOString(), lastError: '' };
@@ -228,18 +204,14 @@ async function deskPart() {
   if (!doc.loaded.some(function (f) { return /^log\//.test(f) || f === 'state.json' || f === 'seen.json'; })) test.check('no log, state or seen file was read from Desk\'s folder');
   else test.fail(OWED + 'Desk still read ' + JSON.stringify(doc.loaded));
 
-  // SINCE goal/G3.10 THE ALL TAB IS THE GROUP CHAT, the chat of the desk server's standing goal desk/G0.0, and the
-  // lines under team/chat are drawn nowhere. They are still read, once and bounded: who the agents and the lead
-  // are is learned from them (desk.js deskFold).
-  test.subHeading('T5b: the lines under team/chat are read with one bounded search, and drawn nowhere');
+  // SINCE goal/G3.10 THE ALL TAB IS THE GROUP CHAT, the chat of the desk server's standing goal goal/G0. SINCE goal/G33.4
+  // the old lines under team/chat are read no more: log.search is gone.
+  test.subHeading('T5b: the old lines are never read; the group chat is the chat of goal/G0');
   const team = doc.getElementById('desk-team').innerHTML;
-  const teamSearches = fake.searches().filter(function (c) { return (c.args || {}).todo === 'team/chat' && !(c.args || {}).kind; });
-  const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && c.verb === 'item.chat' && (c.args || {}).id === 'desk/G0.0'; });
-  if (teamSearches.length === 1 && groupAsks.length === 1 && !/TEAMLINE-/.test(team)) test.check('one search on team/chat and one item.chat for desk/G0.0; no team/chat line is drawn under All');
-  else test.fail(OWED + teamSearches.length + ' team/chat searches, ' + groupAsks.length + ' item.chat asks for desk/G0.0; a team/chat line drawn: ' + /TEAMLINE-/.test(team));
-  const whole = fake.searches().filter(function (c) { const a = c.args || {}; return !a.todo && !a.kind && !a.text; });
-  if (fake.searches().length && !whole.length) test.check('no search without a todo or kind: the whole log is never read');
-  else test.fail(OWED + (whole.length ? whole.length + ' unfiltered searches: ' + JSON.stringify(whole[0].args) : 'Desk made no searches'));
+  const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && c.verb === 'item.chat' && (c.args || {}).id === 'goal/G0'; });
+  const logAsks = fake.calls.filter(function (c) { return c.verb === 'log.search' || c.verb === 'log.add' || c.verb === 'pending.get'; });
+  if (!logAsks.length && groupAsks.length === 1 && !/TEAMLINE-/.test(team)) test.check('no log verb asked, one item.chat for goal/G0; no team/chat line is drawn under All');
+  else test.fail('goal/G33.4: ' + logAsks.length + ' log verb asks, ' + groupAsks.length + ' item.chat asks for goal/G0; a team/chat line drawn: ' + /TEAMLINE-/.test(team));
 
   test.subHeading('T6: scrolling Team to its top reads nothing more');
   // The pager that filled older team/chat lines went with the team box (goal/G3.10): nothing draws them.
@@ -247,22 +219,22 @@ async function deskPart() {
   teamEl.scrollTop = 0;
   teamEl.fire('scroll', { target: teamEl, currentTarget: teamEl });
   await settleLong();
-  const older = fake.searches().filter(function (c) { return (c.args || {}).todo === 'team/chat' && (c.args || {}).before; });
+  const older = fake.calls.filter(function (c) { return c.verb === 'log.search'; });
   if (!older.length) test.check('no search for older team/chat lines is made');
   else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before, for lines nothing draws');
 
   test.subHeading('T3: what arrives, what he types and what Desk decides go to the server, never to files');
-  const before = fake.lines.length;
-  if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 't/G1.3' }, { hash: 'arrived-1', fromKey: WSL, sentAt: new Date().toISOString() });
+  if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 'goal/G101.3' }, { hash: 'arrived-1', fromKey: WSL, sentAt: new Date().toISOString() });
   const say = doc.getElementById('desk-team-say');
   say.value = 'TYPED-BY-ANDY';
   doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
   await settleLong();
-  const added = fake.calls.filter(function (c) { return c.verb === 'log.add'; }).map(function (c) { return JSON.parse(c.args.json).text; });
-  if (fake.lines.length > before && added.indexOf('ARRIVED-LINE') !== -1) test.check('an arrival was recorded by log.add');
-  else test.fail(OWED + 'log.add calls: ' + JSON.stringify(added));
+  // goal/G33.4: the page no longer hears the agents app's packets, and records nothing of them.
+  const added = fake.calls.filter(function (c) { return c.verb === 'log.add'; });
+  if (!doc.arrive && !added.length) test.check('no agents packet is heard, and nothing goes to log.add (goal/G33.4)');
+  else test.fail('goal/G33.4: the page still hears agents packets (' + !!doc.arrive + ') or asked log.add ' + added.length + ' time(s)');
   // NO voice.add ANY MORE (goal/G2.1 note 8): his typed line is in the log; nothing is sent to a voice file.
-  if (!fake.voice.length) test.check('his typed line went to the log alone, nothing to voice.add');
+  if (!fake.voice.length) test.check('nothing of his typed line went to voice.add');
   else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
   const sets = fake.calls.filter(function (c) { return c.verb === 'state.set' || c.verb === 'seen.set'; });
   if (!saved.length && sets.length) test.check('state and seen went by state.set / seen.set; api.fs.saveFile was never called');

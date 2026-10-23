@@ -163,8 +163,11 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   const p1 = d.page();
   if (p1.indexOf('id="dd-reopen"') !== -1 && p1.indexOf('id="dd-done"') === -1) test.check('a published done repaints: Reopen, no Done');
   else test.fail(OWED + 'after the publish: reopen ' + (p1.indexOf('id="dd-reopen"') !== -1) + ', done ' + (p1.indexOf('id="dd-done"') !== -1));
-  d.publish({ change: 9, verb: 'box.write', item: JSON.parse(facts({ buttons: ['close', 'reopen'] })), box: 'NEW-BOX', version: 3 });
-  d.publish({ change: 10, verb: 'chat.add', item: JSON.parse(facts({ buttons: ['close', 'reopen'] })), chat: { by: 'wsl-claude', at: '2026-09-30T15:05:00Z', text: 'CHAT-NEW' } });
+  // goal/G33.4: each changed row is its own publish; the box and the chat line are side rows of the item.
+  d.publish({ change: 9, verb: 'box.write', item: JSON.parse(facts({ buttons: ['close', 'reopen'] })) });
+  d.publish({ change: 9, table: 'box', goal: 1, item: 2, id: 't/G1.2', row: { version: 3, text: 'NEW-BOX', by: 'andy', at: '2026-09-30T15:04:00Z' } });
+  d.publish({ change: 10, verb: 'chat.add', item: JSON.parse(facts({ buttons: ['close', 'reopen'] })) });
+  d.publish({ change: 10, table: 'chat', goal: 1, item: 2, id: 't/G1.2', row: { by: 'wsl-claude', at: '2026-09-30T15:05:00Z', text: 'CHAT-NEW' } });
   await settled();
   const p2 = d.page();
   if (p2.indexOf('NEW-BOX') !== -1 && p2.indexOf('BOX-TEXT') === -1 && p2.indexOf('CHAT-NEW') !== -1) test.check('a published box and chat line are painted as they come');

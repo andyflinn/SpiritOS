@@ -13,8 +13,8 @@
 //      record); when the goal row says that agent is working, the page adds a line from 'desk', "message
 //      delivered, <agent> busy", to that agent's chat and logs it (log.add) like every line. Nothing goes to
 //      the agent for it.
-//   3. COUNTED BY BEING KEPT: those lines are records like any other, so changes answers them (by 'desk') and a
-//      search finds them later.
+//   3. COUNTED BY BEING KEPT: those lines are kept like any other, by 'desk', so a search finds them later (chat.search;
+//      `changes` went with goal/G33.4).
 
 const fs = require('fs');
 const os = require('os');
@@ -75,7 +75,7 @@ function mount(answers) {
   return { doc: doc, writes: writes, posted: posted };
 }
 function goalRow(working) {
-  return { id: 'g/G1', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
+  return { id: 'goal/G100', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
     design: false, waiting: 0, live: ['claude-windows'], working: working };
 }
 function line(key, from, peer) {
@@ -98,15 +98,15 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
-    await call('item.take', { id: 'g/G1.1' }, CW);
+    await call('item.take', { id: 'goal/G100.1' }, CW);
 
     test.subHeading('1. his line under a working agent\'s item gets the desk\'s own reply, every time');
     await call('agent.state', { word: 'working' }, CW);
-    await call('chat.add', { id: 'g/G1.1', text: 'first while busy' }, ANDY);
-    await call('chat.add', { id: 'g/G1.1', text: 'second while busy' }, ANDY);
-    const busyChat = await chatOf('g/G1.1');
+    await call('chat.add', { id: 'goal/G100.1', text: 'first while busy' }, ANDY);
+    await call('chat.add', { id: 'goal/G100.1', text: 'second while busy' }, ANDY);
+    const busyChat = await chatOf('goal/G100.1');
     const replies = busyChat.filter(function (l) { return l.by === 'desk' && BUSY.test(l.text); });
     const afterFirst = busyChat.findIndex(function (l) { return l.text === 'first while busy'; });
     if (replies.length === 2 && afterFirst !== -1 && busyChat[afterFirst + 1] && busyChat[afterFirst + 1].by === 'desk') {
@@ -114,26 +114,29 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
     } else test.fail(OWED + 'the chat reads ' + JSON.stringify(busyChat.map(function (l) { return l.by + ': ' + l.text; })));
 
     await call('agent.state', { word: 'listening' }, CW);
-    await call('chat.add', { id: 'g/G1.1', text: 'now it listens' }, ANDY);
-    const idleChat = await chatOf('g/G1.1');
+    await call('chat.add', { id: 'goal/G100.1', text: 'now it listens' }, ANDY);
+    const idleChat = await chatOf('goal/G100.1');
     const idleReplies = idleChat.filter(function (l) { return l.by === 'desk'; }).length;
     if (idleReplies === 2 && idleChat[idleChat.length - 1].text === 'now it listens') test.check('a line while it listens gets no reply');
     else test.fail(OWED + 'after listening the chat holds ' + idleReplies + ' desk lines, last ' + JSON.stringify(idleChat[idleChat.length - 1]));
 
-    const agentLine = await call('chat.add', { id: 'g/G1.1', text: 'an agent speaks' }, CW);
+    const agentLine = await call('chat.add', { id: 'goal/G100.1', text: 'an agent speaks' }, CW);
     await call('agent.state', { word: 'working' }, CW);
-    const nobodyChatBefore = (await chatOf('g/G1.1')).length;
-    await call('chat.add', { id: 'g/G1', text: 'a line under the goal, nobody holds it' }, ANDY);
-    const goalChat = await chatOf('g/G1');
-    if (agentLine.status === 200 && !goalChat.some(function (l) { return l.by === 'desk'; }) && (await chatOf('g/G1.1')).length === nobodyChatBefore) {
+    const nobodyChatBefore = (await chatOf('goal/G100.1')).length;
+    await call('chat.add', { id: 'goal/G100', text: 'a line under the goal, nobody holds it' }, ANDY);
+    const goalChat = await chatOf('goal/G100');
+    if (agentLine.status === 200 && !goalChat.some(function (l) { return l.by === 'desk'; }) && (await chatOf('goal/G100.1')).length === nobodyChatBefore) {
       test.check('an agent\'s own line, and his line under an item nobody holds, get no reply');
     } else test.fail(OWED + 'a reply went where none was due: goal chat ' + JSON.stringify(goalChat.map(function (l) { return l.by; })));
 
-    test.subHeading('3. the replies are records: changes answers them, by desk');
-    const ch = await call('changes', { n: 0, line: 0 }, ANDY);
-    const recs = ((ch.body || {}).records || []).filter(function (r) { return r.by === 'desk' && r.verb === 'chat.add' && BUSY.test(r.body); });
-    if (recs.length === 2) test.check('changes lists the two desk replies as chat.add records by desk, countable and searchable');
-    else test.fail(OWED + 'changes holds ' + recs.length + ' desk reply records');
+    // goal/G33.4: `changes` is gone; the replies are kept as chat lines by desk, and a search over the goal's items
+    // finds and counts them later.
+    test.subHeading('3. the replies are kept: a search finds them, by desk');
+    const ch = await call('chat.search', { id: 'goal/G100', text: 'message delivered', by: 'desk', since: '', before: '', scope: 'items' }, ANDY);
+    const recs = ((ch.body || {}).items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } })
+      .filter(function (l) { return l.by === 'desk' && BUSY.test(String(l.text)); });
+    if (recs.length === 2) test.check('chat.search finds the two desk replies as lines by desk, countable and searchable');
+    else test.fail(OWED + 'chat.search finds ' + recs.length + ' desk replies: ' + JSON.stringify(ch.body).slice(0, 300));
   } catch (e) {
     test.fail(OWED + 'the red itself tripped on the server half: ' + (e && e.stack || e));
   } finally {
@@ -143,11 +146,11 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
 
   // ── 2: the page, Team tab ─────────────────────────────────────────────
   // THE PAGE'S HALF STOOD HERE: a Team line to one working agent, answered by the page with the desk's busy line.
-  // It went with the direct tabs (goal/G3.12): Team is the group chat, a line there is one chat.add on desk/G0.0
+  // It went with the direct tabs (goal/G3.12): Team is the group chat, a line there is one chat.add on goal/G0
   // and reaches no single agent; the desk server's own reply (part 1 above) is the busy reply that remains.
   test.subHeading('2. a Team line is the group chat\'s, posted to no agent');
   const page = mount({
-    'items.search': { items: [{ key: 'g/G1', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
+    'items.search': { items: [{ key: 'goal/G100', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
     'log.search': { items: [{ key: 'l1', label: JSON.stringify(line('l1', 'claude-windows', CW.key)) }], more: false },
   });
   await settled();
@@ -155,8 +158,8 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
   page.doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
   await settled();
   const added = page.writes.filter(function (w) { return w.verb === 'chat.add'; });
-  if (added.length === 1 && added[0].args.id === 'desk/G0.0' && !page.posted.length) {
-    test.check('the line went as one chat.add on desk/G0.0; nothing was posted to the agent and no busy line was made by the page');
+  if (added.length === 1 && added[0].args.id === 'goal/G0' && !page.posted.length) {
+    test.check('the line went as one chat.add on goal/G0; nothing was posted to the agent and no busy line was made by the page');
   } else test.fail('the Team line: chat.add ' + JSON.stringify(added.map(function (w) { return w.args; })) + ', posted ' + page.posted.length);
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();

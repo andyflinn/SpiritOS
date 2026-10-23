@@ -105,7 +105,7 @@ async function elementHalf() {
 
 async function deskHalf() {
   const fake = require('./deskFake.js').create([]);
-  const G = 'rt/G1';
+  const G = 'goal/G100';
   fake.items = [row(G, 'The goal', ''), row(G + '.1', 'Row one', G), row(G + '.2', 'Row two', G)];
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
@@ -144,7 +144,9 @@ async function deskHalf() {
   test.subHeading('3. a team chat line repaints the team chat alone');
   const team = doc.getElementById('desk-team');
   const t0 = { top: top.sets, team: team.sets };
-  publish({ change: 101, verb: 'chat.add', item: row('desk/G0.0', 'Group chat', ''), chat: { by: 'andy', at: new Date().toISOString(), text: 'hello team', taken: '', key: '', name: '' } });
+  // goal/G33.4: the goal's row and the line are two publishes, one row each.
+  publish({ change: 101, verb: 'chat.add', item: row('goal/G0', 'Group chat', ''), listed: false, key: { goal: 0, item: 0 } });
+  publish({ change: 101, table: 'chat', goal: 0, item: 0, id: 'goal/G0', row: { by: 'andy', at: new Date().toISOString(), text: 'hello team', taken: '', key: '', name: '' } });
   await settled();
   if (team.sets > t0.team && top.sets === t0.top) test.check('#desk-team repainted, #desk-top not');
   else test.fail(OWED + 'after a team line #desk-team was set ' + (team.sets - t0.team) + ' times and #desk-top ' + (top.sets - t0.top));

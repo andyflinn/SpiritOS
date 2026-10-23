@@ -10,6 +10,8 @@
 //
 // THE CONTRACT: after Desk records a line (an arrival, or what he sends), it
 // asks status.get again, so #desk-backup shows the backup's newest check.
+// SINCE goal/G33.4 the page records no line of its own (the legacy log went): a write the desk published is the line,
+// and the page asks status.get again once per such write.
 
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +42,7 @@ function hhmm(iso) { const d = new Date(iso); return String(d.getHours()).padSta
 
 test.startTest("Desk's backup line stays current");
 (async function () {
-  const session = JSON.stringify({ goal: { id: 't/G1', title: 'Goal' }, rules: [], items: [{ id: 't/G1.1', title: 'One' }] });
+  const session = JSON.stringify({ goal: { id: 'goal/G100', title: 'Goal' }, rules: [], items: [{ id: 'goal/G100.1', title: 'One' }] });
   const fake = deskFake.create([{ key: 'b1', at: new Date(Date.now() - 600000).toISOString(), dir: 'in', peer: LEAD, outcome: 'received',
     from: 'claude-windows', kind: 'session', text: session, todo: 'team/chat' }]);
   const first = new Date(Date.now() - 3 * 3600000).toISOString();
@@ -51,16 +53,16 @@ test.startTest("Desk's backup line stays current");
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
   b.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPublished: function () {}, onPacket: function (app, fn) { doc.arrive = fn; },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPublished: function (fn) { (doc.pubs = doc.pubs || []).push(fn); }, onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
   });
   await settleLong();
   const before = doc.getElementById('desk-backup').innerHTML;
 
-  // The backup copies again; then a line arrives.
+  // The backup copies again; then the desk publishes a write (goal/G33.4: a chat line, one row).
   fake.backup = { lastCheck: later, lastCopy: later, lastError: '' };
-  if (doc.arrive) doc.arrive({ from: 'claude-windows', kind: 'note', text: 'a new line', todo: 't/G1.1' }, { hash: 'fresh-1', fromKey: LEAD, sentAt: new Date().toISOString() });
+  (doc.pubs || []).forEach(function (fn) { fn({ change: 1, table: 'chat', goal: 100, item: 1, id: 'goal/G100.1', row: { by: 'claude-windows', at: new Date().toISOString(), text: 'a new line' } }); });
   await settleLong();
   const after = doc.getElementById('desk-backup').innerHTML;
 

@@ -61,37 +61,37 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G3', title: 'Old' }, items: [
-    { id: 'goal/G3.1', title: 'One', blocks: ['goal/G3'] }] }) }, ANDY);
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G5', title: 'Elsewhere' }, items: [
-    { id: 'goal/G5.1', title: 'Other goal', blocks: ['goal/G5'] }] }) }, ANDY);
-  const plain = await call('item.add', { goal: 'goal/G3', title: 'Plain' }, ANDY);
-  if (took(plain) && same((await facts(plain.body.id)).blocking, ['goal/G3'])) test.check('the world: item.add without blocks blocks its goal (goal/G9.9)');
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G13', title: 'Old' }, items: [
+    { id: 'goal/G13.1', title: 'One', blocks: ['goal/G13'] }] }) }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G15', title: 'Elsewhere' }, items: [
+    { id: 'goal/G15.1', title: 'Other goal', blocks: ['goal/G15'] }] }) }, ANDY);
+  const plain = await call('item.add', { goal: 'goal/G13', title: 'Plain' }, ANDY);
+  if (took(plain) && same((await facts(plain.body.id)).blocking, ['goal/G13'])) test.check('the world: item.add without blocks blocks its goal (goal/G9.9)');
   else { test.fail('the world: a plain item.add answered ' + plain.status + ' ' + short(plain.body)); return; }
 
   test.subHeading('1. item.add with blocks adds an item blocking that item, with an empty box');
-  const add = await call('item.add', { goal: 'goal/G3', title: 'Needed first', blocks: 'goal/G3.1' }, ANDY);
+  const add = await call('item.add', { goal: 'goal/G13', title: 'Needed first', blocks: 'goal/G13.1' }, ANDY);
   const nid = add.body && add.body.id;
-  if (took(add) && /^goal\/G3\.\d+$/.test(String(nid))) test.check('item.add {goal, title, blocks} answers ' + nid);
+  if (took(add) && /^goal\/G13\.\d+$/.test(String(nid))) test.check('item.add {goal, title, blocks} answers ' + nid);
   else { test.fail(OWED + 'item.add with blocks answered ' + add.status + ' ' + short(add.body)); return; }
   const f = await facts(nid);
-  if (f.goal === 'goal/G3' && same(f.blocking, ['goal/G3.1'])) test.check(nid + ' is goal/G3\'s and blocks goal/G3.1 alone');
+  if (f.goal === 'goal/G13' && same(f.blocking, ['goal/G13.1'])) test.check(nid + ' is goal/G13\'s and blocks goal/G13.1 alone');
   else test.fail(OWED + nid + ' reads ' + short({ goal: f.goal, blocking: f.blocking }));
-  const parent = await facts('goal/G3.1');
-  if ((parent.blocked || []).indexOf(nid) !== -1) test.check('goal/G3.1 now waits on ' + nid);
-  else test.fail(OWED + 'goal/G3.1 waits on ' + short(parent.blocked));
+  const parent = await facts('goal/G13.1');
+  if ((parent.blocked || []).indexOf(nid) !== -1) test.check('goal/G13.1 now waits on ' + nid);
+  else test.fail(OWED + 'goal/G13.1 waits on ' + short(parent.blocked));
   const box = await call('item.box', { id: nid }, ANDY);
   if (box.body && box.body.box === '') test.check('its box is blank');
   else test.fail(OWED + 'the new box reads ' + short(box.body));
 
   test.subHeading('2. what it may block, and the title\'s rules');
-  const across = await call('item.add', { goal: 'goal/G3', title: 'Across', blocks: 'goal/G5.1' }, ANDY);
+  const across = await call('item.add', { goal: 'goal/G13', title: 'Across', blocks: 'goal/G15.1' }, ANDY);
   if (!took(across) && across.body && across.body.code !== 'no-such-argument') test.check('blocks naming another goal\'s item is refused');
   else test.fail(OWED + 'blocks across goals answered ' + across.status + ' ' + short(across.body));
-  const ghost = await call('item.add', { goal: 'goal/G3', title: 'Ghost', blocks: 'goal/G3.99' }, ANDY);
+  const ghost = await call('item.add', { goal: 'goal/G13', title: 'Ghost', blocks: 'goal/G13.99' }, ANDY);
   if (!took(ghost) && ghost.body && ghost.body.code !== 'no-such-argument') test.check('blocks naming an item the desk does not hold is refused');
-  else test.fail(OWED + 'blocks naming goal/G3.99 answered ' + ghost.status + ' ' + short(ghost.body));
-  const long = await call('item.add', { goal: 'goal/G3', title: 'x'.repeat(65), blocks: 'goal/G3.1' }, ANDY);
+  else test.fail(OWED + 'blocks naming goal/G13.99 answered ' + ghost.status + ' ' + short(ghost.body));
+  const long = await call('item.add', { goal: 'goal/G13', title: 'x'.repeat(65), blocks: 'goal/G13.1' }, ANDY);
   if (!took(long) && long.body && long.body.code !== 'no-such-argument') test.check('a 65-byte title is refused by the label rules');
   else test.fail(OWED + 'a 65-byte title answered ' + long.status + ' ' + short(long.body));
 }
@@ -110,7 +110,7 @@ function fakeElement(id) {
   Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
   return el;
 }
-const label = function (o) { return Object.assign({ goal: 't/G1', status: 'running', with: '', buttons: [], blocking: ['t/G1'], blocked: [], star: false, asks: 0 }, o); };
+const label = function (o) { return Object.assign({ goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: ['goal/G100'], blocked: [], star: false, asks: 0 }, o); };
 
 async function dialog() {
   const byId = {};
@@ -127,8 +127,8 @@ async function dialog() {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
-      if (v === 'item.add') { added = true; return Promise.resolve({ status: 200, body: { id: 't/G1.7', change: 9 } }); }
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 't/G1.2', title: 'Second', blocked: added ? ['t/G1.7'] : [] })), box: 'BOX', version: 1, change: added ? 9 : 1, chatMore: false, checks: [], chat: [] } });
+      if (v === 'item.add') { added = true; return Promise.resolve({ status: 200, body: { id: 'goal/G100.7', change: 9 } }); }
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'goal/G100.2', title: 'Second', blocked: added ? ['goal/G100.7'] : [] })), box: 'BOX', version: 1, change: added ? 9 : 1, chatMore: false, checks: [], chat: [] } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], box: '', version: 1 } });
     },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
@@ -136,7 +136,7 @@ async function dialog() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 't/G1.2', agents: {} });
+  dd.open({ id: 'goal/G100.2', agents: {} });
   const settled = async function () { for (let i = 0; i < 12; i++) await new Promise(function (r) { setImmediate(r); }); };
   await settled();
   const body = doc.getElementById('dd-body').innerHTML;
@@ -165,10 +165,10 @@ async function dialog() {
   doc.getElementById('dd-body').fire('click', { target: target, preventDefault: function () {}, stopPropagation: function () {} });
   await settled();
   const sent = calls.filter(function (c) { return c.verb === 'item.add'; })[0];
-  if (sent && sent.args.goal === 't/G1' && sent.args.blocks === 't/G1.2' && sent.args.title === 'Do this first' && sent.args.id === undefined) test.check('it sent item.add {goal: t/G1, title, blocks: t/G1.2}, naming no id');
+  if (sent && sent.args.goal === 'goal/G100' && sent.args.blocks === 'goal/G100.2' && sent.args.title === 'Do this first' && sent.args.id === undefined) test.check('it sent item.add {goal: goal/G100, title, blocks: goal/G100.2}, naming no id');
   else test.fail(OWED + 'the button sent ' + short(sent));
   const links = doc.getElementById('dd-panel').innerHTML;
-  if (/t\/G1\.7/.test(links)) test.check('Blocked by now shows t/G1.7');
+  if (/goal\/G100\.7/.test(links)) test.check('Blocked by now shows goal/G100.7');
   else test.fail(OWED + 'after the add the links read ' + short(links));
 }
 

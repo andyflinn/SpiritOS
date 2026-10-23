@@ -75,7 +75,7 @@ async function main() {
   }));
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'e/G1', title: 'Ears' }, items: [{ id: 'e/G1.1', title: 'A', blocks: ['e/G1'] }] }) }, ANDY);
+  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ears' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
 
   test.subHeading('1. agent.state takes listening or working from the caller, nothing else');
@@ -99,7 +99,7 @@ async function main() {
   published.length = 0;
   await call('agent.state', { word: 'working' }, WSL);
   await sleep(400);
-  const rowOf = function (p) { return (p.rows || []).concat(p.item && typeof p.item === 'object' ? [p.item] : []).filter(function (r) { return r && r.id === 'e/G1'; })[0]; };
+  const rowOf = function (p) { return (p.rows || []).concat(p.item && typeof p.item === 'object' ? [p.item] : []).filter(function (r) { return r && r.id === 'goal/G100'; })[0]; };
   const pub = published.map(rowOf).filter(Boolean).pop();
   if (pub && Array.isArray(pub.working) && pub.working.join() === 'wsl-claude') test.check('a publish carried the goal row with working: [wsl-claude]');
   else test.fail(OWED + 'no publish carried the goal row with the new working list: ' + JSON.stringify(published.slice(-2)).slice(0, 300));

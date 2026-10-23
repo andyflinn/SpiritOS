@@ -7,6 +7,8 @@
 //           every row of the item's goal whose facts that write changed (the item itself included, the goal row too).
 //           One object, so the page never paints half a press (and no publish coalescing exists to lean on,
 //           fileTransfer goal/G1.4).
+//   SINCE goal/G33.4 ("the desk pushes each changed sub-element ... separately") each changed row is its own publish,
+//           every publish of one press under its one change number; `rows` went.
 //   List    replaces each row in `rows` (a row with listed false leaves). It keeps the last change number it saw; a
 //           publish whose change is not the last + 1 means one was dropped, so it asks items.search once.
 //   Dialog  the same gap asks item.get once.
@@ -88,7 +90,7 @@ function mount(file, answers) {
   return { b: b, doc: doc, asked: asked, publish: function (o) { subs.forEach(function (fn) { fn(o); }); },
     page: function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); } };
 }
-const lab = function (o) { return Object.assign({ goal: 'g/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+const lab = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
 
 test.startTest('desk/G3.10: a press repaints every row it changes');
 
@@ -113,55 +115,58 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     test.subHeading('the server: one publish carries every row the press changed');
     // A blocks B; B blocks the goal.
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
+      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.2'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
     if (set.status !== 200) test.fail('the session was not taken: ' + JSON.stringify(set));
-    await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await sleep(300);
     published.length = 0;
-    await call('press', { id: 'g/G1', what: 'go-all' }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'go-all' }, ANDY);
     await sleep(400);
-    const goAll = published[published.length - 1] || {};
-    const rowsOf = function (o) { const by = {}; (o.rows || []).forEach(function (r) { by[r.id] = r; }); return by; };
+    // goal/G33.4: every row the press changed is its own publish, all under the press's change number.
+    const goAll = published.slice();
+    const rowsOf = function (list) { const by = {}; list.forEach(function (o) { if (o && o.item && o.item.id) by[o.item.id] = o.item; }); return by; };
     const r1 = rowsOf(goAll);
-    if (r1['g/G1.1'] && r1['g/G1.1'].status === 'running' && r1['g/G1'] && (r1['g/G1'].buttons || []).indexOf('go-all') === -1) {
+    if (r1['goal/G100.1'] && r1['goal/G100.1'].status === 'running' && r1['goal/G100'] && (r1['goal/G100'].buttons || []).indexOf('go-all') === -1) {
       test.check('go-all on the goal publishes rows: A running, and the goal without go-all');
     } else test.fail(OWED + 'the go-all publish carried rows ' + JSON.stringify(Object.keys(r1)) + ' of ' + JSON.stringify(goAll).slice(0, 200));
-    await call('press', { id: 'g/G1.1', what: 'claim-done' }, WSL);
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, WSL);
     await sleep(300);
     published.length = 0;
-    await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
     await sleep(400);
-    const r2 = rowsOf(published[published.length - 1] || {});
-    if (r2['g/G1.2'] && (r2['g/G1.2'].buttons || []).indexOf('go') !== -1) test.check('done on A publishes B too, now unblocked and offering Go!');
+    const r2 = rowsOf(published.slice());
+    if (r2['goal/G100.2'] && (r2['goal/G100.2'].buttons || []).indexOf('go') !== -1) test.check('done on A publishes B too, now unblocked and offering Go!');
     else test.fail(OWED + 'the done publish carried rows ' + JSON.stringify(Object.keys(r2)));
 
     test.subHeading('the List replaces every row in rows, and asks again after a dropped publish');
     const list = mount(DESK, { 'items.search': { items: [
-      { key: 'g/G1', label: JSON.stringify(lab({ id: 'g/G1', title: 'Round', goal: '', buttons: ['go-all'] })) },
-      { key: 'g/G1.1', label: JSON.stringify(lab({ id: 'g/G1.1', title: 'Alpha', buttons: ['go'] })) },
-      { key: 'g/G1.2', label: JSON.stringify(lab({ id: 'g/G1.2', title: 'Beta', buttons: ['go'] })) }], more: false } });
+      { key: 'goal/G100', label: JSON.stringify(lab({ id: 'goal/G100', title: 'Round', goal: '', buttons: ['go-all'] })) },
+      { key: 'goal/G100.1', label: JSON.stringify(lab({ id: 'goal/G100.1', title: 'Alpha', buttons: ['go'] })) },
+      { key: 'goal/G100.2', label: JSON.stringify(lab({ id: 'goal/G100.2', title: 'Beta', buttons: ['go'] })) }], more: false } });
     await settled();
-    list.publish({ change: 10, verb: 'press', item: lab({ id: 'g/G1', title: 'Round', goal: '' }), listed: true,
-      rows: [lab({ id: 'g/G1', title: 'Round', goal: '' }), lab({ id: 'g/G1.1', title: 'Alpha', status: 'running' }), lab({ id: 'g/G1.2', title: 'Beta', status: 'running' })] });
+    // goal/G33.4: one publish per row, all of one press under one change number.
+    [lab({ id: 'goal/G100', title: 'Round', goal: '' }), lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }), lab({ id: 'goal/G100.2', title: 'Beta', status: 'running' })].forEach(function (row) {
+      list.publish({ change: 10, verb: 'press', item: row, listed: true });
+    });
     await settled();
     const rowOf = function (t) { return list.doc.getElementById('desk-top').innerHTML.split('<tr').filter(function (s) { return s.indexOf(t) !== -1; })[0] || ''; };
     if (!/data-press="go"/.test(rowOf('Alpha')) && !/data-press="go"/.test(rowOf('Beta')) && /running/.test(rowOf('Beta'))) test.check('a publish with rows repaints Alpha and Beta, neither offering Go! any more');
     else test.fail(OWED + 'after rows, Beta reads ' + JSON.stringify(rowOf('Beta').slice(0, 200)));
     const searchesBefore = list.asked.filter(function (v) { return v === 'items.search'; }).length;
-    list.publish({ change: 11, verb: 'chat.add', item: lab({ id: 'g/G1.1', title: 'Alpha', status: 'running' }), listed: true });
+    list.publish({ change: 11, verb: 'chat.add', item: lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }), listed: true });
     await settled();
     const afterNext = list.asked.filter(function (v) { return v === 'items.search'; }).length;
-    list.publish({ change: 13, verb: 'chat.add', item: lab({ id: 'g/G1.1', title: 'Alpha', status: 'running' }), listed: true });
+    list.publish({ change: 13, verb: 'chat.add', item: lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }), listed: true });
     await settled();
     const afterGap = list.asked.filter(function (v) { return v === 'items.search'; }).length;
     if (afterNext === searchesBefore && afterGap === searchesBefore + 1) test.check('change 11 after 10 asks nothing; 13 after 11 asks items.search once');
     else test.fail(OWED + 'items.search asked: before ' + searchesBefore + ', after 11 ' + afterNext + ', after 13 ' + afterGap);
 
     test.subHeading('the dialog asks item.get again after a dropped publish');
-    const facts = JSON.stringify(lab({ id: 'g/G1.1', title: 'Alpha', status: 'running' }));
+    const facts = JSON.stringify(lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }));
     const dlg = mount(DETAILS, { 'item.get': { item: facts, box: 'BOX', version: 1, change: 20, chatMore: false, checks: [], chat: [] } });
-    dlg.b.open({ id: 'g/G1.1', agents: {} });
+    dlg.b.open({ id: 'goal/G100.1', agents: {} });
     await settled();
     const gets = function () { return dlg.asked.filter(function (v) { return v === 'item.get'; }).length; };
     const g0 = gets();

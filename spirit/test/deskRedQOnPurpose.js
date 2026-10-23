@@ -16,7 +16,7 @@
 // THE SHAPES THIS SUITE NAMES (the box names none):
 //   - His clear is a chat line of his, typed "Q:clear" or "Q<n>:clear" (case and blanks ignored), kept in the chat;
 //     each Q it clears goes to state 'cleared' by a check.set record of his, addressed (to) the key that placed it,
-//     so the placer's changes carry it and another agent's do not. A cleared Q leaves the panel as an answered one.
+//     so the placer's deskClient hands it on and another agent's does not (since goal/G33.4 by the desk's stream). A cleared Q leaves the panel as an answered one.
 //   - A clear that names nothing open is refused with a why, and no line is kept.
 //   - "One sentence": no sentence end (. ! ?) followed by more text, and no line break; at most 200 bytes, in bytes.
 //   - Existing records: an open Q raised from a chat line before goal/G21.2 stays open after a restart.
@@ -25,11 +25,13 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const http = require('http');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
 const appClient = require('../run/js/appClient.js');
+const packet = require('../run/js/client/packet.js');
 
 const OWED = 'OWED by goal/G21.2: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
@@ -42,6 +44,40 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 10; i++) await settle(); }
+
+// ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: `changes` is gone; the desk streams each row). What the desk
+// sends an agent's deskClient (peer.post to its streamListener) goes into sent as {to, row}, answered as that
+// deskClient's node would: its family interface, then heard.
+function streamNode() {
+  const sent = [];
+  const streams = [];
+  const server = http.createServer(function (req, res) {
+    if (req.method === 'GET' && req.url === '/api/events') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write(': open\n\n');
+      streams.push(res);
+      return;
+    }
+    let raw = '';
+    req.on('data', function (c) { raw += c; });
+    req.on('end', function () {
+      let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (b.verb !== 'peer.post') { res.end('{"ok":true}'); return; }
+      const hash = 'H' + Date.now() + Math.random();
+      res.end(JSON.stringify({ ok: true, hash: hash }));
+      let ask = null;
+      try { ask = packet.decode(b.text); } catch (e) { ask = null; }
+      const body = (ask && ask.body) || {};
+      let answer = test.peerFamily(body);
+      const sl = body.deskClient && body.deskClient.streamListener;
+      if (!answer && sl) { try { sent.push({ to: String(b.to), row: JSON.parse(sl.json) }); } catch (e) { /* not a row */ } answer = { heard: true }; }
+      const made = packet.encode('api', answer || { ok: false, code: 'no-verb' }, { re: hash });
+      setImmediate(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: String(b.to), text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); });
+    });
+  });
+  return { server: server, streams: streams, sent: sent };
+}
 
 test.startTest('goal/G21.2: a red Q is placed on purpose, one per agent, one sentence, cleared by Andy');
 
@@ -62,8 +98,13 @@ async function theServer() {
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
   let kid = null;
+  const andysNode = streamNode();
+  await new Promise(function (r) { andysNode.server.listen(0, '127.0.0.1', r); });
   const start = async function () {
-    kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + andysNode.server.address().port + '/' }),
+    });
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return true; } catch (e) { /* not yet */ } }
     return false;
   };
@@ -74,160 +115,165 @@ async function theServer() {
   const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
   const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
   const ask = function (id, words, who) { return call('check.add', { id: id, kind: 'Q', words: words, test: '' }, who); };
-  const lastN = async function () { const r = await call('item.get', { id: 'q/G1' }, ANDY); return Number(r.change) || 0; };
+  const lastN = async function () { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return Number(r.change) || 0; };
+  // WHAT THE DESK'S STREAM HANDED caller's deskClient after change from (goal/G33.4: `changes` is gone), after a moment
+  // for the stream to arrive.
   const recordsFor = async function (from, caller) {
-    const out = [];
-    let n = from;
-    for (let i = 0; i < 50; i++) {
-      const r = await call('changes', { n: n, line: 1e12 }, caller);
-      if (!Array.isArray(r.records)) return out;
-      r.records.forEach(function (x) { out.push(x); });
-      if (!r.more) return out;
-      n = r.n;
-    }
-    return out;
+    await sleep(1500);
+    return andysNode.sent.filter(function (s) { return s.to === caller.key && Number(s.row.change) > from; }).map(function (s) { return s.row; });
   };
-  const clearsIn = function (recs, id, number) {
+  // HIS CLEAR AS caller'S deskClient HANDS IT ON: a check row of the item, that Q, cleared, naming caller as its placer
+  // (deskClient.js meantForAgent hands a clear on to the agent that placed the Q alone). Another agent's stream may
+  // carry the row for its mirror; it names the placer, so it is never handed to that agent as its own.
+  const clearsIn = function (recs, id, number, caller) {
     return recs.some(function (x) {
-      if (x.verb !== 'check.set') return false;
-      let b = {}; try { b = JSON.parse(x.body); } catch (e) { b = {}; }
-      return b.id === id && b.check === number && b.state === 'cleared';
+      return x.table === 'checks' && x.id === id && x.row && x.row.number === number && x.row.state === 'cleared' && x.row.placedKey === caller.key;
     });
   };
   try {
     if (!await start()) { test.fail('the world: the desk did not start'); return; }
-    const items = ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4', 'q/G1.5', 'q/G1.6', 'q/G1.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['q/G1'] }; });
+    const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6', 'goal/G100.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Red Qs' }, items: items }) }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Red Qs' }, items: items }) }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
 
     test.subHeading('1. a question mark in a chat line never makes a red Q');
-    await call('item.take', { id: 'q/G1.1' }, WSL);
-    const said = await call('chat.add', { id: 'q/G1.1', text: 'wsl: should the keys stay in the owner row?' }, WSL);
-    const after1 = await qsOf('q/G1.1');
-    const line1 = (await chatOf('q/G1.1')).filter(function (l) { return /owner row/.test(l.text); })[0] || {};
+    await call('item.take', { id: 'goal/G100.1' }, WSL);
+    const said = await call('chat.add', { id: 'goal/G100.1', text: 'wsl: should the keys stay in the owner row?' }, WSL);
+    const after1 = await qsOf('goal/G100.1');
+    const line1 = (await chatOf('goal/G100.1')).filter(function (l) { return /owner row/.test(l.text); })[0] || {};
     if (said.change && after1.length === 0) test.check('an agent line ending in "?" is kept and raises no Q');
     else test.fail(OWED + 'the "?" line answered ' + short(said) + ' and raised ' + short(after1));
     if (line1.text && line1.q === undefined) test.check('the line carries no Q number');
     else test.fail(OWED + 'the line reads ' + short(line1));
 
     test.subHeading('2. a deliberate Q check is a red Q, by the agent that placed it, and blocks');
-    const placed = await ask('q/G1.1', 'Should the keys stay in the owner row?', WSL);
-    const open2 = await openQs('q/G1.1');
+    const placed = await ask('goal/G100.1', 'Should the keys stay in the owner row?', WSL);
+    const open2 = await openQs('goal/G100.1');
     if (placed.change && open2.length === 1 && open2[0].words === 'Should the keys stay in the owner row?') test.check('check.add kind Q places one open red Q with its words');
     else test.fail(OWED + 'check.add answered ' + short(placed) + '; open Qs ' + short(open2));
-    const f2 = await facts('q/G1.1');
+    const f2 = await facts('goal/G100.1');
     if (f2.green === false && f2.asks > 0) test.check('the item is held: not green, and waiting on Andy');
     else test.fail(OWED + 'the item\'s facts: green ' + short(f2.green) + ', asks ' + short(f2.asks));
 
     test.subHeading('3. one open red Q per agent per item');
-    const second = await ask('q/G1.1', 'And the whoBook?', WSL);
+    const second = await ask('goal/G100.1', 'And the whoBook?', WSL);
     if (second.ok === false && why(second)) test.check('a second open Q by the same agent is refused, with a why: ' + short(why(second)));
     else test.fail(OWED + 'a second Q by wsl-claude answered ' + short(second));
-    const other = await ask('q/G1.1', 'Does the restore keep it?', CW);
+    const other = await ask('goal/G100.1', 'Does the restore keep it?', CW);
     if (other.change) test.check('another agent may place its own Q on the same item');
     else test.fail(OWED + 'claude-windows\'s Q answered ' + short(other));
-    const elsewhere = await ask('q/G1.2', 'Is the second item fine?', WSL);
+    const elsewhere = await ask('goal/G100.2', 'Is the second item fine?', WSL);
     if (elsewhere.change) test.check('the same agent may place a Q on another item');
     else test.fail(OWED + 'wsl-claude\'s Q on another item answered ' + short(elsewhere));
     const firstNumber = open2.length ? open2[0].number : 'Q1';
-    await call('check.set', { id: 'q/G1.1', check: firstNumber, state: 'answered' }, WSL);
-    const afterAnswer = await ask('q/G1.1', 'And the whoBook?', WSL);
+    await call('check.set', { id: 'goal/G100.1', check: firstNumber, state: 'answered' }, WSL);
+    const afterAnswer = await ask('goal/G100.1', 'And the whoBook?', WSL);
     if (afterAnswer.change) test.check('once its first is answered, the agent may place another');
     else test.fail(OWED + 'after answering, wsl-claude\'s Q answered ' + short(afterAnswer));
 
     test.subHeading('4. one sentence, at most about 200 bytes, refused with a why');
-    const two = await ask('q/G1.3', 'The keys move. Should the whoBook move too?', WSL);
+    const two = await ask('goal/G100.3', 'The keys move. Should the whoBook move too?', WSL);
     if (two.ok === false && why(two)) test.check('two sentences are refused, with a why: ' + short(why(two)));
     else test.fail(OWED + 'a two-sentence Q answered ' + short(two));
-    const broken = await ask('q/G1.3', 'Should the keys move\nwith the whoBook?', WSL);
+    const broken = await ask('goal/G100.3', 'Should the keys move\nwith the whoBook?', WSL);
     if (broken.ok === false && why(broken)) test.check('a Q across two lines is refused, with a why');
     else test.fail(OWED + 'a two-line Q answered ' + short(broken));
-    const long = await ask('q/G1.3', 'Should ' + 'the keys and '.repeat(16) + 'the whoBook move?', WSL);
+    const long = await ask('goal/G100.3', 'Should ' + 'the keys and '.repeat(16) + 'the whoBook move?', WSL);
     if (long.ok === false && why(long)) test.check('a Q over 200 bytes is refused, with a why: ' + short(why(long)));
     else test.fail(OWED + 'a long Q answered ' + short(long));
     const wide = 'Is ' + 'é'.repeat(97) + ' right?';
-    const wideQ = await ask('q/G1.3', wide, WSL);
+    const wideQ = await ask('goal/G100.3', wide, WSL);
     if (wide.length <= 200 && Buffer.byteLength(wide) > 200 && wideQ.ok === false) test.check('counted in bytes: ' + wide.length + ' characters, ' + Buffer.byteLength(wide) + ' bytes, refused');
     else test.fail(OWED + 'a Q of ' + wide.length + ' characters and ' + Buffer.byteLength(wide) + ' bytes answered ' + short(wideQ));
-    const fine = await ask('q/G1.3', 'Does goal/G21.2 keep e.g.-style dots in names like desk.js working?', WSL);
+    const fine = await ask('goal/G100.3', 'Does goal/G21.2 keep e.g.-style dots in names like desk.js working?', WSL);
     if (fine.change) test.check('one sentence with dots inside words is taken');
     else test.fail(OWED + 'a one-sentence Q answered ' + short(fine));
 
     test.subHeading('5. Andy clears them: Q:clear every red Q, Q<n>:clear that one');
-    await ask('q/G1.4', 'First from wsl?', WSL);
-    await ask('q/G1.4', 'First from cw?', CW);
+    await ask('goal/G100.4', 'First from wsl?', WSL);
+    await ask('goal/G100.4', 'First from cw?', CW);
     const n5 = await lastN();
-    const one = await call('chat.add', { id: 'q/G1.4', text: '  q2 : CLEAR ' }, ANDY);
-    const left = await openQs('q/G1.4');
+    const one = await call('chat.add', { id: 'goal/G100.4', text: '  q2 : CLEAR ' }, ANDY);
+    const left = await openQs('goal/G100.4');
     if (one.change && left.length === 1 && left[0].number === 'Q1') test.check('"q2 : CLEAR" clears Q2 alone (case and blanks ignored)');
     else test.fail(OWED + 'after "q2 : CLEAR" the open Qs are ' + short(left) + '; the line answered ' + short(one));
-    if ((await qsOf('q/G1.4')).every(function (c) { return c.number !== 'Q2'; })) test.check('the cleared Q leaves the panel');
-    else test.fail(OWED + 'the panel still holds Q2: ' + short(await qsOf('q/G1.4')));
-    const kept = (await chatOf('q/G1.4')).filter(function (l) { return l.by === 'andy'; });
+    if ((await qsOf('goal/G100.4')).every(function (c) { return c.number !== 'Q2'; })) test.check('the cleared Q leaves the panel');
+    else test.fail(OWED + 'the panel still holds Q2: ' + short(await qsOf('goal/G100.4')));
+    const kept = (await chatOf('goal/G100.4')).filter(function (l) { return l.by === 'andy'; });
     if (kept.length === 1 && /clear/i.test(kept[0].text)) test.check('his clear line stays in the chat as his action');
     else test.fail(OWED + 'his lines in the chat: ' + short(kept));
     const recCw = await recordsFor(n5, CW);
     const recWsl = await recordsFor(n5, WSL);
-    if (clearsIn(recCw, 'q/G1.4', 'Q2')) test.check('the agent that placed Q2 is notified: its changes carry the clear');
-    else test.fail(OWED + 'claude-windows\'s changes after the clear: ' + short(recCw.map(function (x) { return x.verb + ' ' + x.body; })));
-    if (!clearsIn(recWsl, 'q/G1.4', 'Q2')) test.check('the clear of Q2 is addressed to its placer, not handed to another agent');
-    else test.fail(OWED + 'wsl-claude was handed the clear of claude-windows\'s Q2');
-    await ask('q/G1.5', 'Is this one held?', WSL);
-    await ask('q/G1.5', 'Is that one held?', CW);
+    if (clearsIn(recCw, 'goal/G100.4', 'Q2', CW)) test.check('the agent that placed Q2 is notified: the desk\'s stream hands it the clear, naming it as the placer');
+    else test.fail(OWED + 'claude-windows\'s stream after the clear: ' + short(recCw));
+    // What wsl-claude's stream carries of the clear, for its mirror, names claude-windows as the placer, so its deskClient
+    // never hands it on as wsl-claude's own.
+    const toWsl = recWsl.filter(function (x) { return x.table === 'checks' && x.id === 'goal/G100.4' && x.row && x.row.number === 'Q2'; });
+    if (toWsl.every(function (x) { return x.row.placedKey === CW.key; })) test.check('the clear of Q2 is addressed to its placer, not handed to another agent');
+    else test.fail(OWED + 'wsl-claude was handed the clear of claude-windows\'s Q2: ' + short(toWsl));
+    await ask('goal/G100.5', 'Is this one held?', WSL);
+    await ask('goal/G100.5', 'Is that one held?', CW);
     const n6 = await lastN();
-    const all = await call('chat.add', { id: 'q/G1.5', text: 'Q:clear' }, ANDY);
-    const none = await openQs('q/G1.5');
+    const all = await call('chat.add', { id: 'goal/G100.5', text: 'Q:clear' }, ANDY);
+    const none = await openQs('goal/G100.5');
     if (all.change && none.length === 0) test.check('"Q:clear" clears every red Q on the item');
     else test.fail(OWED + 'after "Q:clear" the open Qs are ' + short(none));
-    const f5 = await facts('q/G1.5');
+    const f5 = await facts('goal/G100.5');
     if (f5.green === true && !f5.asks) test.check('cleared Qs no longer hold the item');
     else test.fail(OWED + 'after the clear: green ' + short(f5.green) + ', asks ' + short(f5.asks));
-    if (clearsIn(await recordsFor(n6, WSL), 'q/G1.5', 'Q1') && clearsIn(await recordsFor(n6, CW), 'q/G1.5', 'Q2')) test.check('each placer is notified of its own Q\'s clear');
+    if (clearsIn(await recordsFor(n6, WSL), 'goal/G100.5', 'Q1', WSL) && clearsIn(await recordsFor(n6, CW), 'goal/G100.5', 'Q2', CW)) test.check('each placer is notified of its own Q\'s clear');
     else test.fail(OWED + 'the clears did not reach both placers');
-    if ((await openQs('q/G1.4')).length === 1) test.check('a clear on one item touches no other item');
-    else test.fail(OWED + 'q/G1.4\'s open Qs after clearing q/G1.5: ' + short(await openQs('q/G1.4')));
-    const again = await ask('q/G1.5', 'Placed again after the clear?', WSL);
+    if ((await openQs('goal/G100.4')).length === 1) test.check('a clear on one item touches no other item');
+    else test.fail(OWED + 'goal/G100.4\'s open Qs after clearing goal/G100.5: ' + short(await openQs('goal/G100.4')));
+    const again = await ask('goal/G100.5', 'Placed again after the clear?', WSL);
     if (again.change) test.check('after his clear the agent may place a Q again');
     else test.fail(OWED + 'a Q after the clear answered ' + short(again));
-    const nothing = await call('chat.add', { id: 'q/G1.6', text: 'Q3:clear' }, ANDY);
+    const nothing = await call('chat.add', { id: 'goal/G100.6', text: 'Q3:clear' }, ANDY);
     if (nothing.ok === false && why(nothing)) test.check('a clear naming no open Q is refused, with a why: ' + short(why(nothing)));
     else test.fail(OWED + '"Q3:clear" on an item with no Qs answered ' + short(nothing));
-    // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets q/G1.1 go before it takes q/G1.6.
-    await call('item.release', { id: 'q/G1.1' }, WSL);
-    await call('item.take', { id: 'q/G1.6' }, WSL);
-    await ask('q/G1.6', 'Can an agent clear it?', WSL);
-    await call('chat.add', { id: 'q/G1.6', text: 'Q:clear' }, WSL);
-    if ((await openQs('q/G1.6')).length === 1) test.check('an agent\'s "Q:clear" is a chat line and clears nothing');
-    else test.fail(OWED + 'an agent\'s "Q:clear" cleared ' + short(await qsOf('q/G1.6')));
+    // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets goal/G100.1 go before it takes goal/G100.6.
+    await call('item.release', { id: 'goal/G100.1' }, WSL);
+    await call('item.take', { id: 'goal/G100.6' }, WSL);
+    await ask('goal/G100.6', 'Can an agent clear it?', WSL);
+    await call('chat.add', { id: 'goal/G100.6', text: 'Q:clear' }, WSL);
+    if ((await openQs('goal/G100.6')).length === 1) test.check('an agent\'s "Q:clear" is a chat line and clears nothing');
+    else test.fail(OWED + 'an agent\'s "Q:clear" cleared ' + short(await qsOf('goal/G100.6')));
 
     test.subHeading('6. an open red Q holds a press until it is cleared');
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Press' }, items: [{ id: 'p/G1.1', title: 'Held', blocks: ['p/G1'] }] }) }, ANDY);
-    await ask('p/G1.1', 'Is the shape settled?', WSL);
-    const held = await call('press', { id: 'p/G1', what: 'end-design' }, ANDY);
-    await call('chat.add', { id: 'p/G1.1', text: 'Q1:clear' }, ANDY);
-    const freed = await call('press', { id: 'p/G1', what: 'end-design' }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Press' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] }) }, ANDY);
+    await ask('goal/G101.1', 'Is the shape settled?', WSL);
+    const held = await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
+    await call('chat.add', { id: 'goal/G101.1', text: 'Q1:clear' }, ANDY);
+    const freed = await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     if (held.ok === false && freed.change) test.check('End design is refused while the Q is open and taken once Andy cleared it');
     else test.fail(OWED + 'end-design held ' + short(held) + ', after the clear ' + short(freed));
 
     test.subHeading('7. existing open checks stay as they are');
-    await call('item.release', { id: 'q/G1.6' }, WSL);
-    await call('item.take', { id: 'q/G1.7' }, WSL);
-    await call('chat.add', { id: 'q/G1.7', text: 'wsl: an old question, before goal/G21.2?' }, WSL);
+    await call('item.release', { id: 'goal/G100.6' }, WSL);
+    await call('item.take', { id: 'goal/G100.7' }, WSL);
+    await call('chat.add', { id: 'goal/G100.7', text: 'wsl: an old question, before goal/G21.2?' }, WSL);
+    // goal/G33.4: no log of writes to plant an old record in; the line's mark and the open Q are rows of the tables,
+    // written here as the migration writes a Q a line raised before goal/G21.2, and read back after a restart.
     await stop();
     const db = new DatabaseSync(path.join(state, 'desk.db'));
-    db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)').run(new Date().toISOString(), 'check.add', WSL.label, WSL.key,
-      JSON.stringify({ id: 'q/G1.7', kind: 'Q', words: 'an old question, before goal/G21.2?', test: '', asked: WSL.label, forLine: 0 }));
+    const lineRow = db.prepare('SELECT data FROM chat WHERE goal = 100 AND item = 7 AND seq = 0').get();
+    const marked = Object.assign(JSON.parse(lineRow.data), { q: 'Q1' });
+    db.prepare('UPDATE chat SET data = ? WHERE goal = 100 AND item = 7 AND seq = 0').run(JSON.stringify(marked));
+    db.prepare('INSERT INTO checks (goal, item, number, pos, creator, data, change) VALUES (100, 7, ?, 0, ?, ?, 0)').run('Q1', WSL.key,
+      JSON.stringify({ number: 'Q1', kind: 'Q', words: 'an old question, before goal/G21.2?', test: '', state: 'open', by: WSL.label, at: '', placedBy: WSL.label, placedKey: WSL.key }));
     db.close();
     if (!await start()) { test.fail('the world: the desk did not start again'); return; }
-    const old = (await openQs('q/G1.7')).filter(function (c) { return c.words === 'an old question, before goal/G21.2?'; });
-    const oldLine = (await chatOf('q/G1.7'))[0] || {};
+    const old = (await openQs('goal/G100.7')).filter(function (c) { return c.words === 'an old question, before goal/G21.2?'; });
+    const oldLine = (await chatOf('goal/G100.7'))[0] || {};
     if (old.length === 1 && oldLine.q === old[0].number) test.check('a Q raised from a line before goal/G21.2 stays open, its line still marked');
     else test.fail(OWED + 'the old Q reads ' + short(old) + '; its line ' + short(oldLine));
   } finally {
     await stop();
+    andysNode.streams.forEach(function (s) { try { s.end(); } catch (e) { /* gone */ } });
+    try { andysNode.server.close(); } catch (e) { /* closed */ }
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
 }
@@ -238,7 +284,7 @@ async function theDialog() {
   const doc = { getElementById: function (id) { if (!byId[id]) { byId[id] = node('div'); byId[id].id = id; } return byId[id]; }, createElement: node };
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))({ shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, {});
-  const f = { id: 'k/G1.1', title: 'Talk', goal: 'k/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], names: {}, files: [] };
+  const f = { id: 'goal/G102.1', title: 'Talk', goal: 'goal/G102', status: '', with: '', buttons: [], blocking: [], blocked: [], names: {}, files: [] };
   dd.mount(node('div'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -254,7 +300,7 @@ async function theDialog() {
     onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  await dd.open({ id: 'k/G1.1' });
+  await dd.open({ id: 'goal/G102.1' });
   await settled();
   const click = function () { const t = node('div'); t.setAttribute('data-question', 'Q1'); doc.getElementById('dd-body').dispatchEvent({ type: 'click', target: t, preventDefault: function () {} }); };
   const say = doc.getElementById('dd-say');

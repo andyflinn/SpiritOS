@@ -88,7 +88,7 @@ const node = http.createServer(function (req, res) {
     let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
     const want = (ask && ask.body && ask.body.desk) || {};
     json(200, { ok: true, hash: hash });
-    client.ask({ desk: want }, SELF_AT_DESK).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
       streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
@@ -126,9 +126,9 @@ async function main() {
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Scopes' }, items: [{ id: 'k/G1.1', title: 'Work', blocks: ['k/G1'] }] }) }, ANDY);
-  await desk('press', { id: 'k/G1', what: 'end-design' }, ANDY);
-  await desk('press', { id: 'k/G1.1', what: 'go' }, ANDY);
+  await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Scopes' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
+  await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
 
   test.subHeading('1. the core table: run/js and the intrinsic apps');
   let core = null;
@@ -151,30 +151,30 @@ async function main() {
   const install = await run(process.execPath, [CHECK, 'install', String(node.address().port)], repo);
   if (install.status !== 0) { test.fail('commitCheck install answered ' + install.status + ' ' + String(install.stderr).trim().slice(0, 160)); return; }
 
-  const inside = await commitWith(repo, 'spirit/run/shell/ticTacToe/game.js', 'x', 'k/G1.1: an app file');
+  const inside = await commitWith(repo, 'spirit/run/shell/ticTacToe/game.js', 'x', 'goal/G100.1: an app file');
   const n1 = await commits(repo);
   if (inside.status === 0 && n1 === 1) test.check('a file of an app is taken');
   else test.fail('the app file commit answered ' + inside.status + ' ' + String(inside.stderr).trim().slice(0, 160));
-  const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'k/G1.1: anywhere in the repo');
+  const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'goal/G100.1: anywhere in the repo');
   if (anywhere.status === 0 && (await commits(repo)) === 2 && !/scope/i.test(anywhere.stderr + anywhere.stdout)) test.check('a file anywhere in the repo is taken too: no scope since goal/G10.8');
   else test.fail('OWED by goal/G10.8: a file outside any folder answered ' + anywhere.status + ' ' + String(anywhere.stderr + anywhere.stdout).trim().slice(0, 160));
-  const coreOne = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: a core file, not granted');
+  const coreOne = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'goal/G100.1: a core file, not granted');
   const n3 = await commits(repo);
-  const checks = ((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || [];
+  const checks = ((await desk('item.checks', { id: 'goal/G100.1' }, ANDY)).body || {}).checks || [];
   const raised = checks.filter(function (c) { return c.kind === 'G'; });
   if (coreOne.status !== 0 && n3 === 2 && /grant/i.test(coreOne.stderr + coreOne.stdout)) test.check('a core file nobody granted is refused, saying grant');
   else test.fail(OWED + 'the ungranted core file: commit ' + coreOne.status + ' (' + n3 + ' commits): ' + String(coreOne.stderr).trim().slice(0, 160));
   if (!raised.length && /item\.files\.add/.test(coreOne.stderr + coreOne.stdout)) test.check('the refusal raises no grant of its own and says to list the files with item.files.add');
   else test.fail('OWED by goal/G32.2: the refusal raised ' + short(raised) + ' and said ' + String(coreOne.stderr).trim().slice(0, 160));
-  await desk('item.files.add', { id: 'k/G1.1', paths: ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js'] }, SELF_AT_DESK);
-  const asked = (((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
+  await desk('item.files.add', { id: 'goal/G100.1', paths: ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js'] }, SELF_AT_DESK);
+  const asked = (((await desk('item.checks', { id: 'goal/G100.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
   if (asked.length === 1) test.check('the list raised one open grant for both core files: ' + asked[0].number + ' "' + asked[0].words + '"');
   else test.fail(OWED + 'open G checks after item.files.add: ' + short(asked));
-  if (asked.length) await desk('check.set', { id: 'k/G1.1', check: asked[0].number, state: 'granted' }, ANDY);
-  const part = await commitWith(repo, 'spirit/run/js/one.js', 'x', 'k/G1.1: js/one.js is only the end of js/client/js/one.js, not granted');
+  if (asked.length) await desk('check.set', { id: 'goal/G100.1', check: asked[0].number, state: 'granted' }, ANDY);
+  const part = await commitWith(repo, 'spirit/run/js/one.js', 'x', 'goal/G100.1: js/one.js is only the end of js/client/js/one.js, not granted');
   if (part.status !== 0) test.check('a path that is only the end of a granted one is not covered by it');
   else test.fail('OWED by goal/G32.2: js/one.js was taken under the grant naming js/client/js/one.js');
-  const granted = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: the core file, granted');
+  const granted = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'goal/G100.1: the core file, granted');
   if (granted.status === 0 && (await commits(repo)) === 3) test.check('once he granted it, the same commit is taken');
   else test.fail(OWED + 'after his grant the commit answered ' + granted.status + ' ' + String(granted.stderr).trim().slice(0, 160));
 }

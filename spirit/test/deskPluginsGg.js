@@ -96,8 +96,10 @@ const DIALOG = path.join(RUN, 'shell', 'stackFrameCheckDetail', 'stackFrameCheck
 // so the world puts them on its window first, as a page that loaded them holds them.
 const SHARED = ['deskDoorFields.js', 'deskChat.js'].map(function (f) { return path.join(RUN, 'shell', 'shared', 'js', f); });
 function withShared(doc, win) { SHARED.forEach(function (f) { if (fs.existsSync(f)) new Function('document', 'window', fs.readFileSync(f, 'utf8'))(doc, win); }); return win; }
-const GOAL = 'plugin/stackFrameChecks';
-const FAKE_GOAL = 'plugin/ggEcho';
+// SINCE goal/G33.4 a plugin's goal is numbered like any goal, its row naming the plugin; plugin/<name> still names it at
+// every verb (its fixed key). The numbered ids are read from the desk once it is up (below).
+let GOAL = 'plugin/stackFrameChecks';
+let FAKE_GOAL = 'plugin/ggEcho';
 const A = { key: 'MCowBQYDK2VwAyEAdeskPluginsGgAgentAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPluginsGgOwnerAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -287,6 +289,9 @@ function clickTab(el, tab) {
   try {
     if (!await waitUp()) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
+    // goal/G33.4: each plugin's goal by its number, found through its fixed key.
+    GOAL = ((await factsOf('plugin/stackFrameChecks')) || {}).id || GOAL;
+    FAKE_GOAL = ((await factsOf('plugin/ggEcho')) || {}).id || FAKE_GOAL;
 
     test.subHeading('a. desk mounts every plugin in its folder');
     if (fs.existsSync(PLUGIN_JS) && fs.existsSync(PLUGIN_JSON)) test.check('the stackFrameChecks plugin is at process/js/desk/plugins/js/stackFrameChecks/, its .js and its .json');
@@ -327,9 +332,9 @@ function clickTab(el, tab) {
     test.subHeading('c. the plugin sees a call first');
     // An ordinary goal beside it, its items closed and done as they always are.
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'ord/G1', title: 'Ordinary' }, items: [
-      { id: 'ord/G1.1', title: 'One', blocks: ['ord/G1'] }, { id: 'ord/G1.2', title: 'Two', blocks: ['ord/G1'] }] }) }, ANDY);
-    await call('press', { id: 'ord/G1', what: 'end-design' }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Ordinary' }, items: [
+      { id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     const tries = [[GOAL, 'close'], [GOAL, 'done'], [GOAL, 'abandon']];
     for (const t of tries) {
       const r = await call('press', { id: t[0], what: t[1] }, ANDY);
@@ -344,9 +349,9 @@ function clickTab(el, tab) {
     const sess = await call('session.set', { json: JSON.stringify({ goal: { id: GOAL, title: 'Stack-frame checks' }, items: [] }) }, A);
     if (!landed(sess) && /stackFrameChecks/.test(why(sess))) test.check('a session over its goal, which would close its door items as left out, is refused: ' + why(sess));
     else test.fail(OWED + 'a session.set over ' + GOAL + ' answered ' + short(sess));
-    const oDone = await call('press', { id: 'ord/G1.1', what: 'done' }, ANDY);
-    const oClose = await call('press', { id: 'ord/G1.2', what: 'close' }, ANDY);
-    const oAbandon = await call('press', { id: 'ord/G1', what: 'abandon' }, ANDY);
+    const oDone = await call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
+    const oClose = await call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
+    const oAbandon = await call('press', { id: 'goal/G100', what: 'abandon' }, ANDY);
     if (landed(oDone) && landed(oClose) && landed(oAbandon)) test.check('on an ordinary goal Done, Close and abandon still land');
     else test.fail('the ordinary presses answered ' + short([oDone, oClose, oAbandon]));
 
@@ -577,11 +582,11 @@ function clickTab(el, tab) {
   test.subHeading('f. the face');
   // SINCE goal/G22.3's APPS RULING (Andy, 2026-10-13): the label button these lines asserted is gone; Apps replaces it.
   try {
-    const GROUP = 'desk/G0.0';
+    const GROUP = 'goal/G0';
     const doc = mountFace({
       'items.search': { items: [
         { key: GOAL, label: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [GOAL + '.1'] }) },
-        { key: 'ord/G2', label: JSON.stringify({ id: 'ord/G2', title: 'Ordinary goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [] }) },
+        { key: 'goal/G101', label: JSON.stringify({ id: 'goal/G101', title: 'Ordinary goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [] }) },
       ], more: false },
       'item.chat': function (a) {
         if (a && a.id === GROUP) return { chat: [{ by: 'andy', at: new Date(Date.now() - 1000).toISOString(), text: 'a team line held before', taken: '' }], chatMore: false };
@@ -647,7 +652,9 @@ function clickTab(el, tab) {
 
     // Team inside Apps is still drawn live from the stream.
     const line = { by: 'claude-windows', at: new Date().toISOString(), text: 'a team line published while Apps shows Team', taken: '' };
-    doc.published.forEach(function (fn) { try { fn({ change: 7000, verb: 'chat.add', item: { id: GROUP, title: '', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [] }, listed: false, chat: line }); } catch (e) { /* not this subscriber's */ } });
+    // goal/G33.4: the goal's row and the line are two publishes, one row each.
+    doc.published.forEach(function (fn) { try { fn({ change: 7000, verb: 'chat.add', item: { id: GROUP, title: '', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [] }, listed: false }); } catch (e) { /* not this subscriber's */ } });
+    doc.published.forEach(function (fn) { try { fn({ change: 7000, table: 'chat', goal: 0, item: 0, id: GROUP, row: line }); } catch (e) { /* not this subscriber's */ } });
     await sleep(20);
     if (/a team line published while Apps shows Team/.test(doc.getElementById('desk-team').innerHTML)) test.check('a published group-chat line is drawn in Team inside Apps as it comes');
     else test.fail(OWED + 'the published line did not reach #desk-team inside Apps: ' + short(doc.getElementById('desk-team').innerHTML));
@@ -673,7 +680,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'the Stacks UI still subscribes to deskVerify\'s stream');
     if (doc.published.length > subsBefore) {
       doc.asked.length = 0;
-      doc.published.slice(subsBefore).forEach(function (fn) { fn({ change: 7001, verb: 'stackFrameChecks.make', rows: [{ id: GOAL + '.2', goal: GOAL, title: 'x' }] }); });
+      doc.published.slice(subsBefore).forEach(function (fn) { fn({ change: 7001, verb: 'stackFrameChecks.make', item: { id: GOAL + '.2', goal: GOAL, title: 'x' } }); });
       await sleep(20);
       if (doc.asked.some(function (x) { return x[0] === 'items.search'; })) test.check('the Stacks UI subscribed to the stream itself and reads its items again when one of its goal is published');
       else test.fail(OWED + 'a publish naming the plugin\'s goal made the Stacks UI ask nothing');
@@ -719,7 +726,9 @@ function clickTab(el, tab) {
       else test.fail(OWED + 'after a kept send the say box holds ' + short(doc.getElementById(sayM[1]).value));
     } else test.fail(OWED + 'no say box and Send in the Stacks chat to post with');
     const stacksLine = { by: 'claude-windows', at: new Date().toISOString(), text: 'a stacks line published while Stacks shows', taken: '' };
-    doc.published.forEach(function (fn) { try { fn({ change: 7002, verb: 'chat.add', item: { id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [] }, chat: stacksLine }); } catch (e) { /* not this subscriber's */ } });
+    // goal/G33.4: the goal's row and the line are two publishes, one row each.
+    doc.published.forEach(function (fn) { try { fn({ change: 7002, verb: 'chat.add', item: { id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [] } }); } catch (e) { /* not this subscriber's */ } });
+    doc.published.forEach(function (fn) { try { fn({ change: 7002, table: 'chat', id: GOAL, row: stacksLine }); } catch (e) { /* not this subscriber's */ } });
     await sleep(20);
     const after = drawn(pane ? pane.innerHTML : '', 0);
     if (/a stacks line published while Stacks shows/.test(after) && after.indexOf('a stacks line published while Stacks shows') < after.indexOf('a stacks line held before')) test.check('a published line of ' + GOAL + ' is drawn in the Stacks chat as it comes, newest first');

@@ -82,7 +82,7 @@ const node = http.createServer(function (req, res) {
     const desk = (ask && ask.body && ask.body.desk) || {};
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, SELF_AT_DESK).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
       streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
@@ -113,45 +113,45 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Posts' }, items: [{ id: 'a/G1.1', title: 'a code item', blocks: ['a/G1'] }, { id: 'a/G1.2', title: 'a plain item', blocks: ['a/G1'] }] }) }, ANDY);
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Posts' }, items: [{ id: 'goal/G100.1', title: 'a code item', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'a plain item', blocks: ['goal/G100'] }] }) }, ANDY);
   if (set.status !== 200) { test.fail('the world: the test desk took no session: ' + short(set.body)); return; }
   await call('desk', 'profile.set', { agent: SELF_KEY, name: 'claude-windows', nick: 'cw' }, ANDY);
   await call('desk', 'profile.set', { agent: OTHER_KEY, name: 'wsl-claude', nick: 'wsl' }, ANDY);
   await call('desk', 'profile.set', { agent: THIRD_KEY, name: 'levant-local', nick: 'lev' }, ANDY);
 
   // The item this agent creates, under his words (goal/G29.21).
-  await call('desk', 'chat.add', { id: 'a/G1', text: 'add item' }, ANDY);
-  const added = await call('desk', 'item.add', { goal: 'a/G1', title: 'made by claude-windows', blocks: '' }, SELF_AT_DESK);
+  await call('desk', 'chat.add', { id: 'goal/G100', text: 'add item' }, ANDY);
+  const added = await call('desk', 'item.add', { goal: 'goal/G100', title: 'made by claude-windows', blocks: '' }, SELF_AT_DESK);
   const made = (added.body || {}).id;
   if (!made) { test.fail('the world: item.add answered ' + short(added.body)); return; }
   // The code item this agent held the red of, and let go.
-  await call('desk', 'press', { id: 'a/G1.1', what: 'code' }, ANDY);
-  await call('desk', 'press', { id: 'a/G1', what: 'end-design' }, ANDY);
-  await call('desk', 'press', { id: 'a/G1.1', what: 'go' }, ANDY);
-  const took = await call('desk', 'phase.take', { id: 'a/G1.1', phase: 'red' }, SELF_AT_DESK);
-  const done = await call('desk', 'phase.done', { id: 'a/G1.1', phase: 'red', pass: true, why: 'red written' }, SELF_AT_DESK);
-  const g11 = JSON.parse(((await call('desk', 'item.get', { id: 'a/G1.1' }, ANDY)).body || {}).item || '{}');
-  if (!ok(took) || !ok(done) || g11.red !== 'claude-windows' || g11.with) { test.fail('the world: the red of a/G1.1 was not held and let go: ' + short({ took: took.body, done: done.body, red: g11.red, with: g11.with })); return; }
+  await call('desk', 'press', { id: 'goal/G100.1', what: 'code' }, ANDY);
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await call('desk', 'press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+  const took = await call('desk', 'phase.take', { id: 'goal/G100.1', phase: 'red' }, SELF_AT_DESK);
+  const done = await call('desk', 'phase.done', { id: 'goal/G100.1', phase: 'red', pass: true, why: 'red written' }, SELF_AT_DESK);
+  const g11 = JSON.parse(((await call('desk', 'item.get', { id: 'goal/G100.1' }, ANDY)).body || {}).item || '{}');
+  if (!ok(took) || !ok(done) || g11.red !== 'claude-windows' || g11.with) { test.fail('the world: the red of goal/G100.1 was not held and let go: ' + short({ took: took.body, done: done.body, red: g11.red, with: g11.with })); return; }
 
   test.subHeading('R2 at the desk: the creator and an earlier phase holder post at any time');
   if (!await takenByOther(made, 'how is it going?')) { test.fail('the world: the other agent could not take his line on ' + made); return; }
   const byCreator = await posts(SELF_AT_DESK, made, 'creator note');
   if (ok(byCreator)) test.check('the agent that created ' + made + ' posts under it while another agent holds his line');
   else test.fail(OWED + 'the creator was refused under ' + made + ': ' + short(byCreator.body));
-  if (!await takenByOther('a/G1.1', 'status of the red?')) { test.fail('the world: the other agent could not take his line on a/G1.1'); return; }
-  const byEarlier = await posts(SELF_AT_DESK, 'a/G1.1', 'red holder note');
-  if (ok(byEarlier)) test.check('the agent that held the red of a/G1.1 posts under it while another agent holds his line');
-  else test.fail(OWED + 'the earlier red holder was refused under a/G1.1: ' + short(byEarlier.body));
+  if (!await takenByOther('goal/G100.1', 'status of the red?')) { test.fail('the world: the other agent could not take his line on goal/G100.1'); return; }
+  const byEarlier = await posts(SELF_AT_DESK, 'goal/G100.1', 'red holder note');
+  if (ok(byEarlier)) test.check('the agent that held the red of goal/G100.1 posts under it while another agent holds his line');
+  else test.fail(OWED + 'the earlier red holder was refused under goal/G100.1: ' + short(byEarlier.body));
 
   test.subHeading('R3 and R1, guards');
-  if (!await takenByOther('a/G1.2', 'who answers this?')) { test.fail('the world: the other agent could not take his line on a/G1.2'); return; }
-  const second = await posts(THIRD_AT_DESK, 'a/G1.2', 'a second answer');
+  if (!await takenByOther('goal/G100.2', 'who answers this?')) { test.fail('the world: the other agent could not take his line on goal/G100.2'); return; }
+  const second = await posts(THIRD_AT_DESK, 'goal/G100.2', 'a second answer');
   if (!ok(second)) test.check('an agent that neither holds, held, created nor was addressed is still refused: ' + short((second.body || {}).code));
   else test.fail(OWED + 'a second answer to a taken line was accepted');
-  await andySays('a/G1.2', 'cw: and you, what do you think?');
-  await andySays('a/G1.2', 'a later line of his');
-  await call('desk', 'line.take', { id: 'a/G1.2' }, OTHER_AT_DESK);
-  const addressed = await posts(SELF_AT_DESK, 'a/G1.2', 'my answer to his cw: line');
+  await andySays('goal/G100.2', 'cw: and you, what do you think?');
+  await andySays('goal/G100.2', 'a later line of his');
+  await call('desk', 'line.take', { id: 'goal/G100.2' }, OTHER_AT_DESK);
+  const addressed = await posts(SELF_AT_DESK, 'goal/G100.2', 'my answer to his cw: line');
   if (ok(addressed)) test.check('his line addressed to cw lets cw answer it after a later line was taken by another');
   else test.fail(OWED + 'the addressed agent was refused: ' + short(addressed.body));
 
@@ -168,14 +168,14 @@ async function main() {
   const viaCreator = await throughClient(made, 'creator note through deskClient');
   if (ok(viaCreator)) test.check('through deskClient, the creator posts under ' + made);
   else test.fail(OWED + 'deskClient refused the creator under ' + made + ': ' + short(viaCreator.body));
-  await takenByOther('a/G1.1', 'and the red now?');
-  const viaEarlier = await throughClient('a/G1.1', 'red holder note through deskClient');
-  if (ok(viaEarlier)) test.check('through deskClient, the earlier red holder posts under a/G1.1');
-  else test.fail(OWED + 'deskClient refused the earlier red holder under a/G1.1: ' + short(viaEarlier.body));
-  await takenByOther('a/G1.2', 'one more for the other');
-  const viaNone = await throughClient('a/G1.2', 'not mine to answer');
+  await takenByOther('goal/G100.1', 'and the red now?');
+  const viaEarlier = await throughClient('goal/G100.1', 'red holder note through deskClient');
+  if (ok(viaEarlier)) test.check('through deskClient, the earlier red holder posts under goal/G100.1');
+  else test.fail(OWED + 'deskClient refused the earlier red holder under goal/G100.1: ' + short(viaEarlier.body));
+  await takenByOther('goal/G100.2', 'one more for the other');
+  const viaNone = await throughClient('goal/G100.2', 'not mine to answer');
   if (!ok(viaNone)) test.check('through deskClient, a post where it neither holds, held, created nor took is still refused');
-  else test.fail(OWED + 'deskClient let a second answer through under a/G1.2');
+  else test.fail(OWED + 'deskClient let a second answer through under goal/G100.2');
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

@@ -86,14 +86,17 @@ const node = http.createServer(function (req, res) {
     const hash = 'H' + Date.now() + Math.random();
     let ask = null;
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
+    // goal/G33.4: the desk runs on this node too, and what it posts to this agent's key (its stream, deskClient's
+    // streamListener) goes into deskClient as the desk's call; everything else is deskClient's ask of the desk.
+    const fromDesk = b.to === SELF_KEY;
     const desk = (ask && ask.body && ask.body.desk) || {};
     const verb = Object.keys(desk)[0] || '';
-    posts.push({ verb: verb, args: desk[verb] });
+    if (!fromDesk) posts.push({ verb: verb, args: desk[verb] });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, SELF_AT_DESK).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, fromDesk ? { key: DESK_KEY, label: 'Andy' } : SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: fromDesk ? SELF_KEY : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
   });
 });
@@ -140,27 +143,29 @@ async function lineOf(id, text) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-quiet-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');
-  const items = ['a/G1.1', 'a/G1.2', 'a/G1.3', 'a/G1.4', 'a/G1.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['a/G1'] }; });
+  const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['goal/G100'] }; });
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Quiet' }, items: items }) }, ANDY);
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Quiet' }, items: items }) }, ANDY);
   if (set.status !== 200) { test.fail('the world: the test desk took no session: ' + short(set.body)); return; }
   // Both agents known to the desk by key, name and nick, as Andy's profiles hold them, so his "wsl:" line is addressed.
   await call('desk', 'profile.set', { agent: SELF_KEY, name: 'claude-windows', nick: 'cw' }, ANDY);
   await call('desk', 'profile.set', { agent: OTHER_KEY, name: 'wsl-claude', nick: 'wsl' }, ANDY);
-  await call('desk', 'item.take', { id: 'a/G1.5' }, OTHER_AT_DESK);
-  await call('desk', 'chat.add', { id: 'a/G1.5', text: 'the other agent is known' }, OTHER_AT_DESK);
-  await call('desk', 'item.release', { id: 'a/G1.5' }, OTHER_AT_DESK);
+  await call('desk', 'item.take', { id: 'goal/G100.5' }, OTHER_AT_DESK);
+  await call('desk', 'chat.add', { id: 'goal/G100.5', text: 'the other agent is known' }, OTHER_AT_DESK);
+  await call('desk', 'item.release', { id: 'goal/G100.5' }, OTHER_AT_DESK);
   startClient(nodeUrl);
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);
   await next();   // the first run starts at now
 
   test.subHeading('1. his box.take and box.release reach no agent');
-  await call('desk', 'box.take', { id: 'a/G1.1' }, ANDY);
-  await call('desk', 'box.release', { id: 'a/G1.1' }, ANDY);
-  await andySays('a/G1.2', 'after the box');
+  await call('desk', 'box.take', { id: 'goal/G100.1' }, ANDY);
+  await call('desk', 'box.release', { id: 'goal/G100.1' }, ANDY);
+  await andySays('goal/G100.2', 'after the box');
   await sleep(POLL_MS + 100);
   const one = await nextUntil('after the box');
   if (!has(one, 'box.take') && !has(one, 'box.release')) test.check('neither his box.take nor his box.release was handed over');
@@ -169,16 +174,16 @@ async function main() {
   else test.fail(OWED + 'his chat line never came: ' + short(one));
 
   test.subHeading('2. the line is taken before it is handed over');
-  const mine = await lineOf('a/G1.2', 'after the box');
+  const mine = await lineOf('goal/G100.2', 'after the box');
   if (mine && mine.taken === 'claude-windows') test.check('the line handed over stands taken by its own agent at the desk');
   else test.fail(OWED + 'the line handed over reads at the desk ' + short(mine));
-  await andySays('a/G1.3', 'for whoever is first');
-  const otherTook = await call('desk', 'line.take', { id: 'a/G1.3' }, OTHER_AT_DESK);
+  await andySays('goal/G100.3', 'for whoever is first');
+  const otherTook = await call('desk', 'line.take', { id: 'goal/G100.3' }, OTHER_AT_DESK);
   if (otherTook.status !== 200) { test.fail('the world: the other agent could not take the line: ' + short(otherTook.body)); return; }
-  const addressed = await andySays('a/G1.4', 'wsl: this one is for the other agent');
-  const held = await lineOf('a/G1.4', 'wsl: this one is for the other agent');
+  const addressed = await andySays('goal/G100.4', 'wsl: this one is for the other agent');
+  const held = await lineOf('goal/G100.4', 'wsl: this one is for the other agent');
   if (!held || held.taken !== 'wsl-claude') { test.fail('the world: his "wsl:" line is not addressed to the other agent at the desk: ' + short(addressed.body) + ' ' + short(held)); return; }
-  await andySays('a/G1.4', 'marker for anyone');
+  await andySays('goal/G100.4', 'marker for anyone');
   await sleep(POLL_MS + 100);
   const two = await nextUntil('marker for anyone');
   if (!has(two, 'for whoever is first')) test.check('a line the other agent took first was not handed over');
@@ -189,14 +194,14 @@ async function main() {
   else test.fail(OWED + 'the free line never came: ' + short(two));
 
   test.subHeading('3. box.take and box.write are gated like chat');
-  const refusedTake = await throughClient('box.take', { id: 'a/G1.3' });
-  const box = await call('desk', 'item.box', { id: 'a/G1.3' }, ANDY);
-  const refusedWrite = await throughClient('box.write', { id: 'a/G1.3', text: 'not mine to write', version: (box.body && box.body.version) || 0 });
+  const refusedTake = await throughClient('box.take', { id: 'goal/G100.3' });
+  const box = await call('desk', 'item.box', { id: 'goal/G100.3' }, ANDY);
+  const refusedWrite = await throughClient('box.write', { id: 'goal/G100.3', text: 'not mine to write', version: (box.body && box.body.version) || 0 });
   if ((refusedTake.body || {}).code === 'not-taken' && (refusedWrite.body || {}).code === 'not-taken') test.check('box.take and box.write are refused not-taken where the agent neither holds the item nor took his line');
-  else test.fail(OWED + 'on a/G1.3 box.take answered ' + short(refusedTake.body) + ', box.write ' + short(refusedWrite.body));
-  const allowed = await throughClient('box.take', { id: 'a/G1.2' });
+  else test.fail(OWED + 'on goal/G100.3 box.take answered ' + short(refusedTake.body) + ', box.write ' + short(refusedWrite.body));
+  const allowed = await throughClient('box.take', { id: 'goal/G100.2' });
   if (allowed.status === 200 && (allowed.body || {}).ok !== false) test.check('box.take is allowed where the agent took his line');
-  else test.fail(OWED + 'box.take on a/G1.2, where it took his line, answered ' + short(allowed.body));
+  else test.fail(OWED + 'box.take on goal/G100.2, where it took his line, answered ' + short(allowed.body));
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

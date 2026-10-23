@@ -5,16 +5,15 @@
 // and builds it (one agent). The box (v3), in short:
 //   - A desk search answers what the List's rows show: each item's facts, the trunk of the current goal's data tree.
 //   - A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again.
-//   - deskClient takes the rows from the desk's changes answer (Andy: "A it is then"): beside its records, it carries
-//     the current facts of the items they touched, and the held item's panels when one of them is it.
+//   - deskClient takes the rows from the desk's stream (goal/G33.4: `changes` is gone; the desk publishes each row a
+//     write touched, and a goal made current whole, and appServer files them in spirit.data through the translator).
 //   - deskClient's agent reads its held item from deskClient; only writes go to the desk.
 //   - The Desk app keeps the same: the current goal's rows, and the item open in its dialog, whole.
 //   - One shared block: shell/js/spiritData.js (as it is) with one desk translator, in node and in the page.
 // NAMED HERE: shell/js/desk/data.js registers the translator on spirit.data (spiritData) and fills two branches:
 // deskItems (id -> the item's facts, as items.search labels them) and deskItem (id -> { box, version, chat, checks,
-// files }). It takes the desk's publishes as jobs of module process/js/desk (job.app the published object), and the
-// changes answer through spirit.deskData.takeChanges(answer). The changes answer gains rows ([facts]) and held
-// ({ id, box, version, checks, files }, the caller's held item when a record touched it).
+// files }). It takes the desk's publishes as jobs of module process/js/desk (job.app the published object), in the
+// page and in deskClient alike (goal/G33.4).
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -44,32 +43,34 @@ test.startTest('goal/G33.3: Desk clients keep the current goal, one cache for tw
 
 // ── 1. THE TRANSLATOR, IN NODE ───────────────────────────────────────────────────────────────────────────────────
 function translatorHalf() {
-  test.subHeading('1. the desk translator fills spirit.data from a search, a publish and a changes answer');
+  test.subHeading('1. the desk translator fills spirit.data from a search, a publish and a goal pushed whole');
   if (!fs.existsSync(TRANSLATOR)) { test.fail(OWED + 'there is no shell/js/desk/data.js'); return; }
   const D = require('../run/shell/js/spiritData.js');
   try { require(TRANSLATOR); } catch (e) { test.fail(OWED + 'shell/js/desk/data.js did not load: ' + e.message); return; }
-  D.seat('deskItems', [{ key: 'm/G1.1', label: JSON.stringify({ id: 'm/G1.1', title: 'One', status: 'build' }) }]);
+  D.seat('deskItems', [{ key: 'goal/G100.1', label: JSON.stringify({ id: 'goal/G100.1', title: 'One', status: 'build' }) }]);
   // Kept whole, as the dialog or deskClient keeps the item it opened or holds; only such an item takes chat lines,
   // since a line alone would leave a chat that is not the item's whole one.
-  D.set('deskItem/m/G1.1', { box: '', version: 0, chat: [], chatMore: false, checks: [], files: [], filesMore: false });
-  D.take({ module: 'process/js/desk', data: {}, app: { change: 5, verb: 'chat.add', item: { id: 'm/G1.1', title: 'One', status: 'running' },
-    chat: { by: 'claude-windows', at: '2026-10-23T00:00:00Z', text: 'a report' } } });
-  const row = D.get('deskItems/m/G1.1') || {};
-  const panels = D.get('deskItem/m/G1.1') || {};
+  D.set('deskItem/goal/G100.1', { box: '', version: 0, chat: [], chatMore: false, checks: [], files: [], filesMore: false });
+  // goal/G33.4: the item's List row and its chat line are two publishes, one row each.
+  D.take({ module: 'process/js/desk', data: {}, app: { change: 5, verb: 'chat.add', item: { id: 'goal/G100.1', title: 'One', status: 'running' }, key: { goal: 100, item: 1 } } });
+  D.take({ module: 'process/js/desk', data: {}, app: { change: 5, table: 'chat', goal: 100, item: 1, id: 'goal/G100.1',
+    row: { by: 'claude-windows', at: '2026-10-23T00:00:00Z', text: 'a report' } } });
+  const row = D.get('deskItems/goal/G100.1') || {};
+  const panels = D.get('deskItem/goal/G100.1') || {};
   const lines = Array.isArray(panels.chat) ? panels.chat : [];
   if (row.status === 'running' && lines.length && lines[lines.length - 1].text === 'a report') test.check('a publish replaces the row and adds its line to the item\'s chat');
   else test.fail(OWED + 'after the publish the row reads ' + short(row) + ', the item ' + short(panels));
-  const takeChanges = (globalThis.spirit && globalThis.spirit.deskData && globalThis.spirit.deskData.takeChanges) || null;
-  if (typeof takeChanges !== 'function') { test.fail(OWED + 'no spirit.deskData.takeChanges'); return; }
-  takeChanges({ records: [{ n: 6, verb: 'box.write', by: 'andy', body: JSON.stringify({ id: 'm/G1.2', text: 'B' }) }], lines: [], n: 6, line: 0, more: false,
-    rows: [{ id: 'm/G1.2', title: 'Two', status: 'design' }], held: { id: 'm/G1.2', box: 'the box', version: 3, checks: [], files: [] } });
-  const two = D.get('deskItems/m/G1.2') || {};
-  const held = D.get('deskItem/m/G1.2') || {};
-  if (two.title === 'Two' && held.box === 'the box' && held.version === 3) test.check('a changes answer brings the touched row and the held item\'s panels');
-  else test.fail(OWED + 'after the changes answer the row reads ' + short(two) + ', the item ' + short(held));
+  // goal/G33.4: `changes` and takeChanges are gone. A goal becoming current is pushed whole: each item's row with verb
+  // goal.whole, then its side rows; the item is then kept whole, panels and all.
+  D.take({ module: 'process/js/desk', data: {}, app: { change: 6, verb: 'goal.whole', item: { id: 'goal/G100.2', goal: 'goal/G100', title: 'Two', status: 'design' }, key: { goal: 100, item: 2 } } });
+  D.take({ module: 'process/js/desk', data: {}, app: { change: 6, table: 'box', goal: 100, item: 2, id: 'goal/G100.2', row: { text: 'the box', version: 3 } } });
+  const two = D.get('deskItems/goal/G100.2') || {};
+  const held = D.get('deskItem/goal/G100.2') || {};
+  if (two.title === 'Two' && held.box === 'the box' && held.version === 3) test.check('a goal pushed whole brings the item\'s row and its panels');
+  else test.fail(OWED + 'after the goal was pushed whole the row reads ' + short(two) + ', the item ' + short(held));
 }
 
-// ── 2. THE DESK'S CHANGES ANSWER, AND 3. DESKCLIENT ANSWERING FROM ITS KEEPING ────────────────────────────────────
+// ── 2. THE DESK'S PUBLISHED ROWS, AND 3. DESKCLIENT ANSWERING FROM ITS KEEPING ────────────────────────────────────
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskmirror-'));
 const deskState = path.join(scratch, 'desk-state');
 const clientState = path.join(scratch, 'client-state');
@@ -89,6 +90,7 @@ const call = function (app, verb, args, caller) {
 };
 const streams = [];
 const posts = [];
+const published = [];
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.write(': open\n\n'); streams.push(res); return; }
   let raw = '';
@@ -96,19 +98,24 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
+    // goal/G33.4: what the desk publishes, each row it wrote, written down.
+    if (b.verb === 'jobs.update' && b.id === 'desk-job' && b.app && b.app.change !== undefined) published.push(b.app);
     if (b.verb === 'jobs.update') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
     if (b.verb === 'contact.get') { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end('{"ok":false}'); return; }
     if (b.verb !== 'peer.post') { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end('{"ok":false}'); return; }
     const hash = 'H' + Date.now() + Math.random();
     let ask = null;
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
+    // One node for both ends: what the desk posts to the agent's key (its stream, goal/G33.4) goes into deskClient as
+    // the desk's; what deskClient posts goes into the desk as the agent's ask, and is counted.
+    const fromDesk = b.to === AGENT.key;
     const desk = (ask && ask.body && ask.body.desk) || {};
-    posts.push(Object.keys(desk)[0] || '');
+    if (!fromDesk) posts.push(Object.keys(desk)[0] || '');
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, AGENT).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, fromDesk ? { key: DESK_KEY, label: 'Andy' } : AGENT).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: fromDesk ? AGENT.key : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* waited out */ });
   });
 });
@@ -123,24 +130,32 @@ async function up(app) {
 async function serversHalf() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   if (!await up('desk')) { test.fail('the world: the desk did not start'); return; }
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'm/G1', title: 'Mirror' }, items: [{ id: 'm/G1.1', title: 'Held', blocks: ['m/G1'] }, { id: 'm/G1.2', title: 'Other', blocks: ['m/G1'] }] }) }, ANDY);
-  await call('desk', 'item.take', { id: 'm/G1.1' }, AGENT);
+  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Mirror' }, items: [{ id: 'goal/G100.1', title: 'Held', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Other', blocks: ['goal/G100'] }] }) }, ANDY);
+  await call('desk', 'item.take', { id: 'goal/G100.1' }, AGENT);
 
-  test.subHeading('2. the desk\'s changes answer carries the rows it touched, and the held item');
-  const before = await call('desk', 'changes', { n: 0, line: 0 }, AGENT);
-  const from = Number((before.body || {}).n) || 0;
-  await call('desk', 'chat.add', { id: 'm/G1.1', text: 'his line on the held item' }, ANDY);
-  await call('desk', 'chat.add', { id: 'm/G1.2', text: 'his line on another' }, ANDY);
-  const after = await call('desk', 'changes', { n: from, line: 0 }, AGENT);
-  const body = after.body || {};
-  const rowIds = (Array.isArray(body.rows) ? body.rows : []).map(function (r) { return r && r.id; });
-  if (rowIds.indexOf('m/G1.1') !== -1 && rowIds.indexOf('m/G1.2') !== -1) test.check('changes carries the facts of both items its records touched');
-  else test.fail(OWED + 'changes carried rows ' + short(body.rows));
-  const held = body.held || {};
-  if (held.id === 'm/G1.1' && typeof held.box === 'string' && Array.isArray(held.checks) && Array.isArray(held.files)) test.check('and the held item\'s panels: box, checks, files');
-  else test.fail(OWED + 'changes carried held ' + short(body.held));
+  // goal/G33.4: `changes` is gone; the desk publishes each row a write touched, and a goal made current whole.
+  test.subHeading('2. the desk publishes the rows it touched, and the current goal\'s panels');
+  await sleep(300);
+  const from = published.length;
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'his line on the held item' }, ANDY);
+  await call('desk', 'chat.add', { id: 'goal/G100.2', text: 'his line on another' }, ANDY);
+  await sleep(500);
+  const rows = published.slice(from);
+  const rowIds = rows.filter(function (o) { return o.item && o.item.id; }).map(function (o) { return o.item.id; });
+  const lineOn = function (id, text) { return rows.some(function (o) { return o.table === 'chat' && o.id === id && o.row && o.row.text === text; }); };
+  if (rowIds.indexOf('goal/G100.1') !== -1 && rowIds.indexOf('goal/G100.2') !== -1 && lineOn('goal/G100.1', 'his line on the held item') && lineOn('goal/G100.2', 'his line on another')) test.check('the desk published the facts of both items its writes touched, and each line as its own row');
+  else test.fail(OWED + 'the desk published ' + short(rows));
+  // The session made goal/G100 current, so it went out whole; a panel written since goes out as its own row.
+  const boxFrom = published.length;
+  const wrote = await call('desk', 'box.write', { id: 'goal/G100.1', text: 'THE HELD BOX', version: 0 }, ANDY);
+  await sleep(500);
+  const boxOf = published.slice(boxFrom).filter(function (o) { return o.table === 'box' && o.id === 'goal/G100.1' && o.row && o.row.text === 'THE HELD BOX'; });
+  const whole = ['goal/G100', 'goal/G100.1', 'goal/G100.2'].filter(function (id) { return published.some(function (o) { return o.verb === 'goal.whole' && o.item && o.item.id === id; }); });
+  if (whole.length === 3 && wrote.status === 200 && boxOf.length === 1) test.check('goal/G100 went out whole, all three rows, and the held item\'s box, once written, went out as its own row');
+  else test.fail(OWED + 'goal.whole rows for ' + short(whole) + '; box.write answered ' + wrote.status + ', box rows ' + short(boxOf));
 
   test.subHeading('3. deskClient answers its agent\'s reads of the held item from what it keeps');
   // Who it is, as its node hands every server it starts (--node): it knows its agent's held item by that name.
@@ -149,16 +164,16 @@ async function serversHalf() {
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);
   const ask = function (verb, args) { return call('deskClient', 'desk', { name: verb, json: JSON.stringify(args) }, OWNER); };
-  await ask('item.get', { id: 'm/G1.1' });
-  await ask('item.box', { id: 'm/G1.1' });
+  await ask('item.get', { id: 'goal/G100.1' });
+  await ask('item.box', { id: 'goal/G100.1' });
   await sleep(300);
   const sent = posts.length;
-  const again = await ask('item.get', { id: 'm/G1.1' });
-  const boxAgain = await ask('item.box', { id: 'm/G1.1' });
+  const again = await ask('item.get', { id: 'goal/G100.1' });
+  const boxAgain = await ask('item.box', { id: 'goal/G100.1' });
   await sleep(300);
   let facts = null;
   try { facts = JSON.parse((again.body || {}).item); } catch (e) { facts = null; }
-  if (facts && facts.id === 'm/G1.1' && typeof (boxAgain.body || {}).box === 'string' && posts.length === sent) test.check('a second read of the held item is answered from deskClient, nothing posted to the desk');
+  if (facts && facts.id === 'goal/G100.1' && typeof (boxAgain.body || {}).box === 'string' && posts.length === sent) test.check('a second read of the held item is answered from deskClient, nothing posted to the desk');
   else test.fail(OWED + 'the second reads posted ' + short(posts.slice(sent)) + '; item.get answered ' + short(again.body) + ', item.box ' + short(boxAgain.body));
 }
 
@@ -184,7 +199,7 @@ async function dialogHalf() {
   const kernel = require('../run/js/kernel.js');
   const win = { spirit: globalThis.spirit, addEventListener: function () {} };
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))({ shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, win);
-  const item = { id: 'm/G1.3', title: 'Opened', goal: 'm/G1', status: 'design', buttons: [], blocking: ['m/G1'], blocked: [] };
+  const item = { id: 'goal/G100.3', title: 'Opened', goal: 'goal/G100', status: 'design', buttons: [], blocking: ['goal/G100'], blocked: [] };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -203,10 +218,10 @@ async function dialogHalf() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'm/G1.3', agents: {} });
+  dd.open({ id: 'goal/G100.3', agents: {} });
   for (let i = 0; i < 8; i++) await sleep(20);
   const first = asked.filter(function (v) { return v === 'item.box'; }).length;
-  dd.open({ id: 'm/G1.3', agents: {} });
+  dd.open({ id: 'goal/G100.3', agents: {} });
   for (let i = 0; i < 8; i++) await sleep(20);
   const boxes = asked.filter(function (v) { return v === 'item.box'; }).length;
   if (first === 1 && boxes === 1) test.check('opened twice, the item\'s box was asked once');

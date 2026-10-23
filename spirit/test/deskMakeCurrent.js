@@ -65,53 +65,53 @@ async function currentGoal() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // TWO GOALS, the second written last, so it is the current one by today's only rule.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G1', title: 'First' }, items: [{ id: 'mc/G1.1', title: 'One', blocks: ['mc/G1'] }] }) }, ANDY);
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G2', title: 'Second' }, items: [{ id: 'mc/G2.1', title: 'Two', blocks: ['mc/G2'] }] }) }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'First' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Second' }, items: [{ id: 'goal/G101.1', title: 'Two', blocks: ['goal/G101'] }] }) }, ANDY);
   const opened = await currentGoal();
-  if (opened === 'mc/G2') test.check('the goal written last is the current one, as session.set leaves it');
-  else { test.fail('the world: the current goal reads ' + short(opened) + ', expected mc/G2'); return; }
+  if (opened === 'goal/G101') test.check('the goal written last is the current one, as session.set leaves it');
+  else { test.fail('the world: the current goal reads ' + short(opened) + ', expected goal/G101'); return; }
 
   test.subHeading('1. the older goal offers make-current, the current one does not');
-  const f1 = await factsOf('mc/G1');
-  if ((f1.buttons || []).indexOf('make-current') !== -1) test.check('mc/G1, open and not current, offers make-current');
-  else test.fail(OWED + 'mc/G1 offers ' + short(f1.buttons));
-  const f2 = await factsOf('mc/G2');
-  if ((f2.buttons || []).indexOf('make-current') === -1) test.check('mc/G2, already current, does not offer it');
+  const f1 = await factsOf('goal/G100');
+  if ((f1.buttons || []).indexOf('make-current') !== -1) test.check('goal/G100, open and not current, offers make-current');
+  else test.fail(OWED + 'goal/G100 offers ' + short(f1.buttons));
+  const f2 = await factsOf('goal/G101');
+  if ((f2.buttons || []).indexOf('make-current') === -1) test.check('goal/G101, already current, does not offer it');
   else test.fail(OWED + 'the current goal offers make-current: ' + short(f2.buttons));
-  const fi = await factsOf('mc/G1.1');
+  const fi = await factsOf('goal/G100.1');
   if ((fi.buttons || []).indexOf('make-current') === -1) test.check('an item never offers it');
-  else test.fail(OWED + 'the item mc/G1.1 offers make-current: ' + short(fi.buttons));
+  else test.fail(OWED + 'the item goal/G100.1 offers make-current: ' + short(fi.buttons));
 
   test.subHeading('2. his press moves the current goal, and an agent\'s is refused');
-  const byAgent = await call('press', { id: 'mc/G1', what: 'make-current' }, CW);
-  if (!took(byAgent) && await currentGoal() === 'mc/G2') test.check('an agent\'s make-current is refused and moves nothing');
+  const byAgent = await call('press', { id: 'goal/G100', what: 'make-current' }, CW);
+  if (!took(byAgent) && await currentGoal() === 'goal/G101') test.check('an agent\'s make-current is refused and moves nothing');
   else test.fail(OWED + 'an agent\'s make-current answered ' + byAgent.status + ' ' + short(byAgent.body) + '; current ' + short(await currentGoal()));
-  const byHim = await call('press', { id: 'mc/G1', what: 'make-current' }, ANDY);
+  const byHim = await call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
   const now = await currentGoal();
-  if (took(byHim) && now === 'mc/G1') test.check('his make-current on mc/G1 makes it the current goal');
+  if (took(byHim) && now === 'goal/G100') test.check('his make-current on goal/G100 makes it the current goal');
   else test.fail(OWED + 'his make-current answered ' + byHim.status + ' ' + short(byHim.body) + '; current reads ' + short(now));
-  const back = await factsOf('mc/G2');
-  if ((back.buttons || []).indexOf('make-current') !== -1) test.check('mc/G2 now offers it instead');
-  else test.fail(OWED + 'after the switch mc/G2 offers ' + short(back.buttons));
+  const back = await factsOf('goal/G101');
+  if ((back.buttons || []).indexOf('make-current') !== -1) test.check('goal/G101 now offers it instead');
+  else test.fail(OWED + 'after the switch goal/G101 offers ' + short(back.buttons));
 
   test.subHeading('3. it switches the goal and changes nothing else about either');
-  const a1 = await factsOf('mc/G1');
-  const a2 = await factsOf('mc/G2');
+  const a1 = await factsOf('goal/G100');
+  const a2 = await factsOf('goal/G101');
   if (a1.status !== 'closed' && a2.status !== 'closed' && a1.design === f1.design && a2.design === f2.design) test.check('neither goal is closed by the switch, and neither design mode moved');
-  else test.fail(OWED + 'after the switch mc/G1 ' + short({ status: a1.status, design: a1.design }) + ', mc/G2 ' + short({ status: a2.status, design: a2.design }));
+  else test.fail(OWED + 'after the switch goal/G100 ' + short({ status: a1.status, design: a1.design }) + ', goal/G101 ' + short({ status: a2.status, design: a2.design }));
   const listed = await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY);
   const ids = (((listed.body && listed.body.items) || []).map(function (i) { return (parse(i.label) || {}).id; }));
-  if (ids.indexOf('mc/G1.1') !== -1 && ids.indexOf('mc/G2.1') === -1) test.check('the List now answers mc/G1\'s items and not mc/G2\'s');
+  if (ids.indexOf('goal/G100.1') !== -1 && ids.indexOf('goal/G101.1') === -1) test.check('the List now answers goal/G100\'s items and not goal/G101\'s');
   else test.fail(OWED + 'the current List answers ' + short(ids));
 
   test.subHeading('4. a closed goal is not made current; Reopen first, as his words have it');
-  await call('press', { id: 'mc/G2', what: 'close' }, ANDY);
-  const onClosed = await call('press', { id: 'mc/G2', what: 'make-current' }, ANDY);
-  if (!took(onClosed) && await currentGoal() === 'mc/G1') test.check('make-current on a closed goal is refused');
-  else test.fail(OWED + 'make-current on the closed mc/G2 answered ' + onClosed.status + ' ' + short(onClosed.body) + '; current ' + short(await currentGoal()));
-  await call('press', { id: 'mc/G2', what: 'reopen' }, ANDY);
-  const afterReopen = await call('press', { id: 'mc/G2', what: 'make-current' }, ANDY);
-  if (took(afterReopen) && await currentGoal() === 'mc/G2') test.check('reopened, it takes make-current and becomes current');
+  await call('press', { id: 'goal/G101', what: 'close' }, ANDY);
+  const onClosed = await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
+  if (!took(onClosed) && await currentGoal() === 'goal/G100') test.check('make-current on a closed goal is refused');
+  else test.fail(OWED + 'make-current on the closed goal/G101 answered ' + onClosed.status + ' ' + short(onClosed.body) + '; current ' + short(await currentGoal()));
+  await call('press', { id: 'goal/G101', what: 'reopen' }, ANDY);
+  const afterReopen = await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
+  if (took(afterReopen) && await currentGoal() === 'goal/G101') test.check('reopened, it takes make-current and becomes current');
   else test.fail(OWED + 'after Reopen make-current answered ' + afterReopen.status + ' ' + short(afterReopen.body) + '; current ' + short(await currentGoal()));
 
   // GROWN IN THE VERIFY (goal/G5.7: "after an all-green build it's the verifier that extends the red"). The build
@@ -143,20 +143,20 @@ async function currentGoal() {
   const readFile = function () { try { return JSON.parse(fs.readFileSync(goalFile, 'utf8')); } catch (e) { return null; } };
   try {
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G1', title: 'First' }, items: [{ id: 'sh/G1.1', title: 'One', blocks: ['sh/G1'] }] }) }, ANDY);
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G2', title: 'Second' }, items: [{ id: 'sh/G2.1', title: 'Two', blocks: ['sh/G2'] }] }) }, ANDY);
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'goal/G102', title: 'First' }, items: [{ id: 'goal/G102.1', title: 'One', blocks: ['goal/G102'] }] }) }, ANDY);
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'goal/G103', title: 'Second' }, items: [{ id: 'goal/G103.1', title: 'Two', blocks: ['goal/G103'] }] }) }, ANDY);
     await sleep(300);
     const before = readFile();
-    if (before && before.goal === 'sh/G2') test.check('the file names the goal written last, sh/G2');
+    if (before && before.goal === 'goal/G103') test.check('the file names the goal written last, goal/G103');
     else { test.fail('the world: the shared desk wrote ' + short(before)); throw new Error('no file'); }
-    const press = await ask('press', { id: 'sh/G1', what: 'make-current' }, ANDY);
+    const press = await ask('press', { id: 'goal/G102', what: 'make-current' }, ANDY);
     await sleep(300);
     const after = readFile();
     if (!took(press)) test.fail(OWED + 'make-current on the sharing desk answered ' + press.status + ' ' + short(press.body));
-    else if (after && after.goal === 'sh/G1') test.check('after the switch the file names sh/G1, not the goal he left');
+    else if (after && after.goal === 'goal/G102') test.check('after the switch the file names goal/G102, not the goal he left');
     else test.fail(OWED + 'after make-current the file still says ' + short(after && after.goal) + ': ' + short(after));
     const ids = after && Array.isArray(after.items) ? after.items.map(function (x) { return x.id; }) : [];
-    if (ids.indexOf('sh/G1.1') !== -1 && ids.indexOf('sh/G2.1') === -1) test.check('and it carries sh/G1\'s items alone');
+    if (ids.indexOf('goal/G102.1') !== -1 && ids.indexOf('goal/G103.1') === -1) test.check('and it carries goal/G102\'s items alone');
     else test.fail(OWED + 'the file carries ' + short(ids));
   } catch (e) { if (!/no file/.test(String(e && e.message))) test.fail('the sharing desk threw: ' + (e && e.stack || e)); }
   await new Promise(function (r) { if (!kid2) return r(); kid2.once('exit', r); kid2.kill(); setTimeout(r, 3000); });

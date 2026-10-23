@@ -110,9 +110,9 @@ async function main() {
     test.subHeading('6. session.set by an agent creates no goal, and its new items need the grant');
     const sess = function (goal, items) { return call('session.set', { json: JSON.stringify({ goal: { id: goal, title: 'Bulk' }, items: items.map(function (x) { return { id: x, title: 'Bulk ' + x, blocks: [goal] }; }) }) }, CW); };
     await say(gid, 'add items, all of them');
-    const bulkGoal = await sess('s/G9', ['s/G9.1']);
+    const bulkGoal = await sess('goal/G100', ['goal/G100.1']);
     if (bulkGoal.status >= 400) test.check('an agent\'s session.set naming a new goal is refused, even under "add items"');
-    else test.fail(OWED + 'an agent\'s session.set made goal s/G9: ' + bulkGoal.status + ' ' + short(bulkGoal.body));
+    else test.fail(OWED + 'an agent\'s session.set made goal goal/G100: ' + bulkGoal.status + ' ' + short(bulkGoal.body));
     await say(gid, 'thanks');
     const bulkItem = await sess(gid, [gid + '.90']);
     if (bulkItem.status >= 400) test.check('an agent\'s session.set bringing a new item with no grant is refused');

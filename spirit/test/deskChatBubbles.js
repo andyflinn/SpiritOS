@@ -102,11 +102,11 @@ test.startTest('goal/G6.2: chat entries left-aligned, everyone in bubbles 1em ap
   const api = { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, onPublished: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     verb: function () {
-      return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'test/G1.1', title: 'Chat', goal: 'test/G1', status: '', with: '',
+      return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'goal/G100.1', title: 'Chat', goal: 'goal/G100', status: '', with: '',
         buttons: [], blocking: [], blocked: [], alone: false }), box: '', version: 0, change: 1, checks: [], chat: LINES.slice() } });
     } };
   dd.mount(fakeElement('dd'), api);
-  dd.open({ id: 'test/G1.1' });
+  dd.open({ id: 'goal/G100.1' });
   await settle(); await settle();
   judge('dialog', ddDoc.getElementById('dd-chat').innerHTML);
 
@@ -114,7 +114,7 @@ test.startTest('goal/G6.2: chat entries left-aligned, everyone in bubbles 1em ap
   const fake = require('./deskFake.js').fromFiles({ 'log/log.json': '[]', 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
   const verb = function (name, body) {
     const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
-    if (asked && asked.id === 'desk/G0.0') return Promise.resolve({ status: 200, body: { chat: LINES.slice(), chatMore: false } });
+    if (asked && asked.id === 'goal/G0') return Promise.resolve({ status: 200, body: { chat: LINES.slice(), chatMore: false } });
     return fake.verb(name, body);
   };
   const doc = fakeDocument();

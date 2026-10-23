@@ -51,11 +51,12 @@ test.startTest('goal/G8.12: the live verifier tab, what deskVerify publishes as 
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifylive-'));
 
-// A node that runs a desk, answers item.get with each item's test files, pages its changes (slowly when asked to),
-// takes the job's reports (what appServer.publish sends) and keeps every desk call.
+// A node that runs a desk, answers item.get with each item's test files, takes the job's reports (what
+// appServer.publish sends) and keeps every desk call. (Its pages of the desk's `changes` went with goal/G33.4: the verb
+// is gone, and deskVerify never asked it.)
 function fakeNode(opts) {
   return new Promise(function (resolve) {
-    const st = { asks: [], published: [], records: [], files: opts.files, slow: 0 };
+    const st = { asks: [], published: [], files: opts.files };
     const s = http.createServer(function (req, res) {
       let b = '';
       req.on('data', function (c) { b += c; });
@@ -70,15 +71,10 @@ function fakeNode(opts) {
         else if (flatCall && flatCall.desk) {
           const verb = Object.keys(flatCall.desk)[0];
           const a = flatCall.desk[verb] || {};
-          if (verb === 'changes') {
-            if (st.slow) await sleep(st.slow);
-            const from = Number(a.n) || 0;
-            const rest = st.records.filter(function (r) { return r.n > from; });
-            out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
-          } else {
+          {
             st.asks.push({ verb: verb, args: a });
-            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }) || {}).files ? (({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
-            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
+            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }) || {}).files ? (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
+            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'goal/G100', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
             else out = { change: 1 };
           }
         } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
@@ -86,7 +82,6 @@ function fakeNode(opts) {
       });
     }).listen(0, '127.0.0.1', function () {
       st.port = s.address().port;
-      st.rec = function (verb, body) { st.records.push({ n: st.records.length + 1, at: new Date().toISOString(), verb: verb, by: 'wsl-claude', key: '', body: JSON.stringify(body) }); };
       st.close = function () { s.close(); };
       resolve(st);
     });
@@ -113,7 +108,7 @@ function startVerify(name, node, values) {
 
 async function publishHalf() {
   test.subHeading('1. deskVerify publishes its run as it goes');
-  const node = await fakeNode({ files: { 'lv/G1.1': [SLOW, FAST] } });
+  const node = await fakeNode({ files: { 'goal/G100.1': [SLOW, FAST] } });
   // Since goal/G33.3 a run is handed to deskVerify with run {suites, commit}. No pull: the suite's own probes make the
   // tree dirty.
   const v = startVerify('publish', node, { suiteMs: 60000, pull: '' });
@@ -161,7 +156,7 @@ function target(attrs) {
 async function faceHalf() {
   test.subHeading('2. the tab listens and repaints: a bar, one line, an idle countdown');
   const fake = require('./deskFake.js').create([]);
-  fake.items = [{ id: 'lv/G1', title: 'Live', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
+  fake.items = [{ id: 'goal/G100', title: 'Live', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
     now: function () { return { busy: false, running: { suite: '', since: '' }, stopAsked: false }; },
     // A record the tab must NOT show (Andy: "i want that damn log display gone. and only show the latest status.").

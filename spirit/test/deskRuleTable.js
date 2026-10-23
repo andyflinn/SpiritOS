@@ -85,7 +85,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Rules' }, items: [{ id: 'r/G1.1', title: 'Work', blocks: ['r/G1'] }] }) }, CW);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rules' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, CW);
 
   test.subHeading('B1. rule.add: proposed, by an agent too, checked at the door');
   const added = await call('rule.add', { type: 'code', label: 'Tests first', text: 'Red on today\'s tree.\nThe writer never builds.' }, CW);
@@ -134,7 +134,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   test.subHeading('B6. rules outlive a restart and a new goal');
   await stop();
   await start();
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'r/G2', title: 'Next' }, items: [] }) }, CW);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Next' }, items: [] }) }, CW);
   const g6 = k1 ? ruleOf((await call('rule.get', { key: k1 }, ANDY)).body) : {};
   if (g6.status === 'active' && g6.text === 'Red first.\nThe writer never builds it.') test.check(k1 + ' is still active with its text after a restart and a new goal');
   else test.fail(OWED + 'after a restart and a new goal rule.get reads ' + short(g6));

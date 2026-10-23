@@ -69,16 +69,16 @@ function text(h) { return String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '
 // THE LIST: rows from their facts, as the desk answers them; the buttons each row draws.
 async function listHalf() {
   test.subHeading('a, b, d. the List: one button per row, the next one wanted; a goal\'s Done and Close only once its items are');
-  const row = function (id, buttons, extra) { return Object.assign({ id: id, title: id, goal: 'ad/G1', status: 'running', with: '', buttons: buttons, blocking: ['ad/G1'], blocked: [], asks: 0, claims: 1, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' }, extra || {}); };
+  const row = function (id, buttons, extra) { return Object.assign({ id: id, title: id, goal: 'goal/G100', status: 'running', with: '', buttons: buttons, blocking: ['goal/G100'], blocked: [], asks: 0, claims: 1, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' }, extra || {}); };
   const goalRow = function (id, buttons, blocked) { return { id: id, title: id, goal: '', design: false, status: '', with: '', buttons: buttons, blocking: [], blocked: blocked, live: [], working: [], waiting: 0, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' }; };
   const fake = require('./deskFake.js').create([]);
   fake.items = [
-    goalRow('ad/G1', ['done', 'close', 'verify', 'go-all'], ['ad/G1.1']),
-    row('ad/G1.1', ['done', 'verify']),
-    row('ad/G1.2', ['done', 'go']),
-    row('ad/G1.3', ['close', 'done']),
-    row('ad/G1.4', ['close', 'go', 'verify', 'done']),
-    row('ad/G1.5', ['bring-back']),
+    goalRow('goal/G100', ['done', 'close', 'verify', 'go-all'], ['goal/G100.1']),
+    row('goal/G100.1', ['done', 'verify']),
+    row('goal/G100.2', ['done', 'go']),
+    row('goal/G100.3', ['close', 'done']),
+    row('goal/G100.4', ['close', 'go', 'verify', 'done']),
+    row('goal/G100.5', ['bring-back']),
   ];
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
@@ -100,21 +100,21 @@ async function listHalf() {
     if (p.length === 1 && p[0].what === want) test.check(id + ' (' + why + '): one button, ' + want);
     else test.fail(OWED + id + ' (' + why + ') draws ' + short(p.map(function (x) { return x.what; })) + ', where ' + want + ' alone is owed');
   };
-  one('ad/G1.1', 'verify', 'offers done and verify');
-  one('ad/G1.2', 'go', 'offers done and go');
-  one('ad/G1.3', 'done', 'offers close and done');
-  one('ad/G1.4', 'go', 'offers close, go, verify and done');
-  one('ad/G1.5', 'bring-back', 'offers bring-back alone');
-  const g = pressesOf('ad/G1');
+  one('goal/G100.1', 'verify', 'offers done and verify');
+  one('goal/G100.2', 'go', 'offers done and go');
+  one('goal/G100.3', 'done', 'offers close and done');
+  one('goal/G100.4', 'go', 'offers close, go, verify and done');
+  one('goal/G100.5', 'bring-back', 'offers bring-back alone');
+  const g = pressesOf('goal/G100');
   if (!g.some(function (x) { return x.what === 'done' || x.what === 'close'; })) test.check('a goal with an item still open draws no Done and no Close in the List: ' + short(g.map(function (x) { return x.what; })));
   else test.fail(OWED + 'the goal with an open item draws ' + short(g.map(function (x) { return x.what; })));
-  const v = pressesOf('ad/G1.1').filter(function (x) { return x.what === 'verify'; })[0];
+  const v = pressesOf('goal/G100.1').filter(function (x) { return x.what === 'verify'; })[0];
   if (v && !/busy/i.test(v.html)) test.check('the List\'s Verify shows no busy state: ' + short(v.label));
   else test.fail(OWED + 'the List\'s Verify reads ' + short(v && v.html));
 
   // ALL ITEMS DONE: the goal may offer Done in the List.
   const fake2 = require('./deskFake.js').create([]);
-  fake2.items = [goalRow('ad/G2', ['done', 'close', 'verify'], []), row('ad/G2.1', ['close', 'reopen'], { goal: 'ad/G2', blocking: ['ad/G2'], status: 'done' })];
+  fake2.items = [goalRow('goal/G101', ['done', 'close', 'verify'], []), row('goal/G101.1', ['close', 'reopen'], { goal: 'goal/G101', blocking: ['goal/G101'], status: 'done' })];
   const byId2 = {};
   const doc2 = { getElementById: function (id) { return byId2[id] || (byId2[id] = fakeElement(id)); } };
   let behavior2 = null;
@@ -128,7 +128,7 @@ async function listHalf() {
   });
   for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
   const all2 = Object.keys(byId2).map(function (k) { return byId2[k].innerHTML; }).join('\n');
-  const g2 = (/<tr data-row="ad\/G2"[\s\S]*?<\/tr>/.exec(all2) || [''])[0];
+  const g2 = (/<tr data-row="goal\/G101"[\s\S]*?<\/tr>/.exec(all2) || [''])[0];
   const g2p = (g2.match(/data-press="([^"]+)"/g) || []).map(function (x) { return x.slice(12, -1); });
   if (g2p.length === 1 && g2p[0] === 'verify') test.check('with every item done the goal row draws its one next button, Verify before Done');
   else test.fail(OWED + 'the goal with every item done draws ' + short(g2p));
@@ -140,8 +140,8 @@ async function dialogHalf() {
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const FACTS = {
-    'ad/G1': { id: 'ad/G1', title: 'Goal', goal: '', status: '', with: '', buttons: ['done', 'verify', 'go-all', 'close', 'make-current'], blocking: [], blocked: ['ad/G1.1'], asks: 0, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
-    'ad/G1.4': { id: 'ad/G1.4', title: 'Item', goal: 'ad/G1', status: 'running', with: '', buttons: ['go', 'done', 'verify', 'waive', 'delete'], blocking: ['ad/G1'], blocked: [], asks: 0, claims: 1, code: true, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
+    'goal/G100': { id: 'goal/G100', title: 'Goal', goal: '', status: '', with: '', buttons: ['done', 'verify', 'go-all', 'close', 'make-current'], blocking: [], blocked: ['goal/G100.1'], asks: 0, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
+    'goal/G100.4': { id: 'goal/G100.4', title: 'Item', goal: 'goal/G100', status: 'running', with: '', buttons: ['go', 'done', 'verify', 'waive', 'delete'], blocking: ['goal/G100'], blocked: [], asks: 0, claims: 1, code: true, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
   };
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
@@ -160,7 +160,7 @@ async function dialogHalf() {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
   const bar = function () { return doc.getElementById('dd-name-row').innerHTML; };
-  for (const id of ['ad/G1', 'ad/G1.4']) {
+  for (const id of ['goal/G100', 'goal/G100.4']) {
     await dd.open({ id: id, agents: {} });
     await settled();
     const missing = FACTS[id].buttons.filter(function (b) { return bar().indexOf('id="dd-' + b + '"') === -1; });
@@ -200,9 +200,9 @@ async function deskHalf() {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'ad/G9', title: 'Open' }, items: [{ id: 'ad/G9.1', title: 'Still open', blocks: ['ad/G9'] }] }) });
-    await call('press', { id: 'ad/G9', what: 'end-design' });
-    const g = parse(((await call('item.get', { id: 'ad/G9' })).body || {}).item) || {};
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G102', title: 'Open' }, items: [{ id: 'goal/G102.1', title: 'Still open', blocks: ['goal/G102'] }] }) });
+    await call('press', { id: 'goal/G102', what: 'end-design' });
+    const g = parse(((await call('item.get', { id: 'goal/G102' })).body || {}).item) || {};
     const b = g.buttons || [];
     if (b.indexOf('done') !== -1 && b.indexOf('close') !== -1) test.check('a goal with an item still open is offered Done and Close (for the detail panel): ' + short(b));
     else test.fail(OWED + 'the goal with an open item is offered ' + short(b));
@@ -216,7 +216,7 @@ async function deskHalf() {
 async function tabHalf() {
   test.subHeading('e. the Verifier tab: idle is no run; the countdown only with chores; a run reads Running now');
   const fake = require('./deskFake.js').create([]);
-  fake.items = [{ id: 'ad/G1', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
+  fake.items = [{ id: 'goal/G100', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = { now: function () { return { busy: false, running: { suite: '', since: '' }, stopAsked: false }; }, stop: function () { return { stopped: false }; },
     console: function () { return { run: '', start: 0, from: 0, to: 0, more: false, ended: true, text: '' }; } };
   const handlers = {};
@@ -266,12 +266,12 @@ const RUN_OBJ = { doing: 'run', suite: 'spirit/test/zzRunning.js', index: 1, of:
 const IDLE_OBJ = { doing: 'idle', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle, nothing running', since: new Date().toISOString(), stopAsked: false, idleMs: 3600000, chores: '' };
 async function runHalf() {
   test.subHeading('f. the run in the status column and in the dialog, from deskVerify\'s own publishes');
-  const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'ar/G1', status: 'handed to deskVerify', with: '', buttons: ['done', 'verify'], blocking: ['ar/G1'], blocked: [], asks: 0, claims: 1, verified: 'none', verifyFailures: [], verifyRunning: false }, extra || {}); };
+  const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'goal/G103', status: 'handed to deskVerify', with: '', buttons: ['done', 'verify'], blocking: ['goal/G103'], blocked: [], asks: 0, claims: 1, verified: 'none', verifyFailures: [], verifyRunning: false }, extra || {}); };
   const fake = require('./deskFake.js').create([]);
   fake.items = [
-    { id: 'ar/G1', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['ar/G1.1', 'ar/G1.2'], live: [], working: [], waiting: 0 },
-    row('ar/G1.1', { verifyRunning: true }),
-    row('ar/G1.2', { status: 'verified green', verified: 'green' }),
+    { id: 'goal/G103', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['goal/G103.1', 'goal/G103.2'], live: [], working: [], waiting: 0 },
+    row('goal/G103.1', { verifyRunning: true }),
+    row('goal/G103.2', { status: 'verified green', verified: 'green' }),
   ];
   const handlers = {};
   const byId = {};
@@ -294,14 +294,14 @@ async function runHalf() {
     return tds[tds.length - 1] || '';
   };
   await emit(RUN_OBJ);
-  const running = statusOf('ar/G1.1');
+  const running = statusOf('goal/G103.1');
   if (/verifying/i.test(text(running)) && /zzRunning\.js/.test(running) && /<progress/.test(running)) test.check('the row of the item handed over shows the run: ' + short(text(running)));
   else test.fail(OWED + 'the handed-over row\'s status column reads ' + short(running));
-  const other = statusOf('ar/G1.2');
+  const other = statusOf('goal/G103.2');
   if (!/<progress/.test(other) && !/zzRunning/.test(other)) test.check('and no other row does');
   else test.fail(OWED + 'another row shows the run: ' + short(other));
   await emit(IDLE_OBJ);
-  const back = statusOf('ar/G1.1');
+  const back = statusOf('goal/G103.1');
   if (!/<progress/.test(back) && /handed to deskVerify/.test(back)) test.check('after an idle publish the row shows its status word again');
   else test.fail(OWED + 'after idle the row reads ' + short(back));
 
@@ -317,7 +317,7 @@ async function runHalf() {
     verb: function (name, body) {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(row('ar/G1.1', { verifyRunning: true })), version: 1, change: 1 } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(row('goal/G103.1', { verifyRunning: true })), version: 1, change: 1 } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], files: [], box: '', version: 1 } });
     },
     onPublished: function (fn, server) { (dHandlers[server || 'desk'] = dHandlers[server || 'desk'] || []).push(fn); return function () {}; }, onPacket: function () { return function () {}; },
@@ -325,7 +325,7 @@ async function runHalf() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  await dd.open({ id: 'ar/G1.1', agents: {} });
+  await dd.open({ id: 'goal/G103.1', agents: {} });
   await settled();
   const dEmit = async function (o) { (dHandlers.deskVerify || []).forEach(function (fn) { fn(o); }); await settled(); await sleep(20); await settled(); };
   await dEmit(RUN_OBJ);

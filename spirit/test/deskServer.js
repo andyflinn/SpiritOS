@@ -18,9 +18,8 @@
 //   process/js/desk/desk.{js,json}: kind 'server', operated 'node', built on
 //     appServer.js; started with --pipe <p> --state <dir> (the node names
 //     both; the server never works out its own folder).
-//   log.add    {json}            -> {added: bool}   (false: key already held)
-//   log.search {text, todo, since, kind, before} -> {items: [{key, label: json}], more: bool} (slim/G1.2)
-//              bounded by bytes under appClient.ANSWER_MAX; '' matches all
+//   (log.add, log.search and pending.get went with goal/G33.4, Andy: "log.add, log.search and pending.get: delete
+//   them."; the old lines table they wrote and read was dumped at the migration. T2 holds that they are gone.)
 //   state.get  {} -> {json};  state.set {json} -> {saved: true}
 //   seen.get   {} -> {json};  seen.set  {json} -> {saved: true}
 //   (voice.add, a line in <state>/voice.jsonl, left with goal/G2.1)
@@ -77,7 +76,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAnnotations', 'FS.loadFile', 'FS.loadJsonValue', 'FS.saveFile', 'FS.saveJsonValue', 'FS.search', 'FS.statFile'];
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
-const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'work.open'];
+const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');
@@ -114,10 +113,6 @@ function freePort() {
     const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
   });
 }
-function line(key, todo, text, extra) {
-  return JSON.stringify(Object.assign({ key: key, at: new Date(Date.UTC(2026, 8, 29, 5, 0, Number(key.replace(/\D/g, '')) || 0)).toISOString(),
-    dir: 'in', peer: 'K', outcome: 'received', from: 'claude-windows', kind: 'note', text: text, todo: todo }, extra || {}));
-}
 
 (async function () {
   const client = appClient.createAppClient({ rootDir: scratch });
@@ -139,10 +134,11 @@ function line(key, todo, text, extra) {
 
   // ── T2 ──────────────────────────────────────────────────────────────
   test.subHeading('T2: it keeps desk.db in the state folder it was handed, and nothing else opens it');
-  const a1 = up ? await call('log.add', { json: line('k1', 'desk/G1.3', 'first line', { to: 'andy', reported: true }) }) : {};
-  const a2 = up ? await call('log.add', { json: line('k1', 'desk/G1.3', 'first line') }) : {};
-  if (a1.added === true && a2.added === false) test.check('a line is added once; the same key again says added: false; a report line\'s own keys ride along');
-  else test.fail(OWED + 'log.add answered ' + JSON.stringify([a1, a2]));
+  // goal/G33.4: the verbs of the old lines are gone.
+  const gone = [];
+  if (up) for (const v of ['log.add', 'log.search', 'pending.get']) gone.push(((await ask({ desk: { [v]: {} } })).body || {}).code);
+  if (up && gone.every(function (c) { return c === 'no-such-verb'; })) test.check('log.add, log.search and pending.get are no-such-verb (goal/G33.4)');
+  else test.fail('goal/G33.4: the old log verbs answered ' + JSON.stringify(gone));
   if (fs.existsSync(path.join(state, 'desk.db'))) test.check('desk.db sits in the --state folder');
   else test.fail(OWED + 'no desk.db in ' + state);
   // Only process/js/desk names desk.db in code; a comment elsewhere may.
@@ -158,36 +154,6 @@ function line(key, todo, text, extra) {
   })(RUN);
   if (!namers.length && fs.existsSync(SCRIPT)) test.check('no code outside process/js/desk names desk.db');
   else test.fail(OWED + (fs.existsSync(SCRIPT) ? 'desk.db named in ' + namers.join(', ') : 'no process/js/desk/desk.js'));
-
-  // Searching: by todo, by text, since, and bounded by bytes.
-  if (up) {
-    await call('log.add', { json: line('k2', 'desk/G1.4', 'second line') });
-    await call('log.add', { json: line('k3', 'desk/G1.3', 'third LINE') });
-  }
-  const byTodo = up ? await call('log.search', { text: '', todo: 'desk/G1.3', since: '', kind: '', before: '' }) : {};
-  const byText = up ? await call('log.search', { text: 'second', todo: '', since: '', kind: '', before: '' }) : {};
-  const since = up ? await call('log.search', { text: '', todo: '', since: new Date(Date.UTC(2026, 8, 29, 5, 0, 2)).toISOString(), kind: '', before: '' }) : {};
-  const keys = function (r) { return (r.items || []).map(function (i) { try { return JSON.parse(i.label).key; } catch (e) { return '?'; } }).sort().join(','); };
-  // goal/G18.5: the text ranks the lines (probabilityStringMatch), todo, since, kind and before still filter.
-  const first = function (r) { try { return JSON.parse(((r.items || [])[0] || {}).label).key; } catch (e) { return '?'; } };
-  if (keys(byTodo) === 'k1,k3' && first(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.more === false) {
-    test.check('search by todo and since finds its lines, the text ranks its line first, whole, as JSON text');
-  } else {
-    test.fail(OWED + 'search found todo ' + keys(byTodo) + ', text first ' + first(byText) + ', since ' + keys(since));
-  }
-  const report = (byTodo.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }).filter(function (l) { return l.key === 'k1'; })[0];
-  if (report && report.reported === true && report.to === 'andy') test.check('a report line comes back with its to and reported');
-  else test.fail(OWED + 'k1 came back as ' + JSON.stringify(report));
-
-  const big = 'x'.repeat(1000);
-  if (up) for (let i = 10; i < 30; i++) await call('log.add', { json: line('b' + i, 'desk/big', big) });
-  const cut = up ? await call('log.search', { text: '', todo: 'desk/big', since: '', kind: '', before: '' }) : {};
-  const bytes = Buffer.byteLength(JSON.stringify(cut), 'utf8');
-  if (cut.more === true && (cut.items || []).length > 0 && (cut.items || []).length < 20 && bytes <= appClient.ANSWER_MAX) {
-    test.check('20 lines over ANSWER_MAX (' + appClient.ANSWER_MAX + ' bytes): ' + cut.items.length + ' came back, more, ' + bytes + ' bytes');
-  } else {
-    test.fail(OWED + 'a search over the bound answered ' + ((cut.items || []).length) + ' lines, more ' + cut.more + ', ' + bytes + ' bytes');
-  }
 
   // State, seen, voice.
   const s1 = up ? await call('state.set', { json: JSON.stringify({ decided: { 'desk/G1.3': 'go' } }) }) : {};
@@ -205,9 +171,6 @@ function line(key, todo, text, extra) {
   if (v.code === 'no-such-verb' && !fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('voice.add is no-such-verb, and no voice.jsonl is written');
   else test.fail('OWED by goal/G2.1: voice.add answered ' + JSON.stringify(v) + ', file present ' + fs.existsSync(path.join(state, 'voice.jsonl')));
 
-  const bad = up ? await call('log.add', { json: 'not json' }) : {};
-  if (bad.ok === false) test.check('a line that is not JSON is refused, by an error');
-  else test.fail(OWED + 'a non-JSON line answered ' + JSON.stringify(bad));
   // Tightened after the mutation run: a state that is not JSON is refused too.
   const badState = up ? await call('state.set', { json: 'not json' }) : {};
   if (badState.ok === false) test.check('a state that is not JSON is refused, by an error');
@@ -216,11 +179,9 @@ function line(key, todo, text, extra) {
   // It survives its own restart: the node brings it back, desk.db holds.
   await stop(kid);
   kid = start();
-  const again = kid ? await waitFor(function () {
-    return call('log.search', { text: 'third', todo: '', since: '', kind: '', before: '' }).then(function (r) { return first(r) === 'k3'; });
-  }) : false;
+  const again = kid ? await waitFor(function () { return ask('api').then(function (r) { return r.body && r.body.desk && r.body.desk.ok !== false; }); }) : false;
   const sAgain = again ? await call('state.get', {}) : {};
-  if (again && sAgain.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('after a restart its lines and state are still there');
+  if (again && sAgain.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('after a restart its state is still there');
   else test.fail(OWED + 'after a restart: search ' + again + ', state ' + JSON.stringify(sAgain));
 
   // ── T4 ──────────────────────────────────────────────────────────────

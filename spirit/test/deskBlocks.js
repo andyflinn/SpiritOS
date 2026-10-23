@@ -34,7 +34,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskBlocksTestAndyAAAAAAAAAAAAAAAAAAAA=', label: 'Andy' };
-const G = 'bk/G1';
+const G = 'goal/G100';
 const I = function (n) { return G + '.' + n; };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -177,9 +177,9 @@ async function faceHalf() {
   else test.fail(OWED + 'block.targets was asked ' + targetsAsked() + ' times on open, before the blocks icon');
   await d.blocksPanel();
   const html = d.page();
-  if (/data-unblock="bk\/G1\.2"/.test(html) && !/data-unblock="bk\/G1\.8"/.test(html)) test.check('a delete on its block of item 2, none on item 8 that blocks it');
+  if (/data-unblock="goal\/G100\.2"/.test(html) && !/data-unblock="goal\/G100\.8"/.test(html)) test.check('a delete on its block of item 2, none on item 8 that blocks it');
   else test.fail(OWED + 'the dialog reads ' + short(html.slice(0, 600)));
-  if (d.calls.some(function (c) { return c.verb === 'block.targets' && c.args && c.args.id === I(1); }) && /<select[^>]*id="dd-block-add"[\s\S]*bk\/G1\.3[\s\S]*bk\/G1\.4/.test(html)) test.check('the add drop-down holds what block.targets offered');
+  if (d.calls.some(function (c) { return c.verb === 'block.targets' && c.args && c.args.id === I(1); }) && /<select[^>]*id="dd-block-add"[\s\S]*goal\/G100\.3[\s\S]*goal\/G100\.4/.test(html)) test.check('the add drop-down holds what block.targets offered');
   else test.fail(OWED + 'block.targets asked ' + d.calls.filter(function (c) { return c.verb === 'block.targets'; }).length + ' times; the drop-down reads ' + short((/<select[^>]*id="dd-block-add"[\s\S]*?<\/select>/.exec(html) || ['none'])[0]));
   const n0 = d.calls.length;
   d.doc.getElementById('dd-block-add').value = I(4);

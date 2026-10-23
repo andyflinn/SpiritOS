@@ -4,7 +4,7 @@
 // Andy, 2026-10-03 (a musing, then "add the items" under goal/G3): "the main botton row now reads: [List] [Team]
 // [Musings], those are buttons, and Info [Agent1-status] [Agent2-status]... Where the Agent - bubbles are
 // highlighted with a red-blinking border when busy." and "the The team tab will only show the team chat interface
-// (Chat of goal 'desk/G0.0')". His Go is his go-all on goal/G3 (2026-10-03).
+// (Chat of goal 'goal/G0')". His Go is his go-all on goal/G3 (2026-10-03).
 // The shape, named by claude-windows under goal/G3 and not contradicted: the bubbles beside Info show state only
 // (a click does nothing); the direct tabs and the direct line go; Team is the group chat alone.
 // In the tree today (e3506e6b): the tab strip is List, Team, Musings (shell/desk/desk.js deskDrawTabs); the agents
@@ -17,7 +17,7 @@
 //      every tab, the List included, and follow the goal row's publish.
 //   2. STATE ONLY. A click on a bubble asks the server nothing, posts nothing and changes no tab.
 //   3. TEAM IS THE GROUP CHAT. No element with data-agent is drawn anywhere, on Team or elsewhere; what he types
-//      under Team is one chat.add on desk/G0.0 and no packet to anybody, with no tab to pick first.
+//      under Team is one chat.add on goal/G0 and no packet to anybody, with no tab to pick first.
 //   4. ONE PIECE OF CODE. shell/desk/desk.js has no deskDrawAgentTabs, no deskDirectChat, no deskSend, and draws
 //      no data-agent= attribute: the direct tabs are gone, not hidden.
 // Not asserted (the builder's): the look of a bubble, the word Info or its place, what becomes of the recorded
@@ -31,7 +31,7 @@ const kernel = require('../run/js/kernel.js');
 
 const OWED = 'OWED by goal/G3.12: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-const GROUP = 'desk/G0.0';
+const GROUP = 'goal/G0';
 
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
@@ -64,11 +64,11 @@ function target(attrs) {
 }
 
 const label = function (over) {
-  return JSON.stringify(Object.assign({ id: 'f/G1.1', title: 'Alpha', goal: 'f/G1', status: '', with: '', buttons: ['go'],
+  return JSON.stringify(Object.assign({ id: 'goal/G100.1', title: 'Alpha', goal: 'goal/G100', status: '', with: '', buttons: ['go'],
     blocking: [], blocked: [], alone: false, star: false, go: false }, over || {}));
 };
 const goalRow = function (over) {
-  return label(Object.assign({ id: 'f/G1', title: 'The goal', goal: '', buttons: [], design: false, waiting: 0,
+  return label(Object.assign({ id: 'goal/G100', title: 'The goal', goal: '', buttons: [], design: false, waiting: 0,
     live: ['claude-windows', 'wsl-claude'], working: ['wsl-claude'], agents: {} }, over || {}));
 };
 function page() {
@@ -87,7 +87,7 @@ function page() {
       if (ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
-        if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'f/G1', label: goalRow() }, { key: 'f/G1.1', label: label() }], more: false } });
+        if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'goal/G100', label: goalRow() }, { key: 'goal/G100.1', label: label() }], more: false } });
         if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [], more: false } });
         return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', change: 1 } });
       }
@@ -157,7 +157,7 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   p.doc.getElementById('desk-team-send').fire('click', {});
   await settled();
   const added = p.asked.slice(before).filter(function (a) { return a.verb === 'chat.add'; });
-  if (added.length === 1 && added[0].args.id === GROUP && added[0].args.text === 'to the team' && !p.posted.length) test.check('his line under Team is one chat.add on desk/G0.0 and no packet');
+  if (added.length === 1 && added[0].args.id === GROUP && added[0].args.text === 'to the team' && !p.posted.length) test.check('his line under Team is one chat.add on goal/G0 and no packet');
   else test.fail(OWED + 'his line went as ' + JSON.stringify(p.asked.slice(before)) + ', posted ' + JSON.stringify(p.posted));
 
   test.subHeading('4. one piece of code: the direct tabs are gone, not hidden');

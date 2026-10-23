@@ -56,37 +56,37 @@ async function listed(includeClosed) {
 
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // x/G1.1 a plain item never gone, x/G1.2 a code item whose red claude-windows will hold, x/G1.3 a plain item an
-  // agent claims done, x/G1.4 a code item whose red is done and whose build nobody holds yet. x/G1.1 blocks x/G1.5.
+  // goal/G100.1 a plain item never gone, goal/G100.2 a code item whose red claude-windows will hold, goal/G100.3 a plain item an
+  // agent claims done, goal/G100.4 a code item whose red is done and whose build nobody holds yet. goal/G100.1 blocks goal/G100.5.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'x/G1', title: 'Deletes out of design' }, items: [
-    { id: 'x/G1.1', title: 'No longer serves', blocks: ['x/G1', 'x/G1.5'] },
-    { id: 'x/G1.2', title: 'Red held', blocks: ['x/G1'], code: true },
-    { id: 'x/G1.3', title: 'Claimed done', blocks: ['x/G1'] },
-    { id: 'x/G1.4', title: 'Build open, unheld', blocks: ['x/G1'], code: true },
-    { id: 'x/G1.5', title: 'Waits on x/G1.1', blocks: ['x/G1'] },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Deletes out of design' }, items: [
+    { id: 'goal/G100.1', title: 'No longer serves', blocks: ['goal/G100', 'goal/G100.5'] },
+    { id: 'goal/G100.2', title: 'Red held', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.3', title: 'Claimed done', blocks: ['goal/G100'] },
+    { id: 'goal/G100.4', title: 'Build open, unheld', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.5', title: 'Waits on goal/G100.1', blocks: ['goal/G100'] },
   ] }) }, ANDY);
-  await call('box.write', { id: 'x/G1.1', text: 'Its own words.', version: 0 }, CW);
-  await call('item.take', { id: 'x/G1.1' }, CW);
-  await call('chat.add', { id: 'x/G1.1', text: 'claude-windows: a line under it.' }, CW);
-  await call('item.release', { id: 'x/G1.1' }, CW);
-  const ended = await call('press', { id: 'x/G1', what: 'end-design' }, ANDY);
+  await call('box.write', { id: 'goal/G100.1', text: 'Its own words.', version: 0 }, CW);
+  await call('item.take', { id: 'goal/G100.1' }, CW);
+  await call('chat.add', { id: 'goal/G100.1', text: 'claude-windows: a line under it.' }, CW);
+  await call('item.release', { id: 'goal/G100.1' }, CW);
+  const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
-  for (const id of ['x/G1.2', 'x/G1.3', 'x/G1.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
-  // x/G1.4: claude-ubuntu writes the red and finishes it, so the build is open and nobody holds a phase.
-  await call('phase.take', { id: 'x/G1.4', phase: 'red' }, UBI);
-  await call('phase.done', { id: 'x/G1.4', phase: 'red' }, UBI);
-  // x/G1.2: claude-windows holds its red.
-  await call('phase.take', { id: 'x/G1.2', phase: 'red' }, CW);
-  // x/G1.3: claude-ubuntu claims it done.
-  await call('item.take', { id: 'x/G1.3' }, UBI);
-  await call('press', { id: 'x/G1.3', what: 'claim-done' }, UBI);
-  await call('item.release', { id: 'x/G1.3' }, UBI);
+  for (const id of ['goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
+  // goal/G100.4: claude-ubuntu writes the red and finishes it, so the build is open and nobody holds a phase.
+  await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, UBI);
+  await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, UBI);
+  // goal/G100.2: claude-windows holds its red.
+  await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
+  // goal/G100.3: claude-ubuntu claims it done.
+  await call('item.take', { id: 'goal/G100.3' }, UBI);
+  await call('press', { id: 'goal/G100.3', what: 'claim-done' }, UBI);
+  await call('item.release', { id: 'goal/G100.3' }, UBI);
 
-  const g = await facts('x/G1');
-  const i2 = await facts('x/G1.2');
-  const i3 = await facts('x/G1.3');
-  const i4 = await facts('x/G1.4');
+  const g = await facts('goal/G100');
+  const i2 = await facts('goal/G100.2');
+  const i3 = await facts('goal/G100.3');
+  const i4 = await facts('goal/G100.4');
   const world = {
     ended: ended.status, gos: gos, design: g.design, i2: { phase: i2.phase, with: i2.with }, i3: { claims: i3.claims, status: i3.status, closed: i3.closed },
     i4: { phase: i4.phase, with: i4.with },
@@ -94,58 +94,58 @@ async function server() {
   const i3claimed = (typeof i3.claims === 'number' ? i3.claims > 0 : !!(i3.claims && Object.keys(i3.claims).length));
   if (ended.status === 200 && g.design === false && gos.every(function (s) { return s === 200; }) &&
     i2.phase === 'red' && /claude-windows/.test(String(i2.with)) && i3claimed && i4.phase === 'build' && !i4.with) {
-    test.check('the world: x/G1 out of design; x/G1.2 red held by claude-windows; x/G1.3 claimed done; x/G1.4 build open, unheld');
+    test.check('the world: goal/G100 out of design; goal/G100.2 red held by claude-windows; goal/G100.3 claimed done; goal/G100.4 build open, unheld');
   } else { test.fail('the world: ' + short(world)); return; }
 
   test.subHeading('1. out of design mode a plain item offers delete and is deleted, erasing nothing');
-  if (await offers('x/G1.1')) test.check('x/G1.1 offers delete with the goal out of design mode');
-  else test.fail(OWED + 'x/G1.1 offers ' + short((await facts('x/G1.1')).buttons));
-  const del = await call('item.delete', { id: 'x/G1.1' }, ANDY);
-  if (took(del)) test.check('his item.delete {id: x/G1.1} is taken');
+  if (await offers('goal/G100.1')) test.check('goal/G100.1 offers delete with the goal out of design mode');
+  else test.fail(OWED + 'goal/G100.1 offers ' + short((await facts('goal/G100.1')).buttons));
+  const del = await call('item.delete', { id: 'goal/G100.1' }, ANDY);
+  if (took(del)) test.check('his item.delete {id: goal/G100.1} is taken');
   else test.fail(OWED + 'his item.delete answered ' + del.status + ' ' + short(del.body));
   const open = await listed(false);
   const all = await listed(true);
-  if (open.indexOf('x/G1.1') === -1 && all.indexOf('x/G1.1') !== -1) test.check('x/G1.1 leaves the List and Include Closed finds it');
+  if (open.indexOf('goal/G100.1') === -1 && all.indexOf('goal/G100.1') !== -1) test.check('goal/G100.1 leaves the List and Include Closed finds it');
   else test.fail(OWED + 'open list ' + short(open) + ', with closed ' + short(all));
-  const box = await call('item.box', { id: 'x/G1.1' }, ANDY);
-  const chat = JSON.stringify(((await call('item.chat', { id: 'x/G1.1' }, ANDY)).body || {}).chat || []);
+  const box = await call('item.box', { id: 'goal/G100.1' }, ANDY);
+  const chat = JSON.stringify(((await call('item.chat', { id: 'goal/G100.1' }, ANDY)).body || {}).chat || []);
   if (box.body && box.body.box === 'Its own words.' && /a line under it/.test(chat)) test.check('its box and chat stay on the record');
   else test.fail('after the delete: box ' + short(box.body && box.body.box) + ', chat ' + short(chat));
-  if (((await facts('x/G1.5')).blocked || []).indexOf('x/G1.1') === -1) test.check('x/G1.5 no longer waits on it');
-  else test.fail(OWED + 'x/G1.5 still waits on ' + short((await facts('x/G1.5')).blocked));
+  if (((await facts('goal/G100.5')).blocked || []).indexOf('goal/G100.1') === -1) test.check('goal/G100.5 no longer waits on it');
+  else test.fail(OWED + 'goal/G100.5 still waits on ' + short((await facts('goal/G100.5')).blocked));
 
   test.subHeading('2. an item with a phase held offers no delete, and item.delete is refused');
-  if (!await offers('x/G1.2')) test.check('x/G1.2 (red held) offers no delete');
-  else test.fail('x/G1.2 offers delete while its red is held');
-  const held = await call('item.delete', { id: 'x/G1.2' }, ANDY);
-  if (refused(held) && (await listed(false)).indexOf('x/G1.2') !== -1) test.check('item.delete on x/G1.2 is refused and it stays open');
+  if (!await offers('goal/G100.2')) test.check('goal/G100.2 (red held) offers no delete');
+  else test.fail('goal/G100.2 offers delete while its red is held');
+  const held = await call('item.delete', { id: 'goal/G100.2' }, ANDY);
+  if (refused(held) && (await listed(false)).indexOf('goal/G100.2') !== -1) test.check('item.delete on goal/G100.2 is refused and it stays open');
   else test.fail('item.delete on a held phase answered ' + held.status + ' ' + short(held.body));
 
   test.subHeading('3. an item claimed done and not yet closed offers no delete, and item.delete is refused');
-  if (!await offers('x/G1.3')) test.check('x/G1.3 (claimed done) offers no delete');
-  else test.fail('x/G1.3 offers delete while claimed done');
-  const claimed = await call('item.delete', { id: 'x/G1.3' }, ANDY);
-  if (refused(claimed) && (await listed(false)).indexOf('x/G1.3') !== -1) test.check('item.delete on x/G1.3 is refused and it stays open');
+  if (!await offers('goal/G100.3')) test.check('goal/G100.3 (claimed done) offers no delete');
+  else test.fail('goal/G100.3 offers delete while claimed done');
+  const claimed = await call('item.delete', { id: 'goal/G100.3' }, ANDY);
+  if (refused(claimed) && (await listed(false)).indexOf('goal/G100.3') !== -1) test.check('item.delete on goal/G100.3 is refused and it stays open');
   else test.fail('item.delete on a claimed item answered ' + claimed.status + ' ' + short(claimed.body));
 
   test.subHeading('4. a goal never offers delete, in design mode or out of it');
-  if (!await offers('x/G1')) test.check('x/G1 out of design offers no delete');
-  else test.fail('x/G1 offers delete');
-  const onGoal = await call('item.delete', { id: 'x/G1' }, ANDY);
-  if (refused(onGoal) && (await facts('x/G1')).status !== 'closed') test.check('item.delete on the goal is refused');
+  if (!await offers('goal/G100')) test.check('goal/G100 out of design offers no delete');
+  else test.fail('goal/G100 offers delete');
+  const onGoal = await call('item.delete', { id: 'goal/G100' }, ANDY);
+  if (refused(onGoal) && (await facts('goal/G100')).status !== 'closed') test.check('item.delete on the goal is refused');
   else test.fail('item.delete on the goal answered ' + onGoal.status + ' ' + short(onGoal.body));
-  await call('press', { id: 'x/G1', what: 'start-design' }, ANDY);
-  if ((await facts('x/G1')).design !== true) test.fail('the world: start-design did not take');
-  else if (!await offers('x/G1')) test.check('x/G1 in design offers no delete');
-  else test.fail('x/G1 in design offers delete');
-  await call('press', { id: 'x/G1', what: 'end-design' }, ANDY);
+  await call('press', { id: 'goal/G100', what: 'start-design' }, ANDY);
+  if ((await facts('goal/G100')).design !== true) test.fail('the world: start-design did not take');
+  else if (!await offers('goal/G100')) test.check('goal/G100 in design offers no delete');
+  else test.fail('goal/G100 in design offers delete');
+  await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
   test.subHeading('5. a gone code item with no phase held offers delete and is deleted');
-  if (await offers('x/G1.4')) test.check('x/G1.4 (build open, nobody holding) offers delete');
-  else test.fail(OWED + 'x/G1.4 offers ' + short((await facts('x/G1.4')).buttons));
-  const free = await call('item.delete', { id: 'x/G1.4' }, ANDY);
-  if (took(free) && (await listed(false)).indexOf('x/G1.4') === -1 && (await listed(true)).indexOf('x/G1.4') !== -1) test.check('his item.delete on x/G1.4 closes it and Include Closed finds it');
-  else test.fail(OWED + 'item.delete on x/G1.4 answered ' + free.status + ' ' + short(free.body));
+  if (await offers('goal/G100.4')) test.check('goal/G100.4 (build open, nobody holding) offers delete');
+  else test.fail(OWED + 'goal/G100.4 offers ' + short((await facts('goal/G100.4')).buttons));
+  const free = await call('item.delete', { id: 'goal/G100.4' }, ANDY);
+  if (took(free) && (await listed(false)).indexOf('goal/G100.4') === -1 && (await listed(true)).indexOf('goal/G100.4') !== -1) test.check('his item.delete on goal/G100.4 closes it and Include Closed finds it');
+  else test.fail(OWED + 'item.delete on goal/G100.4 answered ' + free.status + ' ' + short(free.body));
 }
 
 (async function () {

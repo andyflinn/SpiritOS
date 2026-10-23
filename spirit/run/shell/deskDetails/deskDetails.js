@@ -126,7 +126,8 @@ function ddHeader() {
   old.parentNode.replaceChild(head, old);
 }
 
-var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
+// goal/G33.4: an item's own End design, while its goal is out of design.
+var DD_LABELS = { 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
 
 // THE VERIFIER'S RUN OF THIS ITEM (goal/G33.6), as the List's status column shows it: the desk's fact (verifyRunning)
 // joined with deskVerify's own publish (ddRun), through the one shared rendering (shell/shared/js/deskRunStatus.js).
@@ -507,16 +508,44 @@ function ddTake(obj) {
   var gap = ddLastChange && change > ddLastChange + 1;
   if (change) ddLastChange = change;
   if (gap && ddId) { ddForget(ddId); ddLoad(); return; }
+  // ONE ROW AT A TIME (goal/G33.4): a side row of an item, {table, id, row}, or its List row, {item: <facts>}.
+  if (obj.table) { if (obj.id === ddId && ddTakeRow(obj)) ddPaint(); return; }
   if (!obj.item || obj.item.id !== ddId) return;
   ddFacts = obj.item;
-  // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
-  // his dialog is open must not hide behind his fold; he folds it again when he has read it.
-  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddBoxLoaded = true; }
-  if (obj.chat) ddChat.push(obj.chat);
-  if (Array.isArray(obj.checks)) ddChecks = obj.checks;
-  if (obj.verb === 'item.files.add') ddLoadFiles(ddId);
   ddPaint();
 }
+// A side row of the open item: its box, a chat line, a check, a changed file list. Answers whether anything shown
+// changed.
+function ddTakeRow(obj) {
+  // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
+  // his dialog is open must not hide behind his fold; he folds it again when he has read it.
+  if (obj.table === 'box') {
+    if (!obj.row) return false;
+    ddBox = String(obj.row.text || '');
+    ddVersion = Number(obj.row.version) || ddVersion;
+    ddBoxLoaded = true;
+    return true;
+  }
+  if (obj.table === 'chat' && obj.row && !obj.removed) {
+    var at = -1;
+    ddChat.forEach(function (l, i) { if (l.at === obj.row.at && l.by === obj.row.by && l.text === obj.row.text) at = i; });
+    if (at === -1) ddChat.push(obj.row); else ddChat[at] = obj.row;
+    return true;
+  }
+  if (obj.table === 'checks') {
+    var number = obj.removed ? String(obj.at || '') : String((obj.row && obj.row.number) || '');
+    var was = -1;
+    ddChecks.forEach(function (c, i) { if (c.number === number) was = i; });
+    // The panel holds the open and the decided ones, never the answered or cleared (desk.js shownChecks).
+    var gone = obj.removed || !obj.row || obj.row.state === 'answered' || obj.row.state === 'cleared';
+    if (gone) { if (was !== -1) ddChecks.splice(was, 1); } else if (was === -1) ddChecks.push(obj.row); else ddChecks[was] = obj.row;
+    return true;
+  }
+  // One write's file rows ask the list once.
+  if (obj.table === 'files') { if (ddFilesAt !== obj.change) { ddFilesAt = obj.change; ddLoadFiles(ddId); } return false; }
+  return false;
+}
+var ddFilesAt = -1;
 
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
 function ddLoadFiles(id) {
@@ -738,7 +767,7 @@ spirit.shell.activateApp({
         return;
       }
       if (id === 'dd-done') { ddArmed = ''; ddNote = ''; }
-      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
+      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen' || id === 'dd-end-design') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }

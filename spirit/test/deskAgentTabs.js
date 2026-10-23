@@ -71,21 +71,21 @@ function row(dir, from, peer, kind, text, todo) {
   return { key: 'k' + n, at: new Date(now - 60000 + n * 1000).toISOString(), dir: dir, peer: peer,
     outcome: dir === 'in' ? 'received' : 'sent', from: from, kind: kind, text: text, todo: todo };
 }
-const SESSION = JSON.stringify({ goal: { id: 'test/G1', title: 'The goal' }, rules: [],
-  items: [{ id: 'test/G1.1', title: 'Asks Andy' }, { id: 'test/G1.2', title: 'Quiet' }] });
+const SESSION = JSON.stringify({ goal: { id: 'goal/G100', title: 'The goal' }, rules: [],
+  items: [{ id: 'goal/G100.1', title: 'Asks Andy' }, { id: 'goal/G100.2', title: 'Quiet' }] });
 const log = [
   row('in', 'claude-windows', LEAD, 'session', SESSION, 'team/chat'),
   row('in', 'claude-windows', LEAD, 'note', 'a line from the lead to Andy alone', ''),
   row('in', 'wsl-claude', WSL, 'note', 'wsl in the team chat', 'team/chat'),
-  row('in', 'claude-windows', LEAD, 'note', 'IN PLACE VERIFIED', 'test/G1.1'),
-  row('in', 'claude-windows', LEAD, 'ask', 'ready: go?', 'test/G1.1'),
+  row('in', 'claude-windows', LEAD, 'note', 'IN PLACE VERIFIED', 'goal/G100.1'),
+  row('in', 'claude-windows', LEAD, 'ask', 'ready: go?', 'goal/G100.1'),
   row('in', 'wsl-claude', WSL, 'note', 'wsl to Andy alone, unseen', ''),
 ];
 
 const posted = [];
 // WHAT WAITS ON ANDY IS THE DESK SERVER'S COUNT, on the goal row (desk/G2.6).
 const fake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
-fake.items = [{ id: 'test/G1', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 1 }];
+fake.items = [{ id: 'goal/G100', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 1 }];
 const doc = fakeDocument();
 const root = fakeElement('container');
 load(DESK, doc).mount(root, {
@@ -125,7 +125,7 @@ settle().then(function () {
     try {
       dd.mount(box, { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
         fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
-      if (dd.open) dd.open({ id: 'test/G1.1', row: { id: 'test/G1.1', title: 'Asks Andy' }, thread: [], agents: {}, session: [], rules: [] });
+      if (dd.open) dd.open({ id: 'goal/G100.1', row: { id: 'goal/G100.1', title: 'Asks Andy' }, thread: [], agents: {}, session: [], rules: [] });
     } catch (e) { /* drawn below */ }
     // The dialog draws its frame into #dd-body, not into the container; since
     // desk/G1.12 the Rename row is redrawn into #dd-name-row on every draw.

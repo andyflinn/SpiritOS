@@ -34,19 +34,6 @@ function create(rows) {
   let holding = null;
   const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [], groupChat: [] };
 
-  function search(a) {
-    a = a || {};
-    const hits = lines.filter(function (m) {
-      // '-' is a line with no todo: an agent's direct chat (wsl-claude, G1.4).
-      if (a.todo === '-') { if (m.todo) return false; } else if (a.todo && m.todo !== a.todo) return false;
-      if (a.kind && m.kind !== a.kind) return false;
-      if (a.since && !(String(m.at) >= a.since)) return false;
-      if (a.before && !(String(m.at) < a.before)) return false;
-      if (a.text && String(m.text || '').indexOf(a.text) === -1) return false;
-      return true;
-    }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : (x.key < y.key ? 1 : -1); });
-    return walked(hits, function (m) { return { key: String(m.key), label: JSON.stringify(m) }; });
-  }
   // As the real server walks (desk.js walked, slim/G1.2): one bucket,
   // '**', a line too big to be sent alone skipped and said by `more`.
   function walked(walk, pairOf) {
@@ -62,30 +49,22 @@ function create(rows) {
     return { items: r.items, more: !!r.more || skipped };
   }
   const desk = {
-    'log.add': function (a) {
-      const m = JSON.parse(a.json);
-      if (lines.some(function (l) { return l.key === m.key; })) return { added: false };
-      lines.push(m);
-      return { added: true };
-    },
-    'log.search': search,
+    // log.add, log.search and pending.get went with goal/G33.4, as on the real server.
     'state.get': function () { return { json: docs.state }; },
     'state.set': function (a) { docs.state = a.json; return { saved: true }; },
     'seen.get': function () { return { json: docs.seen }; },
     'seen.set': function (a) { docs.seen = a.json; return { saved: true }; },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
-    // fake.pending[who]: the items (objects) that wait on that party (desk/G1.5).
     // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
     'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
     'press': function () { return { change: calls.length }; },
-    // The group chat (goal/G3.10): the real server holds the standing goal desk/G0.0 from its start, so the
+    // The group chat (goal/G3.10): the real server holds the standing goal goal/G0 (goal/G33.4: goal 0) from its start, so the
     // fake does too. fake.groupChat: its lines, oldest first; a chat.add on it is his line.
-    'item.chat': function (a) { return { chat: a.id === 'desk/G0.0' ? fake.groupChat.slice() : [], chatMore: false }; },
+    'item.chat': function (a) { return { chat: a.id === 'goal/G0' ? fake.groupChat.slice() : [], chatMore: false }; },
     'chat.add': function (a) {
-      if (a.id === 'desk/G0.0') fake.groupChat.push({ by: 'andy', at: new Date().toISOString(), text: String(a.text), taken: '' });
+      if (a.id === 'goal/G0') fake.groupChat.push({ by: 'andy', at: new Date().toISOString(), text: String(a.text), taken: '' });
       return { change: calls.length };
     },
-    'pending.get': function (a) { return walked(fake.pending[a.who] || [], function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };
@@ -118,7 +97,6 @@ function create(rows) {
   };
   fake.hold = function (pred) { holding = pred; };
   fake.release = function () { holding = null; held.splice(0).forEach(function (f) { f(); }); };
-  fake.searches = function () { return calls.filter(function (c) { return c.server === 'desk' && c.verb === 'log.search'; }); };
   return fake;
 }
 

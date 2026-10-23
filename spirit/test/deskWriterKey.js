@@ -51,44 +51,45 @@ function call(verb, args, headers) {
   for (let i = 0; i < 60; i++) { await sleep(150); const r = await pipeRequest(pipe, 'POST', '/', '"api"', { type: 'application/json', timeoutMs: 1000 }).catch(function () { return null; }); if (r && r.status === 200) break; }
 
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Goal' }, items: [{ id: 'k/G1.1', title: 'A', blocks: ['k/G1'] }] }) }, OWNER);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, OWNER);
 
   test.subHeading('a member\'s write is tracked by its key and shown by its label');
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-  await call('item.take', { id: 'k/G1.1' }, MEMBER);
-  const w = await call('chat.add', { id: 'k/G1.1', text: 'FROM-ALICE' }, MEMBER);
-  const chat = (await call('item.chat', { id: 'k/G1.1' }, MEMBER)).body.chat || [];
+  await call('item.take', { id: 'goal/G100.1' }, MEMBER);
+  const w = await call('chat.add', { id: 'goal/G100.1', text: 'FROM-ALICE' }, MEMBER);
+  const chat = (await call('item.chat', { id: 'goal/G100.1' }, MEMBER)).body.chat || [];
   const line = chat.filter(function (l) { return l.text === 'FROM-ALICE'; })[0];
   if (w.status === 200 && line && line.by === 'alice') test.check('chat.add with no by: the line shows alice, the caller\'s label');
   else test.fail(OWED + 'a member\'s chat.add answered ' + JSON.stringify(w.body).slice(0, 120) + ', line ' + JSON.stringify(line));
 
   test.subHeading('by: is no longer an argument');
-  const withBy = await call('chat.add', { id: 'k/G1.1', text: 'SPOOF', by: 'wsl-claude' }, MEMBER);
+  const withBy = await call('chat.add', { id: 'goal/G100.1', text: 'SPOOF', by: 'wsl-claude' }, MEMBER);
   if (withBy.body.code === 'no-such-argument') test.check('chat.add with a by is no-such-argument: nobody names their own writer');
   else test.fail(OWED + 'chat.add with a by answered ' + JSON.stringify(withBy.body).slice(0, 140));
 
   test.subHeading('the owner\'s presses are his caller\'s, a member\'s refused');
-  const mine = await call('press', { id: 'k/G1', what: 'end-design' }, OWNER);
-  const theirs = await call('press', { id: 'k/G1', what: 'start-design' }, MEMBER);
+  const mine = await call('press', { id: 'goal/G100', what: 'end-design' }, OWNER);
+  const theirs = await call('press', { id: 'goal/G100', what: 'start-design' }, MEMBER);
   if (mine.status === 200 && theirs.body.code === 'not-owner') test.check('the owner\'s press is taken; a member\'s press is refused not-owner');
   else test.fail(OWED + 'presses answered ' + JSON.stringify([mine.body, theirs.body]).slice(0, 180));
-  const oc = await call('chat.add', { id: 'k/G1.1', text: 'FROM-ANDY' }, OWNER);
-  const chat2 = (await call('item.chat', { id: 'k/G1.1' }, OWNER)).body.chat || [];
+  const oc = await call('chat.add', { id: 'goal/G100.1', text: 'FROM-ANDY' }, OWNER);
+  const chat2 = (await call('item.chat', { id: 'goal/G100.1' }, OWNER)).body.chat || [];
   const own = chat2.filter(function (l) { return l.text === 'FROM-ANDY'; })[0];
   if (oc.status === 200 && own && own.by === 'andy') test.check('the owner\'s line shows andy');
   else test.fail(OWED + 'the owner\'s chat line was ' + JSON.stringify(own));
 
-  test.subHeading('desk keeps the key with every record');
+  test.subHeading('desk keeps the key with every chat row (goal/G33.4: its creator)');
   if (kid) { kid.kill(); kid = null; await sleep(400); }
   try {
     const { DatabaseSync } = require('node:sqlite');
     const db = new DatabaseSync(path.join(state, 'desk.db'), { readOnly: true });
-    const cols = db.prepare('PRAGMA table_info(records)').all().map(function (c) { return c.name; });
-    const rows = cols.indexOf('key') !== -1 ? db.prepare("SELECT key, verb FROM records WHERE verb = 'chat.add'").all() : [];
+    // goal/G33.4: the log of writes went; every chat row carries its creator, the writer's key.
+    const cols = db.prepare('PRAGMA table_info(chat)').all().map(function (c) { return c.name; });
+    const rows = cols.indexOf('creator') !== -1 ? db.prepare('SELECT creator AS key FROM chat').all() : [];
     db.close();
     if (rows.length >= 2 && rows.some(function (r) { return r.key === KEY; }) && rows.some(function (r) { return r.key === OWNKEY; })) {
-      test.check('records.key holds alice\'s key and the owner\'s, so a relabel never orphans who wrote what');
-    } else test.fail(OWED + 'records columns ' + JSON.stringify(cols) + ', chat rows ' + JSON.stringify(rows).slice(0, 160));
+      test.check('the chat rows\' creator holds alice\'s key and the owner\'s, so a relabel never orphans who wrote what');
+    } else test.fail(OWED + 'chat columns ' + JSON.stringify(cols) + ', chat rows ' + JSON.stringify(rows).slice(0, 160));
   } catch (e) { test.fail(OWED + 'desk.db could not be read: ' + e.message); }
 
   test.subHeading('nobody sends by any more');

@@ -41,23 +41,23 @@ const WSL = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerWSAAAAAAAAAAAAAAAAAA=', la
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPanelsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }) }, ANDY);
-    await call('box.write', { id: 'p/G1', text: 'B'.repeat(6000), version: 0 }, CW);
-    await call('check.add', { id: 'p/G1', kind: 'C', words: 'look', test: '' }, CW);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Panels' }, items: [] }) }, ANDY);
+    await call('box.write', { id: 'goal/G100', text: 'B'.repeat(6000), version: 0 }, CW);
+    await call('check.add', { id: 'goal/G100', kind: 'C', words: 'look', test: '' }, CW);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-    await call('item.take', { id: 'p/G1' }, WSL);
-    for (let i = 0; i < 30; i++) await call('chat.add', { id: 'p/G1', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300) }, WSL);
+    await call('item.take', { id: 'goal/G100' }, WSL);
+    for (let i = 0; i < 30; i++) await call('chat.add', { id: 'goal/G100', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300) }, WSL);
 
     test.subHeading('item.get answers the facts alone');
-    const g = await call('item.get', { id: 'p/G1' });
+    const g = await call('item.get', { id: 'goal/G100' });
     const gk = Object.keys(g.body || {}).sort().join(',');
     if (g.status === 200 && gk === 'change,item,version') test.check('item.get answers {item, version, change}');
     else test.fail('item.get answered keys ' + gk);
 
     test.subHeading('each panel is its own answer, and each fits');
-    const b = await call('item.box', { id: 'p/G1' });
-    const k = await call('item.checks', { id: 'p/G1' });
-    const c = await call('item.chat', { id: 'p/G1' });
+    const b = await call('item.box', { id: 'goal/G100' });
+    const k = await call('item.checks', { id: 'goal/G100' });
+    const c = await call('item.chat', { id: 'goal/G100' });
     if (b.status === 200 && (b.body || {}).box === 'B'.repeat(6000) && typeof b.body.version === 'number') test.check('item.box answers the whole 6 KB box and its version');
     else test.fail('item.box answered ' + b.status + ' ' + JSON.stringify(b.body || {}).slice(0, 120));
     if (k.status === 200 && ((k.body || {}).checks || []).length === 1) test.check('item.checks answers the checks');
@@ -70,8 +70,8 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     else test.fail('answers ' + sizes.join(', ') + ' bytes against ' + appClient.ANSWER_MAX);
 
     test.subHeading('a box too long to come back is refused when written');
-    const cur = (await call('item.box', { id: 'p/G1' })).body || {};
-    const tooLong = await call('box.write', { id: 'p/G1', text: 'C'.repeat(appClient.ANSWER_MAX), version: cur.version }, CW);
+    const cur = (await call('item.box', { id: 'goal/G100' })).body || {};
+    const tooLong = await call('box.write', { id: 'goal/G100', text: 'C'.repeat(appClient.ANSWER_MAX), version: cur.version }, CW);
     if (tooLong.status === 413 && tooLong.body && tooLong.body.code === 'line-too-large') test.check('box.write refuses it as line-too-large');
     else test.fail('a too-long box answered ' + JSON.stringify({ status: tooLong.status, code: tooLong.body && tooLong.body.code }));
   } catch (e) {
@@ -94,7 +94,7 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     { getElementById: function (id) { return byId[id] || (byId[id] = el(id)); } }, {});
   const asked = [];
   const answers = {
-    'item.get': { item: JSON.stringify({ id: 'p/G1', title: 'Panels', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }), version: 1, change: 5 },
+    'item.get': { item: JSON.stringify({ id: 'goal/G100', title: 'Panels', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }), version: 1, change: 5 },
     'item.box': { box: 'BOX-TEXT', version: 1 },
     'item.checks': { checks: [] },
     'item.chat': { chat: [{ by: 'wsl-claude', at: '2026-09-30T21:00:00Z', text: 'CHAT-LINE' }], chatMore: false },
@@ -106,7 +106,7 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     onPublished: function () {}, onPacket: function () {}, setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); }, fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'p/G1', agents: {} });
+  dd.open({ id: 'goal/G100', agents: {} });
   for (let i = 0; i < 8; i++) await settle();
   const page = Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
   if (['item.get', 'item.box', 'item.checks', 'item.chat'].every(function (v) { return asked.indexOf(v) !== -1; }) && /BOX-TEXT/.test(page) && /CHAT-LINE/.test(page)) test.check('it asked item.get, item.box, item.checks and item.chat, and painted box and chat');

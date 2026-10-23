@@ -40,8 +40,8 @@ const DETAILS_MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'run', 'shel
 const DESK_MANIFEST = JSON.stringify({ name: 'Desk', icon: 'THREAD', hidden: false, intrinsic: false });
 const DD = 'shell/deskDetails';
 
-const A = 'g/G1.1';   // the item opened first (goal/G23.1 in his sequence): a code item
-const B = 'g/G1.2';   // the item opened next (goal/G23.2): not a code item
+const A = 'goal/G100.1';   // the item opened first (goal/G23.1 in his sequence): a code item
+const B = 'goal/G100.2';   // the item opened next (goal/G23.2): not a code item
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 async function settled() { for (let i = 0; i < 6; i++) await sleep(10); }
@@ -79,8 +79,8 @@ function clickOn(id) {
 // ── THE DESK SERVER, STAND-IN ───────────────────────────────────────────
 function deskStandIn() {
   const items = {};
-  items[A] = { id: A, title: 'First', goal: 'g/G1', status: 'running', code: true, buttons: ['done'], blocked: [], blocking: [], claims: 1 };
-  items[B] = { id: B, title: 'Second', goal: 'g/G1', status: 'ready', code: false, buttons: ['go'], blocked: [], blocking: [], claims: 0 };
+  items[A] = { id: A, title: 'First', goal: 'goal/G100', status: 'running', code: true, buttons: ['done'], blocked: [], blocking: [], claims: 1 };
+  items[B] = { id: B, title: 'Second', goal: 'goal/G100', status: 'ready', code: false, buttons: ['go'], blocked: [], blocking: [], claims: 0 };
   const desk = { items: items, change: 10, presses: [], publish: null };
   desk.answer = function (ask) {
     const verb = Object.keys(ask)[0];
@@ -245,7 +245,7 @@ async function sequence(label, reconnect, owed) {
   else fail(label + ': B\'s dialog is titled ' + short(page.title()));
   if (codeShown(page.buttons()) === 'Code') test.check(label + ': the facts drawn are B\'s: Code unchecked, as the desk has it');
   else fail(label + ': B\'s dialog shows ' + short(codeShown(page.buttons())) + ' while the desk has B unchecked (the facts drawn are not B\'s)');
-  if (/the box of g\/G1\.2/.test(page.box())) test.check(label + ': the box drawn is B\'s');
+  if (/the box of goal\/G100\.2/.test(page.box())) test.check(label + ': the box drawn is B\'s');
   else fail(label + ': B\'s dialog shows the box ' + short(page.box().replace(/<[^>]+>/g, '').slice(0, 80)));
 
   desk.presses.length = 0;

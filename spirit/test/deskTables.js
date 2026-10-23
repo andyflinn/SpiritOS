@@ -18,7 +18,8 @@
 //     the old lines table) are dumped.
 //   - The desk database sheds by itself past one constant (16 MB): whole goals, the one untouched the longest first,
 //     with every row of theirs; the current goal never, special goals never.
-//   - Push: each changed row is pushed on its own under PAYLOAD_MAX, a larger row in numbered pieces; a goal that
+//   - Push: each changed row is pushed on its own under PAYLOAD_MAX; a box stays under it (box v31: a larger box write
+//     is refused), so every row is read and pushed in one piece; a goal that
 //     becomes current is pushed whole to every desk client, and a client that was away gets it whole again.
 //
 // THE SHAPES THIS RED READS, LOOSELY, because the box does not name them (the builder may pick, within these):
@@ -28,8 +29,9 @@
 //   - a file row's grant status is a column whose name holds 'grant'.
 //   - the special mark is a column of the goals' table whose name holds 'special'.
 //   - an item's facts (item.get, items.search) carry design: true/false, as a goal's do today.
-//   - a pushed row is one object of the publish naming goal and item as numbers; a piece of a larger row carries its
-//     number in a field named piece, part, chunk, index, seq or n.
+//   - a pushed row is one object of the publish naming goal and item as numbers.
+//   - a box's bound is the one answer item.box carries it back in (appClient.ANSWER_MAX less the desk's 512 bytes of
+//     room), counted in bytes; its refusal names its bytes and the limit (extra.bytes, extra.max).
 //   - the size the desk sheds by is its database's own: page_count x page_size. The suite sets the constant through the
 //     manifest value shedBytes (values.shedBytes), as boxHoldMs is injected; left out, 16 MB.
 //   - shedding happens at a write, or by itself within a few seconds.
@@ -37,8 +39,6 @@
 //   - how the desk learns that a client was away: asserted on the one case the desk itself sees, its own restart, after
 //     which every client is one that was away.
 //   - the group chat's id string: goal/G0, goal/G0.0 and desk/G0.0 are tried; its rows must be goal 0.
-//   - how a box larger than one request is written: the large box here is the largest one write carries (a little
-//     over PAYLOAD_MAX), so only its push has to come in pieces.
 // NOT ASSERTED HERE, OWED ELSEWHERE:
 //   - the client data set's own bound (about 132 MB, one SpiritOS-wide constant, culling its oldest entries) is a
 //     shell-wide feature of spirit.data, managed by no app and no server: it needs its own item.
@@ -380,37 +380,36 @@ async function freshDesk() {
   if (plugins.length && !closedSpecial.length && Array.isArray(specialRows) && specialRows.every(function (k) { return k === 1; })) test.check('each plugin goal\'s row is marked special, and it stays open');
   else test.fail(OWED + 'plugin goals closed: ' + short(closedSpecial) + '; their special rows ' + short(specialRows));
 
-  test.subHeading('8. push: each changed row on its own under PAYLOAD_MAX, a large row in numbered pieces, a current goal whole');
+  test.subHeading('8. push: each changed row on its own under PAYLOAD_MAX, a box past its bound refused, a current goal whole');
   let n0 = published.length;
   await A.call('chat.add', { id: iid, text: 'PUSH-LINE' }, ANDY);
   await settle();
   const linePubs = published.slice(n0).filter(function (p) { return holds(p, 'PUSH-LINE'); });
   if (linePubs.length && linePubs.every(function (p) { return namesRow(p, N, M) && bytesOf(p) <= PAYLOAD_MAX && !holds(p, 'BOX-TWO'); })) test.check('a chat line is pushed as its row, naming goal and item, under PAYLOAD_MAX, without the item\'s other tables');
   else test.fail(OWED + 'the line was pushed ' + short(linePubs.length ? linePubs.map(function (p) { return { namesGoalAndItem: namesRow(p, N, M), bytes: bytesOf(p), withBox: holds(p, 'BOX-TWO'), keys: Object.keys(p) }; }) : 'nowhere'));
-  // A box a little over PAYLOAD_MAX, every run of it unique, so each piece is found where it belongs. It is the largest
-  // box one write can carry (the door takes a request up to PAYLOAD_MAX and some headroom), and still more than one push
-  // can: so its row must travel in pieces. How a box larger than one request gets written is not this red's.
-  let big = '';
-  for (let k = 0; big.length < PAYLOAD_MAX + 200; k++) big += 'BIGBOX' + k.toString(36) + '.' + (k * 7919 % 100003).toString(36) + ' ';
-  big = big.slice(0, PAYLOAD_MAX + 200);
+  // A BOX STAYS UNDER THE PAYLOAD (Andy, on goal/G33.4: "Why would you let box past MAX_PAYLOAD?????"; the box, v31: a
+  // larger box write is refused, so a box is always read and pushed in one piece). Its bound is the one answer item.box
+  // carries it back in (appClient.ANSWER_MAX less the room the desk keeps), counted in bytes: the box past it is made of
+  // two-byte characters, fewer characters than the bound, so only a byte count refuses it.
+  const ROOM = appClient.ANSWER_MAX - 512;
+  const boxBytes = function (text) { return Buffer.byteLength(JSON.stringify({ box: text, version: 0 }), 'utf8'); };
+  let over = 'é';
+  while (boxBytes(over) <= ROOM) over += 'é';
+  let under = over;
+  while (boxBytes(under) > ROOM - 16) under = under.slice(1);
+  under = 'UNDER-BOX ' + under.slice(10);
+  const refusedBig = await A.call('box.write', { id: iid, text: over, version: 2 }, ANDY);
+  const rx = (refusedBig.body && refusedBig.body.extra) || {};
+  if (over.length <= ROOM && refusedBig.status !== 200 && typeof rx.bytes === 'number' && typeof rx.max === 'number' && rx.bytes > rx.max && /split the item/.test(String(rx.why))) test.check('a box past the bound in bytes, though not in characters, is refused, saying its bytes, the limit, and to split the item (box v33)');
+  else test.fail(OWED + 'a box of ' + over.length + ' characters and ' + boxBytes(over) + ' bytes answered ' + short({ status: refusedBig.status, body: refusedBig.body }));
   n0 = published.length;
-  const wrote = await A.call('box.write', { id: iid, text: big, version: 2 }, ANDY);
-  await settle(1500);
+  const wrote = await A.call('box.write', { id: iid, text: under, version: 2 }, ANDY);
+  await settle(1000);
   const after = published.slice(n0);
-  const pieces = [];
-  after.forEach(function (p, at) {
-    each(p, function (o) {
-      Object.keys(o).forEach(function (k) {
-        if (typeof o[k] !== 'string' || o[k].length < 64 || big.indexOf(o[k]) === -1) return;
-        const num = ['piece', 'part', 'chunk', 'index', 'seq', 'n'].map(function (f) { return o[f]; }).filter(function (v) { return typeof v === 'number'; })[0];
-        pieces.push({ at: at, n: num, text: o[k] });
-      });
-    });
-  });
-  const numbered = pieces.length && pieces.every(function (x) { return typeof x.n === 'number'; });
-  const joined = pieces.slice().sort(function (x, y) { return numbered ? x.n - y.n : x.at - y.at; }).map(function (x) { return x.text; }).join('');
-  if (took(wrote) && pieces.length >= 2 && numbered && joined === big && !overMax(after).length) test.check('a box over PAYLOAD_MAX is taken and pushed in numbered pieces, each under it, that join to the box');
-  else test.fail(OWED + 'the large box answered ' + short(wrote.body) + '; ' + pieces.length + ' pieces, numbered ' + !!numbered + ', joined ' + (joined === big) + ', over the limit ' + overMax(after).length);
+  const wholeBox = after.filter(function (p) { return p.table === 'box' && p.row && p.row.text === under; });
+  const noPieces = after.every(function (p) { return p.piece === undefined && p.pieces === undefined; });
+  if (took(wrote) && wholeBox.length === 1 && namesRow(wholeBox[0], N, M) && bytesOf(wholeBox[0]) <= PAYLOAD_MAX && noPieces && !overMax(after).length) test.check('a box just under the bound is taken and pushed whole, in one publish under PAYLOAD_MAX');
+  else test.fail(OWED + 'the box just under the bound answered ' + short(wrote.body) + '; pushed whole ' + wholeBox.length + ' time(s), no pieces ' + noPieces + ', over the limit ' + overMax(after).length);
   // A goal becoming current is pushed whole: every item's row, its box and its chat.
   const pg = await A.call('goal.add', { title: 'Pushed' }, ANDY);
   const pgid = took(pg) ? String(pg.body.id) : '';
@@ -471,6 +470,8 @@ async function migration() {
     Object.keys(t).forEach(function (k) { db.prepare('SELECT * FROM ' + q(k)).all().forEach(function (r) { all += JSON.stringify(r) + '\n'; }); });
     return { names: Object.keys(t), goal: at('items', 7, 0), one: at('items', 7, 1), two: at('items', 7, 2), box: at('box', 7, 1), chat: at('chat', 7, 1),
       group: at('chat', 0, 0), checks: at('checks', 7, 1), files: at('files', 7, 1), claims: at('claims', 7, 2),
+      // goal/G33.4 (box v44-45): the suites table, its migration seeded from the file list's spirit/test/ entries.
+      suites: (function () { try { return db.prepare('SELECT path FROM suites WHERE goal = 7 AND item = 1').all().map(function (r) { return r.path; }); } catch (e) { return null; } }()),
       typed: items ? db.prepare('SELECT typeof(' + q(items.goal) + ') AS g, typeof(' + q(items.item) + ') AS i FROM ' + q(items.name) + ' WHERE ' + q(items.goal) + ' = 7 AND ' + q(items.item) + ' = 1').get() : null,
       markers: ['AGENTSTATE-MARKER', 'SCOPE-MARKER', 'LINES-MARKER'].filter(function (m) { return all.indexOf(m) !== -1; }) };
   });
@@ -488,6 +489,8 @@ async function migration() {
   else test.fail(OWED + 'the chat rows of (7, 1) are ' + short(seen.chat) + '; of goal 0 ' + short(seen.group));
   if (len(seen.checks) >= 1 && len(seen.files) >= 1 && len(seen.claims) >= 1) test.check('the Q, the file and the claim kept their items');
   else test.fail(OWED + 'checks ' + short(seen.checks) + ', files ' + short(seen.files) + ', claims ' + short(seen.claims));
+  if (Array.isArray(seen.suites) && seen.suites.join() === 'spirit/test/deskTables.js') test.check('goal/G7.1\'s suites table holds the spirit/test/ entry of its file list, and nothing else (goal/G33.4, box v44-45)');
+  else test.fail('OWED by goal/G33.4 (suites): the suites rows of (7, 1) are ' + short(seen.suites) + '; its file rows ' + short(seen.files));
   if (!seen.markers.length) test.check('agent.state, scope.set and the old lines table are dumped');
   else test.fail(OWED + 'the database still holds ' + seen.markers.join(', '));
   const box = await S.call('item.box', { id: 'goal/G7.1' }, ANDY);
@@ -592,12 +595,36 @@ async function shedding() {
   await X.stop();
 }
 
+// ── 9. NO HAND-ROLLED MECHANISM (Andy: "if there's new hand-rolled shit in this new code, i'll be extremely MAD") ────
+// A client reaches the desk through the family interface over peerPost (face/spirit.js forPeer), the translator keeps
+// what it learns in spirit.data alone, and the desk publishes through appServer.publish alone, which reaches its pages
+// and its clients both (box v43): the desk itself calls no client.
+function noHandRolled() {
+  test.subHeading('9. calls go through the family interface; the mirror is spirit.data alone');
+  const RUN_DIR = path.join(__dirname, '..', 'run');
+  const code = function (rel) { return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); };
+  const desk = code('process/js/desk/desk.js');
+  const client = code('process/js/deskClient/deskClient.js');
+  const translator = code('shell/js/desk/data.js');
+  const packets = [['deskClient.js', client, /\{\s*desk\s*:\s*\{/], ['desk.js', desk, /\{\s*deskClient\s*:\s*\{/], ['data.js', translator, /\{\s*desk\s*:\s*\{/]]
+    .filter(function (x) { return x[2].test(x[1]); }).map(function (x) { return x[0]; });
+  // box v43: the desk calls no deskClient at all; its one publish reaches them (appServer.publish).
+  if (!packets.length && /forPeer\(/.test(client) && !/forPeer\(|peerPost\(/.test(desk)) test.check('no hand-built {desk: ...} or {deskClient: ...} packet: deskClient calls the desk by forPeer, and the desk calls no client');
+  else test.fail(OWED + 'hand-built packets in ' + short(packets) + '; forPeer used by deskClient ' + /forPeer\(/.test(client) + ', the desk posts to clients itself ' + /forPeer\(|peerPost\(/.test(desk));
+  if (!/new Map\(|Object\.create\(null\)|^ {2}var\s+\w+\s*=\s*(\{\s*\}|\[\s*\])/m.test(translator)) test.check('the translator keeps nothing beside spirit.data');
+  else test.fail(OWED + 'shell/js/desk/data.js keeps a store of its own');
+  const publishes = (desk.match(/appServer\.publish\(/g) || []).length;
+  if (publishes >= 1 && !/jobs\.publish\(|process\.send\(|\.write\('event:/.test(desk)) test.check('the desk publishes through appServer\'s publish alone, no channel of its own');
+  else test.fail(OWED + 'the desk publishes ' + publishes + ' time(s) by appServer.publish, or keeps a channel of its own (jobs.publish beside it)');
+}
+
 (async function () {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   await freshDesk();
   const S = await migration();
   if (S) await bounded(S);
   await shedding();
+  noHandRolled();
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {
   kids.forEach(function (k) { try { if (k.exitCode === null) k.kill(); } catch (e) { /* gone */ } });
   try { node.close(); } catch (e) { /* closed */ }

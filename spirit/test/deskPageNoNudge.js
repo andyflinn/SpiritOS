@@ -8,7 +8,7 @@
 // (shell/desk/desk.js 456-460), and the item dialog does the same after every write but seen, through ddNudge
 // (shell/deskDetails/deskDetails.js 50-57, 63); the page opens the dialog with `agents: deskLiveAgents()` for that
 // nudge alone (desk.js 813). The server's own nudge, one api packet {deskClient: {changed: {}}} to each agent heard
-// from, is asserted by deskNudge.js (goal/G3.5): that is the "reaches a listening agent" half, already green.
+// from, is asserted by deskClientPush.js (goal/G33.4: the desk's stream replaced the nudge of goal/G3.5): that is the "reaches a listening agent" half, already green.
 // The contract (wsl-claude's reading of the box; the dialog is the page's, opened by it and handed its agents only
 // for the nudge, so it is in):
 //   1. A press from a row goes to the server as press {id, what} and posts no packet to anybody.
@@ -69,12 +69,12 @@ const changedPackets = function (posted) { return posted.filter(function (p) { r
 
 // The page, with one live agent it has heard from (the goal row's live names him, a packet gave his key).
 const label = function (over) {
-  return JSON.stringify(Object.assign({ id: 't/G1.1', title: 'Alpha', goal: 't/G1', status: '', with: '', buttons: ['go'],
+  return JSON.stringify(Object.assign({ id: 'goal/G100.1', title: 'Alpha', goal: 'goal/G100', status: '', with: '', buttons: ['go'],
     blocking: [], blocked: [], alone: false, star: false }, over || {}));
 };
 const LIST = { items: [
-  { key: 't/G1', label: label({ id: 't/G1', title: 'The goal', goal: '', buttons: [], design: false, waiting: 0, live: ['claude-windows'] }) },
-  { key: 't/G1.1', label: label() },
+  { key: 'goal/G100', label: label({ id: 'goal/G100', title: 'The goal', goal: '', buttons: [], design: false, waiting: 0, live: ['claude-windows'] }) },
+  { key: 'goal/G100.1', label: label() },
 ], more: false };
 function page() {
   const doc = fakeDocument();
@@ -116,7 +116,7 @@ function dialog() {
   const dd = load(DETAILS, doc);
   const asked = [];
   const posted = [];
-  const answer = { item: JSON.stringify({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: 'wsl-claude', buttons: ['done'], blocking: [], blocked: [], alone: false, star: false }),
+  const answer = { item: JSON.stringify({ id: 'goal/G100.2', title: 'Beta', goal: 'goal/G100', status: 'running', with: 'wsl-claude', buttons: ['done'], blocking: [], blocked: [], alone: false, star: false }),
     box: 'BOX', version: 2, change: 7, checks: [{ number: 'C1', kind: 'C', words: 'LOOK', test: '', state: 'open', by: '', at: '' }], chat: [] };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
@@ -152,23 +152,23 @@ test.startTest('goal/G3.8: the Desk page stops nudging; the desk server does it 
   l.arrive('claude-windows', AGENT_KEY);
   await settled();
   l.posted.length = 0;
-  l.click('desk-top', { 'data-press': 'go', 'data-id': 't/G1.1' });
+  l.click('desk-top', { 'data-press': 'go', 'data-id': 'goal/G100.1' });
   await settled();
   const pressed = l.asked.filter(function (a) { return a.verb === 'press'; })[0];
-  if (pressed && pressed.args.id === 't/G1.1' && pressed.args.what === 'go') test.check('Go! reached the server as press {id: t/G1.1, what: go}');
+  if (pressed && pressed.args.id === 'goal/G100.1' && pressed.args.what === 'go') test.check('Go! reached the server as press {id: goal/G100.1, what: go}');
   else test.fail('the press did not reach the server: ' + JSON.stringify(l.asked));
   if (pressed && !l.posted.length) test.check('and the page posted nothing: no changed packet, to nobody');
   else test.fail(OWED + 'after the press the page posted ' + JSON.stringify(l.posted));
 
   test.subHeading('2. a press in the item dialog: to the server, and no packet');
   const d = dialog();
-  d.dd.open({ id: 't/G1.2', agents: { 'claude-windows': { key: AGENT_KEY } } });
+  d.dd.open({ id: 'goal/G100.2', agents: { 'claude-windows': { key: AGENT_KEY } } });
   await settled();
   d.posted.length = 0;
   d.click('dd-done');
   await settled();
   const ddPressed = d.asked.filter(function (a) { return a.verb === 'press'; })[0];
-  if (ddPressed && ddPressed.args.id === 't/G1.2' && ddPressed.args.what === 'done') test.check('Done reached the server as press {id: t/G1.2, what: done}');
+  if (ddPressed && ddPressed.args.id === 'goal/G100.2' && ddPressed.args.what === 'done') test.check('Done reached the server as press {id: goal/G100.2, what: done}');
   else test.fail('the dialog\'s press did not reach the server: ' + JSON.stringify(d.asked));
   if (ddPressed && !changedPackets(d.posted).length) test.check('and the dialog posted no changed packet');
   else test.fail(OWED + 'after its press the dialog posted ' + JSON.stringify(d.posted));
@@ -193,8 +193,8 @@ test.startTest('goal/G3.8: the Desk page stops nudging; the desk server does it 
   const asksBefore = l.asked.length;
   l.doc.getElementById('desk-team-send').fire('click', {});
   await settled();
-  const line = l.asked.slice(asksBefore).filter(function (a) { return a.verb === 'chat.add' && a.args.id === 'desk/G0.0' && a.args.text === 'for the team'; });
-  if (line.length === 1 && !l.posted.length) test.check('one chat.add on desk/G0.0; no packet to anybody');
+  const line = l.asked.slice(asksBefore).filter(function (a) { return a.verb === 'chat.add' && a.args.id === 'goal/G0' && a.args.text === 'for the team'; });
+  if (line.length === 1 && !l.posted.length) test.check('one chat.add on goal/G0; no packet to anybody');
   else test.fail('his Team line: asked ' + JSON.stringify(l.asked.slice(asksBefore)) + ', posted ' + JSON.stringify(l.posted));
 
   test.subHeading('5. the source carries no changed packet');

@@ -13,7 +13,7 @@ server as `--state`:
 
 | where | what | Desk reaches it by |
 |---|---|---|
-| `desk.db`, table `lines` | The log: every message in and out, one row each, its whole JSON kept, with the columns it is searched by (key, at, todo, from, kind, text). A key is kept once. | `log.add {json}`; `log.search {text, todo, since, kind, before}`, newest first, cut by bytes and `partial` when cut; `todo: '-'` is a line under no todo |
+| `desk.db`, tables `items`, `chat`, `box`, `checks`, `files`, `claims` | Since goal/G33.4 the desk's state, keyed by goal and item number, every row with its creator; the old table `lines` and its verbs (`log.add`, `log.search`, `pending.get`) are gone. | `items.search`, `item.get`, `item.box`, `item.chat`, `item.checks`, `item.files` and the writes |
 | `desk.db`, table `docs`, `state` | What Desk has decided (below), as JSON text. | `state.get`, `state.set {json}` |
 | `desk.db`, table `docs`, `seen` | `{ rows, team, agents, folds }`: when Andy last saw each item and chat, for the red `*` marks, and his folds. | `seen.get`, `seen.set {json}` |
 | `voice.jsonl` | Andy's own typed lines, `{text, day}`, one per line, a plain file he moves to his vault by hand. | `voice.add {text, day}` |

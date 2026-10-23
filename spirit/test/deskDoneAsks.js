@@ -2,7 +2,7 @@
 
 // goal/G4.26: an offered Done lights his ❌ once every agent involved in the item has claimed it. Red on today's tree;
 // wsl-claude wrote it, claude-windows builds it.
-//   Andy, 2026-10-04: "nothing in the the list tells me where my attentions is supposed to go" (desk/G0.0); to "Should
+//   Andy, 2026-10-04: "nothing in the the list tells me where my attentions is supposed to go" (goal/G0); to "Should
 //   an offered Go or Done count as waiting on you (❌)?" — "only if all agents involved in that item consider it
 //   done."; to "Who is involved?" — "took it."; to "An offered Go?" — "i see the go."; then his Go on goal/G4.26.
 //   In the tree: facts.asks (asksOf, desk.js) counts open G and Q checks and open C checks while Done is offered; an
@@ -49,29 +49,29 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'd/G1', title: 'Done' }, items: [
-      { id: 'd/G1.1', title: 'Two takers', blocks: ['d/G1'] }, { id: 'd/G1.2', title: 'Nobody took it', blocks: ['d/G1'] },
-      { id: 'd/G1.3', title: 'Only Go', blocks: ['d/G1'] }] }) }, ANDY);
-    await call('press', { id: 'd/G1', what: 'end-design' }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Done' }, items: [
+      { id: 'goal/G100.1', title: 'Two takers', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Nobody took it', blocks: ['goal/G100'] },
+      { id: 'goal/G100.3', title: 'Only Go', blocks: ['goal/G100'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
     test.subHeading('3. an offered Go counts nothing');
-    const go = await factsOf('d/G1.3');
-    if (go.buttons && go.buttons.indexOf('go') !== -1 && go.asks === 0) test.check('d/G1.3 offers Go and asks 0');
-    else test.fail('d/G1.3: ' + short({ buttons: go.buttons, asks: go.asks }));
+    const go = await factsOf('goal/G100.3');
+    if (go.buttons && go.buttons.indexOf('go') !== -1 && go.asks === 0) test.check('goal/G100.3 offers Go and asks 0');
+    else test.fail('goal/G100.3: ' + short({ buttons: go.buttons, asks: go.asks }));
 
     test.subHeading('1-2. two agents took it: Done counts once both have claimed');
-    await call('press', { id: 'd/G1.1', what: 'go' }, ANDY);
-    await call('item.take', { id: 'd/G1.1' }, CW);
-    await call('chat.add', { id: 'd/G1.1', text: 'his line' }, ANDY);
-    await call('line.take', { id: 'd/G1.1' }, WSL);
-    await call('chat.add', { id: 'd/G1.1', text: 'wsl-claude answers' }, WSL);
-    await call('press', { id: 'd/G1.1', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+    await call('item.take', { id: 'goal/G100.1' }, CW);
+    await call('chat.add', { id: 'goal/G100.1', text: 'his line' }, ANDY);
+    await call('line.take', { id: 'goal/G100.1' }, WSL);
+    await call('chat.add', { id: 'goal/G100.1', text: 'wsl-claude answers' }, WSL);
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
     // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
-    const one = await factsOf('d/G1.1');
+    const one = await factsOf('goal/G100.1');
     if (one.buttons && one.buttons.indexOf('done') !== -1 && one.asks === 0) test.check('claimed by claude-windows alone: Done is offered, asks 0 (wsl-claude took it too)');
     else test.fail(OWED + 'after one of two claims: ' + short({ buttons: one.buttons, asks: one.asks }));
-    await call('press', { id: 'd/G1.1', what: 'claim-done' }, WSL);
-    const both = await factsOf('d/G1.1');
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, WSL);
+    const both = await factsOf('goal/G100.1');
     if (both.asks === 1) test.check('claimed by both takers: asks 1, his ❌');
     else test.fail(OWED + 'after both claims asks is ' + short(both.asks));
     const list = await call('items.search', { text: 'Two takers', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY);
@@ -80,14 +80,14 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
     else test.fail(OWED + 'the List row: ' + short(row && row.asks));
 
     test.subHeading('2. nobody took it: Done counts from its first claim');
-    await call('press', { id: 'd/G1.2', what: 'go' }, ANDY);
-    await call('press', { id: 'd/G1.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+    await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
     // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
-    const lone = await factsOf('d/G1.2');
-    if (lone.asks === 1) test.check('d/G1.2, claimed once and taken by nobody: asks 1');
-    else test.fail(OWED + 'd/G1.2 after one claim: asks ' + short(lone.asks));
-    await call('press', { id: 'd/G1.2', what: 'done' }, ANDY);
-    const after = await factsOf('d/G1.2');
+    const lone = await factsOf('goal/G100.2');
+    if (lone.asks === 1) test.check('goal/G100.2, claimed once and taken by nobody: asks 1');
+    else test.fail(OWED + 'goal/G100.2 after one claim: asks ' + short(lone.asks));
+    await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
+    const after = await factsOf('goal/G100.2');
     if (after.asks === 0) test.check('once he pressed Done, nothing waits: asks 0');
     else test.fail(OWED + 'after his Done asks is ' + short(after.asks));
   } catch (e) {

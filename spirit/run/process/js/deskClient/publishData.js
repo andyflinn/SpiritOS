@@ -249,7 +249,7 @@ async function main() {
   const pushed = await pushOrigin({ repo: clone });
   // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
   if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));
-  await desk('chat.add', { id: 'desk/G0.0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
+  await desk('chat.add', { id: 'goal/G0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
   end(0, 'publishData: published agents/' + agent + '/');
 }
 

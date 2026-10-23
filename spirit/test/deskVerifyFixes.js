@@ -394,7 +394,7 @@ async function mount(fake) {
 
 async function faceHalf() {
   test.subHeading('3. the face: the tab stays, every press says sent then the answer, stop asked, the chores');
-  const goal = { id: 'fx/G3', title: 'Fixes', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 };
+  const goal = { id: 'goal/G100', title: 'Fixes', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 };
   const fake = require('./deskFake.js').create([]);
   fake.items = [goal];
   let stopAnswer = { stopped: true };

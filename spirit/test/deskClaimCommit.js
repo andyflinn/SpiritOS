@@ -102,58 +102,58 @@ async function deskHalf() {
     else test.fail(OWED + 'the api lists ' + short(Object.keys(api).filter(function (k) { return /claim/.test(k); })) + ', claim.json read as ' + short(claimFile.body));
 
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'cc/G1', title: 'Claims' }, items: [
-      { id: 'cc/G1.1', title: 'Code with Go', blocks: ['cc/G1'], code: true },
-      { id: 'cc/G1.2', title: 'Plain with Go', blocks: ['cc/G1'] },
-      { id: 'cc/G1.3', title: 'Code without Go', blocks: ['cc/G1'], code: true },
-      { id: 'cc/G1.4', title: 'Plain without Go', blocks: ['cc/G1'] },
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Claims' }, items: [
+      { id: 'goal/G100.1', title: 'Code with Go', blocks: ['goal/G100'], code: true },
+      { id: 'goal/G100.2', title: 'Plain with Go', blocks: ['goal/G100'] },
+      { id: 'goal/G100.3', title: 'Code without Go', blocks: ['goal/G100'], code: true },
+      { id: 'goal/G100.4', title: 'Plain without Go', blocks: ['goal/G100'] },
     ] }) }, ANDY);
-    await d.call('press', { id: 'cc/G1', what: 'end-design' }, ANDY);
-    await d.call('press', { id: 'cc/G1.1', what: 'go' }, ANDY);
-    await d.call('press', { id: 'cc/G1.2', what: 'go' }, ANDY);
+    await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+    await d.call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
 
     const cases = [
-      ['a commit that is not hex', { id: 'cc/G1.1', phase: 'build', commit: 'nothex!' }],
-      ['a commit of 6 characters', { id: 'cc/G1.1', phase: 'build', commit: 'abcdef' }],
-      ['a commit of 41 characters', { id: 'cc/G1.1', phase: 'build', commit: MISSING + 'a' }],
-      ['no commit on a code item\'s build', { id: 'cc/G1.1', phase: 'build', commit: '' }],
-      ['no commit on a red', { id: 'cc/G1.1', phase: 'red', commit: '' }],
-      ['a phase that is neither build nor red', { id: 'cc/G1.1', phase: 'verify', commit: 'abcdef1' }],
-      ['a red on a plain item', { id: 'cc/G1.2', phase: 'red', commit: 'abcdef1' }],
-      ['a red on a code item without his Go', { id: 'cc/G1.3', phase: 'red', commit: 'abcdef1' }],
-      ['a build claim on an item without his Go (as the press refuses it)', { id: 'cc/G1.4', phase: 'build', commit: '' }],
-      ['an item that does not exist', { id: 'cc/G9.9', phase: 'build', commit: 'abcdef1' }],
+      ['a commit that is not hex', { id: 'goal/G100.1', phase: 'build', commit: 'nothex!' }],
+      ['a commit of 6 characters', { id: 'goal/G100.1', phase: 'build', commit: 'abcdef' }],
+      ['a commit of 41 characters', { id: 'goal/G100.1', phase: 'build', commit: MISSING + 'a' }],
+      ['no commit on a code item\'s build', { id: 'goal/G100.1', phase: 'build', commit: '' }],
+      ['no commit on a red', { id: 'goal/G100.1', phase: 'red', commit: '' }],
+      ['a phase that is neither build nor red', { id: 'goal/G100.1', phase: 'verify', commit: 'abcdef1' }],
+      ['a red on a plain item', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1' }],
+      ['a red on a code item without his Go', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1' }],
+      ['a build claim on an item without his Go (as the press refuses it)', { id: 'goal/G100.4', phase: 'build', commit: '' }],
+      ['an item that does not exist', { id: 'goal/G101.9', phase: 'build', commit: 'abcdef1' }],
     ];
     for (const c of cases) {
       const r = await d.call('claim', c[1], CW);
       if (refusedSaying(r)) test.check('refused, saying why: ' + c[0] + ' (' + whyOf(r) + ')');
       else test.fail(OWED + c[0] + ': claim answered ' + r.status + ' ' + short(r.body));
     }
-    const untouched = await get('cc/G1.1');
+    const untouched = await get('goal/G100.1');
     if (!untouched.claims && !untouched.claimCommit && !untouched.redCommit) test.check('and nothing refused changed the item');
-    else test.fail(OWED + 'after the refusals cc/G1.1 reads ' + short({ claims: untouched.claims, claimCommit: untouched.claimCommit, redCommit: untouched.redCommit }));
+    else test.fail(OWED + 'after the refusals goal/G100.1 reads ' + short({ claims: untouched.claims, claimCommit: untouched.claimCommit, redCommit: untouched.redCommit }));
 
-    const red = await d.call('claim', { id: 'cc/G1.1', phase: 'red', commit: 'abcdef1' }, CW);
-    const afterRed = await get('cc/G1.1');
+    const red = await d.call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
+    const afterRed = await get('goal/G100.1');
     if (took(red) && afterRed.redCommit === 'abcdef1' && !afterRed.claims) test.check('a red claim on a code item with his Go is taken, the item keeps its commit, and it is no Done claim');
     else test.fail(OWED + 'red claim answered ' + short(red.body) + '; item ' + short({ redCommit: afterRed.redCommit, claims: afterRed.claims }));
 
     const full = 'abcdef0123456789abcdef0123456789abcdef01';
-    const build = await d.call('claim', { id: 'cc/G1.1', phase: 'build', commit: full }, CW);
-    const afterBuild = await get('cc/G1.1');
+    const build = await d.call('claim', { id: 'goal/G100.1', phase: 'build', commit: full }, CW);
+    const afterBuild = await get('goal/G100.1');
     if (took(build) && afterBuild.claimCommit === full && afterBuild.claims === 1) test.check('a build claim is the claim-done: one claim on the item, and the item keeps the claimed commit');
     else test.fail(OWED + 'build claim answered ' + short(build.body) + '; item ' + short({ claimCommit: afterBuild.claimCommit, claims: afterBuild.claims }));
 
-    const plain = await d.call('claim', { id: 'cc/G1.2', phase: 'build', commit: '' }, CW);
-    const afterPlain = await get('cc/G1.2');
+    const plain = await d.call('claim', { id: 'goal/G100.2', phase: 'build', commit: '' }, CW);
+    const afterPlain = await get('goal/G100.2');
     if (took(plain) && afterPlain.claims === 1) test.check('a plain item takes a build claim with no commit');
     else test.fail(OWED + 'plain claim answered ' + short(plain.body) + '; claims ' + short(afterPlain.claims));
 
-    const ch = (await d.call('changes', { n: 0, line: 0 }, ANDY)).body || {};
-    const recs = (ch.records || []).filter(function (r) { return r.verb === 'claim'; }).map(function (r) { return parse(r.body) || {}; });
-    if (recs.some(function (b) { return b.id === 'cc/G1.1' && b.phase === 'build' && b.commit === full; }) &&
-        recs.some(function (b) { return b.id === 'cc/G1.1' && b.phase === 'red' && b.commit === 'abcdef1'; })) test.check('the record is one claim record, carrying its phase and its commit');
-    else test.fail(OWED + 'claim records ' + short(recs));
+    // goal/G33.4: no log of writes and no `changes`; the item itself is the record: it holds the claim, and keeps the
+    // build claim's commit and the red's, read back by a fresh item.get.
+    const kept = await get('goal/G100.1');
+    if (kept.claims === 1 && kept.claimCommit === full && kept.redCommit === 'abcdef1') test.check('the item holds its claim, and keeps the build claim\'s commit and the red\'s');
+    else test.fail(OWED + 'the item keeps ' + short({ claims: kept.claims, claimCommit: kept.claimCommit, redCommit: kept.redCommit }));
   } finally { await d.stop(); node.close(); }
 }
 

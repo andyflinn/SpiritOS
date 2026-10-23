@@ -68,43 +68,43 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desktaketoanswer-'
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'ta/G1', title: 'Takes' }, items: [{ id: 'ta/G1.1', title: 'Asked', blocks: ['ta/G1'] }, { id: 'ta/G1.2', title: 'Held', blocks: ['ta/G1'] }] }) }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Takes' }, items: [{ id: 'goal/G100.1', title: 'Asked', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Held', blocks: ['goal/G100'] }] }) }, ANDY);
     // Both agents heard from once, as at a start (an agent never heard from is nobody the desk knows).
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, LEV);
 
     test.subHeading('1. no take, no item: refused');
-    const asked = await say('ta/G1.1', 'what do you think?', ANDY);
+    const asked = await say('goal/G100.1', 'what do you think?', ANDY);
     if (asked.change) test.check('the world: his line is posted');
     else test.fail('the world: his line answered ' + short(asked));
-    const chatter = await say('ta/G1.1', 'I think many things.', LEV);
+    const chatter = await say('goal/G100.1', 'I think many things.', LEV);
     if (refusedWithWhy(chatter)) test.check('an agent that took nothing is refused, and told to take: ' + chatter.extra.why);
     else test.fail(OWED + 'an agent without a take answered ' + short(chatter));
 
     test.subHeading('2. the take answers once');
-    const took = await call('line.take', { id: 'ta/G1.1' }, LEV);
-    const answer = await say('ta/G1.1', 'my one answer', LEV);
+    const took = await call('line.take', { id: 'goal/G100.1' }, LEV);
+    const answer = await say('goal/G100.1', 'my one answer', LEV);
     if (took.change && answer.change) test.check('with the take of his line it answers');
     else test.fail(OWED + 'the take answered ' + short(took) + ', the answer ' + short(answer));
-    const again = await say('ta/G1.1', 'and one more thing', LEV);
+    const again = await say('goal/G100.1', 'and one more thing', LEV);
     if (refusedWithWhy(again)) test.check('its answer frees the line: a second word is refused');
     else test.fail(OWED + 'a second word answered ' + short(again));
-    const late = await call('line.take', { id: 'ta/G1.1' }, CW);
+    const late = await call('line.take', { id: 'goal/G100.1' }, CW);
     if (late.ok === false) test.check('an answered line is taken no more');
     else test.fail(OWED + 'a take of the answered line answered ' + short(late));
 
     test.subHeading('3. the item\'s holder posts its work notes');
-    await call('item.take', { id: 'ta/G1.2' }, CW);
-    const note = await say('ta/G1.2', 'taking: red first', CW);
+    await call('item.take', { id: 'goal/G100.2' }, CW);
+    const note = await say('goal/G100.2', 'taking: red first', CW);
     if (note.change) test.check('the agent holding the item posts there without a line of his');
     else test.fail(OWED + 'the holder\'s note answered ' + short(note));
-    const other = await say('ta/G1.2', 'let me help', LEV);
+    const other = await say('goal/G100.2', 'let me help', LEV);
     if (refusedWithWhy(other)) test.check('another agent on that item is refused');
     else test.fail(OWED + 'another agent on the held item answered ' + short(other));
 
     test.subHeading('4. his lines and the desk\'s are never refused');
-    const his = await say('ta/G1.2', 'carry on', ANDY);
-    const more = await say('ta/G1.1', 'and another question', ANDY);
+    const his = await say('goal/G100.2', 'carry on', ANDY);
+    const more = await say('goal/G100.1', 'and another question', ANDY);
     if (his.change && more.change) test.check('Andy posts under any item, held or not, taken or not');
     else test.fail(OWED + 'his lines answered ' + short([his, more]));
   } finally {

@@ -56,47 +56,48 @@ function ok(r) { return r && r.status === 200; }
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'Takes' }, items: [
-    { id: 't/G1.1', title: 'Taken plainly, then phased', blocks: ['t/G1'], code: true },
-    { id: 't/G1.2', title: 'Taken plainly, then left', blocks: ['t/G1'], code: true },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Takes' }, items: [
+    { id: 'goal/G100.1', title: 'Taken plainly, then phased', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'Taken plainly, then left', blocks: ['goal/G100'], code: true },
   ] }) }, ANDY);
-  const ended = await call('press', { id: 't/G1', what: 'end-design' }, ANDY);
+  const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
-  for (const id of ['t/G1.1', 't/G1.2']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
+  for (const id of ['goal/G100.1', 'goal/G100.2']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
   test.subHeading('1. a plain take leaves the phases open');
-  const plain = await call('item.take', { id: 't/G1.1' }, CW);
-  const red = await call('phase.take', { id: 't/G1.1', phase: 'red' }, UBI);
-  const a1 = await facts('t/G1.1');
+  const plain = await call('item.take', { id: 'goal/G100.1' }, CW);
+  const red = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, UBI);
+  const a1 = await facts('goal/G100.1');
   if (ok(plain) && ok(red) && a1.red === 'claude-ubuntu') test.check('after claude-windows\' plain take, claude-ubuntu takes the red (facts.red claude-ubuntu)');
   else test.fail(OWED + 'plain take ' + plain.status + ', then the red take ' + red.status + ' ' + short(red.body && red.body.code) + '; facts.red ' + short(a1.red));
 
   test.subHeading('2. the status says the phase being held');
   const statusRed = a1.status;
-  await call('phase.done', { id: 't/G1.1', phase: 'red' }, UBI);
-  await call('phase.take', { id: 't/G1.1', phase: 'build' }, WSL);
-  const statusBuild = (await facts('t/G1.1')).status;
-  await call('phase.done', { id: 't/G1.1', phase: 'build' }, WSL);
-  await call('phase.take', { id: 't/G1.1', phase: 'verify' }, UBI);
-  const a2 = await facts('t/G1.1');
+  await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, UBI);
+  await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, WSL);
+  const statusBuild = (await facts('goal/G100.1')).status;
+  await call('phase.done', { id: 'goal/G100.1', phase: 'build' }, WSL);
+  await call('phase.take', { id: 'goal/G100.1', phase: 'verify' }, UBI);
+  const a2 = await facts('goal/G100.1');
   if (ok(red) && statusRed === 'red' && statusBuild === 'build' && a2.status === 'verify' && a2.verifier === 'claude-ubuntu') test.check('the status reads red, then build, then verify, as each phase is taken');
   else test.fail(OWED + 'status while held: ' + short({ red: statusRed, build: statusBuild, verify: a2.status, verifier: a2.verifier }));
 
   test.subHeading('3. no stale-holder question for a plain taker');
-  await call('item.take', { id: 't/G1.2' }, CW);
+  await call('item.take', { id: 'goal/G100.2' }, CW);
   await stop();
   // TWENTY MINUTES AGO for every record of claude-windows': past LIVE_MS (desk.js, 10 minutes), as deskPhases does.
   const db = new DatabaseSync(path.join(state, 'desk.db'));
-  db.prepare('UPDATE records SET at = ? WHERE by = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), CW.label);
+  // goal/G33.4: an agent's last write is its row of the agents table.
+  db.prepare('UPDATE agents SET at = ? WHERE label = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), CW.label);
   db.close();
   if (!await start()) { test.fail('the desk server did not start again'); return; }
-  await call('chat.add', { id: 't/G1.1', text: 'a write, so the desk walks its state' }, WSL);
+  await call('chat.add', { id: 'goal/G100.1', text: 'a write, so the desk walks its state' }, WSL);
   await sleep(500);
-  const checks = ((await call('item.checks', { id: 't/G1.2' }, ANDY)).body || {}).checks || [];
+  const checks = ((await call('item.checks', { id: 'goal/G100.2' }, ANDY)).body || {}).checks || [];
   const stale = checks.filter(function (c) { return c.kind === 'Q' && /^stale:/.test(String(c.words)); });
-  const b = await facts('t/G1.2');
-  if (!stale.length && !b.red && !b.builder && !b.verifier) test.check('claude-windows took t/G1.2 plainly and went silent: no stale-holder question, nobody holds a phase');
+  const b = await facts('goal/G100.2');
+  if (!stale.length && !b.red && !b.builder && !b.verifier) test.check('claude-windows took goal/G100.2 plainly and went silent: no stale-holder question, nobody holds a phase');
   else test.fail(OWED + 'a plain taker gone silent: stale questions ' + short(stale.map(function (c) { return c.words; })) + '; phases ' + short({ red: b.red, builder: b.builder, verifier: b.verifier }));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();

@@ -93,7 +93,7 @@ function mount(file, answers) {
   });
   return { doc: doc, publish: function (o) { subs.forEach(function (fn) { fn(o); }); } };
 }
-const lab = function (o) { return Object.assign({ goal: 'g/G1', status: '', with: '', buttons: [], blocking: [], blocked: [] }, o); };
+const lab = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [] }, o); };
 
 const CW = { key: 'MCowBQYDK2VwAyEAdeskIssuesTestPeerCWAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskIssuesTestOwnerAAAAAAAAAAAAAAAAA=', label: 'Andy Flinn' };
@@ -116,17 +116,17 @@ callback.listen(0, '127.0.0.1', async function () {
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so he writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Round' }, items: [
+      { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
-    await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
 
     test.subHeading('3. no star after an agent line or his answer (the star is gone, goal/G4.20)');
-    await call('press', { id: 'g/G1.1', what: 'seen' }, ANDY);
-    await call('chat.add', { id: 'g/G1.1', text: 'an agent asks' }, CW);
-    const starred = await factsOf('g/G1.1');
-    await call('chat.add', { id: 'g/G1.1', text: 'and he answers' }, ANDY);
-    const answered = await factsOf('g/G1.1');
+    await call('press', { id: 'goal/G100.1', what: 'seen' }, ANDY);
+    await call('chat.add', { id: 'goal/G100.1', text: 'an agent asks' }, CW);
+    const starred = await factsOf('goal/G100.1');
+    await call('chat.add', { id: 'goal/G100.1', text: 'and he answers' }, ANDY);
+    const answered = await factsOf('goal/G100.1');
     const noStar = function (f) { return f && f.id && !Object.prototype.hasOwnProperty.call(f, 'star'); };
     if (noStar(starred) && noStar(answered)) test.check('neither the agent line nor his answer puts a star in the facts');
     else test.fail(OWED + 'star after the agent line ' + starred.star + ', after his own line ' + answered.star);
@@ -138,44 +138,44 @@ callback.listen(0, '127.0.0.1', async function () {
     // blocked (its items still open) is not empty. Asserted here as the List reads it: one item done and one open
     // offers nothing; both done offers Done with no claim; closing them keeps it.
     const inList = function (f) { return (f.buttons || []).filter(function (b) { return !((f.blocked || []).length && (b === 'done' || b === 'close')); }); };
-    await call('press', { id: 'g/G1', what: 'go-all' }, ANDY);
-    await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
-    const halfway = await factsOf('g/G1');
-    await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
-    const allDone = await factsOf('g/G1');
-    await call('press', { id: 'g/G1.1', what: 'close' }, ANDY);
-    await call('press', { id: 'g/G1.2', what: 'close' }, ANDY);
-    const allClosed = await factsOf('g/G1');
+    await call('press', { id: 'goal/G100', what: 'go-all' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
+    const halfway = await factsOf('goal/G100');
+    await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
+    const allDone = await factsOf('goal/G100');
+    await call('press', { id: 'goal/G100.1', what: 'close' }, ANDY);
+    await call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
+    const allClosed = await factsOf('goal/G100');
     if (inList(halfway).indexOf('done') === -1 && inList(allDone).indexOf('done') !== -1 && inList(allClosed).indexOf('done') !== -1) {
       test.check('no Done while an item is open; Done on the goal once all are done, with no claim; still offered once closed');
     } else test.fail(OWED + 'goal buttons with one item done ' + JSON.stringify(halfway.buttons) + ', all done ' + JSON.stringify(allDone.buttons) + ', all closed ' + JSON.stringify(allClosed.buttons));
 
     test.subHeading('6. a brought-back item pops into view with an attention mark');
     published.length = 0;
-    await call('press', { id: 'g/G1.1', what: 'bring-back' }, CW);
+    await call('press', { id: 'goal/G100.1', what: 'bring-back' }, CW);
     await sleep(400);
-    const back = await factsOf('g/G1.1');
+    const back = await factsOf('goal/G100.1');
     // The publish carries the item's facts as an object (desk.js write: out.item = facts(...)), a string only
     // in older shapes; both are read.
     const idOf = function (p) { try { return (typeof p.item === 'string' ? JSON.parse(p.item) : p.item || {}).id || ''; } catch (e) { return ''; } };
-    const pub = published.filter(function (p) { return p.verb === 'press' && idOf(p) === 'g/G1.1'; }).pop() || {};
+    const pub = published.filter(function (p) { return p.verb === 'press' && idOf(p) === 'goal/G100.1'; }).pop() || {};
     if (pub.listed === true && back.alert === true) {
-      await call('press', { id: 'g/G1.1', what: 'seen' }, ANDY);
-      const seen = await factsOf('g/G1.1');
+      await call('press', { id: 'goal/G100.1', what: 'seen' }, ANDY);
+      const seen = await factsOf('goal/G100.1');
       if (seen.alert === false) test.check('bring-back publishes the row listed with alert: true, and his seen clears it');
       else test.fail(OWED + 'alert stayed ' + seen.alert + ' after his seen');
     } else test.fail(OWED + 'after bring-back the publish said listed ' + pub.listed + ' and the facts carry alert ' + JSON.stringify(back.alert));
 
     test.subHeading('7. an older update changes nothing');
     const list = mount(DESK, { 'items.search': { items: [
-      { key: 'g/G1', label: JSON.stringify(lab({ id: 'g/G1', title: 'Round', goal: '' })) },
-      { key: 'g/G1.1', label: JSON.stringify(lab({ id: 'g/G1.1', title: 'Alpha' })) }], more: false } });
+      { key: 'goal/G100', label: JSON.stringify(lab({ id: 'goal/G100', title: 'Round', goal: '' })) },
+      { key: 'goal/G100.1', label: JSON.stringify(lab({ id: 'goal/G100.1', title: 'Alpha' })) }], more: false } });
     await settled();
-    list.publish({ change: 10, verb: 'press', item: lab({ id: 'g/G1.1', title: 'Alpha', status: 'running' }), listed: true });
+    list.publish({ change: 10, verb: 'press', item: lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }), listed: true });
     await settled();
-    list.publish({ change: 9, verb: 'press', item: lab({ id: 'g/G1.1', title: 'Alpha', status: 'closed' }), listed: true });
+    list.publish({ change: 9, verb: 'press', item: lab({ id: 'goal/G100.1', title: 'Alpha', status: 'closed' }), listed: true });
     await settled();
     const row = list.doc.getElementById('desk-top').innerHTML.split('<tr').filter(function (s) { return s.indexOf('Alpha') !== -1; })[0] || '';
     const dialogGuards = /change\s*<\s*ddLastChange/.test(fs.readFileSync(DETAILS, 'utf8'));

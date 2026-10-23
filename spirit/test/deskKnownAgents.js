@@ -2,7 +2,7 @@
 
 // goal/G4.29: the agent pane opens for every agent the desk knows, not only the live ones, so an agent without a
 // listener stays within reach. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
-//   Andy, 2026-10-04, desk/G0.0, after gemma's bubble went 10 minutes after its last line: "can't reach it because
+//   Andy, 2026-10-04, goal/G0, after gemma's bubble went 10 minutes after its last line: "can't reach it because
 //   ollama is gone"; to "Let the agent pane open for every agent the desk knows, not only the live ones, as a new
 //   item? Today gemma drops out of reach 10 minutes after its last line.": "yes"; then his Go on goal/G4.29.
 //   In the tree: the goal row's agents map holds only the live agents' keys (desk.js facts, f.agents from f.live,
@@ -69,18 +69,19 @@ async function theServer() {
   let kid = await start();
   try {
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Known' }, items: [{ id: 'k/G1.1', title: 'Talk', blocks: ['k/G1'] }] }) }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Known' }, items: [{ id: 'goal/G100.1', title: 'Talk', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-    await call('item.take', { id: 'k/G1.1' }, GEMMA);
-    await call('chat.add', { id: 'k/G1.1', text: 'gemma here, then gone' }, GEMMA);
+    await call('item.take', { id: 'goal/G100.1' }, GEMMA);
+    await call('chat.add', { id: 'goal/G100.1', text: 'gemma here, then gone' }, GEMMA);
     await stop(kid);
     // TWENTY MINUTES AGO for every record of gemma's: past LIVE_MS (desk.js, 10 minutes).
     const db = new DatabaseSync(path.join(state, 'desk.db'));
-    db.prepare('UPDATE records SET at = ? WHERE by = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), GEMMA.label);
+    // goal/G33.4: an agent's last write is its row of the agents table.
+    db.prepare('UPDATE agents SET at = ? WHERE label = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), GEMMA.label);
     db.close();
     kid = await start();
-    await call('item.take', { id: 'k/G1.1' }, CW);
-    await call('chat.add', { id: 'k/G1.1', text: 'claude-windows, live' }, CW);
+    await call('item.take', { id: 'goal/G100.1' }, CW);
+    await call('chat.add', { id: 'goal/G100.1', text: 'claude-windows, live' }, CW);
     const r = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY);
     try { row = JSON.parse((((r.body || {}).items) || [])[0].label); } catch (e) { row = null; }
     const live = (row && row.live) || [];
@@ -130,7 +131,7 @@ function bubble(target, ev) {
 async function thePage(served) {
   test.subHeading('2. the page: a bubble for every known agent, the away one marked, its pane opens');
   // The row the server should give (shape 1), so the page is judged on its own even before the server is built.
-  const goalRow = { id: 'k/G1', title: 'Known', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], design: false, waiting: 0,
+  const goalRow = { id: 'goal/G100', title: 'Known', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], design: false, waiting: 0,
     live: [CW.label], working: [], agents: { 'claude-windows': CW.key, gemma: GEMMA.key }, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' };
   if (served && served.agents && served.agents.gemma === GEMMA.key) test.check('the world: the row the server gave carries gemma as this page expects');
   const byId = {};
@@ -147,7 +148,7 @@ async function thePage(served) {
       if (!ask) return Promise.resolve({ status: 200, body: {} });
       const v = Object.keys(ask)[0];
       asked.push({ verb: v, args: ask[v] });
-      if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'k/G1', label: JSON.stringify(goalRow) }], more: false } });
+      if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'goal/G100', label: JSON.stringify(goalRow) }], more: false } });
 
       if (v === 'profile.get') return Promise.resolve({ status: 200, body: { name: 'ollama-gemma', nick: 'gemma' } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false } });

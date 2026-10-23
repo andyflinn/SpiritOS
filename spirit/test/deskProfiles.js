@@ -55,12 +55,12 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Profiles' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Profiles' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude answers a line
     // of his it has taken.
-    await call('chat.add', { id: 'p/G1.1', text: 'anyone here?' }, ANDY);
-    await call('line.take', { id: 'p/G1.1' }, WSL);
-    await call('chat.add', { id: 'p/G1.1', text: 'wsl-claude says hello' }, WSL);
+    await call('chat.add', { id: 'goal/G100.1', text: 'anyone here?' }, ANDY);
+    await call('line.take', { id: 'goal/G100.1' }, WSL);
+    await call('chat.add', { id: 'goal/G100.1', text: 'wsl-claude says hello' }, WSL);
 
     test.subHeading('1. profile.set by Andy alone; profile.get for anyone');
     const unset = await call('profile.get', { agent: '' }, WSL);
@@ -88,20 +88,20 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
     else test.fail(OWED + 'a duplicate nick answered ' + short(dup.body) + '; cw answered ' + okCw.status + ' ' + short(okCw.body));
 
     test.subHeading('3. his "<nick>:" line is taken by that agent alone');
-    await call('chat.add', { id: 'p/G1.1', text: 'WSL: please check the build' }, ANDY);
+    await call('chat.add', { id: 'goal/G100.1', text: 'WSL: please check the build' }, ANDY);
     await sleep(200);
-    const chat = await call('item.chat', { id: 'p/G1.1' }, ANDY);
+    const chat = await call('item.chat', { id: 'goal/G100.1' }, ANDY);
     const last = (((chat.body || {}).chat) || []).slice(-1)[0] || {};
     if (last.text === 'WSL: please check the build' && last.taken === 'wsl-claude') test.check('"WSL: ..." is taken by wsl-claude, case ignored');
     else test.fail(OWED + 'his nicked line reads ' + short(last));
-    const other = await call('chat.add', { id: 'p/G1.1', text: 'claude-windows jumps in' }, CW);
-    const answer = await call('chat.add', { id: 'p/G1.1', text: 'wsl-claude answers' }, WSL);
+    const other = await call('chat.add', { id: 'goal/G100.1', text: 'claude-windows jumps in' }, CW);
+    const answer = await call('chat.add', { id: 'goal/G100.1', text: 'wsl-claude answers' }, WSL);
     if (codeOf(other) === 'taken' && answer.status === 200) test.check('meanwhile another agent is refused taken; the nick\'s agent answers');
     else test.fail(OWED + 'another agent answered ' + short(other.body) + ', the nick\'s agent ' + answer.status + ' ' + short(answer.body));
-    await call('chat.add', { id: 'p/G1.1', text: 'zz: nobody holds this nick' }, ANDY);
+    await call('chat.add', { id: 'goal/G100.1', text: 'zz: nobody holds this nick' }, ANDY);
     // Since goal/G18.8 claude-windows takes his line before it speaks; the take landing is itself the proof nobody holds it.
-    const freeTake = await call('line.take', { id: 'p/G1.1' }, CW);
-    const free = await call('chat.add', { id: 'p/G1.1', text: 'claude-windows may speak' }, CW);
+    const freeTake = await call('line.take', { id: 'goal/G100.1' }, CW);
+    const free = await call('chat.add', { id: 'goal/G100.1', text: 'claude-windows may speak' }, CW);
     if (freeTake.status === 200 && free.status === 200) test.check('a nick nobody holds takes nothing');
     else test.fail('after "zz: ..." another agent was refused: take ' + short(freeTake.body) + ', line ' + short(free.body));
   } catch (e) {

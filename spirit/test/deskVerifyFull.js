@@ -47,6 +47,7 @@ test.startTest('goal/G8.12: the full run when the goal empties');
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifyfull-'));
 
+const published = [];
 function apiNode(apps) {
   return new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
@@ -55,6 +56,8 @@ function apiNode(apps) {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
         { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
+        // What a server publishes for the node's pages (goal/G33.4: the desk's record is its rows, as published).
+        if (j && j.verb === 'jobs.update') { if (j.app) published.push(j.app); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
         const flatCall = test.foldAsk(j);
         const out = flatCall === 'api' ? apps : {};
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
@@ -85,27 +88,28 @@ async function deskHalf() {
   const root = path.join(scratch, 'desk');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
-  const d = server(DESK, 'desk', {}, root);
+  const d = server(DESK, 'desk', { env: { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/' } }, root);
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     await sleep(500);
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fe/G1', title: 'Empties' }, items: [{ id: 'fe/G1.1', title: 'One', blocks: ['fe/G1'] }, { id: 'fe/G1.2', title: 'Two', blocks: ['fe/G1'] }] }) }, ANDY);
-    await d.call('press', { id: 'fe/G1', what: 'end-design' }, ANDY);
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Empties' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }) }, ANDY);
+    await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    // goal/G33.4: `changes` is gone; the desk's goal.emptied write is read off the row it published.
     const emptied = async function () {
-      const ch = (await d.call('changes', { n: 0, line: 0 }, ANDY)).body || {};
-      return (ch.records || []).filter(function (r) { return r.verb === 'goal.emptied'; });
+      await sleep(300);
+      return published.filter(function (o) { return o.verb === 'goal.emptied'; });
     };
-    await d.call('press', { id: 'fe/G1.1', what: 'go' }, ANDY);
-    await d.call('press', { id: 'fe/G1.1', what: 'claim-done' }, CW);
-    await d.call('press', { id: 'fe/G1.1', what: 'done' }, ANDY);
+    await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+    await d.call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
+    await d.call('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
     if (!(await emptied()).length) test.check('one item still open: no goal.emptied yet');
     else test.fail(OWED + 'goal.emptied written with an item open');
-    await d.call('press', { id: 'fe/G1.2', what: 'close' }, ANDY);
+    await d.call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
     const e = await emptied();
-    if (e.length === 1 && (parse(e[0].body) || {}).id === 'fe/G1') test.check('the last item closed: one goal.emptied record naming the goal');
+    if (e.length === 1 && e[0].item && e[0].item.id === 'goal/G100') test.check('the last item closed: one goal.emptied row published, naming the goal');
     else test.fail(OWED + 'goal.emptied records: ' + short(e));
-    const g = parse((await d.call('item.get', { id: 'fe/G1' }, ANDY)).body.item) || {};
+    const g = parse((await d.call('item.get', { id: 'goal/G100' }, ANDY)).body.item) || {};
     // SINCE goal/G33.3 the goal's Done is offered once its items are, and the press itself reads the verifier
     // (deskVerifyDriven.js); nothing starts from goal.emptied, so its status word stays as it was.
     if ((g.buttons || []).indexOf('done') !== -1 && !/goal run/i.test(String(g.status))) test.check('the emptied goal offers Done, its press to read the verifier, and claims no goal run');
@@ -113,17 +117,17 @@ async function deskHalf() {
     // The same for an item: an agent's verify pass sets the status word. (deskVerify's own words, verify.pass and
     // verify.reject, went with goal/G33.3: the desk reads the verifier itself.)
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fs/G1', title: 'Status' }, items: [{ id: 'fs/G1.1', title: 'Code', blocks: ['fs/G1'], code: true }] }) }, ANDY);
-    await d.call('press', { id: 'fs/G1', what: 'end-design' }, ANDY);
-    await d.call('press', { id: 'fs/G1.1', what: 'go' }, ANDY);
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Status' }, items: [{ id: 'goal/G101.1', title: 'Code', blocks: ['goal/G101'], code: true }] }) }, ANDY);
+    await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
+    await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
     const WSLX = { key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
     const round = async function () { // one build and verify round
-      await d.call('phase.take', { id: 'fs/G1.1', phase: 'build' }, WSLX); await d.call('phase.done', { id: 'fs/G1.1', phase: 'build' }, WSLX);
-      await d.call('phase.take', { id: 'fs/G1.1', phase: 'verify' }, CW); await d.call('phase.done', { id: 'fs/G1.1', phase: 'verify', pass: true }, CW);
+      await d.call('phase.take', { id: 'goal/G101.1', phase: 'build' }, WSLX); await d.call('phase.done', { id: 'goal/G101.1', phase: 'build' }, WSLX);
+      await d.call('phase.take', { id: 'goal/G101.1', phase: 'verify' }, CW); await d.call('phase.done', { id: 'goal/G101.1', phase: 'verify', pass: true }, CW);
     };
-    await d.call('phase.take', { id: 'fs/G1.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'fs/G1.1', phase: 'red' }, CW);
+    await d.call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'goal/G101.1', phase: 'red' }, CW);
     await round();
-    const st = async function () { return String((parse((await d.call('item.get', { id: 'fs/G1.1' }, ANDY)).body.item) || {}).status); };
+    const st = async function () { return String((parse((await d.call('item.get', { id: 'goal/G101.1' }, ANDY)).body.item) || {}).status); };
     const s1 = await st();
     if (/deskVerify/i.test(s1)) test.check('an agent\'s verify pass: the status says it waits for deskVerify');
     else test.fail(OWED + 'after the agent\'s verify pass the item status reads ' + short(s1));

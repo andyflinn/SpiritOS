@@ -32,7 +32,7 @@ const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.
 const CW = { key: 'MCowBQYDK2VwAyEAdeskPhaseRestartCWAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const UBI = { key: 'MCowBQYDK2VwAyEAdeskPhaseRestartUbiAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-ubuntu' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPhaseRestartOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' };
-const ID = 'r/G1.1';
+const ID = 'goal/G100.1';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
@@ -75,18 +75,18 @@ async function cycle(redTaken) {
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Restart' }, items: [
-    { id: ID, title: 'Code item', blocks: ['r/G1'], code: true },
-    { id: 'r/G1.2', title: 'A decision', blocks: ['r/G1'] },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Restart' }, items: [
+    { id: ID, title: 'Code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'A decision', blocks: ['goal/G100'] },
   ] }) }, ANDY);
-  const ended = await call('press', { id: 'r/G1', what: 'end-design' }, ANDY);
+  const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const go1 = await call('press', { id: ID, what: 'go' }, ANDY);
-  const go2 = await call('press', { id: 'r/G1.2', what: 'go' }, ANDY);
+  const go2 = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   if (!ok(ended) || !ok(go1) || !ok(go2)) { test.fail('the world: end-design ' + ended.status + ', Gos ' + go1.status + ' ' + go2.status); return; }
   // Two agents live, so the desk does not waive the phase rules itself (deskPhases.js).
-  await call('item.take', { id: 'r/G1.2' }, UBI);
-  await call('chat.add', { id: 'r/G1.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
-  await call('item.release', { id: 'r/G1.2' }, UBI);
+  await call('item.take', { id: 'goal/G100.2' }, UBI);
+  await call('chat.add', { id: 'goal/G100.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+  await call('item.release', { id: 'goal/G100.2' }, UBI);
 
   const first = await cycle(false);
   const v0 = await facts(ID);
@@ -138,19 +138,12 @@ async function cycle(redTaken) {
   s5.push((await call('phase.done', { id: ID, phase: 'build' }, UBI)).status);
   s5.push((await call('phase.take', { id: ID, phase: 'verify' }, CW)).status);
   s5.push((await call('phase.done', { id: ID, phase: 'verify', pass: true }, CW)).status);
-  const ch = await call('changes', { n: 0, line: 0 }, ANDY);
-  let recs = (ch.body && ch.body.records) || [];
-  for (let n = Number(ch.body && ch.body.n) || 0, i = 0; ch.body && ch.body.more && i < 50; i++) {
-    const more = await call('changes', { n: n, line: 0 }, ANDY);
-    recs = recs.concat((more.body && more.body.records) || []);
-    n = Number(more.body && more.body.n) || n;
-    if (!(more.body && more.body.more)) break;
-  }
-  const passes = recs.filter(function (r) { return r.verb === 'phase.done'; }).map(function (r) { try { return JSON.parse(r.body); } catch (e) { return {}; } })
-    .filter(function (b) { return b.id === ID && b.phase === 'verify' && b.pass === true; });
-  const lastPass = passes[passes.length - 1] || {};
-  if (s5.every(function (x) { return x === 200; }) && lastPass.commit === COMMIT) test.check('the verify pass record carries the claimed commit ' + COMMIT.slice(0, 8));
-  else test.fail('OWED by goal/G27.2: the steps answered ' + short(s5) + '; the last verify pass record reads ' + short(lastPass));
+  // goal/G33.4: no log of writes to read the pass record from; the item itself keeps the claimed commit through its
+  // verify pass, and the run his Verify hands over carries it (desk.js handOver).
+  let lastPass = {};
+  try { lastPass = JSON.parse(((await call('item.get', { id: ID }, ANDY)).body || {}).item) || {}; } catch (e) { lastPass = {}; }
+  if (s5.every(function (x) { return x === 200; }) && lastPass.claimCommit === COMMIT && lastPass.verified !== undefined) test.check('after the verify pass the item still carries the claimed commit ' + COMMIT.slice(0, 8));
+  else test.fail('OWED by goal/G27.2: the steps answered ' + short(s5) + '; after the verify pass the item reads ' + short({ claimCommit: lastPass.claimCommit }));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { kid && kid.kill(); } catch (e) { /* gone */ }
   setTimeout(function () {

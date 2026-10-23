@@ -82,7 +82,8 @@
     if (!ctx || !obj || typeof obj !== 'object') return false;
     var item = obj.item;
     if (typeof item === 'string') { try { item = JSON.parse(item); } catch (e) { item = null; } }
-    var rows = (Array.isArray(obj.rows) ? obj.rows : []).concat(item ? [item] : []);
+    // goal/G33.4: one row per publish.
+    var rows = item ? [item] : [];
     return rows.some(function (x) { return x && (x.id === ctx.goal || x.goal === ctx.goal); });
   }
 

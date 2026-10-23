@@ -63,25 +63,25 @@ async function deskHalf() {
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
   const call = function (verb, a, caller) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
-  const gChecks = async function () { return ((await call('item.checks', { id: 'cn/G1.1' }, ANDY)).checks || []).filter(function (c) { return c.kind === 'G'; }); };
+  const gChecks = async function () { return ((await call('item.checks', { id: 'goal/G100.1' }, ANDY)).checks || []).filter(function (c) { return c.kind === 'G'; }); };
   try {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'cn/G1', title: 'Numbers' }, items: [{ id: 'cn/G1.1', title: 'Grants', blocks: ['cn/G1'] }] }) }, ANDY);
-    await call('press', { id: 'cn/G1', what: 'end-design' }, ANDY);
-    await call('press', { id: 'cn/G1.1', what: 'go' }, ANDY);
-    await call('item.take', { id: 'cn/G1.1' }, CW);
-    await call('item.files.add', { id: 'cn/G1.1', paths: [CORE] }, CW);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Numbers' }, items: [{ id: 'goal/G100.1', title: 'Grants', blocks: ['goal/G100'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+    await call('item.take', { id: 'goal/G100.1' }, CW);
+    await call('item.files.add', { id: 'goal/G100.1', paths: [CORE] }, CW);
     const first = (await gChecks()).map(function (c) { return c.number; });
     if (first.join() === 'G1') test.check('the world: a core path raises the grant G1');
     else test.fail('the world: after a core path the G checks are ' + short(first));
-    await call('item.files.add', { id: 'cn/G1.1', paths: ['spirit/test/zzPlain.js'] }, CW);
+    await call('item.files.add', { id: 'goal/G100.1', paths: ['spirit/test/zzPlain.js'] }, CW);
     const gone = await gChecks();
     if (!gone.filter(function (c) { return c.state === 'open'; }).length) test.check('the world: with the core path off the list, the open grant is gone');
     else test.fail('the world: after the core path left, G checks read ' + short(gone));
-    await call('item.files.add', { id: 'cn/G1.1', paths: [CORE, 'spirit/test/zzPlain.js'] }, CW);
+    await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, 'spirit/test/zzPlain.js'] }, CW);
     const again = (await gChecks()).filter(function (c) { return c.state === 'open'; }).map(function (c) { return c.number; });
     if (again.length === 1 && again[0] !== 'G1') test.check('raised again, the grant gets a new number (' + again[0] + '), not G1');
     else test.fail(OWED + 'the grant raised again is numbered ' + short(again));
@@ -113,7 +113,7 @@ async function dialogHalf() {
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
     { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
-  const facts = function (id) { return { id: id, title: id, goal: 'cn/G1', status: 'running', with: '', buttons: [], blocking: ['cn/G1'], blocked: [], asks: 0 }; };
+  const facts = function (id) { return { id: id, title: id, goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: ['goal/G100'], blocked: [], asks: 0 }; };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -130,24 +130,24 @@ async function dialogHalf() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'cn/G1.1', agents: {} });
+  dd.open({ id: 'goal/G100.1', agents: {} });
   await settled(); await sleep(20); await settled();
   const body = doc.getElementById('dd-body');
   const input = doc.getElementById('dd-box-input');
-  input.value = 'box of cn/G1.1';
+  input.value = 'box of goal/G100.1';
   body.fire('focusin', { target: { id: 'dd-box-input' } });
   await settled();
   const took = calls.filter(function (c) { return c.verb === 'box.take'; }).pop();
-  if (took && took.args.id === 'cn/G1.1') test.check('the world: focus took the box of cn/G1.1');
+  if (took && took.args.id === 'goal/G100.1') test.check('the world: focus took the box of goal/G100.1');
   else test.fail('the world: focus asked ' + short(took));
-  dd.open({ id: 'cn/G1.2', agents: {} });
+  dd.open({ id: 'goal/G100.2', agents: {} });
   await settled(); await sleep(20); await settled();
-  doc.getElementById('dd-box-input').value = 'what he typed for cn/G1.1';
+  doc.getElementById('dd-box-input').value = 'what he typed for goal/G100.1';
   const n0 = calls.length;
   body.fire('focusout', { target: { id: 'dd-box-input' } });
   await settled(); await sleep(20); await settled();
   const wrote = calls.slice(n0).filter(function (c) { return c.verb === 'box.write' || c.verb === 'box.release'; });
-  if (wrote.length && wrote.every(function (c) { return c.args.id === 'cn/G1.1'; })) test.check('the blur after opening cn/G1.2 goes to cn/G1.1, where the box was focused (' + wrote[0].verb + ')');
+  if (wrote.length && wrote.every(function (c) { return c.args.id === 'goal/G100.1'; })) test.check('the blur after opening goal/G100.2 goes to goal/G100.1, where the box was focused (' + wrote[0].verb + ')');
   else test.fail(OWED + 'the blur went to ' + short(wrote.map(function (c) { return c.verb + ' ' + c.args.id; })));
 }
 

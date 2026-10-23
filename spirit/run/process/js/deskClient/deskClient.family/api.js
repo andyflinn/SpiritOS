@@ -18,5 +18,8 @@ module.exports = {
     // The key of the node that runs the desk.
     setDesk: { key: 'key' },
     signoff: { agent: 'text?' },
+    // goal/G33.4 (box v40): the desk's stream, one row as the desk publishes it, JSON; appServer's verb for a server
+    // that follows a stream (js/appServer.js withStreamListener), heard from the key setDesk named alone.
+    streamListener: { json: 'text' },
   },
 };

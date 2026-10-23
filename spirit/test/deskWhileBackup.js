@@ -10,7 +10,9 @@
 //   after every change, so log.add meets a locked database.
 //
 // THE CONTRACT: with the backup server copying the same node's desk.db over
-// and over, every log.add succeeds, and every copy the backup makes opens.
+// and over, every write succeeds, and every copy the backup makes opens.
+// SINCE goal/G33.4 the writes are chat lines (the old lines table went), and the record is an old-shape desk.db the
+// desk migrates into its tables at start: 6000 chat lines of about 1.2 KB.
 // How (a journal mode that lets one write while another reads, a copy that
 // does not hold the file) is the build's.
 
@@ -26,6 +28,7 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by the desk-while-backup finding: ';
 const RUN_JS = path.join(__dirname, '..', 'run', 'process', 'js');
 const DESK = path.join(RUN_JS, 'desk', 'desk.js');
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskWhileBackupTestAndyAAAAAAAAAAAAAAAA=', label: 'andy' };
 const BACKUP = path.join(RUN_JS, 'backup', 'backup.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -43,12 +46,13 @@ const kids = [];
 (async function () {
   // A record the size of Andy's order of magnitude, so a copy takes a while.
   const seed = new DatabaseSync(path.join(deskState, 'desk.db'));
-  seed.exec('CREATE TABLE IF NOT EXISTS lines (key TEXT PRIMARY KEY, at TEXT, todo TEXT, sender TEXT, kind TEXT, body TEXT, line TEXT NOT NULL);');
-  const ins = seed.prepare('INSERT INTO lines VALUES (?, ?, ?, ?, ?, ?, ?)');
+  seed.exec("CREATE TABLE records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL, key TEXT NOT NULL DEFAULT '');");
+  const ins = seed.prepare('INSERT INTO records (at, verb, by, body) VALUES (?, ?, ?, ?)');
   seed.exec('BEGIN');
+  ins.run(new Date(Date.UTC(2026, 8, 1)).toISOString(), 'session.set', 'andy', JSON.stringify({ session: { goal: { id: 'goal/G100', title: 'Backup' }, items: [{ id: 'goal/G100.1', title: 'Lines', blocks: ['goal/G100'] }] } }));
   for (let i = 0; i < 6000; i++) {
     const body = 'seed ' + i + ' ' + crypto.randomBytes(600).toString('hex');
-    ins.run('s' + i, new Date(Date.UTC(2026, 8, 1) + i * 1000).toISOString(), 'team/chat', 'claude-windows', 'note', body, JSON.stringify({ key: 's' + i, text: body }));
+    ins.run(new Date(Date.UTC(2026, 8, 1) + (i + 1) * 1000).toISOString(), 'chat.add', 'andy', JSON.stringify({ id: 'goal/G100.1', text: body }));
   }
   seed.exec('COMMIT');
   seed.close();
@@ -81,10 +85,9 @@ const kids = [];
   const until = Date.now() + 6000;
   while (up && Date.now() < until) {
     n += 1;
-    const line = JSON.stringify({ key: 'w' + n, at: new Date().toISOString(), todo: 'team/chat', from: 'andy', kind: 'note', text: 'write ' + n, dir: 'out' });
     let r = null;
-    try { r = await client.ask({ desk: { 'log.add': { json: line } } }); } catch (e) { r = { status: 0, body: { error: e.message } }; }
-    if (!r || r.status !== 200 || !r.body || r.body.added !== true) { failed += 1; if (!firstError) firstError = JSON.stringify(r && r.body).slice(0, 160); }
+    try { r = await client.ask({ desk: { 'chat.add': { id: 'goal/G100.1', text: 'write ' + n } } }, ANDY); } catch (e) { r = { status: 0, body: { error: e.message } }; }
+    if (!r || r.status !== 200 || !r.body || typeof r.body.change !== 'number') { failed += 1; if (!firstError) firstError = JSON.stringify(r && r.body).slice(0, 160); }
     await sleep(20);
   }
   // Under a loaded harness a copy of the big record can take seconds: wait
@@ -92,7 +95,7 @@ const kids = [];
   for (let i = 0; i < 60 && backupLines.filter(function (l) { return /wrote .*desk\.db/.test(l); }).length < 2; i++) await sleep(250);
   await sleep(500);
 
-  test.subHeading('Every log.add succeeds while the backup copies desk.db');
+  test.subHeading('Every write succeeds while the backup copies desk.db');
   const copies = backupLines.filter(function (l) { return /wrote .*desk\.db/.test(l); }).length;
   if (up && n > 50 && copies >= 2 && failed === 0) test.check(n + ' writes, all kept, while the backup copied desk.db ' + copies + ' times');
   else test.fail(OWED + 'up ' + up + ', ' + failed + ' of ' + n + ' writes failed (' + firstError + '), ' + copies + ' copies of desk.db');
@@ -107,7 +110,7 @@ const kids = [];
     }
     return '';
   })(path.join(home, '.SpiritOS'));
-  try { const c = new DatabaseSync(copy, { readOnly: true }); rows = c.prepare('SELECT count(*) AS n FROM lines').get().n; c.close(); } catch (e) { rows = -1; }
+  try { const c = new DatabaseSync(copy, { readOnly: true }); rows = c.prepare('SELECT count(*) AS n FROM chat').get().n; c.close(); } catch (e) { rows = -1; }
   if (copy && rows >= 6000 && !kept.length) test.check('the last copy opens with ' + rows + ' lines; no copy was refused');
   else test.fail(OWED + 'copy ' + (copy || 'none') + ' holds ' + rows + ' lines; refused copies: ' + kept.length);
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () {

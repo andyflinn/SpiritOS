@@ -57,38 +57,38 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return; } catch (e) { /* not yet */ } }
   };
   const session = function (ids, caller) {
-    return call('session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['a/G1'] }; }) }) }, caller || CW);
+    return call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; }) }) }, caller || CW);
   };
   try {
     await start();
     // goal/G29.21: an agent's session creates no goal, so Andy writes the world; cw's later session brings no new item.
-    await session(['a/G1.1', 'a/G1.2', 'a/G1.3'], ANDY);
-    await call('press', { id: 'a/G1', what: 'end-design' }, ANDY);
-    await call('press', { id: 'a/G1.1', what: 'go' }, ANDY);
+    await session(['goal/G100.1', 'goal/G100.2', 'goal/G100.3'], ANDY);
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-    await call('item.take', { id: 'a/G1.2' }, CW);
-    await call('chat.add', { id: 'a/G1.2', text: 'a line that must survive' }, CW);
-    await call('box.write', { id: 'a/G1.2', text: 'BOX OF G1.2', version: 0 }, CW);
+    await call('item.take', { id: 'goal/G100.2' }, CW);
+    await call('chat.add', { id: 'goal/G100.2', text: 'a line that must survive' }, CW);
+    await call('box.write', { id: 'goal/G100.2', text: 'BOX OF G1.2', version: 0 }, CW);
 
     test.subHeading('1. left out of the next session, it is closed, not deleted');
-    const set = await session(['a/G1.1', 'a/G1.3']);
+    const set = await session(['goal/G100.1', 'goal/G100.3']);
     if (set.status !== 200) test.fail('the second session was not taken: ' + short(set.body));
-    const two = await factsOf('a/G1.2');
-    if (two && two.status === 'closed') test.check('a/G1.2, left out, is still on the desk and closed');
-    else test.fail(OWED + 'a/G1.2 after the session that left it out: ' + short(two));
-    const box = await call('item.box', { id: 'a/G1.2' }, ANDY);
-    const chat = await call('chat.search', { id: 'a/G1.2', text: 'survive', by: '', since: '', before: '', scope: '' }, ANDY);
+    const two = await factsOf('goal/G100.2');
+    if (two && two.status === 'closed') test.check('goal/G100.2, left out, is still on the desk and closed');
+    else test.fail(OWED + 'goal/G100.2 after the session that left it out: ' + short(two));
+    const box = await call('item.box', { id: 'goal/G100.2' }, ANDY);
+    const chat = await call('chat.search', { id: 'goal/G100.2', text: 'survive', by: '', since: '', before: '', scope: '' }, ANDY);
     if ((box.body || {}).box === 'BOX OF G1.2' && ((chat.body || {}).items || []).length === 1) test.check('it keeps its box and its chat');
-    else test.fail(OWED + 'a/G1.2 box ' + short((box.body || {}).box || box.body) + ', chat ' + short(chat.body));
+    else test.fail(OWED + 'goal/G100.2 box ' + short((box.body || {}).box || box.body) + ', chat ' + short(chat.body));
     const open = await keys(false);
     const all = await keys(true);
-    if (open.indexOf('a/G1.2') === -1 && all.indexOf('a/G1.2') !== -1) test.check('items.search finds it with includeClosed, and not without');
+    if (open.indexOf('goal/G100.2') === -1 && all.indexOf('goal/G100.2') !== -1) test.check('items.search finds it with includeClosed, and not without');
     else test.fail(OWED + 'items.search without includeClosed ' + short(open) + ', with ' + short(all));
 
     test.subHeading('2. nothing else moves');
-    const one = await factsOf('a/G1.1');
-    const three = await factsOf('a/G1.3');
-    if (one && one.go === true && one.status !== 'closed' && three && three.status !== 'closed' && open.indexOf('a/G1.1') !== -1 && open.indexOf('a/G1.3') !== -1 && open.indexOf('a/G1.1') < open.indexOf('a/G1.3')) {
+    const one = await factsOf('goal/G100.1');
+    const three = await factsOf('goal/G100.3');
+    if (one && one.go === true && one.status !== 'closed' && three && three.status !== 'closed' && open.indexOf('goal/G100.1') !== -1 && open.indexOf('goal/G100.3') !== -1 && open.indexOf('goal/G100.1') < open.indexOf('goal/G100.3')) {
       test.check('the session\'s own items keep their state and order');
     } else test.fail('the kept items moved: ' + short({ one: one && one.status, go: one && one.go, three: three && three.status, open: open }));
 
@@ -96,9 +96,9 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     try { kid.kill(); } catch (e) { /* gone */ }
     await sleep(300);
     await start();
-    const again = await factsOf('a/G1.2');
-    if (again && again.status === 'closed') test.check('restarted on the same desk.db, a/G1.2 is still there and closed');
-    else test.fail(OWED + 'after a restart a/G1.2 is ' + short(again));
+    const again = await factsOf('goal/G100.2');
+    if (again && again.status === 'closed') test.check('restarted on the same desk.db, goal/G100.2 is still there and closed');
+    else test.fail(OWED + 'after a restart goal/G100.2 is ' + short(again));
   } catch (e) {
     test.fail('the suite threw: ' + (e && e.stack || e));
   } finally {

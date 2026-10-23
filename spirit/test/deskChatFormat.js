@@ -97,12 +97,12 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   const api = { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, onPublished: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     verb: function () {
-      return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'test/G1.1', title: 'Asks Andy', goal: 'test/G1', status: '', with: '',
+      return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'goal/G100.1', title: 'Asks Andy', goal: 'goal/G100', status: '', with: '',
         buttons: [], blocking: [], blocked: [], alone: false, star: false }), box: '', version: 0, change: 1, checks: [],
         chat: [{ by: 'claude-windows', at: AT, text: NOTE }] } });
     } };
   dd.mount(fakeElement('dd'), api);
-  dd.open({ id: 'test/G1.1' });
+  dd.open({ id: 'goal/G100.1' });
   await settle();
   await settle();
   const ddChat = ddDoc.getElementById('dd-chat').innerHTML;
@@ -114,13 +114,13 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
     row('in', 'claude-windows', 'note', NOTE, ''),
     row('out', 'andy', 'musing', 'note to self: ' + NOTE, ''),
   ];
-  // TEAM (ALL) IS THE GROUP CHAT SINCE goal/G3.10: the chat of the desk server's standing goal desk/G0.0, read
+  // TEAM (ALL) IS THE GROUP CHAT SINCE goal/G3.10: the chat of the desk server's standing goal goal/G0, read
   // with item.chat, no longer the packets this page recorded under team/chat. So the note under test is a line of
   // that chat, answered here as the desk server answers it.
   const deskFake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
   const deskVerb = function (name, body) {
     const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
-    if (asked && asked.id === 'desk/G0.0') return Promise.resolve({ status: 200, body: { chat: [{ by: 'claude-windows', at: AT, text: NOTE, taken: '' }], chatMore: false } });
+    if (asked && asked.id === 'goal/G0') return Promise.resolve({ status: 200, body: { chat: [{ by: 'claude-windows', at: AT, text: NOTE, taken: '' }], chatMore: false } });
     return deskFake.verb(name, body);
   };
   const doc = fakeDocument();

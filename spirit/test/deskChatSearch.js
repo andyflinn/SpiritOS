@@ -1,9 +1,9 @@
 'use strict';
 
-// goal/G3.11: a search on the chat lines of an item, the group chat's (desk/G0.0) first. Red on today's tree: the desk server has no verb chat.search;
+// goal/G3.11: a search on the chat lines of an item, the group chat's (goal/G0) first. Red on today's tree: the desk server has no verb chat.search;
 // the group chat answers only its newest lines that fit one answer (item.chat), and an older line cannot be found.
-//   Andy, 2026-10-02: "a search on the chat lines of 'desk/G0.0'" — "nothing else". Earlier, of the same: "you may
-//   introduce a search() just for the records of 'desk/G0.0' s chat, if you like.", "with time boundaries etc....
+//   Andy, 2026-10-02: "a search on the chat lines of 'goal/G0'" — "nothing else". Earlier, of the same: "you may
+//   introduce a search() just for the records of 'goal/G0' s chat, if you like.", "with time boundaries etc....
 //   just for you agents". Of an item chat answering only its newest lines: "and that is as it should be. what's the
 //   problem with having to be brief?" And of handing a full answer on in pieces: "no. none of this joing shit."
 //   His Go on this item is his press in Desk. Then, with the first red on master: "why dont you generalize the
@@ -13,7 +13,7 @@
 // Andy asked it to name):
 //   1. One verb on the desk server, chat.search {id, text, by, since, before} -> {items: [{key, label}], more}: what
 //      every search here answers.
-//   2. It searches the chat lines of the ONE item named by id and nothing else: asked for desk/G0.0, a line of
+//   2. It searches the chat lines of the ONE item named by id and nothing else: asked for goal/G0, a line of
 //      another item's chat is never answered, and the other way round. An id no item has is refused
 //      no-such-item.
 //   3. Each label is one line as JSON {by, at, text}; the newest first; the keys differ.
@@ -43,7 +43,7 @@ const OWED = 'OWED by goal/G3.11: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
-const CHAT = 'desk/G0.0';
+const CHAT = 'goal/G0';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -54,7 +54,7 @@ const CW = { key: CW_KEY, label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskChatSearchTestPeerWSLAAAAAAAAAAAA=', label: 'wsl-claude' };
 const CW_OWNER = { owner: true, key: CW_KEY, label: 'claude-windows' };
 
-test.startTest('goal/G3.11: a search on the chat lines of desk/G0.0');
+test.startTest('goal/G3.11: a search on the chat lines of goal/G0');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatsearch-'));
 const deskState = path.join(scratch, 'desk-state');
 const clientState = path.join(scratch, 'client-state');
@@ -86,6 +86,7 @@ const texts = function (s) { return s.lines.map(function (l) { return l.text; })
 // THE PRETEND NODE an agent's deskClient runs on, as deskClientAsk.js builds it: its peer.post goes into the real
 // desk server as the agent's own ask, and the answer comes back down the event stream by re.
 const streams = [];
+const deskPublished = [];
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
@@ -98,6 +99,8 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
+    // goal/G33.4: the desk publishes each row it writes; what it publishes is counted (a read publishes nothing).
+    if (b.verb === 'jobs.update' && b.id === 'desk-job' && b.app && b.app.change !== undefined) deskPublished.push(b.app);
     if (b.verb === 'jobs.update') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
     if (b.verb !== 'peer.post') { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end('{"ok":false}'); return; }
     const hash = 'H' + Date.now() + Math.random();
@@ -105,7 +108,7 @@ const node = http.createServer(function (req, res) {
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: (ask && ask.body && ask.body.desk) || {} }, CW).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, CW).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
       streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
@@ -120,7 +123,11 @@ async function up(app) {
 }
 
 async function main() {
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // The desk runs on the pretend node too, so what it publishes is seen (goal/G33.4).
+  await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
+  const nodeUrl = 'http://127.0.0.1:' + node.address().port;
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   const tree = await up('desk') || {};
 
   test.subHeading('1. the verb');
@@ -135,8 +142,8 @@ async function main() {
   // An ordinary goal with an item, whose chat must never be answered; then four lines in the group chat, each at
   // its own moment.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, ANDY);
-  await call('desk', 'chat.add', { id: 't/G1.1', text: 'alpha in another item' }, ANDY);
+  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, ANDY);
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:
   // "follow the take rules."): claude-windows takes his line before it answers, wsl-claude holds the team chat.
@@ -159,12 +166,12 @@ async function main() {
   if (shaped && new Set(all.keys).size === 4) test.check('each label is the line as the chat holds it, {by, key, name, at, text}, and the four keys differ');
   else test.fail(OWED + 'the labels read ' + JSON.stringify(all.lines).slice(0, 240) + ' with keys ' + JSON.stringify(all.keys));
 
-  const other = await search({ id: 't/G1.1' });
-  const otherAlpha = await search({ id: 't/G1.1', text: 'alpha' });
-  const nowhere = await search({ id: 'nope/G9.9' });
+  const other = await search({ id: 'goal/G100.1' });
+  const otherAlpha = await search({ id: 'goal/G100.1', text: 'alpha' });
+  const nowhere = await search({ id: 'goal/G101.9' });
   if (texts(other) === 'alpha in another item' && texts(otherAlpha) === 'alpha in another item' && nowhere.code === 'no-such-item') {
     test.check('asked for another item, it answers the one line of that item and none of the group chat; an id no item has is refused no-such-item');
-  } else test.fail(OWED + 'asked for t/G1.1 it gave [' + texts(other) + '], with text alpha [' + texts(otherAlpha) + ']; an unknown id answered ' + nowhere.status + ' ' + JSON.stringify(nowhere.body).slice(0, 120));
+  } else test.fail(OWED + 'asked for goal/G100.1 it gave [' + texts(other) + '], with text alpha [' + texts(otherAlpha) + ']; an unknown id answered ' + nowhere.status + ' ' + JSON.stringify(nowhere.body).slice(0, 120));
 
   test.subHeading('4. the four filters, alone and together');
   const byText = await search({ text: 'alpha' });
@@ -186,13 +193,18 @@ async function main() {
   else test.fail(OWED + 'all four together gave [' + texts(together) + ']; text alpha by wsl-claude gave ' + nobody.status + ' [' + texts(nobody) + ']');
 
   test.subHeading('5. a read: no record written, no by taken');
-  const n0 = ((await call('desk', 'changes', { n: 0, line: 0 }, ANDY)).body || {}).n;
+  // goal/G33.4: `changes` is gone; a write is a published row with its change number, so a read publishes none.
+  // The lines above were published: the count is non-zero, so a zero below is not a deaf node.
+  await sleep(300);
+  const p0 = deskPublished.length;
+  const n0 = p0 ? deskPublished[p0 - 1].change : null;
   await search({ text: 'alpha' });
   await search({}, ANDY);
-  const n1 = ((await call('desk', 'changes', { n: 0, line: 0 }, ANDY)).body || {}).n;
+  await sleep(500);
+  const p1 = deskPublished.length;
   const withBy = await call('desk', 'chat.search', Object.assign({ who: 'andy' }, NONE), CW);
-  if (typeof n0 === 'number' && n0 === n1 && (withBy.body || {}).code === 'no-such-argument') test.check('two searches left the record where it stood (change ' + n1 + '), and an argument it does not name is refused no-such-argument');
-  else test.fail(OWED + 'the record stood at ' + n0 + ' before and ' + n1 + ' after two searches; an unnamed argument answered ' + withBy.status + ' ' + JSON.stringify(withBy.body).slice(0, 120));
+  if (typeof n0 === 'number' && p0 > 0 && p0 === p1 && (withBy.body || {}).code === 'no-such-argument') test.check('two searches published no row: the record stood where it stood (change ' + n0 + '), and an argument it does not name is refused no-such-argument');
+  else test.fail(OWED + 'the desk had published ' + p0 + ' row(s) before two searches and ' + p1 + ' after; an unnamed argument answered ' + withBy.status + ' ' + JSON.stringify(withBy.body).slice(0, 120));
 
   test.subHeading('6. brief: a long chat comes back cut, and whole through deskClient');
   // 120 lines full of quotes: every quote gains a backslash each time the answer is packed as text, which is what
@@ -207,8 +219,6 @@ async function main() {
   if (full.status === 200 && full.more === true && full.lines.length > 0 && full.lines.length < 120 && /^long 119 /.test((full.lines[0] || {}).text || '')) test.check('120 long lines: ' + full.lines.length + ' came back, the newest first, and more is true');
   else test.fail(OWED + 'the long chat answered ' + full.status + ', ' + full.lines.length + ' line(s), more ' + full.more + ', first ' + JSON.stringify((full.lines[0] || {}).text || '').slice(0, 40));
 
-  await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
-  const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   kids.push(spawn(process.execPath, [CLIENT, '{}', '--pipe', clientPipe, '--state', clientState, '--node', JSON.stringify({ name: 'claude-windows', publicKey: CW_KEY })], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }),

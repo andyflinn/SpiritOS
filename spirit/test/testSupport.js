@@ -525,6 +525,21 @@ const test = {
     // api.js (js/<family>/ or the server's <family>.family/). A server on the spirit object asks it for each family it
     // calls. body is what the pretend node read off /api/spirit ({verb, ...args}). Answers {status, body}, or null when
     // body asks anything else, the plain api tree included: what a pretend node answers to that stays its own.
+    // A PRETEND PEER'S api {family} (goal/G33.4): what a far node's apiDoor answers the packet {api: {family}} that the
+    // spirit object over peerPost sends (face/spirit.js forPeer): the family's interface, as nodeApi gives it. null for
+    // any other body.
+    // peerAnswer(client, body, caller) -> Promise<{status, body}>: a pretend peer's answer to a decoded api packet, as its
+    // apiDoor gives it: api {family} by peerFamily, any other body by the servers (client.ask), as the caller.
+    peerAnswer: function (client, body, caller) {
+      const fam = this.peerFamily(body);
+      if (fam) return Promise.resolve({ status: 200, body: fam });
+      return client.ask(body && typeof body === 'object' ? body : {}, caller);
+    },
+    peerFamily: function (body) {
+      if (!body || typeof body !== 'object' || !body.api || typeof body.api !== 'object' || typeof body.api.family !== 'string') return null;
+      const r = this.nodeApi({ verb: 'api', family: body.api.family });
+      return r ? r.body : null;
+    },
     nodeApi: function (body) {
       if (!body || body.verb !== 'api' || typeof body.family !== 'string') return null;
       const run = require('path').join(__dirname, '..', 'run');

@@ -90,10 +90,11 @@
         var gap = (last && change > last + 1) || obj.dropped;
         if (change) last = change;
         if (gap) { read(); return; }
-        var said = obj.item;
-        if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
-        if (obj.verb !== 'chat.add' || !said || said.id !== target || !obj.chat || lines === null) return;
-        if (!lines.some(function (l) { return same(l, obj.chat); })) lines.push(obj.chat);
+        // A CHAT LINE IS ITS OWN ROW (goal/G33.4): {table: 'chat', id, row}; a line changed after (a take) replaces it.
+        if (obj.table !== 'chat' || obj.id !== target || !obj.row || obj.removed || lines === null) return;
+        var at = -1;
+        lines.forEach(function (l, i) { if (same(l, obj.row)) at = i; });
+        if (at === -1) lines.push(obj.row); else lines[at] = obj.row;
         draw();
       });
     }

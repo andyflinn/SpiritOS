@@ -83,12 +83,14 @@ const node = http.createServer(function (req, res) {
     const hash = 'H' + Date.now() + Math.random();
     let ask = null;
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
-    const desk = (ask && ask.body && ask.body.desk) || {};
+    // goal/G33.4: the desk runs on this node too, and what it posts to this agent's key (its stream, deskClient's
+    // streamListener) goes into deskClient as the desk's call; everything else is deskClient's ask of the desk.
+    const fromDesk = b.to === SELF_KEY;
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, SELF_AT_DESK).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, fromDesk ? { key: DESK_KEY, label: 'Andy' } : SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: fromDesk ? SELF_KEY : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
   });
 });
@@ -115,10 +117,10 @@ async function nextUntil(text, tries) {
   }
   return { found: false, seen: seen };
 }
-// Another agent's commit line under the item, as commitCheck writes it once the remote holds the commit.
+// Another agent's commit line under the item, as commitCheck writes it once the remote holds the commit. goal/G33.4
+// (box v37): another agent's line reaches this agent on the item this agent holds, so the item is held by it (main).
 async function landed(hash, subject) {
-  await call('desk', 'item.take', { id: 'a/G1.1' }, OTHER_AT_DESK);
-  await call('desk', 'chat.add', { id: 'a/G1.1', text: 'commit ' + hash + ': ' + subject + '\n- x.txt' }, OTHER_AT_DESK);
+  await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'commit ' + hash + ': ' + subject + '\n- x.txt' }, OTHER_AT_DESK);
 }
 function rebasing(clone) {
   return ['rebase-merge', 'rebase-apply'].some(function (d) { return fs.existsSync(path.join(clone, '.git', d)); });
@@ -146,10 +148,20 @@ async function main() {
 
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-pull-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Pulled' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }] }) }, OWNER);
+  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Pulled' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'], code: true }] }) }, OWNER);
+  // goal/G33.4 (box v37): another agent's line reaches this agent on the item this agent holds. So the other agent wrote
+  // the item's red (a phase holder posts under it at any time, goal/G27.10), and this agent holds the item now: the
+  // other's commit lines land under the item this agent holds.
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, OWNER);
+  await call('desk', 'press', { id: 'goal/G100.1', what: 'go' }, OWNER);
+  await call('desk', 'phase.take', { id: 'goal/G100.1', phase: 'red' }, OTHER_AT_DESK);
+  await call('desk', 'phase.done', { id: 'goal/G100.1', phase: 'red' }, OTHER_AT_DESK);
+  await call('desk', 'item.take', { id: 'goal/G100.1' }, SELF_AT_DESK);
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 100 }), '--pipe', clientPipe, '--state', clientState,
     '--node', JSON.stringify({ name: 'claude-windows', publicKey: SELF_KEY })], {
     cwd: clone, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],

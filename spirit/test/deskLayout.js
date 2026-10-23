@@ -69,11 +69,11 @@ function row(from, kind, text, todo) {
   return { key: 'k' + n, at: new Date(Date.now() - 3600000 + n * 1000).toISOString(), dir: dir, peer: LEAD,
     outcome: dir === 'in' ? 'received' : 'sent', from: from, kind: kind, text: text, todo: todo };
 }
-const SESSION = JSON.stringify({ goal: { id: 't/G1', title: 'Goal', description: 'GOAL-TEXT' },
-  rules: [{ id: 't/G1.rule1', text: 'RULE-TEXT' }],
+const SESSION = JSON.stringify({ goal: { id: 'goal/G100', title: 'Goal', description: 'GOAL-TEXT' },
+  rules: [{ id: 'goal/G100.rule1', text: 'RULE-TEXT' }],
   items: [
-    { id: 't/G1.1', title: 'First', blocks: ['t/G1', 't/G1.2'] },
-    { id: 't/G1.2', title: 'Second' },
+    { id: 'goal/G100.1', title: 'First', blocks: ['goal/G100', 'goal/G100.2'] },
+    { id: 'goal/G100.2', title: 'Second' },
   ] });
 const log = [row('claude-windows', 'session', SESSION, 'team/chat'), row('andy', 'answer', 'start design mode.', 'team/chat')];
 
@@ -82,11 +82,11 @@ const files = { 'log/log.json': JSON.stringify(log) };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6): the goal row says design mode,
 // each row its status.
 const fake = require('./deskFake.js').fromFiles(files);
-const label = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+const label = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
 fake.items = [
-  label({ id: 't/G1', title: 'Goal', goal: '', design: true, waiting: 0, blocked: ['t/G1.1'] }),
-  label({ id: 't/G1.1', title: 'First', status: 'blocking', blocking: ['t/G1', 't/G1.2'] }),
-  label({ id: 't/G1.2', title: 'Second', status: 'blocked', blocked: ['t/G1.1'] }),
+  label({ id: 'goal/G100', title: 'Goal', goal: '', design: true, waiting: 0, blocked: ['goal/G100.1'] }),
+  label({ id: 'goal/G100.1', title: 'First', status: 'blocking', blocking: ['goal/G100', 'goal/G100.2'] }),
+  label({ id: 'goal/G100.2', title: 'Second', status: 'blocked', blocked: ['goal/G100.1'] }),
 ];
 const doc = fakeDocument();
 const root = fakeElement('container');
@@ -167,17 +167,17 @@ settle().then(function () {
     press();
     return settle().then(function () {
       // A press on the goal, not a line (desk/G2.6).
-      const ended = fake.calls.some(function (k) { return k.verb === 'press' && k.args.what === 'end-design' && k.args.id === 't/G1' && !('by' in k.args); });
+      const ended = fake.calls.some(function (k) { return k.verb === 'press' && k.args.what === 'end-design' && k.args.id === 'goal/G100' && !('by' in k.args); });
       if (afterOne === 0 && armed && ended) test.check('the first press armed it (sure?) and sent nothing; the second ended design mode');
       else test.fail(OWED + 'after one press ' + afterOne + ' sent, armed ' + armed + '; after two, ended ' + ended);
     });
   });
 }).then(function () {
   test.subHeading("T7: the status column reads what the desk server says");
-  const s1 = stateOf('t/G1.1');
-  const s2 = stateOf('t/G1.2');
-  if (/\bblocking\b/.test(s1) && /\bblocked\b/.test(s2)) test.check('t/G1.1 reads blocking, t/G1.2 (waiting on it) reads blocked');
-  else test.fail(OWED + 't/G1.1 reads ' + JSON.stringify(s1) + ', t/G1.2 reads ' + JSON.stringify(s2));
+  const s1 = stateOf('goal/G100.1');
+  const s2 = stateOf('goal/G100.2');
+  if (/\bblocking\b/.test(s1) && /\bblocked\b/.test(s2)) test.check('goal/G100.1 reads blocking, goal/G100.2 (waiting on it) reads blocked');
+  else test.fail(OWED + 'goal/G100.1 reads ' + JSON.stringify(s1) + ', goal/G100.2 reads ' + JSON.stringify(s2));
 
   test.subHeading('T5 in Desk: the bubble shows the goal by its title, nothing more');
   const bubble = doc.getElementById('desk-session').innerHTML;
@@ -190,7 +190,7 @@ settle().then(function () {
   // task-type icons in the second column."
   test.subHeading('T9: the unseen star has the first column to itself, the type icon the second');
   const list = doc.getElementById('desk-top').innerHTML;
-  const firstRow = (list.match(/<tr data-row="t\/G1\.2"[\s\S]*?<\/tr>/) || [''])[0];
+  const firstRow = (list.match(/<tr data-row="goal\/G100\.2"[\s\S]*?<\/tr>/) || [''])[0];
   const tds = firstRow.match(/<td[^>]*>[\s\S]*?<\/td>/g) || [];
   const icons = [kernel.core.const.ICON.ERROR, kernel.core.const.ICON.CODE];
   const hasIcon = function (c) { return icons.some(function (i) { return c.indexOf(i) !== -1; }); };
@@ -216,15 +216,15 @@ settle().then(function () {
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
   let screenTitle = '';
-  const answer = { item: JSON.stringify({ id: 't/G1.2', title: 'Second', goal: 't/G1', status: 'running', with: '',
-    buttons: ['go', 'done'], blocking: ['t/G1'], blocked: [], alone: false, star: false }),
+  const answer = { item: JSON.stringify({ id: 'goal/G100.2', title: 'Second', goal: 'goal/G100', status: 'running', with: '',
+    buttons: ['go', 'done'], blocking: ['goal/G100'], blocked: [], alone: false, star: false }),
     box: 'ITEM-TEXT', version: 1, change: 1, chat: [],
     checks: [{ number: 'C1', kind: 'C', words: 'CHECK-TEXT', test: '', state: 'open', by: '', at: '' }] };
   dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function () {}, onPublished: function () {},
     setScreenTitle: function (t) { screenTitle = String(t); }, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     verb: function () { return Promise.resolve({ status: 200, body: answer }); } });
-  dd.open({ id: 't/G1.2' });
+  dd.open({ id: 'goal/G100.2' });
   // SINCE goal/G30.8 the yellow strip is gone and the rest is one upper half (#dd-upper) under the header: an icon
   // strip (#dd-icons) and one panel (#dd-panel) at a time, the box on open; the C checks are the red Qs' panel's (❌),
   // Blocked by the blocks panel's (🪠).
@@ -244,7 +244,7 @@ settle().then(function () {
     const box = seen.box;
 
     test.subHeading("T3: a dialog's title starts with the item's id");
-    if (/^\s*t\/G1\.2\b/.test(screenTitle) && /Second/.test(screenTitle)) test.check('the screen title reads ' + JSON.stringify(screenTitle));
+    if (/^\s*goal\/G100\.2\b/.test(screenTitle) && /Second/.test(screenTitle)) test.check('the screen title reads ' + JSON.stringify(screenTitle));
     else test.fail(OWED + 'the screen title is ' + JSON.stringify(screenTitle));
 
     test.subHeading('T4: your buttons sit before Rename; the checks are in the red Qs\' panel');
@@ -257,7 +257,7 @@ settle().then(function () {
     test.subHeading('T5 in the dialog: the box shows at once, and empty groups draw nothing');
     const links = seen.links;
     // And each id a way there (Andy: "the blocked and blocks lists link to the respective items").
-    if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && /data-open="t\/G1"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and its blocking id is a link');
+    if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && /data-open="goal\/G100"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and its blocking id is a link');
     else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links) + ' | blocks panel ' + links.slice(0, 120));
 
     test.subHeading('T13: in a dialog, his buttons are pinned in one sticky block, above the upper half');

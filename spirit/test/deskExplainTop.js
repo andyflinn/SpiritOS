@@ -59,8 +59,8 @@ function row(from, kind, text, todo) {
   return { key: 'k' + n, at: new Date(Date.now() - 3600000 + n * 1000).toISOString(), dir: dir, peer: LEAD,
     outcome: dir === 'in' ? 'received' : 'sent', from: from, kind: kind, text: text, todo: todo };
 }
-const SESSION = JSON.stringify({ goal: { id: 't/G1', title: 'The goal', description: 'GOAL-OVERVIEW-TEXT' }, rules: [],
-  items: [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-RECORD-TEXT', check: 'CHECK-TEXT' }] });
+const SESSION = JSON.stringify({ goal: { id: 'goal/G100', title: 'The goal', description: 'GOAL-OVERVIEW-TEXT' }, rules: [],
+  items: [{ id: 'goal/G100.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-RECORD-TEXT', check: 'CHECK-TEXT' }] });
 
 // The dialog halves (the goal's record, T2, T3, T4) went with desk/G2.7: one box, no explanation box
 // (spirit/test/deskDialog.js).

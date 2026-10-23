@@ -92,9 +92,13 @@ const node = http.createServer(function (req, res) {
     const d = (ask && ask.body && ask.body.desk) || {};
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: d }, SELF_AT_DESK).then(function (r) {
+    // goal/G33.4: the desk runs on this node too, and streams each row to deskClient over peerPost (appServer.publish to
+    // its streamListener); a post to the agent's key goes into deskClient as the desk's call. Every other post is the
+    // agent's own ask of the desk.
+    const toAgent = b.to === SELF_KEY;
+    test.peerAnswer(client, ask && ask.body, toAgent ? { key: DESK_KEY, label: 'Andy' } : SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: toAgent ? SELF_KEY : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
   });
 });
@@ -172,7 +176,9 @@ async function untilLines(pred, ms) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   if (!await up('desk')) { test.fail('the desk server did not start'); return; }
 
   // The rules: one of each type that matters here, all active.
@@ -183,15 +189,15 @@ async function main() {
 
   // A code item whose box names a core path (code) and no shell path (not ui).
   // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'j/G1', title: 'Jobs' }, items: [{ id: 'j/G1.1', title: 'A code job', blocks: ['j/G1'], code: true }] }) }, ANDY);
-  const box = await desk('item.box', { id: 'j/G1.1' }, ANDY);
-  await desk('box.write', { id: 'j/G1.1', text: 'Change spirit/run/js/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
-  await desk('press', { id: 'j/G1', what: 'end-design' }, ANDY);
-  const go = await desk('press', { id: 'j/G1.1', what: 'go' }, ANDY);
+  await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Jobs' }, items: [{ id: 'goal/G100.1', title: 'A code job', blocks: ['goal/G100'], code: true }] }) }, ANDY);
+  const box = await desk('item.box', { id: 'goal/G100.1' }, ANDY);
+  await desk('box.write', { id: 'goal/G100.1', text: 'Change spirit/run/js/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
+  await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  const go = await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   if (go.status !== 200) { test.fail('the world: his Go answered ' + go.status + ' ' + short(go.body)); return; }
 
   test.subHeading('2. on his Go the item records the rules that apply');
-  const f = await facts('j/G1.1');
+  const f = await facts('goal/G100.1');
   const recorded = Array.isArray(f.rules) ? f.rules.map(function (r) { return r && r.key; }) : [];
   const versioned = Array.isArray(f.rules) && f.rules.every(function (r) { return r && r.key && r.version !== undefined; });
   if (recorded.indexOf(deskRule) !== -1 && recorded.indexOf(codeRule) !== -1 && recorded.indexOf(uiRule) === -1 && versioned) test.check('the item holds the desk rule and the code rule, each with its version, and not the ui rule');
@@ -203,19 +209,20 @@ async function main() {
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start from the planted clone'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);
   await next();
-  // THE WORLD HANDS LINES: another agent's chat line reaches this agent today (deskClientNext section 5), so a section
-  // that waits for a line fails for the build, not for the world.
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line. The item's take sets no
-  // phase holder, so its red stays open as a job.
-  await desk('item.take', { id: 'j/G1.1' }, OTHER_AT_DESK);
-  await desk('chat.add', { id: 'j/G1.1', text: 'probe from the other agent' }, OTHER_AT_DESK);
-  const probe = await untilLines(function (seen) { return seen.some(function (l) { return String(l).indexOf('probe from the other agent') !== -1; }); }, 8000);
-  if (!probe.some(function (l) { return String(l).indexOf('probe from the other agent') !== -1; })) { test.fail('the world: deskClient handed no line at all (' + short(probe) + ')'); return; }
+  // THE WORLD HANDS LINES: his line on an item nobody holds reaches this agent (deskClientNext section 5), so a section
+  // that waits for a line fails for the build, not for the world. goal/G33.4 (box v37): another agent's chat on the item
+  // it holds is not this agent's, so the probe is his.
+  await desk('chat.add', { id: 'goal/G100.1', text: 'probe from andy' }, ANDY);
+  const probe = await untilLines(function (seen) { return seen.some(function (l) { return String(l).indexOf('probe from andy') !== -1; }); }, 8000);
+  if (!probe.some(function (l) { return String(l).indexOf('probe from andy') !== -1; })) { test.fail('the world: deskClient handed no line at all (' + short(probe) + ')'); return; }
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: the other agent takes the
+  // item for its commit lines below. The item's take sets no phase holder, so its red stays open as a job.
+  await desk('item.take', { id: 'goal/G100.1' }, OTHER_AT_DESK);
   const t0 = Date.now();
   const jobLines = await untilLines(function (seen) { return seen.some(function (l) { return /^JOB\b/.test(String(l)); }); }, 8000);
   const job = jobLines.filter(function (l) { return /^JOB\b/.test(String(l)); })[0] || '';
   const fast = Date.now() - t0 < 5000;
-  if (job && job.indexOf('j/G1.1') !== -1 && /\bred\b/.test(job) && fast) test.check('a JOB line for j/G1.1 in red came back within ' + (Date.now() - t0) + ' ms');
+  if (job && job.indexOf('goal/G100.1') !== -1 && /\bred\b/.test(job) && fast) test.check('a JOB line for goal/G100.1 in red came back within ' + (Date.now() - t0) + ' ms');
   else test.fail(OWED + 'no JOB line for the open red within 5 s; lines ' + short(jobLines));
   if (job && job.indexOf(deskRule) !== -1 && job.indexOf(codeRule) !== -1 && job.indexOf(uiRule) === -1) test.check('the JOB line names the desk rule and the code rule, not the ui rule');
   else test.fail(OWED + 'the JOB line reads ' + short(job));
@@ -234,7 +241,7 @@ async function main() {
 
   test.subHeading('4. a commit landing pulls the clean clone; an unsaved edit is left alone');
   const landed = pushFromOther(w, 'landed.txt', 'a build landed');
-  await desk('chat.add', { id: 'j/G1.1', text: 'commit ' + landed + ': a build landed' }, OTHER_AT_DESK);
+  await desk('chat.add', { id: 'goal/G100.1', text: 'commit ' + landed + ': a build landed' }, OTHER_AT_DESK);
   await untilLines(function () { return head(w.clone) === landed; }, 8000);
   if (head(w.clone) === landed) test.check('the commit line pulled the listening agent\'s clean clone to ' + landed.slice(0, 8));
   else test.fail(OWED + 'the clone stayed at ' + head(w.clone).slice(0, 8) + ' after ' + landed.slice(0, 8) + ' landed');
@@ -243,7 +250,7 @@ async function main() {
   const original = fs.readFileSync(notes, 'utf8');
   fs.writeFileSync(notes, original + '\n// unsaved\n');
   const second = pushFromOther(w, 'second.txt', 'another build landed');
-  await desk('chat.add', { id: 'j/G1.1', text: 'commit ' + second + ': another build landed' }, OTHER_AT_DESK);
+  await desk('chat.add', { id: 'goal/G100.1', text: 'commit ' + second + ': another build landed' }, OTHER_AT_DESK);
   const heard = await untilLines(function (seen) { return seen.some(function (l) { return /pull/i.test(String(l)) && /unsaved/i.test(String(l)); }); }, 8000);
   const kept = fs.readFileSync(notes, 'utf8') === original + '\n// unsaved\n';
   if (head(w.clone) === before && kept && heard.some(function (l) { return /pull/i.test(String(l)) && /unsaved/i.test(String(l)); })) test.check('with an unsaved edit the clone is not pulled, the edit stays, and the agent is told');

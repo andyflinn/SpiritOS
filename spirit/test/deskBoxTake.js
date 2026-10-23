@@ -62,47 +62,47 @@ async function version(id) { const r = await call('item.box', { id: id }, ANDY);
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'bt/G1', title: 'Boxes' }, items: [{ id: 'bt/G1.1', title: 'One', blocks: ['bt/G1'] }] }) }, ANDY);
-  const first = await call('box.write', { id: 'bt/G1.1', text: 'First text.', version: 0 }, CW);
-  if (took(first)) test.check('the world: bt/G1.1 has a box, version 1');
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Boxes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, ANDY);
+  const first = await call('box.write', { id: 'goal/G100.1', text: 'First text.', version: 0 }, CW);
+  if (took(first)) test.check('the world: goal/G100.1 has a box, version 1');
   else { test.fail('the world: the first box.write answered ' + first.status + ' ' + short(first.body)); return; }
 
   test.subHeading('1. he takes the box, and while he holds it nobody else writes or takes');
-  const his = await call('box.take', { id: 'bt/G1.1' }, ANDY);
-  if (took(his) && await taker('bt/G1.1') === 'andy') test.check('his box.take is accepted and the box reads taken by andy');
-  else test.fail(OWED + 'his box.take answered ' + his.status + ' ' + short(his.body) + '; taken by ' + short(await taker('bt/G1.1')));
-  const agentWrite = await call('box.write', { id: 'bt/G1.1', text: 'An agent writes.', version: await version('bt/G1.1') }, CW);
+  const his = await call('box.take', { id: 'goal/G100.1' }, ANDY);
+  if (took(his) && await taker('goal/G100.1') === 'andy') test.check('his box.take is accepted and the box reads taken by andy');
+  else test.fail(OWED + 'his box.take answered ' + his.status + ' ' + short(his.body) + '; taken by ' + short(await taker('goal/G100.1')));
+  const agentWrite = await call('box.write', { id: 'goal/G100.1', text: 'An agent writes.', version: await version('goal/G100.1') }, CW);
   if (refusedTaken(agentWrite)) test.check('an agent\'s box.write is refused taken while he holds it');
   else test.fail(OWED + 'an agent\'s box.write while he holds the box answered ' + agentWrite.status + ' ' + short(agentWrite.body));
-  const agentTake = await call('box.take', { id: 'bt/G1.1' }, CW);
+  const agentTake = await call('box.take', { id: 'goal/G100.1' }, CW);
   if (refusedTaken(agentTake)) test.check('an agent\'s box.take is refused taken while he holds it');
   else test.fail(OWED + 'an agent\'s box.take while he holds the box answered ' + agentTake.status + ' ' + short(agentTake.body));
 
   test.subHeading('2. box.release frees a take without a write, and only the holder\'s does');
-  const notHis = await call('box.release', { id: 'bt/G1.1' }, CW);
-  if (!took(notHis) && notHis.body && notHis.body.code !== 'no-such-verb' && await taker('bt/G1.1') === 'andy') test.check('an agent cannot release his take');
-  else test.fail(OWED + 'an agent\'s box.release of his take answered ' + notHis.status + ' ' + short(notHis.body) + '; taken by ' + short(await taker('bt/G1.1')));
-  const v1 = await version('bt/G1.1');
-  const rel = await call('box.release', { id: 'bt/G1.1' }, ANDY);
-  if (took(rel) && await taker('bt/G1.1') === '' && await version('bt/G1.1') === v1) test.check('his box.release frees the box and writes nothing');
-  else test.fail(OWED + 'his box.release answered ' + rel.status + ' ' + short(rel.body) + '; taken by ' + short(await taker('bt/G1.1')) + ', version ' + (await version('bt/G1.1')) + ' (was ' + v1 + ')');
-  const after = await call('box.write', { id: 'bt/G1.1', text: 'Written after the release.', version: await version('bt/G1.1') }, CW);
+  const notHis = await call('box.release', { id: 'goal/G100.1' }, CW);
+  if (!took(notHis) && notHis.body && notHis.body.code !== 'no-such-verb' && await taker('goal/G100.1') === 'andy') test.check('an agent cannot release his take');
+  else test.fail(OWED + 'an agent\'s box.release of his take answered ' + notHis.status + ' ' + short(notHis.body) + '; taken by ' + short(await taker('goal/G100.1')));
+  const v1 = await version('goal/G100.1');
+  const rel = await call('box.release', { id: 'goal/G100.1' }, ANDY);
+  if (took(rel) && await taker('goal/G100.1') === '' && await version('goal/G100.1') === v1) test.check('his box.release frees the box and writes nothing');
+  else test.fail(OWED + 'his box.release answered ' + rel.status + ' ' + short(rel.body) + '; taken by ' + short(await taker('goal/G100.1')) + ', version ' + (await version('goal/G100.1')) + ' (was ' + v1 + ')');
+  const after = await call('box.write', { id: 'goal/G100.1', text: 'Written after the release.', version: await version('goal/G100.1') }, CW);
   if (took(after)) test.check('released, an agent writes again');
   else test.fail(OWED + 'after his release an agent\'s write answered ' + after.status + ' ' + short(after.body));
 
   test.subHeading('3. one rule for everybody: an agent\'s take refuses him too, and its release frees it');
-  const cwTake = await call('box.take', { id: 'bt/G1.1' }, CW);
+  const cwTake = await call('box.take', { id: 'goal/G100.1' }, CW);
   if (took(cwTake)) test.check('the world: claude-windows takes the box');
   else test.fail('claude-windows could not take a free box: ' + cwTake.status + ' ' + short(cwTake.body));
-  const hisWrite = await call('box.write', { id: 'bt/G1.1', text: 'He writes over a take.', version: await version('bt/G1.1') }, ANDY);
+  const hisWrite = await call('box.write', { id: 'goal/G100.1', text: 'He writes over a take.', version: await version('goal/G100.1') }, ANDY);
   if (refusedTaken(hisWrite)) test.check('his box.write is refused taken while an agent holds the box');
   else test.fail(OWED + 'his box.write while claude-windows holds the box answered ' + hisWrite.status + ' ' + short(hisWrite.body));
-  const wslWrite = await call('box.write', { id: 'bt/G1.1', text: 'The other agent writes.', version: await version('bt/G1.1') }, WSL);
+  const wslWrite = await call('box.write', { id: 'goal/G100.1', text: 'The other agent writes.', version: await version('goal/G100.1') }, WSL);
   if (refusedTaken(wslWrite)) test.check('the other agent\'s box.write is refused taken, as today');
   else test.fail('wsl-claude\'s write over claude-windows\'s take answered ' + wslWrite.status + ' ' + short(wslWrite.body));
-  const cwRel = await call('box.release', { id: 'bt/G1.1' }, CW);
-  if (took(cwRel) && await taker('bt/G1.1') === '') test.check('claude-windows\'s box.release frees its own take');
-  else test.fail(OWED + 'claude-windows\'s box.release answered ' + cwRel.status + ' ' + short(cwRel.body) + '; taken by ' + short(await taker('bt/G1.1')));
+  const cwRel = await call('box.release', { id: 'goal/G100.1' }, CW);
+  if (took(cwRel) && await taker('goal/G100.1') === '') test.check('claude-windows\'s box.release frees its own take');
+  else test.fail(OWED + 'claude-windows\'s box.release answered ' + cwRel.status + ' ' + short(cwRel.body) + '; taken by ' + short(await taker('goal/G100.1')));
 }
 
 // ── THE DIALOG ─────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ function fakeElement(id) {
   Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
   return el;
 }
-const label = function (o) { return Object.assign({ goal: 'bt/G1', status: 'running', with: '', buttons: [], blocking: [], blocked: [], star: false, asks: 0, boxTaken: '' }, o); };
+const label = function (o) { return Object.assign({ goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: [], blocked: [], star: false, asks: 0, boxTaken: '' }, o); };
 
 async function dialog() {
   const byId = {};
@@ -135,7 +135,7 @@ async function dialog() {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'bt/G1.1', title: 'One' })), box: 'The box as it stands.', version: 3, change: 1, chatMore: false, checks: [], chat: [] } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'goal/G100.1', title: 'One' })), box: 'The box as it stands.', version: 3, change: 1, chatMore: false, checks: [], chat: [] } });
       if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'The box as it stands.', version: 3 } });
       return Promise.resolve({ status: 200, body: { change: 2, version: 4, items: [], more: false, checks: [], chat: [] } });
     },
@@ -144,7 +144,7 @@ async function dialog() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'bt/G1.1', agents: {} });
+  dd.open({ id: 'goal/G100.1', agents: {} });
   for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); });
   const of = function (verb) { return calls.filter(function (c) { return c.verb === verb; }); };
   const html = Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
@@ -168,11 +168,11 @@ async function dialog() {
   input.value = 'The box as it stands.';
   fire(['focus', 'focusin']);
   await settled();
-  if (of('box.take').length >= 1 && of('box.take')[0].args.id === 'bt/G1.1') test.check('focus sent box.take {id: bt/G1.1}');
+  if (of('box.take').length >= 1 && of('box.take')[0].args.id === 'goal/G100.1') test.check('focus sent box.take {id: goal/G100.1}');
   else test.fail(OWED + 'focus sent ' + short(of('box.take')));
   fire(['blur', 'focusout']);
   await settled();
-  if (of('box.release').length >= 1 && of('box.release')[0].args.id === 'bt/G1.1' && !of('box.write').length) test.check('a blur with nothing changed sent box.release and no write');
+  if (of('box.release').length >= 1 && of('box.release')[0].args.id === 'goal/G100.1' && !of('box.write').length) test.check('a blur with nothing changed sent box.release and no write');
   else test.fail(OWED + 'an unchanged blur sent release ' + short(of('box.release')) + ', write ' + short(of('box.write')));
   fire(['focus', 'focusin']);
   await settled();
@@ -180,7 +180,7 @@ async function dialog() {
   fire(['blur', 'focusout']);
   await settled();
   const w = of('box.write')[0];
-  if (w && w.args.id === 'bt/G1.1' && w.args.text === 'The box as he changed it.' && w.args.version === 3) test.check('a blur after a change sent box.write with his text and the version read');
+  if (w && w.args.id === 'goal/G100.1' && w.args.text === 'The box as he changed it.' && w.args.version === 3) test.check('a blur after a change sent box.write with his text and the version read');
   else test.fail(OWED + 'a changed blur sent ' + short(of('box.write')));
 }
 

@@ -67,9 +67,9 @@ test.startTest('goal/G9.1: a sword marks make-current in the List; the button li
   // THE LIST: the current goal (no make-current), another open goal (make-current offered), and an item.
   const fake = require('./deskFake.js').create([]);
   fake.items = [
-    label({ id: 'sw/G1', title: 'Current', status: 'running', buttons: ['close'] }),
-    label({ id: 'sw/G2', title: 'Another', status: 'running', buttons: ['close', 'make-current'] }),
-    label({ id: 'sw/G1.1', title: 'An item', goal: 'sw/G1', status: 'running', buttons: ['go'] }),
+    label({ id: 'goal/G100', title: 'Current', status: 'running', buttons: ['close'] }),
+    label({ id: 'goal/G101', title: 'Another', status: 'running', buttons: ['close', 'make-current'] }),
+    label({ id: 'goal/G100.1', title: 'An item', goal: 'goal/G100', status: 'running', buttons: ['go'] }),
   ];
   const doc = fakeDocument();
   load(DESK, doc).mount(fakeElement('container'), {
@@ -80,25 +80,25 @@ test.startTest('goal/G9.1: a sword marks make-current in the List; the button li
     callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
   });
   await settled();
-  const g2 = rowHtml(doc, 'sw/G2');
-  if (!g2) { test.fail('the world: the List drew no row for sw/G2'); return; }
-  test.check('the world: the List drew the row of sw/G2');
+  const g2 = rowHtml(doc, 'goal/G101');
+  if (!g2) { test.fail('the world: the List drew no row for goal/G101'); return; }
+  test.check('the world: the List drew the row of goal/G101');
 
   test.subHeading('2. a row offering make-current shows the sword, and no make-current button');
-  if (g2.indexOf(SWORD) !== -1) test.check('sw/G2\'s row carries ' + SWORD);
-  else test.fail(OWED + 'sw/G2\'s row has no sword: ' + g2.replace(/\s+/g, ' ').slice(0, 300));
+  if (g2.indexOf(SWORD) !== -1) test.check('goal/G101\'s row carries ' + SWORD);
+  else test.fail(OWED + 'goal/G101\'s row has no sword: ' + g2.replace(/\s+/g, ' ').slice(0, 300));
   if (!/data-press="make-current"/.test(g2) && !/>\s*make-current\s*</i.test(g2)) test.check('and no make-current button in the List');
-  else test.fail(OWED + 'the List still draws a make-current button on sw/G2');
+  else test.fail(OWED + 'the List still draws a make-current button on goal/G101');
   if (/data-press="close"/.test(g2)) test.check('the goal row keeps its Close (goal/G6.6)');
   else test.fail('the goal row lost its Close: ' + g2.replace(/\s+/g, ' ').slice(0, 300));
 
   test.subHeading('3. no sword where make-current is not offered');
-  const g1 = rowHtml(doc, 'sw/G1');
-  const i1 = rowHtml(doc, 'sw/G1.1');
-  if (g1 && g1.indexOf(SWORD) === -1) test.check('the current goal sw/G1 has no sword');
-  else test.fail('sw/G1 reads ' + g1.replace(/\s+/g, ' ').slice(0, 300));
-  if (i1 && i1.indexOf(SWORD) === -1) test.check('the item sw/G1.1 has no sword');
-  else test.fail('sw/G1.1 reads ' + i1.replace(/\s+/g, ' ').slice(0, 300));
+  const g1 = rowHtml(doc, 'goal/G100');
+  const i1 = rowHtml(doc, 'goal/G100.1');
+  if (g1 && g1.indexOf(SWORD) === -1) test.check('the current goal goal/G100 has no sword');
+  else test.fail('goal/G100 reads ' + g1.replace(/\s+/g, ' ').slice(0, 300));
+  if (i1 && i1.indexOf(SWORD) === -1) test.check('the item goal/G100.1 has no sword');
+  else test.fail('goal/G100.1 reads ' + i1.replace(/\s+/g, ' ').slice(0, 300));
 
   test.subHeading('4. the press itself stays in the goal\'s Details');
   const ddoc = fakeDocument();
@@ -109,7 +109,7 @@ test.startTest('goal/G9.1: a sword marks make-current in the List; the button li
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'sw/G2', title: 'Another', status: 'running', buttons: ['close', 'make-current'] })), box: 'BOX', version: 1, change: 1, chatMore: false, checks: [], chat: [] } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'goal/G101', title: 'Another', status: 'running', buttons: ['close', 'make-current'] })), box: 'BOX', version: 1, change: 1, chatMore: false, checks: [], chat: [] } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, checks: [], chat: [], box: '', version: 1 } });
     },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
@@ -117,11 +117,11 @@ test.startTest('goal/G9.1: a sword marks make-current in the List; the button li
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'sw/G2', agents: {} });
+  dd.open({ id: 'goal/G101', agents: {} });
   await settled();
   const ddHtml = Object.keys(ddoc.byId).map(function (k) { return ddoc.byId[k].innerHTML; }).join('\n');
   if (/id="dd-make-current"/.test(ddHtml)) test.check('the goal\'s Details draws Make current goal');
-  else test.fail('the Details of sw/G2 drew no make-current button (it does today; the List change must not take it): ' + ddHtml.replace(/\s+/g, ' ').slice(0, 200));
+  else test.fail('the Details of goal/G101 drew no make-current button (it does today; the List change must not take it): ' + ddHtml.replace(/\s+/g, ' ').slice(0, 200));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);

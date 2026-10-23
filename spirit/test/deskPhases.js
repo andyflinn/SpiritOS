@@ -78,17 +78,17 @@ async function open(caller) {
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Queue' }, items: [
-    { id: 'q/G1.1', title: 'Code item', blocks: ['q/G1'], code: true },
-    { id: 'q/G1.2', title: 'A decision', blocks: ['q/G1'] },
-    { id: 'q/G1.3', title: 'One agent alone', blocks: ['q/G1'], code: true },
-    { id: 'q/G1.4', title: 'Goes stale', blocks: ['q/G1'], code: true },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Queue' }, items: [
+    { id: 'goal/G100.1', title: 'Code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'A decision', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'One agent alone', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.4', title: 'Goes stale', blocks: ['goal/G100'], code: true },
   ] }) }, ANDY);
   // A GOAL A session.set MAKES STARTS IN DESIGN (desk.js session.set), and Go is held back while it is on: end it first,
   // as deskLimbo does. Found by claude-windows building against e4bd1acb.
-  const ended = await call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
+  const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
-  for (const id of ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
+  for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
   // TWO AGENTS ARE HERE, so the phase rules below have something to bite on: since goal/G2.22 the desk waives an
@@ -97,94 +97,95 @@ async function open(caller) {
   // without this line it would never count as live and every rule below would be waived away.
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: claude-ubuntu says it
   // under the decision item, which it takes, so no take lands on the code item whose phases are tested below.
-  await call('item.take', { id: 'q/G1.2' }, UBI);
-  await call('chat.add', { id: 'q/G1.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+  await call('item.take', { id: 'goal/G100.2' }, UBI);
+  await call('chat.add', { id: 'goal/G100.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
   // Since goal/G21.4 an agent holds one task at a time: claude-ubuntu lets the decision item go, so it may take a phase
   // of the code item below.
-  await call('item.release', { id: 'q/G1.2' }, UBI);
+  await call('item.release', { id: 'goal/G100.2' }, UBI);
 
   test.subHeading('1. only an item marked code has phases');
-  const a0 = await facts('q/G1.1');
-  const b0 = await facts('q/G1.2');
+  const a0 = await facts('goal/G100.1');
+  const b0 = await facts('goal/G100.2');
   if (a0.phase === 'red' && !b0.phase) test.check('after his Go the code item is in red; the decision item has no phase');
   else test.fail(OWED + 'phases after Go: code item ' + short(a0.phase) + ', decision item ' + short(b0.phase));
 
   test.subHeading('2. one holder per phase');
-  const redCw = await call('phase.take', { id: 'q/G1.1', phase: 'red' }, CW);
-  const redUbi = await call('phase.take', { id: 'q/G1.1', phase: 'red' }, UBI);
-  const a1 = await facts('q/G1.1');
+  const redCw = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const redUbi = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, UBI);
+  const a1 = await facts('goal/G100.1');
   if (ok(redCw) && !ok(redUbi) && a1.red === 'claude-windows' && a1.with === 'claude-windows') test.check('claude-windows holds the red; claude-ubuntu\'s take is refused (' + short(redUbi.body && redUbi.body.code) + ')');
   else test.fail(OWED + 'red takes answered ' + redCw.status + ' and ' + redUbi.status + '; facts ' + short({ red: a1.red, with: a1.with }));
 
   test.subHeading('3. a finished phase opens the next, for those who may take it');
-  const redDone = await call('phase.done', { id: 'q/G1.1', phase: 'red' }, CW);
-  const a2 = await facts('q/G1.1');
+  const redDone = await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const a2 = await facts('goal/G100.1');
   const openCw = await open(CW);
   const openUbi = await open(UBI);
-  const buildCw = await call('phase.take', { id: 'q/G1.1', phase: 'build' }, CW);
-  if (ok(redDone) && a2.phase === 'build' && !a2.with && openUbi.indexOf('q/G1.1:build') !== -1 && openCw.indexOf('q/G1.1:build') === -1 && !ok(buildCw)) test.check('red done: build opens, with is cleared; work.open offers it to claude-ubuntu, not to the red\'s writer, whose take is refused');
+  const buildCw = await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, CW);
+  if (ok(redDone) && a2.phase === 'build' && !a2.with && openUbi.indexOf('goal/G100.1:build') !== -1 && openCw.indexOf('goal/G100.1:build') === -1 && !ok(buildCw)) test.check('red done: build opens, with is cleared; work.open offers it to claude-ubuntu, not to the red\'s writer, whose take is refused');
   else test.fail(OWED + 'after red done: ' + short({ done: redDone.status, phase: a2.phase, with: a2.with, openCw: openCw, openUbi: openUbi, cwBuild: buildCw.status }));
 
   test.subHeading('4. the builder may not verify; the red\'s writer may');
-  await call('phase.take', { id: 'q/G1.1', phase: 'build' }, UBI);
-  await call('phase.done', { id: 'q/G1.1', phase: 'build' }, UBI);
-  const verUbi = await call('phase.take', { id: 'q/G1.1', phase: 'verify' }, UBI);
-  const verCw = await call('phase.take', { id: 'q/G1.1', phase: 'verify' }, CW);
-  const a3 = await facts('q/G1.1');
+  await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  await call('phase.done', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  const verUbi = await call('phase.take', { id: 'goal/G100.1', phase: 'verify' }, UBI);
+  const verCw = await call('phase.take', { id: 'goal/G100.1', phase: 'verify' }, CW);
+  const a3 = await facts('goal/G100.1');
   if (!ok(verUbi) && ok(verCw) && a3.builder === 'claude-ubuntu' && a3.verifier === 'claude-windows') test.check('the builder\'s verify take is refused; the red\'s writer verifies');
   else test.fail(OWED + 'verify takes: builder ' + verUbi.status + ', red writer ' + verCw.status + '; facts ' + short({ phase: a3.phase, builder: a3.builder, verifier: a3.verifier }));
 
   test.subHeading('5. a failed verify goes back to the same builder');
-  const failed = await call('phase.done', { id: 'q/G1.1', phase: 'verify', pass: false, why: 'the retry is not inside' }, CW);
-  const a4 = await facts('q/G1.1');
-  const buildWsl = await call('phase.take', { id: 'q/G1.1', phase: 'build' }, WSL);
+  const failed = await call('phase.done', { id: 'goal/G100.1', phase: 'verify', pass: false, why: 'the retry is not inside' }, CW);
+  const a4 = await facts('goal/G100.1');
+  const buildWsl = await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, WSL);
   if (ok(failed) && a4.phase === 'build' && a4.builder === 'claude-ubuntu' && !ok(buildWsl)) test.check('back in build, its builder still claude-ubuntu; another agent\'s build take is refused');
   else test.fail(OWED + 'after a failed verify: ' + short({ done: failed.status, phase: a4.phase, builder: a4.builder, wslBuild: buildWsl.status }));
 
   test.subHeading('6. after an all-green build the verifier may grow the red, never the builder');
-  await call('phase.take', { id: 'q/G1.1', phase: 'build' }, UBI);
-  await call('phase.done', { id: 'q/G1.1', phase: 'build' }, UBI);
-  const growUbi = await call('phase.take', { id: 'q/G1.1', phase: 'red' }, UBI);
-  const growCw = await call('phase.take', { id: 'q/G1.1', phase: 'red' }, CW);
-  const a5 = await facts('q/G1.1');
+  await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  await call('phase.done', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  const growUbi = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, UBI);
+  const growCw = await call('phase.take', { id: 'goal/G100.1', phase: 'red' }, CW);
+  const a5 = await facts('goal/G100.1');
   if (!ok(growUbi) && ok(growCw) && a5.phase === 'red') test.check('the builder\'s red take is refused; the verifier takes the red to extend it');
   else test.fail(OWED + 'growing the red: builder ' + growUbi.status + ', verifier ' + growCw.status + '; phase ' + short(a5.phase));
 
   test.subHeading('7. the verifier\'s pass offers his Done, no claims needed');
-  await call('phase.done', { id: 'q/G1.1', phase: 'red' }, CW);
-  await call('phase.take', { id: 'q/G1.1', phase: 'build' }, UBI);
-  await call('phase.done', { id: 'q/G1.1', phase: 'build' }, UBI);
-  await call('phase.take', { id: 'q/G1.1', phase: 'verify' }, CW);
-  const passed = await call('phase.done', { id: 'q/G1.1', phase: 'verify', pass: true }, CW);
-  const a6 = await facts('q/G1.1');
+  await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
+  await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  await call('phase.done', { id: 'goal/G100.1', phase: 'build' }, UBI);
+  await call('phase.take', { id: 'goal/G100.1', phase: 'verify' }, CW);
+  const passed = await call('phase.done', { id: 'goal/G100.1', phase: 'verify', pass: true }, CW);
+  const a6 = await facts('goal/G100.1');
   if (ok(passed) && (a6.buttons || []).indexOf('done') !== -1 && a6.claims === 0) test.check('verify passed: Done is offered with no claim-done pressed');
   else test.fail(OWED + 'after a passing verify: ' + short({ done: passed.status, buttons: a6.buttons, claims: a6.claims, phase: a6.phase }));
 
   test.subHeading('8. his waive lets one agent take every phase');
   const refusedBefore = await (async function () {
-    await call('phase.take', { id: 'q/G1.3', phase: 'red' }, WSL);
-    await call('phase.done', { id: 'q/G1.3', phase: 'red' }, WSL);
-    return call('phase.take', { id: 'q/G1.3', phase: 'build' }, WSL);
+    await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, WSL);
+    await call('phase.done', { id: 'goal/G100.3', phase: 'red' }, WSL);
+    return call('phase.take', { id: 'goal/G100.3', phase: 'build' }, WSL);
   }());
-  const waived = await call('press', { id: 'q/G1.3', what: 'waive' }, ANDY);
-  const agentWaive = await call('press', { id: 'q/G1.4', what: 'waive' }, CW);
-  const buildAfter = await call('phase.take', { id: 'q/G1.3', phase: 'build' }, WSL);
-  await call('phase.done', { id: 'q/G1.3', phase: 'build' }, WSL);
-  const verifyAfter = await call('phase.take', { id: 'q/G1.3', phase: 'verify' }, WSL);
+  const waived = await call('press', { id: 'goal/G100.3', what: 'waive' }, ANDY);
+  const agentWaive = await call('press', { id: 'goal/G100.4', what: 'waive' }, CW);
+  const buildAfter = await call('phase.take', { id: 'goal/G100.3', phase: 'build' }, WSL);
+  await call('phase.done', { id: 'goal/G100.3', phase: 'build' }, WSL);
+  const verifyAfter = await call('phase.take', { id: 'goal/G100.3', phase: 'verify' }, WSL);
   if (!ok(refusedBefore) && ok(waived) && !ok(agentWaive) && ok(buildAfter) && ok(verifyAfter)) test.check('before his waive the red\'s writer may not build; after it, one agent builds and verifies; an agent\'s waive is refused');
   else test.fail(OWED + 'waive: ' + short({ before: refusedBefore.status, waive: waived.status, agentWaive: agentWaive.status, build: buildAfter.status, verify: verifyAfter.status }));
 
   test.subHeading('9. a holder gone stale raises a red question');
-  await call('phase.take', { id: 'q/G1.4', phase: 'red' }, UBI);
+  await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, UBI);
   await stop();
   // TWENTY MINUTES AGO for every record of claude-ubuntu's: past LIVE_MS (desk.js, 10 minutes), as deskKnownAgents does.
   const db = new DatabaseSync(path.join(state, 'desk.db'));
-  db.prepare('UPDATE records SET at = ? WHERE by = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), UBI.label);
+  // goal/G33.4: an agent's last write is its row of the agents table.
+  db.prepare('UPDATE agents SET at = ? WHERE label = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), UBI.label);
   db.close();
   await start();
-  await call('chat.add', { id: 'q/G1.1', text: 'a write, so the desk walks its state' }, CW);
+  await call('chat.add', { id: 'goal/G100.1', text: 'a write, so the desk walks its state' }, CW);
   await sleep(500);
-  const checks = ((await call('item.checks', { id: 'q/G1.4' }, ANDY)).body || {}).checks || [];
+  const checks = ((await call('item.checks', { id: 'goal/G100.4' }, ANDY)).body || {}).checks || [];
   const raised = checks.some(function (c) { return c.kind === 'Q' && c.state === 'open'; });
   if (raised) test.check('claude-ubuntu silent for 20 minutes while holding the red: an open red question is on the item');
   else test.fail(OWED + 'a stale holder left no red question; checks ' + short(checks));

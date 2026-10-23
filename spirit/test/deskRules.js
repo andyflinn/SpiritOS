@@ -180,9 +180,13 @@ const node = http.createServer(function (req, res) {
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
     const want = (ask && ask.body && ask.body.desk) || {};
     json(200, { ok: true, hash: hash });
-    client.ask({ desk: want }, SELF_AT_DESK).then(function (r) {
+    // goal/G33.4: the desk runs on this node too, and streams each row to deskClient over peerPost (appServer.publish to
+    // its streamListener); a post to the agent's key goes into deskClient as the desk's call. Every other post is the
+    // agent's own ask of the desk.
+    const toAgent = b.to === SELF_KEY;
+    test.peerAnswer(client, ask && ask.body, toAgent ? { key: DESK_KEY, label: 'Andy' } : SELF_AT_DESK).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: toAgent ? SELF_KEY : DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
     }, function () { /* the asker waits it out */ });
   });
 });
@@ -271,7 +275,7 @@ function list(rows) {
   }));
   return { html: function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); } };
 }
-const row = function (o) { return Object.assign({ goal: 'r/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], alone: false, star: false, alert: false }, o); };
+const row = function (o) { return Object.assign({ goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], alone: false, star: false, alert: false }, o); };
 const hasClose = function (html, id) { return new RegExp('data-press="close" data-id="' + id.replace(/[/.]/g, '\\$&') + '"').test(html); };
 
 // ── E. git, in a clone of the suite's own ──────────────────────────────────
@@ -307,7 +311,9 @@ async function main() {
   test.subHeading('A. the six rules head AGENTS.md, verbatim and in order, and the desk server serves them');
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
+  kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/api/spirit' }) }));
   await up('desk');
   // The AGENTS verb is gone (goal/G30.4): the desk's family folder is read through FS.loadFile.
   const served = await desk('FS.loadFile', { path: 'AGENTS.md' }, SELF_AT_DESK);
@@ -321,47 +327,47 @@ async function main() {
 
   test.subHeading('B. the desk: go is his press; a claim before Go is refused; Close before Go');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await desk('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Rules' }, items: [
-    // r/G1.1 blocks r/G1.2, so his go-all on the goal never reaches r/G1.2 (wsl-claude's review of the first red).
-    { id: 'r/G1.1', title: 'Gone by his press', blocks: ['r/G1.2'] },
-    { id: 'r/G1.2', title: 'Never gone', blocks: ['r/G1'] },
-    { id: 'r/G1.3', title: 'Gone by go-all', blocks: ['r/G1'] },
-    { id: 'r/G1.4', title: 'Closed before Go', blocks: ['r/G1'] },
+  const set = await desk('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Rules' }, items: [
+    // goal/G100.1 blocks goal/G100.2, so his go-all on the goal never reaches goal/G100.2 (wsl-claude's review of the first red).
+    { id: 'goal/G100.1', title: 'Gone by his press', blocks: ['goal/G100.2'] },
+    { id: 'goal/G100.2', title: 'Never gone', blocks: ['goal/G100'] },
+    { id: 'goal/G100.3', title: 'Gone by go-all', blocks: ['goal/G100'] },
+    { id: 'goal/G100.4', title: 'Closed before Go', blocks: ['goal/G100'] },
   ] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   // A session arrives in design mode, where nothing offers Go (desk/G3.1); his end-design opens the goal.
-  await desk('press', { id: 'r/G1', what: 'end-design' }, ANDY);
-  let f1 = await factsOf('r/G1.1');
+  await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  let f1 = await factsOf('goal/G100.1');
   const before = f1 && f1.go === false && f1.buttons.indexOf('go') !== -1;
-  const claimEarly = await desk('press', { id: 'r/G1.2', what: 'claim-done' }, SELF_AT_DESK);
-  const f2 = await factsOf('r/G1.2');
+  const claimEarly = await desk('press', { id: 'goal/G100.2', what: 'claim-done' }, SELF_AT_DESK);
+  const f2 = await factsOf('goal/G100.2');
   const refusedEarly = claimEarly.status !== 200 || (claimEarly.body && claimEarly.body.ok === false);
   if (refusedEarly && f2 && f2.go === false && f2.buttons.indexOf('done') === -1 && f2.status !== 'running') test.check('B2: a claim-done on an item without his Go is refused (' + JSON.stringify(claimEarly.body).slice(0, 80) + '), and the item is not gone and offers no Done');
   else test.fail(OWED + 'B2: claim-done before Go answered ' + claimEarly.status + ' ' + JSON.stringify(claimEarly.body).slice(0, 120) + '; facts after: ' + JSON.stringify(f2));
-  const go = await desk('press', { id: 'r/G1.1', what: 'go' }, ANDY);
-  f1 = await factsOf('r/G1.1');
+  const go = await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+  f1 = await factsOf('goal/G100.1');
   if (before && go.status === 200 && f1 && f1.go === true) test.check('B1: go is false before his press and true after it');
   else test.fail(OWED + 'B1: facts before ' + JSON.stringify(before) + ', his go answered ' + go.status + ', facts after ' + JSON.stringify(f1));
-  const claim = await desk('press', { id: 'r/G1.1', what: 'claim-done' }, SELF_AT_DESK);
+  const claim = await desk('press', { id: 'goal/G100.1', what: 'claim-done' }, SELF_AT_DESK);
   // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
-  f1 = await factsOf('r/G1.1');
+  f1 = await factsOf('goal/G100.1');
   if (claim.status === 200 && f1 && f1.go === true && f1.buttons.indexOf('done') !== -1) test.check('B2: after his Go the claim-done is taken and Done is offered');
   else test.fail(OWED + 'B2: claim-done after Go answered ' + claim.status + ' ' + JSON.stringify(claim.body).slice(0, 100) + '; facts ' + JSON.stringify(f1));
-  // B3 BEFORE THE GO-ALL (wsl-claude's review of the first red): r/G1.4 is goable, so his go-all would reach it.
-  let f4 = await factsOf('r/G1.4');
+  // B3 BEFORE THE GO-ALL (wsl-claude's review of the first red): goal/G100.4 is goable, so his go-all would reach it.
+  let f4 = await factsOf('goal/G100.4');
   const offered = f4 && f4.buttons.indexOf('close') !== -1 && f4.buttons.indexOf('go') !== -1;
-  const close = await desk('press', { id: 'r/G1.4', what: 'close' }, ANDY);
-  f4 = await factsOf('r/G1.4');
+  const close = await desk('press', { id: 'goal/G100.4', what: 'close' }, ANDY);
+  f4 = await factsOf('goal/G100.4');
   if (offered && close.status === 200 && f4 && f4.status === 'closed' && f4.buttons.join(',') === 'reopen') test.check('B3: an item not gone and not done offers close beside go; his close is taken, the item is closed and offers Reopen alone (goal/G4.20 point 2)');
   else test.fail(OWED + 'B3: offered close before Go: ' + offered + ', his close answered ' + close.status + ' ' + JSON.stringify(close.body).slice(0, 100) + ', facts ' + JSON.stringify(f4));
-  await desk('press', { id: 'r/G1.3', what: 'go-all' }, ANDY);
-  await desk('press', { id: 'r/G1', what: 'go-all' }, ANDY);
-  const f3 = await factsOf('r/G1.3');
+  await desk('press', { id: 'goal/G100.3', what: 'go-all' }, ANDY);
+  await desk('press', { id: 'goal/G100', what: 'go-all' }, ANDY);
+  const f3 = await factsOf('goal/G100.3');
   if (f3 && f3.go === true) test.check('B1: go-all sets go on each item it reached');
-  else test.fail(OWED + 'B1: after go-all, r/G1.3 facts ' + JSON.stringify(f3));
+  else test.fail(OWED + 'B1: after go-all, goal/G100.3 facts ' + JSON.stringify(f3));
 
   test.subHeading('C. the page: an armed Close at the right edge of the dialog, none on the List row');
-  const early = dialog({ id: 'r/G1.4', title: 'Closed before Go', goal: 'r/G1', status: '', with: '', buttons: ['go', 'close'], blocking: [], blocked: [], alone: false, star: false, go: false });
+  const early = dialog({ id: 'goal/G100.4', title: 'Closed before Go', goal: 'goal/G100', status: '', with: '', buttons: ['go', 'close'], blocking: [], blocked: [], alone: false, star: false, go: false });
   await settled();
   const bar0 = early.bar();
   const closeAt = bar0.indexOf('id="dd-close"');
@@ -372,20 +378,20 @@ async function main() {
   const noPress = early.presses.length === 0;
   early.click('dd-close');
   await settled();
-  const pressed = early.presses.length === 1 && early.presses[0].what === 'close' && early.presses[0].id === 'r/G1.4';
+  const pressed = early.presses.length === 1 && early.presses[0].what === 'close' && early.presses[0].id === 'goal/G100.4';
   if (closeAt !== -1 && closeAt >= lastButton && noPress && armed && pressed) test.check('C1: before Go, Close is the last button of the bar; the first click arms it, the second presses close');
   else test.fail(OWED + 'C1: Close at ' + closeAt + ' (last button at ' + lastButton + '), first click sent ' + (noPress ? 'nothing' : JSON.stringify(early.presses)) + ', armed: ' + armed + ', second click pressed: ' + pressed);
-  const done = dialog({ id: 'r/G1.1', title: 'Done', goal: 'r/G1', status: 'done', with: '', buttons: ['close', 'reopen'], blocking: [], blocked: [], alone: false, star: false, go: true });
+  const done = dialog({ id: 'goal/G100.1', title: 'Done', goal: 'goal/G100', status: 'done', with: '', buttons: ['close', 'reopen'], blocking: [], blocked: [], alone: false, star: false, go: true });
   await settled();
   done.click('dd-close');
   await settled();
   if (done.presses.length === 1 && done.presses[0].what === 'close') test.check('C1: on a done item Close presses on the first click, as before');
   else test.fail('C1: on a done item the first click sent ' + JSON.stringify(done.presses));
-  const l = list([row({ id: 'r/G1.4', title: 'Open', status: '', buttons: ['go', 'close'], go: false }), row({ id: 'r/G1.1', title: 'Done', status: 'done', buttons: ['close', 'reopen'], go: true })]);
+  const l = list([row({ id: 'goal/G100.4', title: 'Open', status: '', buttons: ['go', 'close'], go: false }), row({ id: 'goal/G100.1', title: 'Done', status: 'done', buttons: ['close', 'reopen'], go: true })]);
   await settled();
   const page = l.html();
-  const openRow = hasClose(page, 'r/G1.4');
-  const doneRow = hasClose(page, 'r/G1.1');
+  const openRow = hasClose(page, 'goal/G100.4');
+  const doneRow = hasClose(page, 'goal/G100.1');
   if (!openRow && doneRow) test.check('C2: the List draws no Close on a row that is not done, and keeps it on a done row');
   else test.fail(OWED + 'C2: the List drew Close on the open row: ' + openRow + ', on the done row: ' + doneRow);
 
@@ -397,25 +403,29 @@ async function main() {
   // A first run starts at now (goal/G3.4): his line is written once the wait is on, so it is new to deskClient.
   const waiting = next();
   await sleep(1500);
-  await desk('chat.add', { id: 'r/G1.1', text: 'his line, before any other agent wrote' }, ANDY);
+  await desk('chat.add', { id: 'goal/G100.1', text: 'his line, before any other agent wrote' }, ANDY);
   const his = await waiting;
   if (his.status === 200 && his.lines && his.lines.some(function (x) { return x.indexOf('before any other agent wrote') !== -1; })) test.check('D: his write is handed over; Andy is no agent to block');
   else test.fail(OWED + 'D: after his line next answered ' + his.status + ' ' + JSON.stringify(his.body).slice(0, 160));
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line. A take is no chat line, so
   // it is never handed over.
-  await desk('item.take', { id: 'r/G1.1' }, OTHER_AT_DESK);
-  await desk('chat.add', { id: 'r/G1.1', text: 'the other agent speaks' }, OTHER_AT_DESK);
+  await desk('item.take', { id: 'goal/G100.1' }, OTHER_AT_DESK);
+  await desk('chat.add', { id: 'goal/G100.1', text: 'the other agent speaks' }, OTHER_AT_DESK);
   const unblocked = await next();
   const names = JSON.stringify(unblocked.body);
   if (unblocked.body.ok === false && unblocked.body.code === 'unblocked' && names.indexOf('wsl-claude') !== -1 && names.indexOf(OTHER_KEY) !== -1) test.check('D: with wsl-claude unblocked on this node, next is refused unblocked, naming it and its key');
   else test.fail(OWED + 'D: with the other agent unblocked next answered ' + unblocked.status + ' ' + names.slice(0, 200));
   const askedBook = asked.filter(function (a) { return a.verb === 'contact.get' || a.verb === 'contact.search'; }).length;
   book[OTHER_KEY] = { label: 'wsl-claude', blocked: true };
+  // goal/G33.4 (box v37, "without constantly waking agents to read irrelevant messages"): the other agent's chat on the
+  // item it holds is not this agent's, so the line the blocked wait hands over is his, on an item nobody holds.
+  await desk('chat.add', { id: 'goal/G100.2', text: 'his line once the other agent is blocked' }, ANDY);
+  await sleep(500);
   const held = await next();
-  if (held.status === 200 && held.lines && held.lines.some(function (x) { return x.indexOf('the other agent speaks') !== -1; }) && askedBook > 0) test.check('D: once the node blocks that key (asked ' + askedBook + ' times of the book), next hands the held line over');
+  if (held.status === 200 && held.lines && held.lines.some(function (x) { return x.indexOf('his line once the other agent is blocked') !== -1; }) && askedBook > 0) test.check('D: once the node blocks that key (asked ' + askedBook + ' times of the book), next hands the waiting line over');
   else test.fail(OWED + 'D: with the other agent blocked next answered ' + held.status + ' ' + JSON.stringify(held.body).slice(0, 160) + '; the book was asked ' + askedBook + ' times');
   book[OTHER_KEY].blocked = false;
-  await desk('chat.add', { id: 'r/G1.1', text: 'the other agent speaks again' }, OTHER_AT_DESK);
+  await desk('chat.add', { id: 'goal/G100.1', text: 'the other agent speaks again' }, OTHER_AT_DESK);
   const again = await next();
   if (again.body.ok === false && again.body.code === 'unblocked') test.check('D: unblocked again, refused again: the check holds for every wait');
   else test.fail(OWED + 'D: after the block was lifted next answered ' + again.status + ' ' + JSON.stringify(again.body).slice(0, 160));
@@ -423,8 +433,8 @@ async function main() {
   await next();
 
   test.subHeading('E. rules 3 and 4 at the commit: refused without an item with his Go; recorded under it with its files');
-  // Since goal/G18.8 the commit lines this agent writes under r/G1.1 need the item to be its own.
-  await desk('item.take', { id: 'r/G1.1' }, SELF_AT_DESK);
+  // Since goal/G18.8 the commit lines this agent writes under goal/G100.1 need the item to be its own.
+  await desk('item.take', { id: 'goal/G100.1' }, SELF_AT_DESK);
   const repo = path.join(scratch, 'clone');
   fs.mkdirSync(repo);
   await git(repo, ['init', '-q']);
@@ -432,7 +442,7 @@ async function main() {
   if (install.status === 0) test.check('E: `node commitCheck.js install <port>` in the clone exits 0');
   else test.fail(OWED + 'E: install answered ' + install.status + ' ' + String(install.stderr || install.stdout).trim().slice(0, 160));
   const noItem = await commitWith(repo, 'a.txt', 'a', 'names no item at all');
-  const notGone = await commitWith(repo, 'b.txt', 'b', 'r/G1.2: an item he never pressed Go on');
+  const notGone = await commitWith(repo, 'b.txt', 'b', 'goal/G100.2: an item he never pressed Go on');
   const n0 = await commits(repo);
   if (install.status === 0 && noItem.status !== 0 && notGone.status !== 0 && n0 === 0) test.check('E1: a commit naming no item, or an item without his Go, is refused and nothing is committed');
   else test.fail(OWED + 'E1: no item -> ' + noItem.status + ', item without Go -> ' + notGone.status + ', commits on record: ' + n0);
@@ -441,10 +451,10 @@ async function main() {
   await git(scratch, ['init', '-q', '--bare', remote]);
   await git(repo, ['remote', 'add', 'origin', remote]);
   const linesFor = async function (sha) {
-    const all = (await chatOf('r/G1.1')).filter(function (c) { return c.by !== 'andy' && c.by !== 'desk'; });
+    const all = (await chatOf('goal/G100.1')).filter(function (c) { return c.by !== 'andy' && c.by !== 'desk'; });
     return { all: all, hit: all.filter(function (c) { return sha && c.text.indexOf(sha.slice(0, 7)) !== -1; })[0] };
   };
-  const taken = await commitWith(repo, 'c.txt', 'c', 'r/G1.1: taken, he pressed Go');
+  const taken = await commitWith(repo, 'c.txt', 'c', 'goal/G100.1: taken, he pressed Go');
   const hash = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
   const n1 = await commits(repo);
   await sleep(1500);
@@ -456,7 +466,7 @@ async function main() {
   const afterPush = await linesFor(hash);
   const bullets = afterPush.hit ? afterPush.hit.text.split('\n').filter(function (x) { return /^- /.test(x.trim()); }).map(function (x) { return x.trim().slice(2).trim(); }) : [];
   if (pushed.status === 0 && afterPush.hit && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: pushed, it is written under the item: ' + hash.slice(0, 7) + ' with "- c.txt"');
-  else test.fail(OWED19 + 'E2: push -> ' + pushed.status + ' ' + String(pushed.stderr).trim().slice(0, 120) + '; line under r/G1.1: ' + JSON.stringify(afterPush.hit || afterPush.all.map(function (c) { return c.text; })).slice(0, 200));
+  else test.fail(OWED19 + 'E2: push -> ' + pushed.status + ' ' + String(pushed.stderr).trim().slice(0, 120) + '; line under goal/G100.1: ' + JSON.stringify(afterPush.hit || afterPush.all.map(function (c) { return c.text; })).slice(0, 200));
   const viaClient = asked.filter(function (a) { return String(a.verb).indexOf('deskClient.') === 0; }).length;
   if (viaClient > 0) test.check('E2: the check asked through this agent\'s own deskClient (' + viaClient + ' deskClient.<verb> asks), so it is counted');
   else test.fail(OWED + 'E2: no deskClient.<verb> ask came from the check');
@@ -467,7 +477,7 @@ async function main() {
   await git(other, ['add', 'o.txt']);
   await git(other, ['commit', '-q', '-m', 'a commit of somebody else']);
   await git(other, ['push', '-q', 'origin', 'HEAD:master']);
-  const made = await commitWith(repo, 'f.txt', 'f', 'r/G1.1: made before a pull re-stacks it');
+  const made = await commitWith(repo, 'f.txt', 'f', 'goal/G100.1: made before a pull re-stacks it');
   const madeAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
   await git(repo, ['pull', '-q', '--rebase', 'origin', 'master']);
   const restackedAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
@@ -489,7 +499,7 @@ async function main() {
   const once = path.join(scratch, 'refused-once');
   fs.writeFileSync(hook, '#!/bin/sh\nif [ ! -f "' + once + '" ]; then touch "' + once + '"; echo refused once >&2; exit 1; fi\nexit 0\n');
   fs.chmodSync(hook, 0o755);
-  const tried = await commitWith(repo, 'g.txt', 'g', 'r/G1.1: a push the server refuses once');
+  const tried = await commitWith(repo, 'g.txt', 'g', 'goal/G100.1: a push the server refuses once');
   const triedAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
   const refused = await git(repo, ['push', '-q', 'origin', 'HEAD:master']);
   await sleep(3000);
@@ -504,13 +514,13 @@ async function main() {
   else test.fail(OWED27 + 'E2: the second push -> ' + pushed3.status + '; remote ' + remoteNow.slice(0, 7) + ', a line names it: ' + !!(landed && landed.hit));
   try { fs.unlinkSync(hook); } catch (e) { /* gone */ }
   const nBeforeDone = await commits(repo);
-  await desk('press', { id: 'r/G1.1', what: 'done' }, ANDY);
-  const isDone = await commitWith(repo, 'd.txt', 'd', 'r/G1.1: done already');
+  await desk('press', { id: 'goal/G100.1', what: 'done' }, ANDY);
+  const isDone = await commitWith(repo, 'd.txt', 'd', 'goal/G100.1: done already');
   const n2 = await commits(repo);
   if (isDone.status !== 0 && n2 === nBeforeDone) test.check('E1: a commit naming a done item is refused');
-  else test.fail(OWED + 'E1: after his Done a commit naming r/G1.1 -> ' + isDone.status + ', commits: ' + n2);
+  else test.fail(OWED + 'E1: after his Done a commit naming goal/G100.1 -> ' + isDone.status + ', commits: ' + n2);
   const dark = fs.existsSync(CHECK) ? await run(process.execPath, [CHECK, 'install', '1'], repo) : { status: -1 };
-  const unreachable = dark.status === 0 ? await commitWith(repo, 'e.txt', 'e', 'r/G1.3: the node is down') : { status: 0 };
+  const unreachable = dark.status === 0 ? await commitWith(repo, 'e.txt', 'e', 'goal/G100.3: the node is down') : { status: 0 };
   const n3 = await commits(repo);
   if (unreachable.status !== 0 && n3 === nBeforeDone) test.check('E3: with the node unreachable the commit is refused, not waved through');
   else test.fail(OWED + 'E3: with no node on port 1 the commit -> ' + unreachable.status + ', commits: ' + n3);

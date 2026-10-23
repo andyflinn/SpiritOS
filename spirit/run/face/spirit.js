@@ -313,6 +313,60 @@
       }, function () { return s; });
     });
   }
+  // A MEMBER'S SERVERS OVER peerPost (goal/G33.4, box v38). Andy: the family interface takes ANY transport; "the desk is
+  // the server and simply pushes a stream via peerPost to its deskClients". post(body) -> Promise<answer body> is the
+  // caller's peerPost to that member (kernel.peerPost(key, 'api', body, how) in node); ask names the call as the loopback
+  // door does ('family.verb', args; 'api', {family}), and goes as the packet the far node's apiDoor takes: {family:
+  // {verb: args}}, {api: {family}}, or 'api'. The apiDoor answers the body alone: a body with ok false is a refusal
+  // (status 0 when the post never reached the member or nothing answered, 409 when the member refused), any other 200.
+  function peerTransport(post) {
+    return {
+      ask: function (verb, args) {
+        var n = String(verb || '');
+        var body;
+        if (n === 'api') body = args && args.family ? { api: { family: String(args.family) } } : 'api';
+        else {
+          var dot = n.indexOf('.');
+          body = {};
+          body[n.slice(0, dot)] = {};
+          body[n.slice(0, dot)][n.slice(dot + 1)] = args || {};
+        }
+        return Promise.resolve(post(body)).then(function (got) {
+          var refused = !!got && typeof got === 'object' && got.ok === false;
+          var unreached = refused && (got.code === 'not-posted' || got.code === 'no-answer');
+          return { status: unreached ? 0 : refused ? 409 : 200, body: got, text: '' };
+        });
+      },
+      file: function () { return Promise.resolve({ status: 404, type: '', bytes: new Uint8Array(0) }); },
+    };
+  }
+  // forPeer(key, post, family): the spirit object of a member's servers over post, made once per key, a family bound
+  // the first time it is asked for, as forNode binds one; a family the member did not answer is asked again next time.
+  var peers = {};
+  function forPeer(key, post, family) {
+    var k = String(key || '');
+    if (!peers[k]) {
+      var t = peerTransport(post);
+      var bare = assemble(t, {});
+      bare.__transport = t;
+      peers[k] = Promise.resolve(bare);
+    }
+    if (!family) return peers[k];
+    return peers[k].then(function (s) {
+      if (s[family]) return s;
+      // One ask for a family at a time: callers that come while it is out wait for the same answer.
+      var asking = (s.__asking = s.__asking || {});
+      if (!asking[family]) {
+        asking[family] = Promise.resolve(s.__transport.ask('api', { family: family })).then(function (got) {
+          if (got && got.status === 200 && got.body && typeof got.body.interface === 'string') {
+            var def = loadInterface(got.body.interface, family);
+            if (def && def.verbs) s[family] = member(s.__transport, family, def);
+          }
+        }, function () { /* asked again next time */ }).then(function () { delete asking[family]; return s; });
+      }
+      return asking[family];
+    });
+  }
   // outcome(call) -> Promise<{status, body}>: a call's answer as the status it came with, for code that tells the
   // node's refusals apart by status; 0 when the node did not answer at all.
   function outcome(call) {
@@ -325,7 +379,7 @@
   }
 
   var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
-    loadInterface: loadInterface, forNode: forNode, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
+    loadInterface: loadInterface, forNode: forNode, peerTransport: peerTransport, forPeer: forPeer, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
 
   // ── IN A PAGE ────────────────────────────────────────────────────────────────────────────────────────────────────

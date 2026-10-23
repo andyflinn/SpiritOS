@@ -1,7 +1,0 @@
-{
-  "description": "The desk's records and lines since the cursors n and line (0, 0 from the start), oldest first.",
-  "request": {
-    "n": 0,
-    "line": 0
-  }
-}

@@ -118,10 +118,16 @@ const VIOLATORS_BYTES = 2000;
 // is violators.js's header.
 const { violators } = require('./violators.js');
 
+// AN ITEM NAMED BEFORE THE IDS BECAME NUMBERS (goal/G33.4): plugin/stackFrameChecks.<n> in the list is read as this
+// plugin's goal's item, by the desk's own reading (desk.idOf, set at mount); the list keeps what it says until written.
+let itemIdOf = function (id) { return id; };
 function readDoors() {
   let list = [];
   try { list = JSON.parse(fs.readFileSync(LIST, 'utf8')); } catch (e) { list = []; }
-  return Array.isArray(list) ? list.filter(function (d) { return d && typeof d === 'object'; }) : [];
+  return (Array.isArray(list) ? list.filter(function (d) { return d && typeof d === 'object'; }) : []).map(function (d) {
+    if (typeof d.item === 'string' && d.item) d.item = itemIdOf(d.item);
+    return d;
+  });
 }
 // Written whole, through a file beside it, so the stack-frame test never reads half a list.
 function writeDoors(list) {
@@ -283,6 +289,7 @@ function commitOne(what) {
 
 module.exports = function (desk) {
   const goal = desk.goal;
+  if (typeof desk.idOf === 'function') itemIdOf = desk.idOf;
   // THE RERUN ITEM LEFT FROM BEFORE D9 (see the header): deleted, so nothing in the goal has deskVerify run the suite.
   const RERUN_TITLE = 'Rerun the stack-frame test';
   const st = desk.state();

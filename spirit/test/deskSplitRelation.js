@@ -52,9 +52,9 @@ async function start() {
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
-const G = 'sr/G1';
-const P = 'sr/G1.1';       // the item he splits
-const Q = 'sr/G1.2';       // an item the parent blocks
+const G = 'goal/G100';
+const P = 'goal/G100.1';       // the item he splits
+const Q = 'goal/G100.2';       // an item the parent blocks
 const BASE = [
   { id: P, title: 'He splits this one', blocks: [G, Q], code: true },
   { id: Q, title: 'Waits on the parent', blocks: [G], code: true },
@@ -71,16 +71,17 @@ const BASE = [
   // THE SPLIT: three new items, sent the three ways a session can send them.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   const res = await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, split: [P], items: BASE.concat([
-    { id: 'sr/G1.3', title: 'New, the parent named', blocks: [P] },
-    { id: 'sr/G1.4', title: 'New, nothing named' },
-    { id: 'sr/G1.5', title: 'New, the implicit ones named too', blocks: [P, G, Q] },
+    { id: 'goal/G100.3', title: 'New, the parent named', blocks: [P] },
+    { id: 'goal/G100.4', title: 'New, nothing named' },
+    { id: 'goal/G100.5', title: 'New, the implicit ones named too', blocks: [P, G, Q] },
   ]) }) }, ANDY);
   const marked = await facts(P);
-  if (res.status === 200 && marked.subGoal === true) test.check('the split lands: ' + P + ' is a sub-goal');
+  // goal/G33.4: no sub-goals; a split adds its blocking relation and leaves the parent an item.
+  if (res.status === 200 && marked.id === P && marked.subGoal === undefined) test.check('the split lands: ' + P + ' stays an item');
   else { test.fail('the split did not land: ' + res.status + ' ' + short(res.body) + '; ' + P + ' ' + short(marked)); return; }
 
   test.subHeading('1. each new item blocks the parent, and nothing else');
-  for (const id of ['sr/G1.3', 'sr/G1.4', 'sr/G1.5']) {
+  for (const id of ['goal/G100.3', 'goal/G100.4', 'goal/G100.5']) {
     const f = await facts(id);
     if (same(f.blocking, [P])) test.check(id + ' blocks ' + P + ' alone');
     else test.fail(OWED + id + ' blocks ' + short(f.blocking) + ', not [' + P + '] alone');
@@ -90,7 +91,7 @@ const BASE = [
   const p1 = await facts(P);
   if (same(p1.blocking, [G, Q])) test.check(P + ' still blocks the goal and ' + Q);
   else test.fail(OWED + 'after the split ' + P + ' blocks ' + short(p1.blocking));
-  if (same(p1.blocked, ['sr/G1.3', 'sr/G1.4', 'sr/G1.5'])) test.check(P + ' waits on its three new items');
+  if (same(p1.blocked, ['goal/G100.3', 'goal/G100.4', 'goal/G100.5'])) test.check(P + ' waits on its three new items');
   else test.fail(OWED + P + ' waits on ' + short(p1.blocked));
 
   test.subHeading('3. what the parent blocks is not told about the new items');
@@ -98,7 +99,7 @@ const BASE = [
   if (same(q1.blocked, [P])) test.check(Q + ' waits on ' + P + ' alone, the new items reaching it through the parent');
   else test.fail(OWED + Q + ' waits on ' + short(q1.blocked));
   const g1 = await facts(G);
-  const strays = (g1.blocked || []).filter(function (id) { return ['sr/G1.3', 'sr/G1.4', 'sr/G1.5'].indexOf(id) !== -1; });
+  const strays = (g1.blocked || []).filter(function (id) { return ['goal/G100.3', 'goal/G100.4', 'goal/G100.5'].indexOf(id) !== -1; });
   if (!strays.length) test.check('the goal does not list the new items among its blockers');
   else test.fail(OWED + 'the goal waits on ' + short(strays) + ' directly');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {

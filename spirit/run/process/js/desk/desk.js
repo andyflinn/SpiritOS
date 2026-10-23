@@ -70,19 +70,10 @@ const db = new DatabaseSync(path.join(STATE, 'desk.db'));
 // wait covers what is left (a checkpoint). deskWhileBackup.js holds it.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
-db.exec(
-  'CREATE TABLE IF NOT EXISTS lines (key TEXT PRIMARY KEY, at TEXT, todo TEXT, sender TEXT, kind TEXT, body TEXT, line TEXT NOT NULL);' +
-  'CREATE INDEX IF NOT EXISTS lines_at ON lines (at);' +
-  'CREATE INDEX IF NOT EXISTS lines_todo_at ON lines (todo, at);' +
-  'CREATE TABLE IF NOT EXISTS docs (name TEXT PRIMARY KEY, json TEXT NOT NULL);'
-);
-const addLine = db.prepare('INSERT OR IGNORE INTO lines (key, at, todo, sender, kind, body, line) VALUES (?, ?, ?, ?, ?, ?, ?)');
-// kind and before joined with desk/G1.4, so Desk reads what it shows and no
-// more: a todo of '-' means lines under no todo (an agent's direct chat).
-const findLines = db.prepare(
-  "SELECT key, line FROM lines WHERE (? = '' OR todo = ?) AND (? = '' OR kind = ?) AND (? = '' OR at >= ?) AND (? = '' OR at < ?)" +
-  " AND (? = '' OR body LIKE '%' || ? || '%') ORDER BY at DESC, key DESC"
-);
+// THE OLD LINES TABLE WENT WITH goal/G33.4 (Andy, in the item's box: "Records with no goal or item are dumped at
+// migration: agent.state, scope.set and the old lines table."); migrate() below drops it. docs stays: his page's own
+// two documents (state, seen), no record of anybody's work.
+db.exec('CREATE TABLE IF NOT EXISTS docs (name TEXT PRIMARY KEY, json TEXT NOT NULL);');
 const getDoc = db.prepare('SELECT json FROM docs WHERE name = ?');
 const putDoc = db.prepare('INSERT INTO docs (name, json) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET json = excluded.json');
 
@@ -103,7 +94,6 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 function oneAnswerBytes(key, line) {
   return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8');
 }
-function fitsOneAnswer(key, line) { return oneAnswerBytes(key, line) <= ANSWER_ROOM; }
 // A REFUSAL SAYS HOW LARGE, AND THE LIMIT (Andy: "why can't the system cleanly reject oversized stuff?").
 function tooLarge(bytes, max) {
   const e = new Error('line too large to come back in one answer');
@@ -159,139 +149,11 @@ function largestPanel(s, id) {
     Buffer.byteLength(JSON.stringify({ checks: shownChecks(it) }), 'utf8'));
 }
 
-// ── THE LINES TOO BIG FOR ONE ANSWER, SPLIT ONCE (slim/G1.2 T3) ──────
-//
-//   Andy: "the 182 too-big lines already stored get split once, so their
-//   history shows again, but from now on the MAX_PAYLOAD applies."
-//
-// Each becomes parts keyed <key>#1, <key>#2 ..., the same line but for its
-// key, its at (a millisecond apart, the last keeping the old one) and a run
-// of its text, each fitting one answer; the text is cut on
-// whole characters (never inside a surrogate pair), so the parts joined in
-// order are the old text. One transaction per line; the old line goes only
-// with its parts in. Nothing new can be too big (log.add refuses it), so a
-// later start finds nothing to do.
-function splitTooLarge() {
-  const big = [];
-  for (const row of db.prepare('SELECT key, line FROM lines').iterate()) {
-    if (!fitsOneAnswer(row.key, row.line)) big.push(row.key);
-  }
-  if (!big.length) return;
-  const getLine = db.prepare('SELECT line FROM lines WHERE key = ?');
-  const dropLine = db.prepare('DELETE FROM lines WHERE key = ?');
-  let parts = 0;
-  big.forEach(function (key) {
-    let m;
-    try { m = parsed(getLine.get(key).line); } catch (e) { console.error('desk: ' + key + ' does not parse; left as it is'); return; }
-    const chars = Array.from(String(m.text || ''));
-    const pieces = [];
-    let at = 0;
-    while (at < chars.length) {
-      // As many characters as fit, found by halving: escaping makes a
-      // character cost one to six bytes, so no count is right for every text.
-      let lo = 1;
-      let hi = chars.length - at;
-      const n = pieces.length + 1;
-      const fits = function (count) {
-        const part = Object.assign({}, m, { key: key + '#' + n, text: chars.slice(at, at + count).join('') });
-        return fitsOneAnswer(part.key, JSON.stringify(part));
-      };
-      if (!fits(1)) { pieces.length = 0; break; }
-      while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (fits(mid)) lo = mid; else hi = mid - 1; }
-      pieces.push(chars.slice(at, at + lo).join(''));
-      at += lo;
-    }
-    if (!pieces.length) { console.error('desk: ' + key + ' cannot be split to fit; left as it is'); return; }
-    db.exec('BEGIN');
-    try {
-      // Each part a millisecond before the next, the last at the old time:
-      // parts sharing one at could not be paged (before cuts by at).
-      const when = Date.parse(m.at);
-      pieces.forEach(function (text, i) {
-        const at = isNaN(when) ? m.at : new Date(when - (pieces.length - 1 - i)).toISOString();
-        const part = Object.assign({}, m, { key: key + '#' + (i + 1), at: at, text: text });
-        addLine.run(part.key, String(part.at || ''), String(part.todo || ''), String(part.from || ''), String(part.kind || ''), text, JSON.stringify(part));
-      });
-      dropLine.run(key);
-      db.exec('COMMIT');
-      parts += pieces.length;
-    } catch (e) {
-      db.exec('ROLLBACK');
-      console.error('desk: splitting ' + key + ' failed, left as it is: ' + e.message);
-    }
-  });
-  console.log('desk: split ' + big.length + ' lines too big for one answer into ' + parts + ' parts');
-}
-splitTooLarge();
-
 function parsed(json) {
   const v = JSON.parse(String(json));
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('not a JSON object');
   return v;
 }
-// ── WHAT WAITS ON WHOM (desk/G1.5, D1) ─────────────────────────────
-//
-//   Andy: "ah, it can visualize job-queues for agents and me. yes."
-//
-// Worked out from the log alone: the newest session gives the items, the
-// lines under each what happened to it, in time order. The rules are the
-// contract in spirit/test/deskPending.js. Who took what (the tests writer,
-// the builder) is not in the log, so those waits come with take, next goal.
-// A claim is read as Desk reads it (desk.js DESK_READY_CLAIM): a note that
-// opens with READY TO CLOSE, from two different agents before his done.
-// counts (Andy: "so i get a done button and the two of you haven't even
-// both tested it yet?").
-const READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
-const allLines = db.prepare('SELECT line FROM lines ORDER BY at, key');
-
-function pending(who) {
-  let session = null;
-  const agents = Object.create(null);
-  const items = Object.create(null);
-  const of = function (id) {
-    return items[id] || (items[id] = { asked: false, went: false, claims: {}, ready: {}, done: false, last: '' });
-  };
-  for (const row of allLines.iterate()) {
-    let m;
-    try { m = JSON.parse(row.line); } catch (e) { continue; }
-    const text = String(m.text || '');
-    if (m.dir === 'in' && m.from && m.from !== 'andy') agents[m.from] = true;
-    if (m.dir === 'in' && m.kind === 'session') {
-      try { const s = JSON.parse(text); if (s && Array.isArray(s.items)) session = s; } catch (e) { /* not a session */ }
-      continue;
-    }
-    if (!m.todo) continue;
-    const it = of(m.todo);
-    it.last = String(m.at || it.last);
-    if (m.dir === 'in' && m.kind === 'ask') it.asked = true;
-    if (m.dir === 'in' && READY_CLAIM.test(text)) { it.ready[m.from] = true; if (it.went) it.claims[m.from] = true; }
-    if (m.dir !== 'out' || m.kind !== 'answer') continue;
-    if (text === 'go.' || text === 'no.') it.asked = false;
-    if (text === 'go.') { it.went = true; it.claims = {}; }
-    if (text === 'done.' && Object.keys(it.ready).length >= 2) it.done = true;
-    if (text === 'closed.') it.done = true;
-    if (text === 'reopen.') { it.done = false; it.ready = {}; it.claims = {}; }
-  }
-  if (!session) return [];
-  const waits = [];
-  // THE GOAL IS AN ITEM TOO (desk/G1.5 T5): claimed by both, it waits on
-  // his done like any row.
-  const goal = session.goal && session.goal.id ? [{ id: session.goal.id, title: session.goal.title, done: session.goal.done }] : [];
-  session.items.concat(goal).forEach(function (s) {
-    const id = String(s.id || '');
-    const it = of(id);
-    if (!id || s.done || it.done) return;
-    let why = '';
-    if (who === 'andy') {
-      why = Object.keys(it.ready).length >= 2 ? 'done' : it.asked ? 'go' : s.open ? 'answer' : '';
-    } else if (agents[who] && it.went && !it.claims[who] && Object.keys(it.ready).length < 2) {
-      why = 'claim';
-    }
-    if (why) waits.push({ at: it.last, item: JSON.stringify({ id: id, title: String(s.title || ''), why: why }) });
-  });
-  return waits.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; }).map(function (w) { return w.item; });
-}
-
 // Offers each object of `walk`, in its order, to the probability bucket at
 // probability 0, so the walk's order stands (an equal one seats behind), and
 // answers what fits `room` (ANSWER_ROOM unless said). One too big to be sent
@@ -356,45 +218,110 @@ function ranked(walk, room) {
   return { items: r.items, more: r.more || more };
 }
 
-// ── THE STATE: RECORDS IN TIME ORDER (desk/G2.1) ─────────────────────
+// ── THE STATE, IN TABLES KEYED BY GOAL AND ITEM (goal/G33.4) ─────────
 //
-//   Andy: "The server determines all the content to be drawn. buttons, the
-//   text in the one text box, the status of items, the title of items etc."
+//   Andy, in the item's box: "there is a need for two numberic MAIN key fields for desk goals and items.", "Tables keyed
+//   by goal number and item number: goals and items, chat, and files; each file row holds its grant status.", "The box
+//   is a side table of its own, keyed by goal, item and version", "Checks (the Q and G lines) and claims are side tables
+//   keyed by goal and item like the others.", "Every row in the desk database carries a creator reference: who wrote
+//   it.", and "The desk keeps state only: the keyed tables are the store, and the log of writes goes."
 //
-// Every write is one row of `records`, numbered in the order it arrived; that
-// number is the change number. The state is those rows walked in order, and
-// nothing else: the old `lines` stay as they are and feed no item (Andy: "the
-// new Server will not give deprecated items to agents either").
-db.exec('CREATE TABLE IF NOT EXISTS records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL);');
-// THE WRITER'S KEY, BESIDE THE NAME (apiAuth/G1.13). Andy: "internally
-// desk server will use keys for tracking" — the label is for showing and
-// a relabel must never orphan who wrote what. Older files lack the
-// column; rows written before it carry ''.
-if (!db.prepare('PRAGMA table_info(records)').all().some(function (c) { return c.name === 'key'; })) {
-  db.exec("ALTER TABLE records ADD COLUMN key TEXT NOT NULL DEFAULT ''");
-}
-const addRecord = db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)');
+// DECIDED BY ANDY, not this file's to undo: there is no log of writes (`records` went with goal/G33.4), an agent's word
+// is one current value per agent, and an id is two numbers, goal and item (0 for the goal itself), rendered goal/G<n>
+// or goal/G<n>.<m>. No sub-goals: an item never becomes a goal.
+//
+// HOW (this build's plainest reading): the tables are read once at start into the state every rule below reads (S);
+// each write is applied to S and written through, in the same step, to exactly the rows it changed, which are then
+// pushed (goal/G33.4: "the desk pushes each changed sub-element of a goal or item ... separately"). Nothing is replayed.
+//   items    (goal, item)                  the item's own fields as JSON; a goal's row (item 0) also its goal's (design,
+//                                          members, special, plugin); special marks the group chat and plugin goals
+//   chat     (goal, item, seq)             one line, with at and creator (goal/G33.4: "keyed by goal, item, timestamp and
+//                                          the writer's id"; seq keeps two lines of one millisecond apart)
+//   box      (goal, item, version)         one row per version
+//   checks   (goal, item, number)          one Q, G, C or T check
+//   files    (goal, item, holder, path)    one file an agent listed, with its grant status
+//   claims   (goal, item, claimer)         one agent's claim
+//   suites   (goal, item, path)            one suite a Verify of the item runs, supplied by its red writer with the red
+//                                          claim (goal/G33.4, box v44-45), creator the claimer's key
+//   agents   (agent)                       by key: its label, its last write, its word, his profile of it
+//   desk_state (k)                         the desk's own few values: the change number, the current goal, the grants
+// THE CHANGE NUMBER stays: one per write, stamped on every row the write changed and on every row the write publishes,
+// so a client that hears a number skip knows it missed a row.
+const GOAL_RE = /^goal\/G(\d+)(?:\.(\d+))?$/;
+// goal/G33.4 -> [33, 4]; goal/G33 -> [33, 0]; anything else -> null.
+function numbersOf(id) { const m = GOAL_RE.exec(String(id || '')); return m ? [Number(m[1]), Number(m[2] || 0)] : null; }
+function idOf(goal, item) { return 'goal/G' + goal + (item ? '.' + item : ''); }
 
-// ── THE RULES, A TABLE OF THEIR OWN (goal/G5.5) ─────────────────────
-//
+// THE RULES, A TABLE OF THEIR OWN (goal/G5.5), KEYED BY RULE NUMBER (goal/G33.4: "the desk rules by their rule number").
 //   Andy: "rules remain static and apply to all items. ... so rules don't worry about items, items need to worry
 //   about rules.", and on keeping the old texts: "might be a good idea to have a history of legal standards, it's a
-//   form of proof, too." So no goal's replay touches them: every version is a row of `rules`, never overwritten,
-//   the newest row per key is the rule and the older ones its history; his draft between versions is one row per
-//   rule in `rule_drafts`, which writes no history. A rule's chat lines are records ('rule.chat'), so the changes
-//   carry them to the agents; walkState passes them by.
-db.exec('CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL);' +
-  'CREATE TABLE IF NOT EXISTS rule_drafts (key TEXT PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);');
+//   form of proof, too." So every version is a row of `rules`, never overwritten, numbered n across all rules (the
+//   version an item's Go recorded), the newest row per rule is the rule and the older ones its history; his draft
+//   between versions is one row per rule in `rule_drafts`, which writes no history; a rule's chat lines are rows of
+//   `rule_chat`. A rule's key stays rule/<number> at every verb.
+function tableHas(name, column) {
+  return db.prepare('PRAGMA table_info(' + name + ')').all().some(function (c) { return c.name === column; });
+}
+function tableExists(name) { return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name); }
+// An old rules table (keyed by the string rule/<n>) is carried over once, its rows and drafts as they were.
+if (tableExists('rules') && tableHas('rules', 'key')) {
+  db.exec('BEGIN');
+  db.exec('ALTER TABLE rules RENAME TO rules_old');
+  db.exec('CREATE TABLE rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL)');
+  db.exec("INSERT INTO rules (n, rule, at, by, type, label, status, text) SELECT n, CAST(substr(key, 6) AS INTEGER), at, by, type, label, status, text FROM rules_old WHERE key LIKE 'rule/%'");
+  db.exec('DROP TABLE rules_old');
+  if (tableExists('rule_drafts') && tableHas('rule_drafts', 'key')) {
+    db.exec('ALTER TABLE rule_drafts RENAME TO rule_drafts_old');
+    db.exec('CREATE TABLE rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL)');
+    db.exec("INSERT INTO rule_drafts (rule, at, text) SELECT CAST(substr(key, 6) AS INTEGER), at, text FROM rule_drafts_old WHERE key LIKE 'rule/%'");
+    db.exec('DROP TABLE rule_drafts_old');
+  }
+  db.exec('COMMIT');
+}
+db.exec(
+  'CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL);' +
+  'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
+  'CREATE TABLE IF NOT EXISTS rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);' +
+  'CREATE TABLE IF NOT EXISTS rule_chat (rule INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, creator TEXT NOT NULL, text TEXT NOT NULL, born INTEGER NOT NULL, PRIMARY KEY (rule, seq));' +
+  'CREATE INDEX IF NOT EXISTS rule_chat_born ON rule_chat (born);' +
+  // THE KEYED TABLES (goal/G33.4).
+  "CREATE TABLE IF NOT EXISTS items (goal INTEGER NOT NULL, item INTEGER NOT NULL, creator TEXT NOT NULL, special INTEGER NOT NULL DEFAULT 0, at TEXT NOT NULL DEFAULT '', data TEXT NOT NULL," +
+  " change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item));" +
+  'CREATE INDEX IF NOT EXISTS items_change ON items (change);' +
+  'CREATE TABLE IF NOT EXISTS chat (goal INTEGER NOT NULL, item INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, creator TEXT NOT NULL, data TEXT NOT NULL,' +
+  ' change INTEGER NOT NULL DEFAULT 0, born INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, seq));' +
+  'CREATE INDEX IF NOT EXISTS chat_born ON chat (born);' +
+  'CREATE INDEX IF NOT EXISTS chat_at ON chat (goal, item, at, creator);' +
+  'CREATE TABLE IF NOT EXISTS box (goal INTEGER NOT NULL, item INTEGER NOT NULL, version INTEGER NOT NULL, creator TEXT NOT NULL, at TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY (goal, item, version));' +
+  'CREATE TABLE IF NOT EXISTS checks (goal INTEGER NOT NULL, item INTEGER NOT NULL, number TEXT NOT NULL, pos INTEGER NOT NULL, creator TEXT NOT NULL, data TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, number));' +
+  'CREATE TABLE IF NOT EXISTS files (goal INTEGER NOT NULL, item INTEGER NOT NULL, holder TEXT NOT NULL, path TEXT NOT NULL, pos INTEGER NOT NULL, creator TEXT NOT NULL, core INTEGER NOT NULL, grant_status TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, holder, path));' +
+  'CREATE TABLE IF NOT EXISTS claims (goal INTEGER NOT NULL, item INTEGER NOT NULL, claimer TEXT NOT NULL, creator TEXT NOT NULL, at TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, claimer));' +
+  'CREATE TABLE IF NOT EXISTS suites (goal INTEGER NOT NULL, item INTEGER NOT NULL, path TEXT NOT NULL, pos INTEGER NOT NULL, creator TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, path));' +
+  "CREATE TABLE IF NOT EXISTS agents (agent TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', key TEXT NOT NULL DEFAULT '', at TEXT NOT NULL DEFAULT '', word TEXT NOT NULL DEFAULT ''," +
+  " profile TEXT NOT NULL DEFAULT '');" +
+  'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
+);
 const RULE_TYPES = ['ui', 'code', 'design', 'desk'];
 const RULE_STATUSES = ['proposed', 'active', 'deleted'];
-const addRuleRow = db.prepare('INSERT INTO rules (key, at, by, type, label, status, text) VALUES (?, ?, ?, ?, ?, ?, ?)');
-const ruleCount = db.prepare('SELECT COUNT(DISTINCT key) AS c FROM rules');
-const newestRule = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE key = ? ORDER BY n DESC LIMIT 1');
-const newestRules = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY key) ORDER BY n DESC');
-const ruleRows = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE key = ? ORDER BY n DESC');
-const getDraft = db.prepare('SELECT text FROM rule_drafts WHERE key = ?');
-const putDraft = db.prepare('INSERT INTO rule_drafts (key, at, text) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET at = excluded.at, text = excluded.text');
-const ruleChatRows = db.prepare("SELECT at, by, key, body FROM records WHERE verb = 'rule.chat' ORDER BY n");
+// A rule as the verbs answer it: key rule/<number>, as before goal/G33.4.
+function ruleOut(r) { return r ? Object.assign({}, r, { key: 'rule/' + r.rule }) : r; }
+function ruleNumber(key) { const m = /^rule\/(\d+)$/.exec(String(key)); return m ? Number(m[1]) : -1; }
+const addRuleRowAt = db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text) VALUES (?, ?, ?, ?, ?, ?, ?)');
+const addRuleRow = { run: function (key, at, by, type, label, status, text) { return addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text); } };
+const ruleCount = db.prepare('SELECT COUNT(DISTINCT rule) AS c FROM rules');
+const newestRuleRow = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE rule = ? ORDER BY n DESC LIMIT 1');
+const newestRulesRows = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY rule) ORDER BY n DESC');
+const ruleRowsOf = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE rule = ? ORDER BY n DESC');
+const newestRule = { get: function (key) { return ruleOut(newestRuleRow.get(ruleNumber(key))); } };
+const newestRules = { all: function () { return newestRulesRows.all().map(ruleOut); } };
+const ruleRows = { all: function (key) { return ruleRowsOf.all(ruleNumber(key)).map(ruleOut); } };
+const getDraftRow = db.prepare('SELECT text FROM rule_drafts WHERE rule = ?');
+const putDraftRow = db.prepare('INSERT INTO rule_drafts (rule, at, text) VALUES (?, ?, ?) ON CONFLICT(rule) DO UPDATE SET at = excluded.at, text = excluded.text');
+const getDraft = { get: function (key) { return getDraftRow.get(ruleNumber(key)); } };
+const putDraft = { run: function (key, at, text) { return putDraftRow.run(ruleNumber(key), at, text); } };
+const ruleChatOf = db.prepare('SELECT at, by, creator, text FROM rule_chat WHERE rule = ? ORDER BY seq');
+const ruleChatNext = db.prepare('SELECT COALESCE(MAX(seq), -1) + 1 AS seq FROM rule_chat WHERE rule = ?');
+const addRuleChat = db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creator, text, born) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
 // EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
 // rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
@@ -413,23 +340,22 @@ function rulesChanged(key, what) {
   if (GOAL_SHARED && GOAL_REPO) shareFile(RULES_PATH, RULES_STATE_FILE, 'rules.md, shared by the desk (goal/G5.8)');
   try { write('chat.add', { id: GROUP_CHAT, text: 'rule ' + key + ' ' + what + '; the active rules are in ' + RULES_PATH, by: 'desk', key: '' }); } catch (e) { /* no group chat yet */ }
 }
-const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records ORDER BY n');
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
 
-// ── THE GROUP CHAT'S ANCHOR (goal/G3.10) ─────────────────────────────
+// ── THE GROUP CHAT'S ANCHOR (goal/G3.10), GOAL 0 (goal/G33.4) ─────────
 //
 //   Andy, 2026-10-02: "This looks like a perfect team chat. Is it because it has a coal/item to anchor it?",
 //   then "when deskServer Starts up, it makes sure there is a closed goal with the id 'desk/G0.0', instead of
 //   the team-chat box, the 'all' tab displays the chat box for 'desk/G0.0'", and of its box: "the description
 //   box for that chat are the 6 rules i stated a while back. the chat there may change those rules over time."
+//   goal/G33.4, in the box: "Goal 0 is the group chat (desk/G0.0 today): chat that belongs to no other goal lives
+//   there, so every chat line has a goal."
 //
-// A goal the server holds from its start, as its own state: no record makes it, so a session (which would make
-// it the current goal) never does, and a fresh desk has it. It is closed, so it is on no List, offers no button
-// and is not an open goal; and it stays closed. Its chat and its box are an item's like any other: the lines
-// and writes are records, replayed onto it at every walk.
-const GROUP_CHAT = 'desk/G0.0';
+// A goal the server makes at its first start (startState), marked special: no session makes it current, it is closed,
+// so it is on no List, offers no button and is not an open goal; and it stays closed. Its chat and box are an item's.
+const GROUP_CHAT = 'goal/G0';
 
 // ── THE MOUNTED PLUGINS, AND THE GOALS THEY GOVERN (goal/G22.3) ──────
 //
@@ -437,48 +363,450 @@ const GROUP_CHAT = 'desk/G0.0';
 //   to handle every desk event, and the mechanical controls it implements live there, not in desk.js.", "desk scans its
 //   plugin folder and mounts every plugin it finds", and "On its first mount the plugin gets its own private goal with a
 //   fixed key, and from then on that goal and the plugin live hand in hand".
+//   goal/G33.4, in the box: "Each special goal (each plugin goal such as Stacks, and the group chat) has a goal number of
+//   its own, minted like any goal; its goal row marks it special." So the fixed key is the plugin's name on its goal's
+//   row (plugin), and its id is goal/G<n> like any goal's.
 //
-// Filled by mountPlugins() before the desk serves, in mount order: { name, goal, refuses, handles, verbs }. The goal's
-// key is fixed: plugin/<name>. A goal of a plugin is a pluggable goal/G0 (his words: "a special goal that is always open
-// while actually closed"): the desk holds it like any goal, and its plugin decides what may happen to it.
+// Filled by mountPlugins() before the desk serves, in mount order: { name, goal, refuses, handles, verbs }. A goal of a
+// plugin is a pluggable goal/G0 (his words: "a special goal that is always open while actually closed"): the desk holds
+// it like any goal, and its plugin decides what may happen to it.
 const PLUGINS = [];
 const PLUGIN_GOAL = Object.create(null);
 // ITS TAB UNDER APPS (goal/G22.3). Andy, 2026-10-13, in the item's box: a main desk tab Apps whose inner tabs are the
 // special goals, each plugin's private UI its inner tab. Named by the tab field of its .json, short (Stacks), else its
 // label, else its name; keyed by its goal, as PLUGIN_GOAL is.
 const PLUGIN_TAB = Object.create(null);
-function pluginGoalKey(name) { return 'plugin/' + name; }
-// Whether an id is a plugin's goal or one of its items, by the id alone: an item's id is minted <goal>.<n> (nextItemId),
-// and a plugin refuses a session over its goal, so nothing else lands under that prefix. No walk of the records.
-function inGoalOf(goal, id) { const s = String(id || ''); return s === goal || s.indexOf(goal + '.') === 0; }
+// Whether an id is a goal's or one of its items, by the id alone: an item's id is goal/G<n>.<m>.
+function inGoalOf(goal, id) { const g = numbersOf(goal); const x = numbersOf(id); return !!g && !!x && g[0] === x[0]; }
+// THE GOAL A PLUGIN'S NAME HAS, '' before its first mount.
+function pluginGoalOf(s, name) { return Object.keys(s.goals).filter(function (gid) { return s.goals[gid].plugin === name; })[0] || ''; }
 
+// ── S: THE STATE AS THE TABLES HOLD IT ────────────────────────────────
+// agentWord: each agent's last word about itself, listening or working (goal/G2.3), one current value (goal/G33.4).
+// agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
+function newState() {
+  return { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null),
+    agentKey: Object.create(null), profiles: Object.create(null), current: '', verifyAnswer: '', addGrant: 0, addGrantGoal: '', goalGrant: 0 };
+}
+let S = null;
 function walkState() {
-  // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
-  // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), profiles: Object.create(null), current: '', verifyAnswer: '' };
-  s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
-  s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
-  s.items[GROUP_CHAT].closed = true;
-  const item = function (id) { return s.items[id] || null; };
-  const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
-  for (const r of allRecords.iterate()) {
-    s.change = r.n;
-    let b = {};
-    try { b = JSON.parse(r.body); } catch (e) { continue; }
-    // Writers other than him and the desk itself are agents, and a write is their liveness.
-    if (r.by !== 'andy' && r.by !== 'desk') { s.agentsAt[r.by] = r.at; if (r.key) s.agentKey[r.by] = String(r.key); }
-    apply(s, r, b, item, goalOf);
-  }
   // A BOX HOLD RUNS OUT (goal/G21.1): a hold his nick request or a cap take started is over after its minute, written
   // or not, so the box is anybody's again.
   const now = Date.now();
-  Object.keys(s.items).forEach(function (id) {
-    const it = s.items[id];
+  Object.keys(S.items).forEach(function (id) {
+    const it = S.items[id];
     if (it.boxHoldUntil && now >= it.boxHoldUntil) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
+  });
+  return S;
+}
+
+// THE FIELDS OF AN ITEM THAT ARE ROWS OF THEIR OWN, never in its items row.
+const SIDE_FIELDS = ['chat', 'checks', 'files', 'claims', 'suites', 'suitesKey', 'box', 'boxBy', 'boxKey', 'boxAt', 'boxHistory'];
+const NULL_PROTO = ['claims', 'takers', 'checkHigh', 'files'];
+function goalData(g) { const o = Object.assign({}, g); delete o.id; return o; }
+// Who made it: the key it was written with, else the label (the desk's own rows: desk).
+function madeBy(r) { return String((r && (r.key || r.by)) || 'desk'); }
+function grantOf(it, p, core) {
+  if (!core) return 'none';
+  const cg = it.checks.filter(function (c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0 && String(c.words).split(/[:,]\s*/).indexOf(p) !== -1; });
+  if (cg.some(function (c) { return c.state === 'open'; })) return 'open';
+  if (cg.some(function (c) { return c.state === 'granted'; })) return 'granted';
+  return 'owed';
+}
+// A chat line's JSON, kept per line while the fields a line can change after it is written (its take, its answer, its
+// Q mark) stay as they were: an item's whole chat is compared at each write, and its lines are rarely changed.
+const LINE_JSON = new WeakMap();
+function lineJson(l) {
+  const sig = String(l.taken) + '|' + String(l.takenKey) + '|' + String(l.answered) + '|' + String(l.q);
+  const kept = LINE_JSON.get(l);
+  if (kept && kept.sig === sig) return kept.json;
+  const json = JSON.stringify(l);
+  LINE_JSON.set(l, { sig: sig, json: json });
+  return json;
+}
+// Every row an item is, by a key unique within the item: [{ key, table, cols, out }]; cols in the table's column
+// order after (goal, item), out the row as it is pushed.
+function rowsOf(s, it) {
+  const k = numbersOf(it.id);
+  if (!k) return [];
+  const out = [];
+  const data = {};
+  Object.keys(it).forEach(function (f) { if (SIDE_FIELDS.indexOf(f) === -1) data[f] = it[f]; });
+  const gs = it.goal ? s.goals[it.id] : null;
+  if (gs) data.goalState = goalData(gs);
+  out.push({ key: 'items', table: 'items', cols: [String(it.made || it.creatorKey || it.creator || 'desk'), gs && gs.special ? 1 : 0, String(it.at || ''), JSON.stringify(data)] });
+  it.chat.forEach(function (l, i) {
+    out.push({ key: 'chat|' + i, table: 'chat', id: i, cols: [i, String(l.at || ''), String(l.key || l.by || 'desk'), lineJson(l)], out: function () { return shownLine(s, l); },
+      to: Array.isArray(l.to) ? l.to.slice() : null });
+  });
+  if (it.version > 0) out.push({ key: 'box', table: 'box', cols: [it.version, String(it.boxKey || it.boxBy || 'desk'), String(it.boxAt || ''), String(it.box)],
+    out: function () { return { version: it.version, text: String(it.box), by: String(it.boxBy || ''), at: String(it.boxAt || '') }; } });
+  it.checks.forEach(function (c, i) {
+    out.push({ key: 'checks|' + c.number, table: 'checks', id: c.number, cols: [c.number, i, String(c.made || c.placedKey || c.placedBy || c.by || 'desk'), JSON.stringify(c)], out: function () { return c; } });
+  });
+  const core = require('../../../js/coreFiles.js');
+  Object.keys(it.files || {}).forEach(function (holder) {
+    (Array.isArray(it.files[holder]) ? it.files[holder] : []).forEach(function (p, i) {
+      const isCore = core.isCore(String(p)) === true;
+      const grant = grantOf(it, String(p), isCore);
+      out.push({ key: 'files|' + holder + '|' + p, table: 'files', id: [holder, String(p)], cols: [holder, String(p), i, String(s.agentKey[holder] || holder), isCore ? 1 : 0, grant],
+        out: function () { return { path: String(p), by: holder, core: isCore, grant: grant }; } });
+    });
+  });
+  Object.keys(it.claims || {}).forEach(function (label) {
+    const at = String((it.claimAt && it.claimAt[label]) || it.at || '');
+    out.push({ key: 'claims|' + label, table: 'claims', id: label, cols: [label, String(s.agentKey[label] || label), at], out: function () { return { by: label, at: at }; } });
+  });
+  (Array.isArray(it.suites) ? it.suites : []).forEach(function (p, i) {
+    out.push({ key: 'suites|' + p, table: 'suites', id: String(p), cols: [String(p), i, String(it.suitesKey || 'desk')], out: function () { return { path: String(p) }; } });
+  });
+  return out;
+}
+const UPSERT = {
+  items: db.prepare('INSERT INTO items (goal, item, creator, special, at, data, change) VALUES (?, ?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item) DO UPDATE SET creator = excluded.creator, special = excluded.special, at = excluded.at, data = excluded.data, change = excluded.change'),
+  chat: db.prepare('INSERT INTO chat (goal, item, seq, at, creator, data, change, born) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item, seq) DO UPDATE SET at = excluded.at, creator = excluded.creator, data = excluded.data, change = excluded.change'),
+  box: db.prepare('INSERT OR REPLACE INTO box (goal, item, version, creator, at, text) VALUES (?, ?, ?, ?, ?, ?)'),
+  checks: db.prepare('INSERT INTO checks (goal, item, number, pos, creator, data, change) VALUES (?, ?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item, number) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, data = excluded.data, change = excluded.change'),
+  files: db.prepare('INSERT INTO files (goal, item, holder, path, pos, creator, core, grant_status, change) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item, holder, path) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, core = excluded.core, grant_status = excluded.grant_status, change = excluded.change'),
+  claims: db.prepare('INSERT INTO claims (goal, item, claimer, creator, at, change) VALUES (?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item, claimer) DO UPDATE SET creator = excluded.creator, at = excluded.at, change = excluded.change'),
+  suites: db.prepare('INSERT INTO suites (goal, item, path, pos, creator, change) VALUES (?, ?, ?, ?, ?, ?)' +
+    ' ON CONFLICT(goal, item, path) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, change = excluded.change'),
+};
+const DELETE = {
+  items: db.prepare('DELETE FROM items WHERE goal = ? AND item = ?'),
+  chat: db.prepare('DELETE FROM chat WHERE goal = ? AND item = ? AND seq = ?'),
+  box: db.prepare('DELETE FROM box WHERE goal = ? AND item = ?'),
+  checks: db.prepare('DELETE FROM checks WHERE goal = ? AND item = ? AND number = ?'),
+  files: db.prepare('DELETE FROM files WHERE goal = ? AND item = ? AND holder = ? AND path = ?'),
+  claims: db.prepare('DELETE FROM claims WHERE goal = ? AND item = ? AND claimer = ?'),
+  suites: db.prepare('DELETE FROM suites WHERE goal = ? AND item = ? AND path = ?'),
+};
+// The rows last written, per item: key -> the row's cols as JSON. A write compares against it, so it writes and pushes
+// exactly what changed.
+const ROWS = new Map();
+// What a row is compared by: its columns as JSON; a chat line by its kept JSON alone (lineJson), the same string while
+// the line is unchanged, so a long chat costs no new text at each write.
+function rowSig(x) { return x.table === 'chat' ? x.cols[3] : JSON.stringify(x.cols); }
+function writeRow(k, x, r) {
+  const c = x.cols;
+  if (x.table === 'items') UPSERT.items.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
+  else if (x.table === 'chat') UPSERT.chat.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n, r.n);
+  else if (x.table === 'box') UPSERT.box.run(k[0], k[1], c[0], c[1], c[2], c[3]);
+  else if (x.table === 'checks') UPSERT.checks.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
+  else if (x.table === 'files') UPSERT.files.run(k[0], k[1], c[0], c[1], c[2], c[3], c[4], c[5], r.n);
+  else if (x.table === 'claims') UPSERT.claims.run(k[0], k[1], c[0], c[1], c[2], r.n);
+  else if (x.table === 'suites') UPSERT.suites.run(k[0], k[1], c[0], c[1], c[2], r.n);
+}
+function deleteRow(k, key) {
+  const parts = key.split('|');
+  const table = parts[0];
+  if (table === 'items') DELETE.items.run(k[0], k[1]);
+  else if (table === 'chat') DELETE.chat.run(k[0], k[1], Number(parts[1]));
+  else if (table === 'box') { /* a box's versions go only with its item */ }
+  else if (table === 'checks') DELETE.checks.run(k[0], k[1], parts.slice(1).join('|'));
+  else if (table === 'files') DELETE.files.run(k[0], k[1], parts[1], parts.slice(2).join('|'));
+  else if (table === 'claims') DELETE.claims.run(k[0], k[1], parts.slice(1).join('|'));
+  else if (table === 'suites') DELETE.suites.run(k[0], k[1], parts.slice(1).join('|'));
+}
+// One item written through: every row of it that changed is written, every row it no longer has deleted. Answers what
+// changed, as { table, key, x (the row), removed } in row order. written: the item the write named, whose row always
+// takes the write's verb and writer, and, for a write of his that is no chat line, the record `changes` hands on.
+function persistItem(s, it, r, written, body) {
+  const k = numbersOf(it.id);
+  if (!k) return [];
+  const old = ROWS.get(it.id) || new Map();
+  const now = new Map();
+  const changed = [];
+  rowsOf(s, it).forEach(function (x) {
+    const j = rowSig(x);
+    now.set(x.key, j);
+    if (old.get(x.key) === j && !(written && x.table === 'items')) return;
+    writeRow(k, x, r);
+    if (old.get(x.key) !== j) changed.push({ table: x.table, key: x.key, x: x, removed: false });
+  });
+  old.forEach(function (j, key) {
+    if (now.has(key)) return;
+    deleteRow(k, key);
+    changed.push({ table: key.split('|')[0], key: key, x: null, removed: true });
+  });
+  ROWS.set(it.id, now);
+  return changed;
+}
+// ITS GOAL GONE (shedding): every row of every item of it.
+function dropGoalRows(n) {
+  ['items', 'chat', 'box', 'checks', 'files', 'claims', 'suites'].forEach(function (t) { db.prepare('DELETE FROM ' + t + ' WHERE goal = ?').run(n); });
+}
+
+// THE AGENTS, BY KEY (goal/G33.4: "What is about an agent (its profile, signed off) is keyed by the agent"): one row
+// each, its label, its last write, its one current word, and his profile of it. A label written before keys is its own
+// agent.
+const putAgent = db.prepare('INSERT INTO agents (agent, label, key, at, word) VALUES (?, ?, ?, ?, ?) ON CONFLICT(agent) DO UPDATE SET label = excluded.label, key = excluded.key, at = excluded.at, word = excluded.word');
+const putProfile = db.prepare('INSERT INTO agents (agent, profile) VALUES (?, ?) ON CONFLICT(agent) DO UPDATE SET profile = excluded.profile');
+function persistAgent(s, label) {
+  if (!label || label === 'andy' || label === 'desk') return;
+  const key = String(s.agentKey[label] || '');
+  putAgent.run(key || label, label, key, String(s.agentsAt[label] || ''), String(s.agentWord[label] || ''));
+}
+function persistProfile(s, key) {
+  const p = s.profiles[key];
+  putProfile.run(key, p ? JSON.stringify(p) : '');
+}
+const putDeskState = db.prepare('INSERT INTO desk_state (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v');
+const DESK_STATE_KEYS = ['change', 'current', 'verifyAnswer', 'addGrant', 'addGrantGoal', 'goalGrant'];
+function persistDeskState(s) { DESK_STATE_KEYS.forEach(function (k) { putDeskState.run(k, JSON.stringify(s[k] === undefined ? null : s[k])); }); }
+
+// THE STATE, READ ONCE FROM THE TABLES.
+function loadState() {
+  const s = newState();
+  db.prepare('SELECT k, v FROM desk_state').all().forEach(function (row) {
+    if (DESK_STATE_KEYS.indexOf(row.k) === -1) return;
+    try { const v = JSON.parse(row.v); if (v !== null) s[row.k] = v; } catch (e) { /* left at its default */ }
+  });
+  for (const row of db.prepare('SELECT goal, item, data FROM items ORDER BY goal, item').iterate()) {
+    const id = idOf(row.goal, row.item);
+    let d = {};
+    try { d = JSON.parse(row.data) || {}; } catch (e) { d = {}; }
+    const gs = d.goalState;
+    delete d.goalState;
+    const it = Object.assign(blank(id, '', ''), d);
+    NULL_PROTO.forEach(function (f) { it[f] = Object.assign(Object.create(null), d[f] || {}); });
+    it.files = Object.create(null); it.claims = Object.create(null); it.chat = []; it.checks = []; it.box = ''; it.version = 0; it.suites = [];
+    s.items[id] = it;
+    if (row.item === 0) s.goals[id] = Object.assign({ design: false, abandoned: false, members: [] }, gs || {}, { id: id });
+  }
+  const at = function (g, i) { return s.items[idOf(g, i)] || null; };
+  for (const row of db.prepare('SELECT goal, item, data FROM chat ORDER BY goal, item, seq').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) { try { it.chat.push(JSON.parse(row.data)); } catch (e) { /* a broken line is left out */ } }
+  }
+  for (const row of db.prepare('SELECT goal, item, data FROM checks ORDER BY goal, item, pos').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) { try { it.checks.push(JSON.parse(row.data)); } catch (e) { /* a broken check is left out */ } }
+  }
+  for (const row of db.prepare('SELECT goal, item, holder, path FROM files ORDER BY goal, item, holder, pos').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) (it.files[row.holder] = it.files[row.holder] || []).push(row.path);
+  }
+  for (const row of db.prepare('SELECT goal, item, path, creator FROM suites ORDER BY goal, item, pos').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) { it.suites.push(row.path); it.suitesKey = row.creator; }
+  }
+  for (const row of db.prepare('SELECT goal, item, claimer, at FROM claims').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) { it.claims[row.claimer] = true; (it.claimAt = it.claimAt || {})[row.claimer] = row.at; }
+  }
+  for (const row of db.prepare('SELECT b.goal, b.item, b.version, b.creator, b.at, b.text FROM box b WHERE b.version = (SELECT MAX(version) FROM box WHERE goal = b.goal AND item = b.item)').iterate()) {
+    const it = at(row.goal, row.item);
+    if (it) { it.box = row.text; it.version = row.version; it.boxKey = row.creator; it.boxAt = row.at; it.boxBy = String(it.boxBy || ''); }
+  }
+  for (const row of db.prepare('SELECT agent, label, key, at, word, profile FROM agents').iterate()) {
+    if (row.label) {
+      if (row.key) s.agentKey[row.label] = row.key;
+      if (row.at) s.agentsAt[row.label] = row.at;
+      if (row.word) s.agentWord[row.label] = row.word;
+    }
+    if (row.profile) { try { s.profiles[row.agent] = JSON.parse(row.profile); } catch (e) { /* no profile */ } }
+  }
+  ROWS.clear();
+  Object.keys(s.items).forEach(function (id) {
+    const m = new Map();
+    rowsOf(s, s.items[id]).forEach(function (x) { m.set(x.key, rowSig(x)); });
+    ROWS.set(id, m);
   });
   return s;
 }
 
+// ── THE MIGRATION, ONCE (goal/G33.4) ──────────────────────────────────
+//
+//   Andy, in the item's box: "Migration: today's database is migrated into the tables once; each id string becomes its
+//   two numbers (goal/G33.4 becomes 33 and 4).", and "Records with no goal or item are dumped at migration: agent.state,
+//   scope.set and the old lines table."
+//
+// The old `records` are walked once, in order, by the same apply every write uses, and what they come to is written into
+// the tables; then records and lines are dropped and the file compacted. goal/G<n> keeps n, desk/G0.0 becomes goal 0,
+// and every goal of another area (desk/, apiAuth/, plugin/) gets the next free number, its items keeping theirs. Only
+// the newest box version is kept. A rule's chat lines (rule.chat records) become rows of rule_chat.
+const OLD_GROUP_CHAT = 'desk/G0.0';
+function migrate() {
+  if (!tableExists('records')) return false;
+  const t0 = Date.now();
+  const s = newState();
+  s.goals[OLD_GROUP_CHAT] = { id: OLD_GROUP_CHAT, design: false, abandoned: false, members: [], special: true };
+  s.items[OLD_GROUP_CHAT] = blank(OLD_GROUP_CHAT, 'Group chat', '');
+  s.items[OLD_GROUP_CHAT].closed = true;
+  const item = function (id) { return s.items[id] || null; };
+  const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
+  const hasKey = tableHas('records', 'key');
+  const ruleChat = [];
+  let count = 0;
+  for (const r of db.prepare('SELECT n, at, verb, by, ' + (hasKey ? 'key' : "'' AS key") + ', body FROM records ORDER BY n').iterate()) {
+    s.change = r.n;
+    count += 1;
+    let b = {};
+    try { b = JSON.parse(r.body); } catch (e) { continue; }
+    // DUMPED: an agent's word and a scope are about no goal or item.
+    if (r.verb === 'agent.state' || r.verb === 'scope.set') continue;
+    if (r.verb === 'rule.chat') { ruleChat.push({ rule: ruleNumber(b.rule), at: r.at, by: r.by, creator: madeBy(r), text: String(b.text || '') }); continue; }
+    // Writers other than him and the desk itself are agents, and a write is their liveness.
+    if (r.by !== 'andy' && r.by !== 'desk') { s.agentsAt[r.by] = r.at; if (r.key) s.agentKey[r.by] = String(r.key); }
+    try { apply(s, r, b, item, goalOf); } catch (e) { /* a record that no longer fits changes nothing */ }
+  }
+  // DESIGN ON ITEM LEVEL IS NEW (goal/G33.4): an item from before it is governed by its goal's design mode alone.
+  Object.keys(s.items).forEach(function (id) { s.items[id].design = false; });
+  // THE NEW IDS.
+  const map = Object.create(null);
+  let top = 0;
+  Object.keys(s.goals).forEach(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); if (m) top = Math.max(top, Number(m[1])); });
+  Object.keys(s.goals).forEach(function (gid) {
+    if (gid === OLD_GROUP_CHAT) map[gid] = GROUP_CHAT;
+    else if (/^goal\/G\d+$/.test(gid)) map[gid] = gid;
+    else map[gid] = idOf(++top, 0);
+    const p = /^plugin\/(.+)$/.exec(gid);
+    if (p) { s.goals[gid].plugin = p[1]; s.goals[gid].special = true; }
+  });
+  Object.keys(s.goals).forEach(function (gid) {
+    const ng = numbersOf(map[gid])[0];
+    let itop = 0;
+    const tails = [];
+    s.goals[gid].members.forEach(function (id) {
+      const tail = id.indexOf(gid + '.') === 0 ? id.slice(gid.length + 1) : '';
+      if (/^\d+$/.test(tail)) { itop = Math.max(itop, Number(tail)); tails.push([id, Number(tail)]); } else tails.push([id, -1]);
+    });
+    tails.forEach(function (x) { map[x[0]] = idOf(ng, x[1] > 0 ? x[1] : ++itop); });
+  });
+  const re = function (id) { return map[id] || id; };
+  const items = Object.create(null);
+  const goals = Object.create(null);
+  Object.keys(s.goals).forEach(function (gid) {
+    const g = s.goals[gid];
+    goals[re(gid)] = Object.assign({}, g, { id: re(gid), members: g.members.map(re) });
+  });
+  Object.keys(s.items).forEach(function (id) {
+    const it = s.items[id];
+    if (!map[id]) return;   // an item of no goal the desk held: nothing reaches it
+    it.id = re(id);
+    it.goalId = it.goalId ? re(it.goalId) : '';
+    it.blocks = (it.blocks || []).map(re);
+    items[it.id] = it;
+  });
+  s.goals = goals;
+  s.items = items;
+  s.current = s.current ? re(s.current) : '';
+  s.addGrantGoal = s.addGrantGoal ? re(s.addGrantGoal) : '';
+  s.agentWord = Object.create(null);
+  // WRITTEN ONCE, in one transaction, then the old tables go.
+  const r = { n: s.change, at: new Date().toISOString(), verb: 'migrate', by: 'desk', key: '' };
+  db.exec('BEGIN');
+  try {
+    ROWS.clear();
+    Object.keys(s.items).forEach(function (id) { persistItem(s, s.items[id], r, false); });
+    Object.keys(s.agentsAt).concat(Object.keys(s.agentKey)).forEach(function (l) { persistAgent(s, l); });
+    Object.keys(s.profiles).forEach(function (k) { persistProfile(s, k); });
+    persistDeskState(s);
+    const seqs = Object.create(null);
+    ruleChat.forEach(function (c) {
+      if (c.rule < 0) return;
+      seqs[c.rule] = seqs[c.rule] === undefined ? Number(ruleChatNext.get(c.rule).seq) : seqs[c.rule] + 1;
+      addRuleChat.run(c.rule, seqs[c.rule], c.at, c.by, c.creator, c.text, s.change);
+    });
+    db.exec('DROP TABLE records');
+    if (tableExists('lines')) db.exec('DROP TABLE lines');
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+  try { db.exec('VACUUM'); } catch (e) { console.error('desk: the migrated file was not compacted: ' + e.message); }
+  console.log('desk: migrated ' + count + ' records into ' + Object.keys(s.items).length + ' items in ' + (Date.now() - t0) + ' ms (goal/G33.4)');
+  return true;
+}
+// THE OLD LINES TABLE ALONE (a file that never held records) goes too.
+if (!tableExists('records') && tableExists('lines')) db.exec('DROP TABLE lines');
+
+// AT START: the migration if an old file is here, the state read, and the group chat made on a fresh desk.
+function startState() {
+  migrate();
+  S = loadState();
+  suitesFromFiles();
+  if (!S.goals[GROUP_CHAT]) {
+    S.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [], special: true };
+    S.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
+    S.items[GROUP_CHAT].closed = true;
+    db.exec('BEGIN');
+    persistItem(S, S.items[GROUP_CHAT], { n: S.change, at: new Date().toISOString(), verb: 'start', by: 'desk', key: '' }, false);
+    persistDeskState(S);
+    db.exec('COMMIT');
+  }
+}
+
+// THE SUITES TABLE'S MIGRATION (goal/G33.4, box v44-45: "existing items get their suites from today's file list"):
+// once, on the first start that has the table, every item with none gets the spirit/test/ entries of its file list.
+// From then on only a red claim supplies them; the file list never does.
+function suitesFromFiles() {
+  if (db.prepare("SELECT v FROM desk_state WHERE k = 'suitesMigrated'").get()) return;
+  db.exec('BEGIN');
+  const r = { n: S.change, at: new Date().toISOString(), verb: 'migrate', by: 'desk', key: '' };
+  Object.keys(S.items).forEach(function (id) {
+    const it = S.items[id];
+    if (it.goal || (Array.isArray(it.suites) && it.suites.length)) return;
+    const tests = testFilesOf(it);
+    if (!tests.length) return;
+    it.suites = tests;
+    it.suitesKey = 'desk';
+    persistItem(S, it, r, false);
+  });
+  putDeskState.run('suitesMigrated', JSON.stringify(true));
+  db.exec('COMMIT');
+}
+
+// ── SHEDDING (goal/G33.4) ─────────────────────────────────────────────
+//
+//   Andy, in the item's box: "The desk database sheds by itself past a boundary size, one constant set in a single place,
+//   16 MB. It sheds in whole goal chunks: first the goal untouched the longest, with all its items and every row of
+//   theirs (file, chat, box, checks, claims), since nothing could reach them any more; then the next. The current goal
+//   is never shed. Special goals are exempt. Shedding is goal by goal, nothing finer."
+//
+// THE ONE CONSTANT: SHED_BYTES, 16 MB; the manifest value shedBytes is the knob a suite turns (deskTables.js), as
+// boxHoldMs is. The size is the database's own: its pages in use (page_count less the free list) times the page size.
+const SHED_BYTES = Number(values.shedBytes) > 0 ? Number(values.shedBytes) : 16 * 1024 * 1024;
+function usedBytes() {
+  const pc = Number(db.prepare('PRAGMA page_count').get().page_count);
+  const fl = Number(db.prepare('PRAGMA freelist_count').get().freelist_count);
+  return (pc - fl) * Number(db.prepare('PRAGMA page_size').get().page_size);
+}
+// When a goal was last touched: the newest write to it or any item of it.
+function touchedAt(s, gid) {
+  const g = s.goals[gid];
+  return [gid].concat(g ? g.members : []).reduce(function (t, id) { const x = s.items[id]; return x && String(x.at || '') > t ? String(x.at || '') : t; }, '');
+}
+function shed() {
+  const s = S;
+  const gone = [];
+  while (usedBytes() > SHED_BYTES) {
+    const open = Object.keys(s.goals).filter(function (gid) { return gid !== s.current && !s.goals[gid].special && !PLUGIN_GOAL[gid] && gid !== GROUP_CHAT; });
+    if (!open.length) break;
+    open.sort(function (a, b) { const x = touchedAt(s, a); const y = touchedAt(s, b); return x < y ? -1 : x > y ? 1 : 0; });
+    const gid = open[0];
+    const ids = [gid].concat(s.goals[gid].members);
+    db.exec('BEGIN');
+    try { dropGoalRows(numbersOf(gid)[0]); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); console.error('desk: shedding ' + gid + ' failed: ' + e.message); break; }
+    ids.forEach(function (id) { delete s.items[id]; ROWS.delete(id); });
+    delete s.goals[gid];
+    gone.push(gid);
+    // Each row it held leaves every client, as a row does (goal/G33.4).
+    ids.forEach(function (id) {
+      const k = numbersOf(id);
+      publishOne({ change: s.change, verb: 'goal.shed', item: { id: id, goal: id === gid ? '' : gid }, listed: false, key: { goal: k[0], item: k[1] }, removed: true });
+    });
+  }
+  if (gone.length) console.log('desk: shed ' + gone.join(', ') + ' past ' + SHED_BYTES + ' bytes (goal/G33.4)');
+  return gone;
+}
 // ── NAMES AND KEYS (goal/G21.1) ──────────────────────────────────────
 //
 //   Andy, in the item's box: "The page shows the agent's name everywhere it shows the agent ... The name is looked up
@@ -638,11 +966,13 @@ function blank(id, title, goalId) {
     boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
     withKey: '', phaseWithKey: '',
-    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false, phaseAt: '',
+    box: '', version: 0, checks: [], chat: [], at: '', checked: false, phaseAt: '',
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
     // another's: { '<agent>': ['<path>', ...] }.
-    files: Object.create(null) };
+    files: Object.create(null),
+    // goal/G33.4 (box v44-45): the suites a Verify of it runs, as its red claim supplied them, and the claimer's key.
+    suites: [], suitesKey: '' };
 }
 
 // One record applied to the state. A record that no longer fits (an item gone
@@ -709,6 +1039,7 @@ function apply(s, r, b, item, goalOf) {
       if (r.by !== 'andy' && r.by !== 'desk' && s.addGrant > 0 && newItemsOf(s, sess)) s.addGrant = 0;
       const g = s.goals[gid] || (s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] });
       const goalItem = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
+      if (!goalItem.made) goalItem.made = madeBy(r);
       goalItem.title = String(sess.goal.title || goalItem.title);
       goalItem.at = r.at;
       const ids = [];
@@ -726,7 +1057,9 @@ function apply(s, r, b, item, goalOf) {
       (sess.items || []).forEach(function (x) {
         const id = String(x.id || '');
         if (!id) return;
-        const one = s.items[id] || (s.items[id] = blank(id, '', gid));
+        // A NEW ITEM ARRIVES IN DESIGN MODE (goal/G33.4, the box: "A new item always arrives in design mode.").
+        if (!s.items[id]) { s.items[id] = blank(id, '', gid); s.items[id].design = true; s.items[id].made = madeBy(r); }
+        const one = s.items[id];
         one.title = String(x.title || one.title);
         one.goalId = gid;
         one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
@@ -741,8 +1074,7 @@ function apply(s, r, b, item, goalOf) {
         one.leftOut = false;
         // AN ITEM MARKED CODE (goal/G5.7) walks the phases. Andy: "an item marked code is the only one i see this for
         // right now."
-        // A sub-goal is never a code item (goal/G6.8): a later session's code: true does not bring the mark back.
-        if (x.code === true && !one.subGoal) one.code = true;
+        if (x.code === true) one.code = true;
         ids.push(id);
       });
       // LEFT OUT IS CLOSED, NEVER DELETED (goal/G4.24). Andy: "1. sounds dumb that the \"archive\" is not
@@ -750,13 +1082,9 @@ function apply(s, r, b, item, goalOf) {
       // session leaves out stays a member, after the session's own, closed, with its box, checks and chat, so
       // [Include Closed] finds it; the records replay to the same, so items left out before this come back too.
       // It blocks nothing any more (blockers skips it), as it blocked nothing while it was deleted.
-      // ONLY HIS SPLIT MAKES A SUB-GOAL (goal/G6.8). Andy: "an item becomes a sub-goal only when i say split, the box of
-      // that item must then only contain references to it's blockers, and it can no longer be marked as a coding item."
-      // The session names the item split; a new blocking item alone marks nothing (goal/G5.4 had inferred it).
-      (Array.isArray(sess.split) ? sess.split : []).map(String).forEach(function (id) {
-        const it = s.items[id];
-        if (it && !it.goal) { it.subGoal = true; it.code = false; }
-      });
+      // NO SUB-GOALS (goal/G33.4, replacing goal/G6.8's split mark). Andy, in the item's box: "No sub-goals and no goal
+      // tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed." A split
+      // adds its blocking relation (above) and marks nothing.
       const kept = g.members.filter(function (id) { return ids.indexOf(id) === -1 && s.items[id]; });
       kept.forEach(function (id) { s.items[id].closed = true; s.items[id].leftOut = true; });
       g.members = ids.concat(kept);
@@ -769,9 +1097,10 @@ function apply(s, r, b, item, goalOf) {
       return;
     }
     case 'box.write':
-      it.boxHistory.push({ version: it.version + 1, by: r.by, at: r.at, text: String(b.text) });
+      // EACH VERSION A ROW (goal/G33.4): the item holds its newest, and who wrote it; persistItem adds the row.
       it.box = String(b.text);
       it.version += 1;
+      it.boxBy = String(r.by || ''); it.boxKey = madeBy(r); it.boxAt = String(r.at || '');
       // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9), by key since goal/G21.1: that is the one write of a hold.
       if (it.boxTakenBy && holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
       // A written box ends a cap still offered (goal/G21.1): the cap was for this text.
@@ -780,7 +1109,7 @@ function apply(s, r, b, item, goalOf) {
     case 'check.add': {
       const kind = String(b.kind);
       const number = nextCheckNumber(it, kind);
-      const c = { number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : '') };
+      const c = { number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : ''), made: madeBy(r) };
       // WHO PLACED A RED Q (goal/G21.2), from the record, so a replay of records written before it knows too: "one
       // open red Q per agent per item", and his clear notifies "the agent that placed it".
       if (kind === 'Q') { c.placedBy = String(r.by); c.placedKey = String(r.key || ''); }
@@ -889,6 +1218,9 @@ function apply(s, r, b, item, goalOf) {
     case 'verify.answer':
       s.verifyAnswer = b.taken === true ? 'taken' : 'busy';
       if (it && b.taken === true && !it.done && !it.closed) { it.verifyRunning = true; if (it.status === 'waiting for deskVerify') it.status = 'handed to deskVerify'; }
+      // ANY RUN HIS VERIFY STARTED IS READ BACK (goal/G33.4, Andy's word): the item is marked handed until a read sees the
+      // run end, waiting for verification or not.
+      if (it && b.taken === true) it.verifyHanded = true;
       return;
     // WHAT THE VERIFIER'S SEARCH SAYS OF ITS SUITES (goal/G33.3), read by the desk at each event: green, red with the
     // failure lines, or none (no run yet). The item's facts carry it, and Done's warning mark is drawn from it.
@@ -896,7 +1228,7 @@ function apply(s, r, b, item, goalOf) {
       if (!it) return;
       it.verifyState = String(b.verified || 'none');
       it.verifyFailures = Array.isArray(b.failures) ? b.failures.map(String) : [];
-      if (b.ended === true || (b.ended === undefined && it.verifyState !== 'none')) it.verifyRunning = false;
+      if (b.ended === true || (b.ended === undefined && it.verifyState !== 'none')) { it.verifyRunning = false; it.verifyHanded = false; }
       if (b.ran === true && !it.done && !it.closed && (it.status === 'waiting for deskVerify' || it.status === 'handed to deskVerify' || /^verified /.test(it.status))) {
         it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
       }
@@ -995,7 +1327,10 @@ function apply(s, r, b, item, goalOf) {
       const gid = String(b.minted || '');
       if (!gid) return;
       if (!s.goals[gid]) s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] };
+      // A PLUGIN'S GOAL IS SPECIAL (goal/G33.4): its row names the plugin and is marked special; it is always open.
+      if (b.plugin) { s.goals[gid].plugin = String(b.plugin); s.goals[gid].special = true; s.goals[gid].design = false; }
       const gi = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
+      if (!gi.made) gi.made = madeBy(r);
       gi.title = String(b.title || gi.title);
       gi.at = r.at;
       // goal/G29.21: an agent's goal spends his "add goal".
@@ -1007,7 +1342,9 @@ function apply(s, r, b, item, goalOf) {
       const id = String(b.minted || '');
       const g = s.goals[gid];
       if (!id || !g) return;
-      const one = s.items[id] || (s.items[id] = blank(id, '', gid));
+      // A NEW ITEM ARRIVES IN DESIGN MODE (goal/G33.4).
+      if (!s.items[id]) { s.items[id] = blank(id, '', gid); s.items[id].design = true; s.items[id].made = madeBy(r); }
+      const one = s.items[id];
       one.title = String(b.title || one.title);
       one.goalId = gid;
       // A plain add blocks its goal, as a session's item with no blocks does; with `blocks` named (goal/G9.10) it
@@ -1018,7 +1355,7 @@ function apply(s, r, b, item, goalOf) {
       if (!one.creator) { one.creator = r.by; one.creatorKey = String(r.key || ''); }
       if (g.members.indexOf(id) === -1) g.members.push(id);
       // goal/G29.21: code from the record (the handler decided it); an agent's add spends one of an "add item" grant.
-      if (b.code === true && !one.subGoal) one.code = true;
+      if (b.code === true) one.code = true;
       if (r.by !== 'andy' && r.by !== 'desk' && s.addGrant > 0) s.addGrant -= 1;
       return;
     }
@@ -1072,7 +1409,7 @@ function apply(s, r, b, item, goalOf) {
         const settled = it.checks.some(function (c) { return isCoreGrant(c) && c.state !== 'open' && c.words === words; });
         if (settled) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
         if (open.length) { open[0].words = words; open[0].at = r.at; it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open') || c === open[0]; }); }
-        else it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at });
+        else it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' });
       } else if (open.length) {
         it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); });
       }
@@ -1088,7 +1425,12 @@ function apply(s, r, b, item, goalOf) {
     case 'claim':
       if (!it) return;
       if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
-      else if (String(b.phase) === 'red') it.redCommit = String(b.commit || '');
+      else if (String(b.phase) === 'red') {
+        it.redCommit = String(b.commit || '');
+        // THE RED WRITER SUPPLIES THE SUITES (goal/G33.4, box v44-45): a red claim naming them fills the item's suites
+        // table, replacing what was there; one naming none leaves it as it is.
+        if (Array.isArray(b.suites) && b.suites.length) { it.suites = b.suites.slice(); it.suitesKey = String(r.key || r.by || 'desk'); }
+      }
       return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -1142,8 +1484,15 @@ function press(s, it, what, r, goalOf, b) {
   // work already running.
   const rulesAtGo = function (m) { if (b && b.rules && Array.isArray(b.rules[m.id])) m.rules = b.rules[m.id]; };
   const g = goalOf(it.id);
-  if (what === 'start-design' && g) g.design = true;
-  else if (what === 'end-design' && g) g.design = false;
+  // DESIGN MODE ON GOAL LEVEL AND ON ITEM LEVEL (goal/G33.4). Andy, in the item's box: "Design mode on goal level AND on
+  // item level, so further items can be designed while other items of the same goal already go through their
+  // implementation phases." Pressed on an item it is that item's alone. Pressed on a goal it is the goal's, and his End
+  // design on the goal ends it for every item of the goal as it stands then (this build's reading: the goal's End
+  // design is the one he has always pressed); an item added after it arrives in design all the same.
+  if (what === 'start-design' && !it.goal) it.design = true;
+  else if (what === 'end-design' && !it.goal) it.design = false;
+  else if (what === 'start-design' && g) g.design = true;
+  else if (what === 'end-design' && g) { g.design = false; g.members.forEach(function (id) { if (s.items[id]) s.items[id].design = false; }); }
   else if (what === 'abandon' && g) g.abandoned = true;
   // MAKE CURRENT (goal/G2.19). Andy, 2026-10-06: "i want to switch between goals at will, so the goals detail should
   // give me re-open and and on any open goal i want a button \"make current goal\"". Until now the current goal moved
@@ -1151,21 +1500,19 @@ function press(s, it, what, r, goalOf, b) {
   // nothing else: no item's state, neither goal's design mode, nothing closed or opened.
   else if (what === 'make-current' && it.goal) s.current = it.id;
   // HIS CODE TOGGLE (goal/G9.5). Andy, 2026-10-07: "the item Detail dialog has a check/toggle button, [Code✓], in it's
-  // button bar, where the user can set the Code-state of an item". Never on a goal, never on a sub-goal (goal/G6.8:
-  // "it can no longer be marked as a coding item"); the handler refuses both, and the walk holds it too.
+  // button bar, where the user can set the Code-state of an item". Never on a goal; the handler refuses it, and this
+  // holds it too.
   // CODE MARKED AFTER HIS GO (goal/G8.10). His Go starts the red phase only on an item that is already a coding item,
   // so an item marked as code afterwards sat with no phase at all: nobody could take it, no Done was offered, and no
   // Close either (Close is offered before a Go alone), which held its goal's Done as well. Andy, 2026-10-09, "go" to
   // this line: marking the item starts its red, exactly as his Go would have.
-  else if (what === 'code' && !it.goal && !it.subGoal) {
+  else if (what === 'code' && !it.goal) {
     it.code = !it.code;
     if (it.code && it.go && !it.phase) it.phase = 'red';
   }
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
-  // His Go on a sub-goal is a go-all over its blockers (goal/G5.4); the sub-goal itself carries no Go.
-  else if (what === 'go' && it.subGoal && !it.goal) subGoalGoable(s, it).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; rulesAtGo(m); });
   else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; if (it.code && !it.phase) it.phase = 'red'; rulesAtGo(it); }
   else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; if (m.code && !m.phase) m.phase = 'red'; rulesAtGo(m); });
   // HIS WAIVE (goal/G5.7). Andy: "absolutely. with only one agent this must be waved." One agent may take every phase.
@@ -1177,6 +1524,8 @@ function press(s, it, what, r, goalOf, b) {
   // is consumed between 'go' and 'done'"). The line below replays the records taken before that day as they were.
   else if (what === 'claim-done') {
     it.claims[r.by] = true;
+    // When, for its claims row (goal/G33.4).
+    (it.claimAt = it.claimAt || {})[r.by] = String(r.at || '');
     if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
   }
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
@@ -1262,17 +1611,10 @@ function buttonsOf(s, it) {
   // DONE WAITS ON EVERY GRANT (goal/G8.5). Andy, 2026-10-09: "'Done' needs all grants approved." On every item and
   // goal: while any G check is open, no Done is offered, and his red mark on the row says why.
   const grantsOpen = it.checks.some(function (c) { return c.kind === 'G' && c.state === 'open'; });
-  // A SUB-GOAL IS A SCOPED GOAL (goal/G5.4). Andy: "items that are no-code branches, they really are sub-goals, and
-  // must offer 'Done' when it's blockers are done.", "pressing 'Go' on a sub-goal presses go on it's blockers, where
-  // appropriate.", "it's like a scoped goal." So it offers Go while a blocker offers Go, Done once every item that
-  // blocks it is done or closed, and nothing else.
-  if (it.subGoal && !it.goal) {
-    if (g && !g.design && subGoalGoable(s, it).length) out.push('go');
-    const under = splitOf(s, it);
-    if (!grantsOpen && under.length && under.every(function (m) { return m.done || m.closed; })) out.push('done');
-    return out;
-  }
-  if (!it.goal && !claimed && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
+  // goal/G33.4: no Go while the item itself is in design, nor while its goal is. An item in its own design while its
+  // goal is out of it offers its End design (his alone, as the goal's is), so a new item can be built.
+  if (!it.goal && it.design && g && !g.design) out.push('end-design');
+  if (!it.goal && !claimed && g && !g.design && !it.design && !it.went && !blockers(s, it).length) out.push('go');
   // A GOAL OFFERS DONE AT ANY TIME, AND NEVER ON A CLAIM (goal/G33.6, replacing goal/G2.10's "only when all items are
   // done"). Andy: "just in the list, a goal offers no done or closed while items are not done or closed, the goal
   // offers those only in the detail panel anytime". So the facts offer it; the List holds it back while the goal's
@@ -1311,22 +1653,11 @@ function buttonsOf(s, it) {
   // HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done
   // button"), on every open item and goal where a deskVerify answers on this node. It always tries; the answer is
   // shown on it, and holds nothing back.
-  if (hasDeskVerify() && it.id !== GROUP_CHAT && !it.subGoal) {
+  if (hasDeskVerify() && it.id !== GROUP_CHAT) {
     const at = out.indexOf('done');
     if (at === -1) out.push('verify'); else out.splice(at + 1, 0, 'verify');
   }
   return out;
-}
-// The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
-function splitOf(s, it) {
-  const g = s.goals[it.goalId];
-  if (!g) return [];
-  return g.members.map(function (id) { return s.items[id]; }).filter(function (o) {
-    return o && o.id !== it.id && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
-  });
-}
-function subGoalGoable(s, it) {
-  return splitOf(s, it).filter(function (m) { return !m.closed && !m.done && buttons(s, m).indexOf('go') !== -1; });
 }
 // The items of a goal that offer Go!, decided by the same rule as their own button.
 function goable(s, g) {
@@ -1367,8 +1698,9 @@ function mayTake(s, it, phase, who) {
   if (!it || it.goal || !it.code || it.go !== true || it.done || it.closed) return 'not-offered';
   // NO PHASE WHILE DESIGN IS ON (goal/G6.8). Andy: "no phases can be taken in an item while design mode is on."; an
   // earlier Go does not lift it.
+  // goal/G33.4: the item's own design mode as well as its goal's.
   const gd = s.goals[it.goalId];
-  if (gd && gd.design) return 'not-offered';
+  if ((gd && gd.design) || it.design) return 'not-offered';
   if (it.phaseWith) return 'taken';
   const w = it.waived === true;
   if (phase === 'red') {
@@ -1417,7 +1749,7 @@ function rulesForGo(s, id, what) {
   const it = s.items[String(id)];
   if (!it) return {};
   const g = s.goals[it.goal ? it.id : it.goalId];
-  const going = what === 'go-all' ? (g ? goable(s, g) : []) : it.subGoal && !it.goal ? subGoalGoable(s, it) : [it];
+  const going = what === 'go-all' ? (g ? goable(s, g) : []) : [it];
   const out = {};
   going.forEach(function (m) { out[m.id] = rulesFor(m); });
   return out;
@@ -1436,7 +1768,7 @@ function notGreen(s, ids) {
 // agent." Working on it: an agent that took it, live, whose last word is working. At once, with no grace time:
 // Andy, to how long nobody must be working first: "it counts al limbo immediately."
 function limboOf(s, it) {
-  if (!it || it.goal || it.subGoal || it.go !== true || it.done || it.closed) return false;
+  if (!it || it.goal || it.go !== true || it.done || it.closed) return false;
   if (buttons(s, it).indexOf('done') !== -1) return false;
   if (it.checks.some(function (c) { return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q'); })) return false;
   // A HELD PHASE IS NOT LIMBO (goal/G9.14). Andy, 2026-10-09, to "Open an item to have limbo read the phase holder
@@ -1484,7 +1816,7 @@ function facts(s, it) {
     // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
     // items." The dialog draws its Code toggle from this: an item (never a goal or sub-goal) whose plugin, if any, does
     // not refuse the code press.
-    codeOffered: !it.goal && !it.subGoal && !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: it.id, what: 'code' }); }),
+    codeOffered: !it.goal && !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: it.id, what: 'code' }); }),
     // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
     go: it.go === true,
     // THE STAR IS GONE (goal/G4.20 point 8). Andy: "ha ha, the red star has no function anymore. take it out."
@@ -1493,8 +1825,10 @@ function facts(s, it) {
     claims: Object.keys(it.claims).length,
     // WHO HOLDS THE BOX (goal/G4.20 point 9), '' when nobody.
     boxTaken: it.boxTakenBy || '',
-    // goal/G5.4: in limbo, and marked a sub-goal by a split.
-    limbo: limboOf(s, it), subGoal: it.subGoal === true,
+    // goal/G5.4: in limbo.
+    limbo: limboOf(s, it),
+    // goal/G33.4: design mode on item level, as a goal's row has carried it (a goal's is set below).
+    design: it.design === true,
     // THE FILES TOUCHED (goal/G8.8) are item.files' own answer since goal/G32.2: a 142-file list in the facts made
     // every write to the item too large to come back. The facts say only how many.
     fileCount: filesOf(it).length,
@@ -1524,6 +1858,9 @@ function facts(s, it) {
   // goal/G21.6: every agent with an open take of one of his lines.
   f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
     .concat(openTakes(it).map(function (l) { return l.taken; }), Object.keys(it.takers), Object.keys(it.files || {}), it.goal ? Object.keys(s.agentKey) : []));
+  // goal/G33.4: the holder's key beside its label, so a desk client knows its own item by key (Andy may relabel); only
+  // on a held item, so an unheld row grows by nothing.
+  if (it.with && it.withKey) f.withKey = String(it.withKey);
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -1539,6 +1876,8 @@ function facts(s, it) {
     // List draws the goal's title as plain text; "Apps replaces the label button".
     if (PLUGIN_GOAL[it.id]) { f.plugin = PLUGIN_GOAL[it.id]; f.pluginTab = PLUGIN_TAB[it.id] || f.plugin; }
     f.design = g.design;
+    // goal/G33.4: the group chat's and every plugin's goal row is marked special, and is always open.
+    if (g.special) f.special = true;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       // goal/G24.9: delete is on offer on running items now, and offering it is not Andy being waited on.
       // goal/G33.3: nor is his Verify, which every open item offers.
@@ -1655,6 +1994,7 @@ function whyNotOffered(st, it, what, offered) {
   const g = st.goals[it.goal ? it.id : it.goalId];
   if (what === 'go' || what === 'go-all') {
     if (g && g.design) return 'the goal ' + g.id + ' is in design mode; End design comes first';
+    if (it.design) return it.id + ' is in design mode; End design on it comes first';
     const held = blockers(st, it);
     if (held.length) return it.id + ' is blocked by ' + held.join(', ');
     if (it.went) return 'Go is already on record for ' + it.id;
@@ -1665,47 +2005,116 @@ function whyNotOffered(st, it, what, offered) {
   return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
 }
 
-// ── THE NUDGE, SERVER TO SERVER (goal/G3.5) ──────────────────────────
+// ── WHOM THE STREAM REACHES (goal/G3.5, goal/G33.4) ──────────────────
 //
-//   Andy, 2026-10-02: "so the desk server would nudge the deskClient server?" — and "accepted." to the design
-//   that holds it. Until this the Desk page sent the nudge, after a press, and had to be open.
-//
-// One api packet {deskClient: {changed: {}}}, through the kernel, to the node of each agent a write is meant for;
-// that agent's deskClient then asks what changed. Meant for: a write of Andy's, every agent (but his seen press,
-// which no agent is handed); an agent's chat line, every other agent; a kept line of his, the agent it was for.
-// An agent's own word (agent.state) nudges nobody: it would wake every other agent at every wait.
-// NEVER HELD BY IT: the write has answered before the post leaves, and an agent whose node does not answer costs
-// nothing but the wait below. A nudge that does not land is not repeated; the agent's own poll is the net.
-// WHOM: an agent heard from in the last day, not only a live one (ten minutes): an agent that has waited quietly
-// for longer than that is exactly the one a nudge is for.
-const NUDGE_WAIT_MS = 10000;
+// The deskClient of every agent heard from in the last day, not only a live one (ten minutes): an agent that has waited
+// quietly for longer than that is still one the stream is for. THE NUDGE WENT WITH goal/G33.4 (box v43, Andy: "the desk
+// server publishes its changes to the browser with the same function that it publishes its changes to the deskClients"):
+// the stream's own rows wake a client's wait, and the desk sends nothing beside its one publish.
 const NUDGE_FOR_MS = 24 * 60 * 60 * 1000;
 function nudgeKeys(s) {
   const now = Date.now();
   return Object.keys(s.agentsAt).filter(function (a) { return s.agentKey[a] && now - Date.parse(s.agentsAt[a]) < NUDGE_FOR_MS; })
     .map(function (a) { return s.agentKey[a]; });
 }
-function nudge(keys) {
-  keys.filter(function (k, i) { return k && keys.indexOf(k) === i; }).forEach(function (key) {
-    Promise.resolve().then(function () {
-      return require('../../../js/kernel.js').peerPost(key, 'api', { deskClient: { changed: {} } }, { waitMs: NUDGE_WAIT_MS });
-    }).catch(function () { /* the agent reads the state when it next asks */ });
-  });
-}
-function nudgeForWrite(s, verb, a) {
-  if (a.by === 'andy') {
-    if (verb === 'press' && a.what === 'seen') return;
-    // HIS ADDRESSED LINE NUDGES ITS ADDRESSEES ALONE (goal/G21.1): "only it is notified". So does his clear of a red Q,
-    // addressed to the agent that placed it (goal/G21.2).
-    if (Array.isArray(a.to)) { nudge(nudgeKeys(s).filter(function (k) { return a.to.indexOf(k) !== -1; })); return; }
-    nudge(nudgeKeys(s));
-  } else if (a.by !== 'desk' && verb === 'chat.add') {
-    nudge(nudgeKeys(s).filter(function (k) { return k !== String(a.key || ''); }));
-  }
+
+// Every write: checked against the state as it stands, applied, written through to exactly the rows it changed, then
+// published, each changed row on its own ("no pulling"). goal/G33.4, in the item's box: "Mirror distribution is push:
+// the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under
+// PAYLOAD_MAX, so a desk client never grabs anything." Every row fits one publish: the box, the one row that could
+// grow, is refused past one answer (box.write, box v31), so no row is ever pushed in pieces.
+// What a write publishes, every object with this write's change number:
+//   { change, verb, item: <facts>|null, listed, key: {goal, item} }   the written item's facts (its List row), always
+//   the same for every other row of the goal whose facts this write changed, one publish each
+//   { change, table, goal, item, id, row }                            each side row it changed: chat (the line as
+//                                                                     item.chat gives it), box (the newest version),
+//                                                                     checks (one check), files (one file), claims
+//   { change, table, goal, item, id, removed: true, at }              a side row it removed
+// A goal that becomes current is pushed whole (pushGoalWhole).
+// One object onto the desk's stream, as it is: THE ONE PUBLISH (box v43, Andy: "the desk server publishes its changes
+// to the browser with the same function that it publishes its changes to the deskClients"). appServer.publish hands it to
+// the node's pages and to every deskClient streamRecipients names; the desk has no second send path.
+function publishOne(o) {
+  return appServer.publish(o);
 }
 
-// Every write: checked against the state as it stands, then recorded, then
-// published to the page with the change it made ("no pulling").
+// ── THE STREAM TO THE DESK CLIENTS (goal/G33.4, box v38-39) ───────────
+//
+//   Andy: "the desk is the server and simply pushes a stream via peerPost to its deskClients", and the box: "when a goal
+//   becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates."
+//
+// Every row the desk publishes for its current goal (and goal 0, the group chat) goes, as it is published, to the
+// deskClient of every agent the desk has heard from in the last day (nudgeKeys): appServer.publish delivers it over
+// peerPost to that client's streamListener (js/appServer.js, opts.streamTo), one at a time per client, in order, and a
+// client that does not answer is away until it writes again (backFromAway).
+// THE RECEIVER (box v40, Andy: "the streamListener verb is approved"): the verb appServer gives every server that
+// follows a stream, on the client's deskClient family.
+// The desk never acts as a client of its clients and keeps nothing from them: they write by their own asks, and their
+// own changes come back to them on this stream like anybody's (box v40). It follows no stream itself (box v42, Andy:
+// "no stream listening on the desk server!"): its serve() names no opts.stream, so it has no streamListener verb.
+const CLIENT_WAIT_MS = 10000;
+function inStream(o) {
+  const id = o && (o.item && o.item.id ? o.item.id : o.id);
+  const k = numbersOf(id);
+  const cur = S && S.current ? numbersOf(S.current) : null;
+  return !!k && (k[0] === 0 || (!!cur && k[0] === cur[0]));
+}
+function streamRecipients(o) {
+  if (!S || !inStream(o)) return [];
+  // ONLY THE ADDRESSED AGENT IS HANDED HIS ADDRESSED LINE (goal/G21.1).
+  return nudgeKeys(S).filter(function (key) { return !Array.isArray(o.to) || o.to.indexOf(key) !== -1; });
+}
+// A CLIENT THAT WAS AWAY, OR IS NEW TO THIS DESK, GETS THE CURRENT GOAL WHOLE (the box) when its agent writes: every row
+// of the current goal goes to it alone, through the same publish.
+function backFromAway(key) {
+  if (!key || !S || !S.current || appServer.listening(key) === 'on') return;
+  const g = S.goals[S.current];
+  if (!g) return;
+  [S.current].concat(g.members).forEach(function (id) {
+    const it = S.items[id];
+    if (!it) return;
+    appServer.publish(rowPublish(S, id, 'goal.whole', S.change), key);
+    rowsOf(S, it).forEach(function (x) { if (x.table !== 'items') appServer.publish(sidePublish(S, id, { table: x.table, key: x.key, x: x, removed: false }, S.change), key); });
+  });
+}
+// An item's facts as a List row publish.
+function rowPublish(s, id, verb, change) {
+  const it = s.items[id];
+  const k = numbersOf(id);
+  return { change: change, verb: verb, item: it ? facts(s, it) : null, listed: it ? listed(s, it) : false, key: { goal: k ? k[0] : -1, item: k ? k[1] : -1 } };
+}
+function sidePublish(s, id, ch, change) {
+  const k = numbersOf(id);
+  const o = { change: change, table: ch.table, goal: k[0], item: k[1], id: id };
+  if (ch.removed) { o.removed = true; o.at = ch.key.split('|').slice(1).join('|'); } else o.row = ch.x.out();
+  // HIS LINE ADDRESSED TO AGENTS (goal/G21.1) names them, so the stream carries it to them alone (streamRecipients).
+  if (ch.x && Array.isArray(ch.x.to)) o.to = ch.x.to.slice();
+  return o;
+}
+// A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk
+// pushes it whole onto every desk client; from then on it pushes only that goal's updates." Every row of it: each item's
+// facts, its newest box, every chat line, every check, every file, every claim, each its own publish. Also at start, the
+// current goal: every client was away from a desk that was not there (this build's reading of "a client that was away").
+function pushGoalWhole(gid) {
+  const s = S;
+  const g = s.goals[gid];
+  if (!g) return;
+  [gid].concat(g.members).forEach(function (id) {
+    const it = s.items[id];
+    if (!it) return;
+    publishOne(rowPublish(s, id, 'goal.whole', s.change));
+    rowsOf(s, it).forEach(function (x) { if (x.table !== 'items') publishOne(sidePublish(s, id, { table: x.table, key: x.key, x: x, removed: false }, s.change)); });
+  });
+}
+// THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
+// every item where somebody holds something (signoff and his exclusion let go of what that agent held).
+function goalIds(s, gid) { const g = s.goals[gid]; return g ? [gid].concat(g.members) : []; }
+function heldSomewhere(s) {
+  return Object.keys(s.items).filter(function (id) {
+    const m = s.items[id];
+    return m.with || m.phaseWith || m.boxTakenBy || (Array.isArray(m.capOffer) && m.capOffer.length) || openTakes(m).length;
+  });
+}
 function write(verb, a, check) {
   const s = walkState();
   const it = a.id !== undefined ? s.items[String(a.id)] : null;
@@ -1716,93 +2125,121 @@ function write(verb, a, check) {
   const body = Object.assign({}, a);
   delete body.by;
   delete body.key;
-  // KEPT ONLY IF IT CAN COME BACK (the oversize suite; Andy: "why can't the system cleanly reject oversized
-  // stuff?"). The write is taken inside a transaction, the state walked, and every panel it touched measured as
-  // the answer that would carry it; one that no longer fits undoes the write and is refused by name.
-  db.exec('BEGIN');
-  let r;
-  let after;
+  if (verb === 'rule.chat') return writeRuleChat(s, body, a);
+  const by = String(a.by || '');
+  const key = String(a.key || '');
+  const sessGoal = verb === 'session.set' && body.session && body.session.goal ? String(body.session.goal.id) : '';
+  // The row the write names: its item, the session's goal, or what goal.add and item.add minted (set by their check).
+  const writtenId = it ? it.id : sessGoal || String(body.minted || '');
+  const gidW = it ? (it.goal ? it.id : it.goalId) : sessGoal || (verb === 'item.add' ? String(body.goal || '') : verb === 'goal.add' ? String(body.minted || '') : '');
+  // The goals whose List rows may change: the written one's, and the current goal's for a word about an agent or the
+  // verifier (the goal row's working list, every row's verifier switch).
+  const shownGoals = [gidW].concat(['agent.state', 'signoff', 'profile.set', 'verify.answer'].indexOf(verb) !== -1 ? [s.current] : []).filter(function (g, i, all) { return g && all.indexOf(g) === i; });
+  const seen = function (id) { const x = s.items[id]; return x ? JSON.stringify([facts(s, x), listed(s, x)]) : ''; };
+  const before = Object.create(null);
+  shownGoals.forEach(function (g) { goalIds(s, g).forEach(function (id) { before[id] = seen(id); }); });
+  const holders = verb === 'signoff' || (verb === 'profile.set' && body.included === false) ? heldSomewhere(s) : [];
+  const currentBefore = s.current;
+  s.change += 1;
+  const r = { n: s.change, at: new Date().toISOString(), verb: verb, by: by, key: key };
+  // Writers other than him and the desk itself are agents, and a write is their liveness.
+  if (by !== 'andy' && by !== 'desk') { s.agentsAt[by] = r.at; if (key) { s.agentKey[by] = key; backFromAway(key); } }
+  const item = function (id) { return s.items[id] || null; };
+  const goalOf = function (id) { const x = item(id); return x ? (x.goal ? s.goals[x.id] : s.goals[x.goalId]) : null; };
+  apply(s, r, body, item, goalOf);
+  // KEPT ONLY IF IT CAN COME BACK (the oversize suite; Andy: "why can't the system cleanly reject oversized stuff?").
+  // Every panel it touched is measured as the answer that would carry it; one that no longer fits is refused by name,
+  // and the state is read again from the tables, which the write never reached.
+  const touched = sessGoal ? [sessGoal].concat((body.session.items || []).map(function (x) { return String(x.id || ''); })) : writtenId ? [writtenId] : [];
   try {
-    r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), String(a.key || ''), JSON.stringify(body));
-    after = walkState();
-    const touched = verb === 'session.set' && body.session && body.session.goal
-      ? [String(body.session.goal.id)].concat((body.session.items || []).map(function (x) { return String(x.id || ''); }))
-      : a.id !== undefined ? [String(a.id)] : [];
     touched.forEach(function (id) {
-      const bytes = largestPanel(after, id);
+      const bytes = largestPanel(s, id);
       if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
     });
+  } catch (e) { S = loadState(); throw e; }
+  // WRITTEN THROUGH, in one transaction: every row of the goal's items that changed, the agent's row, the desk's own.
+  const dirty = goalIds(s, gidW).concat(holders).filter(function (id, i, all) { return all.indexOf(id) === i; });
+  const side = [];
+  db.exec('BEGIN');
+  try {
+    dirty.forEach(function (id) {
+      const x = s.items[id];
+      if (!x) return;
+      persistItem(s, x, r, id === writtenId, body).forEach(function (ch) { if (ch.table !== 'items') side.push(sidePublish(s, id, ch, r.n)); });
+    });
+    if (by !== 'andy' && by !== 'desk') persistAgent(s, by);
+    if (verb === 'profile.set') persistProfile(s, String(body.agent));
+    persistDeskState(s);
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
+    S = loadState();
     throw e;
   }
   // NO LIMBO LINE (goal/G29.10, point 1: "The limbo posts go."). Limbo stays a mark in the item's facts; the desk
   // posts nothing under the item when it enters it.
-  const gidW = it ? (it.goal ? it.id : it.goalId)
-    : verb === 'session.set' && body.session && body.session.goal ? String(body.session.goal.id) : after.current;
-  const gW = after.goals[gidW];
-  let saidLimbo = false;
+  const gW = s.goals[gidW || s.current];
   // A HOLDER GONE STALE (goal/G5.7). Andy: "the deskServer throws a red question." Once per hold: a holder silent past
-  // LIVE_MS gets one open red question on its item.
+  // LIVE_MS gets one open red question on its item. Written after this write's own publishes.
+  const stale = [];
   if (gW) gW.members.forEach(function (id) {
-    const m = after.items[id];
+    const m = s.items[id];
     if (!m || !m.code || !m.phaseWith || m.closed || m.done) return;
-    const at = after.agentsAt[m.phaseWith];
+    const at = s.agentsAt[m.phaseWith];
     if (at && Date.now() - Date.parse(at) < LIVE_MS) return;
     if (m.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open' && String(c.words).indexOf('stale:') === 0; })) return;
-    write('check.add', { id: id, kind: 'Q', words: 'stale: ' + m.phaseWith + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
-    saidLimbo = true;
+    stale.push(m);
   });
-  // Said before this write publishes and writes the goal file, so both carry the line and the newest cursor.
-  if (saidLimbo) after = walkState();
-  const now = it ? after.items[it.id] : null;
-  // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"): the item's facts and
-  // whether it is still on the List; a box write adds the box, a chat line the
-  // line, a check its item's checks. The page paints from this.
-  const out = { change: Number(r.lastInsertRowid), verb: verb, item: now ? facts(after, now) : null };
-  if (now) out.listed = listed(after, now);
-  // A line under a rule names its rule, as rule.add, rule.draft and rule.version do: the open rule dialog repaints
-  // on a publish naming its rule (goal/G2.18).
-  if (verb === 'rule.chat') out.rule = String(a.rule);
-  if (now && verb === 'box.write') { out.box = now.box; out.version = now.version; }
-  if (now && verb === 'chat.add') out.chat = shownLine(after, now.chat[now.chat.length - 1]);
-  // THE CHECKS TRAVEL WHENEVER THEY CHANGED (goal/G18.5), not only on check.add and check.set: item.files.add raises
-  // the core grant itself, and an open dialog that never heard of it showed no red button until it was reopened. Andy,
-  // 2026-10-12: "the red grant Buttons don't show up automatically in deskDetail, i'd like that as well".
-  const was = it ? s.items[it.id] : null;
-  if (now && (verb === 'check.add' || verb === 'check.set' || !was || JSON.stringify(was.checks) !== JSON.stringify(now.checks))) out.checks = now.checks;
-  // EVERY ROW IT CHANGED (desk/G3.10). Andy: "i just pressed the Go-All button in the list. and the G3.9 go button
-  // didn't disarm." A press changes more than its own row (go-all, a done that unblocks, the goal's waiting), so the
-  // facts of every row of the goal that differ now ride along, in this one object: one press, one object, never a
-  // half-painted press (fileTransfer goal/G1.4 removed the publish coalescing; this ride-along never depended on it).
-  if (it) out.rows = changedRows(s, after, it.goal ? it.id : it.goalId);
-  // THE SWITCH TRAVELS TO EVERY CLIENT (goal/G33.3): the verifier's answer is one desk fact, said with the publish, and
-  // every row it changed, in every goal, rides along, not the handed item's alone.
-  if (verb === 'verify.answer') {
-    out.verifier = { answer: after.verifyAnswer };
-    out.rows = [];
-    Object.keys(after.goals).forEach(function (gid) { out.rows = out.rows.concat(changedRows(s, after, gid)); });
-  }
-  // An agent's word changes the current goal's row (its working list), and that row travels (goal/G2.3).
-  if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
-  appServer.spirit.core.jobs.publish(out);
-  nudgeForWrite(after, verb, a);
-  writeGoalFile(after, verb, a, Math.max(Number(r.lastInsertRowid), after.change));
-  return after;
+  // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"), one row at a time (goal/G33.4): the written item's facts and
+  // whether it is still on the List, always; then every other row whose facts changed (desk/G3.10: a press changes more
+  // than its own row), each its own publish; then each side row it changed.
+  const now = writtenId ? s.items[writtenId] || null : null;
+  const out = rowPublish(s, now ? now.id : '', verb, r.n);
+  if (!now) { out.item = null; delete out.listed; delete out.key; }
+  // THE SWITCH TRAVELS TO EVERY CLIENT (goal/G33.3): the verifier's answer is one desk fact, said with the publish.
+  if (verb === 'verify.answer') out.verifier = { answer: s.verifyAnswer };
+  publishOne(out);
+  shownGoals.forEach(function (g) {
+    goalIds(s, g).forEach(function (id) {
+      if (now && id === now.id) return;
+      if (s.items[id] && seen(id) !== before[id]) publishOne(rowPublish(s, id, verb, r.n));
+    });
+  });
+  side.forEach(publishOne);
+  writeGoalFile(s, verb, a, s.change);
+  // A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4).
+  if (s.current && s.current !== currentBefore) pushGoalWhole(s.current);
+  stale.forEach(function (m) {
+    write('check.add', { id: m.id, kind: 'Q', words: 'stale: ' + m.phaseWith + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
+  });
+  shed();
+  return s;
+}
+// A LINE UNDER A RULE (goal/G5.5): a row of rule_chat, numbered like any write so `changes` hands it on; its publish
+// names its rule, as rule.add, rule.draft and rule.version do: the open rule dialog repaints on it (goal/G2.18).
+function writeRuleChat(s, body, a) {
+  const rule = ruleNumber(body.rule);
+  s.change += 1;
+  db.exec('BEGIN');
+  try {
+    addRuleChat.run(rule, Number(ruleChatNext.get(rule).seq), new Date().toISOString(), String(a.by || ''), madeBy(a), String(body.text), s.change);
+    persistDeskState(s);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); s.change -= 1; throw e; }
+  publishOne({ change: s.change, verb: 'rule.chat', item: null, rule: String(body.rule) });
+  return s;
 }
 
 // THE FILE (goal/G3.14): written whole on his status changes, go, go-all, done, reopen and close (goal/G4.21: "a
 // re-open would be subject to the same rule?"), and on session.set (items appear and leave by it; his open point,
 // taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
-// the two cursors as changes answers them at this moment (change, and line, the newest line's rowid), the current
-// goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts as
-// item.get gives them, its box and version, its checks and its chat lines {by, at, text}. The group chat desk/G0.0
+// the two cursors as changes answers them at this moment (change, and line, 0 since the lines went with goal/G33.4),
+// the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
+// as item.get gives them, its box and version, its checks and its chat lines {by, at, text}. The group chat goal/G0
 // is no item of the goal and is not in it. Written at the end of the write, after the publish, into this server's
 // own state folder, never the checkout; then goalShare.js commits it on the remote's master and pushes it, as a job
 // the node runs (goal/G4.21: an automation beside its owner, started through its own node's jobs.create, so Jobs
 // shows it under process/js/desk). A failure to write or to ask is said on stderr and fails no press.
-const newestLine = db.prepare('SELECT COALESCE(MAX(rowid), 0) AS rid FROM lines');
 const GOAL_STATE_FILE = path.join(STATE, 'currentGoal.json');
 function writeGoalFile(s, verb, a, change) {
   if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
@@ -1821,8 +2258,9 @@ function writeGoalFile(s, verb, a, change) {
   });
   // NO writtenAt (goal/G19.6; the box: "goalShare's shared file without writtenAt, so an unchanged goal is not
   // committed again"): a clock in the file made every share new bytes, so goalShare's "same" never held. Nothing read
-  // it; the commit carries its own time, and change and line still name the desk's moment.
-  const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, items: items };
+  // it; the commit carries its own time, and change names the desk's moment (line, the log's cursor, went with the log in
+  // goal/G33.4).
+  const doc = { change: change, goal: s.current, items: items };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
   shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
 }
@@ -1845,18 +2283,6 @@ function shareFile(repoPath, fromFile, message) {
   }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });
 }
 
-// The goal and its items whose facts differ between two states, each with whether it is still listed.
-function changedRows(before, after, goalId) {
-  const g = after.goals[goalId];
-  if (!g) return [];
-  const seen = function (st, id) { const x = st.items[id]; return x ? JSON.stringify([facts(st, x), listed(st, x)]) : ''; };
-  return [goalId].concat(g.members).filter(function (id) {
-    return after.items[id] && seen(before, id) !== seen(after, id);
-  }).map(function (id) {
-    return Object.assign(facts(after, after.items[id]), { listed: listed(after, after.items[id]) });
-  });
-}
-
 // HIS VOICE IS NO LONGER WRITTEN HERE (goal/G2.1 note 8). The plain file of what he typed (D5, desk/G1.4) was
 // the hack he named on 2026-09-27; since apiAuth/G1's close the brain reads his Desk lines through this
 // server's api, and the vault's own tool (claude/voiceFromDesk.js) keeps his corpus. No app writes into the vault.
@@ -1867,8 +2293,7 @@ function newGoal(w) {
   // A plugin's goal is always open (goal/G22.3) and is no goal of his work: it never holds a new goal back.
   const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && !PLUGIN_GOAL[gid] && listed(st, g) && !g.closed; });
   if (open) throw refusedWhy('bad-request', 'a goal is open already; close it before a new one starts');
-  const used = Object.keys(st.goals).map(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); return m ? Number(m[1]) : 0; });
-  const id = 'goal/G' + (Math.max.apply(null, [0].concat(used)) + 1);
+  const id = nextGoalId(st);
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
@@ -1958,11 +2383,13 @@ const WAITING = 'waiting for deskVerify';
 function testFilesOf(it) {
   return filesOf(it).map(function (f) { return f.path; }).filter(function (p) { return /^spirit\/test\/.+\.js$/.test(p); });
 }
-// An item's suites, or a goal's: every test file its items list, done and closed ones too (they are the goal's work).
+// An item's suites, or a goal's: its suites table, or the union of its items' tables, done and closed ones too (they
+// are the goal's work). goal/G33.4 (box v44-45): "a Verify runs exactly the item's suites table, never a guess from the
+// file list"; the file list only seeded the tables once (suitesFromFiles).
 function suitesFor(s, it) {
   const out = Object.create(null);
   const items = it.goal ? ((s.goals[it.id] || { members: [] }).members.map(function (id) { return s.items[id]; })) : [it];
-  items.forEach(function (m) { if (m && !m.leftOut) testFilesOf(m).forEach(function (p) { out[p] = true; }); });
+  items.forEach(function (m) { if (m && !m.leftOut && Array.isArray(m.suites)) m.suites.forEach(function (p) { out[p] = true; }); });
   return Object.keys(out).sort();
 }
 // THE ITEMS WAITING FOR VERIFICATION: open items an agent claimed or its verifier passed, and goals whose items are all
@@ -1970,7 +2397,7 @@ function suitesFor(s, it) {
 // the work is scoped to the current goal (Andy, goal/G33.4), so a leftover claim in an older goal is never read.
 function waitingItems(s) {
   return Object.keys(s.items).map(function (id) { return s.items[id]; }).filter(function (m) {
-    if (!m || m.id === GROUP_CHAT || m.done || m.closed || m.leftOut || m.subGoal) return false;
+    if (!m || m.id === GROUP_CHAT || m.done || m.closed || m.leftOut) return false;
     if (!s.current || !inGoalOf(s.current, m.id)) return false;
     if (m.goal) { const g = s.goals[m.id]; return !!g && !g.abandoned && g.members.length > 0 && g.members.every(function (id) { const x = s.items[id]; return x && (x.done || x.closed); }); }
     return Object.keys(m.claims).length > 0 || m.verified === true || m.status === WAITING;
@@ -2000,7 +2427,10 @@ async function readVerifyStates() {
   if (!hasDeskVerify()) return;
   const s = walkState();
   const cache = Object.create(null);
-  for (const it of waitingItems(s)) {
+  // goal/G33.4 (Andy's word): the items waiting, and every item a run of his Verify was handed for, waiting or not.
+  const reading = waitingItems(s);
+  Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.verifyHanded === true && reading.indexOf(m) === -1) reading.push(m); });
+  for (const it of reading) {
     const suites = suitesFor(s, it);
     let verified = 'green';
     let failures = [];
@@ -2046,13 +2476,27 @@ function handOver(id) {
 // desk-node get only triggered by MY verify button. NOTHING ELSE."): a claim, an item coming to wait or a Done only
 // reads states.
 let verifyEvents = Promise.resolve();
+// THE RUN HIS VERIFY HANDED OVER IS READ UNTIL IT ENDS (goal/G33.4, Andy's word: "the desk shows the result of ANY run his
+// Verify started, on that item"). The end of a run is no event the desk hears, so while an item handed over still waits
+// for its run's end, its state is read through the verifier's search every VERIFY_WATCH_MS (manifest value
+// verifyWatchMs): a read, never a run started or queued. It stops when no handed item is left.
+const VERIFY_WATCH_MS = Number(values.verifyWatchMs) > 0 ? Number(values.verifyWatchMs) : 2000;
+let handedWatch = null;
+function watchHanded() {
+  if (handedWatch) return;
+  handedWatch = setInterval(function () {
+    const s = walkState();
+    if (!Object.keys(s.items).some(function (id) { return s.items[id].verifyHanded === true; })) { clearInterval(handedWatch); handedWatch = null; return; }
+    verifyEvent('');
+  }, VERIFY_WATCH_MS);
+}
 function verifyEvent(id) {
   const next = verifyEvents.then(async function () {
     if (!hasDeskVerify()) return;
     await readVerifyStates();
     const target = String(id || '');
     if (!target) return;
-    if ((await handOver(target)) === 'taken') await readVerifyStates();
+    if ((await handOver(target)) === 'taken') { await readVerifyStates(); watchHanded(); }
   });
   verifyEvents = next.catch(function () {});
   return next.catch(function () {});
@@ -2075,28 +2519,21 @@ function doneOver(id) {
 }
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
-// A goal: one past the highest G<n> of the current goal's area, so an add in `goal/` never counts `other/`; with no
-// current goal, the area is `goal`. An item: one past the highest <goal>.<n> the desk holds, closed and left-out ones
-// counted, so an id is never handed out twice.
-function areaOf(id) { const at = String(id).indexOf('/'); return at > 0 ? String(id).slice(0, at) : ''; }
+// An item: one past the highest item number of its goal, closed and left-out ones counted, so an id is never handed
+// out twice.
+// SINCE goal/G33.4 A GOAL IS A NUMBER: one past the highest goal number the desk holds, special goals counted (Andy, in
+// the box: a special goal's number is "minted like any goal").
 function nextGoalId(s) {
-  const area = areaOf(s.current) || 'goal';
   let top = 0;
-  Object.keys(s.goals).forEach(function (id) {
-    const m = /^([^/]+)\/G(\d+)$/.exec(id);
-    if (m && m[1] === area) top = Math.max(top, Number(m[2]));
-  });
-  return area + '/G' + (top + 1);
+  Object.keys(s.goals).forEach(function (id) { const k = numbersOf(id); if (k) top = Math.max(top, k[0]); });
+  return idOf(top + 1, 0);
 }
 function nextItemId(s, gid) {
-  const head = String(gid) + '.';
+  // goal/G33.4: the goal's own items (closed and left-out ones are members too), its number and one past the highest.
+  const k = numbersOf(gid);
   let top = 0;
-  Object.keys(s.items).forEach(function (id) {
-    if (id.indexOf(head) !== 0) return;
-    const tail = id.slice(head.length);
-    if (/^\d+$/.test(tail)) top = Math.max(top, Number(tail));
-  });
-  return head + (top + 1);
+  ((s.goals[gid] || {}).members || []).forEach(function (id) { const x = numbersOf(id); if (x && k && x[0] === k[0]) top = Math.max(top, x[1]); });
+  return idOf(k ? k[0] : 0, top + 1);
 }
 
 // WHO WRITES (apiAuth/G1.13): the caller appServer hands the handler,
@@ -2121,80 +2558,6 @@ function saveDoc(name, json) {
   if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
   putDoc.run(name, String(json));
   return { saved: true };
-}
-
-// The walk behind `changes`: records first, then lines, each taken while the answer still fits ANSWER_ROOM. A
-// record too big to travel even alone goes with an empty body, so the cursor still passes it and the reader asks
-// the item's panels instead.
-const recordsAfter = db.prepare('SELECT n, at, verb, by, key, body FROM records WHERE n > ? ORDER BY n');
-const linesAfter = db.prepare('SELECT rowid AS rid, line FROM lines WHERE rowid > ? ORDER BY rowid');
-// ONLY THE ADDRESSED AGENT IS NOTIFIED (goal/G21.1): an agent reading changes (viewer, its key) is not handed his
-// line addressed to other keys; the cursor passes it all the same. He reads everything. The line is still in the
-// item's chat, for any agent that looks. His clear of a red Q (a check.set addressed to its placer, goal/G21.2) the same.
-function addressedAway(r, viewer) {
-  if (!viewer || (r.verb !== 'chat.add' && r.verb !== 'check.set') || r.by !== 'andy' || String(r.body).indexOf('"to":[') === -1) return false;
-  try { const b = JSON.parse(r.body); return Array.isArray(b.to) && b.to.indexOf(viewer) === -1; } catch (e) { return false; }
-}
-function changesSince(n, line, viewer) {
-  const out = { records: [], lines: [], n: n, line: line, more: false };
-  const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
-  for (const r of recordsAfter.iterate(n)) {
-    if (addressedAway(r, viewer)) { out.n = r.n; continue; }
-    const rec = { n: r.n, at: r.at, verb: r.verb, by: r.by, key: r.key, body: r.body };
-    out.records.push(rec);
-    out.n = r.n;
-    if (size() <= ANSWER_ROOM) continue;
-    if (out.records.length === 1) { rec.body = ''; if (size() <= ANSWER_ROOM) continue; }
-    out.records.pop();
-    out.n = out.records.length ? out.records[out.records.length - 1].n : n;
-    out.more = true;
-    return out;
-  }
-  for (const l of linesAfter.iterate(line)) {
-    let obj = {};
-    try { obj = JSON.parse(l.line) || {}; } catch (e) { obj = {}; }
-    obj.line = l.rid;
-    out.lines.push(obj);
-    out.line = l.rid;
-    if (size() <= ANSWER_ROOM) continue;
-    out.lines.pop();
-    out.line = out.lines.length ? out.lines[out.lines.length - 1].line : line;
-    out.more = true;
-    return withRows(out, viewer);
-  }
-  return withRows(out, viewer);
-}
-// THE ROWS AND THE HELD ITEM RIDE ALONG (goal/G33.3; Andy, on how deskClient learns the rows: "A it is then"). Beside
-// its records, a changes answer carries the current facts of every item they touched (rows), and, when one of them
-// is the item the asking agent holds, that item's panels (held: box, version, checks, files), so deskClient keeps
-// them without asking again. Each is added while the answer still fits; what does not fit is said (rowsMore,
-// heldMore), and deskClient asks for it as before.
-function withRows(out, viewer) {
-  const touched = [];
-  out.records.forEach(function (r) {
-    let b = null;
-    try { b = JSON.parse(r.body || '{}'); } catch (e) { b = null; }
-    const id = b && typeof b.id === 'string' ? b.id : '';
-    if (id && touched.indexOf(id) === -1) touched.push(id);
-  });
-  if (!touched.length) return out;
-  const s = walkState();
-  const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
-  out.rows = [];
-  for (const id of touched) {
-    const it = s.items[id];
-    if (!it) continue;
-    out.rows.push(facts(s, it));
-    if (size() > ANSWER_ROOM) { out.rows.pop(); out.rowsMore = true; break; }
-  }
-  const label = viewer ? Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === viewer; }).pop() || '' : '';
-  const heldId = label ? touched.filter(function (id) { const it = s.items[id]; return it && !it.goal && it.with === label; })[0] : '';
-  if (heldId) {
-    const it = s.items[heldId];
-    out.held = { id: heldId, box: it.box, version: it.version, checks: shownChecks(it), files: filesOf(it) };
-    if (size() > ANSWER_ROOM) { delete out.held; out.heldMore = heldId; }
-  }
-  return out;
 }
 
 // ── MOUNTING THE PLUGINS (goal/G22.3) ────────────────────────────────
@@ -2243,12 +2606,11 @@ function idsOfCall(verb, a) {
 // (plugins/<name>/, never in git, as desk.db is not: D5 above), and publish(data), which says data on the desk's stream
 // as { plugin: <name>, data }: no change, no item, no rows, so the face's List never paints it, and only the plugin's
 // own UI, which subscribes itself, reads it.
-function pluginDesk(name, manifest) {
-  const goal = pluginGoalKey(name);
+function pluginDesk(name, manifest, goal) {
   return {
     name: name, goal: goal, manifest: manifest,
     stateDir: path.join(STATE, 'plugins', name),
-    publish: function (data) { return appServer.spirit.core.jobs.publish({ plugin: name, data: data }); },
+    publish: function (data) { return appServer.publish({ plugin: name, data: data }); },
     state: walkState,
     inGoal: function (id) { return inGoalOf(goal, id); },
     write: function (verb, body, check) { body.by = 'desk'; body.key = ''; return write(verb, body, check); },
@@ -2258,6 +2620,9 @@ function pluginDesk(name, manifest) {
     fieldRules: require('../../../js/fieldRules.js'),
     fieldWhy: fieldWhy,
     nextItemId: nextItemId,
+    // goal/G33.4: an id written before the ids became numbers (plugin/<name>.<n>, as a plugin's own list may still hold
+    // it) read as this goal's: goal/G<k>.<n>. Any other id comes back as it is.
+    idOf: function (id) { const m = /^plugin\/([^.]+)(?:\.(\d+))?$/.exec(String(id || '')); return m && m[1] === name ? (m[2] ? goal + '.' + m[2] : goal) : String(id || ''); },
     // SINCE goal/G22.3 (Andy, 2026-10-13: "every run here should report to deskVerify."): one verb of this node's
     // deskVerify, by its verbs on the node's flat apiDoor, as lookForDeskVerify asks the node; only a port its own node named,
     // never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why.
@@ -2276,13 +2641,18 @@ function mountPlugins() {
       let manifest = null;
       try { manifest = JSON.parse(fs.readFileSync(json, 'utf8')); } catch (e) { console.error('desk: plugin ' + name + ': its .json does not parse; not mounted'); return; }
       seen[name] = true;
-      const goal = pluginGoalKey(name);
       try {
-        // ITS PRIVATE GOAL, ON ITS FIRST MOUNT: the fixed key, the title its manifest gives.
-        if (!walkState().goals[goal]) write('goal.add', { title: String((manifest && (manifest.goal || manifest.label)) || name), minted: goal, by: 'desk', key: '' });
+        // ITS PRIVATE GOAL, ON ITS FIRST MOUNT: the next goal number, the title its manifest gives, its row naming the
+        // plugin and marked special (goal/G33.4); a later mount finds it by that name.
+        let goal = pluginGoalOf(walkState(), name);
+        if (!goal) {
+          const args = { title: String((manifest && (manifest.goal || manifest.label)) || name), plugin: name, by: 'desk', key: '' };
+          write('goal.add', args, function (st) { args.minted = nextGoalId(st); });
+          goal = args.minted;
+        }
         PLUGIN_GOAL[goal] = name;
         PLUGIN_TAB[goal] = String((manifest && (manifest.tab || manifest.label)) || name).slice(0, 32);
-        const made = require(js)(pluginDesk(name, manifest)) || {};
+        const made = require(js)(pluginDesk(name, manifest, goal)) || {};
         const verbs = made.verbs && typeof made.verbs === 'object' ? made.verbs : {};
         Object.keys(verbs).forEach(function (v) { if (v.indexOf(name + '.') !== 0) throw new Error('its verb ' + v + ' is not named ' + name + '.<verb>'); });
         PLUGINS.push({ name: name, goal: goal, refuses: made.refuses, handles: made.handles, verbs: verbs });
@@ -2330,6 +2700,21 @@ function withPlugins(verbs) {
   Object.keys(verbs).forEach(function (verb) {
     const v = verbs[verb];
     all[verb] = Object.assign({}, v, { handler: function (a, caller) {
+      // AN AGENT'S ASK, ANY ASK, SAYS ITS CLIENT IS THERE (goal/G33.4, the box: "a client that was away gets the current
+      // goal pushed whole again"): a known agent whose client the stream has marked away, or never reached, gets the
+      // current goal whole at its first ask, a read included, so its reads are answered from what it keeps.
+      if (caller && caller.owner !== true && typeof caller.key === 'string' && S && nudgeKeys(S).indexOf(caller.key) !== -1) backFromAway(caller.key);
+      // A PLUGIN'S GOAL BY ITS FIXED KEY (goal/G22.3: "its own private goal with a fixed key"): since goal/G33.4 the goal
+      // is numbered, and plugin/<name> (or plugin/<name>.<n>, one of its items) names it still, so the page finds a
+      // plugin's goal by the plugin's name.
+      if (a && typeof a === 'object') {
+        ['id', 'goal', 'blocks'].forEach(function (k) {
+          if (typeof a[k] !== 'string') return;
+          const m = /^plugin\/([^.]+)(?:\.(\d+))?$/.exec(a[k]);
+          const gid = m ? Object.keys(PLUGIN_GOAL).filter(function (g) { return PLUGIN_GOAL[g] === m[1]; })[0] : '';
+          if (gid) { a = Object.assign({}, a); a[k] = m[2] ? gid + '.' + m[2] : gid; }
+        });
+      }
       const ids = idsOfCall(verb, a);
       for (const p of PLUGINS) {
         const no = pluginRefusal(p, verb, a, ids);
@@ -2348,64 +2733,17 @@ function withPlugins(verbs) {
   });
   return all;
 }
+// AT START (goal/G33.4): the state read from its tables (the migration first, once), the plugins mounted, the database
+// shed to its size; the current goal is pushed whole once the desk serves (below).
+startState();
 mountPlugins();
+shed();
 
 appServer.serve(withPlugins({
-  'log.add': {
-    request: { json: '' }, reply: { added: true },
-    handler: function (a) {
-      const l = parsed(a.json);
-      if (typeof l.key !== 'string' || !l.key) throw new Error('a line needs its key');
-      // Refused, never stored to stall a read later (slim/G1.2 T4).
-      if (!fitsOneAnswer(l.key, a.json)) throw tooLarge(oneAnswerBytes(l.key, a.json), ANSWER_ROOM);
-      const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
-      // A line of Andy's nudges the agent it was for, and nobody else (goal/G3.5).
-      // THE LINE TRAVELS (goal/G27.9, S1): "log.add publishes its line", so a page shows it without asking again.
-      if (r.changes === 1) appServer.spirit.core.jobs.publish({ log: { key: String(l.key), at: String(l.at || ''), todo: String(l.todo || ''), from: String(l.from || ''), kind: String(l.kind || ''), peer: String(l.peer || ''), text: String(l.text || '') } });
-      if (r.changes === 1 && l.from === 'andy' && l.peer) {
-        nudge(nudgeKeys(walkState()).filter(function (k) { return k === String(l.peer); }));
-      }
-      return { added: r.changes === 1 };
-    },
-  },
-  // THROUGH THE BUCKET (slim/G1.2 T1): the walk is ours (SQL's filters,
-  // newest first), the cut and `more` are the probability bucket's (ranked()).
-  'log.search': {
-    request: { text: '', todo: '', since: '', kind: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const todo = a.todo === '-' ? '' : a.todo;
-      // SINCE goal/G18.5 THE TEXT RANKS THE LINES; the SQL keeps the other filters and gives newest first.
-      const text = String(a.text || '').trim();
-      const rows = findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, '', '');
-      const walk = (function* () {
-        for (const row of rows) {
-          let line = null;
-          try { line = JSON.parse(row.line); } catch (e) { line = null; }
-          yield { probability: text ? probabilityStringMatch(text, String((line && line.text) || row.line)) : 0, pair: { key: row.key, label: row.line } };
-        }
-      })();
-      return ranked(walk, ANSWER_ROOM);
-    },
-  },
-  // WHAT CHANGED SINCE (apiAuth/G1.12). Andy: "dsek needs an interface for that. desk can't serve agents at
-  // different locations otherwise", and "yes on the verb". The records after change n and the lines after rowid
-  // line, oldest first, as many as one answer holds; n and line come back as the cursors to resume from. Rowids,
-  // not times: two lines can share one at, and a time cursor would re-read or miss them.
-  'changes': {
-    // A line is the object Desk stored, whatever keys it has, plus its rowid as line: so lines is an open list.
-    request: { n: 0, line: 0 }, reply: { records: [{ n: 0, at: '', verb: '', by: '', key: '', body: '' }], lines: [], n: 0, line: 0, more: false },
-    handler: function (a, caller) {
-      const viewer = caller && caller.owner !== true && typeof caller.key === 'string' ? caller.key : '';
-      return changesSince(Number(a.n) || 0, Number(a.line) || 0, viewer);
-    },
-  },
-  // One party's queue, newest first, through the same bucket.
-  'pending.get': {
-    request: { who: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      return walked(pending(String(a.who)), function (item) { return { key: JSON.parse(item).id, label: item }; });
-    },
-  },
+  // log.add, log.search AND pending.get WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete
+  // them."): the old lines table they read and wrote was dumped at the migration. Do not bring them back.
+  // changes WENT WITH goal/G33.4 (Andy, on it: "isn't that what this item does? implement the push/broadcast concept?"):
+  // the desk streams each changed row to its clients (streamRecipients), and nothing is read back by a cursor.
   // ── WHAT THE LIST AND THE DIALOG READ (desk/G2.1) ─────────────────
   // Andy: "nice verb names! can use them an many seaches. aprooved."
   // Each label is one item's facts as JSON; the goal's row also carries
@@ -2484,7 +2822,7 @@ appServer.serve(withPlugins({
       let it = st.items[String(a.id)];
       // A rule's chat (goal/G5.5) is read the same way, from its records.
       if (!it && /^rule\/\d+$/.test(String(a.id)) && newestRule.get(String(a.id))) {
-        const lines = ruleChatRows.all().map(function (r) { const b = JSON.parse(r.body); return b.rule === String(a.id) ? { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') } : null; }).filter(Boolean);
+        const lines = ruleChatOf.all(ruleNumber(a.id)).map(function (r) { return { by: r.by, at: r.at, text: String(r.text), taken: '', key: r.creator === r.by ? '' : String(r.creator) }; });
         it = { chat: lines };
       }
       if (!it) throw refused('no-such-item');
@@ -2556,6 +2894,15 @@ appServer.serve(withPlugins({
       const w = writerOf(caller);
       const sess = parsed(a.json);
       if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
+      // AN ID IS TWO NUMBERS (goal/G33.4, the box: "the cute little ID string you display ('goal/G45.765') can be
+      // rendered from those two keys"): the session's goal is goal/G<n>, each item goal/G<n>.<m> of that goal.
+      const gk = numbersOf(sess.goal.id);
+      if (!gk || gk[1] !== 0) throw refusedWhy('bad-request', 'a goal id is goal/G<n>, not ' + JSON.stringify(String(sess.goal.id)));
+      const bad = sess.items.map(function (x) { return String((x && x.id) || ''); }).filter(function (id) { const k = numbersOf(id); return !k || k[0] !== gk[0] || k[1] === 0; });
+      if (bad.length) throw refusedWhy('bad-request', 'an item id of ' + sess.goal.id + ' is ' + sess.goal.id + '.<m>, not ' + bad.slice(0, 3).join(', '));
+      // A special goal (the group chat, a plugin's) is never a session's: a session closes what it leaves out.
+      const sg = walkState().goals[String(sess.goal.id)];
+      if (sg && sg.special) throw refusedWhy('bad-request', sess.goal.id + ' is a special goal, never written by a session');
       return { change: write('session.set', { session: sess, by: w.by, key: w.key }, function (st) {
         // goal/G29.21, decided by Andy: an agent's session creates no goal, and the new items it brings need his
         // "add item" (one) or "add items" (several), as item.add does (addGrantOf).
@@ -2675,9 +3022,17 @@ appServer.serve(withPlugins({
     request: { id: '', text: '', version: 0 }, reply: { change: 0, version: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
+      // A BOX STAYS UNDER THE PAYLOAD (goal/G33.4, the box v31: a larger box write is refused, so a box is always read
+      // and pushed in one piece; Andy: "Why would you let box past MAX_PAYLOAD?????"). Its bound is the one answer
+      // item.box carries it back in, which is under PAYLOAD_MAX, so its pushed row is too. Counted in bytes, never
+      // characters; the refusal says its bytes and the limit, and to split the item (box v33, Andy: "if the items is to big
+      // for a fucking box NOW, then motherfucking split it."). No row of the desk travels in pieces.
       const boxBytes = Buffer.byteLength(JSON.stringify({ box: String(a.text), version: 0 }), 'utf8');
-      if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
+      if (boxBytes > ANSWER_ROOM) {
+        const e = tooLarge(boxBytes, ANSWER_ROOM);
+        e.extra.why = 'the box is ' + boxBytes + ' bytes, the limit is ' + ANSWER_ROOM + ': split the item into items';
+        throw e;
+      }
       // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
       if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refusedWhy('bad-request', 'a line starting OPEN is not box text: an open point is a Q check');
@@ -2954,7 +3309,7 @@ appServer.serve(withPlugins({
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
-      appServer.spirit.core.jobs.publish({ rule: key, row: ruleRow(key) });
+      appServer.publish({ rule: key, row: ruleRow(key) });
       rulesChanged(key, 'added, proposed');
       return { key: key };
     },
@@ -2975,7 +3330,7 @@ appServer.serve(withPlugins({
       if (!newestRule.get(String(a.key))) throw refused('no-such-item');
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
-      appServer.spirit.core.jobs.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
+      appServer.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
       return { key: String(a.key) };
     },
   },
@@ -2989,7 +3344,7 @@ appServer.serve(withPlugins({
       if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
-      appServer.spirit.core.jobs.publish({ rule: r.key, row: ruleRow(r.key) });
+      appServer.publish({ rule: r.key, row: ruleRow(r.key) });
       rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
     },
@@ -3231,7 +3586,7 @@ appServer.serve(withPlugins({
         const it = st.items[String(a.id)];
         if (!it) throw refused('no-such-item');
         if (buttons(st, it).indexOf('verify') === -1) throw notOffered(hasDeskVerify() ? it.id + ' takes no verify' : 'no deskVerify answers on this node, so nothing can be verified');
-        if (!suitesFor(st, it).length) throw notOffered(it.id + ' lists no test file, so there is nothing to run');
+        if (!suitesFor(st, it).length) throw notOffered(it.id + ' has no suites (its red claim supplies them), so there is nothing to run');
         return verifyEvent(it.id).then(function () { return { change: walkState().change }; });
       }
       const body = Object.assign({}, a, { by: w.by, key: w.key });
@@ -3266,8 +3621,17 @@ appServer.serve(withPlugins({
   //   commit       7 to 40 hex characters; '' only for a plain item's build claim, which has no code to carry.
   // An agent verb, told to the agents by claim.json beside this file. press claim-done stays for his pages and the
   // callers that have no commit. Every refusal says why.
+  //   suites       goal/G33.4 (box v44-45, Andy's yes on the verb change): the red claim carries the item's suites, the
+  //                spirit/test/ paths a Verify of it runs; they fill its suites table. Optional; a build claim takes none.
   'claim': {
-    request: { id: '', phase: '', commit: '' }, reply: { change: 0 },
+    request: { id: '', phase: '', commit: '', suites: [''] }, reply: { change: 0 },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      const keys = Object.keys(a).sort().join(',');
+      if (keys !== 'commit,id,phase' && keys !== 'commit,id,phase,suites') return false;
+      return typeof a.id === 'string' && typeof a.phase === 'string' && typeof a.commit === 'string' &&
+        (a.suites === undefined || (Array.isArray(a.suites) && a.suites.every(function (p) { return typeof p === 'string'; })));
+    },
     handler: function (a, caller) {
       const w = writerOf(caller);
       const id = String(a.id);
@@ -3283,7 +3647,12 @@ appServer.serve(withPlugins({
         if (!it0.code) throw refusedWhy('not-offered', id + ' is not a code item: it has no red phase to claim');
         if (!it0.go) throw refusedWhy('not-offered', 'no Go is on record for ' + id + ', so its red is not claimable yet');
       }
+      const suites = Array.isArray(a.suites) ? a.suites.map(String) : [];
+      if (suites.length && phase !== 'red') throw refusedWhy('bad-request', 'suites come with the red claim, which supplies them; a build claim takes none');
+      const notTest = suites.filter(function (p) { return !/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p) || p.split('/').indexOf('..') !== -1; });
+      if (notTest.length) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(notTest[0]));
       const body = { id: id, phase: phase, commit: commit, by: w.by, key: w.key };
+      if (suites.length) body.suites = suites.filter(function (p, i) { return suites.indexOf(p) === i; });
       // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
       const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
       if (phase === 'build') emptiedByPress({ id: id });
@@ -3311,7 +3680,9 @@ appServer.serve(withPlugins({
 // raise them; appServer puts "desk: " in front of each text, so the origin
 // of a refusal is plain and no other app can wear this name. The codes
 // themselves are unchanged, so nothing on the wire moved.
-{ dependencies: ['desk'], codes: {
+// goal/G33.4 (box v43): the deskClients appServer.publish reaches (publishOne), and no opts.stream: the desk follows
+// no stream (box v42).
+{ dependencies: ['desk'], streamTo: { family: 'deskClient', recipients: function (o) { return streamRecipients(o); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },
@@ -3334,12 +3705,14 @@ function pressCheck(a) {
     // Every refusal below names what blocked it (goal/G9.17, change 3), the code staying not-offered.
     if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw notOffered(whyNotOffered(st, it, a.what, offered));
     if (a.what === 'bring-back' && !it.closed) throw notOffered(it.id + ' is not closed, so there is nothing to bring back');
-    if (a.what === 'code' && (it.goal || it.subGoal)) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
+    if (a.what === 'code' && it.goal) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
     // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
     // on an item with one, a go-all while any item of the goal has one: refused.
     const gOf = st.goals[it.goal ? it.id : it.goalId];
     const members = gOf ? gOf.members : [];
-    const red = (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
+    // goal/G33.4: an item's own End design waits for its own green alone.
+    const red = a.what === 'end-design' && !it.goal ? notGreen(st, [it.id])
+      : (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
     if (red.length) throw notOffered(red.join(', ') + (red.length === 1 ? ' carries' : ' carry') + ' an open red question; answer or close it first');
     if (a.what === 'go' && openQ(it)) throw notOffered(it.id + ' carries an open red question; answer or close it first');
     // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
@@ -3350,3 +3723,7 @@ function pressCheck(a) {
     if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw notOffered('the group chat never comes back onto the List');
   };
 }
+
+// THE CURRENT GOAL, WHOLE, ONCE THE DESK SERVES (goal/G33.4). Andy, in the item's box: "a client that was away gets the
+// current goal pushed whole again"; after this desk's own start every client is one that was away from it.
+if (S.current) setImmediate(function () { pushGoalWhole(S.current); });

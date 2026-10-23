@@ -76,6 +76,7 @@ const call = function (app, verb, args, caller) {
 // the answer comes back down the event stream by re, as a relay would bring it; holdMs keeps the next answer back.
 const streams = [];
 const posts = [];   // every peer.post it was handed: { to, app, verb }
+const familyAsks = [];   // every api {family} it was asked over peer.post (goal/G33.4): { to, family }
 let holdMs = 0;
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') {
@@ -95,12 +96,14 @@ const node = http.createServer(function (req, res) {
     let ask = null;
     try { ask = packet.decode(b.text); } catch (e) { ask = null; }
     const desk = (ask && ask.body && ask.body.desk) || {};
-    posts.push({ to: b.to, app: ask && ask.app, verb: Object.keys(desk)[0] || '' });
+    // goal/G33.4: the desk's family interface, asked once over peerPost (api {family}), is kept apart from the asks.
+    if (test.peerFamily(ask && ask.body)) familyAsks.push({ to: b.to, family: ask.body.api.family });
+    else posts.push({ to: b.to, app: ask && ask.app, verb: Object.keys(desk)[0] || '' });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, hash: hash }));
     const wait = holdMs;
     holdMs = 0;
-    client.ask({ desk: desk }, AGENT).then(function (r) {
+    test.peerAnswer(client, ask && ask.body, AGENT).then(function (r) {
       const made = packet.encode('api', r && r.body, { re: hash });
       setTimeout(function () {
         streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: DESK_KEY, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
@@ -152,7 +155,7 @@ async function main() {
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Asked' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }] }) }, OWNER);
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Asked' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] }) }, OWNER);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   let kid = startClient(nodeUrl);
 
@@ -175,16 +178,18 @@ async function main() {
   if ((theirs.body || {}).code === 'not-owner' && mine.status === 200 && (mine.body || {}).set === true) test.check('a member is refused not-owner; the owner sets the desk\'s key');
   else test.fail(OWED + 'setDesk answered a member ' + JSON.stringify(theirs.body) + ', the owner ' + mine.status + ' ' + JSON.stringify(mine.body));
 
-  test.subHeading('4. one ask, passed on and answered');
+  test.subHeading('4. one ask, passed on and answered, through the desk family interface');
   posts.length = 0;
   const yes = await call('deskClient', 'desk', { name: 'items.search', json: SEARCH }, OWNER);
   // Since goal/G4.19 the desk's answer itself, not a json string.
   const got = yes.body || null;
-  const goalSeen = got && Array.isArray(got.items) && got.items.some(function (p) { return p.key === 'a/G1'; });
+  const goalSeen = got && Array.isArray(got.items) && got.items.some(function (p) { return p.key === 'goal/G100'; });
   if (yes.status === 200 && goalSeen && posts.length === 1 && posts[0].to === DESK_KEY && posts[0].app === 'api' && posts[0].verb === 'items.search') {
     test.check('items.search went as one api post to the desk\'s key, and its answer came back as the answer itself');
   } else test.fail(OWED + 'the ask answered ' + yes.status + ' ' + JSON.stringify(yes.body).slice(0, 200) + '; posts ' + JSON.stringify(posts));
-  const no = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'nope/G9' }) }, OWNER);
+  if (familyAsks.some(function (x) { return x.to === DESK_KEY && x.family === 'desk'; })) test.check('deskClient read the desk family interface from the desk\'s node (api {family: desk} over peerPost) and called through it');
+  else test.fail('OWED by goal/G33.4: deskClient never asked the desk node for the desk family interface: ' + JSON.stringify(familyAsks));
+  const no = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'goal/G101' }) }, OWNER);
   const refusedBody = no.body || null;
   if (no.status === 200 && refusedBody && refusedBody.ok === false && refusedBody.code === 'no-such-item') test.check('the desk\'s refusal comes back as its answer: no-such-item as the body');
   else test.fail(OWED + 'a refused ask answered ' + no.status + ' ' + JSON.stringify(no.body).slice(0, 200));
@@ -202,7 +207,7 @@ async function main() {
   posts.length = 0;
   holdMs = 13000;
   const t0 = Date.now();
-  const slow = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'a/G1.1' }) }, OWNER);
+  const slow = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'goal/G100.1' }) }, OWNER);
   const took = Date.now() - t0;
   const id = (((slow.body || {}).extra) || {}).id;
   const pendingRow = (await history()).filter(function (x) { return x.key === id; })[0];

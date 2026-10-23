@@ -7,7 +7,8 @@
 // writes publish the rule row."
 //
 // WHAT IS ASSERTED
-//   1. log.add publishes {log: <the line as log.search labels it>}: its key, from, kind and text.
+//   1. (log.add publishing its line went with log.add itself, goal/G33.4: "log.add, log.search and pending.get: delete
+//      them.")
 //   2. rule.add, rule.draft and rule.version publish {rule: <key>, row: <the rule as rule.get answers it>}.
 //   3. a guard: an item write still publishes its item's facts (as today).
 // NOT ASSERTED: deskVerify's and deskAgent's own publishes (they publish whole objects already).
@@ -30,7 +31,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (ms || 4000)) { if (fn()) return true; await sleep(30); } return fn(); }
 
-test.startTest('goal/G27.9 S1: log.add and the rule writes publish their row');
+test.startTest('goal/G27.9 S1: the rule writes publish their row');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desk-realtime-server-'));
 const deskState = path.join(scratch, 'desk-state');
 fs.mkdirSync(deskState, { recursive: true });
@@ -66,27 +67,18 @@ async function main() {
   let up = false;
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: the desk did not start'); return; }
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'rt/G1', title: 'Realtime' }, items: [{ id: 'rt/G1.1', title: 'one', blocks: ['rt/G1'] }] }) }, ANDY);
+  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Realtime' }, items: [{ id: 'goal/G100.1', title: 'one', blocks: ['goal/G100'] }] }) }, ANDY);
   if (set.status !== 200) { test.fail('the world: no session: ' + short(set.body)); return; }
 
   test.subHeading('3. guard: an item write publishes its facts');
   let n = published.length;
-  await call('item.rename', { id: 'rt/G1.1', title: 'one, renamed' }, ANDY);
+  await call('item.rename', { id: 'goal/G100.1', title: 'one, renamed' }, ANDY);
   await until(function () { return published.slice(n).some(function (p) { return p && p.verb === 'item.rename'; }); });
   const renamed = published.slice(n).filter(function (p) { return p && p.verb === 'item.rename'; })[0];
   let facts = renamed && renamed.item;
   if (typeof facts === 'string') { try { facts = JSON.parse(facts); } catch (e) { facts = null; } }
   if (facts && facts.title === 'one, renamed') test.check('item.rename publishes the item\'s facts with the new title');
   else test.fail('the world: item.rename published ' + short(published.slice(n)));
-
-  test.subHeading('1. log.add publishes its line');
-  n = published.length;
-  const line = { key: 'line-1', at: new Date().toISOString(), todo: '', from: 'andy', kind: 'note', peer: AGENT.key, text: 'a kept line' };
-  const added = await call('log.add', { json: JSON.stringify(line) }, ANDY);
-  await until(function () { return published.slice(n).some(function (p) { return p && p.log; }); }, 2000);
-  const logged = published.slice(n).filter(function (p) { return p && p.log; })[0];
-  if (added.status === 200 && logged && logged.log.key === 'line-1' && logged.log.text === 'a kept line' && logged.log.from === 'andy' && logged.log.kind === 'note') test.check('log.add publishes {log} with its key, from, kind and text');
-  else test.fail(OWED + 'log.add answered ' + short(added.body) + ' and published ' + short(published.slice(n)));
 
   test.subHeading('2. the rule writes publish the rule row');
   n = published.length;

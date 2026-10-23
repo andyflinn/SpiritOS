@@ -129,7 +129,7 @@ function dialog(facts, checks) {
   };
 }
 const FACTS = function (over) {
-  return Object.assign({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: '', buttons: [], blocking: [], blocked: [],
+  return Object.assign({ id: 'goal/G100.2', title: 'Beta', goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: [], blocked: [],
     go: true, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' }, over || {});
 };
 
@@ -183,110 +183,110 @@ test.startTest('goal/G4.20: Desk for Andy');
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'Asks', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'Claimed', blocks: ['g/G1'] },
-      { id: 'g/G1.3', title: 'Hidden', blocks: ['g/G1'] }, { id: 'g/G1.4', title: 'Boxed', blocks: ['g/G1'] }] }) }, ANDY);
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Round' }, items: [
+      { id: 'goal/G101.1', title: 'Asks', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'Claimed', blocks: ['goal/G101'] },
+      { id: 'goal/G101.3', title: 'Hidden', blocks: ['goal/G101'] }, { id: 'goal/G101.4', title: 'Boxed', blocks: ['goal/G101'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + short(set.body)); return; }
 
     test.subHeading('10-11. the waiting list: G and Q checks, asks, and Close alone counts nothing');
-    const design = await factsOf('g/G1.1');
+    const design = await factsOf('goal/G101.1');
     if (has(design.buttons, 'close') && design.asks === 0) test.check('in design an item offering Close has asks 0');
     else test.fail(OWED + 'facts.asks in design: ' + short({ buttons: design.buttons, asks: design.asks }));
-    const g1 = await call('check.add', { id: 'g/G1.1', kind: 'G', words: 'core grant: appServer.js', test: '' }, CW);
-    const q1 = await call('check.add', { id: 'g/G1.1', kind: 'Q', words: 'Which port?', test: '' }, CW);
-    const k0 = await checksOf('g/G1.1');
+    const g1 = await call('check.add', { id: 'goal/G101.1', kind: 'G', words: 'core grant: appServer.js', test: '' }, CW);
+    const q1 = await call('check.add', { id: 'goal/G101.1', kind: 'Q', words: 'Which port?', test: '' }, CW);
+    const k0 = await checksOf('goal/G101.1');
     const numbers = k0.map(function (c) { return c.number + ':' + c.state; }).join(',');
     if (g1.status === 200 && q1.status === 200 && numbers === 'G1:open,Q1:open') test.check('check.add takes kinds G and Q, numbered G1 and Q1, open');
     else test.fail(OWED + 'check.add G/Q answered ' + g1.status + '/' + q1.status + ' ' + short(g1.body) + '; checks ' + numbers);
-    const asks2 = (await factsOf('g/G1.1')).asks;
+    const asks2 = (await factsOf('goal/G101.1')).asks;
     if (asks2 === 2) test.check('an open grant and an open question: asks 2');
     else test.fail(OWED + 'asks with G1 and Q1 open: ' + asks2);
-    const agentGrant = await call('check.set', { id: 'g/G1.1', check: 'G1', state: 'granted' }, CW);
+    const agentGrant = await call('check.set', { id: 'goal/G101.1', check: 'G1', state: 'granted' }, CW);
     if (codeOf(agentGrant) === 'not-owner') test.check('an agent granting G1 is refused not-owner');
     else test.fail(OWED + 'an agent\'s grant answered ' + agentGrant.status + ' ' + short(agentGrant.body));
-    const hisGrant = await call('check.set', { id: 'g/G1.1', check: 'G1', state: 'granted' }, ANDY);
-    const gRow = (await checksOf('g/G1.1')).filter(function (c) { return c.number === 'G1'; })[0] || {};
+    const hisGrant = await call('check.set', { id: 'goal/G101.1', check: 'G1', state: 'granted' }, ANDY);
+    const gRow = (await checksOf('goal/G101.1')).filter(function (c) { return c.number === 'G1'; })[0] || {};
     if (hisGrant.status === 200 && gRow.state === 'granted' && gRow.by === 'andy' && gRow.at) test.check('his grant is taken and logged: G1 granted, by andy, with its time');
     else test.fail(OWED + 'his grant answered ' + hisGrant.status + ' ' + short(hisGrant.body) + '; G1 ' + short(gRow));
-    const answered = await call('check.set', { id: 'g/G1.1', check: 'Q1', state: 'answered' }, CW);
-    const asks0 = (await factsOf('g/G1.1')).asks;
+    const answered = await call('check.set', { id: 'goal/G101.1', check: 'Q1', state: 'answered' }, CW);
+    const asks0 = (await factsOf('goal/G101.1')).asks;
     if (answered.status === 200 && asks0 === 0) test.check('the agent marks Q1 answered: asks 0');
     else test.fail(OWED + 'Q1 answered -> ' + answered.status + ' ' + short(answered.body) + ', asks ' + asks0);
 
-    await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
 
     test.subHeading('3. Done only after a claim, with the count');
-    await call('press', { id: 'g/G1.2', what: 'go' }, ANDY);
-    const gone = await factsOf('g/G1.2');
+    await call('press', { id: 'goal/G101.2', what: 'go' }, ANDY);
+    const gone = await factsOf('goal/G101.2');
     if (gone.claims === 0 && !has(gone.buttons, 'done')) test.check('gone, nobody claimed: claims 0 and no Done');
     else test.fail(OWED + 'after his Go: ' + short({ claims: gone.claims, buttons: gone.buttons }));
-    await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'goal/G101.2', what: 'claim-done' }, CW);
     // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
-    const one = await factsOf('g/G1.2');
-    await call('press', { id: 'g/G1.2', what: 'claim-done' }, WSL);
-    const two = await factsOf('g/G1.2');
+    const one = await factsOf('goal/G101.2');
+    await call('press', { id: 'goal/G101.2', what: 'claim-done' }, WSL);
+    const two = await factsOf('goal/G101.2');
     if (one.claims === 1 && two.claims === 2 && has(two.buttons, 'done')) test.check('one claim: claims 1; two: claims 2, Done offered');
     else test.fail(OWED + 'facts.claims after one and two claims: ' + one.claims + ', ' + two.claims + '; buttons ' + short(two.buttons));
-    await call('check.add', { id: 'g/G1.2', kind: 'C', words: 'open the dialog and look', test: '' }, CW);
-    const cOpen = (await factsOf('g/G1.2')).asks;
-    await call('check.set', { id: 'g/G1.2', check: 'C1', state: 'passed' }, ANDY);
-    const cPassed = (await factsOf('g/G1.2')).asks;
-    // Nobody took g/G1.2 and both claimed it, so its offered Done counts one too (goal/G4.26: "only if all agents
+    await call('check.add', { id: 'goal/G101.2', kind: 'C', words: 'open the dialog and look', test: '' }, CW);
+    const cOpen = (await factsOf('goal/G101.2')).asks;
+    await call('check.set', { id: 'goal/G101.2', check: 'C1', state: 'passed' }, ANDY);
+    const cPassed = (await factsOf('goal/G101.2')).asks;
+    // Nobody took goal/G101.2 and both claimed it, so its offered Done counts one too (goal/G4.26: "only if all agents
     // involved in that item consider it done.").
     if (cOpen === 2 && cPassed === 1) test.check('an open C while Done is offered counts in asks; passed, it does not (the claimed Done counts 1)');
     else test.fail(OWED + 'asks with C1 open / passed under Done: ' + cOpen + ' / ' + cPassed);
 
     test.subHeading('2. Reopen on a closed item takes back Done and Close, keeps his Go');
-    await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
-    await call('press', { id: 'g/G1.2', what: 'close' }, ANDY);
-    const shut = await factsOf('g/G1.2');
+    await call('press', { id: 'goal/G101.2', what: 'done' }, ANDY);
+    await call('press', { id: 'goal/G101.2', what: 'close' }, ANDY);
+    const shut = await factsOf('goal/G101.2');
     if (shut.status === 'closed' && has(shut.buttons, 'reopen')) test.check('a closed item offers Reopen');
     else test.fail(OWED + 'closed item: ' + short({ status: shut.status, buttons: shut.buttons }));
-    const reopen = await call('press', { id: 'g/G1.2', what: 'reopen' }, ANDY);
-    const back = await factsOf('g/G1.2');
+    const reopen = await call('press', { id: 'goal/G101.2', what: 'reopen' }, ANDY);
+    const back = await factsOf('goal/G101.2');
     if (reopen.status === 200 && back.status !== 'closed' && back.status !== 'done' && back.go === true && !has(back.buttons, 'go') && !has(back.buttons, 'done')) {
       test.check('Reopen: neither done nor closed, his Go kept, no Go and no Done offered');
     } else test.fail(OWED + 'reopen answered ' + reopen.status + ' ' + short(reopen.body) + '; facts ' + short({ status: back.status, go: back.go, buttons: back.buttons }));
 
     test.subHeading('1. items.search with includeClosed');
-    await call('press', { id: 'g/G1.3', what: 'close' }, ANDY);
+    await call('press', { id: 'goal/G101.3', what: 'close' }, ANDY);
     const ids = function (r) { return ((r.body || {}).items || []).map(function (x) { return x.key; }); };
     const without = await call('items.search', { text: 'Hidden', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY);
     const withClosed = await call('items.search', { text: 'Hidden', currentGoalOnly: false, goalsOnly: false, includeClosed: true }, ANDY);
-    if (without.status === 200 && !has(ids(without), 'g/G1.3')) test.check('includeClosed false: the closed item is not found');
+    if (without.status === 200 && !has(ids(without), 'goal/G101.3')) test.check('includeClosed false: the closed item is not found');
     else test.fail(OWED + 'items.search includeClosed false answered ' + without.status + ' ' + short(without.body));
-    if (withClosed.status === 200 && has(ids(withClosed), 'g/G1.3')) test.check('includeClosed true: the closed item is found');
+    if (withClosed.status === 200 && has(ids(withClosed), 'goal/G101.3')) test.check('includeClosed true: the closed item is found');
     else test.fail(OWED + 'items.search includeClosed true answered ' + withClosed.status + ' ' + short(withClosed.body));
 
     test.subHeading('9. box.take: the box is the taker\'s, and red, until it writes');
-    const take = await call('box.take', { id: 'g/G1.4' }, CW);
-    const taken = await factsOf('g/G1.4');
+    const take = await call('box.take', { id: 'goal/G101.4' }, CW);
+    const taken = await factsOf('goal/G101.4');
     if (take.status === 200 && taken.boxTaken === 'claude-windows') test.check('box.take by claude-windows: boxTaken names it');
     else test.fail(OWED + 'box.take answered ' + take.status + ' ' + short(take.body) + '; boxTaken ' + short(taken.boxTaken));
-    const second = await call('box.take', { id: 'g/G1.4' }, WSL);
-    const other = await call('box.write', { id: 'g/G1.4', text: 'mine', version: 0 }, WSL);
+    const second = await call('box.take', { id: 'goal/G101.4' }, WSL);
+    const other = await call('box.write', { id: 'goal/G101.4', text: 'mine', version: 0 }, WSL);
     if (codeOf(second) === 'taken' && codeOf(other) === 'taken') test.check('meanwhile another agent\'s box.take and box.write are refused taken');
     else test.fail(OWED + 'second take ' + short(second.body) + '; other\'s write ' + short(other.body));
     // SINCE goal/G9.3 HE TAKES THE BOX TOO, where G4.20 point 9 refused him by name. Andy, 2026-10-07: "the text box
     // in item/goal detail must be an input area for the user. When the user activates that input area, the area is
     // \"taken\" by the user, and not modifiable for agents." His take of a free box is accepted, and box.release frees
     // it without a write (deskBoxTake.js holds the whole rule).
-    const his = await call('box.take', { id: 'g/G1.1' }, ANDY);
-    const hisBox = await factsOf('g/G1.1');
+    const his = await call('box.take', { id: 'goal/G101.1' }, ANDY);
+    const hisBox = await factsOf('goal/G101.1');
     if (his.status === 200 && hisBox.boxTaken === 'andy') test.check('his box.take is accepted too (goal/G9.3), and boxTaken names him');
     else test.fail(OWED + 'his box.take answered ' + his.status + ' ' + short(his.body) + '; boxTaken ' + short(hisBox.boxTaken));
-    const hisRelease = await call('box.release', { id: 'g/G1.1' }, ANDY);
-    if (hisRelease.status === 200 && (await factsOf('g/G1.1')).boxTaken === '') test.check('and his box.release frees it again');
+    const hisRelease = await call('box.release', { id: 'goal/G101.1' }, ANDY);
+    if (hisRelease.status === 200 && (await factsOf('goal/G101.1')).boxTaken === '') test.check('and his box.release frees it again');
     else test.fail(OWED + 'his box.release answered ' + hisRelease.status + ' ' + short(hisRelease.body));
-    const now = Number(((await call('item.box', { id: 'g/G1.4' }, ANDY)).body || {}).version) || 0;
-    const write = await call('box.write', { id: 'g/G1.4', text: 'CAP', version: now }, CW);
-    const freed = await factsOf('g/G1.4');
+    const now = Number(((await call('item.box', { id: 'goal/G101.4' }, ANDY)).body || {}).version) || 0;
+    const write = await call('box.write', { id: 'goal/G101.4', text: 'CAP', version: now }, CW);
+    const freed = await factsOf('goal/G101.4');
     if (write.status === 200 && freed.boxTaken === '') test.check('the taker\'s box.write clears the take');
     else test.fail(OWED + 'taker\'s write answered ' + write.status + ' ' + short(write.body) + '; boxTaken ' + short(freed.boxTaken));
 
     test.subHeading('8. no star in the facts');
-    await call('chat.add', { id: 'g/G1.4', text: 'agent to agent' }, CW);
-    const quiet = await factsOf('g/G1.4');
+    await call('chat.add', { id: 'goal/G101.4', text: 'agent to agent' }, CW);
+    const quiet = await factsOf('goal/G101.4');
     if (quiet.id && !Object.prototype.hasOwnProperty.call(quiet, 'star')) test.check('an agent line under an item: the facts carry no star');
     else test.fail(OWED + 'the facts still carry star: ' + short(quiet.star));
   } finally {
@@ -347,7 +347,7 @@ test.startTest('goal/G4.20: Desk for Andy');
   await settled();
   const sets = dw.sent('check.set');
   const grant = sets[0] && sets[0].args;
-  if (armedOnly === 0 && sets.length === 1 && grant.id === 't/G1.2' && grant.check === 'G1' && grant.state === 'granted') test.check('G1: the first click arms, the second sends check.set {check: G1, state: granted}');
+  if (armedOnly === 0 && sets.length === 1 && grant.id === 'goal/G100.2' && grant.check === 'G1' && grant.state === 'granted') test.check('G1: the first click arms, the second sends check.set {check: G1, state: granted}');
   else test.fail(OWED + 'grant clicks sent ' + armedOnly + ' then ' + short(sets));
 
   test.subHeading('9. a taken box shows red in the dialog');
@@ -360,10 +360,10 @@ test.startTest('goal/G4.20: Desk for Andy');
   // ── THE LIST ──
   test.subHeading('10-11. ICON.ERROR on the row exactly while asks > 0');
   const rows = [
-    { id: 't/G1', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '', design: true, waiting: 1, live: [] },
-    { id: 't/G1.1', title: 'Quiet', goal: 't/G1', status: '', with: '', buttons: ['close'], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' },
-    { id: 't/G1.2', title: 'Loud', goal: 't/G1', status: '', with: '', buttons: ['close'], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 2, boxTaken: '' },
-    { id: 't/G1.3', title: 'Starred', goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], go: false, alone: false, alert: false, star: true, claims: 0, asks: 0, boxTaken: '' },
+    { id: 'goal/G100', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '', design: true, waiting: 1, live: [] },
+    { id: 'goal/G100.1', title: 'Quiet', goal: 'goal/G100', status: '', with: '', buttons: ['close'], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' },
+    { id: 'goal/G100.2', title: 'Loud', goal: 'goal/G100', status: '', with: '', buttons: ['close'], blocking: [], blocked: [], go: false, alone: false, alert: false, claims: 0, asks: 2, boxTaken: '' },
+    { id: 'goal/G100.3', title: 'Starred', goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], go: false, alone: false, alert: false, star: true, claims: 0, asks: 0, boxTaken: '' },
   ];
   const l = listPage(rows);
   await settled();

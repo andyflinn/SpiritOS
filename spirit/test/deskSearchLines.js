@@ -53,41 +53,41 @@ test.startTest('goal/G4.24 point 2: the List search matches chat lines and the b
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 's/G1', title: 'Search' }, items: [
-      { id: 's/G1.1', title: 'Alpha', blocks: ['s/G1'] },
-      { id: 's/G1.2', title: 'Beta', blocks: ['s/G1'] },
-      { id: 's/G1.3', title: 'Gamma', blocks: ['s/G1'] }] }) }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Search' }, items: [
+      { id: 'goal/G100.1', title: 'Alpha', blocks: ['goal/G100'] },
+      { id: 'goal/G100.2', title: 'Beta', blocks: ['goal/G100'] },
+      { id: 'goal/G100.3', title: 'Gamma', blocks: ['goal/G100'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
-    await call('item.take', { id: 's/G1.2' }, CW);
-    await call('chat.add', { id: 's/G1.2', text: 'we tested the fs-watch library here' }, CW);
-    await call('box.write', { id: 's/G1.3', text: 'NOTES\nchokidar is the library', version: 0 }, CW);
+    await call('item.take', { id: 'goal/G100.2' }, CW);
+    await call('chat.add', { id: 'goal/G100.2', text: 'we tested the fs-watch library here' }, CW);
+    await call('box.write', { id: 'goal/G100.3', text: 'NOTES\nchokidar is the library', version: 0 }, CW);
 
     // goal/G18.5: the text ranks, it no longer filters, so "finds" here means "ranks first".
     test.subHeading('1. the text matches chat lines and the box, as well as id and title');
     const byLine = await search('fs-watch');
-    if (keys(byLine)[0] === 's/G1.2') test.check('"fs-watch", in a chat line of s/G1.2 only, ranks s/G1.2 first');
+    if (keys(byLine)[0] === 'goal/G100.2') test.check('"fs-watch", in a chat line of goal/G100.2 only, ranks goal/G100.2 first');
     else test.fail(OWED + 'items.search "fs-watch" answered ' + short(keys(byLine)));
     const upper = await search('FS-WATCH');
-    if (keys(upper)[0] === 's/G1.2') test.check('case is ignored');
+    if (keys(upper)[0] === 'goal/G100.2') test.check('case is ignored');
     else test.fail(OWED + 'items.search "FS-WATCH" answered ' + short(keys(upper)));
     const byBox = await search('chokidar');
-    if (keys(byBox)[0] === 's/G1.3') test.check('"chokidar", in the box of s/G1.3 only, ranks s/G1.3 first');
+    if (keys(byBox)[0] === 'goal/G100.3') test.check('"chokidar", in the box of goal/G100.3 only, ranks goal/G100.3 first');
     else test.fail(OWED + 'items.search "chokidar" answered ' + short(keys(byBox)));
     const byTitle = await search('alpha');
-    if (keys(byTitle)[0] === 's/G1.1') test.check('a title still matches ("alpha" ranks s/G1.1 first)');
+    if (keys(byTitle)[0] === 'goal/G100.1') test.check('a title still matches ("alpha" ranks goal/G100.1 first)');
     else test.fail('items.search "alpha" answered ' + short(keys(byTitle)));
 
     test.subHeading('2. the rows stay the List\'s rows, and the filters still hold');
-    const row = byLine.items.filter(function (x) { return x.key === 's/G1.2'; })[0];
+    const row = byLine.items.filter(function (x) { return x.key === 'goal/G100.2'; })[0];
     let f = null; try { f = JSON.parse(row.label); } catch (e) { f = null; }
-    if (f && f.id === 's/G1.2' && f.title === 'Beta' && f.box === undefined && f.chat === undefined) test.check('the row carries key and title in the item\'s facts, never its box or chat');
-    else test.fail(OWED + 'the row for s/G1.2 was ' + short(row));
-    await call('press', { id: 's/G1', what: 'end-design' }, ANDY);
-    await call('press', { id: 's/G1.2', what: 'close' }, ANDY);
+    if (f && f.id === 'goal/G100.2' && f.title === 'Beta' && f.box === undefined && f.chat === undefined) test.check('the row carries key and title in the item\'s facts, never its box or chat');
+    else test.fail(OWED + 'the row for goal/G100.2 was ' + short(row));
+    await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100.2', what: 'close' }, ANDY);
     const hidden = await search('fs-watch', false);
     const shown = await search('fs-watch', true);
-    if (keys(hidden).indexOf('s/G1.2') === -1 && keys(shown).indexOf('s/G1.2') !== -1) test.check('closed, s/G1.2 is found by its line with includeClosed only');
-    else test.fail(OWED + 'closed s/G1.2 by its line: without includeClosed ' + short(keys(hidden)) + ', with ' + short(keys(shown)));
+    if (keys(hidden).indexOf('goal/G100.2') === -1 && keys(shown).indexOf('goal/G100.2') !== -1) test.check('closed, goal/G100.2 is found by its line with includeClosed only');
+    else test.fail(OWED + 'closed goal/G100.2 by its line: without includeClosed ' + short(keys(hidden)) + ', with ' + short(keys(shown)));
   } catch (e) {
     test.fail('the suite threw: ' + (e && e.stack || e));
   } finally {

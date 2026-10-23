@@ -64,63 +64,63 @@ function heard(r) { return ((r.body && r.body.andy) || []).map(function (l) { re
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Quick fixes' }, items: [
-    { id: 'q/G1.1', title: 'Limbo, quietly', blocks: ['q/G1'], code: true },
-    { id: 'q/G1.2', title: 'A code item', blocks: ['q/G1'], code: true },
-    { id: 'q/G1.3', title: 'A decision', blocks: ['q/G1'] },
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Quick fixes' }, items: [
+    { id: 'goal/G100.1', title: 'Limbo, quietly', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.3', title: 'A decision', blocks: ['goal/G100'] },
   ] }) }, ANDY);
-  const ended = await call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
-  const go3 = await call('press', { id: 'q/G1.3', what: 'go' }, ANDY);
+  const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  const go3 = await call('press', { id: 'goal/G100.3', what: 'go' }, ANDY);
   if (!ok(ended) || !ok(go3)) { test.fail('the world: end-design ' + ended.status + ', Go ' + go3.status); return; }
   // Two agents live, so the desk does not waive the phase rules itself (deskPhases.js).
-  await call('item.take', { id: 'q/G1.3' }, UBI);
-  await call('chat.add', { id: 'q/G1.3', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
-  await call('item.release', { id: 'q/G1.3' }, UBI);
+  await call('item.take', { id: 'goal/G100.3' }, UBI);
+  await call('chat.add', { id: 'goal/G100.3', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+  await call('item.release', { id: 'goal/G100.3' }, UBI);
 
   test.subHeading('1. the limbo posts go');
-  const go1 = await call('press', { id: 'q/G1.1', what: 'go' }, ANDY);
-  await call('chat.add', { id: 'q/G1.3', text: 'any write, so the desk looks again' }, ANDY);
-  const f1 = await facts('q/G1.1');
-  const lines1 = await limboLines('q/G1.1');
-  if (ok(go1) && f1.limbo === true) test.check('the world: q/G1.1 has his Go, nobody on it, and is marked limbo');
+  const go1 = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+  await call('chat.add', { id: 'goal/G100.3', text: 'any write, so the desk looks again' }, ANDY);
+  const f1 = await facts('goal/G100.1');
+  const lines1 = await limboLines('goal/G100.1');
+  if (ok(go1) && f1.limbo === true) test.check('the world: goal/G100.1 has his Go, nobody on it, and is marked limbo');
   else test.fail('the world: Go ' + go1.status + ', limbo ' + short(f1.limbo));
   if (lines1 === 0) test.check('the desk posted no limbo line under it');
-  else test.fail(OWED + 'the desk posted ' + lines1 + ' limbo line(s) under q/G1.1');
+  else test.fail(OWED + 'the desk posted ' + lines1 + ' limbo line(s) under goal/G100.1');
 
   test.subHeading('2. a phase holder\'s write answers with his lines since its phase take');
-  const go2 = await call('press', { id: 'q/G1.2', what: 'go' }, ANDY);
-  await call('chat.add', { id: 'q/G1.2', text: 'before the take' }, ANDY);
+  const go2 = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+  await call('chat.add', { id: 'goal/G100.2', text: 'before the take' }, ANDY);
   await sleep(5);
-  const red = await call('phase.take', { id: 'q/G1.2', phase: 'red' }, CW);
+  const red = await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
   if (!ok(go2) || !ok(red)) { test.fail('the world: Go ' + go2.status + ', red take ' + short(red.body || red.status)); return; }
   await sleep(5);
-  await call('chat.add', { id: 'q/G1.2', text: 'make the button blue' }, ANDY);
-  await call('chat.add', { id: 'q/G1.2', text: 'and the frame thinner' }, ANDY);
-  const files = await call('item.files.add', { id: 'q/G1.2', paths: ['spirit/test/zzQuickFixes.js'] }, CW);
+  await call('chat.add', { id: 'goal/G100.2', text: 'make the button blue' }, ANDY);
+  await call('chat.add', { id: 'goal/G100.2', text: 'and the frame thinner' }, ANDY);
+  const files = await call('item.files.add', { id: 'goal/G100.2', paths: ['spirit/test/zzQuickFixes.js'] }, CW);
   const said = heard(files);
   if (ok(files) && said.indexOf('make the button blue') !== -1 && said.indexOf('and the frame thinner') !== -1) test.check('its item.files.add answers with both lines he typed since the take');
   else test.fail(OWED + 'item.files.add answered ' + short(files.body || files.status));
   if (said.indexOf('before the take') === -1) test.check('and not the line he typed before it');
   else test.fail(OWED + 'the answer carries a line from before the phase take: ' + short(said));
-  const chat = await call('chat.add', { id: 'q/G1.2', text: 'blue it is' }, CW);
+  const chat = await call('chat.add', { id: 'goal/G100.2', text: 'blue it is' }, CW);
   if (ok(chat) && heard(chat).indexOf('make the button blue') !== -1) test.check('its chat.add answers with them too');
   else test.fail(OWED + 'chat.add answered ' + short(chat.body || chat.status));
 
   test.subHeading('3. from his Go to his Done the item stays in code');
   const steps = [];
-  steps.push((await call('phase.done', { id: 'q/G1.2', phase: 'red' }, CW)).status);
-  steps.push((await call('phase.take', { id: 'q/G1.2', phase: 'build' }, UBI)).status);
-  steps.push((await call('phase.done', { id: 'q/G1.2', phase: 'build' }, UBI)).status);
-  steps.push((await call('phase.take', { id: 'q/G1.2', phase: 'verify' }, CW)).status);
-  steps.push((await call('phase.done', { id: 'q/G1.2', phase: 'verify', pass: true, why: 'green' }, CW)).status);
-  const v0 = await facts('q/G1.2');
+  steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW)).status);
+  steps.push((await call('phase.take', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);
+  steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);
+  steps.push((await call('phase.take', { id: 'goal/G100.2', phase: 'verify' }, CW)).status);
+  steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'verify', pass: true, why: 'green' }, CW)).status);
+  const v0 = await facts('goal/G100.2');
   if (steps.every(function (s) { return s === 200; }) && (v0.buttons || []).indexOf('done') !== -1) test.check('the world: one cycle ran to a verify pass, and Done is offered');
   else { test.fail('the world: the cycle answered ' + short(steps) + ', buttons ' + short(v0.buttons)); return; }
   const offered = await open(CW);
-  if (offered.indexOf('q/G1.2:red') === -1) test.check('work.open offers no red for it: no JOB while it waits for his Done');
+  if (offered.indexOf('goal/G100.2:red') === -1) test.check('work.open offers no red for it: no JOB while it waits for his Done');
   else test.fail(OWED + 'work.open offers ' + short(offered));
-  const again = await call('phase.take', { id: 'q/G1.2', phase: 'red' }, CW);
-  const v1 = await facts('q/G1.2');
+  const again = await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
+  const v1 = await facts('goal/G100.2');
   if (ok(again) && v1.phase === 'red' && v1.with === 'claude-windows') test.check('its red is taken again without a line of his: the item is in red, with claude-windows');
   else test.fail(OWED + 'red after the verify pass, with no line of his, answered ' + short(again.body || again.status) + '; phase ' + short(v1.phase));
   if ((v1.buttons || []).indexOf('done') === -1) test.check('while the new cycle runs Done is not offered');

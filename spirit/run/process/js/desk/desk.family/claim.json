@@ -1,8 +1,11 @@
 {
-  "description": "Claim a phase of an item as finished, with the commit it was finished at: phase build is the claim-done (Done is then offered once the verifier, which waits until its tree holds that commit, passes it); phase red claims a code item's red, and the verifier checks that its suites are red at that commit. commit is 7 to 40 lower-case hex characters, pushed first; it may be empty only for a plain item's build claim, which has no code.",
+  "description": "Claim a phase of an item as finished, with the commit it was finished at: phase build is the claim-done (Done is then offered once the verifier, which waits until its tree holds that commit, passes it); phase red claims a code item's red, and the verifier checks that its suites are red at that commit. commit is 7 to 40 lower-case hex characters, pushed first; it may be empty only for a plain item's build claim, which has no code. suites, with the red claim only: the spirit/test/ paths of the item's suites (the red writer supplies them); they are what a Verify of the item runs, whatever its file list says. Optional; a red claim without them leaves the item's suites as they are.",
   "request": {
     "id": "",
     "phase": "",
-    "commit": ""
+    "commit": "",
+    "suites": [
+      ""
+    ]
   }
 }

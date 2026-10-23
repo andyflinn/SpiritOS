@@ -77,9 +77,9 @@ let nextQueue = [];
 const posted = [];
 let client = null;
 const ITEMS = [
-  { id: 'ag/G1', title: 'Agent', goal: '', status: '', with: '', go: false, files: [] },
-  { id: 'ag/G1.1', title: 'Mine', goal: 'ag/G1', status: 'building', with: NODE_NAME, go: true, files: [{ path: 'spirit/test/zzMine.js', by: NODE_NAME, core: false }] },
-  { id: 'ag/G1.2', title: 'Theirs', goal: 'ag/G1', status: 'building', with: 'claude-windows', go: true, files: [{ path: 'spirit/test/zzTheirs.js', by: 'claude-windows', core: false }] },
+  { id: 'goal/G100', title: 'Agent', goal: '', status: '', with: '', go: false, files: [] },
+  { id: 'goal/G100.1', title: 'Mine', goal: 'goal/G100', status: 'building', with: NODE_NAME, go: true, files: [{ path: 'spirit/test/zzMine.js', by: NODE_NAME, core: false }] },
+  { id: 'goal/G100.2', title: 'Theirs', goal: 'goal/G100', status: 'building', with: 'claude-windows', go: true, files: [{ path: 'spirit/test/zzTheirs.js', by: 'claude-windows', core: false }] },
 ];
 function deskAnswer(verb, a) {
   const verbs = deskVerbFiles();
@@ -182,12 +182,12 @@ async function suite() {
   await until(function () { return true; }, 10);
   await sleep(800); // past the backlog: the first empty next
   answerText = '';
-  const press = 'DESK andy press ' + JSON.stringify({ id: 'ag/G1.2', what: 'go' });
+  const press = 'DESK andy press ' + JSON.stringify({ id: 'goal/G100.2', what: 'go' });
   nextQueue.push([press]);
   await until(function () { return calls.length >= 1; }, 8000);
   const c1 = calls[0];
   const text = c1 ? JSON.stringify(c1.messages) : '';
-  if (c1 && text.indexOf('press') !== -1 && text.indexOf('ag/G1.2') !== -1) test.check('a press nobody addressed to Levant reaches the model, the change in the call');
+  if (c1 && text.indexOf('press') !== -1 && text.indexOf('goal/G100.2') !== -1) test.check('a press nobody addressed to Levant reaches the model, the change in the call');
   else test.fail(OWED + 'after an unaddressed press the model was called ' + calls.length + ' time(s): ' + short(text));
   const toolNames = c1 && Array.isArray(c1.tools) ? c1.tools.map(function (t) { return t.function && t.function.name; }) : [];
   if (['desk_box_write', 'desk_press', 'desk_check_set', 'desk_item_files_add', 'deskAgent_file_save', 'deskAgent_commit'].every(function (n) { return toolNames.indexOf(n) !== -1; })) test.check('its tools include the four desk verbs and deskAgent\'s file and git verbs');
@@ -196,7 +196,7 @@ async function suite() {
   if (!posted.length) test.check('an empty answer posts nothing');
   else test.fail(OWED + 'an empty answer posted ' + short(posted));
   const before = calls.length;
-  nextQueue.push(['DESK ' + NODE_NAME + ' chat.add ' + JSON.stringify({ id: 'ag/G1.1', text: 'Levant: my own line' })]);
+  nextQueue.push(['DESK ' + NODE_NAME + ' chat.add ' + JSON.stringify({ id: 'goal/G100.1', text: 'Levant: my own line' })]);
   await sleep(1500);
   if (calls.length === before) test.check('its own change reaches no model call');
   else test.fail(OWED + 'its own line called the model');

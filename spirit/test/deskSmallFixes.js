@@ -83,8 +83,8 @@ async function deskHalf() {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'sf/G1', title: 'Fixes' }, items: [{ id: 'sf/G1.1', title: 'One', blocks: ['sf/G1'] }] }) }, CW);
-    const add = await call('item.add', { goal: 'sf/G1', title: LONG, blocks: 'sf/G1' }, ANDY);
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Fixes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }) }, CW);
+    const add = await call('item.add', { goal: 'goal/G100', title: LONG, blocks: 'goal/G100' }, ANDY);
     const why = String(((add.body || {}).extra || {}).why || '');
     if ((add.body || {}).ok === false && /title/i.test(why) && why.indexOf(String(LONG_BYTES)) !== -1 && /64/.test(why)) test.check('item.add with a ' + LONG_BYTES + '-byte title says why: ' + why);
     else test.fail(OWED + 'item.add answered ' + short(add.body));
@@ -99,19 +99,19 @@ async function deskHalf() {
     const G33 = 'OWED by goal/G33.2: ';
     const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
     // Its own goal, written by the owner (goal/G29.21: an agent's session creates none).
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'mk/G1', title: 'Marks' }, items: [{ id: 'mk/G1.1', title: 'Held', blocks: ['mk/G1'] }] }) }, ANDY);
-    await call('press', { id: 'mk/G1', what: 'end-design' }, ANDY);
-    await call('press', { id: 'mk/G1.1', what: 'code' }, ANDY);
-    await call('press', { id: 'mk/G1.1', what: 'go' }, ANDY);
-    await call('item.take', { id: 'mk/G1.1' }, CW);
-    await call('phase.take', { id: 'mk/G1.1', phase: 'red' }, CW);
-    const before = await factsOf('mk/G1.1');
-    await call('chat.add', { id: 'mk/G1.1', text: 'a report from the phase holder' }, CW);
-    const marked = await factsOf('mk/G1.1');
-    await call('press', { id: 'mk/G1.1', what: 'seen' }, ANDY);
-    const seen = await factsOf('mk/G1.1');
-    await call('chat.add', { id: 'mk/G1.1', text: 'his own line' }, ANDY);
-    const his = await factsOf('mk/G1.1');
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G101', title: 'Marks' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] }) }, ANDY);
+    await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G101.1', what: 'code' }, ANDY);
+    await call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
+    await call('item.take', { id: 'goal/G101.1' }, CW);
+    await call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW);
+    const before = await factsOf('goal/G101.1');
+    await call('chat.add', { id: 'goal/G101.1', text: 'a report from the phase holder' }, CW);
+    const marked = await factsOf('goal/G101.1');
+    await call('press', { id: 'goal/G101.1', what: 'seen' }, ANDY);
+    const seen = await factsOf('goal/G101.1');
+    await call('chat.add', { id: 'goal/G101.1', text: 'his own line' }, ANDY);
+    const his = await factsOf('goal/G101.1');
     if (before.phase === 'red' && before.alert !== true && marked.alert === true) test.check('the phase holder\'s line marks the item');
     else test.fail(G33 + 'phase ' + before.phase + ', marked before ' + before.alert + ', after the holder\'s line ' + marked.alert);
     if (seen.alert !== true && his.alert !== true) test.check('his seen clears it, and his own line does not mark it');
@@ -158,8 +158,8 @@ async function dialogHalf() {
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if ((v === 'item.add' || v === 'item.rename') && refuseWith) return Promise.resolve({ status: 400, body: refuseWith });
-      if (v === 'item.add') return Promise.resolve({ status: 200, body: { id: 'sf/G1.7', change: 9 } });
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'sf/G1.2', title: 'Second', goal: 'sf/G1', status: 'running', with: '', buttons: [], blocking: ['sf/G1'], blocked: [], asks: 0 }), version: 1, change: 1 } });
+      if (v === 'item.add') return Promise.resolve({ status: 200, body: { id: 'goal/G100.7', change: 9 } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'goal/G100.2', title: 'Second', goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: ['goal/G100'], blocked: [], asks: 0 }), version: 1, change: 1 } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], box: '', version: 1 } });
     },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
@@ -167,7 +167,7 @@ async function dialogHalf() {
     peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  dd.open({ id: 'sf/G1.2', agents: {} });
+  dd.open({ id: 'goal/G100.2', agents: {} });
   await settled();
   const body = doc.getElementById('dd-body');
   const target = function (id) { const el = doc.getElementById(id); return { id: id, value: el.value, getAttribute: function (n) { return n === 'id' ? id : (n === 'data-field' ? 'label' : null); }, closest: function () { return null; } }; };
@@ -196,12 +196,12 @@ async function dialogHalf() {
   if (sentOf('item.add', n1).length === 1) test.check('within the limit Add sends item.add');
   else test.fail(OWED + 'a 13-byte title sent ' + short(calls.slice(n1)));
 
-  refuseWith = { ok: false, code: 'bad-request', error: 'text required', extra: { why: 'the goal sf/G1 is closed' } };
+  refuseWith = { ok: false, code: 'bad-request', error: 'text required', extra: { why: 'the goal goal/G100 is closed' } };
   doc.getElementById('dd-add-title').value = 'Another';
   body.fire('input', { target: target('dd-add-title') });
   body.fire('click', { target: target('dd-add'), preventDefault: function () {}, stopPropagation: function () {} });
   await settled();
-  if (/the goal sf\/G1 is closed/.test(all())) test.check('a refusal from the desk is shown with its why');
+  if (/the goal goal\/G100 is closed/.test(all())) test.check('a refusal from the desk is shown with its why');
   else test.fail(OWED + 'the refusal shown reads ' + short((doc.getElementById('dd-error').innerHTML || '') + ' ' + (doc.getElementById('dd-error').textContent || '')));
   refuseWith = null;
 
