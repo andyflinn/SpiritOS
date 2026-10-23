@@ -277,7 +277,7 @@ function runSuite(file, port, onTests, env) {
     // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
     // ends. The printed lines are what every reader of a suite uses (runAll, a run here), not the exit code.
     const count = function (text) {
-      const n = String(text).split('\n').filter(function (l) { return /SUCCESS #|FAILURE #/.test(l); }).length;
+      const n = String(text).split('\n').filter(function (l) { return /^\**\s*(SUCCESS|FAILURE) #/.test(l); }).length;
       if (!n || typeof onTests !== 'function') return;
       tests += n;
       onTests(tests);
@@ -387,8 +387,9 @@ async function runSuites(suites, commit, row) {
     told(0);
     const r = await runSuite(file, port, told);
     // THE PRINTED LINES ARE THE VERDICT, not the exit code: a suite that ends with process.exit(0) after a failure
-    // would otherwise read green.
-    const lines = r.said.split('\n').filter(function (l) { return /FAILURE #/.test(l); })
+    // would otherwise read green. Only a line that STARTS with the mark counts (goal/G33.4): a success that quotes a
+    // FAILURE line in its text is still a success.
+    const lines = r.said.split('\n').filter(function (l) { return /^\**\s*FAILURE #/.test(l); })
       .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
     if (r.stopped) { one.outcome = 'stopped'; one.failures = ['stopped by hand, so nothing was measured'].concat(lines).slice(0, FAILURES_KEPT); continue; }
     if (r.timedOut) { one.outcome = 'red'; one.failures = ['stopped at the time limit of ' + SUITE_MS + 'ms, so it counts as red'].concat(lines).slice(0, FAILURES_KEPT); continue; }

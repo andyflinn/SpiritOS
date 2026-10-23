@@ -54,7 +54,9 @@ function server(script, name, args, cwd) {
 // chat line: a run whose commit the tree lacks measures nothing, each suite's outcome 'not run' naming the commit.
 async function verifyHalf() {
   test.subHeading('2. no green without the commit the run was handed in the tree');
-  fs.writeFileSync(path.join(__dirname, GREEN), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('commit-bound green probe');\ntest.check('green');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
+  // The probe's one check QUOTES a failure line, as deskVerifyDriven's "its line names the failure" check does: a
+  // success that names a FAILURE must still read green (goal/G33.4, found on Andy's node at 5c11de1e).
+  fs.writeFileSync(path.join(__dirname, GREEN), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('commit-bound green probe');\ntest.check('green, quoting: red: FAILURE #1 red probe');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
   const repo = path.join(__dirname, '..', '..');
   const head = String(spawnSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).stdout || '').trim();
   // A node that answers its tree, the families' interfaces, and the records the probe posts.
