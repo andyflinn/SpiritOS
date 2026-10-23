@@ -3251,7 +3251,9 @@ appServer.serve(withPlugins({
       const w = writerOf(caller);
       const s = walkState();
       const jobs = [];
-      Object.keys(s.goals).forEach(function (gid) {
+      // THE CURRENT GOAL'S WORK ALONE (goal/G33.8, box v14): a job left in an old goal (found live: goal/G29.17's build)
+      // was offered to every listening agent, who skipped it by hand. The work is scoped to the current goal.
+      Object.keys(s.goals).filter(function (gid) { return gid === s.current; }).forEach(function (gid) {
         const g = s.goals[gid];
         if (g.abandoned || (s.items[gid] && s.items[gid].closed)) return;
         g.members.forEach(function (id) {

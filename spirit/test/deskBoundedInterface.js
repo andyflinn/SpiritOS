@@ -178,6 +178,27 @@ async function main() {
   const joined = Object.keys(answers).filter(function (v) { const r = answers[v]; return !took(r) || bytes(r.body) > MAX || 'andy' in r.body; });
   if (took(taken) && !joined.length && !/\bfunction heard\(|\.andy\s*=/.test(deskCode)) test.check('the holder\'s item.get, chat.add, item.files.add and box.write answered without any line of his, each under one answer; desk.js joins none');
   else test.fail(OWED + 'phase.take answered ' + short(taken.body) + '; answers with his lines or too big: ' + short(joined.map(function (v) { return v + ' ' + answers[v].status + ' ' + bytes(answers[v].body) + ' andy ' + ('andy' in (answers[v].body || {})); })));
+
+  // ── 7. WORK IS THE CURRENT GOAL'S (goal/G33.8, box v14): work.open walked every goal, so a job left in an old goal (found
+  // live: goal/G29.17's build) was offered to every listening agent. It offers the current goal's jobs alone.
+  test.subHeading('7. work.open offers the current goal\'s jobs, none from another goal');
+  const jobGoal = async function (title) {
+    const g = await call('goal.add', { title: title }, ANDY);
+    const id = took(g) ? String(g.body.id) : '';
+    const it = await call('item.add', { goal: id, title: title + ' item' }, ANDY);
+    const item = took(it) ? String(it.body.id) : '';
+    await call('press', { id: id, what: 'end-design' }, ANDY);
+    await call('press', { id: item, what: 'go' }, ANDY);
+    return { goal: id, item: item };
+  };
+  const old = await jobGoal('Old work');
+  const now = await jobGoal('Current work');
+  await call('press', { id: now.goal, what: 'make-current' }, ANDY);
+  const FRESH = { key: 'MCowBQYDK2VwAyEAdeskBoundedTestFreshAAAAAAAAAAAAAAAAAAAAA=', label: 'fresh-agent' };
+  const wo = await call('work.open', {}, FRESH);
+  const offered = (((wo.body || {}).items) || []).map(function (x) { try { return JSON.parse(x.label).id; } catch (e) { return ''; } });
+  if (took(wo) && offered.indexOf(now.item) !== -1 && offered.indexOf(old.item) === -1) test.check('the red of ' + now.item + ' (current goal) is offered; the red of ' + old.item + ' (another goal) is not');
+  else test.fail(OWED.replace('G33.7', 'G33.8') + 'work.open offered ' + short(offered) + ' (current ' + now.item + ', other ' + old.item + ')');
 }
 
 main().catch(function (e) { test.fail(OWED + 'the suite itself tripped: ' + (e && e.stack || e)); }).then(function () {
