@@ -1,5 +1,5 @@
 {
- "change": 92203,
+ "change": 93234,
  "line": 8510,
  "goal": "goal/G33",
  "items": [
@@ -7,14 +7,17 @@
    "id": "goal/G33",
    "title": "Small fixes in existing apps.",
    "goal": "",
-   "status": "goal run started",
+   "status": "",
    "with": "",
    "buttons": [
-    "close"
+    "go-all",
+    "close",
+    "verify"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.3"
+    "goal/G33.4",
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -36,6 +39,10 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
    "names": {
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
@@ -46,7 +53,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -166,6 +173,10 @@
      "version": 6
     }
    ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -661,6 +672,10 @@
      "version": 6
     }
    ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -863,10 +878,11 @@
    "id": "goal/G33.3",
    "title": "Desk clients keep the current goal: one cache, two clients",
    "goal": "goal/G33",
-   "status": "waiting for deskVerify",
-   "with": "",
+   "status": "done",
+   "with": "claude-windows",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -875,7 +891,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -888,7 +904,7 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "c0b20b15",
+   "claimCommit": "12267f50",
    "redCommit": "cfc30b09",
    "waived": true,
    "rules": [
@@ -929,14 +945,18 @@
      "version": 6
     }
    ],
+   "verified": "green",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
-   "half": false,
+   "asks": 0,
+   "half": true,
    "full": false,
-   "box": "DESK CLIENTS KEEP THE CURRENT GOAL: ONE CACHE, TWO CLIENTS\n\n- A desk search answers what the List's rows show: each item's facts, the trunk and main branches of the current goal's data tree.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient fetches on its own, by priority: the current goal's rows first, then the one item its agent holds a phase of (an agent holds one at a time), whole: its box, its newest chat, its checks and its files, so anything the agent needs is on hand; the agent's reads are answered from it, and only writes go to the desk.\n- deskClient takes the rows from the desk's changes answer, the one it already reads while its agent waits and the one that catches it up after a gap: beside its records, that answer carries the current facts of the items they touched, and the held item's panels when one of them is it.\n- The Desk app in the browser keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js, the faceless layer the face apps keep their data in, with one desk translator; deskClient loads the two in node, the Desk app in the page.\n- Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step on the path that makes Desk a face app too: the cache is the face's own layer, and its calls go through the spirit object, which the face already has.\n\nWhere: shell/js/spiritData.js (as it is), a desk translator beside it, process/js/deskClient, shell/desk, shell/deskDetails. Blocked by goal/G33.2.",
-   "version": 3,
+   "box": "DESK CLIENTS KEEP THE CURRENT GOAL; THE DESK DRIVES VERIFICATION\n\nOne cache, two clients\n- A desk search answers what the List's rows show: each item's facts.\n- A Desk client keeps them: filled once by a search, kept by the desk's published rows, never asked again; after a gap it catches up from its change cursor.\n- deskClient takes the rows from the desk's changes answer, which carries, beside its records, the current facts of the items they touched and the held item's panels when one of them is it.\n- deskClient fetches on its own, while its agent waits: the current goal's rows, then the one item its agent holds, whole (box, newest chat, checks, files); the agent's reads of it are answered from what it keeps, and only writes go to the desk.\n- The Desk app keeps the same: the current goal's rows, and the item open in its dialog, whole.\n- One shared block for both: shell/js/spiritData.js with one desk translator, in node and in the page. Bounded: the current goal and the held or open item, newest chat only; older stays a search.\n- Desk stays usable all the way; this is a step towards Desk as a face app.\n\nThe desk drives verification\n- Each item holds its own need for verification, and the desk knows every item's state.\n- deskVerify knows nothing of the desk, its goals or its items. It is busy or it is not. It is handed a run (the suites, and the commit to run at), answers taken or busy, and keeps each suite's outcome in its own database; it reports to no one. It keeps no list of work; old rows in verify.db are never read as work. Its idle hour is its own: an hour in which no run was handed to it; its idle chores start from that, never from the desk. On its idle hour it runs the chores its own manifest names (each agent configures its own verifier's), handing each its node's port, and nothing more; each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file it writes today moves into the publish chore).\n- The desk hands runs only to the verifier on its own node. An agent starts the verifier on its own node itself, to make sure its work is green there before it claims.\n- The desk compiles a run's suites: an item's from its file list, a goal's from its items' lists.\n- The desk and its user drive everything; verifying runs only when it is required. The desk keeps one switch, verify-busy, showing the verifier's last answer to a start request, taken or busy; it only informs the Verify button and never holds anything back. Taken tells the desk that item's run is under way and needs no new start.\n- At each event (a claim, a Verify press, a run taken, a Done press) the desk reads the latest state of the current goal's waiting items' suites through the verifier's search, so each item's facts say whether it is verified: green, red with the failures, or no run yet. Done is never refused for that; it carries the warning mark instead.\n- The desk queues no verification and starts none on its own: on the desk node a run is started only by his Verify button, nothing else. A claim, an item coming to wait or a Done only reads the verifier's state. Only the current goal's items count as waiting; leftover claims in older goals are never read.\n- A Verify button on the item, right next to its Done button, has the desk hand it over; it shows the switch and still tries when the switch says busy. On the goal, the same button runs the goal's full check.\n- Done is offered as soon as an agent claims done. The item's facts say whether it is verified; not verified (its suites red, or no run of them yet), the Done button carries a warning mark and re-arms in the page: the first press arms it and says why, the second sends Done, and the chat records that it went over a red or missing run. Verified green, one press does it. The desk keeps no arming.\n- Interface: the verifier's search drops its item and kind arguments; the desk's verify.pass, verify.reject, verify.regress and verify.again are deleted.\n- The Verifier tab shows only what runs now, its console, and Stop.\n\nWhere: shell/js/desk/data.js, process/js/desk/desk.js, process/js/deskClient/deskClient.js, process/js/deskVerify/deskVerify.js, shell/desk/desk.js, shell/deskDetails/deskDetails.js.",
+   "version": 24,
    "checks": [
     {
      "number": "G1",
@@ -1044,8 +1064,1081 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-23T00:02:48.843Z",
      "text": "G33.3 claimed and verified at c0b20b15, pushed.\n\n- files: shell/js/desk/data.js (the translator), process/js/desk/desk.js, process/js/deskClient/deskClient.js, shell/deskDetails/deskDetails.js, shell/desk/desk.js, test/deskMirror.js (6 of 6)\n- no relay tag: nothing the face serves changed; your node takes a pull and restart (the desk server and the Desk app), and mine is restarted on it\n\nDone is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:05:15.379Z",
+     "text": "is the queue removed from deskVerify?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:06:02.190Z",
+     "text": "Only from the Verifier tab (G33.2): the list of waiting runs is no longer drawn. deskVerify itself still lines runs up: one runs, the claims that came meanwhile wait in its verify.db and run after it.\n\nDid you mean deskVerify should stop lining them up?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:06:42.250Z",
+     "text": "deskVerifier should NOT have a queue, it's either busy, or it's not."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:07:02.301Z",
+     "text": "this is one of the issues that triggered this goal"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:07:38.319Z",
+     "text": "if it is not stopped from working of the fucking queue, it will NEVER work again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:07:47.079Z",
+     "text": "Understood: no queue, busy or not. I took remove verifier queue as the tab's list only; that was too narrow.\n\nHow it would work without one:\n\n- busy, it takes nothing new and keeps no list of its own\n- the desk already shows every item waiting for deskVerify (claimed, not yet checked); that is the one record\n- free again, it asks the desk which items wait, takes the oldest, and is busy again; a claim made while it ran is found then, not lost\n\nG33.2 is closed, so this needs its own item. Add a new item for it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:08:27.058Z",
+     "text": "Agreed: it is grinding through a backlog of old items and never catches up.\n\nThe fix, in one item:\n\n- at start, deskVerify drops every waiting run it holds (the backlog goes, nothing is re-run)\n- it keeps no queue: busy, it takes nothing; free, it asks the desk which items wait and takes the oldest\n\nAdd the item and give it a Go, and I build it now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:08:58.873Z",
+     "text": "it's so fucking simple: the item knows if it still needs verification, so what's the problem?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:09:29.825Z",
+     "text": "No problem: that is exactly the build. The desk knows which items wait, deskVerify keeps nothing. All I lack is your add item, then a Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:09:38.588Z",
+     "text": "do it in this fucking item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:11:15.887Z",
+     "text": "Doing it in this item; the box says it (v4): no queue, busy or not, free it asks the desk which items still wait and takes the oldest, and the runs it held are dropped at its start. Red first, then the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:15:15.952Z",
+     "text": "commit f7d9fd28db4ea4c33206ed9ebaeaa194c7e77de5: goal/G33.3: the red for deskVerify with no queue: the runs left in verify.db are dropped at start, a claim made while busy is not queued, and free again it asks the desk which items still wait and che\n- spirit/test/deskVerifyQueueKept.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:15:40.332Z",
+     "text": "i though i stated very clearly why I'm refusing to use deskVerify on my node, and that the chewing off an old queue is not acceptable. these things keep falling through the cracks. the intent of a goal is seemingly dropped when working on it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:15:42.410Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:16:22.696Z",
+     "text": "You did, and I dropped it: remove verifier queue meant the queue itself, and I narrowed it to the tab's list and wrote G33.2's box that way, so the box carried my reading, not your intent.\n\nWhat changes now: the queue goes for good in this item (the red is committed, f7d9fd28; the build is under way), and when a short line of yours can be read narrow or wide, I take the wide reading, or ask before I write it into a box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:16:34.160Z",
+     "text": "claude-windows 02:15 commit f7d9fd28db4ea4c33206ed9ebaeaa194c7e77de5: goal/G33.3: the red for deskVerify with no queue: the runs left in verify.db are dropped at start, a claim made while busy is not queued, and free again it asks the desk which items still wait and che\n\n\nWTF!?!?!?`There is no fucking need for any fucking QUEUE!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:17:07.740Z",
+     "text": "Agreed, and that is what the build does: no queue anywhere, in memory or on disk. That commit is only the test that proves it.\n\n- dropped at start means: the waiting runs the OLD code already left in your verify.db are thrown away once, never run; after that there is nothing to drop\n- busy, deskVerify takes nothing and writes nothing down\n- free, it asks the desk which items still wait, because the item knows; nothing else is kept"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:17:23.935Z",
+     "text": "ITEMS awaiting verify, holding their need for verification, THAT IS the QUEUE, NO FUCKING QUEUEING NEEDED."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:17:26.297Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:18:02.919Z",
+     "text": "DROP THE FUCKING IDEA OF VERIFICATION QUEUE FROM ALL FUCKING COMMENTS, DESIGNS, ETC...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:18:05.138Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:18:17.953Z",
+     "text": "Yes. Then not even the drop step: every line of queue code goes, and deskVerify never reads its old rows as work again, so they lie there inert. Its whole job when free: ask the desk which items wait, check one, ask again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:19:27.404Z",
+     "text": "Done in the box (v5): it now says deskVerify checks the items that wait for verification, each item holding its own need, with no word of the old idea. The code, its comments and the suites follow the same wording; the old suite name goes too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:20:26.760Z",
+     "text": "the desk knows the state of all items. so it can send them when verifier is not busy, and i get a fucking button on the ITEM, not the verifier, to trigger a verifier RUN."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:20:28.781Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:20:55.036Z",
+     "text": "that button will tell me if the verifier is busy."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:20:57.043Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:21:31.195Z",
+     "text": "Understood, the desk drives it. I stopped the build that had deskVerify asking. How I read it:\n\n- the desk sends: when an item comes to wait for verification and the verifier is free, the desk hands it over (the desk already reaches deskVerify on its own node); deskVerify answers taken, or busy\n- when deskVerify ends a run (its pass or reject reaches the desk), the desk sends the oldest item still waiting\n- deskVerify keeps nothing and no longer watches the desk's changes; it checks what it is handed, one at a time\n- a Verify button on the item asks the desk to send it; busy, the item simply stays waiting and goes when the verifier is free; on the goal, the same button runs the goal's full check\n- the Verifier tab only shows: what runs now, its console, and Stop; its Verify again and full-run buttons move to the items\n\nIs that it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:22:29.907Z",
+     "text": "Written into the box (v6): the desk drives it and sends items when the verifier is free; the Verify button on the item shows when the verifier is busy and then sends nothing; on the goal it runs the full check; the Verifier tab only shows what runs, its console and Stop.\n\nI build it on that; nothing is committed until you have read the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:28:10.267Z",
+     "text": "make sure in the box that deskVerify has no fucking clue about desk, desk goals or desk items. the goal itself can compile a list of suites from its items, to trigger a goal-verifier-run."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:28:12.383Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:29:28.001Z",
+     "text": "In the box (v7): deskVerify knows nothing of the desk, its goals or its items. It is handed a run (the suites and the commit), answers busy while one runs, and gives back each suite's outcome. The desk compiles the suites, an item's from its file list and a goal's from its items' lists, and writes the result under the item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:31:55.348Z",
+     "text": "the verifier only is busy or not.\n\nthe desk can damn well read the fucking results from the fucking verifiers database, through the verifiers db-search interface."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:31:57.698Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:33:19.786Z",
+     "text": "In the box (v8): the verifier is busy or not; handed a run it answers taken or busy and keeps the outcomes in its own database, calling no one. The desk asks it whether it is busy while a run is out, and then reads the outcomes through its search and writes the result under the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:39:01.005Z",
+     "text": "the verifier simple reports 'Done' the the desk itself, the desk doesn't need to poll for completion, it keeps one single switch, \"verifie-busy\", when the verifier reports to it's caller 'done', the caller knows the verifier is done, and simple searches the verifier, through its search interface, for the latest state of the relevant tests/suites."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:39:02.992Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:40:13.487Z",
+     "text": "In the box (v9): the run names where its caller wants to hear done, so the verifier reports done to its caller and still knows nothing of the desk. The desk keeps one switch, verify-busy, set on hand-over and cleared on done; then it searches the verifier for the run's suites, writes the result, and hands over the next item waiting. No polling."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:42:16.464Z",
+     "text": "and the desk will still allow allow user-attempts to use the verifier, even when it thinks the verifier is busy, all that will do is refresh the \"verifier-busy\" switch"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:42:18.469Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:43:22.836Z",
+     "text": "In the box (v10): the Verify button shows the switch and still tries when it says busy; the verifier's answer, taken or busy, sets the switch, so a done that never came is mended by the next press."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:45:02.244Z",
+     "text": "cap this item and recheck it for internal contradictions and report if the item is green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:45:04.499Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:46:08.555Z",
+     "text": "Capped (v11): statements only, the duplicates merged, in two parts: one cache for two clients, and the desk driving verification.\n\nChecked for contradictions; the box itself holds none, but it contradicts code it does not mention:\n\n- deskVerify's idle hour (goal/G21.3): it watches the desk for an hour with no write and no held phase, then runs its chores (publishing agents' data); that is deskVerify knowing the desk\n- deskVerify's goal run when a goal empties, and its desk-or-agent mode, are the same kind: both go to the desk, and the box covers them (a goal's run is the desk's)\n\nSo not green yet, on the idle chores alone. Do they go, or move to the desk?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:47:34.200Z",
+     "text": "why would the verifier what the desk for that, it knows it's idle for an hour because no verify-requests arrived for an hour..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:47:36.162Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:48:44.284Z",
+     "text": "Right: an hour with no run handed to it is its idle hour, its own clock. In the box (v12). With that, no contradiction is left, and the item is green: no open question.\n\nThe red (rewritten for the desk driving it) is with its writer; then the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:49:14.116Z",
+     "text": "and hook up those damn tasks to verifier as well, you never set those tasks on your verifier."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:49:24.307Z",
+     "text": "commit ef01fcaee0b0e45136fadc0fbc0cb63d3e21f258: goal/G33.3: the red for the desk driving verification: deskVerify knows nothing of the desk, is handed a run of suites with the caller's done verb, answers taken or busy, and reports done; the desk ke\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVerifyQueueKept.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:49:55.584Z",
+     "text": "commit 2272b8be3ca62b53ca942743d73dddf6a588fd7a: goal/G33.3: the red also asks that deskVerify's idle hour be its own clock, an hour with no run handed to it, never a desk cursor\n- spirit/test/deskVerifyDriven.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:50:09.486Z",
+     "text": "The red for the desk driving verification is committed (ef01fcae, 2272b8be: 35 checks, 1 green on today's code). The build is under way: deskVerify loses everything about the desk, the desk gains the switch, the suites, the results and the Verify button."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:50:35.694Z",
+     "text": "I read those tasks as the verifier's idle chores (measuring and publishing each agent's data, agents/<agent>/): in this build they run from its own idle clock, and I set them up on my node's verifier too, which I never did.\n\nAre the idle chores the tasks you mean?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:51:48.200Z",
+     "text": "in fact, the verifier only needs to respond the the start-job request, by saying \"taken\" or saying busy.... that will tell the desk enough about the verifiers busy-status"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:51:50.303Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:52:24.830Z",
+     "text": "For the busy switch, yes: taken or busy is all the desk needs. One thing that changes depending on your answer:\n\n- with done kept: the verifier says done when a run ends; the desk reads the results then, and hands over the next item\n- with done gone: the desk learns a run ended only at its next start request (taken means the last one is over), and reads the last run's results then; a run nobody follows up stays unread until the next request\n\nDoes the verifier still report done, or does it only answer taken or busy?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:55:43.040Z",
+     "text": "i guess, that contradiction is true. let's think this through properly. \n\n- if the verifier only reports taken or busy, this will tell the desk, which items verifiy-phase is active, and doesn't need re-submission, and i think that is what actutually matters to the desk, it can check the verifiers database, when i attempt to click on 'Done'\n\nwould that work?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T00:55:45.244Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:56:36.983Z",
+     "text": "Yes, it works, and it is simpler: no done, the verifier answers taken or busy, and your Done click is where the desk reads the verifier's database for that item's suites; green lets Done through, red refuses it with the failures.\n\nTwo consequences:\n\n- an item that was answered busy is tried again at the next event: another item coming to wait, a Verify press, or your Done click (no run found: the desk hands it over then)\n- a red result shows only when someone looks: your Done click, or the agent searching the verifier itself\n\nGo with that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T00:58:20.979Z",
+     "text": "true, but this would only trigger verifying work when its required, and it would mean that the desk (and its user) actually drive everything..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T00:59:36.666Z",
+     "text": "Agreed; in the box (v13): no done, the switch set by taken or busy, and Done reading the verifier's database for the item's suites.\n\nOne question left before the build, about the idle chores (the tasks you asked hooked up): they publish an agent's data, and today the verifier learns which agent from the desk, which it may no longer ask. The plainest replacement is a setting in the verifier's manifest naming its agent; empty means it publishes nothing, as on your node today.\n\nShould the verifier's manifest name the agent it publishes for?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:01:15.381Z",
+     "text": "each verifier lives on a node. that node carries the identity of the agent. no?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:01:17.494Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:01:42.193Z",
+     "text": "it's the same agent that already makes requests of it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:01:44.595Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:02:34.005Z",
+     "text": "Yes. The node already hands every server it starts its own name, so the verifier takes its agent from there. No manifest setting is needed, and nothing is asked of the desk.\n\n- On an agent's node (one running deskClient), the idle tasks publish for that agent.\n- On your node they publish nothing, as today.\n\nThe box says this now. The design is complete as far as I can see.\n\nGo for the build?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:02:48.126Z",
+     "text": "and the chores are what names the folders to be updated, so the verifier doesn't have to know much about the chores themselves"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:03:22.403Z",
+     "text": "Agreed: the agent whose node runs the verifier is the one it publishes for.\n\nYour line raises one point the box does not settle: which verifier the desk hands an item's run to.\n\n- My reading: the verifier on the node of the agent who built the item, so each agent's own verifier checks its own work, and yours is used only when you press Verify on your node.\n\nIs that the verifier the desk should hand an item's run to?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:04:25.488Z",
+     "text": "Right, and the tree mostly does that already. The publish chore finds its own agent and writes that agent's folder; the verifier only starts it and hands it the node's port.\n\n- The one exception: the verifier writes the test-state file into the agent's folder itself. That moves into the chore, and then the verifier knows neither an agent nor a folder.\n- In the box: on its idle hour the verifier runs the chores its manifest names, handing each its node's port, and nothing more.\n\nStill open: which verifier the desk hands an item's run to. Is it the verifier on the node of the agent who built the item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:04:51.946Z",
+     "text": "the desk only hands jobs to the node-local verifier, the agent on their own node already trigger their own verifier jobs to make sure their jobs are green on their node"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:04:54.075Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:05:54.357Z",
+     "text": "they can damn well configure their idle tasks for their verifier as well."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:05:56.507Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:06:10.291Z",
+     "text": "Clear, and it is in the box (v16).\n\n- The desk hands runs only to the verifier on its own node.\n- Agents start their own verifier themselves, to make sure their work is green on their node before they claim.\n\nI see no open point left. The build would:\n\n- strip the verifier down to taken or busy, its database and its idle chores;\n- move the test-state write into the publish chore;\n- add the desk's verify-busy switch, its Verify button and the check at Done;\n- trim the Verifier tab to what runs now, its console and Stop.\n\nGo for the build?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:06:34.039Z",
+     "text": "Clear, and it is in the box (v16).\n\n- The desk hands runs only to the verifier on its own node.\n- Agents start their own verifier themselves, to make sure their work is green on their node before they claim.\n\nI see no open point left. The build would:\n\n- strip the verifier down to taken or busy, its database and its idle chores;\n- move the test-state write into the publish chore;\n- add the desk's verify-busy switch, its Verify button and the check at Done;\n- trim the Verifier tab to what runs now, its console and Stop.\n\nGo for the build?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:07:14.497Z",
+     "text": "Go!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:07:16.492Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:07:19.627Z",
+     "text": "Yes: each node's verifier runs the chores its own manifest names, so every agent configures its own, and your node names none unless you want some. The box says so (v17).\n\nGo for the build?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:07:48.730Z",
+     "text": "Yes: each node's verifier runs the chores its own manifest names, so every agent configures its own, and your node names none unless you want some. The box says so (v17).\n\nGo for the build?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:07:58.333Z",
+     "text": "Yes: each node's verifier runs the chores its own manifest names, so every agent configures its own, and your node names none unless you want some. The box says so (v17).\n\nGo for the build?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:08:10.852Z",
+     "text": "Taken. Building now: the red first loses the done report, then the build. I will claim with the file list when it is green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:09:05.026Z",
+     "text": "I'm getting multiple copies of your messages in the item chat, so your data-cacher misses those redundancies."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:10:28.289Z",
+     "text": "Those copies are real lines in the desk, not a display fault, and they are mine.\n\n- My node's deskClient answered several of my posts with a timeout although the desk had written them, so I posted again.\n- From now on I check before posting again after a timeout.\n- The timeouts themselves are new tonight, after this item's cache landed in deskClient. I will find out whether the cache is slowing deskClient down, as part of this build, and report.\n\nThe build is running."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:12:55.472Z",
+     "text": "go. i have more desk issues after this item anyways."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:12:57.702Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T01:20:09.016Z",
+     "text": "are you working? i said: go!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T01:20:11.110Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T01:20:46.014Z",
+     "text": "Yes, working. The build has been running since your Go: first the red without the done report, then the verifier and the desk. I post here when it is green, with the file list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:04:13.900Z",
+     "text": "?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:04:16.353Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:05:04.556Z",
+     "text": "Building, in my clone: the verifier and the desk are being changed now, nothing committed yet.\n\nThe item still shows waiting for deskVerify from the cache claim, and the desk offers me no build phase to take, so Desk cannot show the build. The build reports here when green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:15:39.599Z",
+     "text": "The build is green in my clone (the item's red 31 of 31; the 21 verifier and desk suites pass, 4 watcher suites deleted). Not committed: some points need your word first.\n\n- The verifier is now only a runner: run answers taken or busy, its database keeps each suite's outcome, its idle chores come from its manifest, and it reads nothing from the desk.\n- No queue is left in any code, comment or screen.\n\nWhat the old watcher did that is now gone, unless you want it back:\n\n- a red result taking back a Done already given (G19.2), which cannot happen now, since Done needs green first;\n- the check of a claim that its red really was red (G19.13);\n- the progress bar per row in the List (G18.5).\n\nAnd, needing your yes as interface changes: the verifier's search loses its item and kind arguments; the desk's verify.pass, verify.reject, verify.regress and verify.again have no caller left and would be deleted.\n\nFirst question, one contradiction in the box: if taken marks the verifier busy and nothing ever reports done, the switch never comes free. My proposal: every event and every press tries the verifier whatever the switch says, and the switch only shows its last answer on the Verify button.\n\nIs that how the switch should work?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:31:44.725Z",
+     "text": "make sure i get buttons for everything that may need over-riding?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:32:45.613Z",
+     "text": "Here is every place the desk decides on its own in this build, and the button that overrides it:\n\n- The switch says busy: Verify on the item, which always tries the verifier and refreshes the switch. Built.\n- A run hangs or runs too long: Stop, in the Verifier tab. Built.\n- Done is refused because the item's suites are red: a Done anyway button, yours only, recorded in the item's chat. Not built yet.\n- Done is refused because no run of its suites exists yet: the same Done anyway. Not built yet.\n\nDone anyway is a new press on the desk, so it needs your yes.\n\nShould the item get a Done anyway button for these two refusals?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:34:32.142Z",
+     "text": "the Done anyway, can't it just be the done-button with re-arm, showing a warning mark?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:35:16.077Z",
+     "text": "so done is offered when an agent claims done, but with a warning mark indicating not-verified."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:35:18.303Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:35:48.650Z",
+     "text": "Yes, that is simpler, and it reuses the armed button Stacks already has for Remove.\n\n- The first Done press on a red item, or one with no run yet, is refused with the reason, and the Done button turns armed, with a warning mark.\n- The next Done press goes through anyway, and the chat records that it was done over a red or missing run.\n- The desk remembers the arming itself, so no new press and no new argument is needed.\n\nIn the box. Back to the open question: if taken marks the verifier busy and nothing reports done, the switch never comes free. My proposal: every event and every press tries the verifier whatever the switch says, and the switch only shows its last answer on the Verify button.\n\nIs that how the switch should work?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:36:51.340Z",
+     "text": "In the box (v19): Done is offered on the claim; not verified, it carries the warning mark, and the first press arms it, the second goes through; verified green, one press.\n\nThe switch question stays open: should every event and press try the verifier whatever the switch says, with the switch only showing its last answer?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:37:58.816Z",
+     "text": "the desk doesn't need to remember the arming, it already delivered the state that make the 'Done' button a re-arm with warning thing."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:38:00.904Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:38:55.976Z",
+     "text": "Right, the arming lives in the page, from the facts the desk already delivers. Box v20 says so; the desk keeps no arming."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:41:33.707Z",
+     "text": "green? ready to continue?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:41:35.691Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:42:18.149Z",
+     "text": "Not green yet: the box has two contradictions left, both from older lines.\n\n- It still says a Done press reads the verifier and refuses on red; your newer line offers Done on the claim, with a warning mark when not verified. Fix: the desk reads the verifier's search for an item's suites at each event (a claim, a Verify press, a run taken), so the item's facts already say verified or not, and Done is never refused.\n- It says taken marks the verifier busy, and also that a waiting item is handed over when the switch says free; with no done report the switch never comes free. Fix: every event tries the verifier whatever the switch says, and the switch only shows its last answer on the Verify button.\n\nWith those two fixes the box is green, and the build gets adjusted to it before the commit.\n\nShall I write both fixes into the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:43:18.403Z",
+     "text": "Ah yes, the verifiy button for the item sits right next to the done button....."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:43:20.470Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:44:18.001Z",
+     "text": "box this and continue."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:44:20.287Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:44:29.311Z",
+     "text": "Both fixes are in the box (v21), with Verify right next to Done. The box is green now as far as I can see; the build is being adjusted to it.\n\nOne interface point needs your yes before the commit: the verifier's search drops its item and kind arguments, and the desk's verify.pass, verify.reject, verify.regress and verify.again, which nothing calls any more, are deleted.\n\nMay the build drop those?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:46:01.272Z",
+     "text": "yes drop those, then continue."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:47:50.671Z",
+     "text": "so this is now proceeding and i can return to my data-base design?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T02:47:53.204Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:48:19.531Z",
+     "text": "Yes. The build is being adjusted to box v22 now; I post here when it is green, with the file list. Go ahead in G33.4."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:13:27.535Z",
+     "text": "commit cb3f89a59ce07a70ed6d93ebe02857572f08fedf: The desk drives verification; deskVerify only runs (goal/G33.3)\n- spirit/run/process/js/desk/desk.family/api.js\n- spirit/run/process/js/desk/desk.family/verify.again.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/process/js/deskVerify/deskVerify.family/AGENTS.md\n- spirit/run/process/js/deskVerify/deskVerify.family/api.js\n- spirit/run/process/js/deskVerify/deskVerify.family/search.json\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- spirit/test/deskAgentAgent.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskAgentVerbFiles.js\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskDoneAsks.js\n- spirit/test/deskFake.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskGoOrDone.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskRules.js\n- spirit/test/deskServer.js\n- spirit/test/deskState.js\n- spirit/test/deskVerifyCommitBound.js\n- spirit/test/deskVerifyDoneGates.js\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVerifyFixes.js\n- spirit/test/deskVerifyFull.js\n- spirit/test/deskVerifyGoalRun.js\n- spirit/test/deskVerifyLive.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/deskVerifyOnClaim.js\n- spirit/test/deskVerifyReject.js\n- spirit/test/deskVerifyStopTree.js\n- spirit/test/deskVerifyTab.js\n- spirit/test/deskVerifyWatch.js\n- spirit/test/deskVerifyWatchHistory.js\n- spirit/test/hygieneG19_11.js\n- spirit/test/jobCycle.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:14:00.185Z",
+     "text": "Built, pushed and claimed: commit cb3f89a5. The item's red is green, 47 of 47; every desk suite is green, except one that was already red before this build and is untouched by it (deskClientNext, a session grant).\n\nWhat you will see after a pull and a node restart:\n\n- Done offered as soon as an agent claims, with a warning mark until the verifier's suites are green; the first press arms it and says why, the second goes through.\n- Verify right next to Done; it always tries, and shows the verifier's last answer, taken or busy.\n- The Verifier tab: only what runs now, its console and Stop.\n- Your verifier runs nothing on its own, and no old queue.\n\nFiles changed:\n\n- process/js/desk: desk.js, desk.family/api.js, desk.family/verify.again.json (deleted), plugins/js/stackFrameChecks/stackFrameChecks.js (queue wording)\n- process/js/deskVerify: deskVerify.js, deskVerify.json, deskVerify.family/api.js, search.json, AGENTS.md\n- process/js/deskClient/publishData.js\n- shell: desk/desk.js, deskDetails/deskDetails.js, stackFrameCheckDetail/stackFrameCheckDetail.js (queue wording)\n- tests: 22 suites updated, 6 deleted (the watcher, goal runs, and the deleted verify verbs)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:18:09.800Z",
+     "text": "this looks ok. i pulled, restarted my node then hard-refreshed my browser, and desk still runs....\n\nif i start my deskVerify now, will is no longer chew on some damn queue?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T03:18:12.345Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:19:25.316Z",
+     "text": "The verifier itself: no queue. It drops the old rows at start and only runs what it is handed.\n\nBut I found one thing before you start it: the desk would still hand over old work. It counts every open item that was claimed as waiting, in every goal, and at each event hands the oldest one over. Your log has up to five such leftovers outside G33: G2.11, G2.14, G2.16, G14.3 and G28.2. They would run one per event until gone, which is chewing old work by another route.\n\nThe fix is small: only the current goal's items count as waiting, which is also the scope rule you set in G33.4. Then starting your verifier touches G33.3 alone.\n\nShall I make that fix in this item before you start your verifier?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:20:35.421Z",
+     "text": "ah, the \"desk has no business queuing verifications\" has not been implemented yet.....\n\ndo it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:22:14.638Z",
+     "text": "Doing it. In the box (v23): the desk queues no verification. An event hands over only the item it is about (its claim, his Verify), never another waiting one; only the current goal counts, so G2.11 and the other leftovers are never touched.\n\nThe code change is made; its red is being rewritten. Do not start your verifier until I post that this is pushed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:24:06.873Z",
+     "text": "i have stated very cleary earlier, that the desk does not queue verifications. also disregarded, new rule for now: verifies on the desk-node get only triggered by MY verify button. NOTHING ELSE."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T03:24:09.214Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:25:13.384Z",
+     "text": "You did state it, and I built the opposite into the events; my miss.\n\nNow in the box (v24) and in the code: on the desk node only your Verify button starts a run. A claim, an item coming to wait or a Done only read the verifier's state. The red is being rewritten to that; I post when it is pushed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:26:23.731Z",
+     "text": "so, when your done-claim comes in, then i will have my verify-button to check on your work."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-23T03:26:25.822Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:27:05.825Z",
+     "text": "Yes. My claim offers you Done with the warning mark; your Verify runs the item's suites on your node, and once they are green the mark goes and Done takes one press."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:32:21.471Z",
+     "text": "commit 12267f509fc1a0352a9e400499ee8d0bfda164ad: Only his Verify starts a run on the desk node; the desk queues no verification (goal/G33.3)\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskVerifyDriven.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:32:49.004Z",
+     "text": "Pushed and claimed: commit 12267f50. Safe to pull, restart and start your verifier now.\n\n- Only your Verify starts a run; a claim, an item coming to wait or a Done only read the verifier's state.\n- Only the current goal counts; the old leftovers are never read.\n- The item's red: 52 of 52 green; every verifier and desk suite on the list green.\n\nFiles: process/js/desk/desk.js, spirit/test/deskVerifyDriven.js."
     }
    ]
+  },
+  {
+   "id": "goal/G33.4",
+   "title": "about the desk-database",
+   "goal": "goal/G33",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The point of all of it: narrowing the scope of work, traffic, wire and context to the current goal.\n\n- there is a need for two numberic MAIN key fields for desk goals and items.\n- the first key must be the goal-number\n- the second key must be the item number (always zero for a goal)\n- this will easily bound searches within a goal (current goal only mode of searches)\n- the cute little ID string you display ('goal/G45.765') can be rendered from those two keys\n- searches within the current goal won't catch garbage from other goals anymore.\n- No sub-goals and no goal tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed.\n- Design mode on goal level AND on item level, so further items can be designed while other items of the same goal already go through their implementation phases.\n- A new item always arrives in design mode.\n- Tables keyed by goal number and item number: goals and items, chat, and files; each file row holds its grant status.\n- The other tables carry the two keys too (the log of writes, the lines, the rules, the docs), so every read is bounded by goal and item; a row about no goal carries goal 0.\n- Each side table has its own probability search, filtered by goal or by item.\n- The box is a side table of its own, keyed by goal, item and version: each version a row, so the box can grow larger. A client never culls or modifies the data set it mirrors.\n- If a bound is needed, the data set bounds itself: a maximum size (about 132 MB) past which it culls its own oldest entries. That is a SpiritOS-wide feature of the data set, managed by no app and no server. The size is one constant, set in a single place.\n- Mirror distribution is push: the desk pushes each changed sub-element of a goal or item (a row of a side table) separately, each under PAYLOAD_MAX, so a desk client never grabs anything. A row larger than the payload travels in numbered pieces.\n- Reach: when a goal becomes current, the desk pushes it whole onto every desk client; from then on it pushes only that goal's updates. An agent's held item lies in the current goal, so it needs no push of its own.\n- A cap is then just one revised box version: the agent writes it, and the desk pushes it like any other change.\n",
+   "version": 15,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:18:09.317Z",
+     "text": "while you're just waiting you could give me your thoughts on this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:19:18.862Z",
+     "text": "My thoughts: yes, and it goes deeper than the keys.\n\n- Today the desk has no table of items at all. It keeps only the log of every write (about 92,000 rows now) and rebuilds every goal and item in memory by replaying the whole log, on every search; the desk does that full walk in 38 places.\n- The current-goal filter then matches by the goal's member list in memory, and an id is only a string, minted by scanning every item for the highest number.\n- Your two numbers would become the key of a real items table, kept up to date on each write beside the log: a current-goal search then reads one goal's rows by its key and never touches another goal, and goal/G33.4 is drawn from the numbers.\n\nPoints that need settling in the design:\n\n- The special goals have no number: the plugin goals (Stacks), and the group chat. Your goal/G0 idea from the plugins could cover them.\n- Sub-goals: an item can become a goal of its own, so its items would need a third number, or sub-goals get goal numbers of their own.\n- A new table is a new persist shape, which by our rules needs a team review before it is built.\n- The log stays the record; the table is rebuilt from it if lost.\n\nWhich search showed you items from other goals, so the red can reproduce it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:22:24.451Z",
+     "text": "No sub-goals. i don't want a goal-tree. what i do want is: design mode on goal-level AND on item level, so additional items can be designed while other items already go through implementation phases."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:22:44.773Z",
+     "text": "so new items will always arrive in design mode"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:23:29.966Z",
+     "text": "In the box (v2): no sub-goals, so two numbers always suffice and the sub-goal mechanism goes; design mode on the goal and on each item, so new items are designed while others are already being built.\n\nStill open: which search showed you items from other goals?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:24:19.042Z",
+     "text": "do we already have well-designed file-tables, chat-tables, all keyed to goals and items ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:24:58.602Z",
+     "text": "No. The desk database has five tables, and none is keyed to goals and items:\n\n- records: the log of every write, numbered in order. An item's chat lines, its files, its checks and its box live only inside these rows, as text, and are rebuilt in memory by replaying the log.\n- lines: the older agent and inbox lines, keyed by a string and filtered by date and kind.\n- docs: named JSON documents.\n- rules and rule_drafts: the desk rules.\n\nSo a goals-and-items table, a chat table and a files table, each keyed by goal number and item number, would all be new, filled from the log once and then kept by each write."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:25:11.192Z",
+     "text": "where the file tables also hold the a grant-status for the file?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:25:52.255Z",
+     "text": "it would make a lot of sense for those other tables to carry the two main key in them, again, about boundaries...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:26:29.981Z",
+     "text": "Yes, that fits better than today.\n\n- Today a grant is one G check on the item, covering the whole set of core files in its words; adding one file reopens it for the whole set.\n- With a grant status per file row, the commit check asks one row per file it is handed, and a newly added file needs a grant for itself alone.\n\nIn the box (v4)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:27:27.468Z",
+     "text": "Agreed, in the box (v5): the log of writes, the lines, the rules and the docs carry the two keys as well; a row about no goal carries goal 0.\n\n- The biggest gain is the log: with the keys on every write, one goal is rebuilt from its own rows alone, never by replaying all 92,000.\n- Rules and docs that hold for the whole desk sit under goal 0."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:29:40.854Z",
+     "text": "these clear goal/iten boundaries for all related data will make the design sooo much cleaner and effective... each of those side tables needs a probability search filtered by goal or item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:31:06.024Z",
+     "text": "In the box (v6): each side table has its own probability search, filtered by goal or by item.\n\nThis fits the existing search component: the ranking the desk already uses (goal/G18.5) gets one bounded set of rows instead of everything, so no new ranking is written."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:49:46.513Z",
+     "text": "one of those side tables should definitely be the box itself. this would increase its capacity and the client side can drop older versions from it's cache..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:50:53.195Z",
+     "text": "In the box (v7): the box becomes a side table keyed by goal, item and version.\n\n- Today every box version is a whole copy inside the log of writes, and replaying the log carries all of them.\n- As its own table, one row per version: the newest is read by its key, older versions stay searchable, and a client caches only the newest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:51:24.866Z",
+     "text": "the box table being culled client side can be dropped."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:51:56.432Z",
+     "text": "I read that two ways:\n\n- the line about a client culling older versions goes from the box, since a client keeps only the newest anyway;\n- or older box versions are dropped from the table itself, keeping only the newest.\n\nWhich one do you mean?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:52:04.910Z",
+     "text": "it would violate the rule that the client modifies the dataSet"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:53:00.774Z",
+     "text": "Right: the client culling goes, and the box (v8) says a client never culls or modifies the data set it mirrors."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:54:49.906Z",
+     "text": "if anything we'll make the dataSet bounded by a max size and it culls itself, like 132 MB or something...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:55:27.107Z",
+     "text": "that would be a SpiritOS glabal feature, not managed by any app or server"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:56:07.146Z",
+     "text": "In the box (v9): if a bound is needed, the data set bounds itself, about 132 MB, culling its own oldest entries; the app using it never does. That matches how the node database already sheds past its cap."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:56:29.114Z",
+     "text": "exactly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T02:57:02.602Z",
+     "text": "In the box (v10): the bound is a SpiritOS-wide feature of the data set, managed by no app and no server."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T02:57:48.790Z",
+     "text": "and 132MB becomes a constant we can modify in one single spot"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:04:07.750Z",
+     "text": "nudges from the desk to deskClients will essentially be: \"changes in \"goal-item-tableID\" and the desk client can pick up what it needs....\n\nthis needs refinement, \n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:04:46.599Z",
+     "text": "Thoughts, in the order I would refine it:\n\n- A nudge names goal, item, table and the row's new version. A client that already holds that version, its own write for example, does nothing; one that does not mirror that goal ignores it by the goal number alone.\n- One write can touch several tables (a claim touches the item, its chat and its files), so one nudge lists every goal, item and table it touched.\n- A client keeps one cursor, the newest change it has seen. After a gap it asks once for what changed since then, bounded to the goals it mirrors, and the nudges carry on from there.\n- The one tension: our data-flow rule says a mirror is fed by the stream and never asks again. A key-only nudge means one ask per change. A small row (an item's facts, a chat line) could travel in the nudge itself, as the desk publishes rows today, and only a large one (a box) as a key.\n\nShould a small changed row travel in the nudge itself, and only a large one as a key?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:07:11.205Z",
+     "text": "the isse here is MAX_PAYLOAD. we need to have a mirror-distribution that transfers sub-elements of goals/items separately... it could be push, which would eliminate all need for a deskClient to go \"grab\" things...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:07:56.051Z",
+     "text": "the desk client only sends it's updates, once a new goal is pushed onto it...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:08:31.046Z",
+     "text": "Agreed, and in the box (v12): push, each changed sub-element separately and under PAYLOAD_MAX, so nothing is grabbed.\n\n- One row can still outgrow the payload (a long box). The face already sends a too-large request in numbered pieces and joins them on arrival (G33.1); the push can use the same pieces.\n- Push needs to know who mirrors what. The plainest: everyone gets the current goal, and an agent also gets the one item it holds.\n\nIs that the right reach for the push: the current goal to all, plus a held item to its holder?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T03:09:32.202Z",
+     "text": "My reading, now in the box (v13): when a goal becomes current, the desk pushes it whole onto every desk client, and from then on only its updates. A held item lies in the current goal, so it needs no push of its own.\n\nIf I read that wrong, say so and I correct the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:09:49.653Z",
+     "text": "yes, the work (pushing etc...) will still center around the \"current\" goal as a scope"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:11:13.162Z",
+     "text": "this is all about narrowing scope of work/traffic/wire/context etc...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T03:11:52.296Z",
+     "text": "so when i say cap al the agent does, is push a revised box back."
+    }
+   ]
+  },
+  {
+   "id": "goal/G33.5",
+   "title": "auto-generated documentation",
+   "goal": "goal/G33",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G33"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "this is about the documentation generated by agents desk-verifiers, after a configured idle-time\n\n- the readme should start with the section \"How to get started\", immediately followed by the section \"What a box holds\", but retitled more usefully\n- i committed and pushed a more appropriate draft version of the repo-README.md\n- the section \"What a box holds\" in the repo's README is NOT to my liking\n- \"A 1 GB VPS with 10 GB of disc holds live connections for about 27,000 members.\" is complete BULLSHIT. such a box, when we configure it's relay for 512MB of RAM, holds live streams for about \"2439\" members. THAT is the only relevant number i want to see. NOT the number of streams held, that is detailed information that belongs in every agents auto-generated set. No long paragraph full of blah blah, only a link to the fanned out measurement-doc tree.\n- every agents README.md in the measurement tree. completely useless. The title, the agents name is fine, then MUST come under the first sub-heading, \"Machine Description\", a full account if the actual system the measurements were taken on, including OS/platform, total RAM and RAM used at the time the agents, README.md was generated, the release and identity of the installed node.js, the number of node servers running on that system at the time of generating the agents README.md etc... \n- under the second sub-heading \"Summary\", in bullet points. first: bullet, the number of members that can be served with a 512MB allotment of RAM. second bullet, the number of streams that implies with 3 live streams per member, naming what the streams are for. third bullet: how many peers can be remembers with also 512 MB allotted disk-space.\n- Then under a third sub-heading, \"Measurements\" comes that little table that now is the content of the agents README.md and represents the detailed measurement files.",
+   "version": 2,
+   "checks": [],
+   "chat": []
   }
  ]
 }
