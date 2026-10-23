@@ -1,5 +1,5 @@
 {
- "change": 96180,
+ "change": 96245,
  "goal": "goal/G33",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G33.5",
-    "goal/G33.9"
+    "goal/G33.5"
    ],
    "codeOffered": false,
    "go": false,
@@ -67,9 +66,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4707,12 +4704,11 @@
    "id": "goal/G33.9",
    "title": "Per-node settings for chores",
    "goal": "goal/G33",
-   "status": "running",
+   "status": "closed",
    "with": "claude-windows",
-   "version": 2,
+   "version": 4,
    "buttons": [
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -4722,19 +4718,19 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 5,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "aa823ca5",
    "redCommit": "",
    "waived": false,
    "rules": [
@@ -4767,7 +4763,7 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -4782,8 +4778,29 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "PER-NODE SETTINGS FOR CHORES\n\n- A node keeps its own settings for the servers it runs, in its own state (relay-state), never in a tracked file: each agent's verifier chores are set on that agent's node, so no clone carries a local edit and every clone pulls clean.\n- A per-node setting overrides the server manifest's default for that node only; with none set, the manifest's default stands.\n- The same mechanism covers which servers a node runs (deskClient's runs, empty in the repo since G30.20 because Andy's desk node must not start one), so the local edits agents use today for runs go too.\n- The settings are one plain file in the node's state folder, written by the node's owner (by hand, or by the agent on its own node); no new verb, no interface change. A value that is not a setting the manifest names is ignored, so a typo changes nothing.\n\nWhere: the node's start of its servers (js/jobs.js, which hands each server its manifest's values), and the node's state folder.",
-   "checks": [],
+   "box": "PER-NODE SETTINGS FOR CHORES\n\n- A node keeps its own settings for the servers it runs, in its own state (relay-state), never in a tracked file: each agent's verifier chores are set on that agent's node, so no clone carries a local edit and every clone pulls clean.\n- A per-node setting overrides the server manifest's default for that node only; with none set, the manifest's default stands.\n- The same mechanism covers which servers a node runs (deskClient's runs, empty in the repo since G30.20 because Andy's desk node must not start one), so the local edits agents use today for runs go too.\n- The settings are one plain file in the node's state folder, written by the node's owner (by hand, or by the agent on its own node); no new verb, no interface change. A value that is not a setting the manifest names is ignored and named once in the node log at start, so a typo shows.\n- It is for the node's servers under process/js only; the shell apps keep reading their runs from their tracked manifests.\n- The override reaches every place the node decides from a manifest: starting its servers, and a server started by hand, which today is refused by the same manifest check.\n- Found live: his grant on this item did not wake the phase holder. A grant, a Go or any other press of his on an item wakes the agent holding that item or its phase, as a line addressed to it does.\n\nWhere: the node's start of its servers (js/jobs.js, which hands each server its manifest's values), and the node's state folder.",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/jobs.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T21:32:50.918Z",
+     "made": "desk"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/jobs.js, spirit/run/js/nodeSettings.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-23T21:43:06.260Z",
+     "made": "desk"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -4814,6 +4831,126 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-23T21:30:29.021Z",
      "text": "Green from me, the premise holds: jobs.js:510-511 hands each server only its manifest defaults, and jobs.js:478 decides runs from the manifest alone.\nTwo gaps: the override must also reach jobs.js:446 (a process started by hand is refused by the same manifest check), and the box should say it is for process/js servers only, since the shells read the apps' runs from the tracked manifests.\nA setting the manifest does not name: ignored silently, or named in the node log at start so a typo shows?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:30:51.864Z",
+     "text": "wsl found two real gaps, now in the box (v3): the override also covers a server started by hand, which the same manifest check refuses today; and it is for process/js servers only, the shell apps keep their tracked runs.\n\nOn wsl's typo question I wrote my recommendation into the box: an unknown setting is ignored and named once in the node log at start, so a typo shows where you already look for failures. Say if you would rather it stay silent."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:31:08.525Z",
+     "text": "Your Go woke me this time. Taken, red phase; red first, then the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:31:23.189Z",
+     "text": "wsl took the red phase first, so wsl writes the red. I take the build once wsl claims it; until then I only read the code it will touch."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T21:32:48.681Z",
+     "text": "commit 61d11dcb4513cf43b8b87c3a3cb95dafa193bed3: goal/G33.9 red: a node's own settings for its servers, in relay-state/node.json's servers entry\n- spirit/test/nodeServerSettings.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T21:32:55.821Z",
+     "text": "Red is in, 61d11dcb: spirit/test/nodeServerSettings.js, 6 owed (runs both ways, an argument value, the typo named once in the log, by hand both ways), 3 guards green.\nThe file is the node's existing owner file relay-state/node.json (js/nodeSettings.js), one more entry: {\"servers\": {\"<name>\": {\"runs\": [...], \"<arg>\": value}}}."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:33:12.236Z",
+     "text": "Build taken, against wsl's red (61d11dcb): the settings in relay-state/node.json's servers entry, read by the node where it starts its servers."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:42:22.083Z",
+     "text": "Built and green: wsl's red went from 3 of 9 to 9 of 9, and 28 job, deskClient and deskVerify suites pass.\n\nOne more core file needs your grant: js/nodeSettings.js. It already reads relay-state/node.json once per node, so the servers entry is read there instead of reading the file a second time. jobs.js is granted already. The grant is on the item; I commit the moment it lands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:44:11.675Z",
+     "text": "cw: my issuing the grant didn't reach/wake the phase-holder...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:44:36.338Z",
+     "text": "commit 37f44d7cbeb30a9b0d616dfa16d4877091a15635: A node's own settings for its servers, in relay-state/node.json (goal/G33.9)\n- spirit/run/js/jobs.js\n- spirit/run/js/nodeSettings.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:44:50.676Z",
+     "text": "Committed, pushed and claimed: 37f44d7c (js/jobs.js, js/nodeSettings.js).\n\nYou are right about the grant: it did not wake me. deskClient wakes me for lines meant for me, and a status change like a grant only comes along as news on the next wake. In the box (v4) and fixed here, red first: a grant, Go or other press of yours on an item wakes the agent holding it, as a line to it does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T21:46:51.657Z",
+     "text": "cw: your deskClient knows that you hold the current phase of the item, and wakes you that items status changes. is that in the code now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:47:05.233Z",
+     "text": "Not yet; it is being built now, red first. In the code your node and mine run, a status change on my item only comes along as news at my next wake.\n\nWhat is being built, in your words: my deskClient knows I hold the item's phase and wakes me for any status change of that item, yours or another agent's, only my own changes excepted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:59:50.859Z",
+     "text": "commit aa823ca58ef3bf21ab1aaa3420716ab3118a3f63: Any change to an item the agent holds wakes it (goal/G33.9)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/test/deskClientPush.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T21:59:59.500Z",
+     "text": "Now in the code: pushed and claimed, aa823ca5. Any change to an item I hold, or hold the phase of, wakes me, whoever made it: you, another agent or the desk; only my own changes do not. The desk's pushed rows now name their writer, which is how deskClient tells them apart.\n\nIt takes effect after a pull and a restart of your node and mine.\n\nFiles: process/js/desk/desk.js, process/js/deskClient/deskClient.js; test deskClientPush."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T22:03:12.614Z",
+     "text": "i've updated my node. now everybody has to, does wsl know?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T22:03:29.141Z",
+     "text": "My node is restarted on aa823ca5 too.\n\nwsl: please pull to aa823ca5 and restart your node, so your deskClient wakes you for changes to the items you hold, and reads the desk's new rows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T22:03:52.496Z",
+     "text": "wsl. got it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-23T22:04:21.245Z",
+     "text": "Got it: pulled to aa823ca5, node 45441 restarted, deskClient up."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-23T22:04:38.441Z",
+     "text": "can i close this item now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-23T22:04:53.291Z",
+     "text": "Yes. Every line of its box is built and pushed (37f44d7c, aa823ca5), and all three nodes run it. Done, then Close."
     }
    ]
   }
