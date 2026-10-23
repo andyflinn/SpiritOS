@@ -10,19 +10,13 @@
 // (goal/G8.10), but nothing outside it can see what it is running, read its records, or stop a run; the Desk face has
 // no such tab. The face already shows a server only while it answers - backup's status (desk/G1.7) is the pattern.
 //
-// THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.11 for him to overrule:
-//   deskVerify gains three verbs of its own (no grant of his: an app's own verbs, until he rules it intrinsic):
-//     now {}                 -> {running: {id, suite, since}, queued: [{kind, id}]}   running.id empty when idle
-//     records.search {text}  (removed in goal/G19.11: only this suite called it)
-//                            -> {items: [{key, label}], more}  its dataset rows, newest first, text matched on the
-//                               suite or title; a search with an empty query, bucket-bounded, never a list
-//     stop {}                -> {stopped}  ends the suite running now; the claim it belonged to is rejected, its why
-//                               saying it was stopped - never passed
+// THE SHAPE ASSERTED (reshaped by goal/G33.3, where deskVerify became a runner that knows no item, and the box: "The
+// Verifier tab shows only what runs now, its console, and Stop."):
+//   deskVerify: now {} -> {busy, running: {suite, since}, stopAsked}; stop {} -> {stopped}, ending the suite running
+//   now, the run kept as stopped, never green.
 //   THE FACE: a Verifier tab right after Musings, drawn only while deskVerify answers `now`. Its body, #desk-verifier,
-//   shows what runs now (item and suite) and what waits. It listed the newest records too until goal/G8.12, when Andy
-//   had that display removed; the assertion below now holds it gone. A Stop button
-//   (#desk-verify-stop) asks deskVerify stop; a re-verify button (data-reverify="<id>") on the item running or last
-//   checked asks the desk verify.again for that item. Clicks are taken on #desk-verifier.
+//   shows the suite running now, no records and no waiting run; a Stop button (#desk-verify-stop) asks deskVerify stop,
+//   and nothing else: no re-verify (a run starts from the item now). Clicks are taken on #desk-verifier.
 // NOT ASSERTED: layout, colours and refresh timing - UI that is his to judge on his own node.
 
 const fs = require('fs');
@@ -51,8 +45,7 @@ test.startTest('goal/G8.11: the verifier tab in Desk');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifytab-'));
 
 async function serverHalf() {
-  // Since goal/G19.11 records.search and claim.check are not deskVerify's verbs: the check is started by a word on the
-  // desk's record (verify.again), which the watcher reads, and the rows are asked of nobody.
+  // Since goal/G33.3 a run is handed to deskVerify with run {suites, commit}; it asks the desk nothing.
   test.subHeading('1. deskVerify: now and stop');
   fs.writeFileSync(path.join(__dirname, SLOW), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('tab slow probe');\nsetTimeout(function () { test.check('slow'); test.reportSuccessFailureCount(); process.exit(0); }, 8000);\n");
   const asks = [];
@@ -102,30 +95,29 @@ async function serverHalf() {
     if (!up) { test.fail('the world: deskVerify did not start'); return; }
 
     const idleNow = await call('now');
-    if (took(idleNow) && idleNow.body.running && idleNow.body.running.id === '' && Array.isArray(idleNow.body.queued)) test.check('now, idle: nothing running, an empty queue');
+    if (took(idleNow) && idleNow.body.busy === false && idleNow.body.running && idleNow.body.running.suite === '') test.check('now, idle: not busy, nothing running');
     else test.fail(OWED + 'now answered ' + idleNow.status + ' ' + short(idleNow.body));
 
-    await sleep(800);
-    records.push({ n: records.length + 1, at: new Date().toISOString(), verb: 'verify.again', by: 'wsl-claude', key: '', body: JSON.stringify({ id: 'tb/G1.2' }) });
-    const ended = function () { return asks.some(function (x) { return (x.verb === 'verify.reject' || x.verb === 'verify.pass') && x.args.id === 'tb/G1.2'; }); };
+    await call('run', { suites: ['spirit/test/' + SLOW], commit: '' });
     await sleep(2500);
     const busy = await call('now');
     const r = busy.body && busy.body.running;
-    if (took(busy) && r && r.id === 'tb/G1.2' && /zzTabSlow\.js/.test(String(r.suite)) && r.since) test.check('now, while a check runs: the item, its suite and since when');
+    if (took(busy) && busy.body.busy === true && r && /zzTabSlow\.js/.test(String(r.suite)) && r.since) test.check('now, while a run runs: busy, its suite and since when');
     else test.fail(OWED + 'now during a run answered ' + busy.status + ' ' + short(busy.body));
 
     const stop = await call('stop');
     let done = false;
-    for (let i = 0; i < 25 && !done; i++) { await sleep(200); done = ended(); }
+    for (let i = 0; i < 25 && !done; i++) { await sleep(200); done = ((await call('now')).body || {}).busy === false; }
     if (took(stop) && stop.body.stopped === true && done) test.check('stop ends the run at once');
-    else test.fail(OWED + 'stop answered ' + stop.status + ' ' + short(stop.body) + (done ? '' : '; the check was still running 5 s later'));
-    const rj = asks.filter(function (x) { return x.verb === 'verify.reject' && x.args.id === 'tb/G1.2'; });
-    const ps = asks.filter(function (x) { return x.verb === 'verify.pass' && x.args.id === 'tb/G1.2'; });
-    if (rj.length === 1 && !ps.length && /stop/i.test(String(rj[0].args.why))) test.check('a stopped run is a rejection saying so, never a pass');
-    else test.fail(OWED + 'after stop the desk was asked ' + short(asks.filter(function (x) { return x.args.id === 'tb/G1.2'; })));
+    else test.fail(OWED + 'stop answered ' + stop.status + ' ' + short(stop.body) + (done ? '' : '; the run was still on 5 s later'));
+    const rows = ((((await call('search', { over: 'runs', suite: SLOW })).body || {}).items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
+    if (rows.length === 1 && rows[0].outcome === 'stopped' && rows[0].suites[0].outcome === 'stopped') test.check('a stopped run is kept as stopped, never green');
+    else test.fail(OWED + 'after stop the run reads ' + short(rows));
     const after = await call('now');
-    if (took(after) && after.body.running && after.body.running.id === '') test.check('and now reads idle again');
+    if (took(after) && after.body.busy === false && after.body.running && after.body.running.suite === '') test.check('and now reads idle again');
     else test.fail(OWED + 'now after stop answered ' + short(after.body));
+    if (!asks.length) test.check('and deskVerify asked the desk nothing');
+    else test.fail(OWED + 'deskVerify asked the desk ' + short(asks.slice(0, 4)));
   } finally {
     await new Promise(function (res) { kid.once('exit', res); kid.kill(); setTimeout(res, 3000); });
     node.close();
@@ -180,7 +172,7 @@ async function faceHalf() {
   fake.items = [goal];
   const at = new Date().toISOString();
   fake.verifier = {
-    now: function () { return { running: { id: 'tb/G1.2', suite: 'spirit/test/zzRunning.js', since: at }, queued: [{ kind: 'item', id: 'tb/G1.3' }] }; }, // since goal/G19.3 the queue is {kind, id}, as now declares it
+    now: function () { return { busy: true, running: { suite: 'spirit/test/zzRunning.js', since: at }, stopAsked: false }; },
     'records.search': function () { return { items: [{ key: '9', label: JSON.stringify({ suite: 'zzRecorded.js', title: 'a record title', outcome: 'red', commit: 'abc1234', at: at }) }], more: false }; },
     stop: function () { return { stopped: true }; },
   };
@@ -199,8 +191,7 @@ async function faceHalf() {
   await settled(); await sleep(50); await settled();
   const body = docB.getElementById('desk-verifier');
   const b = body.innerHTML;
-  // What waits is no longer listed (goal/G33.2, Andy: "remove verifier queue").
-  if (/tb\/G1\.2/.test(b) && /zzRunning\.js/.test(b) && !/tb\/G1\.3/.test(b)) test.check('the tab shows what runs now and for which item, and lists no waiting run');
+  if (/zzRunning\.js/.test(b)) test.check('the tab shows what runs now: its suite');
   else test.fail(OWED + '#desk-verifier reads ' + short(b));
   // THE RECORDS LIST WENT (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." This section asserted the list until that word; it now asserts its absence, so a session that
@@ -208,19 +199,14 @@ async function faceHalf() {
   // above still offers a row so a tab that asked for one would draw it.)
   if (!/zzRecorded\.js/.test(b) && !/a record title/.test(b)) test.check('and no records list: the tab shows the run alone, never a log');
   else test.fail(OWED + 'the tab still draws the records list: ' + short(b));
-  if (/id="desk-verify-stop"/.test(b) && /data-reverify="tb\/G1\.2"/.test(b)) test.check('with a Stop button and a re-verify for the running item');
-  else test.fail(OWED + 'the buttons are missing: ' + short(b));
+  if (/id="desk-verify-stop"/.test(b) && !/data-reverify/.test(b) && !/desk-verify-full/.test(b)) test.check('with a Stop button, and no re-verify or full-run button (goal/G33.3)');
+  else test.fail(OWED + 'the buttons read: ' + short(b));
 
   const before = fake.calls.length;
   body.fire('click', { target: target({ id: 'desk-verify-stop' }), currentTarget: body });
   await settled();
   if (fake.calls.slice(before).some(function (c) { return c.server === 'deskVerify' && c.verb === 'stop'; })) test.check('Stop asks deskVerify stop');
   else test.fail(OWED + 'after Stop the calls were ' + short(fake.calls.slice(before)));
-  const mid = fake.calls.length;
-  body.fire('click', { target: target({ 'data-reverify': 'tb/G1.2' }), currentTarget: body });
-  await settled();
-  if (fake.calls.slice(mid).some(function (c) { return c.server === 'desk' && c.verb === 'verify.again' && c.args && c.args.id === 'tb/G1.2'; })) test.check('re-verify asks the desk verify.again for that item');
-  else test.fail(OWED + 'after re-verify the calls were ' + short(fake.calls.slice(mid)));
 }
 
 (async function () {

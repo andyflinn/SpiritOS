@@ -16,7 +16,9 @@
 //   2  N read-only desk asks (profile.get; scope.get until goal/G10.8 removed agent scopes) from this node, then their figures from its own traffic log: packets.json
 //      {posts, waitMs {median, max}, flight {median, max}, retried, refusals} and packets.md; platform.md names the
 //      agent, the commit and the box
-//   3  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
+//   3  the test state: testState.json and testState.md, from this node's verify.db (the newest row of each test its
+//      deskVerify keeps), no suite re-run
+//   4  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
 //      files all lie there) and posts one summary line to Desk
 // The agent is the name Andy set in its profile (profile.get). The traffic log is read from a copy of
 // <clone>/spirit/run/relay-state/node.db, read only: the node holds the file open, and no verb reads that log.
@@ -78,6 +80,52 @@ function closingRows(clone, sinceIso) {
   }
 }
 
+// THE TEST STATE (goal/G21.3, moved here by goal/G33.3). It was written by deskVerify's idle chores into
+// agents/<agent>/ just before they ran this script; since goal/G33.3 the verifier knows no agent and no folder (the box:
+// "each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file
+// it writes today moves into the publish chore)"). So it is written here, from the newest row of each test in this
+// clone's verify.db, read only; no suite is run for it.
+const VERIFY_DB = path.join(__dirname, '..', 'deskVerify', 'verify.db');
+function writeTestState(out, agent, commit) {
+  let rows = [];
+  if (fs.existsSync(VERIFY_DB)) {
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(VERIFY_DB, { readOnly: true });
+    try {
+      rows = db.prepare('SELECT suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN ' +
+        '(SELECT MAX(rowid) FROM results GROUP BY suite, title) ORDER BY suite, title').all();
+    } finally { db.close(); }
+  }
+  const bySuite = Object.create(null);
+  rows.forEach(function (r) {
+    const s = bySuite[r.suite] || (bySuite[r.suite] = { suite: r.suite, tests: 0, green: 0, red: 0, newestAt: '' });
+    s.tests += 1;
+    if (r.outcome === 'red') s.red += 1; else s.green += 1;
+    if (String(r.at) > s.newestAt) s.newestAt = String(r.at);
+  });
+  const reds = rows.filter(function (r) { return r.outcome === 'red'; })
+    .map(function (r) { return { suite: r.suite, title: r.title, commit: r.commitAt, at: r.at, failure: r.failure || '' }; });
+  const report = {
+    agent: agent, measuredAt: new Date().toISOString(), commit: commit,
+    from: 'verify.db: the newest row of each test this node\'s deskVerify keeps; no suite was run for this report',
+    note: rows.length ? '' : 'no records yet',
+    tests: rows.length, green: rows.length - reds.length, red: reds.length,
+    suites: Object.keys(bySuite).sort().map(function (k) { return bySuite[k]; }),
+    reds: reds,
+  };
+  fs.writeFileSync(path.join(out, 'testState.json'), JSON.stringify(report, null, 2) + '\n');
+  const md = ['# Test state: ' + agent, '',
+    '**Written ' + report.measuredAt.slice(0, 10) + ' by publishData at `' + report.commit + '`, from this node\'s verify.db; no suite was re-run.**', '',
+    report.tests + ' tests, ' + report.green + ' green, ' + report.red + ' red.' + (report.note ? ' ' + report.note + '.' : ''), '',
+    '| suite | tests | green | red | newest |', '|---|---|---|---|---|']
+    .concat(report.suites.map(function (x) { return '| ' + x.suite + ' | ' + x.tests + ' | ' + x.green + ' | ' + x.red + ' | ' + x.newestAt + ' |'; }))
+    .concat(['', '## Red', ''])
+    .concat(reds.length ? reds.map(function (r) { return '- `' + r.suite + '` ' + r.title + ' (`' + String(r.commit).slice(0, 8) + '`, ' + r.at + ')' + (r.failure ? ': ' + r.failure.replace(/\s+/g, ' ') : ''); }) : ['none'])
+    .concat(['']);
+  fs.writeFileSync(path.join(out, 'testState.md'), md.join('\n'));
+  return report;
+}
+
 // agents/<agent>/README.md: the folder's front page, rewritten on every run from the files themselves, so it never
 // goes stale. Each file with the date and commit it was measured at, and the studies by their dated folders.
 function writeIndex(out, agent) {
@@ -95,8 +143,7 @@ function writeIndex(out, agent) {
     row('harness', 'harness.txt', read('harness.json')),
     row('capacity', 'capacity.md', read('capacity.json')),
     row('packets', 'packets.md', read('packets.json')),
-    // THE TEST STATE (goal/G21.3): written by deskVerify's idle chores into this folder just before they run this
-    // script, from its own dataset; listed here so the front page names it.
+    // THE TEST STATE (goal/G21.3): written by this script (writeTestState) from this node's verify.db.
     row('test state', 'testState.md', read('testState.json')), '',
     '## Studies', '',
   ].concat(studies.length ? studies.map(function (d) { return '- [' + d + '](studies/' + d + '/)'; }) : ['none yet']).concat(['']);
@@ -174,10 +221,15 @@ async function main() {
       '| cpus | ' + os.cpus().length + ' |', '| ram | ' + Math.round(os.totalmem() / 1048576) + ' MB |', '',
     ].join('\n'));
   }
+  // 3. THE TEST STATE, from this node's verify.db (goal/G33.3: the publish chore writes it, not the verifier).
+  try {
+    const rep = writeTestState(out, agent, commit);
+    say('testState: ' + rep.tests + ' tests, ' + rep.red + ' red');
+  } catch (e) { say('testState not written: ' + ((e && e.message) || e)); }
   writeIndex(out, agent);
   say('packets: ' + packets.posts + ' posts, wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms, ' + packets.retried + ' retried');
 
-  // 3. COMMIT AND SAY SO, unless this was only a look.
+  // 4. COMMIT AND SAY SO, unless this was only a look.
   if (packetsOnly || outArg) end(0, 'publishData: written to ' + out);
   // ZERO POSTS IS PUBLISHED TOO (Andy, to Q16, whether a run counting 0 posts should refuse: "publish it anyway. that's
   // what happened."). The figures say what the run met; it only says so aloud.

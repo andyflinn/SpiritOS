@@ -19,8 +19,9 @@
 //   index/of as it goes; then it posts ONE report line in the goal's chat naming the reds, asks goal.check (so the reds
 //   outside the goal become the G8.7 grant), and asks verify.pass on the goal. One pass per goal: a second goal.emptied
 //   for the same goal runs nothing.
-// SINCE goal/G14.3 the deskVerify half lives in deskVerifyGoalRun.js: an emptied goal runs its own items' suites, and
-// the whole folder runs only by his button. Andy, 2026-10-12: "yes." to both. This file keeps the desk's half.
+// SINCE goal/G14.3 the deskVerify half lived in deskVerifyGoalRun.js, which went with goal/G33.3: nothing starts a run
+// from goal.emptied any more; the goal's run is his Verify on the goal, and its Done reads the verifier
+// (deskVerifyDriven.js). This file keeps the desk's half: the record, and the status words.
 // NOT ASSERTED: the report line's exact words, and what a full run does when a suite hangs (the time limit already
 // covers it).
 
@@ -41,7 +42,6 @@ const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestOwnerAAAAAAA
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parse(x) { if (typeof x !== 'string') return x; try { return JSON.parse(x); } catch (e) { return x; } }
-function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 
 test.startTest('goal/G8.12: the full run when the goal empties');
 
@@ -106,27 +106,18 @@ async function deskHalf() {
     if (e.length === 1 && (parse(e[0].body) || {}).id === 'fe/G1') test.check('the last item closed: one goal.emptied record naming the goal');
     else test.fail(OWED + 'goal.emptied records: ' + short(e));
     const g = parse((await d.call('item.get', { id: 'fe/G1' }, ANDY)).body.item) || {};
-    if ((g.buttons || []).indexOf('done') === -1) test.check('with a deskVerify on the node, the goal offers no Done before its pass');
-    else test.fail(OWED + 'the goal offers Done before deskVerify has spoken: ' + short(g.buttons));
-    // GROWN AFTER HIS WORD (claude-windows). Andy: "the desk should update status in every change it manages....", and
-    // "yes" to its being the status word on the List rows.
-    // goal/G14.3: an emptied goal runs its own items' suites, not the full harness, and its word says so.
-    if (/goal run/i.test(String(g.status))) test.check('the desk writes the goal\'s status itself: the goal run is running');
-    else test.fail(OWED + 'the emptied goal\'s status reads ' + short(g.status));
-    const pass = await d.call('verify.pass', { id: 'fe/G1' }, ANDY);
-    const g2 = parse((await d.call('item.get', { id: 'fe/G1' }, ANDY)).body.item) || {};
-    if (took(pass) && (g2.buttons || []).indexOf('done') !== -1) test.check('deskVerify\'s verify.pass on the goal brings its Done');
-    else test.fail(OWED + 'verify.pass on the goal answered ' + pass.status + ' ' + short(pass.body) + '; buttons ' + short(g2.buttons));
-    if (/goal run passed/i.test(String(g2.status)) && g2.status !== g.status) test.check('and its status moves on by itself: passed');
-    else test.fail(OWED + 'after the goal\'s pass its status reads ' + short(g2.status));
-
-    // The same for an item: an agent's verify pass, deskVerify's rejection and its pass each set the status word.
+    // SINCE goal/G33.3 the goal's Done is offered once its items are, and the press itself reads the verifier
+    // (deskVerifyDriven.js); nothing starts from goal.emptied, so its status word stays as it was.
+    if ((g.buttons || []).indexOf('done') !== -1 && !/goal run/i.test(String(g.status))) test.check('the emptied goal offers Done, its press to read the verifier, and claims no goal run');
+    else test.fail(OWED + 'the emptied goal reads buttons ' + short(g.buttons) + ', status ' + short(g.status));
+    // The same for an item: an agent's verify pass sets the status word. (deskVerify's own words, verify.pass and
+    // verify.reject, went with goal/G33.3: the desk reads the verifier itself.)
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fs/G1', title: 'Status' }, items: [{ id: 'fs/G1.1', title: 'Code', blocks: ['fs/G1'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'fs/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'fs/G1.1', what: 'go' }, ANDY);
     const WSLX = { key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
-    const round = async function () {
+    const round = async function () { // one build and verify round
       await d.call('phase.take', { id: 'fs/G1.1', phase: 'build' }, WSLX); await d.call('phase.done', { id: 'fs/G1.1', phase: 'build' }, WSLX);
       await d.call('phase.take', { id: 'fs/G1.1', phase: 'verify' }, CW); await d.call('phase.done', { id: 'fs/G1.1', phase: 'verify', pass: true }, CW);
     };
@@ -136,15 +127,6 @@ async function deskHalf() {
     const s1 = await st();
     if (/deskVerify/i.test(s1)) test.check('an agent\'s verify pass: the status says it waits for deskVerify');
     else test.fail(OWED + 'after the agent\'s verify pass the item status reads ' + short(s1));
-    await d.call('verify.reject', { id: 'fs/G1.1', why: 'red' }, ANDY);
-    const s2 = await st();
-    if (/reject/i.test(s2)) test.check('deskVerify\'s rejection: the status says rejected');
-    else test.fail(OWED + 'after verify.reject the item status reads ' + short(s2));
-    await round();
-    await d.call('verify.pass', { id: 'fs/G1.1' }, ANDY);
-    const s3 = await st();
-    if (/pass/i.test(s3) && s3 !== s1) test.check('deskVerify\'s pass: the status says passed');
-    else test.fail(OWED + 'after verify.pass the item status reads ' + short(s3));
   } finally { await d.stop(); node.close(); }
 }
 

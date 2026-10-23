@@ -11,8 +11,8 @@
 //   - It commits and pushes, through two deskAgent verbs, so its work is verified like everyone's.
 //
 // WHAT IS ASSERTED
-//   1. the desk has a verb file for box.write, press, check.set, item.files.add and verify.again, each with a
-//      description and the request keys desk.js declares.
+//   1. the desk has a verb file for box.write, press, check.set and item.files.add, each with a description and the
+//      request keys desk.js declares (verify.again went with goal/G33.3, Andy's yes: "box this and continue").
 //   2. deskAgent lists file.load, file.save, commit and push in its own family folder (FS.search, goal/G30.4).
 //   3. every change: a desk change that is not addressed to Levant still reaches the model, the change in the call;
 //      its own change does not; an empty answer posts nothing. The call's tools include the new desk verbs and
@@ -131,9 +131,10 @@ let kid = null;
 const out = { stdout: '', stderr: '', code: null };
 
 async function suite() {
-  test.subHeading('1. the desk tells agents five more verbs');
+  test.subHeading('1. the desk tells agents four more verbs (verify.again went with goal/G33.3)');
   const verbs = deskVerbFiles();
-  const want = { 'box.write': ['id', 'text', 'version'], press: ['id', 'what'], 'check.set': ['id', 'check', 'state'], 'item.files.add': ['id', 'paths'], 'verify.again': ['id'] };
+  // verify.again went with goal/G33.3 (Andy's yes, "box this and continue"): deskVerify reads no desk record.
+  const want = { 'box.write': ['id', 'text', 'version'], press: ['id', 'what'], 'check.set': ['id', 'check', 'state'], 'item.files.add': ['id', 'paths'] };
   Object.keys(want).forEach(function (v) {
     const f = verbs[v];
     const keys = f && f.request ? Object.keys(f.request).sort() : [];
@@ -189,7 +190,7 @@ async function suite() {
   if (c1 && text.indexOf('press') !== -1 && text.indexOf('ag/G1.2') !== -1) test.check('a press nobody addressed to Levant reaches the model, the change in the call');
   else test.fail(OWED + 'after an unaddressed press the model was called ' + calls.length + ' time(s): ' + short(text));
   const toolNames = c1 && Array.isArray(c1.tools) ? c1.tools.map(function (t) { return t.function && t.function.name; }) : [];
-  if (['desk_box_write', 'desk_press', 'desk_check_set', 'desk_item_files_add', 'desk_verify_again', 'deskAgent_file_save', 'deskAgent_commit'].every(function (n) { return toolNames.indexOf(n) !== -1; })) test.check('its tools include the five desk verbs and deskAgent\'s file and git verbs');
+  if (['desk_box_write', 'desk_press', 'desk_check_set', 'desk_item_files_add', 'deskAgent_file_save', 'deskAgent_commit'].every(function (n) { return toolNames.indexOf(n) !== -1; })) test.check('its tools include the four desk verbs and deskAgent\'s file and git verbs');
   else test.fail(OWED + 'the call\'s tools are ' + short(toolNames));
   await sleep(500);
   if (!posted.length) test.check('an empty answer posts nothing');

@@ -12,7 +12,8 @@
 //   THE SHELL: one shared bar element draws a process's open job (built with the Jobs list, goal/G29.14).
 // Named here before building, as promised in the item's chat: the servers that publish switch to
 // spirit.core.jobs.publish (desk with its plugins' publish, deskVerify, deskAgent, fileServer, chatClerver), and
-// deskVerify wraps each run of its queue in start/end, its suites counted with progress.
+// deskVerify wraps each run in start/end, its suites counted with progress (since goal/G33.3 a run is handed to it
+// with run {suites, commit}, one at a time).
 // rule/11: through testSupport only.
 
 const fs = require('fs');
@@ -163,13 +164,13 @@ const cycleOf = function (r) { return appsOf(r).filter(function (a) { return a.j
   if (!notSwitched.length) test.check('desk, deskVerify, deskAgent, fileServer and chatClerver call spirit.core.jobs.publish');
   else test.fail(OWED + 'not switched: ' + notSwitched.join(', '));
 
-  // ── 7. deskVerify runs its queue as jobs ─────────────────────────────
-  test.subHeading('7. deskVerify: each run of its queue is one job, its suites counted');
+  // ── 7. deskVerify runs each run as a job ─────────────────────────────
+  test.subHeading('7. deskVerify: each run is one job, its suites counted');
   const dv = read('process/js/deskVerify/deskVerify.js');
   // A checkout may end its lines with \r\n (his tree on Windows does), so the bodies are cut either way.
-  const drain = (/async function drainQueue\(\)[\s\S]*?\r?\n\}\r?\n/.exec(dv) || [''])[0];
-  if (/\.core\.jobs\.start\(/.test(drain) && /\.core\.jobs\.end\(/.test(drain)) test.check('drainQueue starts a job for each run and ends it however the run ended');
-  else test.fail(OWED + 'drainQueue does not run start/end');
+  const startFn = (/function startRun\([\s\S]*?\r?\n\}\r?\n/.exec(dv) || [''])[0];
+  if (/\.core\.jobs\.start\(/.test(startFn) && /\.core\.jobs\.end\(/.test(startFn)) test.check('startRun starts a job for each run and ends it however the run ended');
+  else test.fail(OWED + 'startRun does not run start/end');
   const sayFn = (/function say\(o\) \{[\s\S]*?\r?\n\}\r?\n/.exec(dv) || [''])[0];
   if (/\.core\.jobs\.progress\(/.test(sayFn)) test.check('what it says while running carries the suite count as progress');
   else test.fail(OWED + 'say() reports no progress');

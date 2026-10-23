@@ -86,8 +86,6 @@ function create(rows) {
       return { change: calls.length };
     },
     'pending.get': function (a) { return walked(fake.pending[a.who] || [], function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
-    // goal/G18.10: fake.verifyAgain, when a suite sets it, answers the re-verify (a refusal, say); else it is taken.
-    'verify.again': function (a) { return fake.verifyAgain ? fake.verifyAgain(a) : { change: calls.length }; },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };

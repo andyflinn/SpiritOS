@@ -126,6 +126,24 @@ function ddHeader() {
 
 var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
 
+// DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3). The box: "not verified (its suites red,
+// or no run of them yet), the Done button carries a warning mark and re-arms in the page: the first press arms it and
+// says why, the second sends Done ... Verified green, one press does it. The desk keeps no arming." The facts say it
+// (verified, verifyFailures); '' where no deskVerify answers, and then nothing is marked.
+var DD_WARN = '\u26a0';
+function ddDoneWarned(f) { return f.verified === 'red' || f.verified === 'none'; }
+function ddDoneWhy(f) {
+  return f.verified === 'red' ? 'Not verified: its suites are red: ' + (f.verifyFailures || []).join(' | ')
+    : 'Not verified: there is no run of its suites yet. Press Done again to send it anyway.';
+}
+// HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done button").
+// Andy: "that button will tell me if the verifier is busy." It shows the verifier's last answer and is never disabled:
+// the desk asks the verifier anyway. On a goal it runs the goal's suites.
+function ddVerifyHtml(f) {
+  return '<button type="button" id="dd-verify" title="' + (f.verifierBusy ? 'the verifier answered ' + ddEsc(f.verifyAnswer || 'busy') + ' last; pressing asks it again' : 'hand this to the verifier') + '">' +
+    (f.verifierBusy ? 'Verify (verifier busy)' : 'Verify') + '</button>';
+}
+
 
 // CLOSE BEFORE HIS GO IS ARMED, AT THE RIGHT EDGE (goal/G3.9). Andy, 2026-10-03: "A close - with arm-button is
 // available on the right edge of the button bar, before an item has received a 'go' or a 'done'", "the close-with
@@ -134,10 +152,18 @@ function ddEarlyClose(f) { return f.status !== 'done' && f.status !== 'closed' &
 function ddButtonsHtml() {
   var f = ddFacts || {};
   var early = ddEarlyClose(f);
+  var verifyDrawn = false;
   var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
     // DONE (n) (goal/G4.20 point 3). Andy: "when the done button appears it also shows number of claims [Done (2)]".
     var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
-    return '<button type="button" id="dd-' + b + '">' + label + '</button>';
+    if (b !== 'done') return '<button type="button" id="dd-' + b + '">' + label + '</button>';
+    var warned = ddDoneWarned(f);
+    var armed = warned && ddArmed === 'dd-done';
+    var done = '<button type="button" id="dd-done"' + (armed ? ' data-armed="1"' : '') + (warned ? ' title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
+      (armed ? 'Done anyway: sure?' : label + (warned ? ' ' + DD_WARN : '')) + '</button>';
+    if ((f.buttons || []).indexOf('verify') === -1) return done;
+    verifyDrawn = true;
+    return done + ddVerifyHtml(f);
   }).join('');
   html += ddRenaming
     ? '<label class="field-label grow">Your name for it<input type="text" id="dd-name" data-field="label" placeholder="in your own words"></label>' +
@@ -180,6 +206,8 @@ function ddButtonsHtml() {
   if ((f.buttons || []).indexOf('make-current') !== -1) {
     html += '<button type="button" id="dd-make-current">Make current goal</button>';
   }
+  // VERIFY WHERE NO DONE IS SHOWN (a goal before its items are done): at the end of the row.
+  if (!verifyDrawn && (f.buttons || []).indexOf('verify') !== -1) html += ddVerifyHtml(f);
   if (f.goal === '') {
     html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
       ' style="margin-left:auto;background:#b00020;color:#fff">' +
@@ -649,7 +677,8 @@ spirit.shell.activateApp({
         if (event.preventDefault) event.preventDefault();
         ddApi.closeDialog({ open: to });
         return;
-      }
+      }
+
       var grantEl = t && t.closest ? t.closest('[data-grant]') : null;
       if (grantEl) {
         var g = grantEl.getAttribute('data-grant');
@@ -675,10 +704,21 @@ spirit.shell.activateApp({
       // once. On a non-goal item (an open code item) the existing early-close arm stands (desk/G3.9).
       var armedClose = id === 'dd-close' && ddEarlyClose(f) && (f.goal !== '' || (f.blocked || []).length > 0);
       if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+      // goal/G33.3: Done not verified green arms first and says why; the second press sends it.
+      if (id === 'dd-done' && ddDoneWarned(f) && ddArmed !== 'dd-done') {
+        ddArmed = 'dd-done';
+        ddNote = ddDoneWhy(f);
+        ddPaint();
+        if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(function () { ddNote = ''; ddDisarm(); });
+        return;
+      }
+      if (id === 'dd-done') { ddArmed = ''; ddNote = ''; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
+      // goal/G33.3: Verify presses at once, whatever the switch says.
+      if (id === 'dd-verify') { ddPress('verify'); return; }
       if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || id === 'dd-delete' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;
@@ -750,7 +790,8 @@ spirit.shell.activateApp({
     ddArmed = '';
     ddRenaming = false;
     ddNote = '';
-    ddLastChange = 0;
+    ddLastChange = 0;
+
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {

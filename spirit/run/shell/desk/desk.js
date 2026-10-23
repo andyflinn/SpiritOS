@@ -673,7 +673,15 @@ function deskPress(id, what) {
     function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
 }
 
-var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back' };
+var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back', verify: 'Verify' };
+// DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3), as the item dialog does, from the same
+// facts (verified, verifyFailures). The box: "the first press arms it and says why, the second sends Done ... Verified
+// green, one press does it. The desk keeps no arming." '' where no deskVerify answers: no mark.
+var DESK_WARN = '\u26a0';
+function deskWarnOnDone(row) { return row.verified === 'red' || row.verified === 'none'; }
+function deskWarnWhy(row) {
+  return row.verified === 'red' ? 'not verified, red: ' + (row.verifyFailures || []).join(' | ') : 'not verified: no run of its suites yet';
+}
 // NOT IN A ROW: Go all sits in the tab bar (desk/G3.4), and Reopen only in the item's dialog (desk/G3.6, Andy:
 // "the Re-Open button should never be shown in the list").
 // MAKE CURRENT IS NOT IN THE ROW, THE SWORD IS (goal/G9.1). Andy, 2026-10-07: "the [make-current] button will not be
@@ -709,8 +717,17 @@ function deskRowPresses(row) {
     var armed = goal && what === 'close' && deskArmed === 'desk-goal-close-' + row.id;
     var open = goal && what === 'close' ? (row.blocked || []).length : 0;
     var label = armed ? 'are you sure? ' + open + ' open' : (DESK_PRESS_LABEL[what] || what);
+    var title = '';
+    // goal/G33.3: Done not verified green: the mark, and once armed the why in its own words.
+    if (what === 'done' && deskWarnOnDone(row)) {
+      armed = deskArmed === 'desk-done-' + row.id;
+      title = deskWarnWhy(row);
+      label = armed ? 'Done anyway? ' + title : 'Done ' + DESK_WARN;
+    }
+    // goal/G33.3: Verify shows the verifier's last answer; it is never disabled.
+    if (what === 'verify' && row.verifierBusy) label = 'Verify (verifier busy)';
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
-      (armed ? ' data-armed="1"' : '') + '>' + deskEsc(label) + '</button>';
+      (armed ? ' data-armed="1"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
 }
 // THE CELLS OF A ROW, apart from its <tr>, so the row's own element repaints them alone (goal/G27.9).
@@ -830,21 +847,10 @@ function deskOpenPlugin(app) {
   script.onerror = function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
   document.body.appendChild(script);
 }
-// THE STATUS BOX SHOWS THE VERIFIER'S RUN (goal/G18.5). Andy, 2026-10-12: "when a search is run agains the goal or an
-// item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result
-// string shown will be green or red, depending on the outcome." ("search" there: "i DEFINITELY meant verify-run".)
-// While deskVerify runs for this row (its published object names the row's id), its bar and suite i of n stand in the
-// box; otherwise the server's status word, green when it says passed, red when rejected or red.
+// THE STATUS BOX (goal/G18.5): the server's status word, green when it says passed, red when rejected or red. The run's
+// bar that stood here named the row through deskVerify's published object; since goal/G33.3 deskVerify knows no item
+// (Andy: "deskVerify has no fucking clue about desk, desk goals or desk items"), so the bar is the Verifier tab's alone.
 function deskStatusCell(row) {
-  var r = deskVerifyRun;
-  if (r && r.doing && r.doing !== 'idle' && String(r.id) === String(row.id)) {
-    var of = Number(r.of) || 0;
-    var index = Number(r.index) || 0;
-    var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) : 0;
-    var pct = of ? Math.max(0, Math.min(100, Math.round(((index - 1) + inOne) / of * 100))) : 0;
-    return '<progress max="100" value="' + pct + '" style="width:6em"></progress> ' +
-      '<span class="job-manifest-note">' + (of ? 'suite ' + index + ' of ' + of : 'verifying') + '</span>';
-  }
   var word = String(row.status || '');
   var colour = /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b/i.test(word) ? '#c00' : '';
   return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
@@ -1283,14 +1289,11 @@ function deskBackupHtml() {
 //   and if/when necessary, allow intervention?", then "add it".
 //
 // Drawn only where a deskVerify answers, as backup's status is: on a node
-// without one the tab is not there at all. Monitoring is `now` (what runs,
-// for which item, since when, what waits) and the dataset's newest rows;
-// intervention is Stop, which ends the run and has its claim rejected
-// saying so, and a re-verify, which asks the DESK for verify.again and lets
-// deskVerify's watcher pick it up (goal/G8.10). The tab presses nothing on
-// his behalf and brings no Done.
+// without one the tab is not there at all. SINCE goal/G33.3 it shows only
+// what runs now (the suite, since when), its console, and Stop (the box:
+// "The Verifier tab shows only what runs now, its console, and Stop."). A
+// run is started from the item: his Verify button there, or the desk itself.
 var deskVerifier = null;
-var deskVerifyLast = '';
 // THE RE-VERIFY'S ANSWER (goal/G18.10). Andy: "verify, when idling, does not react to my attempts of pushing it's
 // re-verify button." The desk refused it and the page swallowed the refusal; now its outcome is said in the tab.
 var deskVerifyNote = '';
@@ -1311,7 +1314,6 @@ function deskAskVerifier() {
   return deskVerifyAsk('now', {}).then(function (body) {
     deskVerifier = body;
     deskVerifyMissed = false;
-    if (body.running && body.running.id) deskVerifyLast = String(body.running.id);
     deskDrawTabs();
     deskDrawVerifier();
   }, function () {
@@ -1390,7 +1392,7 @@ var DESK_IDLE_MIN = 60; // the idle hour (goal/G8.4), which the countdown counts
 // THE BAR IS ALWAYS THERE (goal/G8.12). Andy, 2026-10-09: "just gray out the progress bar so i can see the layout,
 // and the progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays
 // visible." So one bar, three states:
-//   a run      how far through the item or the full run: suites done plus the tests of the one running
+//   a run      how far through the run: suites done plus the tests of the one running
 //   idle       the idle hour filling, live, from the newest desk write deskVerify published
 //   spent      the hour reached, or nothing known yet: grey, and it says why
 // A suite never measured before has no total, so the bar stands on the suites alone - a guessed percentage is a lie.
@@ -1413,12 +1415,10 @@ function deskVerifyIdleMin() {
   var ms = deskVerifyRun && Number(deskVerifyRun.idleMs);
   return ms > 0 ? ms / 60000 : DESK_IDLE_MIN;
 }
-// WHAT THE CHORES DID, OR WHY THE HOUR DOES NOT COUNT (goal/G21.3): the chores are ruled now (goal/G8.4's, brought
-// back), so the tab says what they did, and a phase held by the node's agent is named as what keeps it busy.
+// WHAT THE CHORES DID (goal/G21.3): the idle hour is the verifier's own since goal/G33.3, counted from the last run
+// handed to it, so the tab says what its chores did.
 function deskVerifyIdleSaid() {
   var r = deskVerifyRun || {};
-  var holding = Array.isArray(r.holding) ? r.holding : [];
-  if (holding.length) return 'Busy: its agent holds ' + holding.map(function (h) { return deskEsc(String(h)); }).join(', ') + ', so the idle hour does not count.';
   if (r.chores) return 'Idle time reached; the chores: ' + deskEsc(String(r.chores));
   return 'Idle time reached; the chores are starting.';
 }
@@ -1427,7 +1427,7 @@ function deskVerifyBar() {
   if (!r) return deskVerifyBarHtml(0, 'done') + '<div>Nothing measured yet on this node.</div>';
   if (r.doing === 'idle') {
     var pct = deskVerifyIdlePct(r.since);
-    if (pct === null) return deskVerifyBarHtml(0, 'done') + '<div>Idle; no desk write to count the hour from.</div>';
+    if (pct === null) return deskVerifyBarHtml(0, 'done') + '<div>Idle; no time to count the hour from.</div>';
     return deskVerifyBarHtml(pct, pct >= 100 ? 'done' : 'countdown') +
       '<div>' + (pct >= 100 ? deskVerifyIdleSaid() : 'Idle, the hour filling: ' + pct + '%') + '</div>';
   }
@@ -1437,24 +1437,21 @@ function deskVerifyBar() {
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
   var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
   return deskVerifyBarHtml(runPct, 'run') +
-    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
-    (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
+    '<div>Run' + (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
 // IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
-// documentation runs." The hour is measured from the newest desk write deskVerify knows, which it publishes as `since`.
+// documentation runs." The hour is measured from the last run handed to deskVerify, which it publishes as `since`.
 function deskVerifyCountdown(since) {
   if (!since) return '';
   var ms = Date.now() - Date.parse(since);
   if (isNaN(ms)) return '';
-  var held = deskVerifyRun && Array.isArray(deskVerifyRun.holding) && deskVerifyRun.holding.length;
   var left = Math.ceil(deskVerifyIdleMin() - ms / 60000);
-  if (left <= 0 || held) return '<div>' + deskVerifyIdleSaid() + '</div>';
+  if (left <= 0) return '<div>' + deskVerifyIdleSaid() + '</div>';
   return '<div>Idle in ' + left + ' min of quiet.</div>';
 }
 function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
-  var run = deskVerifier.running || { id: '', suite: '', since: '' };
-  var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
+  var run = deskVerifier.running || { suite: '', since: '' };
   var live = deskVerifyRun;
   // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
   var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
@@ -1466,22 +1463,13 @@ function deskVerifyHtml() {
     (live ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
     (live && live.doing === 'idle' ? deskVerifyCountdown(live.since) : '') +
     '<div>' +
-    (run.id
-      ? 'Item ' + deskEsc(run.id) + ' · suite ' + deskEsc(run.suite || '(choosing)') +
-        (run.since ? ' · since ' + deskTime(run.since) : '')
-      : (live && live.doing !== 'idle' ? '' : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : ''))) +
+    (run.suite || deskVerifier.busy === true
+      ? 'Suite ' + deskEsc(run.suite || '(starting)') + (run.since ? ' · since ' + deskTime(run.since) : '')
+      : (live && live.doing !== 'idle' ? '' : 'Idle')) +
     '</div>' +
     (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
-    // HIS BUTTONS (goal/G14.3). Andy, 2026-10-12: "the Buttons in the verifier then read: [run the full harness button]
-    // [stop the run][re- run:.....]", the full harness "(armable)" and his alone; "re-run:" names the item, and
-    // "[Verify <item> again] can be left alone." Stop is pressable whenever anything runs: it was tied to an item id,
-    // and a full run carries none, so the longest run there is could never be stopped.
-    '<div><button type="button" id="desk-verify-full" data-armed="' + (deskArmed === 'desk-verify-full' ? '1' : '') + '">' +
-      (deskArmed === 'desk-verify-full' ? 'Run the full harness: sure?' : 'Run the full harness') + '</button>' +
-    ' <button type="button" id="desk-verify-stop"' + (run.id || run.suite ? '' : ' disabled') + '>Stop the run</button>' +
-    (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
-    '</div>' +
-    // THE QUEUE THAT STOOD HERE (goal/G19.3) IS GONE (goal/G33.2). Andy, 2026-10-22: "remove verifier queue".
+    // STOP, AND NOTHING ELSE (goal/G33.3): pressable whenever anything runs. A run is started from the item.
+    '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button></div>' +
     // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
     deskVerifyConsoleHtml() +
     '</div>';
@@ -1524,8 +1512,7 @@ function deskVerifyEvent(obj) {
   // stopped has ended.
   deskVerifyMissed = false;
   if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
-  if (obj.id) deskVerifyLast = String(obj.id);
-  if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' } }; deskDrawTabs(); }
+  if (!deskVerifier) { deskVerifier = { running: { suite: '', since: '' } }; deskDrawTabs(); }
   deskDrawVerifier();
   deskVerifyConsoleHeard(obj);
   // AND THE LIST'S STATUS BOX FOLLOWS IT (goal/G18.5): the row it runs for shows the progress, and is itself again
@@ -1699,6 +1686,17 @@ spirit.shell.activateApp({
         var id = press.getAttribute('data-id');
         // goal/G6.6: Close on a goal with open items asks "are you sure?" first; nothing open sends at once.
         if (what === 'close' && deskIsGoal(id)) { deskGoalCloseClick(id); return; }
+        // goal/G33.3: Done not verified green arms first; the second press sends it.
+        if (what === 'done') {
+          var r = deskItems.filter(function (x) { return x.id === id; })[0];
+          if (r && deskWarnOnDone(r) && deskArmed !== 'desk-done-' + id) {
+            deskArmed = 'desk-done-' + id;
+            deskDraw();
+            if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
+            return;
+          }
+          if (deskArmed === 'desk-done-' + id) deskArmed = '';
+        }
         deskPress(id, what);
         return;
       }
@@ -1746,37 +1744,10 @@ spirit.shell.activateApp({
       deskRuleFilter.text = String((el && el.value) || e.target.value || '');
       deskRulesSearch();
     });
-    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop, and a re-verify per item.
+    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop.
     document.getElementById('desk-verifier').addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
-      // THE FULL HARNESS, ARMED THEN SENT (goal/G14.3), on the current goal, whose chat takes the report line.
-      if (t.id === 'desk-verify-full') {
-        deskArmOrFire('desk-verify-full', function () {
-          deskVerifyPressed('Full run sent; waiting for deskVerify\'s answer.');
-          var sent = function (id) {
-            return deskVerifyAsk('full.run', { id: id }).then(function (b) {
-              deskVerifyAnswered(b && b.queued ? 'deskVerify answered: the full run is queued' + (id ? ', its line to ' + id : '') + '.' : 'deskVerify answered without queueing the full run.');
-              return deskVerifyRefresh();
-            }, function (e) {
-              deskVerifyAnswered('The full run was not taken: ' + ((e && e.message) || e) + '.');
-              return deskVerifyRefresh();
-            });
-          };
-          // THE DESK'S CURRENT GOAL WHEN THE LIST SHOWS NONE (goal/G19.2). With no goal row on screen (a search, Goals
-          // Only off the current goal) it sent id '', and the report line had no goal to land on and failed in silence.
-          // The goal row is taken only while the List is the current goal's; otherwise the desk is asked for its
-          // current goal alone, with the same read the List uses.
-          var g = deskFilter.currentGoalOnly ? deskGoalRow() : null;
-          if (g) { sent(g.id); return; }
-          deskAsk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: true }).then(function (r) {
-            var cur = deskLabels(r).filter(function (x) { return x && x.goal === ''; })[0];
-            return sent(cur ? cur.id : '');
-          }, function () { return sent(''); });
-        });
-        deskDrawVerifier();
-        return;
-      }
       if (t.id === 'desk-verify-stop') {
         deskVerifyPressed('Stop sent; waiting for deskVerify\'s answer.');
         deskVerifyAsk('stop', {}).then(function (b) {
@@ -1788,14 +1759,6 @@ spirit.shell.activateApp({
         });
         return;
       }
-      var again = t.getAttribute && t.getAttribute('data-reverify');
-      if (again) deskVerifyPressed('Re-verify of ' + again + ' sent; waiting for the desk\'s answer.');
-      // THE RE-VERIFY GOES TO THE DESK, not to deskVerify (goal/G8.10): the record is the word its watcher reads, so
-      // his node's verifier picks it up wherever it runs.
-      if (again) deskAsk('verify.again', { id: again }).then(function () {
-        deskVerifyNote = 'Asked to verify ' + again + ' again.';
-        return deskVerifyRefresh();
-      }, function (e) { deskVerifyNote = 'Not verified again: ' + ((e && e.message) || e); deskDrawVerifier(); });
     });
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);

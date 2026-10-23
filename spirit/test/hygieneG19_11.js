@@ -134,11 +134,12 @@ async function deadVerbs() {
   else test.fail(OWED + 'hub.js still exports handleMatches');
 
   // deskVerify asked for its verbs, as the node asks any server. No node behind it: it needs none to answer `api`.
-  const v = startServer(path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js'), 'deskVerify', { db: path.join(scratch, 'verify.db'), watchMs: 60000, pull: '' });
+  const v = startServer(path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js'), 'deskVerify', { db: path.join(scratch, 'verify.db'), pull: '' });
   const api = await v.up();
   if (!api) { test.fail('the world: deskVerify did not start'); return; }
   const DEAD = ['mode', 'suites', 'loop.once', 'idle', 'chore.once', 'goal.check', 'records.search', 'claim.check'];
-  const KEPT = ['now', 'stop', 'full.run', 'record'];
+  // full.run went with goal/G33.3 (the Verifier tab's run buttons are gone); run is how a run is handed over now.
+  const KEPT = ['now', 'stop', 'run', 'record'];
   const served = DEAD.filter(function (n) { return Object.prototype.hasOwnProperty.call(api, n); });
   if (!served.length) test.check('deskVerify serves none of ' + DEAD.join(', '));
   else test.fail(OWED + 'deskVerify still serves ' + served.join(', '));

@@ -10,7 +10,8 @@
 // WHAT IS ASSERTED
 //   1. Stop by hand ends the suite AND the server it started.
 //   2. The time limit ends the suite AND the server it started.
-//   3. A listed path that leaves spirit/test is not run, and the line on the item says so.
+//   3. A listed path that leaves spirit/test is not run, and the run's row says so (since goal/G33.3 a run of suites is
+//      handed to deskVerify with run {suites, commit}, and its outcome read through search).
 //   4. The desk refuses item.files.add of a path with a .. segment, saying why.
 // rule/11: through testSupport only; a fake node and its own desk; it kills only the processes this suite started.
 
@@ -67,41 +68,19 @@ async function verifyHalf() {
   const outside = path.join(__dirname, '..', '..', 'zzStopTreeOutside.js');
   const outsideMarker = path.join(scratch, 'outside-ran.txt');
   fs.writeFileSync(outside, "require('fs').writeFileSync(" + JSON.stringify(outsideMarker) + ", 'ran');\n");
-  const files = function (rel) { return [{ path: rel, by: 'claude-windows', core: false }]; };
-  const ITEMS = {
-    'st/G1.1': files('spirit/test/' + HANG),
-    'st/G1.2': files('spirit/test/' + HANG),
-    'st/G1.3': files('spirit/test/../../zzStopTreeOutside.js'),
-  };
-  const records = [];
-  const rec = function (verb, body) { records.push({ n: records.length + 1, at: new Date().toISOString(), verb: verb, by: 'claude-windows', key: '', body: JSON.stringify(body) }); };
-  const asks = [];
+  // SINCE goal/G33.3 a run is handed to deskVerify (run {suites, commit}) and its outcome read through search; the
+  // node only answers its tree and the records a suite posts.
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = '';
       req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
         { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
         const flatCall = test.foldAsk(j);
         let out = {};
-        if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
-        else if (flatCall && flatCall.desk) {
-          const verb = Object.keys(flatCall.desk)[0];
-          const a = flatCall.desk[verb] || {};
-          if (verb === 'changes') {
-            const from = Number(a.n) || 0;
-            const rest = records.filter(function (r) { return r.n > from; });
-            out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
-          } else {
-            asks.push({ verb: verb, args: a });
-            if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }) || {}).files ? (({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
-            else if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'st/G1', code: false, go: true, files: ITEMS[a.id] || [] }), version: 1, change: 1 };
-            else if (verb === 'item.chat') out = { chat: [], chatMore: false };
-            else out = { change: 1 };
-          }
-        } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
+        if (flatCall === 'api') out = { deskVerify: {} };
+        else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -111,17 +90,22 @@ async function verifyHalf() {
   const run = path.join(scratch, 'verify');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
-  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), watchMs: 300, suiteMs: 6000, pull: process.execPath + ' ' + probe }, run);
-  const lineOn = function (id) { return asks.filter(function (x) { return x.verb === 'chat.add' && x.args.id === id; }).map(function (x) { return String(x.args.text || ''); }); };
-  const waitFor = async function (fn, ms) { const t = Date.now() + ms; while (Date.now() < t) { if (fn()) return true; await sleep(200); } return fn(); };
+  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), suiteMs: 6000, pull: process.execPath + ' ' + probe }, run);
+  const waitFor = async function (fn, ms) { const t = Date.now() + ms; while (Date.now() < t) { if (await fn()) return true; await sleep(200); } return fn(); };
   const serverPid = function () { try { return Number(fs.readFileSync(pidFile, 'utf8')) || 0; } catch (e) { return 0; } };
+  const idle = function () { return waitFor(async function () { return ((await v.call('now', {})).body || {}).busy === false; }, 30000); };
+  // The newest run of a suite, by its row's key (never by time: two processes' clocks differ by milliseconds).
+  const lastRun = async function (rel) {
+    const items = ((((await v.call('search', { over: 'runs', suite: rel })).body || {}).items) || []).slice().sort(function (x, y) { return Number(y.key) - Number(x.key); });
+    try { return items.length ? JSON.parse(items[0].label) : null; } catch (e) { return null; }
+  };
+  const hang = 'spirit/test/' + HANG;
   try {
     if (!await v.up()) { test.fail('deskVerify did not start'); return; }
-    await sleep(1500);
 
     test.subHeading('1. Stop by hand ends the suite and its server');
     try { fs.unlinkSync(pidFile); } catch (e) { /* none yet */ }
-    rec('press', { id: 'st/G1.1', what: 'claim-done' });
+    await v.call('run', { suites: [hang], commit: '' });
     await waitFor(function () { return serverPid() > 0; }, 15000);
     const p1 = serverPid();
     if (p1) started.push(p1);
@@ -129,30 +113,36 @@ async function verifyHalf() {
     else test.fail('the world: no server pid from the hanging suite');
     await sleep(500);
     await v.call('stop', {});
-    await waitFor(function () { return lineOn('st/G1.1').length > 0; }, 15000);
+    await idle();
     await sleep(1500);
     if (p1 && !alive(p1)) test.check('after Stop the suite\'s server is gone too');
     else test.fail(OWED + 'after Stop the server ' + p1 + ' is still running');
 
     test.subHeading('2. the time limit ends the suite and its server');
     try { fs.unlinkSync(pidFile); } catch (e) { /* gone */ }
-    rec('press', { id: 'st/G1.2', what: 'claim-done' });
+    await v.call('run', { suites: [hang], commit: '' });
     await waitFor(function () { return serverPid() > 0; }, 15000);
     const p2 = serverPid();
     if (p2) started.push(p2);
-    await waitFor(function () { return lineOn('st/G1.2').length > 0; }, 20000);
+    await sleep(1000);
+    await idle();
     await sleep(1500);
-    if (p2 && !alive(p2) && /time limit/i.test(lineOn('st/G1.2')[0] || '')) test.check('after the time limit the suite\'s server is gone too');
-    else test.fail(OWED + 'after the time limit the server ' + p2 + (p2 && alive(p2) ? ' is still running' : ' is gone') + '; line ' + short(lineOn('st/G1.2')[0]));
+    const r2 = await lastRun(hang);
+    const why2 = r2 && r2.suites && r2.suites[0] ? (r2.suites[0].failures || []).join(' ') : '';
+    if (p2 && !alive(p2) && /time limit/i.test(why2)) test.check('after the time limit the suite\'s server is gone too');
+    else test.fail(OWED + 'after the time limit the server ' + p2 + (p2 && alive(p2) ? ' is still running' : ' is gone') + '; run ' + short(r2));
 
     test.subHeading('3. a listed path outside spirit/test is not run');
-    rec('press', { id: 'st/G1.3', what: 'claim-done' });
-    await waitFor(function () { return lineOn('st/G1.3').length > 0; }, 15000);
-    const line3 = lineOn('st/G1.3')[0] || '';
+    const outsideRel = 'spirit/test/../../zzStopTreeOutside.js';
+    await v.call('run', { suites: [outsideRel], commit: '' });
+    await sleep(500);
+    await idle();
+    const r3 = await lastRun('zzStopTreeOutside.js');
+    const why3 = r3 && r3.suites && r3.suites[0] ? (r3.suites[0].failures || []).join(' ') : '';
     if (!fs.existsSync(outsideMarker)) test.check('the file outside spirit/test was not run');
     else test.fail(OWED + 'deskVerify ran spirit/test/../../zzStopTreeOutside.js');
-    if (/outside spirit\/test|leaves spirit\/test|not under spirit\/test/i.test(line3)) test.check('and the line on the item says the path leaves spirit/test');
-    else test.fail(OWED + 'the line on that item reads ' + short(line3));
+    if (r3 && r3.suites[0].outcome === 'not run' && /outside spirit\/test|leaves spirit\/test|not under spirit\/test/i.test(why3)) test.check('and the run\'s row says the path leaves spirit/test');
+    else test.fail(OWED + 'the run of that path reads ' + short(r3));
   } finally {
     await v.stop();
     node.close();

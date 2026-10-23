@@ -1,7 +1,7 @@
 {
   "runs": [],
   "label": "Verifier's dataset",
-  "description": "Keeps verify.db, a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), and beside a red its failure text, capped (goal/G21.3); every run it makes is a row too (goal/G19.3), with the line it posted. Both are read with search (goal/G21.3). Since goal/G22.3 it also runs one door of the Stacks plugin when asked (door.run, its verdict read with door.state), and keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). Started by the node; reached by its verbs on the loopback door (the flat apiDoor).",
+  "description": "A runner that knows nothing of the desk (goal/G33.3): handed a run (run {suites, commit}), it answers taken or busy, runs the suites one at a time and keeps each suite's outcome; it reports to no one. Keeps verify.db: a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), beside a red its failure text, capped (goal/G21.3), and a row per run with each suite's outcome, the commit and the dirty mark. Both are read with search (goal/G21.3), which is how the desk reads a run's outcome. Records the Stacks plugin's door verdicts (door.record), and keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). On its idle hour, an hour with no run handed to it, it runs the chores its manifest names. Started by the node; reached by its verbs on the loopback door (the flat apiDoor).",
   "kind": "server",
   "operated": "node",
   "args": [
@@ -11,34 +11,14 @@
       "description": "The database file. Empty: verify.db beside this server, which git ignores. Every suite hands a temp path, so a test never touches the measurements of a real run."
     },
     {
-      "name": "watchMs",
-      "default": "5000",
-      "description": "How often the watcher reads the desk's changes (goal/G8.10). A claim (since goal/G19.13 it carries its commit; the verifier's pass no longer starts anything), a press claim-done or an agent's verify.again starts that item's check; what was on the record before it started triggers nothing."
-    },
-    {
-      "name": "waitMs",
-      "default": "60000",
-      "description": "How often a claim waiting for its commit is tried again, pulling first (goal/G19.13). A claim whose commit the tree does not hold yet is neither passed nor rejected: one line on the item says what it waits for."
-    },
-    {
-      "name": "waitGiveUpMs",
-      "default": "3600000",
-      "description": "How long a claim waits for its commit before it is dropped, with one line on the item saying so (goal/G19.13)."
-    },
-    {
       "name": "suiteMs",
       "default": "600000",
       "description": "How long one suite may run before it is stopped and counted red (goal/G8.10). A hung suite prints no failure line, so without a limit it read as all green."
     },
     {
-      "name": "suites",
-      "default": "spirit/test",
-      "description": "The folder whose suites a full run runs (goal/G8.12), relative to the checkout. The full run starts when the desk says a goal has emptied; a suite hands a folder of probes so no test runs the real harness."
-    },
-    {
       "name": "pull",
       "default": "git pull --ff-only",
-      "description": "The command run before an item check, in the checkout, when the tree is CLEAN (goal/G16.13). Andy, 2026-10-11: \"pull git when a status change occurs in desk.\" A dirty tree is never pulled - his uncommitted work is his - and is checked as it stands, with the item's result line saying so. Empty: no pull; a suite hands a probe script so no test runs a real git pull. Spawned and awaited since goal/G21.3, so now and stop answer while it runs."
+      "description": "The command run before every run, in the checkout, when the tree is CLEAN (goal/G16.13). A dirty tree is never pulled - its owner's uncommitted work is his - and is run as it stands, the run's row saying so. Empty: no pull; a suite hands a probe script so no test runs a real git pull. Spawned and awaited (goal/G21.3), so now and stop answer while it runs."
     },
     {
       "name": "repo",
@@ -48,22 +28,17 @@
     {
       "name": "idleMs",
       "default": "3600000",
-      "description": "The idle hour (goal/G8.4, brought back by goal/G21.3): this long with no desk write and no phase held by its agent, and the node is idle. Published with every run object, so the tab counts down to this server's own hour."
+      "description": "The idle hour (goal/G8.4, its own clock since goal/G33.3): this long with no run handed to it, and it runs its chores. Published with every run object, so the tab counts down to this server's own hour."
     },
     {
       "name": "idleCheckMs",
       "default": "60000",
-      "description": "How often it reads whether the node is idle (goal/G21.3): the newest desk write from a cursor of its own, and the items its agent holds."
+      "description": "How often it looks whether its idle hour is up (goal/G33.3)."
     },
     {
-      "name": "publish",
+      "name": "chores",
       "default": "",
-      "description": "The idle chore's publish command, the node's port appended (goal/G21.3). Empty: process/js/deskClient/publishData.js, which measures, writes agents/<agent>/ and commits it under the standing grant. A suite hands a probe so no test commits or pushes."
-    },
-    {
-      "name": "choresRepo",
-      "default": "",
-      "description": "The checkout the idle chores write agents/<agent>/ into and run the publish in (goal/G21.3). Empty: the repo it measures. A suite hands a scratch repo."
+      "description": "The idle chores (goal/G33.3): commands, one per line or separated by ';', each run in the checkout with the node's port appended, one after the other, once per quiet stretch. Each chore names the folders it updates and finds its own agent; the verifier knows neither. Empty: no chores. An agent's node names its publish here, for instance node spirit/run/process/js/deskClient/publishData.js."
     }
   ]
 }

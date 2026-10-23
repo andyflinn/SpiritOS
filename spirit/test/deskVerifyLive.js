@@ -13,12 +13,13 @@
 // node); runAll rewrites BOARD.md at the end of every full run.
 //
 // THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.12 for him to overrule:
-//   1 THE WATCHER: one read at a time, and one word is one check - however slow the desk answers.
-//   2 PUBLISH: deskVerify publishes (appServer.publish) one plain object every time its run changes:
-//       {doing: 'item' | 'full' | 'idle', id, suite, index, of, tests, expected, line, since}
+//   1 THE WATCHER went with goal/G33.3: deskVerify reads nothing of the desk; a run is handed to it (run {suites,
+//     commit}), so its section here went too.
+//   2 PUBLISH: deskVerify publishes (spirit.core.jobs.publish) one plain object every time its run changes:
+//       {doing: 'run' | 'idle', suite, index, of, tests, expected, line, since}
 //     index/of: which suite of how many; tests: assertions the running suite has printed so far; expected: how many
 //     tests that suite had in the dataset last time (0 when never seen); line: one status sentence. When the run ends
-//     it publishes doing 'idle', its since being the newest desk write it knows - what the countdown counts from.
+//     it publishes doing 'idle', its since being when the last run was handed to it - what the countdown counts from.
 //   3 THE FACE: the tab subscribes with api.onPublished(fn, 'deskVerify') and repaints from each object: a progress bar
 //     and ONE status line under it, replaced by each event, never appended; idle, a countdown to idle time.
 //   4 BOARD.md: runAll no longer writes it.
@@ -46,7 +47,7 @@ function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-test.startTest('goal/G8.12: the live verifier tab, the watcher one read at a time, and no BOARD.md');
+test.startTest('goal/G8.12: the live verifier tab, what deskVerify publishes as it runs, and no BOARD.md');
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifylive-'));
 
@@ -110,50 +111,28 @@ function startVerify(name, node, values) {
   };
 }
 
-async function watcherHalf() {
-  test.subHeading('1. the watcher: one read at a time, one word is one check');
-  const node = await fakeNode({ files: { 'lv/G1.8': [FAST], 'lv/G1.9': [FAST] } });
-  const v = startVerify('watch', node, { watchMs: 200, suiteMs: 60000 });
-  const passes = function (id) { return node.asks.filter(function (x) { return x.verb === 'verify.pass' && x.args.id === id; }).length; };
-  try {
-    if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
-    await sleep(800);
-    node.slow = 1200;   // every read now takes six ticks
-    node.rec('verify.again', { id: 'lv/G1.9' });
-    await sleep(9000);
-    if (passes('lv/G1.9') === 1) test.check('a desk slower than the tick: one verify.again gave one verify.pass');
-    else test.fail(OWED + 'one verify.again gave ' + passes('lv/G1.9') + ' verify.pass');
-    node.slow = 0;
-    node.rec('verify.again', { id: 'lv/G1.8' });
-    node.rec('verify.again', { id: 'lv/G1.8' });
-    await sleep(5000);
-    if (passes('lv/G1.8') === 1) test.check('two words for one item in one read: one check');
-    else test.fail(OWED + 'two words for lv/G1.8 gave ' + passes('lv/G1.8') + ' verify.pass');
-  } finally { await v.stop(); node.close(); }
-}
-
 async function publishHalf() {
-  test.subHeading('2. deskVerify publishes its run as it goes');
+  test.subHeading('1. deskVerify publishes its run as it goes');
   const node = await fakeNode({ files: { 'lv/G1.1': [SLOW, FAST] } });
-  // Since goal/G19.11 there is no claim.check verb: the check is started the way it is started on his node, by a word
-  // on the desk's record (verify.again) that the watcher reads. No pull: the suite's own probes make the tree dirty.
-  const v = startVerify('publish', node, { watchMs: 300, suiteMs: 60000, pull: '' });
+  // Since goal/G33.3 a run is handed to deskVerify with run {suites, commit}. No pull: the suite's own probes make the
+  // tree dirty.
+  const v = startVerify('publish', node, { suiteMs: 60000, pull: '' });
   try {
     if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
     for (const t of ['a', 'b', 'c']) await v.call('record', { suite: SLOW, title: t, outcome: 'green' });
     await sleep(800);
-    node.rec('verify.again', { id: 'lv/G1.1' });
-    const ended = function () { return node.asks.some(function (x) { return (x.verb === 'verify.pass' || x.verb === 'verify.reject') && x.args.id === 'lv/G1.1'; }); };
-    for (let i = 0; i < 150 && !ended(); i++) await sleep(200);
+    await v.call('run', { suites: ['spirit/test/' + SLOW, 'spirit/test/' + FAST], commit: '' });
+    await sleep(300);
+    for (let i = 0; i < 150 && ((await v.call('now')).body || {}).busy !== false; i++) await sleep(200);
     await sleep(500);
     const p = node.published.filter(function (o) { return o && typeof o === 'object' && o.doing; });
-    const first = p.filter(function (o) { return o.doing === 'item' && o.id === 'lv/G1.1' && /zzLiveA\.js/.test(String(o.suite)); });
-    if (first.length && first[0].index === 1 && first[0].of === 2 && first[0].expected === 3) test.check('it publishes the item, suite 1 of 2, and the 3 tests that suite had last time');
+    const first = p.filter(function (o) { return o.doing === 'run' && /zzLiveA\.js/.test(String(o.suite)); });
+    if (first.length && first[0].index === 1 && first[0].of === 2 && first[0].expected === 3) test.check('it publishes the run, suite 1 of 2, and the 3 tests that suite had last time');
     else test.fail(OWED + 'published: ' + short(p.slice(0, 3)));
     const counts = first.map(function (o) { return o.tests; }).filter(function (n) { return typeof n === 'number'; });
     if (counts.length >= 2 && Math.max.apply(null, counts) >= 2 && counts.every(function (n, i) { return !i || n >= counts[i - 1]; })) test.check('and again as its tests report, the count rising');
     else test.fail(OWED + 'tests counts published for zzLiveA.js: ' + short(counts));
-    if (p.some(function (o) { return o.doing === 'item' && o.index === 2 && /zzLiveB\.js/.test(String(o.suite)); })) test.check('then suite 2 of 2');
+    if (p.some(function (o) { return o.doing === 'run' && o.index === 2 && /zzLiveB\.js/.test(String(o.suite)); })) test.check('then suite 2 of 2');
     else test.fail(OWED + 'no publish for suite 2: ' + short(p.map(function (o) { return [o.doing, o.index, o.suite]; })));
     if (p.length && p.every(function (o) { return typeof o.line === 'string' && o.line.length; })) test.check('every object carries one status line');
     else test.fail(OWED + 'objects without a line: ' + short(p.filter(function (o) { return !o.line; }).slice(0, 2)));
@@ -180,11 +159,11 @@ function target(attrs) {
 }
 
 async function faceHalf() {
-  test.subHeading('3. the tab listens and repaints: a bar, one line, an idle countdown');
+  test.subHeading('2. the tab listens and repaints: a bar, one line, an idle countdown');
   const fake = require('./deskFake.js').create([]);
   fake.items = [{ id: 'lv/G1', title: 'Live', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
-    now: function () { return { running: { id: '', suite: '', since: '' }, queued: [] }; },
+    now: function () { return { busy: false, running: { suite: '', since: '' }, stopAsked: false }; },
     // A record the tab must NOT show (Andy: "i want that damn log display gone. and only show the latest status.").
     'records.search': function () { return { items: [{ key: '1', label: JSON.stringify({ suite: 'zzLogRow.js', title: 'a logged title', outcome: 'red', commit: 'abc1234', at: new Date().toISOString() }) }], more: false }; },
     stop: function () { return { stopped: false }; },
@@ -215,14 +194,14 @@ async function faceHalf() {
   if (/(<progress|role="progressbar")[^>]*data-phase="done"|data-phase="done"[^>]*(<progress|role="progressbar")/.test(body.innerHTML) || /<progress[^>]*data-phase="done"/.test(body.innerHTML)) test.check('with nothing published yet the bar is drawn, gray');
   else test.fail(OWED + 'before any publish the tab reads ' + short(body.innerHTML));
   const at = new Date().toISOString();
-  await send({ doing: 'item', id: 'lv/G1.1', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 1, expected: 3, line: 'first status line', since: at });
-  await send({ doing: 'item', id: 'lv/G1.1', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 2, expected: 3, line: 'second status line', since: at });
+  await send({ doing: 'run', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 1, expected: 3, line: 'first status line', since: at });
+  await send({ doing: 'run', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 2, expected: 3, line: 'second status line', since: at });
   const b = body.innerHTML;
   if (/<progress|role="progressbar"/.test(b)) test.check('a progress bar');
   else test.fail(OWED + '#desk-verifier has no progress bar: ' + short(b));
   if (/second status line/.test(b) && !/first status line/.test(b)) test.check('and one status line, replaced by each event, never appended');
   else test.fail(OWED + 'the status lines in #desk-verifier: ' + short(b));
-  if (/lv\/G1\.1/.test(b) && /zzLiveA\.js/.test(b)) test.check('it says what it is testing');
+  if (/zzLiveA\.js/.test(b) && /suite 1 of 2/.test(b)) test.check('it says what it is testing: the suite, 1 of 2');
   else test.fail(OWED + 'no item or suite in #desk-verifier: ' + short(b));
   // GROWN AFTER HIS LOOK (claude-windows): "i want that damn log display gone. and only show the latest status."
   if (!/zzLogRow\.js|a logged title|Records, newest first/.test(b)) test.check('no records list: the log display is gone');
@@ -252,7 +231,7 @@ async function faceHalf() {
 }
 
 function boardHalf() {
-  test.subHeading('4. no BOARD.md');
+  test.subHeading('3. no BOARD.md');
   const src = fs.readFileSync(RUNALL, 'utf8');
   if (src.indexOf('BOARD.md') === -1) test.check('runAll no longer writes BOARD.md');
   else test.fail(OWED + 'runAll.js still names BOARD.md ' + (src.split('BOARD.md').length - 1) + ' time(s)');
@@ -261,7 +240,6 @@ function boardHalf() {
 (async function () {
   fs.writeFileSync(path.join(__dirname, SLOW), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('live probe A');\nlet i = 0;\nconst t = setInterval(function () { test.check(['a', 'b', 'c'][i]); i++; if (i === 3) { clearInterval(t); test.reportSuccessFailureCount(); process.exit(0); } }, 700);\n");
   fs.writeFileSync(path.join(__dirname, FAST), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('live probe B');\ntest.check('fast');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
-  await watcherHalf();
   await publishHalf();
   await faceHalf();
   boardHalf();

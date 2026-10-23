@@ -8,7 +8,7 @@
 //   box.release, item.add, goal.add, phase.take, phase.done, phase.may, changes, chat.search, log.search, items.find,
 //   rule.get, rules.search, profile.get, pending.get.
 //   Only the files are added: the desk still decides what it allows him. session.set, rule.add, item.delete,
-//   profile.set, the verifier's verbs (verify.pass/reject/regress), log.add, agent.state, signoff,
+//   profile.set, log.add, agent.state, signoff (the verifier's verbs went with goal/G33.3),
 //   rule.draft/version/history get no file.
 //
 // HOW THE DECLARED REQUEST IS READ: from desk.js's source, never by requiring it (it starts a server): the verb's
@@ -36,7 +36,7 @@ const FAMILY_DIR = path.join(DESK_DIR, 'desk.family'); // the verb files, <modul
 const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'tools.js');
 
 const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get'];
-const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'verify.pass', 'verify.reject', 'verify.regress', 'log.add', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
+const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'log.add', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sameKeys(a, b) { return JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b || {}).sort()); }

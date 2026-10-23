@@ -163,7 +163,8 @@ async function suite() {
   // being described for Levant too, so the family lists the ten and those five.
   // Since goal/G19.13 SIXTEEN: the desk's claim {id, phase, commit} has its verb file, claim.json.
   // Since goal/G24.1 THIRTY-THREE: the seventeen desk verbs cw uses daily got their files (deskAgentVerbFiles.js).
-  const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'verify.again', 'claim',
+  // verify.again went with goal/G33.3 (Andy's yes, "box this and continue").
+  const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'claim',
     'line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may',
     'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get',
     // goal/G27.5, R9: agents arrange dependencies, so block, unblock and block.targets are described to them too.

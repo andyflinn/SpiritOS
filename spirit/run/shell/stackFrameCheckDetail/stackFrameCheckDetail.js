@@ -7,7 +7,7 @@
 //   D2. it reads and writes the door only through the plugin's verbs (stackFrameChecks.doors, update, run, runState,
 //       remove), by name (desk.<verb>) to the desk server, as deskDetails asks.
 //   D3. its chat is the chat of the door's item (the door's `item`), the shared chat element (shell/shared/js/deskChat.js).
-//   D5. Run runs this one door at once, in the plugin, outside deskVerify's queue; the plugin hands the verdict to
+//   D5. Run runs this one door at once, in the plugin, never by deskVerify; the plugin hands the verdict to
 //       deskVerify as a record only. So the run, its time and its verdict show here; there is no Verifier console to go to.
 //   D7. a door is deleted here alone: Remove, armed by its first press and sent by the second, strikes the door and
 //       deletes its item (the plugin does both), and the dialog closes.

@@ -101,7 +101,8 @@ async function serverHalf() {
     for (const word of ['listening', 'working', 'listening', 'working', 'listening']) await call('agent.state', { word: word }, CW);
     const f = parse(((await call('item.get', { id: 'lf/G1.1' }, ANDY)).body || {}).item) || {};
     const after = await limboLines();
-    if (f.claims > 0 && (f.buttons || []).indexOf('done') === -1) test.check('the world: claimed, Done not yet offered (deskVerify on the node)');
+    // SINCE goal/G33.3 Done is offered on the claim, and his press reads the verifier (deskVerifyDriven.js).
+    if (f.claims > 0 && (f.buttons || []).indexOf('done') !== -1) test.check('the world: claimed, Done offered, its press to read the verifier (deskVerify on the node)');
     else test.fail('the world: the item reads ' + short(f));
     if (f.limbo === false && after === before) test.check('it is not in limbo, and no limbo line came while its taker\'s word flipped (' + after + ' before and after)');
     else test.fail(OWED + 'limbo ' + f.limbo + '; limbo lines ' + before + ' then ' + after);
@@ -207,14 +208,14 @@ async function listHalf() {
   else test.fail(OWED + 'the status header reads ' + short((/<th[^>]*>status<\/th>/.exec(table()) || [''])[0]));
 
   if (typeof subs.deskVerify !== 'function') { test.fail('the world: the page did not subscribe to deskVerify'); return; }
-  subs.deskVerify({ doing: 'item', id: 'lv/G1.1', suite: 'spirit/test/zzA.js', index: 1, of: 2, tests: 3, expected: 6, line: 'running zzA.js, suite 1 of 2', since: new Date().toISOString() });
+  // SINCE goal/G33.3 deskVerify knows no item (Andy: "deskVerify has no fucking clue about desk, desk goals or desk
+  // items"): its published run names suites only, so no row can be told apart as its own, and the run's bar is the
+  // Verifier tab's alone. The row keeps its status word.
+  subs.deskVerify({ doing: 'run', suite: 'spirit/test/zzA.js', index: 1, of: 2, tests: 3, expected: 6, line: 'running zzA.js, suite 1 of 2', since: new Date().toISOString() });
   await settled(); await sleep(20); await settled();
   const running = cellOf('lv/G1.1');
-  if (/<progress/.test(running) && /1 of 2/.test(running)) test.check('while deskVerify runs for a row, its status box shows the progress: ' + short(running.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')));
-  else test.fail(OWED + 'the running row\'s status cell reads ' + short(running));
-  const other = cellOf('lv/G1.2');
-  if (!/<progress/.test(other)) test.check('and only that row');
-  else test.fail(OWED + 'another row shows progress: ' + short(other));
+  if (!/<progress/.test(running) && /waiting for deskVerify/.test(running)) test.check('while deskVerify runs, a row keeps its status word: ' + short(running.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')));
+  else test.fail(OWED + 'the row\'s status cell during a run reads ' + short(running));
 
   subs.deskVerify({ doing: 'idle', id: '', line: 'idle', since: new Date().toISOString() });
   await settled(); await sleep(20); await settled();

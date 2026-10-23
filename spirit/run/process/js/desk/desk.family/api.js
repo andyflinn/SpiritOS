@@ -81,11 +81,7 @@ module.exports = {
     'state.get': {},
     'state.set': { json: 'id' },
     unblock: { id: 'id', blocks: 'id' },
-    'verify.again': { id: 'id' },
-    'verify.pass': { id: 'id' },
     // why may be '': the desk words a rejection without one.
-    'verify.regress': { id: 'id', why: 'text' },
-    'verify.reject': { id: 'id', why: 'text' },
     'work.open': {},
   },
 };

@@ -33,7 +33,7 @@
 //
 // ── A DOOR RUNS HERE, deskVerify ONLY RECORDS IT (goal/G27.2) ───────
 //
-// DECIDED BY ANDY, 2026-10-17, in goal/G27.2's box, replacing goal/G22.3's run through deskVerify's queue: a door being
+// DECIDED BY ANDY, 2026-10-17, in goal/G27.2's box, replacing goal/G22.3's run through deskVerify: a door being
 // designed runs at once, here, and deskVerify only records its verdict ("i don't want verifier to block the
 // design-a-door process", "i don't mind if our test sends the verifier a result"). So run starts the one-door suite
 // itself and answers at once; runState and each door's last verdict are its own, kept under the desk's --state
@@ -352,13 +352,13 @@ module.exports = function (desk) {
   //   Andy, 2026-10-17: "i also don't want to wait for the verifier to be willing to run that one door test for me. in
   //   stacks, we're actually "designing" the door, not running it for the verifiers benefit, i don't mind if our test
   //   sends the verifier a result, i don't want verifier to block the design-a-door process". This replaces goal/G22.3's
-  //   ruling that every door run goes through deskVerify's queue; the overlap with a deskVerify run on the same tree is
+  //   ruling that every door run goes through deskVerify; the overlap with a deskVerify run on the same tree is
   //   accepted (Andy, same day).
   //
   // Run starts the stack-frame suite in its one-door mode at once (SPIRIT_STACKS_DOOR, the list the plugin keeps in
   // SPIRIT_STACKS_LIST, the verdict written to SPIRIT_STACKS_VERDICT), one run per door at a time; its verdict is kept
   // in the plugin's own folder under the desk's --state (runs/<id>.json, the newest per door), said on the stream, and
-  // then handed to deskVerify as a record only (door.record), which runs and queues nothing.
+  // then handed to deskVerify as a record only (door.record), which runs nothing.
   const RUNS_DIR = STATE_DIR ? path.join(STATE_DIR, 'runs') : '';
   const live = Object.create(null);   // door id -> { startedAt } while its run is under way
   function keptRun(id) {

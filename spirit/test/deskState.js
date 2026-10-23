@@ -120,9 +120,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('done') && !btns(by['t/G1.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
   else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['t/G1.1']));
   await call('press', { id: 't/G1.1', what: 'claim-done' }, WSL);
-  // goal/G16.13: a plain item's claim no longer brings Done by itself — the verifier's
-  // word does (Andy: "only the verifier should give me a done button").
-  await call('verify.pass', { id: 't/G1.1' }, ANDY);
+  // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
   by = await items();
   if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
   else test.fail(OWED + 'after one claim Alpha has ' + JSON.stringify(by['t/G1.1']));

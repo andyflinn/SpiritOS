@@ -25,6 +25,7 @@
 //   the function inside deskVerify, judged by what `record` keeps.)
 //   record: in 'desk' and 'agent' modes it keeps rows as goal/G8.1 built it; in 'none' mode it answers and stores
 //   nothing.
+// SINCE goal/G33.3 there is no mode: deskVerify asks its node nothing about a desk, and every node keeps its records.
 // SINCE goal/G21.3: every node's deskVerify keeps its own test records in the same shape; the desk node's records are
 // the authoritative ones, an agent's are private to its own work and never go through git. "No commit" means the
 // agent's deskVerify writes nothing official, not that it keeps no records. Section 3 asserts that.
@@ -130,7 +131,9 @@ async function start(name, apps) {
     if (agentRows.length === 1 && agentRows[0].suite === 'mini.js' && agentRows[0].outcome === 'red') test.check('its own database holds the row, in the same shape as the desk node\'s');
     else test.fail(OWED3 + 'the agent node stored ' + short(agentRows));
     const bareRec = await bare.ask('record', { suite: 'mini.js', title: 'it holds', outcome: 'green' });
-    if (bareRec.status === 200 && !bare.rows().length) test.check('a node that is neither stores nothing either');
+    // SINCE goal/G33.3 deskVerify knows no mode: it asks its node nothing about a desk (Andy: "deskVerify has no
+    // fucking clue about desk, desk goals or desk items"), so a node running neither keeps its own records as well.
+    if (bareRec.status === 200 && bareRec.body && bareRec.body.written === true && bare.rows().length === 1) test.check('a node that is neither keeps the record too: deskVerify reads no mode');
     else test.fail(OWED + 'the bare node answered ' + short(bareRec.body) + ' with ' + bare.rows().length + ' rows');
   } finally {
     await deskNode.stop();

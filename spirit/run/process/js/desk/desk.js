@@ -455,7 +455,7 @@ function inGoalOf(goal, id) { const s = String(id || ''); return s === goal || s
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), profiles: Object.create(null), current: '' };
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), profiles: Object.create(null), current: '', verifyAnswer: '' };
   s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
   s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
   s.items[GROUP_CHAT].closed = true;
@@ -882,7 +882,24 @@ function apply(s, r, b, item, goalOf) {
       // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
       // change it manages....", and "yes" to its being the word on the List rows. An agent's verify pass does not
       // finish a code item: it waits for deskVerify, and the row says so instead of reading like any running item.
-      if (b.phase === 'verify' && b.pass === true && it.code && !it.done && !it.closed) it.status = 'waiting for deskVerify';
+      if (b.phase === 'verify' && b.pass === true && it.code && !it.done && !it.closed) { it.status = 'waiting for deskVerify'; if (!it.waitingAt) it.waitingAt = r.n; }
+      return;
+    // THE VERIFIER'S ANSWER TO A START REQUEST (goal/G33.3): the one switch, verify-busy, shows it (taken or busy) and
+    // holds nothing back; a taken run is that item's verify under way, so it is not handed over again.
+    case 'verify.answer':
+      s.verifyAnswer = b.taken === true ? 'taken' : 'busy';
+      if (it && b.taken === true && !it.done && !it.closed) { it.verifyRunning = true; if (it.status === 'waiting for deskVerify') it.status = 'handed to deskVerify'; }
+      return;
+    // WHAT THE VERIFIER'S SEARCH SAYS OF ITS SUITES (goal/G33.3), read by the desk at each event: green, red with the
+    // failure lines, or none (no run yet). The item's facts carry it, and Done's warning mark is drawn from it.
+    case 'verify.state':
+      if (!it) return;
+      it.verifyState = String(b.verified || 'none');
+      it.verifyFailures = Array.isArray(b.failures) ? b.failures.map(String) : [];
+      if (it.verifyState !== 'none') it.verifyRunning = false;
+      if (b.ran === true && !it.done && !it.closed && (it.status === 'waiting for deskVerify' || it.status === 'handed to deskVerify' || /^verified /.test(it.status))) {
+        it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
+      }
       return;
     // AND ONLY deskVerify BRINGS THE BUTTON (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't show up
     // until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the button." So
@@ -923,23 +940,16 @@ function apply(s, r, b, item, goalOf) {
       // goal/G8.12: the row says it was rejected, not merely that it runs again.
       it.status = 'deskVerify rejected it';
       return;
-    // THE GOAL IS EMPTY (goal/G8.12). Andy, 2026-10-09: "why, the run-all should be triggered by: \"no items left in
-    // the goal\", by the desk itself." Ruled already in goal/G8.3's box: "When the last item of the goal closes, every
-    // copy starts its full run." The record is written once per goal, by the press that empties it, and deskVerify's
-    // watcher reads it; the flag here is what makes it once.
+    // THE GOAL IS EMPTY (goal/G8.12): written once per emptying, by the press that empties it. Since goal/G33.3 no run
+    // starts from it: the goal's run is his Verify on the goal.
     case 'goal.emptied': {
       const g = s.goals[String(b.id)];
       if (g) g.emptied = true;
-      // goal/G8.12: and the goal's own row says what it is waiting for, written here and by nobody by hand.
-      const row = s.items[String(b.id)];
-      if (row && !row.done && !row.closed) row.status = 'goal run started';
       return;
     }
-    // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes
-    // nothing of the item - not its phase, not its verified mark, not its buttons: the record itself is the word, and
-    // deskVerify's watcher reads it and runs the item's suites again.
-    // (Since goal/G19.2 the record on a goal carries goal: true, which is how the watcher knows to run the goal run;
-    // it still changes nothing here.)
+    // verify.pass, verify.reject, verify.regress and verify.again WENT WITH goal/G33.3 as verbs (Andy's yes, "box this
+    // and continue"). Their records already written are replayed here as they were, so no stored item changes; nothing
+    // writes new ones.
     case 'verify.again': return;
     // A DONE TAKEN BACK BY A REGRESSION (goal/G19.2). Andy, 2026-10-12: "i said the verifier can not press done, i
     // never said that the verifier cannot undo a done/close...", "a done becomes unsettles when an associated suite
@@ -1167,6 +1177,8 @@ function press(s, it, what, r, goalOf, b) {
   // is consumed between 'go' and 'done'"). The line below replays the records taken before that day as they were.
   else if (what === 'claim-done') {
     it.claims[r.by] = true;
+    // goal/G33.3: a claim makes the item wait for verification, in the order it came.
+    if (!it.waitingAt) it.waitingAt = r.n;
     if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
   }
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
@@ -1202,7 +1214,7 @@ function blockers(s, it) {
 
 // THE GOAL THAT HAS JUST EMPTIED (goal/G8.12): every item of it done, closed or left out, and no goal.emptied on the
 // record yet. Called after a press lands, so the state it reads is the state his press produced; it writes one record
-// as the desk itself, which is what deskVerify's watcher takes for "run the full harness now".
+// as the desk itself. Since goal/G33.3 no run starts from it: the goal's run is his Verify on the goal.
 function emptiedByPress(a) {
   const st = walkState();
   const it = st.items[String(a && a.id)];
@@ -1269,29 +1281,14 @@ function buttonsOf(s, it) {
   // pressed against the goal id offers nothing by itself. An item's own rule is unchanged: a claim offers Done.
   if (it.goal) {
     const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
-    // AND THE GOAL'S DONE WAITS FOR THE FULL RUN WHERE ONE CAN RUN IT (goal/G8.12). Andy, 2026-10-09: "the run-all
-    // should be triggered by: \"no items left in the goal\", by the desk itself." The run is deskVerify's, so where a
-    // deskVerify answers on this node the goal's Done comes with its verify.pass on the goal and not before; where
-    // none runs, nothing changes and the Done comes as it always did.
-    if (allDone && !grantsOpen && (it.checked === true || !hasDeskVerify())) out.push('done');
-  // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
-  // AND DONE WAITS FOR deskVerify WHERE ONE RUNS (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't
-  // show up until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the
-  // button." So a code item needs the verifier's pass AND deskVerify's own word (verify.pass) - but only while a
-  // deskVerify runs on this node: on a box without one, Done follows the pass as it always has, or nothing there could
-  // ever be done.
-  // AND A PLAIN ITEM WAITS FOR THE VERIFIER TOO (goal/G16.13). Andy, 2026-10-11:
-  // "only the verifier should give me a done button, that's one way of knowing that the
-  // 'Done' offered went through the verifier." A claim is still what a plain item needs
-  // — it has no verify phase to pass — but the claim alone no longer brings the button.
-  //
-  // AND WITH NO deskVerify ON THE BOX IT STILL WAITS, unlike a code item. That looks
-  // like the harsher rule and is the plainer one: `verify.pass` is offered on a claimed
-  // plain item now, so Done is still reachable where no verifier runs, and the button
-  // then means the same thing everywhere — somebody or something said the item holds.
-  // A code item keeps its own escape, which predates this and is not this item's to move.
-  } else if (!grantsOpen && (it.code ? (it.verified === true && (it.checked === true || !hasDeskVerify()))
-    : (Object.keys(it.claims).length && it.checked === true))) out.push('done');
+    // DONE IS NEVER HELD BACK FOR VERIFICATION (goal/G33.3). The box: "Done is offered as soon as an agent claims done.
+    // The item's facts say whether it is verified; not verified (its suites red, or no run of them yet), the Done
+    // button carries a warning mark and re-arms in the page". So the goal's Done comes when its items are done, and the
+    // page marks it from the facts; the desk keeps no arming and refuses no Done.
+    if (allDone && !grantsOpen) out.push('done');
+  // A CODE ITEM OFFERS DONE ON ITS VERIFIER'S PASS (goal/G5.7) OR A CLAIM; A PLAIN ITEM ON A CLAIM (goal/G33.3, as
+  // above: Done is offered as soon as an agent claims done).
+  } else if (!grantsOpen && ((it.code && it.verified === true) || Object.keys(it.claims).length > 0)) out.push('done');
   // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
   // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
   // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
@@ -1317,6 +1314,13 @@ function buttonsOf(s, it) {
   // not yet closed (his "no." to Q1). A closed or done item returned above and offers none. G9.7's ruling stands: delete
   // closes and leaves out, it erases nothing. The dialog draws it from here, and item.delete refuses what is not here.
   if (!it.goal && g && !it.phaseWith && !claimed) out.push('delete');
+  // HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done
+  // button"), on every open item and goal where a deskVerify answers on this node. It always tries; the answer is
+  // shown on it, and holds nothing back.
+  if (hasDeskVerify() && it.id !== GROUP_CHAT && !it.subGoal) {
+    const at = out.indexOf('done');
+    if (at === -1) out.push('verify'); else out.splice(at + 1, 0, 'verify');
+  }
   return out;
 }
 // The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
@@ -1511,7 +1515,13 @@ function facts(s, it) {
     // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
     waived: it.waived === true,
     // goal/G5.8: the rules in force at his Go, each { key, version }.
-    rules: Array.isArray(it.rules) ? it.rules : [] };
+    rules: Array.isArray(it.rules) ? it.rules : [],
+    // WHETHER IT IS VERIFIED (goal/G33.3), as the desk last read the verifier's search: 'green', 'red' (verifyFailures
+    // the failure lines) or 'none' (no run yet); '' where no deskVerify answers on this node, so no mark is drawn.
+    verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: Array.isArray(it.verifyFailures) ? it.verifyFailures : [],
+    // THE SWITCH (goal/G33.3): the verifier's last answer to a start request, taken or busy ('' before any); the Verify
+    // button shows it.
+    verifyAnswer: s.verifyAnswer || '', verifierBusy: !!s.verifyAnswer };
   // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
   // goal/G21.6: every agent with an open take of one of his lines.
   f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
@@ -1533,7 +1543,8 @@ function facts(s, it) {
     f.design = g.design;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       // goal/G24.9: delete is on offer on running items now, and offering it is not Andy being waited on.
-      return o && listed(s, o) && (buttons(s, o).filter(function (b) { return b !== 'delete'; }).length > 0 || asksOf(s, o) > 0);
+      // goal/G33.3: nor is his Verify, which every open item offers.
+      return o && listed(s, o) && (buttons(s, o).filter(function (b) { return b !== 'delete' && b !== 'verify'; }).length > 0 || asksOf(s, o) > 0);
     }).length;
     // AN AGENT NOT INCLUDED IS ABSENT (goal/G21.1), whatever it last wrote: out of live, named in excluded.
     f.excluded = Object.keys(s.agentKey).filter(function (l) { return excludedKey(s, s.agentKey[l]); }).sort();
@@ -1768,6 +1779,13 @@ function write(verb, a, check) {
   // facts of every row of the goal that differ now ride along, in this one object: one press, one object, never a
   // half-painted press (fileTransfer goal/G1.4 removed the publish coalescing; this ride-along never depended on it).
   if (it) out.rows = changedRows(s, after, it.goal ? it.id : it.goalId);
+  // THE SWITCH TRAVELS TO EVERY CLIENT (goal/G33.3): the verifier's answer is one desk fact, said with the publish, and
+  // every row it changed, in every goal, rides along, not the handed item's alone.
+  if (verb === 'verify.answer') {
+    out.verifier = { answer: after.verifyAnswer };
+    out.rows = [];
+    Object.keys(after.goals).forEach(function (gid) { out.rows = out.rows.concat(changedRows(s, after, gid)); });
+  }
   // An agent's word changes the current goal's row (its working list), and that row travels (goal/G2.3).
   if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
   appServer.spirit.core.jobs.publish(out);
@@ -1864,11 +1882,11 @@ function ruleRow(key) {
   const d = getDraft.get(r.key);
   return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by };
 }
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code', 'verify'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code', 'verify'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // IS THERE A deskVerify ON THIS NODE (goal/G8.3), which decides whether Done waits for it. Asked of this node, the
@@ -1901,6 +1919,157 @@ function lookForDeskVerify() {
 lookForDeskVerify();
 const verifyWatch = setInterval(lookForDeskVerify, 60000);
 if (verifyWatch && typeof verifyWatch.unref === 'function') verifyWatch.unref();
+
+// ONE VERB OF THIS NODE'S deskVerify, by its name on the node's flat apiDoor (goal/G22.3, goal/G33.3): only a port its
+// own node named, never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why. The desk
+// hands runs only to the verifier on its own node (the box: "The desk hands runs only to the verifier on its own node").
+function askDeskVerify(verb, args) {
+  const port = nodeNamedPort();
+  if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
+  // Through the spirit object (goal/G32.3), as {status, body}; made again when deskVerify came up after it.
+  return spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
+    const b = r && r.body;
+    if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
+    const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));
+    throw refusedWhy('bad-request', 'deskVerify did not take ' + verb + ': ' + why);
+  }, function (e) { throw refusedWhy('bad-request', 'no deskVerify answers on this node: ' + ((e && e.message) || e)); });
+}
+
+// ── THE DESK DRIVES VERIFICATION (goal/G33.3) ────────────────────────────
+//
+//   Andy, in the item's box: "the desk knows the state of all items. so it can send them when verifier is not busy, and
+//   i get a fucking button on the ITEM, not the verifier, to trigger a verifier RUN.", "make sure in the box that
+//   deskVerify has no fucking clue about desk, desk goals or desk items. the goal itself can compile a list of suites
+//   from its items, to trigger a goal-verifier-run.", "the verifier only is busy or not.", and "the desk can damn well
+//   read the fucking results from the fucking verifiers database, through the verifiers db-search interface."
+//
+// DECIDED BY ANDY, in the box, not this file's to widen:
+//   - Each item holds its own need for verification: from its verify-phase pass, or its claim, it waits, in that order.
+//   - The desk compiles a run's suites (an item's from its file list, a goal's from its items' lists) and hands the run
+//     to deskVerify.run. The answer, taken or busy, is the switch, verify-busy (a record, verify.answer, so every client
+//     and a restart see it); it only informs the Verify button and never holds anything back.
+//   - At each event (a claim, a Verify press, a run taken, a Done press) the desk reads the latest state of the waiting
+//     items' suites through deskVerify's search, so each item's facts say green, red with the failures, or none.
+//   - Every event tries the verifier for the oldest item still waiting with no run, whatever the switch says.
+//   - Done is never refused for it: the page marks and arms a Done that is not verified green, and the desk writes one
+//     line under the item when Done went over a red or a missing run (doneOver). The desk keeps no arming.
+// Do not put a list of work or a result report into deskVerify for this: it is a runner, busy or not.
+const WAITING = 'waiting for deskVerify';
+function testFilesOf(it) {
+  return filesOf(it).map(function (f) { return f.path; }).filter(function (p) { return /^spirit\/test\/.+\.js$/.test(p); });
+}
+// An item's suites, or a goal's: every test file its items list, done and closed ones too (they are the goal's work).
+function suitesFor(s, it) {
+  const out = Object.create(null);
+  const items = it.goal ? ((s.goals[it.id] || { members: [] }).members.map(function (id) { return s.items[id]; })) : [it];
+  items.forEach(function (m) { if (m && !m.leftOut) testFilesOf(m).forEach(function (p) { out[p] = true; }); });
+  return Object.keys(out).sort();
+}
+// THE ITEMS WAITING FOR VERIFICATION: open items an agent claimed or its verifier passed, and goals whose items are all
+// done (their Done is offered). Their facts carry what the verifier says of their suites.
+function waitingItems(s) {
+  return Object.keys(s.items).map(function (id) { return s.items[id]; }).filter(function (m) {
+    if (!m || m.id === GROUP_CHAT || m.done || m.closed || m.leftOut || m.subGoal) return false;
+    if (m.goal) { const g = s.goals[m.id]; return !!g && !g.abandoned && g.members.length > 0 && g.members.every(function (id) { const x = s.items[id]; return x && (x.done || x.closed); }); }
+    return Object.keys(m.claims).length > 0 || m.verified === true || m.status === WAITING;
+  });
+}
+// THE LATEST STATE OF SOME SUITES, from the verifier's search: for each, the newest run that ran it (by its row, never
+// by time: the verifier's clock is not this one's).
+const FAILURES_SHOWN = 10;
+async function suiteStates(suites, cache) {
+  const out = [];
+  for (const suite of suites) {
+    if (!cache[suite]) {
+      const found = await askDeskVerify('search', { over: 'runs', suite: suite });
+      const rows = ((found && found.items) || []).map(function (i) { let l = null; try { l = JSON.parse(i.label); } catch (e) { l = null; } return l ? { n: Number(i.key) || 0, row: l } : null; })
+        .filter(Boolean).sort(function (a, b) { return b.n - a.n; });
+      const newest = rows[0] ? rows[0].row : null;
+      const one = newest ? (newest.suites || []).filter(function (x) { return x && x.path === suite; })[0] || {} : {};
+      cache[suite] = !newest || newest.state !== 'ended' ? { outcome: 'none', failures: [] }
+        : { outcome: String(one.outcome || 'not run'), failures: (one.failures || []).map(String) };
+    }
+    out.push({ suite: suite, outcome: cache[suite].outcome, failures: cache[suite].failures });
+  }
+  return out;
+}
+// AT EACH EVENT: every waiting item's state, written as verify.state where it changed (so its row travels).
+async function readVerifyStates() {
+  if (!hasDeskVerify()) return;
+  const s = walkState();
+  const cache = Object.create(null);
+  for (const it of waitingItems(s)) {
+    const suites = suitesFor(s, it);
+    let verified = 'green';
+    let failures = [];
+    if (suites.length) {
+      let states;
+      try { states = await suiteStates(suites, cache); } catch (e) { return; }
+      const red = states.filter(function (x) { return x.outcome !== 'green' && x.outcome !== 'none'; });
+      if (red.length) {
+        verified = 'red';
+        red.forEach(function (x) {
+          (x.failures.length ? x.failures : ['']).forEach(function (f) { failures.push((x.suite + ' ' + x.outcome + (f ? ': ' + f : '')).slice(0, 300)); });
+        });
+        failures = failures.slice(0, FAILURES_SHOWN);
+      } else if (states.some(function (x) { return x.outcome === 'none'; })) verified = 'none';
+    }
+    if (String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures)) continue;
+    // ran: the state came from runs of its suites (an item listing none is green with nothing run, and keeps its word).
+    write('verify.state', { id: it.id, verified: verified, failures: failures, ran: suites.length > 0 && verified !== 'none', by: 'desk', key: '' });
+  }
+}
+// ONE START REQUEST, its answer written as verify.answer. Answers 'taken', 'busy', or null when nothing was asked.
+function handOver(id) {
+  const s = walkState();
+  const it = s.items[String(id)];
+  if (!it || !hasDeskVerify()) return Promise.resolve(null);
+  const suites = suitesFor(s, it);
+  if (!suites.length) return Promise.resolve(null);
+  const commit = it.goal ? '' : String(it.claimCommit || '');
+  return askDeskVerify('run', { suites: suites, commit: commit }).then(function (b) {
+    const taken = b && b.taken === true;
+    write('verify.answer', { id: it.id, taken: taken, by: 'desk', key: '' });
+    return taken ? 'taken' : 'busy';
+  }, function () { return null; });
+}
+// AN EVENT, one at a time (two at once would hand the same item over twice): the waiting items' state is read, then the
+// item named (his Verify) or else the oldest waiting with no run under way is handed over, whatever the switch says; a
+// run taken is an event of its own, so the state is read again.
+let verifyEvents = Promise.resolve();
+function verifyEvent(id) {
+  const next = verifyEvents.then(async function () {
+    if (!hasDeskVerify()) return;
+    await readVerifyStates();
+    let target = String(id || '');
+    if (!target) {
+      const s = walkState();
+      const oldest = waitingItems(s).filter(function (m) { return !m.goal && String(m.verifyState || 'none') === 'none' && !m.verifyRunning && suitesFor(s, m).length; })
+        .sort(function (a, b) { return (a.waitingAt || Number.MAX_SAFE_INTEGER) - (b.waitingAt || Number.MAX_SAFE_INTEGER); })[0];
+      target = oldest ? oldest.id : '';
+    }
+    if (!target) return;
+    if ((await handOver(target)) === 'taken') await readVerifyStates();
+  });
+  verifyEvents = next.catch(function () {});
+  return next.catch(function () {});
+}
+// A DONE THAT WENT OVER A RED OR A MISSING RUN SAYS SO, once, under the item (the box: "the chat records that it went
+// over a red or missing run").
+function doneOver(id) {
+  if (!hasDeskVerify()) return;
+  const s = walkState();
+  const it = s.items[String(id)];
+  if (!it || !it.done) return;
+  const state = String(it.verifyState || 'none');
+  if (state === 'green') return;
+  const suites = suitesFor(s, it);
+  if (!suites.length) return;
+  const text = state === 'red'
+    ? 'Done went over a red run: ' + (it.verifyFailures || []).join(' | ')
+    : 'Done went over a missing run: no run of ' + suites.join(', ') + ' yet';
+  write('chat.add', { id: it.id, text: text, by: 'desk', key: '' });
+}
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
 // A goal: one past the highest G<n> of the current goal's area, so an add in `goal/` never counts `other/`; with no
@@ -2089,17 +2258,7 @@ function pluginDesk(name, manifest) {
     // SINCE goal/G22.3 (Andy, 2026-10-13: "every run here should report to deskVerify."): one verb of this node's
     // deskVerify, by its verbs on the node's flat apiDoor, as lookForDeskVerify asks the node; only a port its own node named,
     // never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why.
-    verify: function (verb, args) {
-      const port = nodeNamedPort();
-      if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
-      // Through the spirit object (goal/G32.3), as {status, body}; made again when deskVerify came up after it.
-      return spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
-        const b = r && r.body;
-        if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
-        const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));
-        throw refusedWhy('bad-request', 'deskVerify did not take ' + verb + ': ' + why);
-      }, function (e) { throw refusedWhy('bad-request', 'no deskVerify answers on this node: ' + ((e && e.message) || e)); });
-    },
+    verify: askDeskVerify,
   };
 }
 function mountPlugins() {
@@ -2716,14 +2875,15 @@ appServer.serve(withPlugins({
     handler: function (a, caller) {
       const w = writerOf(caller);
       const body = { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key };
-      // A VERIFY PASS CARRIES THE ITEM'S CLAIMED COMMIT (goal/G27.2, D11). Andy, 2026-10-17: "make that press queue it.":
-      // the pass sets the item back to waiting for deskVerify, so deskVerify's watcher queues a check at this commit,
-      // never at whatever its tree holds (goal/G19.13's reason for dropping the pass as a trigger).
+      // A VERIFY PASS CARRIES THE ITEM'S CLAIMED COMMIT (goal/G27.2, D11): the pass sets the item waiting for deskVerify,
+      // and the run the desk hands over carries this commit (handOver), never whatever the verifier's tree holds.
       const claimed = a.phase === 'verify' && a.pass === true ? String(((walkState().items[String(a.id)]) || {}).claimCommit || '') : '';
       if (claimed) body.commit = claimed;
       const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
       }).change;
+      // AN ITEM THAT COMES TO WAIT IS AN EVENT (goal/G33.3): its state is read and the oldest with no run tried.
+      const comesToWait = a.phase === 'verify' && a.pass === true;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
       // ONE AGENT ALONE NEEDS NO WAIVE (goal/G2.22). Andy, 2026-10-06: "add to 2.22 that the desk can waive the rule
       // if only one agent is present.", and asked why the desk cannot simply do it: "contradiction or not. autowaive
@@ -2738,6 +2898,7 @@ appServer.serve(withPlugins({
         write('press', { id: a.id, what: 'waive', by: 'desk', key: '' });
         write('chat.add', { id: a.id, text: 'waived: ' + w.by + ' is the only agent here, so it may take the next phase of this item itself.', by: 'desk', key: '' });
       }
+      if (comesToWait) return verifyEvent('').then(function () { return { change: change }; });
       return { change: change };
     },
   },
@@ -2877,98 +3038,9 @@ appServer.serve(withPlugins({
       return { change: write('signoff', { by: w.by, key: w.key }).change };
     },
   },
-  // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
-  // agent to pick the item up, raise red-questions if neccessary." His alone, because deskVerify writes as him; it is
-  // the one thing it may do, and it cannot go through phase.done, which refuses a caller that does not hold the phase
-  // (deskVerify holds none, by his ruling). Only a verified code item: anything else is not-offered, so a second
-  // rejection of the same item changes nothing. The why is kept as one line by desk under the item, which is how a
-  // failed verify already reads, and it names the reds because his rule is that only reds are delivered.
-  // deskVerify'S OWN WORD ON A VERIFY (goal/G8.3): the mirror of verify.reject, his alone as that is, and only on a
-  // verified code item. It brings the Done button; the builder's claim was already on the record without it.
-  'verify.pass': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const w = writerOf(caller);
-      return { change: write('verify.pass', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        // A GOAL TAKES IT ONCE IT HAS EMPTIED (goal/G8.12): that is what the full run was started by, and the goal
-        // carries no code mark of its own. An item still needs its verifier's pass first (goal/G8.3).
-        if (!it || it.done || it.closed) throw refused('not-offered');
-        if (it.goal) { if (!(st.goals[it.id] || {}).emptied) throw refused('not-offered'); }
-        // A CODE ITEM NEEDS ITS VERIFIER'S PASS FIRST; A PLAIN ITEM NEEDS A CLAIM
-        // (goal/G16.13). A plain item was refused outright, which is why the verifier
-        // could say nothing about one and the claim alone had to bring Done.
-        else if (it.code) { if (it.verified !== true) throw refused('not-offered'); }
-        else if (!Object.keys(it.claims).length) throw refused('not-offered');
-      }).change };
-    },
-  },
-  'verify.reject': {
-    request: { id: '', why: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const w = writerOf(caller);
-      const change = write('verify.reject', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        // A DONE OR CLOSED ITEM TAKES NO VERIFY WORD (goal/G8.10): the flood of 2026-10-09 rejected thirty-four
-        // settled items, and his desk carried the chat line for each. deskVerify is not the one to unsettle an item.
-        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
-      }).change;
-      const why = String(a.why || '').trim();
-      write('chat.add', { id: a.id, text: 'verify rejected: ' + (why || 'the item\'s suites did not hold'), by: 'desk', key: '' });
-      return { change: change };
-    },
-  },
-  // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." Any agent,
-  // not his alone, and only on a verified code item - before a verify there is nothing to redo, and the refusal keeps a
-  // stray call from sitting on the record as a trigger. It writes the record and touches no field of the item.
-  'verify.again': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      // A GOAL IS RUN AGAIN TOO (goal/G19.2). A deskVerify restarted while a goal emptied read that goal.emptied as
-      // history, and verify.again refused a goal as "not a code item", so the goal's Done was out of reach for good.
-      // On a goal it is taken, from him or an agent, and the record says goal: true: deskVerify's watcher reads that as
-      // the goal run. The refusals below are an item's, unchanged.
-      const st0 = walkState();
-      const isGoal = !!(st0.items[String(a.id)] && st0.items[String(a.id)].goal);
-      const rec = isGoal ? { id: a.id, goal: true, by: w.by, key: w.key } : { id: a.id, by: w.by, key: w.key };
-      return { change: write('verify.again', rec, function (st, it) {
-        if (it && it.goal) { if (it.id === GROUP_CHAT) throw refusedWhy('not-offered', 'the group chat has no suites: it is not a goal to verify'); return; }
-        // Nor on a done or closed item (goal/G8.10): a re-verify of a settled item would only feed the watcher a word
-        // the desk would then refuse.
-        // EACH REFUSAL SAYS WHY (goal/G18.10): the Verifier tab's button was refused in silence, and Andy read it as
-        // "verify, when idling, does not react to my attempts of pushing it's re-verify button."
-        if (!it) throw refused('not-offered');
-        if (it.done || it.closed) throw refusedWhy('not-offered', a.id + ' is ' + (it.closed ? 'closed' : 'done') + ': a settled item is not verified again');
-        if (!it.code) throw refusedWhy('not-offered', a.id + ' is not a code item: its check comes from its claim, not from a re-verify');
-        if (it.verified !== true) throw refusedWhy('not-offered', a.id + ' has no verify pass on record yet: its verifier passes it first, then it can be verified again');
-      }).change };
-    },
-  },
-  // THE UNDO OF A DONE (goal/G19.2). Andy, 2026-10-12: "i said the verifier can not press done, i never said that the
-  // verifier cannot undo a done/close...", and "yes." to: any run showing a suite red unsettles every done or closed
-  // item listing it, and its goal, counted only from a clean, pulled tree holding the item's commit. deskVerify judges
-  // that and writes this as him, so it is his alone; what it does to the item is in the walk. Only a settled item takes
-  // it (a goal also while its pass or its emptied mark stands, which is what would bring its Done back unearned), and
-  // every refusal says why. verify.reject keeps refusing a settled item: the undo is this verb's, not that one's.
-  'verify.regress': {
-    request: { id: '', why: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      if (!caller || caller.owner !== true) throw refusedWhy('not-owner', 'verify.regress is the owner\'s: deskVerify writes it as Andy, and no agent takes back a Done');
-      const w = writerOf(caller);
-      const why = String(a.why || '').trim();
-      return { change: write('verify.regress', { id: a.id, why: why, by: w.by, key: w.key }, function (st, it) {
-        if (!it) throw refused('not-offered');
-        if (it.goal) {
-          if (it.id === GROUP_CHAT) throw refusedWhy('not-offered', 'the group chat is never settled, so nothing regresses there');
-          if (!it.done && !it.closed && !it.checked && !(st.goals[it.id] || {}).emptied) throw refusedWhy('not-offered', a.id + ' is neither done, closed nor passed: a goal with nothing settled has nothing to take back');
-          return;
-        }
-        if (it.leftOut) throw refusedWhy('not-offered', a.id + ' was deleted: a left-out item is not brought back by a regression');
-        if (!it.done && !it.closed) throw refusedWhy('not-offered', a.id + ' is neither done nor closed: only a settled item is unsettled by a regression');
-      }).change };
-    },
-  },
+  // THE VERIFIER'S WORDS ON THE DESK WENT WITH goal/G33.3: verify.pass, verify.reject, verify.regress, verify.again.
+  // Andy's yes, "box this and continue": deskVerify knows nothing of the desk, so nothing would write them; the desk
+  // reads the verifier's search itself and keeps the outcome in each item's facts (verifyEvent).
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   // ONE TASK AT A TIME (goal/G21.4, heldBy): a second item is refused while one is held; the item it holds, taken
   // again, is no second.
@@ -3149,12 +3221,34 @@ appServer.serve(withPlugins({
       // START DESIGN WITH NOTHING OPEN STARTS A NEW GOAL (desk/G3.1). Andy: "start design mode should start a new
       // project if nothing is in the list". It arrives in design mode; he names it.
       if (a.what === 'start-design' && a.id === '') return { change: newGoal(w).change };
+      // HIS VERIFY (goal/G33.3): no record of its own; the item (a goal: its items' suites) is handed over whatever the
+      // switch says, and the verifier's answer, written as verify.answer, is shown on the switch.
+      if (a.what === 'verify') {
+        const st = walkState();
+        const it = st.items[String(a.id)];
+        if (!it) throw refused('no-such-item');
+        if (buttons(st, it).indexOf('verify') === -1) throw notOffered(hasDeskVerify() ? it.id + ' takes no verify' : 'no deskVerify answers on this node, so nothing can be verified');
+        if (!suitesFor(st, it).length) throw notOffered(it.id + ' lists no test file, so there is nothing to run');
+        return verifyEvent(it.id).then(function () { return { change: walkState().change }; });
+      }
       const body = Object.assign({}, a, { by: w.by, key: w.key });
       if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
-      const landed = write('press', body, pressCheck(a));
-      // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.
-      emptiedByPress(a);
-      return { change: landed.change };
+      const land = function () {
+        const landed = write('press', body, pressCheck(a));
+        // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.
+        emptiedByPress(a);
+        return { change: landed.change };
+      };
+      // A CLAIM IS AN EVENT (goal/G33.3): the waiting items' state is read and the oldest with no run tried.
+      if (a.what === 'claim-done') { const out = land(); return verifyEvent('').then(function () { return out; }); }
+      if (a.what !== 'done') return land();
+      // HIS DONE IS NEVER REFUSED FOR VERIFICATION (goal/G33.3): the state is read first, and a Done that goes over a
+      // red or a missing run says so in one line under the item (doneOver). Then it is an event like any other.
+      return readVerifyStates().then(function () {
+        const out = land();
+        doneOver(String(a.id));
+        return verifyEvent('').then(function () { return out; });
+      });
     },
   },
   // A CLAIM WITH ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code, it
@@ -3190,6 +3284,8 @@ appServer.serve(withPlugins({
       // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
       const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
       if (phase === 'build') emptiedByPress({ id: id });
+      // A BUILD CLAIM IS AN EVENT (goal/G33.3), as the press claim-done is.
+      if (phase === 'build') return verifyEvent('').then(function () { return { change: landed.change }; });
       return { change: landed.change };
     },
   },

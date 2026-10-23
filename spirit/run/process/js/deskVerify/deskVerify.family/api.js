@@ -11,15 +11,16 @@ module.exports = {
     console: { from: 'number?' },
     // A door run by the plugin, recorded: id the plugin's own door id (d<n>), verdict {ran, green, around, of, ...}.
     'door.record': { id: 'id', verdict: 'object' },
-    // The full harness, queued; id is the goal whose chat takes the report line ('' for none).
-    'full.run': { id: 'text?' },
     now: {},
     // One test's outcome, as a suite reports it: outcome 'red' or 'green'; failure the text a red printed.
     record: { suite: 'id', title: 'id', outcome: 'id', failure: 'text?' },
+    // A run handed over (goal/G33.3): suites the spirit/test paths, commit the hash the checkout must hold first ('' for
+    // none). Answers taken or busy.
+    run: { suites: 'list', commit: 'text?' },
     // One search: over 'tests' or 'runs', every other key a filter ('' for none). current, history and slim are
     // 'yes' or '' (search.json beside this file says each).
     search: {
-      over: 'id', suite: 'text?', test: 'text?', outcome: 'text?', commit: 'text?', item: 'text?', kind: 'text?', since: 'text?',
+      over: 'id', suite: 'text?', test: 'text?', outcome: 'text?', commit: 'text?', since: 'text?',
       current: 'flag?', heading: 'text?', history: 'flag?', slim: 'flag?',
     },
     stop: {},

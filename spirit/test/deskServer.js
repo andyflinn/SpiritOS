@@ -53,10 +53,8 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // chat.search: goal/G3.11, the search on an item's chat lines (its own suite is deskChatSearch.js).
 // goal/G9.7 added item.delete, his alone, on an item of a goal in design mode.
 // goal/G8.8 added item.files.add: the files an agent touched, kept by the item.
-// goal/G8.3 added verify.reject and verify.pass: deskVerify takes a verify back, his alone.
-// goal/G8.10 added verify.again: any agent asks for a re-verify, and deskVerify's watcher reads that record.
-// goal/G19.2 added verify.regress: deskVerify takes back the Done of a settled item, and its goal, when a suite it lists
-// goes red; his alone, as verify.reject is.
+// goal/G8.3, goal/G8.10 and goal/G19.2 added verify.reject, verify.pass, verify.again and verify.regress; goal/G33.3 took
+// all four away (Andy's yes, "box this and continue"): deskVerify knows nothing of the desk, so nothing writes them.
 // goal/G9.3 added box.release: the holder lets a box go without writing it.
 // goal/G9.9 added goal.add and item.add: the desk names every goal and item id, and the same two verbs serve him and
 // the agents (Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.").
@@ -79,7 +77,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAnnotations', 'FS.loadFile', 'FS.loadJsonValue', 'FS.saveFile', 'FS.saveJsonValue', 'FS.search', 'FS.statFile'];
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
-const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'verify.again', 'verify.pass', 'verify.regress', 'verify.reject', 'work.open'];
+const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

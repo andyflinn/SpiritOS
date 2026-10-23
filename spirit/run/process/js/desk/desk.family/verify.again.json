@@ -1,6 +1,0 @@
-{
-  "description": "Ask the verifier to check an item again, its suites run on Andy's tree: after a push that fixes what it rejected.",
-  "request": {
-    "id": ""
-  }
-}
