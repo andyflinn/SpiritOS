@@ -1,0 +1,263 @@
+'use strict';
+
+// spirit/test/deskAdjustments.js
+// goal/G33.6: Desk adjustments, after goal/G33.3. Red first; claude-windows wrote it and builds it (one agent). Andy's
+// words that set it: "the main list may only show one single button, and it is the button for the next wanted
+// user-action, so verify button for any done button, a done button before any close button. the detail shows all
+// available buttons.", "and go before done etc....", "just in the list, a goal offers no done or closed while items
+// are not done or closed, the goal offers those only in the detail panel anytime", "please don't show verifier-busy an
+// any verify button, i can check that for myself", and "The desk verifier still thinks 'idling' is a run".
+//
+// WHAT IS ASSERTED, on the real rendering code (shell/desk/desk.js, shell/deskDetails/deskDetails.js) and the real desk:
+//   a. a List row draws exactly one action button: the first, in the step order Go, Verify, Done, Close and then the
+//      rest in the item's own order, among the buttons its facts offer.
+//   b. in the List a goal draws no Done and no Close while any of its items is not done or closed; once all are, it may.
+//   c. the detail panel draws every button offered; the desk offers a goal's Done and Close at any time.
+//   d. no Verify button, in the List or the dialog, shows the verifier's busy state.
+//   e. the Verifier tab: idle is no run (no "Running now", a grey bar that does not move, "Idle, nothing running");
+//      the idle-hour countdown only when the verifier says it has chores (hasChores in what it publishes); during a run,
+//      "Running now" and a moving bar.
+// rule/11: through testSupport only; its desk has its own folder, its own environment file and a pretend node on a port
+// of its own, never 65432; it stops only the processes it started.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const http = require('http');
+const { spawn } = require('child_process');
+const test = require('./testSupport.js');
+const kernel = require('../run/js/kernel.js');
+const appClient = require('../run/js/appClient.js');
+
+const OWED = 'OWED by goal/G33.6: ';
+const RUN = path.join(__dirname, '..', 'run');
+const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
+const FACE = path.join(RUN, 'shell', 'desk', 'desk.js');
+const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskAdjustmentsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+function parse(x) { if (typeof x !== 'string') return x; try { return JSON.parse(x); } catch (e) { return x; } }
+function settle() { return new Promise(function (r) { setImmediate(r); }); }
+async function settled() { for (let i = 0; i < 12; i++) await settle(); }
+
+test.startTest('goal/G33.6: one button per List row, the next one wanted; a goal\'s Done and Close in the detail only while items are open; Verify shows no busy; idle is no run');
+const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskadjustments-'));
+
+function fakeElement(id) {
+  let html = '';
+  const attrs = {};
+  const el = {
+    id: id, value: '', textContent: '', hidden: false, disabled: false, style: {}, listeners: {}, placeholder: '', className: '', scrollTop: 0, scrollHeight: 0,
+    addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
+    fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
+    querySelectorAll: function () { return []; }, querySelector: function () { return null; },
+    getAttribute: function (n) { return n in attrs ? attrs[n] : null; }, setAttribute: function (n, v) { attrs[n] = String(v); }, removeAttribute: function (n) { delete attrs[n]; }, focus: function () {},
+    appendChild: function () {}, removeChild: function () {}, replaceChild: function () {},
+  };
+  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
+  return el;
+}
+function target(attrs) { return { id: attrs.id || '', getAttribute: function (n) { return attrs[n] || null; }, closest: function () { return null; }, parentNode: null }; }
+function text(h) { return String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
+
+// THE LIST: rows from their facts, as the desk answers them; the buttons each row draws.
+async function listHalf() {
+  test.subHeading('a, b, d. the List: one button per row, the next one wanted; a goal\'s Done and Close only once its items are');
+  const row = function (id, buttons, extra) { return Object.assign({ id: id, title: id, goal: 'ad/G1', status: 'running', with: '', buttons: buttons, blocking: ['ad/G1'], blocked: [], asks: 0, claims: 1, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' }, extra || {}); };
+  const goalRow = function (id, buttons, blocked) { return { id: id, title: id, goal: '', design: false, status: '', with: '', buttons: buttons, blocking: [], blocked: blocked, live: [], working: [], waiting: 0, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' }; };
+  const fake = require('./deskFake.js').create([]);
+  fake.items = [
+    goalRow('ad/G1', ['done', 'close', 'verify', 'go-all'], ['ad/G1.1']),
+    row('ad/G1.1', ['done', 'verify']),
+    row('ad/G1.2', ['done', 'go']),
+    row('ad/G1.3', ['close', 'done']),
+    row('ad/G1.4', ['close', 'go', 'verify', 'done']),
+    row('ad/G1.5', ['bring-back']),
+  ];
+  const byId = {};
+  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+  let behavior = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, { spirit: {} });
+  behavior.mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
+    onPublished: function () { return function () {}; }, onPacket: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
+  const all = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
+  const rowHtml = function (id) { return (new RegExp('<tr data-row="' + id.replace(/[./]/g, '\\$&') + '"[\\s\\S]*?</tr>').exec(all()) || [''])[0]; };
+  const pressesOf = function (id) { const out = []; const re = /<button[^>]*data-press="([^"]+)"[^>]*>([^<]*)<\/button>/g; let m; const h = rowHtml(id); while ((m = re.exec(h))) out.push({ what: m[1], label: m[2], html: m[0] }); return out; };
+  const one = function (id, want, why) {
+    const p = pressesOf(id);
+    if (p.length === 1 && p[0].what === want) test.check(id + ' (' + why + '): one button, ' + want);
+    else test.fail(OWED + id + ' (' + why + ') draws ' + short(p.map(function (x) { return x.what; })) + ', where ' + want + ' alone is owed');
+  };
+  one('ad/G1.1', 'verify', 'offers done and verify');
+  one('ad/G1.2', 'go', 'offers done and go');
+  one('ad/G1.3', 'done', 'offers close and done');
+  one('ad/G1.4', 'go', 'offers close, go, verify and done');
+  one('ad/G1.5', 'bring-back', 'offers bring-back alone');
+  const g = pressesOf('ad/G1');
+  if (!g.some(function (x) { return x.what === 'done' || x.what === 'close'; })) test.check('a goal with an item still open draws no Done and no Close in the List: ' + short(g.map(function (x) { return x.what; })));
+  else test.fail(OWED + 'the goal with an open item draws ' + short(g.map(function (x) { return x.what; })));
+  const v = pressesOf('ad/G1.1').filter(function (x) { return x.what === 'verify'; })[0];
+  if (v && !/busy/i.test(v.html)) test.check('the List\'s Verify shows no busy state: ' + short(v.label));
+  else test.fail(OWED + 'the List\'s Verify reads ' + short(v && v.html));
+
+  // ALL ITEMS DONE: the goal may offer Done in the List.
+  const fake2 = require('./deskFake.js').create([]);
+  fake2.items = [goalRow('ad/G2', ['done', 'close', 'verify'], []), row('ad/G2.1', ['close', 'reopen'], { goal: 'ad/G2', blocking: ['ad/G2'], status: 'done' })];
+  const byId2 = {};
+  const doc2 = { getElementById: function (id) { return byId2[id] || (byId2[id] = fakeElement(id)); } };
+  let behavior2 = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))({ shell: { activateApp: function (x) { behavior2 = x; } }, core: kernel.core }, doc2, { spirit: {} });
+  behavior2.mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake2.verb,
+    onPublished: function () { return function () {}; }, onPacket: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
+  const all2 = Object.keys(byId2).map(function (k) { return byId2[k].innerHTML; }).join('\n');
+  const g2 = (/<tr data-row="ad\/G2"[\s\S]*?<\/tr>/.exec(all2) || [''])[0];
+  const g2p = (g2.match(/data-press="([^"]+)"/g) || []).map(function (x) { return x.slice(12, -1); });
+  if (g2p.length === 1 && g2p[0] === 'verify') test.check('with every item done the goal row draws its one next button, Verify before Done');
+  else test.fail(OWED + 'the goal with every item done draws ' + short(g2p));
+}
+
+// THE DETAIL PANEL: every button offered.
+async function dialogHalf() {
+  test.subHeading('c, d. the detail panel: every button offered, a goal\'s Done and Close at any time; Verify shows no busy');
+  const byId = {};
+  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+  const FACTS = {
+    'ad/G1': { id: 'ad/G1', title: 'Goal', goal: '', status: '', with: '', buttons: ['done', 'verify', 'go-all', 'close', 'make-current'], blocking: [], blocked: ['ad/G1.1'], asks: 0, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
+    'ad/G1.4': { id: 'ad/G1.4', title: 'Item', goal: 'ad/G1', status: 'running', with: '', buttons: ['go', 'done', 'verify', 'waive', 'delete'], blocking: ['ad/G1'], blocked: [], asks: 0, claims: 1, code: true, verified: 'green', verifyFailures: [], verifierBusy: true, verifyAnswer: 'busy' },
+  };
+  let dd = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+  dd.mount(fakeElement('dd'), {
+    escapeHtml: kernel.core.util.escapeHtml,
+    verb: function (name, body) {
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const v = ask && Object.keys(ask)[0];
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(FACTS[ask[v].id] || {}), version: 1, change: 1 } });
+      return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], files: [], box: '', version: 1 } });
+    },
+    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
+    setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+  });
+  const bar = function () { return doc.getElementById('dd-name-row').innerHTML; };
+  for (const id of ['ad/G1', 'ad/G1.4']) {
+    await dd.open({ id: id, agents: {} });
+    await settled();
+    const missing = FACTS[id].buttons.filter(function (b) { return bar().indexOf('id="dd-' + b + '"') === -1; });
+    if (!missing.length) test.check(id + ': the detail panel draws every button offered: ' + FACTS[id].buttons.join(', '));
+    else test.fail(OWED + id + ': the detail panel lacks ' + short(missing) + '; it reads ' + short(text(bar())));
+    const verifyBtn = (/<button[^>]*id="dd-verify"[^>]*>[^<]*<\/button>/.exec(bar()) || [''])[0];
+    if (verifyBtn && !/busy/i.test(verifyBtn)) test.check(id + ': its Verify shows no busy state: ' + short(text(verifyBtn)));
+    else test.fail(OWED + id + ': its Verify reads ' + short(verifyBtn));
+  }
+}
+
+// THE DESK: a goal's Done and Close are offered at any time (the List alone holds them back).
+async function deskHalf() {
+  test.subHeading('c. the desk offers a goal\'s Done and Close while its items are open');
+  const node = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) {
+      let b = ''; req.on('data', function (c) { b += c; });
+      req.on('end', function () {
+        let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        { const na = test.nodeApi(j); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
+        const out = test.foldAsk(j) === 'api' ? { desk: {} } : {};
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
+      });
+    }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
+  });
+  const root = path.join(scratch, 'desk');
+  const state = path.join(root, 'state');
+  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(state, { recursive: true });
+  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'door.sock');
+  const client = appClient.createAppClient({ rootDir: root });
+  client.register('desk', pipe);
+  const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const call = function (verb, a) { const q = {}; q[verb] = a || {}; return client.ask({ desk: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };
+  try {
+    let up = false;
+    for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+    if (!up) { test.fail('the world: the desk did not start'); return; }
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'ad/G9', title: 'Open' }, items: [{ id: 'ad/G9.1', title: 'Still open', blocks: ['ad/G9'] }] }) });
+    await call('press', { id: 'ad/G9', what: 'end-design' });
+    const g = parse(((await call('item.get', { id: 'ad/G9' })).body || {}).item) || {};
+    const b = g.buttons || [];
+    if (b.indexOf('done') !== -1 && b.indexOf('close') !== -1) test.check('a goal with an item still open is offered Done and Close (for the detail panel): ' + short(b));
+    else test.fail(OWED + 'the goal with an open item is offered ' + short(b));
+  } finally {
+    await new Promise(function (r) { kid.once('exit', r); kid.kill(); setTimeout(r, 3000); });
+    node.close();
+  }
+}
+
+// THE VERIFIER TAB: idle is no run.
+async function tabHalf() {
+  test.subHeading('e. the Verifier tab: idle is no run; the countdown only with chores; a run reads Running now');
+  const fake = require('./deskFake.js').create([]);
+  fake.items = [{ id: 'ad/G1', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
+  fake.verifier = { now: function () { return { busy: false, running: { suite: '', since: '' }, stopAsked: false }; }, stop: function () { return { stopped: false }; },
+    console: function () { return { run: '', start: 0, from: 0, to: 0, more: false, ended: true, text: '' }; } };
+  const handlers = {};
+  const byId = {};
+  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+  let behavior = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
+  behavior.mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
+    onPublished: function (fn, server) { (handlers[server || 'desk'] = handlers[server || 'desk'] || []).push(fn); }, onPacket: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  await settled();
+  const tabs = doc.getElementById('desk-tabs');
+  for (let i = 0; i < 20 && tabs.innerHTML.indexOf('data-tab="verifier"') === -1; i++) { await sleep(50); await settled(); }
+  tabs.fire('click', { target: target({ 'data-tab': 'verifier' }), currentTarget: tabs });
+  await settled(); await sleep(30); await settled();
+  const body = doc.getElementById('desk-verifier');
+  const emit = async function (o) { (handlers.deskVerify || []).forEach(function (fn) { fn(o); }); await settled(); };
+  const barOf = function () { return (/<progress[^>]*>/.exec(body.innerHTML) || [''])[0]; };
+  const idleObj = function (extra) { return Object.assign({ doing: 'idle', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle, nothing running', since: new Date(Date.now() - 18 * 60000).toISOString(), stopAsked: false, idleMs: 3600000, chores: '' }, extra || {}); };
+
+  await emit(idleObj({ hasChores: false }));
+  const idle = body.innerHTML;
+  if (!/Running now/.test(idle) && /Idle, nothing running/.test(text(idle)) && /data-phase="done"/.test(barOf()) && /value="0"/.test(barOf()) && !/Idle in \d+ min|hour filling/i.test(text(idle))) test.check('idle with no chores: no "Running now", "Idle, nothing running", a grey bar standing at 0, no countdown');
+  else test.fail(OWED + 'the idle tab reads ' + short(text(idle)) + '; bar ' + short(barOf()));
+  await emit(idleObj({ hasChores: true }));
+  const withChores = body.innerHTML;
+  if (!/Running now/.test(withChores) && /Idle in \d+ min/.test(text(withChores)) && /data-phase="done"/.test(barOf())) test.check('idle on a verifier with chores: the countdown to its idle hour, the bar still grey');
+  else test.fail(OWED + 'the idle tab with chores reads ' + short(text(withChores)) + '; bar ' + short(barOf()));
+  await emit({ doing: 'run', suite: 'spirit/test/zzA.js', index: 1, of: 2, tests: 3, expected: 6, line: 'running zzA.js, suite 1 of 2', since: new Date().toISOString(), stopAsked: false, idleMs: 3600000, chores: '' });
+  const running = body.innerHTML;
+  if (/Running now/.test(running) && /data-phase="run"/.test(barOf()) && !/value="0"/.test(barOf())) test.check('during a run: "Running now", and the bar moves');
+  else test.fail(OWED + 'the tab during a run reads ' + short(text(running)) + '; bar ' + short(barOf()));
+}
+
+(async function () {
+  await listHalf();
+  await dialogHalf();
+  await deskHalf();
+  await tabHalf();
+})().catch(function (e) { test.fail(OWED + 'the suite threw: ' + (e && e.stack || e)); }).then(function () {
+  try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  test.reportSuccessFailureCount();
+  process.exit(0);
+});
