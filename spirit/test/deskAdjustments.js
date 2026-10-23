@@ -273,6 +273,9 @@ async function runHalf() {
     { id: 'goal/G103', title: 'Goal', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['goal/G103.1', 'goal/G103.2'], live: [], working: [], waiting: 0 },
     row('goal/G103.1', { verifyRunning: true }),
     row('goal/G103.2', { status: 'verified green', verified: 'green' }),
+    // goal/G33.7 (box v10): ended runs, their outcome in the facts, the status word saying something else.
+    row('goal/G103.3', { status: 'running', verified: 'red', verifyRed: 3, verifyFailures: ['spirit/test/a.js red: FAILURE #1 x'] }),
+    row('goal/G103.4', { status: 'waiting for deskVerify', verified: 'green' }),
   ];
   const handlers = {};
   const byId = {};
@@ -305,6 +308,12 @@ async function runHalf() {
   const back = statusOf('goal/G103.1');
   if (!/<progress/.test(back) && /handed to deskVerify/.test(back)) test.check('after an idle publish the row shows its status word again');
   else test.fail(OWED + 'after idle the row reads ' + short(back));
+  // goal/G33.7 (box v10, Andy: he "can't tell whether a Verify succeeded"): once a run ended, the row says its outcome
+  // from the facts, "verified green" or "red: N suites", until the next run starts.
+  const redRow = text(statusOf('goal/G103.3'));
+  const greenRow = text(statusOf('goal/G103.4'));
+  if (/red: 3 suites/.test(redRow) && /verified green/.test(greenRow)) test.check('ended runs show their outcome in the status column: ' + short(redRow) + ' / ' + short(greenRow));
+  else test.fail('OWED by goal/G33.7: the status column of an ended red run reads ' + short(redRow) + ', of a green one ' + short(greenRow));
 
   // THE DIALOG: the same rendering, in #dd-run.
   const dById = {};
@@ -318,7 +327,7 @@ async function runHalf() {
     verb: function (name, body) {
       const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
-      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(row('goal/G103.1', { verifyRunning: true })), version: 1, change: 1 } });
+      if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(row('goal/G103.1', { verifyRunning: true, verified: 'red', verifyRed: 2 })), version: 1, change: 1 } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], files: [], box: '', version: 1 } });
     },
     onPublished: function (fn, server) { (dHandlers[server || 'desk'] = dHandlers[server || 'desk'] || []).push(fn); return function () {}; }, onPacket: function () { return function () {}; },
@@ -337,6 +346,8 @@ async function runHalf() {
   const dIdle = ddoc.getElementById('dd-run').innerHTML;
   if (!/<progress/.test(dIdle)) test.check('and drops it on an idle publish');
   else test.fail(OWED + 'the dialog after idle reads ' + short(dIdle));
+  if (/red: 2 suites/.test(text(dIdle))) test.check('then the dialog shows the ended run\'s outcome, the same way: ' + short(text(dIdle)));
+  else test.fail('OWED by goal/G33.7: the dialog after the run reads ' + short(text(dIdle)));
 }
 
 (async function () {

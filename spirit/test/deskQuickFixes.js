@@ -3,7 +3,9 @@
 // spirit/test/deskQuickFixes.js
 // goal/G29.10: quick desk fixes. Red on today's tree; claude-windows writes it and builds it (one agent). The item's box:
 //   1. The limbo posts go.
-//   2. A write an agent makes while holding a phase answers with Andy's lines typed since it took the phase.
+//   2. A write an agent makes while holding a phase answered with Andy's lines typed since it took the phase; that join
+//      WENT WITH goal/G33.7 (Andy: "why? my lines are streamed to deskClient without any further assistance"), so a
+//      phase holder's writes now answer what was asked and nothing more.
 //   3. An item stays in the code phase from its Go until Andy presses Done; the agent's own claim that it is done (a
 //      verify pass) leaves it in code; within it red, build and verify run as often as needed, Andy's lines reach it
 //      without the hold, and the desk sends no JOB offer to take a red while the item is being worked on.
@@ -11,7 +13,7 @@
 //
 // WHAT IS ASSERTED
 //   1  an item going into limbo is still marked limbo, but the desk posts no line under it.
-//   2  a phase holder's write answers with `andy`: his lines under the item since its phase take, and none before it.
+//   2  a phase holder's writes answer without any line of his (goal/G33.7; the stream brings them, deskClientPush.js).
 //   3  after a verify pass and before his Done: work.open offers no red (no JOB), and the red is taken again without a
 //      line of his; Done is not offered while the new cycle runs.
 // rule/11: through testSupport only; its own folders; never 65432.
@@ -59,7 +61,6 @@ async function open(caller) {
   return l.map(function (j) { try { return typeof j.label === 'string' ? JSON.parse(j.label) : j; } catch (e) { return j; } })
     .map(function (j) { return (j.id || j.key) + ':' + j.phase; });
 }
-function heard(r) { return ((r.body && r.body.andy) || []).map(function (l) { return String(l && l.text); }); }
 
 (async function () {
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
@@ -88,7 +89,7 @@ function heard(r) { return ((r.body && r.body.andy) || []).map(function (l) { re
   if (lines1 === 0) test.check('the desk posted no limbo line under it');
   else test.fail(OWED + 'the desk posted ' + lines1 + ' limbo line(s) under goal/G100.1');
 
-  test.subHeading('2. a phase holder\'s write answers with his lines since its phase take');
+  test.subHeading('2. a phase holder\'s writes answer without his lines (goal/G33.7)');
   const go2 = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   await call('chat.add', { id: 'goal/G100.2', text: 'before the take' }, ANDY);
   await sleep(5);
@@ -98,14 +99,9 @@ function heard(r) { return ((r.body && r.body.andy) || []).map(function (l) { re
   await call('chat.add', { id: 'goal/G100.2', text: 'make the button blue' }, ANDY);
   await call('chat.add', { id: 'goal/G100.2', text: 'and the frame thinner' }, ANDY);
   const files = await call('item.files.add', { id: 'goal/G100.2', paths: ['spirit/test/zzQuickFixes.js'] }, CW);
-  const said = heard(files);
-  if (ok(files) && said.indexOf('make the button blue') !== -1 && said.indexOf('and the frame thinner') !== -1) test.check('its item.files.add answers with both lines he typed since the take');
-  else test.fail(OWED + 'item.files.add answered ' + short(files.body || files.status));
-  if (said.indexOf('before the take') === -1) test.check('and not the line he typed before it');
-  else test.fail(OWED + 'the answer carries a line from before the phase take: ' + short(said));
   const chat = await call('chat.add', { id: 'goal/G100.2', text: 'blue it is' }, CW);
-  if (ok(chat) && heard(chat).indexOf('make the button blue') !== -1) test.check('its chat.add answers with them too');
-  else test.fail(OWED + 'chat.add answered ' + short(chat.body || chat.status));
+  if (ok(files) && ok(chat) && !('andy' in files.body) && !('andy' in chat.body)) test.check('its item.files.add and chat.add answered what they were asked, no line of his');
+  else test.fail('OWED by goal/G33.7: item.files.add answered ' + short(files.body || files.status) + ', chat.add ' + short(chat.body || chat.status));
 
   test.subHeading('3. from his Go to his Done the item stays in code');
   const steps = [];

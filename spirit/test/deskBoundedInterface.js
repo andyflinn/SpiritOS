@@ -154,6 +154,30 @@ async function main() {
   const found0 = took(far) && far.body.items.some(function (x) { return x.key === 'agent-with-a-rather-long-label-0'; });
   if (took(gf) && bytes(gf.body) <= MAX && facts.agentsMore === true && found0) test.check('with 160 agents the goal\'s item.get answered ' + bytes(gf.body) + ' bytes, agentsMore, and agents.search found the oldest');
   else test.fail(OWED + 'the goal\'s item.get answered ' + gf.status + ' ' + bytes(gf.body) + ' bytes, agentsMore ' + short(facts.agentsMore) + '; agents.search found it ' + found0);
+
+  // ── 6. NO DESK ANSWER CARRIES HIS LINES (goal/G33.7; Andy: "why? my lines are streamed to deskClient without any
+  // further assistance"). Found live: goal/G33.4's item.get by the agent holding it answered app-answer-too-large, 8,930
+  // bytes, his lines since its take joined to the facts (goal/G29.10's join, now gone). The holder's reads and writes
+  // answer what was asked; his lines reach it on the stream and through next (deskClientPush.js).
+  test.subHeading('6. a phase holder\'s reads and writes carry none of his lines');
+  // A goal of its own, so the open Q of section 4 holds nothing back here.
+  const g6 = await call('goal.add', { title: 'Held' }, ANDY);
+  const gid6 = took(g6) ? String(g6.body.id) : '';
+  const i3 = await call('item.add', { goal: gid6, title: 'Held while he talks' }, ANDY);
+  const three = took(i3) ? String(i3.body.id) : '';
+  await call('press', { id: gid6, what: 'end-design' }, ANDY);
+  await call('press', { id: three, what: 'go' }, ANDY);
+  const taken = await call('phase.take', { id: three, phase: 'red' }, AGENT);
+  for (let k = 0; k < 25; k++) await call('chat.add', { id: three, text: 'his line ' + k + ' ' + 'é'.repeat(200) }, ANDY);
+  const answers = {
+    'item.get': await call('item.get', { id: three }, AGENT),
+    'chat.add': await call('chat.add', { id: three, text: 'the holder answers' }, AGENT),
+    'item.files.add': await call('item.files.add', { id: three, paths: ['spirit/test/zzHeld.js'] }, AGENT),
+    'box.write': await call('box.write', { id: three, text: 'the holder\'s box', version: 0 }, AGENT),
+  };
+  const joined = Object.keys(answers).filter(function (v) { const r = answers[v]; return !took(r) || bytes(r.body) > MAX || 'andy' in r.body; });
+  if (took(taken) && !joined.length && !/\bfunction heard\(|\.andy\s*=/.test(deskCode)) test.check('the holder\'s item.get, chat.add, item.files.add and box.write answered without any line of his, each under one answer; desk.js joins none');
+  else test.fail(OWED + 'phase.take answered ' + short(taken.body) + '; answers with his lines or too big: ' + short(joined.map(function (v) { return v + ' ' + answers[v].status + ' ' + bytes(answers[v].body) + ' andy ' + ('andy' in (answers[v].body || {})); })));
 }
 
 main().catch(function (e) { test.fail(OWED + 'the suite itself tripped: ' + (e && e.stack || e)); }).then(function () {

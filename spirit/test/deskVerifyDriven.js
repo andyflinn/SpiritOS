@@ -515,6 +515,10 @@ async function deskAndVerify() {
     const fatBytes = Buffer.byteLength(JSON.stringify(fatGet.body || {}), 'utf8');
     if (fatGet.status === 200 && fatFacts.verified === 'red' && fatBytes <= appClient.ANSWER_MAX && Array.isArray(fatFacts.verifyFailures) && fatFacts.verifyFailures.length >= 1 && fatFacts.verifyFailuresMore === true) test.check('item.get of the red item answered ' + fatBytes + ' bytes, under ' + appClient.ANSWER_MAX + ', with the failure lines that fit (' + fatFacts.verifyFailures.length + ') and more said');
     else test.fail('OWED by goal/G33.4: item.get of goal/G100.11 answered ' + fatGet.status + ' ' + short(fatGet.body) + ' (' + fatBytes + ' bytes, the answer limit ' + appClient.ANSWER_MAX + ')');
+    // goal/G33.7 (box v10): the facts say how many suites ended red, the count the row and dialog show ("red: N suites"),
+    // whatever number of failure lines the row could keep.
+    if (fatFacts.verifyRed === 2) test.check('its facts count the suites that ended red: verifyRed 2');
+    else test.fail('OWED by goal/G33.7: the facts of goal/G100.11 say verifyRed ' + short(fatFacts.verifyRed) + ' for two red suites');
     const fatSearch = await d.call('items.search', { text: 'Red with long failure lines', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, CW);
     const fatRow = ((fatSearch.body || {}).items || []).filter(function (x) { return x.key === 'goal/G100.11'; })[0];
     if (fatSearch.status === 200 && fatRow && Buffer.byteLength(JSON.stringify(fatSearch.body), 'utf8') <= appClient.ANSWER_MAX) test.check('items.search found its row, and the answer is under one answer');

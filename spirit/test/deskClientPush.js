@@ -232,6 +232,23 @@ async function main() {
   // A third agent takes the red phase, so no job is open to this one and its next waits start quiet again.
   await call('desk', 'phase.take', { id: jobId, phase: 'red' }, { key: 'MCowBQYDK2VwAyEAdeskClientPushTestAgentCCCCCCCCCCCCCCCCCCCC=', label: 'third' });
 
+  // goal/G33.7 (Andy: "why? my lines are streamed to deskClient without any further assistance"): the phase holder hears
+  // his lines on the stream and through next, now that no desk answer carries them (goal/G29.10's join went).
+  test.subHeading('4c. the agent holding a phase gets his line on its item through next');
+  const heldItem = await call('desk', 'item.add', { goal: 'goal/G100', title: 'Held by B' }, ANDY);
+  const heldId = String((heldItem.body || {}).id || '');
+  await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+  await call('desk', 'press', { id: heldId, what: 'go' }, ANDY);
+  const bTook = await call('desk', 'phase.take', { id: heldId, phase: 'red' }, B_AT_DESK);
+  await waitFor(15000);
+  const heldWait = waitFor(15000);
+  await sleep(1000);
+  await call('desk', 'chat.add', { id: heldId, text: 'andy to the holder' }, ANDY);
+  const heldLines = await heldWait;
+  if (bTook.status === 200 && !('andy' in (bTook.body || {})) && heldLines && heldLines.some(function (l) { return String(l).indexOf('andy to the holder') !== -1; })) test.check('his line on ' + heldId + ', whose red B holds, ended B\'s wait; phase.take answered no lines of his');
+  else test.fail(OWED + 'phase.take answered ' + short(bTook.body) + '; B\'s wait ended with ' + short(heldLines));
+  await call('desk', 'phase.done', { id: heldId, phase: 'red' }, B_AT_DESK);
+
   test.subHeading('5. no needless waking: chat between Andy and another agent on its item does not end the wait');
   await call('desk', 'item.take', { id: 'goal/G100.2' }, A_AT_DESK);
   const notMine = waitFor(15000);

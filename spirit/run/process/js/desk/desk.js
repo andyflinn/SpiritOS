@@ -997,7 +997,7 @@ function blank(id, title, goalId) {
     boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
     withKey: '', phaseWithKey: '',
-    box: '', version: 0, checks: [], chat: [], at: '', checked: false, phaseAt: '',
+    box: '', version: 0, checks: [], chat: [], at: '', checked: false,
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
     // another's: { '<agent>': ['<path>', ...] }.
@@ -1221,8 +1221,6 @@ function apply(s, r, b, item, goalOf) {
     case 'phase.take':
       it.with = r.by; it.phaseWith = r.by; it.status = String(b.phase); it.takers[r.by] = true; it.verified = false;
       it.withKey = String(r.key || ''); it.phaseWithKey = String(r.key || '');
-      // goal/G29.10: when it took the phase, so its writes answer with his lines typed since (heardSince).
-      it.phaseAt = String(r.at || '');
       // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
       if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
       else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
@@ -1260,6 +1258,8 @@ function apply(s, r, b, item, goalOf) {
       it.verifyState = String(b.verified || 'none');
       it.verifyFailures = Array.isArray(b.failures) ? b.failures.map(String) : [];
       it.verifyFailuresMore = b.failuresMore === true;
+      // goal/G33.7 (box v10): how many suites the run ended red, the "red: N suites" the row and the dialog show.
+      it.verifyRed = Number(b.redSuites) || 0;
       if (b.ended === true || (b.ended === undefined && it.verifyState !== 'none')) { it.verifyRunning = false; it.verifyHanded = false; }
       if (b.ran === true && !it.done && !it.closed && (it.status === 'waiting for deskVerify' || it.status === 'handed to deskVerify' || /^verified /.test(it.status))) {
         it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
@@ -1883,6 +1883,7 @@ function facts(s, it) {
     verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: boundFailures(it.verifyFailures).lines,
     // goal/G33.4: more failure lines than the row holds; the verifier's search has them all.
     verifyFailuresMore: it.verifyFailuresMore === true || boundFailures(it.verifyFailures).more,
+    verifyRed: Number(it.verifyRed) || 0,
     // THE SWITCH (goal/G33.3): the verifier's last answer to a start request, taken or busy ('' before any); the Verify
     // button shows it.
     verifyAnswer: s.verifyAnswer || '', verifierBusy: !!s.verifyAnswer,
@@ -2484,6 +2485,7 @@ async function readVerifyStates() {
     let verified = 'green';
     let failures = [];
     let failuresMore = false;
+    let redSuites = 0;
     let pending = false;
     if (suites.length) {
       let states;
@@ -2492,6 +2494,7 @@ async function readVerifyStates() {
       const red = states.filter(function (x) { return x.outcome !== 'green' && x.outcome !== 'none'; });
       if (red.length) {
         verified = 'red';
+        redSuites = red.length;
         red.forEach(function (x) {
           (x.failures.length ? x.failures : ['']).forEach(function (f) { failures.push((x.suite + ' ' + x.outcome + (f ? ': ' + f : '')).slice(0, 300)); });
         });
@@ -2504,9 +2507,9 @@ async function readVerifyStates() {
     // Unchanged is not written, unless a run of it was under way and has now ended (goal/G33.6): the write is what ends
     // verifyRunning, so the run leaves the item's status.
     const ended = it.verifyRunning === true && !pending;
-    if (!ended && String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures) && (it.verifyFailuresMore === true) === failuresMore) continue;
+    if (!ended && String(it.verifyState || 'none') === verified && JSON.stringify(it.verifyFailures || []) === JSON.stringify(failures) && (it.verifyFailuresMore === true) === failuresMore && (Number(it.verifyRed) || 0) === redSuites) continue;
     // ran: the state came from runs of its suites (an item listing none is green with nothing run, and keeps its word).
-    write('verify.state', { id: it.id, verified: verified, failures: failures, failuresMore: failuresMore, ran: suites.length > 0 && verified !== 'none', ended: !pending, by: 'desk', key: '' });
+    write('verify.state', { id: it.id, verified: verified, failures: failures, failuresMore: failuresMore, redSuites: redSuites, ran: suites.length > 0 && verified !== 'none', ended: !pending, by: 'desk', key: '' });
   }
 }
 // ONE START REQUEST, its answer written as verify.answer. Answers 'taken', 'busy', or null when nothing was asked.
@@ -2702,36 +2705,9 @@ function mountPlugins() {
 // EVERY VERB SEEN FIRST BY THE PLUGINS (goal/G22.3), in mount order: a refusal names the plugin and its goal, and is
 // the desk's not-offered with its why, as every refused press is; a plugin that takes the call answers it. Then the
 // desk's own handler. The plugins' verbs join the table; one that would shadow a desk verb stops the start.
-// HIS LINES IN A PHASE HOLDER'S REPLIES (goal/G29.10, point 2: "A write an agent makes while holding a phase answers
-// with Andy's lines typed since it took the phase."). An agent at work does not listen, so every write it makes under
-// the item whose phase it holds answers with `andy`, his lines there since its phase take, newest kept within
-// HEARD_ROOM bytes. A write is an answer carrying its change.
-const HEARD_ROOM = 8192;
-function heard(a, caller, out) {
-  if (!caller || !a || a.id === undefined) return out;
-  return Promise.resolve(out).then(function (o) {
-    if (!o || typeof o !== 'object' || typeof o.change !== 'number') return o;
-    // The write is done: a caller the desk cannot name gets its answer as it is.
-    let w = null;
-    try { w = writerOf(caller); } catch (e) { return o; }
-    if (w.by === 'andy') return o;
-    const it = walkState().items[String(a.id)];
-    if (!it || !holdsPhase(it, w)) return o;
-    const lines = [];
-    let room = HEARD_ROOM;
-    for (let i = it.chat.length - 1; i >= 0; i--) {
-      const l = it.chat[i];
-      if (String(l.at || '') <= String(it.phaseAt || '')) break;
-      if (l.by !== 'andy') continue;
-      const one = { at: String(l.at), text: String(l.text) };
-      room -= Buffer.byteLength(JSON.stringify(one), 'utf8');
-      if (room < 0) break;
-      lines.unshift(one);
-    }
-    o.andy = lines;
-    return o;
-  });
-}
+// HIS LINES JOINED TO A PHASE HOLDER'S ANSWERS (goal/G29.10, point 2) WENT WITH goal/G33.7. Andy: "why? my lines are
+// streamed to deskClient without any further assistance", and "the desk should answer what it was asked. period.
+// don't get fancy, it always backfires." Every verb answers what it was asked; his lines reach the agent on the stream.
 function withPlugins(verbs) {
   const all = {};
   Object.keys(verbs).forEach(function (verb) {
@@ -2760,7 +2736,7 @@ function withPlugins(verbs) {
         const took = typeof p.handles === 'function' ? p.handles(verb, a, caller) : undefined;
         if (took !== undefined) return took;
       }
-      return heard(a, caller, caller === undefined ? v.handler(a) : v.handler(a, caller));
+      return caller === undefined ? v.handler(a) : v.handler(a, caller);
     } });
   });
   PLUGINS.forEach(function (p) {
