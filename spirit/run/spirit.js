@@ -39,6 +39,17 @@
 (function (root) {
   'use strict';
 
+  // ── WHERE IT RUNS, TOLD HERE AND NOWHERE ELSE (goal/G40.6) ─────────────────────────────────────────────────────────
+  // Andy: spirit.js is "the one and only place that can tell face from node isBrowser() isNode()". Every branch below
+  // asks these two, and no other file asks at all.
+  function isNode() { return typeof module === 'object' && !!module && !!module.exports && typeof process === 'object' && !!(process && process.versions && process.versions.node); }
+  function isBrowser() { return !isNode() && typeof window === 'object' && root === window; }
+
+  // ── THE GLOBAL, FIRST (goal/G40.6) ───────────────────────────────────────────────────────────────────────────────
+  // Rule one: every module and page loads spirit.js first, and spirit is a plain global before anything else is loaded;
+  // everything below fills this one object.
+  var self = root.spirit = root.spirit && typeof root.spirit === 'object' ? root.spirit : {};
+
   // ── THE HELPERS, the object's own (the kernel's, answering the same) ──────────────────────────────────────────────
   function error(str) {
     if (typeof console !== 'undefined') console.error('ERROR: ' + str);
@@ -59,7 +70,7 @@
   // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
   function fieldRules() {
     if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
-    if (typeof require === 'function') { try { return require('./spirit/fieldRules.js'); } catch (e) { return null; } }
+    if (isNode()) { try { return require('./spirit/fieldRules.js'); } catch (e) { return null; } }
     return null;
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -152,8 +163,7 @@
     };
   }
   function text(bytes) {
-    if (typeof TextDecoder !== 'undefined') return new TextDecoder().decode(bytes);
-    return Buffer.from(bytes).toString('utf8');
+    return new TextDecoder().decode(bytes);
   }
   // A family's interface, the text api {family} answered, run as a module: its module.exports is the definition.
   function loadInterface(source, name) {
@@ -266,7 +276,7 @@
   // createSpirit(transport) -> Promise<spirit>. transport: ask(verb, args), file(path). The names from api, each
   // family's interface from api {family}, bound under the node's name.
   function createSpirit(transport) {
-    var t = transport || (typeof window === 'undefined' ? nodeTransport('') : pageTransport());
+    var t = transport || (isBrowser() ? pageTransport() : nodeTransport(''));
     var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(t) };
     spirit.call = byName(spirit);
     spirit.require = requirer(spirit, t);
@@ -454,7 +464,8 @@
   };
 
   var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
-    loadInterface: loadInterface, forNode: forNode, peerTransport: peerTransport, forPeer: forPeer, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
+    loadInterface: loadInterface, forNode: forNode, peerTransport: peerTransport, forPeer: forPeer, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml,
+    isNode: isNode, isBrowser: isBrowser };
 
   // ── IN NODE: THE GLOBAL spirit (goal/G40.1) ──────────────────────────────────────────────────────────────────────
   // A script that is not the node or a relay server requires this file first, and from then on uses the global spirit:
@@ -463,9 +474,9 @@
   // their implementation until it goes (Andy: "we leave kernel.js where it is and get rid of it when we are finished").
   // spirit.require: a component is required from the run root; a family is bound from this process's own node, the one
   // SPIRIT_CALLBACK_URL names (the node that started it), or with a key asked of that peer through the kernel's peerPost.
-  if (typeof module === 'object' && module.exports) {
+  if (isNode()) {
     var kernel = require('./spirit/kernel.js');
-    var g = root.spirit && typeof root.spirit === 'object' ? root.spirit : {};
+    var g = self;
     Object.keys(api).forEach(function (k) { if (!(k in g)) g[k] = api[k]; });
     g.core = g.core || {};
     g.core.jobs = kernel.core.jobs;
@@ -477,7 +488,8 @@
     g.require = function (path, key) {
       var p = String(path || '').replace(/^\/+/, '');
       var fam = interfaceName(p);
-      if (fam && key) return ofPeer(key, function (k, body) { return kernel.peerPost(k, 'api', body); }, fam);
+      // A peer's family through the spirit object's own peerPost, so the object stays the one door there too.
+      if (fam && key) return ofPeer(key, function (k, body) { return g.peerPost(k, 'api', body); }, fam);
       if (fam) {
         // This process's own node is the one that started it, named by SPIRIT_CALLBACK_URL as the kernel's peerPost
         // reads it; never SPIRIT_PORT, which is the default 65432, the owner's live node on every box.
@@ -492,7 +504,6 @@
       }
       return new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); });
     };
-    root.spirit = g;
     module.exports = g;
     return;
   }
@@ -500,7 +511,9 @@
   // ── IN A PAGE ────────────────────────────────────────────────────────────────────────────────────────────────────
   // window.spirit gets the helpers at once and its families on spirit.start(), which the page calls once it can reach
   // its node (the face shell after its link is up; index.html at load). spirit.ready answers when they are there.
-  var s = root.spirit = root.spirit || {};
+  var s = self;
+  s.isNode = isNode;
+  s.isBrowser = isBrowser;
   s.error = s.error || error;
   s.formatBytes = s.formatBytes || formatBytes;
   s.escapeHtml = s.escapeHtml || escapeHtml;
@@ -519,4 +532,4 @@
     s.ready = started;
     return started;
   };
-}(typeof window !== 'undefined' ? window : globalThis));
+}(globalThis));
