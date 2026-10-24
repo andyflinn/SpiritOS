@@ -1,5 +1,5 @@
 {
- "change": 97469,
+ "change": 97650,
  "goal": "goal/G40",
  "items": [
   {
@@ -60,7 +60,8 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [],
    "agents": {
@@ -1053,7 +1054,9 @@
    "blocking": [
     "goal/G40"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G40.3"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -1089,7 +1092,20 @@
    "half": false,
    "full": false,
    "box": "Move core code tree from spirit/run/js to spirit/run/spirit/ (goal/G40). Andy, 2026-10-24: \"so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a winning path.\"\n\nWHY\n- spirit.js at the run root (goal/G40.1) requires ./js/kernel.js and ./js/fieldRules.js. js/ is a sibling of spirit.js, not its own children, so the require rule (a module may require only its own children, by <module>/, or a file in an ancestor) is broken by spirit.js itself. With the folder named spirit/, those become spirit/kernel.js and spirit/fieldRules.js: spirit's own children, legal.\n\nDECIDED\n- One item, a folder move and nothing else: spirit/run/js/ becomes spirit/run/spirit/, by git mv, history kept; nothing stays at the old path. No line of logic changes.\n- Every path that names the folder changes with it, require or not:\n  - requires: about 437 files, mostly suites reaching ../run/js/, and 17 scripts under run/.\n  - the node and the relay are started by path (js/server.js, js/relayServer.js): the relays' systemd units (spirit-relay.service, spirit-face.service), bash/lib.sh, bash/http-to-https, and every suite that spawns a node.\n  - pages load by address: /js/kernel.js and /js/client/shell.js (index.html, the node's boot list), about 15 addresses.\n  - coreFiles.js's rule names spirit/run/js/.\n  - docs: README.md, DICTIONARY.md, bash/README.md, bash/RELAY-HOST.md.\n  - onboarding: both installers (install/chat-windows, install/microscopic: create.js and README.txt each) copy and start the node by that path.\n  - labMaster.js (lines 627, 744) looks for js/server.js under a home.\n- Not touched: face login (face.html and the login app load nothing from js/). Design notes that name js/ are records of their day and stay.\n- It fixes spirit.js alone: a server script that requires ../../../spirit/appServer.js still descends into an ancestor's folder; those reach appServer through spirit in the module items after the require scan.\n- Order: right after goal/G40.1, before the require scan.\n\nEND TO END\n- The relays change in the same step: their units start the node by the new path, or a relay restarted after the pull does not start.\n- Andy's node (65432) and the agents' nodes are restarted by node spirit/server.js the day it lands; each restart command changes.\n- Proof: the harness green, plus one relay and one node restarted by the new path. Old reds may stay red.",
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Its 720 paths overflow one item.files.add (23,952 of 22,528 bytes): split into two items (the move, then the 443 suites), or let the desk list a moved folder as one entry?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T10:53:52.245Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
    "chat": [
     {
      "by": "wsl-claude",
@@ -1120,6 +1136,426 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-24T10:17:39.232Z",
      "text": "noted. worth it. thanks"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:47:20.864Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:48:10.081Z",
+     "text": "cw: not green, two open:\n- Its file list and grants are not set yet (wsl held them until G40.1 closed, which it now is).\n- A gap in the end to end: a relay's unit is not the repo's file. bash/install-units fills the template (ExecStart=/usr/bin/node js/server.js --relay --port __PORT__) and copies it into /etc/systemd/system; bash/update only pulls the tag and restarts. After the move, the installed copy still starts js/server.js, so a relay updated the usual way does not come back.\n- So each relay host needs bash/install-units run again with the update, or bash/update re-installs the units itself when the template changed.\n- ? Which: install-units by hand on each relay this once, or bash/update learns to re-install a changed unit?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T10:48:47.631Z",
+     "text": "- wsl: not green: no file list or grants yet. Counted: 598 files change (122 moved, 443 suites, plus installers, units, docs), and 3 start paths the box misses: package.json's start script and your own platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh.\n- Blocker: the commit check wants every written path on the list, the 122 new names under spirit/run/spirit/ too: 720 paths, 23,952 bytes, over one request's 22,528, so one item.files.add cannot carry it.\n- ? Two items (the move with every run, start and doc path; then the 443 suites, the same day), or the desk takes a moved folder as one entry?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:49:48.910Z",
+     "text": "my biggest worry right now: is the file and grant-list going to be busting some MAX_PAYLOAD gap or is the file list  published and retrieved by search?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T10:50:17.131Z",
+     "text": "- wsl: reading is safe: item.files and item.files.search answer as many as fit one answer and say filesMore, so a long list never busts a read.\n- Writing is the gap: item.files.add takes the whole list in one request, 720 paths, 23,952 bytes, over the 22,528 limit (desk.js:1450 replaces the list whole).\n- The grant fits but is heavy: the desk makes one G check whose words name every core path (desk.js:1462), about 250 here, some 9 KB in one check row."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:50:38.591Z",
+     "text": "cw, from desk.js and commitCheck.js:\n- The write busts: item.files.add sends the whole list in one request and replaces it. 720 paths is about 24 KB, over the 22 KB one request may carry, so it is refused.\n- The reads do not bust: item.files and item.checks answer only what fits in one answer and say there is more (filesMore, checksMore), as every search does.\n- But the commit check reads item.checks once and does not ask for the rest: on an item with many checks, a granted G past the first answer is not seen, and the commit is refused. Here that is near: every list change raises a fresh G naming all core files.\n- The G itself fits: one check naming the move's core files, old and new paths (about 245), is about 9 KB.\n- So: wsl's two items keep each list under the limit with no desk change; a folder entry, or a list sent in parts, is a desk change and a verb change, needing your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:50:51.425Z",
+     "text": "would we to a blocking item that prepares desk for the onslaught.... this will happen again?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:51:15.107Z",
+     "text": "cw: yes, I would, as a blocking item before G40.2: every folder move hits it, and G40's module moves are folder moves.\n- The plainest shape is not a list in parts (that is the chunking your rule forbids), but a shorter list: an entry may name a folder, ending in /, and it covers every file under it. spirit/run/spirit/ is one entry, not 122.\n- The grant follows: the desk's G names the folder, and the commit check takes a staged file under a granted folder as granted.\n- deskVerify runs only the test files named one by one, never a folder's, so spirit/test/ as an entry does not make it run 400 suites.\n- With it, the commit check asks for the rest of item.checks when the desk says there is more, so a grant past the first answer is seen.\n- Cost: item.files.add's paths may end in /, which changes what a desk verb takes: wsl's review and your yes on that.\n- ? A blocking item, folder entries in the file list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:51:23.463Z",
+     "text": "should we create a blocking item that prepares desk for this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:51:39.013Z",
+     "text": "Yes, blocking G40.2: folder entries in the file list (a path ending in / covers every file under it), the grant naming the folder, and the commit check reading all of item.checks. The shape is in my line above; say \"add item\" and I add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:52:10.529Z",
+     "text": "add item: fix desk so file lists exceeding MAX_PAYLOAD can't break an item or a goal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:52:49.949Z",
+     "text": "Added: goal/G40.3, \"File lists past MAX_PAYLOAD break no item\" (your words were over the title limit; they open its box), blocking goal/G40.2. Its box holds the tree today and the proposed shape, folder entries, for your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:53:51.880Z",
+     "text": "Q1: clear"
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.3",
+   "title": "File lists past MAX_PAYLOAD break no item",
+   "goal": "goal/G40",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 13,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40.2"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "Fix desk so file lists exceeding MAX_PAYLOAD can't break an item or a goal (Andy, 2026-10-24). Blocks goal/G40.2, whose move lists about 720 paths.\n\nTHE TREE TODAY (desk.js, commitCheck.js, the desk's api.js)\n- item.files.add sends an agent's whole list in one request and replaces it: 720 paths are about 24 KB, over the 22 KB one request carries. Replacing has also dropped a listed red three times when a late file was added alone.\n- Reads do not break: item.files and item.checks answer what fits one answer and say there is more.\n- The grant is one G check naming every core file on the list (about 245 for the move, 9 KB), raised again whole at every list change.\n- The commit check reads item.checks once; item.checks takes only {id}, so it never sees a granted G past the first answer.\n- Two more writes store a list whole: a red claim's suites (replaces the item's suites), and stackFrameChecks.make and .update (a door's paths and suites). rules.search's types and statuses are search filters, not stored, and stay.\n\nTHE SHAPE (Andy: \"items are added one-by one, and desk streams those items to its clients\")\n- A stored row is added or removed one per write, each streamed to the clients, as the chat, box, checks and claims already are; no write carries a list the desk stores.\n- Files: item.files.add takes one path and adds it; item.files.remove takes one away. 720 paths are 720 calls, a few minutes.\n- The same, in this item, for the red claim's suites (a suite added or removed one per write, never replaced by a second claim) and a door's paths and suites (stackFrameChecks) (Andy: \"we to all item list adjustments now, or they'll come bite us sooner than later.\").\n- One grant for the item's list as it stands, never a check per file, and naming no paths (Andy: \"i will get no single file grant checks anymore, just all in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons next to them.... The grand will simply be for the current/updated list.\"). His one press grants every core row on the list. A core file added after it voids the grant, and he issues it again for the whole list (Andy: \"the grant is not valid if core files are added after the grant is issued, if core files are added i must re-issue the grant for the whole list.\"). The grant lives until he presses Done (Andy: \"and make sure that the grant lives until i click 'done'\"): before Done only a core file added after it voids it; no other list change and no phase change clears it.\n- The commit check makes sure each staged core file is on the granted list (Andy: \"yes to the commit-check making sure each file exists in the granted list.\"): it asks item.files.search with the staged path as its text and takes only the row whose path is exactly that one, never a cache that may be partial (wsl: a deskClient's file list is one item.files answer, cut with filesMore, not complete by the stream).\n- The commit check finds its grants with item.checks.search (it exists, desk.js tableSearch), so a grant past the first answer is seen (wsl's review).\n- Rejected: folder entries (one entry granting files added under it later, wider than what Andy saw), and a list sent in parts (the chunking the rules forbid).\n- It changes what item.files.add takes and adds the remove verbs, likewise for the suites and the doors: approved, under THE VERBS.\n- Reopen puts an item back into design mode (Andy: \"oh, re-open should put an item back to design mode.\"). Today it clears only done, closed and the claims (desk.js, the reopen press), so a reopened item goes straight back to its phases; with design on, it waits for his End design and a new Go.\n\nTHE VERBS (Andy: \"same set of verbs for all sub-item-tables add, remove, search.\")\n- On every list table, the same three: <table>.add {id, path}, <table>.remove {id, path}, <table>.search {id, text}; each add or remove writes one row and streams it, and refuses a path already there or not there, saying which.\n- The list tables: item.files, item.suites, and a door's stackFrameChecks.paths and stackFrameChecks.suites. item.files.add loses its list; stackFrameChecks.make and .update lose their paths and suites.\n- A red claim fails if no suite rows are registered with the item (Andy: \"a red claim will fail if no suite-rows are registered with an item.\"), and carries no suites itself.\n- No getFirst or getNext (Andy: \"all clients by that time will have a complete list in their cache....\"); what must be exact, the commit check, looks each row up by its path.\n- The records keep their own verbs: chat, box versions, checks and claims are never removed, until shed (Andy: \"chat, box versions, checks and claims are records and keep their own verbs, never removed (until shed).\").\n- The verbs named here are approved (Andy, 2026-10-24: \"yes to the named verbs\"), after wsl's review.",
+   "checks": [],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T10:54:30.017Z",
+     "text": "- wsl review: folder entries are sound and shorten the list with no parts. One flaw: item.checks takes only {id}, so asking again returns the same first answer; the commit check should use item.checks.search, which exists (desk.js tableSearch), to find its granted G, and no verb changes for that.\n- A folder grant is wider than what you saw: a file added under it later is covered too; so the G should name the folder with its file count, and a file count that grows raises it again.\n- Guard: refuse a folder entry at or above spirit/run/ (or the repo root), so one entry can never grant the whole tree."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:54:50.069Z",
+     "text": "what about this: items are added one-by one, and desk streams those items to its clients?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:55:15.939Z",
+     "text": "cw: yes, and it is plainer than folders: it is how every other desk table already works, one row a write, each row streamed.\n- item.files.add takes one path and adds it, item.files.remove takes one away; no call ever carries the list, so no list can outgrow a request. It also ends the trap that bit three times: an add that replaced the whole list and dropped the red.\n- Cost, stated: the move's 720 paths are 720 calls, a few minutes; each its own row on the stream.\n- The grant must follow, or every add raises a fresh G for the whole set. Two ways: one G per core file, which your Grant-All grants in one press; or one open G whose words grow by each core file added.\n- The commit check then reads the grants with item.checks.search, as wsl says, since item.checks alone answers only the first page.\n- It changes what item.files.add takes and adds item.files.remove: wsl's review and your yes on both.\n- ? One G per core file with your Grant-All, or one G that grows?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:56:02.728Z",
+     "text": "should this apply to other side-tables in desk?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:56:30.233Z",
+     "text": "cw: yes, to every desk table a write fills with a list; the chat, box, checks and claims already take one row a write. Three more take a whole list, read from the desk's interface:\n- claim's suites: a red claim carries its suites as a list and replaces the item's suites table. Small today (1 to 3), but a goal's core suites grow, and a second claim drops what the first named.\n- stackFrameChecks.make and .update: a door's paths and suites as lists, replaced whole.\n- rules.search's types and statuses are filters on a search, not stored rows, so they stay as they are.\n- The plainest uniform rule: a stored row is added or removed one per write, each streamed; no write carries a list that the desk stores.\n- ? All of them in this item, or files now and the suites and doors each when they are next touched?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:57:30.806Z",
+     "text": "all this into the box, plus, maybe:\n\n- box arbitration. box becomes a user command in the chat,\n- there will be two occasions where an agent is allowed to touch the box. 1. implicit, through the order to create a goal or items, the creation of both those objects will bring with it a grant to fill the box, once. 2. through a taken box command in chat. ..... these come from my experience with all the Levants that kept going at the box without discipline.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T10:58:17.076Z",
+     "text": "Boxed (v2): the tree, the one-row-a-write shape, the side tables. Open still: one G per core file or one that grows, and whether the suites and doors move in this item.\nOn box arbitration, against the tree:\n- Today any agent that holds the item or took a line of yours on it may take the box and write it; nothing asks whether you wanted the box written.\n- Your two occasions are enforceable by the desk, both at box.take: an agent that just created the goal or item on your order holds one write of its box; otherwise it must hold a take of your line that is a box command.\n- What makes a line a box command needs a mark the desk can read. You already write them: \"update the box accordingly\", \"fill the box\", \"add to the box\", \"box it\". A line starting with the word box would be the plainest.\n- A cost to know: today I box each of your rulings the same turn without being told (your rule \"the item text is the record\"). With arbitration, a ruling stays in the chat until you say box, which is more lines from you.\n- It is a different concern from file lists. I would give it its own item, so neither waits for the other.\n- ? Box arbitration as its own item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T10:59:40.744Z",
+     "text": "leave box arbitration out of this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:01:20.314Z",
+     "text": "he the grant grows and must be an all at once grant, otherwise we bring back the MAX_PAYLOAD problem with that."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:01:47.384Z",
+     "text": "- wsl: agreed, one grant, given at once. One catch: if its words list every core path, the grant itself grows past one answer (245 paths are 9 KB, 700 would be about 25 KB), the same problem again.\n- So the grant names a count, \"core grant: 245 files\", and each file row carries core and granted: your one press marks every core row granted; a row added later is ungranted and the count asks again.\n- The commit check then asks, per staged core file, whether its row is granted (item.files.search finds it), so no answer ever holds the whole set. ? That shape?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:01:53.092Z",
+     "text": "Boxed (v3): one G per item that grows by each core file added, granted all at once.\n- One detail I added, yours to strike: a core file added after you granted opens a fresh G for what came since, so a granted G never grows behind your back.\n- A limit to know: one G is one row, and a row holds about 580 core paths before it outgrows a packet. The move needs about 245, so it fits; a larger one would open a second G at the limit, each granted all at once.\n- ? Still open: the red claim's suites and the doors' lists, in this item or each when next touched?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:03:56.455Z",
+     "text": "i will get no single file grant checks anymore, just all in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons next to them.... The grand will simply be for the current/updated list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:04:27.805Z",
+     "text": "- Boxed (v4): one grant for the list as it stands, naming no paths; your press marks every core row granted, a later core file asks again; the commit check looks up each staged core file's row. That drops my row limit.\n- ? Still open: the red claim's suites and the doors' lists, in this item or each when next touched?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:05:31.266Z",
+     "text": "and make sure that the grant lives until i click 'done'"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:06:11.636Z",
+     "text": "- Boxed (v5), your words: the grant lives until you press Done; no list change, phase change or reopened phase clears it.\n- ? A core file added after your grant: covered by it until Done, or asks you again as v4 says?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:06:48.447Z",
+     "text": "oh, re-open should put an item back to design mode."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:07:48.574Z",
+     "text": "Boxed (v6): Reopen puts an item back into design mode; today it clears only done, closed and the claims, so a reopened item now waits for your End design and a new Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:08:41.407Z",
+     "text": "the grant is not valid if core files are added after the grant is issued, if core files are added i must re-issue the grant for the whole list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:09:04.500Z",
+     "text": "Boxed (v7): a core file added after your grant voids it; you grant the whole list again. wsl's question is answered by it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:09:18.176Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:09:51.295Z",
+     "text": "- wsl: answered, thanks. I fixed my own line that now contradicted you (v8): before Done only a core file added after the grant voids it; no other list change or phase change clears it.\n- Not green yet, one open from cw: the red claim's suites and the doors' lists, in this item or each when next touched."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:11:05.328Z",
+     "text": "we to all item list adjustments now, or they'll come bite us sooner than later."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:11:36.758Z",
+     "text": "Boxed (v9): all three lists in this item, the files, the red claim's suites and the doors' paths and suites, one row a write. Nothing open from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:11:53.539Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:12:22.185Z",
+     "text": "- wsl: not green: the verbs are not named yet, and each needs your yes: item.files.add {id, path} and item.files.remove {id, path}; for suites item.suites.add / .remove {id, path}; for the doors the same pair on stackFrameChecks.\n- One clash with G33.11: today the red claim carries its suites (\"red cannot be claimed without delivering the list of suites\"); with suites added one per write, the red claim instead requires at least one suite row on the item, and carries none.\n- ? Those names, and the red claim checking the item's suite rows?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:12:26.002Z",
+     "text": "cw: not green, one open: the verbs themselves. The box says each needs your yes, and none is named yet. Named here:\n- item.files.add {id, path}: one path, added (today {id, paths}, replacing the list). New: item.files.remove {id, path}.\n- New: item.suites.add {id, path} and item.suites.remove {id, path}, the red writer's. The red claim then takes no suites: claim {id, phase, commit}, and a red claim is refused while the item's suites table is empty (your rule, unchanged).\n- stackFrameChecks.make {gate, endpoint} and .update {id, gate, endpoint} lose their lists. New: stackFrameChecks.path.add and .path.remove {id, path}, stackFrameChecks.suite.add and .suite.remove {id, path}.\n- The grant press is unchanged: check.set on the one list-wide grant.\n- Every add and remove is one row written and streamed; each refuses a path already there or not there, saying which.\n- ? Your yes on these verbs, after wsl's review?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:15:12.989Z",
+     "text": "same set of verbs for all sub-item-tables add, remove, search.\n\na red claim will fail if no suite-rows are registered with an item.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:15:42.721Z",
+     "text": "cw: yes to both, and it makes the names fall out by themselves: <table>.add, <table>.remove, <table>.search on every list table, each one row a write.\n- The list tables: item.files, item.suites, and a door's stackFrameChecks.paths and stackFrameChecks.suites. Their .search verbs mostly exist already (item.files.search, item.suites.search).\n- Red claim: refused while the item has no suite row; it carries no suites itself.\n- The one boundary I would keep: chat, box, checks and claims are records, not lists. A chat line, a box version, a check or a claim is written and answered, never removed, or the history changes behind you. They keep their own verbs (chat.add, box.write, check.add and check.set, claim) and their searches.\n- ? The add/remove/search set on the four list tables, and the records left as they are?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:17:49.903Z",
+     "text": "how about a getFirst verb as well, with a getNext, that way we don't have to rely on incomplete searches?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:18:22.922Z",
+     "text": "cw: one flag before it, since it meets an earlier ruling of yours:\n- 2026-09-27: \"there are no (complete) lists, only searches\", and on 2026-09-30, to paging: \"IT'S NOT GOING TO HAPPEN, overengineered for a future the user doesn't want.\" getFirst and getNext are paging by another name: a cursor the desk keeps, or a key the caller hands back.\n- What needs a complete answer here is narrow: the commit check must know, for each staged core file, whether its row is on the list and granted. That is one row by its key, not a walk.\n- So the plainest addition is a get: <table>.get {id, path} answers that one row, or no-such-row. A get of one row by its key is no list, and no search can come back incomplete for it.\n- A cursor would also have to say what happens when rows are added between two getNext calls, which the stream does all the time.\n- ? add, remove, search and get on each list table, or getFirst and getNext after all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:18:57.843Z",
+     "text": "understood, all clients by that time will have a complete list in their cache...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:19:30.042Z",
+     "text": "- Boxed (v10): add, remove, search on every list table; a red claim fails with no suite rows; no getFirst or getNext; the commit check reads the rows from its own deskClient, complete by the stream.\n- ? One open from me: chat, box versions, checks and claims are records and keep their own verbs, never removed: agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:20:55.342Z",
+     "text": "chat, box versions, checks and claims are records and keep their own verbs, never removed (until shed)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:21:15.327Z",
+     "text": "Boxed (v11): the records keep their own verbs, never removed until shed. Nothing open from me but your yes on the verbs once wsl has reviewed them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:21:43.922Z",
+     "text": "yes to the named verbs"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:22:05.473Z",
+     "text": "Boxed (v12): the named verbs approved. Green from me: settled, open none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:22:09.727Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:22:23.931Z",
+     "text": "Green: settled, open none, box current (v12)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:22:34.715Z",
+     "text": "- wsl review: the verbs are sound. One premise in v12 does not hold today: a deskClient's file list is not complete by the stream. The desk's bootstrap pushes facts only (desk.js:2077), and the list comes from one item.files read, cut to one answer with filesMore (shell/js/desk/data.js:118); a node restarted mid-item holds only that first answer.\n- Plainest fix, no new verb: the commit check asks item.files.search with each staged path as its text, and takes the row whose path is exactly that one.\n- ? That, so the commit check never trusts a cache that may be partial?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:24:20.025Z",
+     "text": "yes to the commit-check making sure each file exists in the granted list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T11:24:56.306Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T11:25:03.515Z",
+     "text": "Boxed (v13): the commit check looks up each staged core file by its exact path with item.files.search, never a cache; my premise of a complete cache was wrong, wsl caught it. Green from me."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T11:25:14.717Z",
+     "text": "wsl: green from me: box v13 has your yes, the commit check looks each staged core file up by its exact path; my review of the named verbs is done, nothing open."
     }
    ]
   }
