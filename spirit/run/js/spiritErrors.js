@@ -761,6 +761,8 @@ define('no-row', { status: 404, texts: ['no row for that key'] });
 // apiAuth (G1.2, G1.4): the gate's refusals and the auth family's.
 define('not-granted', { status: 403, texts: ['not granted to this caller'] });
 define('already-granted', { status: 409, texts: ['already granted'] });
+// goal/G33.10: the fs family is the owner's, hard-coded; no peer reaches it and no grant names it.
+define('owner-only', { status: 403, texts: ['the owner\'s alone'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
 define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
 define('store-unavailable', { status: 503, texts: ['the grants cannot be read'], fault: 'node' });

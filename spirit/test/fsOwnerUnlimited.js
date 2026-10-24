@@ -172,18 +172,82 @@ function waitForBoot(port) {
   } finally { child.kill(); }
 
   // ── 4. THE FACE'S SAVE IN PARTS ──────────────────────────────────────
-  // The box fixes what the save does, not its wire shape; the builder names that under the item, and each line below
-  // turns red when its unit lands, to be written as the assertion it stands in for.
-  test.subHeading('4. the face\'s save in parts, streamed to a work file (awaiting the shape)');
-  const faceHome = code('js/faceHome.js');
+  // The shape, named by the builder under the item: {upload: {id, n, of, size, path, bytes}}, each part sealed on its own
+  // and sent as its own call (face/shell.js uploadSave, UPLOAD_PART bytes a part); the home node appends each part to
+  // os.tmpdir()/spirit-upload-<id>, answers 202 to each but the last, and on the last checks the size, copies the work
+  // file to the target through o.saveFrom, then deletes it. Driven here on faceHome itself, its clock handed in.
+  test.subHeading('4. the face\'s save in parts, streamed to a work file in the system temp folder');
+  const FH = require('../run/js/faceHome.js');
+  const me = require('../run/js/relayAuth').generateIdentity('fsowner');
+  let clock = Date.now();
+  const saved = [];
+  const answers = [];
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-fsowner-target-'));
+  const home2 = FH.createFaceHome({
+    call: function () { return Promise.resolve({ status: 500, body: null }); },
+    saveFrom: function (work, rel) {
+      saved.push({ work: work, rel: rel, bytes: fs.readFileSync(work).length });
+      fs.copyFileSync(work, path.join(target, path.basename(rel)));
+      return { ok: true };
+    },
+    serveFile: function () {}, identity: function () { return me; }, relayKey: function () { return ''; },
+    jobs: { subscribe: function () { return function () {}; } }, renames: null, log: function () {}, now: function () { return clock; },
+    upload: function (url, at, headers) {
+      const got = { status: Number(headers && headers['x-spirit-status']), body: '' };
+      answers.push(got);
+      return { on: function () {}, write: function (c) { got.body += String(c); return true; }, end: function (c) { if (c) got.body += String(c); } };
+    },
+  });
+  const content = Buffer.from(fs.readFileSync(path.join(RUN, 'shell', 'icons', 'iconSet.json')));
+  const PART = 8192;
+  const of = Math.ceil(content.length / PART);
+  const id = 'fsownerunlimited01';
+  const work = path.join(os.tmpdir(), 'spirit-upload-' + id);
+  const part = function (pid, n) { return { upload: { id: pid, n: n, of: of, size: content.length, path: 'shell/icons/iconSet.json', bytes: content.subarray(n * PART, (n + 1) * PART).toString('base64') } }; };
+  home2.request('http://relay.test', { id: 'c0', request: part(id, 0) });
+  await sleep(20);
+  const afterFirst = fs.existsSync(work) ? fs.statSync(work).size : -1;
+  if (answers[0] && answers[0].status === 202 && afterFirst === Math.min(PART, content.length) && !saved.length)
+    test.check('the first part is appended to a work file in the system temp folder (' + afterFirst + ' bytes), answered 202, nothing saved yet');
+  else test.fail(OWED + 'after the first part: answer ' + short(answers[0]) + ', work file ' + afterFirst + ' bytes, saved ' + saved.length);
+  for (let n = 1; n < of; n++) { home2.request('http://relay.test', { id: 'c' + n, request: part(id, n) }); await sleep(20); }
+  const last = answers[answers.length - 1];
+  const landed = fs.existsSync(path.join(target, 'iconSet.json')) ? fs.readFileSync(path.join(target, 'iconSet.json')) : null;
+  if (of > 1 && last && last.status === 200 && saved.length === 1 && saved[0].rel === 'shell/icons/iconSet.json' && landed && landed.equals(content) && !fs.existsSync(work))
+    test.check('the whole icon set (' + content.length + ' bytes, ' + of + ' parts) is copied to its target on the last part, and the work file is deleted');
+  else test.fail(OWED + 'after the last part: answer ' + short(last) + ', saved ' + short(saved) + ', landed ' + (landed ? landed.length : 'nothing') + ', work file left ' + fs.existsSync(work));
+
+  // The size named up front is held to: parts past it are refused, and the transfer is dropped.
+  const id2 = 'fsownerunlimited02';
+  const lie = part(id2, 0);
+  lie.upload.size = 10;
+  home2.request('http://relay.test', { id: 'd0', request: lie });
+  await sleep(20);
+  if (answers[answers.length - 1].status === 413 && !fs.existsSync(path.join(os.tmpdir(), 'spirit-upload-' + id2))) test.check('a part past the size named up front is refused 413 and its work file deleted');
+  else test.fail(OWED + 'a part past the named size answered ' + short(answers[answers.length - 1]));
+
+  // An hour without a new part drops the transfer; the target is left as it was.
+  const id3 = 'fsownerunlimited03';
+  const before = saved.length;
+  home2.request('http://relay.test', { id: 'e0', request: part(id3, 0) });
+  await sleep(20);
+  const work3 = path.join(os.tmpdir(), 'spirit-upload-' + id3);
+  const made3 = fs.existsSync(work3);
+  clock += 59 * 60 * 1000;
+  home2.sweepUploads();
+  const kept = fs.existsSync(work3);
+  clock += 2 * 60 * 1000;
+  home2.sweepUploads();
+  if (made3 && kept && !fs.existsSync(work3) && saved.length === before) test.check('a work file is kept for 59 minutes without a part, deleted after the hour, and nothing is saved');
+  else test.fail(OWED + 'the hour: made ' + made3 + ', kept at 59 minutes ' + kept + ', there after the hour ' + fs.existsSync(work3) + ', saves ' + (saved.length - before));
+  try { fs.rmSync(target, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+
+  // Each part fits one trip once sealed: the face seals it as one request, which the relay takes up to BODY_MAX.
+  const seal = require('../run/js/seal');
+  const sealedPart = JSON.stringify(Object.assign(seal.seal(me.sealPublicKey, me.publicKey, me.publicKey, JSON.stringify({ upload: { id: 'x'.repeat(24), n: 99, of: 100, size: 99999999, path: 'shell/icons/iconSet.json', bytes: Buffer.alloc(PART, 255).toString('base64') } })), { k: me.publicKey }));
   const faceShell = code('face/shell.js');
-  test.awaiting('goal/G33.10', 'a sized save from the face', /size/.test(faceShell) && /size/.test(faceHome) && !/PIECES_MAX = 64/.test(faceHome),
-    'a save from the face names its size up front, and any size is taken: no 64 pieces, no PIECES_BYTES_MAX');
-  test.awaiting('goal/G33.10', 'a work file in the system temp folder', /os\.tmpdir\(\)|require\('os'\)\.tmpdir/.test(faceHome),
-    'each part is streamed, as it arrives, into a work file under os.tmpdir(), never the whole file in memory; on the last part it is copied to the target, then deleted');
-  test.awaiting('goal/G33.10', 'an hour without a part drops the transfer', /60 \* 60 \* 1000|3600000/.test(faceHome),
-    'a work file with no new part for an hour is deleted, and the target is left as it was');
-  test.awaiting('goal/G33.10', 'the whole icon set saves from the face', false,
-    'end to end through the face; written with the three above');
+  if (Buffer.byteLength(sealedPart) < BODY_MAX && /var UPLOAD_PART = 8192;/.test(faceShell) && /String\(verb\) === 'fs\.save'[\s\S]{0,200}uploadSave\(args\)/.test(faceShell))
+    test.check('the face sends an fs.save larger than one part in parts of ' + PART + ' bytes, each ' + Buffer.byteLength(sealedPart) + ' bytes sealed, inside one trip (' + BODY_MAX + ')');
+  else test.fail(OWED + 'a sealed part is ' + Buffer.byteLength(sealedPart) + ' bytes against ' + BODY_MAX + ', or the face does not send fs.save in parts');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });

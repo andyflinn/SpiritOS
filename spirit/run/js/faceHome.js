@@ -178,6 +178,70 @@ function createFaceHome(opts) {
     return whole;
   }
 
+  // A SAVE FROM THE FACE IN PARTS (goal/G33.10). Andy: "i want fs to be hard-coded owner only, with no size limits on it's
+  // loadFile and saveFile....", and on how: "stream it to a disk work-file into some kind of temp folder and then drop
+  // them after an hour if the transfer fails", "or even stream them to the users system temp directory...", "we will
+  // always copy, then delete the temp file.... but that's what a temp folder is for, if garbage accidentally remains
+  // (node-restart etc) the garbage is where it belongs....". A save larger than one trip comes as
+  // {upload: {id, n, of, size, path, bytes}}, each part sealed on its own and sent as its own call, bytes a run of the
+  // file's bytes in base64, size the whole file's named on every part. Each part is appended to the work file as it
+  // arrives, so the file is never whole in memory; on the last, the size is checked, the work file copied to the target
+  // through the save gate (o.saveFrom), then deleted. Each but the last is answered 202 {more: true}.
+  const uploads = new Map();   // id -> { file, path, size, of, next, written, at }
+  const UPLOAD_IDLE_MS = 60 * 60 * 1000;
+  const UPLOAD_ID = /^[A-Za-z0-9_-]{8,64}$/;
+  const nowMs = function () { return typeof o.now === 'function' ? o.now() : Date.now(); };
+  function dropUpload(id) {
+    const u = uploads.get(id);
+    uploads.delete(id);
+    if (u) { try { require('fs').rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ } }
+  }
+  // A transfer with no new part for an hour is dropped, its work file deleted.
+  function sweepUploads() {
+    const now = nowMs();
+    Array.from(uploads.keys()).forEach(function (id) { if (now - uploads.get(id).at > UPLOAD_IDLE_MS) dropUpload(id); });
+  }
+  const sweeper = setInterval(sweepUploads, 60 * 1000);
+  if (sweeper.unref) sweeper.unref();
+  function uploadPart(p, res) {
+    sweepUploads();
+    const id = String(p.id || '');
+    const n = p.n;
+    const of = p.of;
+    const size = p.size;
+    const rel = String(p.path || '');
+    const fine = UPLOAD_ID.test(id) && Number.isInteger(of) && of > 0 && Number.isInteger(n) && n >= 0 && n < of &&
+      Number.isInteger(size) && size >= 0 && rel !== '' && typeof p.bytes === 'string';
+    if (!fine) { dropUpload(id); json(res, 400, { ok: false, code: 'bad-part', error: 'a part is {id, n, of, size, path, bytes}: n below of, size the whole file\'s bytes, bytes base64' }); return; }
+    const fsm = require('fs');
+    if (n === 0) {
+      dropUpload(id);
+      const file = require('path').join(require('os').tmpdir(), 'spirit-upload-' + id);
+      try { fsm.writeFileSync(file, ''); } catch (e) { json(res, 500, { ok: false, code: 'not-saved', error: 'the work file could not be made: ' + e.message }); return; }
+      uploads.set(id, { file: file, path: rel, size: size, of: of, next: 0, written: 0, at: nowMs() });
+    }
+    const u = uploads.get(id);
+    if (!u || n !== u.next || of !== u.of || size !== u.size || rel !== u.path) {
+      dropUpload(id);
+      json(res, 400, { ok: false, code: 'bad-part', error: 'part ' + n + ' of ' + id + ' does not follow the parts before it' });
+      return;
+    }
+    const bytes = Buffer.from(p.bytes, 'base64');
+    if (u.written + bytes.length > u.size) { dropUpload(id); json(res, 413, { ok: false, code: 'too-big', error: 'the parts of ' + id + ' are more than the ' + u.size + ' bytes named' }); return; }
+    try { fsm.appendFileSync(u.file, bytes); } catch (e) { dropUpload(id); json(res, 500, { ok: false, code: 'not-saved', error: 'the work file could not be written: ' + e.message }); return; }
+    u.written += bytes.length;
+    u.next += 1;
+    u.at = nowMs();
+    if (u.next < u.of) { json(res, 202, { ok: true, more: true, part: n }); return; }
+    uploads.delete(id);
+    if (u.written !== u.size) { try { fsm.rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ } json(res, 400, { ok: false, code: 'bad-part', error: u.written + ' bytes came, ' + u.size + ' were named' }); return; }
+    let out = null;
+    try { out = typeof o.saveFrom === 'function' ? o.saveFrom(u.file, u.path) : { ok: false, reason: 'error' }; } catch (e) { out = { ok: false, reason: 'error' }; }
+    try { fsm.rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ }
+    if (out && out.ok) json(res, 200, { ok: true });
+    else json(res, out && out.reason === 'forbidden' ? 403 : 500, { ok: false, code: (out && out.reason) || 'error', reason: (out && out.reason) || 'error', error: 'not saved: ' + ((out && out.reason) || 'error') });
+  }
+
   function request(url, data) {
     const d = data || {};
     const id = String(d.id || '');
@@ -209,6 +273,7 @@ function createFaceHome(opts) {
     const no = faceRefuses(r);
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
+    if (r.upload && typeof r.upload === 'object') { uploadPart(r.upload, res); return; }
     const verb = String(r.verb || '');
     // THE FACE'S OWN PART OF A SIDECAR (goal/G30.21). The node knows this request came from the face, so its fs.annotate
     // writes the face part and never reaches the door, whose fs.annotate writes the client part.
@@ -319,7 +384,7 @@ function createFaceHome(opts) {
     if (ev && typeof ev === 'object') toFaces(FACE_PRIORITY.app, { event: 'relay-event', data: ev });
   }
 
-  return { request: request, open: open, close: close, ownerEvent: ownerEvent };
+  return { request: request, open: open, close: close, ownerEvent: ownerEvent, sweepUploads: sweepUploads };
 }
 
 module.exports = {

@@ -433,6 +433,8 @@ function asDoorHandler(name, decl) {
       var errors = require('./spiritErrors');
       var known = e && typeof e.refusal === 'string' ? errors.byCode(e.refusal) : null;
       if (known) return send(known.status, Object.assign({ ok: false, code: e.refusal, error: known.text, verb: name }, e.extra && typeof e.extra === 'object' ? { extra: e.extra } : {}));
+      // A body refused for its size says too big (goal/G33.10), never handler-failed or bad JSON.
+      if (e && e.statusCode === 413) return send(413, { ok: false, code: 'too-big', error: 'too big: more than ' + require('./limits').BODY_MAX + ' bytes', verb: name });
       if (e instanceof SyntaxError) return send(400, { ok: false, code: 'bad-request', error: 'Invalid JSON body', verb: name });
       send(500, { ok: false, code: 'handler-failed', error: 'the handler failed', verb: name });
     });

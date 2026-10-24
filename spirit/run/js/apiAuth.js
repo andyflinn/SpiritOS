@@ -91,6 +91,8 @@ function createApiAuth(opts) {
     grant: function (a) {
       if (!text(a.key) || !text(a.path)) return Promise.resolve(refuse('bad-request'));
       if (!PATH.test(a.path)) return Promise.resolve(refuse('not-a-path'));
+      // THE fs FAMILY IS THE OWNER'S (goal/G33.10, Andy: "i want fs to be hard-coded owner only"): never granted.
+      if (a.path.split('.')[0] === 'fs') return Promise.resolve(refuse('owner-only'));
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that

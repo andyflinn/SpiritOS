@@ -402,10 +402,7 @@ function handleCreateJob(req, res) {
     }
     res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(job));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // ── THE ID CAME OUT OF THE PATH ──────────────────────────────────────
@@ -444,10 +441,7 @@ function handleJobUpdate(req, res) {
     }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(job));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // Same move as handleJobUpdate: the id is a field now. This one took no
@@ -456,10 +450,7 @@ function handleJobUpdate(req, res) {
 function handleCancelJob(req, res) {
   return readJsonBody(req).then((body) => {
     cancelJobById(res, String((body && body.id) || ''));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 function cancelJobById(res, id) {
@@ -482,10 +473,7 @@ function cancelJobById(res, id) {
 function handleDeleteJob(req, res) {
   return readJsonBody(req).then((body) => {
     deleteJobById(res, String((body && body.id) || ''));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 function deleteJobById(res, id) {
@@ -519,20 +507,14 @@ function handleFsStat(req, res) {
     }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(stats));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 function handleFsAnnotations(req, res) {
   return readJsonBody(req).then((body) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(spirit.core.fs.getAnnotations(String((body && body.path) || ''))));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 function writeFsResult(res, result) {
@@ -563,13 +545,23 @@ function writeFsResult(res, result) {
   res.end('Internal error');
 }
 
+// A BODY THAT WAS NOT READ, SAID FOR WHAT IT IS (goal/G33.10). Andy saw "not saved: Invalid JSON body" for a save that
+// was only too large: every catch here named one fault for two. A body refused for its size is 413 and says so, with
+// the bytes read; anything else is the bad JSON it always was. json answers the {ok, error} shape a verb answers.
+function bodyRefused(req, res, e, json) {
+  const big = !!e && e.statusCode === 413;
+  const text = big ? 'Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX : 'Invalid JSON body';
+  res.writeHead(big ? 413 : 400, { 'Content-Type': (json ? 'application/json' : 'text/plain') + '; charset=utf-8' });
+  res.end(json ? JSON.stringify({ ok: false, code: big ? 'too-big' : 'bad-request', error: text }) : text);
+}
+
+// fs.save AND fs.load HAVE NO SIZE LIMIT (goal/G33.10, Andy: "i want fs to be hard-coded owner only, with no size
+// limits on it's loadFile and saveFile...."). The owner's alone (apiDoor, apiAuth), so the packet's bound is not theirs.
+const FS_UNBOUNDED = { max: Infinity };
 function handleFsSave(req, res) {
-  readJsonBody(req).then((body) => {
+  readJsonBody(req, FS_UNBOUNDED).then((body) => {
     writeFsResult(res, spirit.core.fs.saveFile(body.path, body.content));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // THE READ AS A VERB (goal/G14.8): a file's text by path, through loadFile,
@@ -578,7 +570,7 @@ function handleFsSave(req, res) {
 // the local agent: "i'm more inclined to deny URL fetch, and allow
 // loadFile, it's much narrower."
 function handleFsLoad(req, res) {
-  return readJsonBody(req).then((body) => {
+  return readJsonBody(req, FS_UNBOUNDED).then((body) => {
     const filePath = String((body && body.path) || '');
     const text = spirit.core.fs.loadFile(filePath);
     if (text === null) {
@@ -588,10 +580,7 @@ function handleFsLoad(req, res) {
     }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ path: filePath, text: text }));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // handleFsSaveAppScript and handleFsSaveAppManifest stood here until
@@ -602,10 +591,7 @@ function handleFsLoad(req, res) {
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
     writeFsResult(res, spirit.core.fs.deleteFile(body.path));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // Writes into the target file's sidecar 'client' bucket only — see
@@ -614,10 +600,7 @@ function handleFsDelete(req, res) {
 function handleFsAnnotate(req, res) {
   readJsonBody(req).then((body) => {
     writeFsResult(res, spirit.core.fs.annotateFile(body.path, body.payload));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20). envSecrets.js (the env-variable key fill) and proxyList.js (the
@@ -744,10 +727,7 @@ function handleGenericProxy(req, res) {
     // A caller that gives up takes the call down with it.
     req.on('close', () => { if (!answered) out.destroy(); });
     out.end(payload === null ? undefined : payload);
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // server.listen below has no host argument, so Node binds to all network
@@ -1053,8 +1033,8 @@ const server = http.createServer((req, res) => {
       // still reads the body it was written to read, so a handler moving
       // under this door needs no change of its own.
       peekVerb(req).then(function (verb) {
-        // Every verb but the proxy keeps the packet's bound.
-        if (verb !== 'net.fetch' && common.bodyBytes(req) > require('./limits').BODY_MAX) {
+        // Every verb but the proxy and the owner's fs.save and fs.load keeps the packet's bound (goal/G33.10).
+        if (['net.fetch', 'fs.save', 'fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > require('./limits').BODY_MAX) {
           res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX);
           return;
@@ -1524,6 +1504,14 @@ contactBook.syncMarks(ROOT_DIR);
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
       // The face's fs.annotate writes the face part of a sidecar (goal/G30.21).
       annotateFace: function (rel, payload) { return spirit.core.fs.annotateFace(rel, payload); },
+      // A face's save in parts lands here (goal/G33.10): the work file copied to the target through the save gate.
+      saveFrom: function (work, rel) {
+        if (!spirit.core.fs.fileWritable(rel)) return { ok: false, reason: 'forbidden' };
+        const to = fsPath(ROOT_DIR, rel);
+        if (!to) return { ok: false, reason: 'forbidden' };
+        const disc = require('fs');
+        try { disc.mkdirSync(path.dirname(to), { recursive: true }); disc.copyFileSync(work, to); return { ok: true }; } catch (e) { return { ok: false, reason: 'error' }; }
+      },
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       jobs: jobs,
@@ -1850,10 +1838,7 @@ contactBook.syncMarks(ROOT_DIR);
           rs.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
           rs.end(JSON.stringify({ error: String((err && err.message) || err) }));
         });
-      }, () => {
-        rs.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        rs.end('Invalid JSON body');
-      });
+      }, (e) => bodyRefused(rq, rs, e));
     };
   }
   const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
@@ -1994,10 +1979,7 @@ contactBook.syncMarks(ROOT_DIR);
         }
         rs.writeHead(said.ok ? 200 : said.status, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
-      }).catch(function () {
-        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
-      });
+      }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
   }, { wire: false, by: 'hub.js' });
 
@@ -2036,10 +2018,7 @@ contactBook.syncMarks(ROOT_DIR);
             { 'Content-Type': 'application/json; charset=utf-8' });
           rs.end(JSON.stringify(answer));
         });
-      }).catch(function () {
-        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
-      });
+      }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
   }, { wire: true, by: 'ownerPost.js' });
 

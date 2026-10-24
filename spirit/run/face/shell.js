@@ -186,7 +186,36 @@
     });
   }
 
+  // A SAVE LARGER THAN ONE TRIP GOES IN PARTS (goal/G33.10). Andy: "no size limits on it's loadFile and saveFile....":
+  // the file's bytes go as {upload: {id, n, of, size, path, bytes}}, each part sealed on its own by call() and sent as its
+  // own call, one after the other; the home node (js/faceHome.js) appends each to a work file in the system temp folder
+  // and answers 202 to each but the last, whose answer is the save's. UPLOAD_PART keeps a sealed part inside one trip.
+  var UPLOAD_PART = 8192;
+  function uploadSave(args) {
+    var bytes = new TextEncoder().encode(String(args.content));
+    var of = Math.max(1, Math.ceil(bytes.length / UPLOAD_PART));
+    var idBytes = new Uint8Array(12);
+    crypto.getRandomValues(idBytes);
+    var id = Array.prototype.map.call(idBytes, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+    function next(n) {
+      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: window.faceSeal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
+      return call({ upload: part }).then(function (r) {
+        if (n === of - 1 || r.status !== 202) return r;
+        return next(n + 1);
+      });
+    }
+    return next(0);
+  }
+
   function ask(verb, args) {
+    if (String(verb) === 'fs.save' && args && typeof args.content === 'string' && new TextEncoder().encode(args.content).length > UPLOAD_PART) {
+      return uploadSave(args).then(function (r) {
+        var text = bytesText(r.bytes);
+        var body = null;
+        try { body = JSON.parse(text); } catch (e) { body = null; }
+        return { status: r.status, text: text, body: body };
+      });
+    }
     var request = { verb: String(verb) };
     Object.keys(args || {}).forEach(function (k) { request[k] = args[k]; });
     return call(request).then(function (r) {

@@ -33,6 +33,11 @@
 // "DEBUG verb is never allowed through peerPost()"; apiAuth/G1.10:
 // DEPENDENCIES owner-only "like DEBUG"), granted or not.
 const OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];
+// THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
+// access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
+// naming it cannot be made (apiAuth.grant), and one left in the table from before is read as nothing here.
+const OWNER_FAMILIES = ['fs'];
+function ownerFamily(app) { return OWNER_FAMILIES.indexOf(String(app || '').split('.')[0]) !== -1; }
 
 function refusal(code, error) {
   return { status: 403, body: { ok: false, code: code, error: error } };
@@ -89,6 +94,7 @@ function answer(servers, ask, caller) {
     // The gate fails closed: grants it cannot read grant nothing.
     return Promise.resolve(refusal('store-unavailable', 'the grants cannot be read: ' + e.message));
   }
+  paths = paths.filter(function (p) { return !ownerFamily(p); });
   if (ask === 'api') {
     if (!paths.length) return Promise.resolve(refusal('not-granted', 'no path is granted to this key'));
     return Promise.resolve(servers.ask('api', who)).then(function (r) {
@@ -101,6 +107,7 @@ function answer(servers, ask, caller) {
   // in that family, the family whole or one of its verbs; any other family is refused as its verbs would be.
   if (ask && typeof ask === 'object' && !Array.isArray(ask) && Object.keys(ask).length === 1 && ask.api && typeof ask.api === 'object') {
     const fam = String(ask.api.family || '');
+    if (ownerFamily(fam)) return Promise.resolve(refusal('owner-only', 'the ' + fam + ' family is the owner\'s alone'));
     const held = paths.some(function (p) { return p === fam || p.indexOf(fam + '.') === 0; });
     if (!fam || !held) return Promise.resolve(refusal('not-granted', 'no grant in the family ' + fam + ' is held by this key'));
     return Promise.resolve(servers.ask({ api: { family: fam } }, who));
@@ -114,6 +121,7 @@ function answer(servers, ask, caller) {
   const grantedVerb = function (app, verb) { return paths.indexOf(app) !== -1 || paths.indexOf(app + '.' + verb) !== -1; };
   let named = 0;
   for (const app of apps) {
+    if (ownerFamily(app)) return Promise.resolve(refusal('owner-only', 'the ' + app + ' family is the owner\'s alone'));
     const verbs = ask[app];
     if (!verbs || typeof verbs !== 'object') return Promise.resolve(refusal('not-granted', String(app) + ' asks nothing grantable'));
     for (const verb of Object.keys(verbs)) {

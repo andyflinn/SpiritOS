@@ -431,9 +431,10 @@ freePort()
     return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:1/big', method: 'POST', body: { blob: 'x'.repeat(100000) } }).then(function (r) {
       if (r.status === 403 && /this-machine/.test(r.text)) test.check('a 100 KB net.fetch is not refused by size: it reaches net.fetch, whose fence answers this-machine');
       else test.fail('big net.fetch: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
-      return verb({ verb: 'fs.save', path: 'shell/natter/too-big.json', content: 'x'.repeat(100000) });
+      // fs.save and fs.load are the owner's and unbounded too (goal/G33.10, fsOwnerUnlimited.js); fs.annotate is not.
+      return verb({ verb: 'fs.annotate', path: 'shell/natter/too-big.json', payload: { blob: 'x'.repeat(100000) } });
     }).then(function (r) {
-      if (r.status === 413) test.check('and any other verb with 100 KB is still refused 413 — the packet bound stands for them');
+      if (r.status === 413 && /too large/i.test(r.text)) test.check('and any other verb with 100 KB is still refused 413, saying too large — the packet bound stands for them');
       else test.fail('a big non-proxy verb was not refused: HTTP ' + r.status);
       return port;
     });
