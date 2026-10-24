@@ -816,11 +816,13 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 500, error: 'could not write relay-state/config.json' };
     }
 
-    // THE RELAY MOVES ITS OWN SERVICE CAP (goal/G40.4), to twice the limit just written, on every change of it. Andy,
-    // 2026-10-24: "the relay raises its own service cap to exactly twice the amount of RAM it uses for itself." The call
-    // is injected (relayServer.js, systemd); a relay with no service cap has none.
+    // THE RELAY MOVES ITS OWN SERVICE CAP (goal/G40.4), to twice the limit it runs on. Andy, 2026-10-24: "the relay
+    // raises its own service cap to exactly twice the amount of RAM it uses for itself." A raise applies now, so the cap
+    // moves now; a lowering applies at the next start, and the cap follows it then (relayServer.js, at boot), since
+    // twice the new figure now would equal the limit the relay still runs on. The call is injected (relayServer.js,
+    // systemd); a relay with no service cap has none.
     var capMoved = null;
-    if (checked.config.ramLimitMB !== config.ramLimitMB && typeof deps.setServiceCap === 'function') {
+    if (checked.config.ramLimitMB > config.ramLimitMB && typeof deps.setServiceCap === 'function') {
       try { capMoved = deps.setServiceCap(2 * checked.config.ramLimitMB); } catch (e) { capMoved = false; }
     }
 

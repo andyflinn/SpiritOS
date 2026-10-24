@@ -359,6 +359,11 @@ const relay = createRelay.createRelay(undefined, {
   },
 });
 
+// AT BOOT THE CAP FOLLOWS THE LIMIT THIS PROCESS RUNS ON (goal/G40.4): a lowering applies at the next start, and this is
+// it, so the cap a raise left at twice the old figure comes down to twice the new one. Only under systemd, where there
+// is a cap at all.
+if (process.env.INVOCATION_ID) setServiceCap(2 * CONFIG.ramLimitMB);
+
 // A relay is a party to conversations, and `relay` is the caption it
 // answers to, not an identity. A node that keeps one file per peer cannot
 // file the relay anywhere without a key, so the relay gets one: made
