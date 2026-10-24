@@ -22,7 +22,8 @@
 //   2. The owner's config verb, on a relay running at 256 MB whose own cap leaves little room: a raise to 512 passes
 //      when the difference (256) fits in what the box has free less the margin; a raise whose difference does not fit
 //      is refused, naming the difference; a lowering passes.
-//   3. Every limit change the relay takes moves its cap to exactly twice the new limit, a lowering too.
+//   3. A raise moves the cap at once to exactly twice the new limit; a lowering, which applies at the next start, leaves
+//      the cap at twice the limit the relay still runs on.
 //   4. install-units writes the cap at twice the limit (no more limit + 128).
 //   5. The relay host documentation lists the overhead beside the relay (the system, Caddy, the kernel's socket
 //      buffers) and recommends 256 MB for a 1 GB VPS.
@@ -132,11 +133,13 @@ test.subHeading('2. the owner\'s raise is checked by the difference against what
   else test.fail(OWED + 'the lowering 256 to 128 answered ' + short(down));
 
   // ── 3. THE CAP FOLLOWS ─────────────────────────────────────────────────
-  test.subHeading('3. every limit change moves the relay\'s own cap to exactly twice the new limit');
+  test.subHeading('3. the cap is twice the limit the relay runs on: a raise moves it at once, a lowering at the next start');
   if (R.caps.length && R.caps[R.caps.length - 1] === 1024) test.check('the raise to 512 moved the cap to 1024');
   else test.fail(OWED + 'after the raise to 512 the cap was set to ' + short(R.caps));
-  if (R3.caps.length && R3.caps[R3.caps.length - 1] === 256) test.check('the lowering to 128 moved the cap to 256');
-  else test.fail(OWED + 'after the lowering to 128 the cap was set to ' + short(R3.caps));
+  // A LOWERING APPLIES AT THE NEXT START (relay.js), so the cap stays twice the limit the relay still runs on until then:
+  // moved at once to twice the new limit, it would equal the running limit and leave no margin (cw, building goal/G40.4).
+  if (!R3.caps.length || R3.caps[R3.caps.length - 1] === 512) test.check('the lowering to 128 leaves the cap at twice the 256 the relay still runs on until its next start');
+  else test.fail(OWED + 'after the lowering to 128, while it still runs on 256, the cap was set to ' + short(R3.caps));
   if (!R2.caps.length) test.check('a refused raise moves nothing');
   else test.fail(OWED + 'a refused raise set the cap to ' + short(R2.caps));
 }
