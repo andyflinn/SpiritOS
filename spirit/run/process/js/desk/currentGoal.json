@@ -1,5 +1,5 @@
 {
- "change": 100187,
+ "change": 100219,
  "goal": "goal/G40",
  "items": [
   {
@@ -16,9 +16,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G40.4"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -60,7 +58,8 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [],
    "agents": {
@@ -2166,13 +2165,13 @@
    "id": "goal/G40.4",
    "title": "Relay RAM raise checks the difference",
    "goal": "goal/G40",
-   "status": "waiting for deskVerify",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 8,
    "buttons": [
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -2181,7 +2180,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -2227,7 +2226,7 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -2238,7 +2237,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Raising a running relay's RAM limit is checked against the difference, not the whole new figure (goal/G40). Andy, 2026-10-24: \"the relay calculates if there's room for a 512MB relay, when it is supposed to calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right now. It needs to asses the difference^....\"\n\nToday: the owner's config verb refuses a new ramLimitMB above what the relay measures as free, less the safety margin. On Linux that measure is the smaller of the box's free memory and the room left under the relay's own service cap, which install-units set to the old limit plus 128 MB. So with 256 MB set, the cap is 384 MB, and a raise to 512 can never pass, however much the box has free.\n\nWanted: a raise passes when the new limit less the limit the relay runs on fits in what the box itself has free, less the margin; the relay's own cap does not count against its own raise. A lowering always passes this check. The cap at twice the limit is the safety, and nothing further is counted for it. Andy, 2026-10-24: \"the twice is safe. decision. period.\"\n\nThe relay's service cap is twice its RAM limit, written at install and moved by the relay itself with every limit change (it runs as root under systemd). Andy, 2026-10-24, answering Q1: \"the relay raises its own service cap to exactly twice the amount of RAM it uses for itself.\" Andy, 2026-10-24: \"the cap must be twice the size of what we compute for relay-internal use, per member, so for a 256MB not as computed today the cap must be 512MB, simple, AND safe.\" The limit already holds what the relay needs at rest and its members' share, so twice it also covers the kernel's buffers for those members.\n\nThe relay keeps its own memory calculation; nothing is measured from the kernel. Andy, 2026-10-24: \"I'll stay with the old calculation then. we stick with our own memory calculation, and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB figure for a 1GB RAM VPS. and keep its simple for ourselves.\"\n\nAlso owed: the relay host documentation says what a relay box spends beside the relay: the system itself, Caddy's own memory per connection, and the kernel's socket buffers. It recommends a 256 MB limit for a 1 GB VPS.\n\nRuns in parallel with goal/G40.5: it touches the relay's config and limits code and the relay host documentation, which that item does not.",
@@ -2740,6 +2739,60 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-24T16:20:54.961Z",
      "text": "- wsl: verify passed at e4737add: relayRamRaise.js 10 of 10, relayReconfigure, relayConfig, fixedAllowance, discBound green.\n- Found while verifying, my red's fault: its box let a raise check that wrongly used the capped figure pass too. Tightened (the cap leaves 200 MB, so only the box's free memory fits the raise); now that mistake turns it red, and the build is green on it.\n- deskVerify next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:39:27.556Z",
+     "text": "this one needs a tag, i s'pose...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:40:09.443Z",
+     "text": "- cw: yes, a tag. An honest are-you-sure first.\n- Since the last tag (14:17 today): the relay's RAM raise judged by the difference, its service cap at twice its limit, the memory section in the host documentation, and the presence and icons fixes (page code, no relay change).\n- What changes on the relays when they take it: at every start the relay now sets its own cap to twice its limit through systemd. spirit-3 and noderoutes both run 256, so their caps go from 384 to 512 MB at their next restart. The raise from your node works by the difference from then on.\n- Not yet tried on a real relay: that one systemd call. If it fails, the relay logs why and runs on as today, with the old cap; nothing else depends on it.\n- The unit file changed only in its comments, so no relay installs its unit again.\n- It is public the moment it is pushed, and spirit-3 takes it within ten minutes by itself.\n- My recommendation: tag now, then read noderoutes' log for the line that says its cap moved to 512.\n- ? Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:41:23.211Z",
+     "text": "go, tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:41:52.244Z",
+     "text": "- cw: tagged v-2026-10-24-18-41 at a2cee2ac, pushed, and the remote holds it.\n- spirit-3 takes it by itself within ten minutes. noderoutes takes it the same way, or at once with its update script.\n- The line to look for in either relay's log after its restart: service cap moved to 512 MB. If it says it could not move the cap, the relay still runs, on the old cap, and the reason is in that line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:45:45.626Z",
+     "text": "all relays on the latest code now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:46:06.923Z",
+     "text": "- cw: confirmed from your node: both relays report a2cee2ac, freshly restarted.\n- A correction to my are-you-sure: spirit-3 runs at 512, not 256, so its cap is now 1024; noderoutes at 256 has 512.\n- The cap line itself is only in each relay's own log, which I cannot read from here."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:47:32.711Z",
+     "text": "- wsl: your WSL side is on the new code too: its checkout already held the move, but labMaster had run since 21 October on the old code and your work node was down. I restarted labMaster from the checkout and started the work node through it: 65432 answers, and serves /spirit/kernel.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:49:08.454Z",
+     "text": "looks like you fixed a bug so the relay now actually reads is RAM configuration on re-start... very nice."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:49:42.870Z",
+     "text": "- cw: partly, and worth saying exactly. The relay always read its figure at a restart, but it then cut it down to what its old service cap left, so a figure above that cap never really applied. Now the cap moves with the figure, so the figure holds.\n- spirit-3 reports 384 right now, restarted two minutes ago, with an allowance of 1,756 members.\n- One edge left, small: at a start, the relay reads its figure before it moves its cap. A figure written above the old cap by hand, not through your node, is still cut on that first start, and holds from the second. Raises from your node do not hit it, since they move the cap at once."
     }
    ]
   },
