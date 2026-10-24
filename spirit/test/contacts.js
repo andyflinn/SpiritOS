@@ -1202,6 +1202,47 @@ function theDotColumn() {
   });
 }
 
+// ── A RELAY'S ROW FOLLOWS THE NODE'S HOLD ON IT (goal/G40.5) ─────────
+//
+//   Andy, 2026-10-24: "in contacts->natterDetails, both relays show as NOT present." and "The other problem seems to
+//   be that the UI is not tracking relay-presence correctly anymore..."
+//
+// Written first, red on today's tree, by claude-windows. A relay's row is keyed by its url (relay.search), and the
+// relay-presence table by public keys: the node seeds each relay's own key present the moment its stream opens
+// (presenceNode seedRelay) and drops that relay's whole part when the stream closes (forget). The box: a relay the
+// node holds a stream to is drawn present, and drawn absent when the stream drops, without a reload.
+const RELAY_URL = 'https://relay.example';
+const RELAY_KEY = 'MCowBQYDK2VwAyEArelayrelayrelayrelayrelayrelayrelayre=';
+function aRelayRowFollowsTheNode() {
+  test.subHeading('A relay\'s row is present while the node holds its stream, absent once it drops (goal/G40.5)');
+  const OWED = 'OWED by goal/G40.5: ';
+  const app = mountApp({
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false }],
+    relays: [{ url: RELAY_URL, name: 'my relay', owned: true, relayKey: RELAY_KEY }],
+  });
+  function dot() { return cell(app, RELAY_URL, 'presence'); }
+
+  return settle().then(function () {
+    // The stream opens: the node's table names the relay's own key present, as seedRelay writes it.
+    const open = {};
+    open[RELAY_KEY] = true;
+    open[BERT] = true;
+    app.presence(open);
+    if (dot() === ICONS.GREEN_CIRCLE) test.check('the node holds the relay\'s stream: its row goes green, from the relay\'s own key in the table');
+    else test.fail(OWED + 'the table names the relay\'s key present and its row (keyed by its url) reads ' + dot());
+
+    // The stream drops: forget() takes the relay's part out of the table, its own key with it.
+    app.presence({});
+    if (dot() === ICONS.RED_CIRCLE) test.check('the stream drops: its row goes red, absent, with no reload');
+    else test.fail(OWED + 'the relay\'s key left the table (its stream closed) and its row reads ' + dot() + ', not absent');
+
+    // And it comes back by itself.
+    app.presence(open);
+    if (dot() === ICONS.GREEN_CIRCLE) test.check('and green again when the stream opens again');
+    else test.fail(OWED + 'the stream opened again and the row reads ' + dot());
+  });
+}
+
 // ── THE RENAME'S MIGRATION (cycle 10, R18) ───────────────────────────
 //
 //   Andy, 2026-09-23: "we loose census from the dictionary."
@@ -1261,6 +1302,7 @@ listsTheBook()
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)
   .then(theDotColumn)
+  .then(aRelayRowFollowsTheNode)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contacts threw: ' + ((err && err.stack) || err));
