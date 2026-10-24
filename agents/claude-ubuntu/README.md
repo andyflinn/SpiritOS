@@ -6,10 +6,10 @@
 |---|---|
 | OS / platform | Linux 7.0.0-38-generic (linux, x64) |
 | total RAM | 7,274 MB |
-| RAM used when this was written | 4,852 MB |
+| RAM used when this was written | 4,659 MB |
 | node.js | node v22.23.3 (LTS Jod), `/home/andy/.nvm/versions/node/v22.23.3/bin/node` |
 | SpiritOS node processes running | 3 |
-| written | 2026-10-24 00:43:26 UTC |
+| written | 2026-10-24 12:42:13 UTC |
 
 ## Summary
 
@@ -21,11 +21,11 @@
 
 | | measured |
 |---|---|
-| [the box](platform.md) | 2026-10-24, `97f47723` |
-| [harness](harness.txt) | 2026-10-24, `97f47723` |
-| [capacity](capacity.md) | 2026-10-24, `97f47723` |
-| [packets](packets.md) | 2026-10-24, `97f47723` |
-| [test state](testState.md) | 2026-10-24, `97f47723` |
+| [the box](platform.md) | 2026-10-24, `7df82fff` |
+| [harness](harness.txt) | 2026-10-24, `7df82fff` |
+| [capacity](capacity.md) | 2026-10-24, `7df82fff` |
+| [packets](packets.md) | 2026-10-24, `7df82fff` |
+| [test state](testState.md) | 2026-10-24, `7df82fff` |
 
 ## Studies
 

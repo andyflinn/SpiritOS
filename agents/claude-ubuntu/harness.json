@@ -1,16 +1,16 @@
 {
-  "measuredAt": "2026-10-24T00:39:29.331Z",
-  "commit": "97f47723",
+  "measuredAt": "2026-10-24T12:38:11.779Z",
+  "commit": "7df82fff",
   "platform": "linux",
   "release": "7.0.0-38-generic",
   "node": "v22.23.3",
-  "seconds": 198,
+  "seconds": 189,
   "exitCode": 1,
   "summary": {
-    "suites": 460,
-    "green": 6184,
-    "red": 77,
-    "unhappy": 44,
+    "suites": 463,
+    "green": 6233,
+    "red": 100,
+    "unhappy": 52,
     "notRun": 0
   },
   "summaryParsed": true
