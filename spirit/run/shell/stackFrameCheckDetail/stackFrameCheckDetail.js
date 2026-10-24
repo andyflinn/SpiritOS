@@ -172,7 +172,20 @@ function sdSave() {
   if (wrong) { sdSay('Not saved: ' + wrong); return; }
   var d = F.door(SD_PRE);
   sdSay('Sent; waiting for the desk.');
-  sdAsk('stackFrameChecks.update', { id: id, gate: d.gate, endpoint: d.endpoint, paths: d.paths, suites: d.suites }).then(function () {
+  // One row a write (goal/G40.3): the gate and endpoint changed in place, then each path and suite the form added or
+  // dropped, against the door as the plugin holds it.
+  sdAsk('stackFrameChecks.update', { id: id, gate: d.gate, endpoint: d.endpoint }).then(function () {
+    return sdAsk('stackFrameChecks.door', { id: id });
+  }).then(function (now) {
+    var steps = [];
+    [['paths', 'stackFrameChecks.paths'], ['suites', 'stackFrameChecks.suites']].forEach(function (f) {
+      var had = (now && Array.isArray(now[f[0]])) ? now[f[0]] : [];
+      var want = Array.isArray(d[f[0]]) ? d[f[0]] : [];
+      want.forEach(function (v) { if (had.indexOf(v) === -1) steps.push([f[1] + '.add', v]); });
+      had.forEach(function (v) { if (want.indexOf(v) === -1) steps.push([f[1] + '.remove', v]); });
+    });
+    return steps.reduce(function (chain, s) { return chain.then(function () { return sdAsk(s[0], { id: id, path: s[1] }); }); }, Promise.resolve());
+  }).then(function () {
     sdSay('Saved. Its last verdict is cleared: it described the door as it was.');
     sdReadRun();
   }, function (e) { sdSay('Not saved: ' + sdErr(e)); });

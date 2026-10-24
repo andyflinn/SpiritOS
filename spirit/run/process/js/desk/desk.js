@@ -243,6 +243,30 @@ function tableSearch(spec) {
 }
 // Every version of an item's box, newest first (the box table keeps them all).
 const boxVersionsOf = { all: function (g, i) { return db.prepare('SELECT version, creator, at, text FROM box WHERE goal = ? AND item = ? ORDER BY version DESC').all(g, i); } };
+// ONE ROW OF A LIST TABLE, ADDED OR REMOVED (goal/G40.3): {id, path}, one path a write. has(it, w, p) says whether the
+// row is there; an add refuses one already there and a remove one not there, naming it. A path never climbs (..). A
+// suite is a spirit/test/ .js path, and only the item's red writer, or Andy, writes its suites.
+function listRowVerb(verb, has, adding, suite) {
+  return {
+    request: { id: '', path: '' }, reply: { change: 0 },
+    accepts: function (x) {
+      return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 && typeof x.id === 'string' && typeof x.path === 'string' && x.path !== '';
+    },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const p = String(a.path);
+      const it = itemFor(walkState(), a);
+      if (p.replace(/\\/g, '/').split('/').indexOf('..') !== -1) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + p);
+      if (suite && (!/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p))) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(p));
+      if (suite && w.by !== 'andy' && it.red !== w.by && !(it.phase === 'red' && it.phaseWith === w.by)) throw refusedWhy('not-offered', 'the suites of ' + it.id + ' are its red writer\'s to add or remove');
+      const there = has(it, w, p);
+      if (adding && there) throw refusedWhy('bad-request', p + ' is on the list of ' + it.id + ' already');
+      if (!adding && !there) throw refusedWhy('bad-request', p + ' is not on the list of ' + it.id);
+      // The grant is kept in the walk, beside the list it describes, so the record decides the same everywhere.
+      return { change: write(verb, { id: it.id, path: p, by: w.by, key: w.key }).change };
+    },
+  };
+}
 // The item a table's search is about: by id, refused when there is none.
 function itemFor(st, a) {
   const it = st.items[String((a && a.id) || '')];
@@ -438,9 +462,30 @@ const NULL_PROTO = ['claims', 'takers', 'checkHigh', 'files'];
 function goalData(g) { const o = Object.assign({}, g); delete o.id; return o; }
 // Who made it: the key it was written with, else the label (the desk's own rows: desk).
 function madeBy(r) { return String((r && (r.key || r.by)) || 'desk'); }
+// ONE GRANT FOR THE LIST (goal/G40.3). Andy, 2026-10-24: "i will get no single file grant checks anymore, just all
+// in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons
+// next to them.... The grand will simply be for the current/updated list.", "the grant is not valid if core files are
+// added after the grant is issued, if core files are added i must re-issue the grant for the whole list.", and "make
+// sure that the grant lives until i click 'done'". So an item holds at most one live core grant, naming no path: open
+// while it waits for his press, granted after it, for every core file on the list then. A core file added after it
+// voids it (state voided, the record kept) and opens a fresh one; a non-core add, a remove and a phase change leave it.
+// A list left with no core file drops an open one; a granted one stands.
+const CORE_GRANT = 'core grant: every core file on this item\'s list';
+function isCoreGrant(c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0; }
+function coreGrantAfter(it, r, added) {
+  const hasCore = filesOf(it).some(function (e) { return e.core; });
+  if (!hasCore) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
+  const granted = it.checks.filter(function (c) { return isCoreGrant(c) && c.state === 'granted'; });
+  if (granted.length) {
+    if (!added || require('../../../js/coreFiles.js').isCore(added) !== true) return;
+    granted.forEach(function (c) { c.state = 'voided'; c.at = r.at; });
+  }
+  if (it.checks.some(function (c) { return isCoreGrant(c) && c.state === 'open'; })) return;
+  it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: CORE_GRANT, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' });
+}
 function grantOf(it, p, core) {
   if (!core) return 'none';
-  const cg = it.checks.filter(function (c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0 && String(c.words).split(/[:,]\s*/).indexOf(p) !== -1; });
+  const cg = it.checks.filter(isCoreGrant);
   if (cg.some(function (c) { return c.state === 'open'; })) return 'open';
   if (cg.some(function (c) { return c.state === 'granted'; })) return 'granted';
   return 'owed';
@@ -1440,34 +1485,38 @@ function apply(s, r, b, item, goalOf) {
       if (!it.blocks.length) it.blocks = [it.goalId];
       return;
     }
-    // FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent and the
-    // testing agent should be adding files they test/touch in a list that can be fetched per item." A write carries
-    // that agent's WHOLE list for the item and replaces its own entries, leaving every other agent's alone, so a
-    // wrong path is corrected by writing the list again and nothing has to be deleted.
+    // FILES TOUCHED, ONE ROW A WRITE (goal/G40.3; goal/G8.8 for the list itself). Andy, 2026-10-24: "items are added
+    // one-by one, and desk streams those items to its clients", and "same set of verbs for all sub-item-tables add,
+    // remove, search." An add puts one path on the writer's own list and a remove takes one away, each one row on the
+    // stream; no write carries a list, so none can outgrow a request. (The whole-list write of goal/G8.8 stood here: it
+    // replaced the writer's list, and a late file added alone once dropped a listed red.)
     case 'item.files.add': {
       if (!it) return;
       if (!it.files) it.files = Object.create(null);
-      it.files[r.by] = (Array.isArray(b.paths) ? b.paths : []).map(String);
-      // ONE GRANT FOR ALL THE CORE FILES (goal/G8.8). Andy, 2026-10-09: "all files that need a grant should get one
-      // 'grant' button together." So there is at most one open core grant on an item: its words are rewritten when the
-      // core set changes, and it goes when no core file is left. commitCheck raised one grant per file until today.
-      // ONLY A CHANGED SET ASKS HIM AGAIN (goal/G8.8, found by claude-windows verifying e4818ee9): every agent re-sends
-      // its whole list as it works, so a grant he has already given must not be asked for twice - a core grant whose
-      // words he granted already stands for that set, and nothing new is raised until the set itself changes.
-      const core = filesOf(it).filter(function (e) { return e.core; }).map(function (e) { return e.path; });
-      const isCoreGrant = function (c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0; };
-      const open = it.checks.filter(function (c) { return isCoreGrant(c) && c.state === 'open'; });
-      if (core.length) {
-        const words = 'core grant: ' + core.join(', ');
-        const settled = it.checks.some(function (c) { return isCoreGrant(c) && c.state !== 'open' && c.words === words; });
-        if (settled) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
-        if (open.length) { open[0].words = words; open[0].at = r.at; it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open') || c === open[0]; }); }
-        else it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' });
-      } else if (open.length) {
-        it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); });
-      }
+      const mine = (it.files[r.by] = it.files[r.by] || []);
+      if (mine.indexOf(String(b.path)) === -1) mine.push(String(b.path));
+      coreGrantAfter(it, r, String(b.path));
       return;
     }
+    case 'item.files.remove': {
+      if (!it || !it.files || !Array.isArray(it.files[r.by])) return;
+      it.files[r.by] = it.files[r.by].filter(function (p) { return p !== String(b.path); });
+      if (!it.files[r.by].length) delete it.files[r.by];
+      coreGrantAfter(it, r, '');
+      return;
+    }
+    // THE SUITES, ONE ROW A WRITE (goal/G40.3): the red writer adds or removes one suite, each streamed; the red claim
+    // carries none of its own (Andy: "a red claim will fail if no suite-rows are registered with an item.").
+    case 'item.suites.add':
+      if (!it) return;
+      if (!Array.isArray(it.suites)) it.suites = [];
+      if (it.suites.indexOf(String(b.path)) === -1) it.suites.push(String(b.path));
+      it.suitesKey = String(r.key || r.by || 'desk');
+      return;
+    case 'item.suites.remove':
+      if (!it || !Array.isArray(it.suites)) return;
+      it.suites = it.suites.filter(function (p) { return p !== String(b.path); });
+      return;
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // A CLAIM CARRIES ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code,
     // it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet...
@@ -1479,12 +1528,8 @@ function apply(s, r, b, item, goalOf) {
     case 'claim':
       if (!it) return;
       if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
-      else if (String(b.phase) === 'red') {
-        it.redCommit = String(b.commit || '');
-        // THE RED WRITER SUPPLIES THE SUITES (goal/G33.4, box v44-45): a red claim naming them fills the item's suites
-        // table, replacing what was there; one naming none leaves it as it is.
-        if (Array.isArray(b.suites) && b.suites.length) { it.suites = b.suites.slice(); it.suitesKey = String(r.key || r.by || 'desk'); }
-      }
+      // A red claim keeps its commit; its suites are the item's suite rows, added one a write (goal/G40.3).
+      else if (String(b.phase) === 'red') it.redCommit = String(b.commit || '');
       return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -1587,6 +1632,14 @@ function press(s, it, what, r, goalOf, b) {
   // as Close\"". His Go stays on record; the claims go, so Done is not offered again until an agent claims anew.
   else if (what === 'reopen') {
     it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null);
+    // REOPEN IS DESIGN AGAIN (goal/G40.3; Andy: "oh, re-open should put an item back to design mode."): it waits for his
+    // End design and a fresh Go. Its grant lived until his Done ("make sure that the grant lives until i click 'done'"),
+    // so a granted one is spent and the list asks again.
+    if (!it.goal) {
+      it.design = true; it.go = false; it.went = false;
+      it.checks.forEach(function (c) { if (isCoreGrant(c) && c.state === 'granted') { c.state = 'voided'; c.at = r.at; } });
+      coreGrantAfter(it, r, '');
+    }
     // A REOPENED GOAL WAITS FOR A FRESH RUN (goal/G19.2). Its deskVerify pass and its emptied mark survived the reopen,
     // so Done came straight back on the old run's word. Andy, 2026-10-12, to the four fixes that hold back an unearned
     // Done: "yes. with my addendum." Both go here, in the walk, so a replay agrees; with the mark gone the press below
@@ -3239,7 +3292,7 @@ appServer.serve(withPlugins({
       const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
         // A RED FINISHES ONLY ONCE ITS RED CLAIM, WITH ITS SUITES, IS ON RECORD (goal/G33.11).
-        if (a.phase === 'red' && !(it.redCommit && Array.isArray(it.suites) && it.suites.length)) throw refusedWhy('not-offered', 'the red of ' + it.id + ' finishes once a red claim with its suites is on record: claim {id, phase: red, commit, suites}');
+        if (a.phase === 'red' && !(it.redCommit && Array.isArray(it.suites) && it.suites.length)) throw refusedWhy('not-offered', 'the red of ' + it.id + ' finishes once its suite rows are added (item.suites.add) and a red claim is on record: claim {id, phase: red, commit}');
       }).change;
       // AN ITEM THAT COMES TO WAIT IS AN EVENT (goal/G33.3): the states are read; nothing is handed over (his Verify does).
       const comesToWait = a.phase === 'verify' && a.pass === true;
@@ -3495,22 +3548,13 @@ appServer.serve(withPlugins({
   // grant should get one 'grant' button together." So: the caller's whole list, replacing its own entries; the list
   // comes back in item.get; and if it holds core files, ONE open grant names them all. A desk verb, and his ruling of
   // 2026-10-09 is that a desk verb needs no grant of his "until i rule this app 'intrinsic'".
-  'item.files.add': {
-    request: { id: '', paths: [''] }, reply: { change: 0 },
-    accepts: function (x) {
-      return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
-        typeof x.id === 'string' && Array.isArray(x.paths) && x.paths.every(function (p) { return typeof p === 'string' && p; });
-    },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      // NO .. IN A LISTED PATH (goal/G19.4): a path is a repository path, and one that climbs out of where it names is
-      // refused here, before deskVerify could run it.
-      const climbing = a.paths.filter(function (p) { return String(p).replace(/\\/g, '/').split('/').indexOf('..') !== -1; });
-      if (climbing.length) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + climbing.join(', '));
-      // The grant is raised in the walk, beside the list it describes, so a replay of the records decides the same.
-      return { change: write('item.files.add', { id: a.id, paths: a.paths.map(String), by: w.by, key: w.key }).change };
-    },
-  },
+  // ONE ROW A WRITE (goal/G40.3; the verbs Andy approved: "yes to the named verbs"): item.files.add and .remove take one
+  // path of the writer's own list; item.suites.add and .remove one suite of the item's. Each refuses a path already
+  // there or not there, naming it.
+  'item.files.add': listRowVerb('item.files.add', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, true),
+  'item.files.remove': listRowVerb('item.files.remove', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, false),
+  'item.suites.add': listRowVerb('item.suites.add', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, true, true),
+  'item.suites.remove': listRowVerb('item.suites.remove', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, false, true),
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
   // deactivates the input, also by leaving the details dialog, the box input is released from the take." A take was
   // freed only by its holder's box.write until then, so leaving the box unchanged held it for good. Only the holder
@@ -3581,7 +3625,7 @@ appServer.serve(withPlugins({
         const it = st.items[String(a.id)];
         if (!it) throw refused('no-such-item');
         if (buttons(st, it).indexOf('verify') === -1) throw notOffered(hasDeskVerify() ? it.id + ' takes no verify' : 'no deskVerify answers on this node, so nothing can be verified');
-        if (!suitesFor(st, it).length) throw notOffered(it.id + ' has no suites (its red claim supplies them), so there is nothing to run');
+        if (!suitesFor(st, it).length) throw notOffered(it.id + ' has no suites (its red writer adds them with item.suites.add), so there is nothing to run');
         return verifyEvent(it.id).then(function () { return { change: walkState().change }; });
       }
       const body = Object.assign({}, a, { by: w.by, key: w.key });
@@ -3618,13 +3662,12 @@ appServer.serve(withPlugins({
   //   suites       goal/G33.4 (box v44-45, Andy's yes on the verb change): the red claim carries the item's suites, the
   //                spirit/test/ paths a Verify of it runs; they fill its suites table. Optional; a build claim takes none.
   'claim': {
-    request: { id: '', phase: '', commit: '', suites: [''] }, reply: { change: 0 },
+    // No suites of its own (goal/G40.3): a claim carrying them is refused; the item's suite rows are what a red names.
+    request: { id: '', phase: '', commit: '' }, reply: { change: 0 },
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
-      const keys = Object.keys(a).sort().join(',');
-      if (keys !== 'commit,id,phase' && keys !== 'commit,id,phase,suites') return false;
-      return typeof a.id === 'string' && typeof a.phase === 'string' && typeof a.commit === 'string' &&
-        (a.suites === undefined || (Array.isArray(a.suites) && a.suites.every(function (p) { return typeof p === 'string'; })));
+      if (Object.keys(a).sort().join(',') !== 'commit,id,phase') return false;
+      return typeof a.id === 'string' && typeof a.phase === 'string' && typeof a.commit === 'string';
     },
     handler: function (a, caller) {
       const w = writerOf(caller);
@@ -3641,15 +3684,10 @@ appServer.serve(withPlugins({
         if (!it0.code) throw refusedWhy('not-offered', id + ' is not a code item: it has no red phase to claim');
         if (!it0.go) throw refusedWhy('not-offered', 'no Go is on record for ' + id + ', so its red is not claimable yet');
       }
-      const suites = Array.isArray(a.suites) ? a.suites.map(String) : [];
-      // NO RED WITHOUT ITS SUITES (goal/G33.11; Andy: "red cannot be claimed without delivering the list of suites to the
-      // item."): they are what a Verify of the item runs.
-      if (phase === 'red' && !suites.length) throw refusedWhy('bad-request', 'a red claim delivers its suites: name the spirit/test/ paths a Verify of ' + id + ' runs');
-      if (suites.length && phase !== 'red') throw refusedWhy('bad-request', 'suites come with the red claim, which supplies them; a build claim takes none');
-      const notTest = suites.filter(function (p) { return !/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p) || p.split('/').indexOf('..') !== -1; });
-      if (notTest.length) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(notTest[0]));
+      // NO RED WITHOUT ITS SUITES (goal/G33.11, goal/G40.3; Andy: "a red claim will fail if no suite-rows are registered
+      // with an item."): they are what a Verify of the item runs, added one a write with item.suites.add.
+      if (phase === 'red' && !it0.closed && !(Array.isArray(it0.suites) && it0.suites.length)) throw refusedWhy('bad-request', 'no suite rows are registered with ' + id + ': add its spirit/test/ suites with item.suites.add before the red claim');
       const body = { id: id, phase: phase, commit: commit, by: w.by, key: w.key };
-      if (suites.length) body.suites = suites.filter(function (p, i) { return suites.indexOf(p) === i; });
       // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
       const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
       if (phase === 'build') emptiedByPress({ id: id });

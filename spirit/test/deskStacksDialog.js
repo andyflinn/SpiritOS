@@ -151,7 +151,8 @@ async function serverHalf() {
   if (set.ok === false) { test.fail('the world: no ordinary goal: ' + short(set)); return; }
 
   test.subHeading('D4. the stacks goal owns its door items');
-  const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END, paths: [], suites: [] });
+  // goal/G40.3: make takes the gate and endpoint alone; a door's paths and suites are rows added after it.
+  const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END });
   const item = made.id;
   const doors = (await doorsList());
   const door = doors.filter(function (d) { return d.item === item; })[0];
@@ -182,7 +183,7 @@ async function serverHalf() {
 
   test.subHeading('D4. removing the door deletes its item');
   // A second door, its item untouched by the presses above, so the delete is the remove's own.
-  const made2 = await call('stackFrameChecks.make', { gate: 'spirit/run/js/peerPost.js::postMessage', endpoint: END, paths: [], suites: [] });
+  const made2 = await call('stackFrameChecks.make', { gate: 'spirit/run/js/peerPost.js::postMessage', endpoint: END });
   const door2 = (await doorsList()).filter(function (d) { return d.item === made2.id; })[0];
   const open2 = await factsOf(made2.id);
   if (!door2 || !open2 || open2.status === 'closed') { test.fail('the world: a second door was not made open: ' + short(made2)); return; }

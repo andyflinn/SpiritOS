@@ -171,7 +171,9 @@ async function suite() {
     // with goal/G33.7 (the approved verb list: "agents only; items.search covers it").
     'chat.search', 'rule.get', 'rules.search', 'profile.get',
     // goal/G27.5, R9: agents arrange dependencies, so block, unblock and block.targets are described to them too.
-    'block', 'unblock', 'block.targets']);
+    'block', 'unblock', 'block.targets',
+    // goal/G40.3: one row a write on the list tables (Andy: "yes to the named verbs").
+    'item.files.remove', 'item.suites.add', 'item.suites.remove']);
   let family = null;
   try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL }); } catch (e) { family = null; }
   // Since goal/G30.4 the folder is listed by its FS.search, and a verb is described when its file reads with a

@@ -16,7 +16,7 @@
 //      taker recorded, the item no longer verified, so Done is not offered while the new cycle runs.
 //   2  the new cycle runs to its end under the same item: build, then verify, then Done is offered again.
 //   3  once he presses Done no phase is offered or taken.
-//   4  his Reopen of a done item lets red be taken again.
+//   4  his Reopen of a done item puts it back in design (goal/G40.3); after his End design and Go red is taken again.
 // Two agents, so the who-may-take rules of goal/G5.7 stay in force (deskPhases.js); the world is that suite's.
 // rule/11: through testSupport only; its own folders; never 65432.
 
@@ -64,8 +64,8 @@ async function open(caller) {
 async function cycle(redTaken) {
   const steps = [];
   if (!redTaken) steps.push((await call('phase.take', { id: ID, phase: 'red' }, CW)).status);
-  // A red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: ID, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhaseRestart.js'] }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  await call('item.suites.add', { id: ID, path: 'spirit/test/deskPhaseRestart.js' }, CW); await call('claim', { id: ID, phase: 'red', commit: 'abcdef1' }, CW);
   steps.push((await call('phase.done', { id: ID, phase: 'red' }, CW)).status);
   steps.push((await call('phase.take', { id: ID, phase: 'build' }, UBI)).status);
   steps.push((await call('phase.done', { id: ID, phase: 'build' }, UBI)).status);
@@ -122,12 +122,20 @@ async function cycle(redTaken) {
   if (ok(done) && !ok(afterDone) && openDone.indexOf(ID + ':red') === -1) test.check('after his Done the red take is refused and not offered');
   else test.fail((ok(done) ? OWED : 'the world: ') + 'Done answered ' + done.status + ', red after it ' + afterDone.status + ', offered ' + short(openDone));
 
-  test.subHeading('4. his Reopen lets red be taken again');
+  // goal/G40.3: Reopen now puts the item back into design mode (Andy: "oh, re-open should put an item back to design
+  // mode."), so red waits for his End design and a fresh Go; after those it is taken again.
+  test.subHeading('4. his Reopen puts it back in design; after his End design and Go red is taken again');
   const reopen = await call('press', { id: ID, what: 'reopen' }, ANDY);
+  const inDesign = await call('phase.take', { id: ID, phase: 'red' }, CW);
+  const v3 = await facts(ID);
+  if (ok(reopen) && !ok(inDesign) && v3.design === true) test.check('after his Reopen the item is in design and red is not taken');
+  else test.fail(OWED + 'Reopen answered ' + reopen.status + ', design ' + short(v3.design) + ', red in design ' + short(inDesign.body || inDesign.status));
+  const endD = await call('press', { id: ID, what: 'end-design' }, ANDY);
+  const goAgain = await call('press', { id: ID, what: 'go' }, ANDY);
   const afterReopen = await call('phase.take', { id: ID, phase: 'red' }, CW);
   const v4 = await facts(ID);
-  if (ok(reopen) && ok(afterReopen) && v4.phase === 'red') test.check('after his Reopen red is taken again');
-  else test.fail(OWED + 'Reopen answered ' + reopen.status + ', red after it ' + short(afterReopen.body || afterReopen.status) + ', phase ' + short(v4.phase));
+  if (ok(endD) && ok(goAgain) && ok(afterReopen) && v4.phase === 'red') test.check('after his End design and Go red is taken again');
+  else test.fail(OWED + 'End design ' + endD.status + ', Go ' + goAgain.status + ', red after them ' + short(afterReopen.body || afterReopen.status) + ', phase ' + short(v4.phase));
 
   // goal/G27.2, D11. Andy, 2026-10-17: "make that press queue it.": the verify pass sets the item back to waiting for
   // deskVerify, so the desk writes the item's claimed commit on the pass's record, and deskVerify queues its check at
@@ -135,8 +143,8 @@ async function cycle(redTaken) {
   test.subHeading('5. a verify pass carries the item\'s claimed commit');
   const COMMIT = 'abcdef1234567890abcdef1234567890abcdef12';
   const s5 = [];
-  // A red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: ID, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhaseRestart.js'] }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  await call('item.suites.add', { id: ID, path: 'spirit/test/deskPhaseRestart.js' }, CW); await call('claim', { id: ID, phase: 'red', commit: 'abcdef1' }, CW);
   s5.push((await call('phase.done', { id: ID, phase: 'red' }, CW)).status);
   s5.push((await call('phase.take', { id: ID, phase: 'build' }, UBI)).status);
   s5.push((await call('claim', { id: ID, phase: 'build', commit: COMMIT }, UBI)).status);

@@ -250,8 +250,10 @@ test.startTest('goal/G4.20: Desk for Andy');
     else test.fail(OWED + 'closed item: ' + short({ status: shut.status, buttons: shut.buttons }));
     const reopen = await call('press', { id: 'goal/G101.2', what: 'reopen' }, ANDY);
     const back = await factsOf('goal/G101.2');
-    if (reopen.status === 200 && back.status !== 'closed' && back.status !== 'done' && back.go === true && !has(back.buttons, 'go') && !has(back.buttons, 'done')) {
-      test.check('Reopen: neither done nor closed, his Go kept, no Go and no Done offered');
+    // goal/G40.3 (Andy: "oh, re-open should put an item back to design mode."): his Go is no longer kept; the item waits
+    // for his End design and a fresh Go.
+    if (reopen.status === 200 && back.status !== 'closed' && back.status !== 'done' && back.go === false && back.design === true && has(back.buttons, 'end-design') && !has(back.buttons, 'go') && !has(back.buttons, 'done')) {
+      test.check('Reopen: neither done nor closed, back in design mode without his Go, End design offered, no Go and no Done');
     } else test.fail(OWED + 'reopen answered ' + reopen.status + ' ' + short(reopen.body) + '; facts ' + short({ status: back.status, go: back.go, buttons: back.buttons }));
 
     test.subHeading('1. items.search with includeClosed');

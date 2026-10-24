@@ -98,15 +98,15 @@ async function open(caller) {
   await sleep(5);
   await call('chat.add', { id: 'goal/G100.2', text: 'make the button blue' }, ANDY);
   await call('chat.add', { id: 'goal/G100.2', text: 'and the frame thinner' }, ANDY);
-  const files = await call('item.files.add', { id: 'goal/G100.2', paths: ['spirit/test/zzQuickFixes.js'] }, CW);
+  const files = await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/test/zzQuickFixes.js' }, CW);
   const chat = await call('chat.add', { id: 'goal/G100.2', text: 'blue it is' }, CW);
   if (ok(files) && ok(chat) && !('andy' in files.body) && !('andy' in chat.body)) test.check('its item.files.add and chat.add answered what they were asked, no line of his');
   else test.fail('OWED by goal/G33.7: item.files.add answered ' + short(files.body || files.status) + ', chat.add ' + short(chat.body || chat.status));
 
   test.subHeading('3. from his Go to his Done the item stays in code');
   const steps = [];
-  // A red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskQuickFixes.js'] }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  await call('item.suites.add', { id: 'goal/G100.2', path: 'spirit/test/deskQuickFixes.js' }, CW); await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1' }, CW);
   steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW)).status);
   steps.push((await call('phase.take', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);
   steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);

@@ -125,8 +125,10 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     // after another agent took and answered his line. The rest of this section stands.
     test.subHeading('2. an earlier phase holder posts its notes, before and after a take (goal/G27.10)');
     const red = await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
-    // A red finishes only after its red claim with suites (goal/G33.11).
-    await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskChatFlowOneTask.js'] }, CW);
+    // A red finishes only after its red claim, and a red claim needs a suite row (goal/G33.11; goal/G40.3: the suites
+    // are rows added with item.suites.add, the claim carries none).
+    await call('item.suites.add', { id: 'goal/G100.2', path: 'spirit/test/deskChatFlowOneTask.js' }, CW);
+    await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1' }, CW);
     const redDone = await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW);
     if (!landed(red) || !landed(redDone)) test.fail('the world: the red of goal/G100.2 answered ' + short([red, redDone]));
     await say('goal/G100.2', 'how far is it?', ANDY);
@@ -177,8 +179,10 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     const afterClaim = await call('phase.take', { id: 'goal/G100.6', phase: 'red' }, CW);
     if (landed(claimed) && landed(afterClaim)) test.check('its claim frees it: a phase of another item is taken');
     else test.fail(OWED + 'claim: ' + short({ claimed: claimed, next: afterClaim }));
-    // A red finishes only after its red claim with suites (goal/G33.11).
-    await call('claim', { id: 'goal/G100.6', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskChatFlowOneTask.js'] }, CW);
+    // A red finishes only after its red claim, and a red claim needs a suite row (goal/G33.11; goal/G40.3: the suites
+    // are rows added with item.suites.add, the claim carries none).
+    await call('item.suites.add', { id: 'goal/G100.6', path: 'spirit/test/deskChatFlowOneTask.js' }, CW);
+    await call('claim', { id: 'goal/G100.6', phase: 'red', commit: 'abcdef1' }, CW);
     const phaseDone = await call('phase.done', { id: 'goal/G100.6', phase: 'red' }, CW);
     const afterPhase = await call('item.take', { id: 'goal/G100.8' }, CW);
     if (landed(phaseDone) && landed(afterPhase)) test.check('a finished phase frees it');

@@ -12,11 +12,13 @@
 // draws every button an item offers except go-all, reopen and make-current (shell/desk/desk.js DESK_NOT_IN_ROW).
 //
 // THE SHAPE ASSERTED, from the box and the red writer's naming where the box leaves it open:
-//   item.files.add {id, paths}: the caller's whole list for that item, replacing its own entries and leaving others'.
+//   item.files.add {id, path}: one path onto the caller's own list for that item, leaving others'; item.files.remove
+//   {id, path} takes one away (goal/G40.3: one row a write; the whole-list write {id, paths} went).
 //   item.files {id} answers it as {files: [{path, by, core}], filesMore}, core read from js/coreFiles.js isCore (never a
 //   second list): its own answer since goal/G32.2, core files first, as many as fit one answer, filesMore saying there
 //   were more. The facts carry no files: 64 core grants and a 142-file list outgrew the item's one answer.
-//   A list holding any core file puts ONE open G check on the item for all of them, not one per file.
+//   A list holding any core file puts ONE open G check on the item for all of them, not one per file; since goal/G40.3
+//   its words name no path: "core grant: every core file on this item's list".
 //   The Details draws the list in its files panel (#dd-panel with 📂 pressed, goal/G30.8; #dd-files before it), a core
 //   path marked data-core="1". The List never draws Delete.
 // NOT ASSERTED: a file added after the grant turning the grant red again (both agents proposed it, he has not ruled),
@@ -63,6 +65,9 @@ async function start() {
   return false;
 }
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
+// goal/G40.3: a list is built by one add per path; this adds each in turn and answers every result.
+async function addEach(id, paths, caller) { const out = []; for (const p of paths) out.push(await call('item.files.add', { id: id, path: p }, caller)); return out; }
+const CORE_GRANT = 'core grant: every core file on this item\'s list';
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 function refusedByVerb(r) { return !took(r) && !(r.body && r.body.code === 'no-such-verb'); }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
@@ -83,9 +88,10 @@ async function server() {
   else { test.fail('the world did not land'); return; }
 
   test.subHeading('1. an agent adds the files it touched, and the item carries them');
-  const add = await call('item.files.add', { id: 'goal/G100.1', paths: [PLAIN, CORE] }, CW);
-  if (took(add)) test.check('item.files.add {id, paths} is taken');
-  else test.fail(OWED + 'item.files.add answered ' + add.status + ' ' + short(add.body));
+  // goal/G40.3: one add per path, each taken (the whole-list {id, paths} is refused, section 4).
+  const adds = await addEach('goal/G100.1', [PLAIN, CORE], CW);
+  if (adds.every(took)) test.check('item.files.add {id, path} is taken, once for each path');
+  else test.fail(OWED + 'item.files.add answered ' + short(adds.map(function (a) { return a.status + ' ' + short(a.body); })));
   const f1 = await files('goal/G100.1');
   if (JSON.stringify(listOf(f1)) === JSON.stringify(['claude-windows:' + CORE, 'claude-windows:' + PLAIN].sort())) test.check('item.files answers both paths, written by claude-windows');
   else test.fail('OWED by goal/G32.2: item.files reads ' + short(f1));
@@ -96,28 +102,32 @@ async function server() {
   if (core.core === true && plain.core === false) test.check(CORE + ' is marked core, ' + PLAIN + ' is not (coreFiles.isCore)');
   else test.fail(OWED + 'core marks read ' + short({ core: core.core, plain: plain.core }));
 
-  test.subHeading('2. the list is the item\'s: each writer replaces its own entries, never another\'s');
-  await call('item.files.add', { id: 'goal/G100.1', paths: [PLAIN2] }, WSL);
-  await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, CORE2] }, CW);
+  // goal/G40.3: no write replaces a list any more; each writer adds and removes rows of its own list, one a write.
+  test.subHeading('2. the list is the item\'s: each writer adds and removes its own rows, never another\'s');
+  await call('item.files.add', { id: 'goal/G100.1', path: PLAIN2 }, WSL);
+  const theirs = await call('item.files.remove', { id: 'goal/G100.1', path: PLAIN }, WSL);
+  await call('item.files.remove', { id: 'goal/G100.1', path: PLAIN }, CW);
+  await call('item.files.add', { id: 'goal/G100.1', path: CORE2 }, CW);
   const f2 = await files('goal/G100.1');
   const want = ['claude-windows:' + CORE, 'claude-windows:' + CORE2, 'wsl-claude:' + PLAIN2].sort();
-  if (JSON.stringify(listOf(f2)) === JSON.stringify(want)) test.check('claude-windows\'s second list replaced its first; wsl-claude\'s entry stands');
-  else test.fail(OWED + 'after both writers the list reads ' + short(listOf(f2)));
+  if (!took(theirs) && JSON.stringify(listOf(f2)) === JSON.stringify(want)) test.check('claude-windows removed one row and added another; wsl-claude\'s entry stands, and its remove of claude-windows\'s row was refused');
+  else test.fail(OWED + 'after both writers the list reads ' + short(listOf(f2)) + '; wsl-claude removing claude-windows\'s row answered ' + theirs.status);
 
   test.subHeading('3. one grant for all the core files, and none without them');
   const g = await openGrants('goal/G100.1');
-  if (g.length === 1 && g[0].words.indexOf(CORE) !== -1 && g[0].words.indexOf(CORE2) !== -1) test.check('one open G check names both core files');
+  // goal/G40.3: the one grant is for the whole list and names no path (Andy: "the grant request doesn't have to list them").
+  if (g.length === 1 && g[0].words === CORE_GRANT) test.check('one open G check for both core files, its words naming no path');
   else test.fail(OWED + 'the open grants read ' + short(g.map(function (c) { return c.words; })));
-  // GROWN IN THE VERIFY (claude-windows): a list he has granted, sent again unchanged, asks him nothing new. Each call
-  // carries the writer's whole list, so agents re-send it as they work; a fresh red grant for files he already granted
-  // would make him grant the same list over and over.
+  // GROWN IN THE VERIFY (claude-windows): a list he has granted asks him nothing new while no core file joins it.
+  // goal/G40.3: a list is no longer re-sent whole; a path already on it is refused, and a non-core add keeps the grant.
   const g1 = g[0] && g[0].number;
   await call('check.set', { id: 'goal/G100.1', check: g1, state: 'granted' }, ANDY);
-  await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, CORE2] }, CW);
+  const twice = await call('item.files.add', { id: 'goal/G100.1', path: CORE }, CW);
+  await call('item.files.add', { id: 'goal/G100.1', path: PLAIN }, CW);
   const again = await openGrants('goal/G100.1');
-  if (g1 && !again.length) test.check('the same list sent again after his grant raises no new grant');
-  else test.fail(OWED + 'after his grant, the unchanged list raised ' + short(again.map(function (c) { return c.number + ' ' + c.words; })));
-  await call('item.files.add', { id: 'goal/G100.2', paths: [PLAIN] }, CW);
+  if (g1 && !took(twice) && !again.length) test.check('after his grant, a core path added again is refused and a non-core add raises no new grant');
+  else test.fail(OWED + 'after his grant, adding ' + CORE + ' again answered ' + twice.status + ' and the open grants are ' + short(again.map(function (c) { return c.number + ' ' + c.words; })));
+  await call('item.files.add', { id: 'goal/G100.2', path: PLAIN }, CW);
   const none = await openGrants('goal/G100.2');
   if (!none.length && listOf(await files('goal/G100.2')).length === 1) test.check('a list with no core file raises no grant');
   else test.fail(OWED + 'goal/G100.2 has grants ' + short(none.map(function (c) { return c.words; })) + ' and list ' + short(listOf(await files('goal/G100.2'))));
@@ -126,7 +136,9 @@ async function server() {
   // G32.2 listed 142 files, 64 of them core: the list in the facts made every write to the item too large to come back.
   const many = [];
   for (let i = 0; i < 150; i++) many.push(i % 3 ? 'spirit/test/manyFilesSuite' + String(i).padStart(3, '0') + '.js' : 'spirit/run/js/manyCore' + String(i).padStart(3, '0') + '.js');
-  const big = await call('item.files.add', { id: 'goal/G100.2', paths: many }, CW);
+  // goal/G40.3: the list is built one add per path; big is the first refused add, if any.
+  const bigAdds = await addEach('goal/G100.2', many, CW);
+  const big = bigAdds.filter(function (a) { return !took(a); })[0] || { status: 200, body: { ok: true } };
   const bigAnswer = await filesAnswer('goal/G100.2');
   const shown = bigAnswer.files || [];
   const firstPlain = shown.findIndex(function (e) { return !e.core; });
@@ -138,10 +150,12 @@ async function server() {
   else test.fail('OWED by goal/G32.2: the 150 paths left ' + grantsBig.length + ' open grants');
 
   test.subHeading('4. what it refuses');
-  const notList = await call('item.files.add', { id: 'goal/G100.1', paths: PLAIN }, CW);
-  if (refusedByVerb(notList)) test.check('paths that is not a list is refused');
-  else test.fail(OWED + 'a string for paths answered ' + notList.status + ' ' + short(notList.body));
-  const ghost = await call('item.files.add', { id: 'goal/G100.99', paths: [PLAIN] }, CW);
+  // goal/G40.3: the argument is one path, a string; the old whole list {id, paths} and a list for path are refused.
+  const notList = await call('item.files.add', { id: 'goal/G100.1', paths: [PLAIN] }, CW);
+  const listPath = await call('item.files.add', { id: 'goal/G100.1', path: [PLAIN] }, CW);
+  if (refusedByVerb(notList) && refusedByVerb(listPath)) test.check('the old {id, paths} list is refused, and so is a list for path');
+  else test.fail(OWED + '{id, paths} answered ' + notList.status + ' ' + short(notList.body) + '; a list for path ' + listPath.status);
+  const ghost = await call('item.files.add', { id: 'goal/G100.99', path: PLAIN }, CW);
   if (refusedByVerb(ghost)) test.check('an item the desk does not hold is refused');
   else test.fail(OWED + 'item.files.add on goal/G100.99 answered ' + ghost.status + ' ' + short(ghost.body));
 }

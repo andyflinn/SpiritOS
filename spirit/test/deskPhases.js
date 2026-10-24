@@ -118,8 +118,8 @@ async function open(caller) {
   else test.fail(OWED + 'red takes answered ' + redCw.status + ' and ' + redUbi.status + '; facts ' + short({ red: a1.red, with: a1.with }));
 
   test.subHeading('3. a finished phase opens the next, for those who may take it');
-  // A red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhases.js'] }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/deskPhases.js' }, CW); await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
   const redDone = await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
   const a2 = await facts('goal/G100.1');
   const openCw = await open(CW);
@@ -154,8 +154,8 @@ async function open(caller) {
   else test.fail(OWED + 'growing the red: builder ' + growUbi.status + ', verifier ' + growCw.status + '; phase ' + short(a5.phase));
 
   test.subHeading('7. the verifier\'s pass offers his Done, no claims needed');
-  // A red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhases.js'] }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/deskPhases.js' }, CW); await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
   await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
   await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, UBI);
   await call('phase.done', { id: 'goal/G100.1', phase: 'build' }, UBI);
@@ -168,8 +168,8 @@ async function open(caller) {
   test.subHeading('8. his waive lets one agent take every phase');
   const refusedBefore = await (async function () {
     await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, WSL);
-    // A red finishes only after its red claim with suites (goal/G33.11).
-    await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhases.js'] }, WSL);
+    // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+    await call('item.suites.add', { id: 'goal/G100.3', path: 'spirit/test/deskPhases.js' }, WSL); await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1' }, WSL);
     await call('phase.done', { id: 'goal/G100.3', phase: 'red' }, WSL);
     return call('phase.take', { id: 'goal/G100.3', phase: 'build' }, WSL);
   }());

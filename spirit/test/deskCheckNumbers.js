@@ -74,15 +74,18 @@ async function deskHalf() {
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await call('item.take', { id: 'goal/G100.1' }, CW);
-    await call('item.files.add', { id: 'goal/G100.1', paths: [CORE] }, CW);
+    // goal/G40.3: one row a write. The core path leaves the list by item.files.remove (no write replaces the list any
+    // more) and comes back by one item.files.add.
+    await call('item.files.add', { id: 'goal/G100.1', path: CORE }, CW);
     const first = (await gChecks()).map(function (c) { return c.number; });
     if (first.join() === 'G1') test.check('the world: a core path raises the grant G1');
     else test.fail('the world: after a core path the G checks are ' + short(first));
-    await call('item.files.add', { id: 'goal/G100.1', paths: ['spirit/test/zzPlain.js'] }, CW);
+    await call('item.files.add', { id: 'goal/G100.1', path: 'spirit/test/zzPlain.js' }, CW);
+    await call('item.files.remove', { id: 'goal/G100.1', path: CORE }, CW);
     const gone = await gChecks();
-    if (!gone.filter(function (c) { return c.state === 'open'; }).length) test.check('the world: with the core path off the list, the open grant is gone');
+    if (!gone.filter(function (c) { return c.state === 'open'; }).length) test.check('the world: with the core path removed from the list, the open grant is gone');
     else test.fail('the world: after the core path left, G checks read ' + short(gone));
-    await call('item.files.add', { id: 'goal/G100.1', paths: [CORE, 'spirit/test/zzPlain.js'] }, CW);
+    await call('item.files.add', { id: 'goal/G100.1', path: CORE }, CW);
     const again = (await gChecks()).filter(function (c) { return c.state === 'open'; }).map(function (c) { return c.number; });
     if (again.length === 1 && again[0] !== 'G1') test.check('raised again, the grant gets a new number (' + again[0] + '), not G1');
     else test.fail(OWED + 'the grant raised again is numbered ' + short(again));

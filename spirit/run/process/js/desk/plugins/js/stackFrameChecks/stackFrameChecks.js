@@ -176,7 +176,7 @@ function endpointWhy(endpoint, paths) {
     const bad = kinds.filter(function (k) { return NODE_KINDS.indexOf(k) === -1; });
     if (bad.length) return 'the endpoint ' + endpoint + ' names ' + bad.join(', ') + ': Node\'s own are ' + NODE_KINDS.join(', ') + ', joined by +';
     if (new Set(kinds).size !== kinds.length) return 'the endpoint ' + endpoint + ' names a kind twice';
-    if (!paths.length) return 'a node: endpoint needs its paths, the request paths it counts (the relay\'s: /api/relay/)';
+    // A node: door is made with no path and gets its paths one a write (goal/G40.3); until then its run counts nothing.
     return pathsWhy(paths);
   }
   const m = FILE_RE.exec(endpoint);
@@ -490,7 +490,7 @@ module.exports = function (desk) {
     if (caller) desk.writeAs('item.add', args, caller, mint); else desk.write('item.add', args, mint);
     const id = args.minted;
     const on = endpoint + (door.paths ? ' on ' + door.paths.join(', ') : '');
-    desk.write('item.files.add', { id: id, paths: [ITEMS_TEST] });
+    desk.write('item.files.add', { id: id, path: ITEMS_TEST });
     desk.write('box.write', { id: id, version: 0, text: 'every production stack reaching ' + on + ' passes through ' + gate + '.\n' +
       '- Gate: ' + gate + ', one function. Endpoint: ' + on + (door.paths ? ', Node\'s own requests on those paths.' : ', the whole module: every function it exports, and what an exported factory returns.') + '\n' +
       '- The door is ' + doorId + ' in the plugin\'s list, stackFrameList.json, ' + (door.suites && door.suites.length ? 'driven by ' + door.suites.join(', ') : 'with no suites yet: its run is an empty run until an agent measures the suites that drive it and writes them in') + '.\n' +
@@ -505,9 +505,12 @@ module.exports = function (desk) {
   // THE DIALOG'S ADD: a door (gate, endpoint, paths, suites) in; the door added to the list under a new id and a
   // goal/G22.2-type item out, in its goal (itemFor). Each form is checked against the tree (the file there, the function
   // in it, each suite there); a door already in the list or an open item asking the same is refused.
+  // ONE ROW A WRITE (goal/G40.3; Andy: "same set of verbs for all sub-item-tables add, remove, search."): a door is made
+  // from its gate and endpoint alone; its paths and suites come one a write, through paths.add/.remove and
+  // suites.add/.remove, and are read through paths.search and suites.search.
   function make(a, caller) {
     const list = doorsWithIds();
-    const door = doorOf(desk, a, list, '');
+    const door = doorOf(desk, { gate: a.gate, endpoint: a.endpoint }, list, '');
     const now = readDoors();
     const doorId = nextDoorId(now);
     // THE DOOR, with the suites given, or none: an empty run fails in the stack-frame test, which is its red until an
@@ -521,7 +524,8 @@ module.exports = function (desk) {
     markChanged(doorId);
     say('list', doorId);
     return commitOne('door ' + doorId + ' added, ' + door.gate + ' -> ' + on + ', for ' + made.id).then(function (said) {
-      return { id: made.id, change: made.change, commit: said };
+      // door: the new door's id, so its paths and suites can be added to it a row at a time (goal/G40.3).
+      return { id: made.id, door: doorId, change: made.change, commit: said };
     });
   }
 
@@ -556,26 +560,74 @@ module.exports = function (desk) {
 
   // A DOOR CHANGED IN PLACE, under the add's rules; its id and its item stay. Its last verdict is cleared: it no longer
   // describes the door (Andy's "with a way to modify a row as well", 2026-10-13). Refused while its run is under way.
+  // Its gate and endpoint alone (goal/G40.3); its paths and suites stay as their rows are.
   function update(a) {
     const id = String(a.id || '');
     const first = doorsWithIds();
-    doorById(first, id, 'change');
-    doorOf(desk, a, first, id);
+    const was = doorById(first, id, 'change');
+    doorOf(desk, { gate: a.gate, endpoint: a.endpoint, paths: was.paths || [], suites: was.suites || [] }, first, id);
     return notRunning(id, 'change').then(function () {
       // Read again after the wait, so a write in between is not lost, and checked again against it.
       const list = doorsWithIds();
       const d = doorById(list, id, 'change');
-      const door = doorOf(desk, a, list, id);
+      const door = doorOf(desk, { gate: a.gate, endpoint: a.endpoint, paths: d.paths || [], suites: d.suites || [] }, list, id);
       d.gate = door.gate;
       d.endpoint = door.endpoint;
-      d.suites = door.suites;
-      if (door.paths) d.paths = door.paths; else delete d.paths;
       writeDoors(list);
       markChanged(id);
       say('list', id);
       return commitOne('door ' + id + ' changed, ' + door.gate + ' -> ' + door.endpoint + (door.paths ? ' on ' + door.paths.join(', ') : '') +
         (door.suites.length ? ', driven by ' + door.suites.join(', ') : ', no suites')).then(function (said) { return { id: id, commit: said }; });
     });
+  }
+
+  // A DOOR'S PATHS OR SUITES, ONE ROW A WRITE (goal/G40.3): field is 'paths' or 'suites'; adding puts one in, else one
+  // goes. Checked against the tree under the add's rules (a path only on a node: door, a suite a file of spirit/test),
+  // refused while the door's run is under way, written and committed as every change of the list is.
+  function rowVerb(field, adding) {
+    const word = field === 'paths' ? 'path' : 'suite';
+    return function (a) {
+      const id = String(a.id || '');
+      const value = String(a.path || '').trim();
+      if (!value) throw desk.refused('bad-request', 'a ' + word + ' is needed');
+      const check = function (list) {
+        const d = doorById(list, id, 'change');
+        const now = Array.isArray(d[field]) ? d[field].slice() : [];
+        const there = now.indexOf(value) !== -1;
+        if (adding && there) throw desk.refused('bad-request', 'door ' + id + ' has the ' + word + ' ' + value + ' already');
+        if (!adding && !there) throw desk.refused('bad-request', 'door ' + id + ' has no ' + word + ' ' + value);
+        const next = adding ? now.concat([value]) : now.filter(function (x) { return x !== value; });
+        if (field === 'paths' && adding && !/^node:/.test(d.endpoint)) throw desk.refused('bad-request', 'paths belong to a node: endpoint; the module endpoint ' + d.endpoint + ' takes none');
+        const why = field === 'paths' ? pathsWhy(next) : suitesWhy(next);
+        if (why) throw desk.refused('bad-request', why);
+        return { d: d, next: next };
+      };
+      check(doorsWithIds());
+      return notRunning(id, 'change').then(function () {
+        const list = doorsWithIds();
+        const c = check(list);
+        if (field === 'paths' && !c.next.length) delete c.d.paths; else c.d[field] = c.next;
+        writeDoors(list);
+        markChanged(id);
+        say('list', id);
+        return commitOne('door ' + id + (adding ? ' gains the ' : ' loses the ') + word + ' ' + value).then(function (said) { return { id: id, commit: said }; });
+      });
+    };
+  }
+  // A door's paths or suites ranked by text, bounded to one answer as every search is.
+  function rowSearch(field) {
+    return function (a) {
+      const d = doorById(doorsWithIds(), String(a.id || ''), 'read');
+      const text = String(a.text || '').trim();
+      const rows = Array.isArray(d[field]) ? d[field] : [];
+      const bucket = createProbabilityBucket(rows.length || 1);
+      rows.forEach(function (v, i) {
+        const p = text ? probabilityStringObjectMatch(text, { value: v }) : 1 / (1 + i);
+        bucket.seatFor(p, { key: String(v), label: JSON.stringify({ value: String(v), pos: i }) });
+      });
+      const r = bucket.serialize(null, DOORS_ROOM);
+      return { items: r.items, more: !!r.more };
+    };
   }
 
   // A DOOR STRUCK FROM THE LIST, and its item deleted with it (D4, below).
@@ -617,14 +669,23 @@ module.exports = function (desk) {
     });
   }
 
-  const DOOR = { id: '', gate: '', endpoint: '', paths: [''], suites: [''] };
+  const DOOR = { id: '', gate: '', endpoint: '' };
+  const ROW = { id: '', path: '' };
+  const ROWS = { items: [{ key: '', label: '' }], more: false };
   const VERDICT = { ran: true, green: true, around: 0, of: 0, violators: [''], violatorsLeft: 0, paths: [''], pathsLeft: 0, why: '' };
   return {
     refuses: refuses,
     verbs: {
       // commit: one line, what became of the list's commit and push (goal/G22.3).
-      'stackFrameChecks.make': { request: { gate: '', endpoint: '', paths: [''], suites: [''] }, reply: { id: '', change: 0, commit: '' }, handler: make },
+      'stackFrameChecks.make': { request: { gate: '', endpoint: '' }, reply: { id: '', door: '', change: 0, commit: '' }, handler: make },
       'stackFrameChecks.update': { request: DOOR, reply: { id: '', commit: '' }, handler: update },
+      // goal/G40.3: a door's paths and suites, one row a write (path is the path, or the suite's file name).
+      'stackFrameChecks.paths.add': { request: ROW, reply: { id: '', commit: '' }, handler: rowVerb('paths', true) },
+      'stackFrameChecks.paths.remove': { request: ROW, reply: { id: '', commit: '' }, handler: rowVerb('paths', false) },
+      'stackFrameChecks.paths.search': { request: { id: '', text: '' }, reply: ROWS, handler: rowSearch('paths') },
+      'stackFrameChecks.suites.add': { request: ROW, reply: { id: '', commit: '' }, handler: rowVerb('suites', true) },
+      'stackFrameChecks.suites.remove': { request: ROW, reply: { id: '', commit: '' }, handler: rowVerb('suites', false) },
+      'stackFrameChecks.suites.search': { request: { id: '', text: '' }, reply: ROWS, handler: rowSearch('suites') },
       'stackFrameChecks.remove': { request: { id: '' }, reply: { id: '', commit: '' }, handler: remove },
       'stackFrameChecks.run': { request: { id: '' }, reply: { started: true, already: false, said: '' }, handler: run },
       'stackFrameChecks.runState': { request: { id: '' }, reply: { id: '', running: true, queued: true, startedAt: '', endedAt: '', stopped: true, commit: '', verdict: VERDICT }, handler: runState },

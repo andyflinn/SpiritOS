@@ -834,19 +834,27 @@ function ignored(root, rel) {
     return is;
   });
 }
+// THE NODE'S OWN WATCHER COMPONENT (goal/G40.3). Andy: "you hand-rolled shit again!", "use that chokidar component then
+// on the whole repo.", and "you may as well add to the filename in the status (changed, deleted, added)". chokidar, as
+// the node's fs-watcher job uses it (js/jobs.js), on the whole checkout; the status word is the path and what happened
+// to it, which the desk keeps as the file's name and that word.
+const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
 function watchCheckout(root) {
   try {
-    fs.watch(root, { recursive: true }, function (event, name) {
-      if (!name) return;
-      const rel = String(name).split(path.sep).join('/');
-      if (rel === '.git' || rel.indexOf('.git/') === 0) return;
+    const skip = function (full) {
+      const rel = path.relative(root, String(full)).split(path.sep).join('/');
+      return rel.split('/').some(function (part) { return part === '.git' || part === 'node_modules'; });
+    };
+    require('chokidar').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+      if (!WHAT[event] || !full) return;
+      const rel = path.relative(root, String(full)).split(path.sep).join('/');
       const id = heldPhase();
       if (!id) return;
-      ignored(root, rel).then(function (skip) {
-        if (skip) return;
+      ignored(root, rel).then(function (skipped) {
+        if (skipped) return;
         let to = '';
         try { to = deskKey(); } catch (e) { return; }
-        countedAsk(to, 'item.status', { id: id, word: rel, tone: rel.indexOf('spirit/test/') === 0 ? 'test' : 'code' }).answer.catch(function () {});
+        countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: rel.indexOf('spirit/test/') === 0 ? 'test' : 'code' }).answer.catch(function () {});
       });
     }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
   } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }

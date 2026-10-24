@@ -159,15 +159,29 @@ function coreGrants(id) {
   return Promise.resolve().then(function () {
     const core = staged.filter(function (f) { return require('../../../js/coreFiles.js').isCore(f, top); });
     if (!core.length) return null;
-    const under = function (f) { return f.replace(/^spirit\/run\//, ''); };
-    const named = function (c) { return String(c.words).replace(/^core grant: /, '').split(', '); };
-    return desk('item.checks', { id: id }).then(function (got) {
-      const checks = Array.isArray(got.checks) ? got.checks : [];
-      const granted = checks.filter(function (c) { return c.kind === 'G' && c.state === 'granted'; });
-      const ungranted = core.filter(function (f) { return !granted.some(function (c) { const n = named(c); return n.indexOf(f) !== -1 || n.indexOf(under(f)) !== -1; }); });
-      if (!ungranted.length) return null;
-      end(1, 'commitCheck: REFUSED (grant): core files Andy has not granted under ' + id + '. List them with item.files.add ' +
-        'under the item: the desk raises one grant for all its core files.\n' + ungranted.map(function (f) { return '- ' + f; }).join('\n'));
+    // ONE GRANT FOR THE LIST (goal/G40.3). Andy: "yes to the commit-check making sure each file exists in the granted
+    // list." Each staged core file is looked up on the item's list by its exact path (item.files.search, never a whole
+    // list or a cache that may be partial), and the list's one core grant must stand granted: a core file added after
+    // his press voids it, so a granted one covers every core file on the list.
+    const rowOf = function (label) { try { return JSON.parse(label); } catch (e) { return null; } };
+    const listed = function (f) {
+      return desk('item.files.search', { id: id, text: f }).then(function (got) {
+        return (Array.isArray(got.items) ? got.items : []).some(function (p) { const r = rowOf(p.label); return !!r && r.path === f; });
+      });
+    };
+    return Promise.all(core.map(listed)).then(function (on) {
+      return desk('item.checks.search', { id: id, text: 'core grant' }).then(function (got) {
+        const granted = (Array.isArray(got.items) ? got.items : []).some(function (p) {
+          const c = rowOf(p.label);
+          return !!c && c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0 && c.state === 'granted';
+        });
+        const missing = core.filter(function (f, i) { return !on[i]; });
+        if (!missing.length && granted) return null;
+        const lines = missing.length ? missing : core;
+        end(1, 'commitCheck: REFUSED (grant): ' + (missing.length ? 'core files not on the list of ' + id + ': add each with item.files.add, then Andy grants the list.'
+          : 'the list of ' + id + ' has no standing grant: Andy grants the whole list once, and a core file added after it asks again.') + '\n' +
+          lines.map(function (f) { return '- ' + f; }).join('\n'));
+      });
     });
   });
 }
@@ -184,8 +198,10 @@ function redWriterBuilds(id) {
     throw e;
   }).then(function (may) {
     if (may.allowed !== false) return null;
-    return desk('item.checks', { id: id }).then(function (got) {
-      const mine = (Array.isArray(got.checks) ? got.checks : []).filter(function (c) { return c.kind === 'G' && /red writer builds/i.test(String(c.words)); });
+    // By search (goal/G40.3): an item's checks can outgrow one answer, and a bare item.checks answers only what fits.
+    return desk('item.checks.search', { id: id, text: 'red writer builds' }).then(function (got) {
+      const mine = (Array.isArray(got.items) ? got.items : []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return null; } })
+        .filter(function (c) { return !!c && c.kind === 'G' && /red writer builds/i.test(String(c.words)); });
       if (mine.some(function (c) { return c.state === 'granted'; })) return null;
       const ask = mine.length ? Promise.resolve() : desk('check.add', { id: id, kind: 'G', words: 'red writer builds: ' + String(may.why || ''), test: '' });
       return ask.then(function () { end(1, 'commitCheck: REFUSED (red writer): ' + String(may.why || '') + ' (a grant request is under the item)'); });

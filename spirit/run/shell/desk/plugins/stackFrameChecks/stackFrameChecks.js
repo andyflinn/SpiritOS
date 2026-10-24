@@ -123,7 +123,18 @@
     var wrong = F.FIELDS.map(function (f) { return F.why(PRE, f); }).filter(Boolean)[0];
     if (wrong) { say('sfc-note', 'Not sent: ' + wrong); return; }
     say('sfc-note', 'Sent; waiting for the desk.');
-    Promise.resolve(ctx.ask('stackFrameChecks.make', d)).then(function (r) {
+    // One row a write (goal/G40.3): the door from its gate and endpoint, then each path and each suite on its own.
+    var made = null;
+    var rows = (d.paths || []).map(function (p) { return ['stackFrameChecks.paths.add', p]; })
+      .concat((d.suites || []).map(function (s) { return ['stackFrameChecks.suites.add', s]; }));
+    Promise.resolve(ctx.ask('stackFrameChecks.make', { gate: d.gate, endpoint: d.endpoint })).then(function (r) {
+      made = r;
+      var doorId = r && r.door ? r.door : '';
+      return rows.reduce(function (chain, row) {
+        return chain.then(function () { return doorId ? ctx.ask(row[0], { id: doorId, path: row[1] }) : null; });
+      }, Promise.resolve());
+    }).then(function () {
+      var r = made;
       F.fill(PRE, null);
       F.check(PRE, 'sfc-make');
       say('sfc-note', 'Made ' + ((r && r.id) || 'the item') + ': nobody but ' + d.gate + ' reaches ' + d.endpoint + '. The door is in the list' + (d.suites.length ? '.' : ', with no suites yet.'));

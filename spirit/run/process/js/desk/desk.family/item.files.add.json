@@ -1,9 +1,7 @@
 {
-  "description": "Name the files you change for an item: paths are repository paths, your whole list each time (it replaces your last). A file must be on the list of an item you have taken before you may write or commit it; the red test file goes on the list too.",
+  "description": "Add one file you change for an item to your list, by its repository path, one path a write (goal/G40.3); a path already on your list is refused. A file must be on the list of an item you have taken before you may write or commit it; the red test file goes on the list too. A core file added after Andy granted the list voids his grant, and he grants the whole list again.",
   "request": {
     "id": "",
-    "paths": [
-      ""
-    ]
+    "path": ""
   }
 }

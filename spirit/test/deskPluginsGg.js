@@ -47,7 +47,9 @@
 //      button/link for each one of them, or even better, a run-dialog", "with a way to modify a row as well." and "put
 //      that in the dialog if you want." So on the server: make takes {gate, endpoint, paths, suites}, a node: endpoint
 //      with its paths, each suite a file of spirit/test that is there; every door carries a stable id; update {id, gate,
-//      endpoint, paths, suites} changes a door in place under the same validation and clears its last verdict; remove
+//      endpoint, paths, suites} changes a door in place under the same validation and clears its last verdict
+//      (goal/G40.3: make takes {gate, endpoint} and update {id, gate, endpoint}; the paths and suites are rows, one a
+//      write, through paths.add/.remove/.search and suites.add/.remove/.search on the door's id); remove
 //      {id} strikes it; an unknown id is refused by each. run {id} answers at once {started, runId}, a second run of the
 //      same door while one runs is refused, runState {id} reports running, then the verdict (green, around, of, paths)
 //      and the output's tail, stop {id} stops it; the last verdict per door is kept in the plugin's own folder under the
@@ -366,9 +368,10 @@ function clickTab(el, tab) {
     test.subHeading('e. the dialog\'s verb makes a goal/G22.2-type item');
     const GATE = 'spirit/run/js/peerPost.js::post';
     const END = 'spirit/run/js/presenceNode.js';
-    // Since h. make takes paths and suites as well (a request is exact: every key, every time).
+    // goal/G40.3: make takes the gate and the endpoint alone (a request is exact: every key, every time); a door's paths
+    // and suites are rows, added one a write after it.
     const head0 = headOf();
-    const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END, paths: [], suites: [] }, ANDY);
+    const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END }, ANDY);
     const headMade = headOf();
     const mf = made.id ? await factsOf(made.id) : null;
     const mb = made.id ? await call('item.box', { id: made.id }, ANDY) : {};
@@ -406,7 +409,7 @@ function clickTab(el, tab) {
       ['the same gate and endpoint again', { gate: GATE, endpoint: END }],
     ];
     for (const t of bad) {
-      const r = await call('stackFrameChecks.make', Object.assign({ paths: [], suites: [] }, t[1]), ANDY);
+      const r = await call('stackFrameChecks.make', t[1], ANDY);
       if (!r.id && why(r) && (!t[2] || t[2].test(why(r)))) test.check(t[0] + ' is refused: ' + why(r));
       else test.fail(OWED + t[0] + ' answered ' + short(r));
     }
@@ -442,28 +445,47 @@ function clickTab(el, tab) {
     const idA = door && typeof door.id === 'string' && door.id ? door.id : '';
     if (idA) test.check('the made door carries a stable id in the list: ' + idA);
     else test.fail(OWED + 'the made door carries no id: ' + short(door));
-    // A node: endpoint with its paths, and suites of spirit/test that are there.
-    const RELAY = { gate: 'spirit/run/js/peerPost.js::onRequest', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: ['deskServer.js'] };
-    const badAdds = [
-      ['a suite that is not in spirit/test', Object.assign({}, RELAY, { suites: ['noSuchSuiteHere.js'] }), /noSuchSuiteHere/],
-      ['a suite outside spirit/test', Object.assign({}, RELAY, { suites: ['../run/js/hub.js'] }), /suite/],
-      ['a node: endpoint without its paths', Object.assign({}, RELAY, { paths: [] }), /paths/],
-      ['a path that is no request path', Object.assign({}, RELAY, { paths: ['api relay'] }), /path/],
-      ['a node: endpoint of an unknown kind', Object.assign({}, RELAY, { endpoint: 'node:ftp' }), /ftp/],
-      ['paths on a module endpoint', { gate: GATE, endpoint: 'spirit/run/js/postQueue.js', paths: ['/api/relay/'], suites: [] }, /paths/],
+    // A node: endpoint, then its paths and suites of spirit/test that are there.
+    // goal/G40.3: the door is made from its gate and endpoint alone, and its paths and suites come one row a write
+    // (stackFrameChecks.paths.add / .suites.add on the door's id), each checked under the same rules make used to apply.
+    const RELAY = { gate: 'spirit/run/js/peerPost.js::onRequest', endpoint: 'node:http+https+fetch' };
+    const RELAY_PATHS = ['/api/relay/'];
+    const RELAY_SUITES = ['deskServer.js'];
+    const ftp = await call('stackFrameChecks.make', Object.assign({}, RELAY, { endpoint: 'node:ftp' }), ANDY);
+    if (!ftp.id && why(ftp) && /ftp/.test(why(ftp))) test.check('a node: endpoint of an unknown kind is refused: ' + why(ftp));
+    else test.fail(OWED + 'a node: endpoint of an unknown kind answered ' + short(ftp));
+    // goal/G40.3: a node: door is made with no paths now (they follow, one a write); it was refused without them.
+    const madeB = await call('stackFrameChecks.make', RELAY, ANDY);
+    const bare = (((await doorsOf(A)).doors) || []).filter(function (x) { return x.endpoint === RELAY.endpoint; })[0];
+    const idB = bare && bare.id ? bare.id : '';
+    if (madeB.id && idB && madeB.door === idB && !(bare.paths && bare.paths.length) && !(bare.suites && bare.suites.length)) test.check('a node: endpoint is made with no paths, its reply naming the new door ' + idB);
+    else test.fail(OWED + 'the relay door made with no paths answered ' + short(madeB) + ', read back ' + short(bare));
+    const badRows = [
+      ['a suite that is not in spirit/test', 'stackFrameChecks.suites.add', idB, 'noSuchSuiteHere.js', /noSuchSuiteHere/],
+      ['a suite outside spirit/test', 'stackFrameChecks.suites.add', idB, '../run/js/hub.js', /suite/],
+      ['a path that is no request path', 'stackFrameChecks.paths.add', idB, 'api relay', /path/],
+      ['paths on a module endpoint', 'stackFrameChecks.paths.add', idA, '/api/relay/', /paths/],
     ];
-    for (const t of badAdds) {
-      const r = await call('stackFrameChecks.make', t[1], ANDY);
-      if (!r.id && why(r) && t[2].test(why(r))) test.check(t[0] + ' is refused: ' + why(r));
+    for (const t of badRows) {
+      const r = await call(t[1], { id: t[2], path: t[3] }, ANDY);
+      if (why(r) && t[4].test(why(r))) test.check(t[0] + ' is refused: ' + why(r));
       else test.fail(OWED + t[0] + ' answered ' + short(r));
     }
-    const madeB = await call('stackFrameChecks.make', RELAY, ANDY);
+    const rowAdds = [];
+    for (const p of RELAY_PATHS) rowAdds.push(await call('stackFrameChecks.paths.add', { id: idB, path: p }, ANDY));
+    for (const s of RELAY_SUITES) rowAdds.push(await call('stackFrameChecks.suites.add', { id: idB, path: s }, ANDY));
+    const twice = await call('stackFrameChecks.suites.add', { id: idB, path: RELAY_SUITES[0] }, ANDY);
     const doorsB = await doorsOf(A);
     const dB = (doorsB.doors || []).filter(function (x) { return x.endpoint === RELAY.endpoint; })[0];
-    const idB = dB && dB.id ? dB.id : '';
-    if (madeB.id && dB && idB && idB !== idA && JSON.stringify(dB.paths) === JSON.stringify(RELAY.paths) && JSON.stringify(dB.suites) === JSON.stringify(RELAY.suites)) {
-      test.check('a node: endpoint with its paths and a suite that is there is added, under its own id ' + idB + ', its item ' + madeB.id);
-    } else test.fail(OWED + 'the relay door made ' + short(madeB) + ', read back ' + short(dB));
+    if (rowAdds.every(function (r) { return !why(r); }) && dB && dB.id === idB && idB !== idA && JSON.stringify(dB.paths) === JSON.stringify(RELAY_PATHS) && JSON.stringify(dB.suites) === JSON.stringify(RELAY_SUITES)) {
+      test.check('its path and a suite that is there are added one a write, under its own id ' + idB + ', its item ' + madeB.id);
+    } else test.fail(OWED + 'the relay door\'s rows answered ' + short(rowAdds) + ', read back ' + short(dB));
+    if (why(twice) && /already/.test(why(twice))) test.check('a suite the door has already is refused: ' + why(twice));
+    else test.fail(OWED + 'a second add of ' + RELAY_SUITES[0] + ' answered ' + short(twice));
+    const pS = (await call('stackFrameChecks.paths.search', { id: idB, text: '' }, ANDY)).items || [];
+    const sS = (await call('stackFrameChecks.suites.search', { id: idB, text: 'deskServer' }, ANDY)).items || [];
+    if (pS.some(function (x) { return x.key === RELAY_PATHS[0]; }) && sS.some(function (x) { return x.key === RELAY_SUITES[0]; })) test.check('paths.search and suites.search read the rows back');
+    else test.fail(OWED + 'paths.search answered ' + short(pS) + ', suites.search ' + short(sS));
     if ((doorsB.doors || []).every(function (x) { return x.last && typeof x.last.ran === 'boolean' && typeof x.last.running === 'boolean'; })) test.check('every door read back carries its last run: ' + short(dB && dB.last));
     else test.fail(OWED + 'the doors read back carry no last run: ' + short(doorsB));
 
@@ -474,9 +496,10 @@ function clickTab(el, tab) {
     const upBad = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { gate: 'spirit/run/js/peerPost.js' }), ANDY);
     if (why(upBad) && /cheating/.test(why(upBad))) test.check('update under the add rules: a whole module as the gate is refused: ' + why(upBad));
     else test.fail(OWED + 'update with a whole module as the gate answered ' + short(upBad));
-    const upSuite = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['nopeSuite.js'] }), ANDY);
-    if (why(upSuite) && /nopeSuite/.test(why(upSuite))) test.check('update with a suite that is not there is refused: ' + why(upSuite));
-    else test.fail(OWED + 'update with a missing suite answered ' + short(upSuite));
+    // goal/G40.3: update takes {id, gate, endpoint} only; one still carrying suites is refused (they are rows now).
+    const upSuite = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { paths: RELAY_PATHS, suites: ['nopeSuite.js'] }), ANDY);
+    if (why(upSuite) || upSuite.ok === false) test.check('update carrying paths and suites is refused: ' + (why(upSuite) || upSuite.code));
+    else test.fail(OWED + 'update carrying paths and suites answered ' + short(upSuite));
 
     // run (goal/G27.2, D5): the plugin starts the door's run itself and answers at once; deskVerify gets the verdict as a
     // record only. Door A has no suites, so its verdict lands at once: an empty run, said so.
@@ -525,15 +548,17 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'run of an unknown door answered ' + short(runUnknown));
 
     // update lands and clears the door's last verdict; the other door keeps its own.
-    const upOk = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['deskServer.js', 'oneDoorStacks.js'] }), ANDY);
+    // goal/G40.3: update changes the gate and endpoint in place and keeps the door's rows; a suite is a row added after.
+    const upOk = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { endpoint: 'node:http+https' }), ANDY);
+    const cUp = lastCommit();
+    const upRow = await call('stackFrameChecks.suites.add', { id: idB, path: 'oneDoorStacks.js' }, ANDY);
     const after2 = (await doorsOf(A)).doors;
     const dB2 = after2.filter(function (x) { return x.id === idB; })[0];
     const dA2 = after2.filter(function (x) { return x.id === idA; })[0];
-    if (!why(upOk) && dB2 && JSON.stringify(dB2.suites) === '["deskServer.js","oneDoorStacks.js"]' && dB2.item === madeB.id) test.check('update changes the door in place, under its id and its item');
-    else test.fail(OWED + 'update answered ' + short(upOk) + ', the door reads ' + short(dB2));
+    if (!why(upOk) && !why(upRow) && dB2 && dB2.endpoint === 'node:http+https' && JSON.stringify(dB2.paths) === JSON.stringify(RELAY_PATHS) && JSON.stringify(dB2.suites) === '["deskServer.js","oneDoorStacks.js"]' && dB2.item === madeB.id) test.check('update changes the door in place, under its id and its item, keeping its rows; a suite row added after it lands beside the first');
+    else test.fail(OWED + 'update answered ' + short(upOk) + ', the suite add ' + short(upRow) + ', the door reads ' + short(dB2));
     if (dB2 && dB2.last && dB2.last.ran === false && dA2 && dA2.last && dA2.last.ran === true) test.check('an updated door\'s last verdict is cleared; the other door keeps its own');
     else test.fail(OWED + 'after the update the last runs read ' + short([dB2 && dB2.last, dA2 && dA2.last]));
-    const cUp = lastCommit();
     if (/^plugin\/stackFrameChecks: /.test(cUp.subject) && /update|chang/i.test(cUp.subject) && JSON.stringify(cUp.files) === '["stackFrameList.json"]' && remoteHead() === headOf()) test.check('j. update committed the list alone and pushed it: "' + cUp.subject + '"');
     else test.fail(OWED + 'after update the last commit is ' + short(cUp) + ', remote ' + (remoteHead() === headOf() ? 'level' : 'behind'));
 
@@ -541,7 +566,7 @@ function clickTab(el, tab) {
     fs.writeFileSync(path.join(work, 'README.md'), 'somebody else\'s staged change\n');
     gitIn(work, ['add', 'README.md']);
     const headStaged = headOf();
-    const upStaged = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['deskServer.js'] }), ANDY);
+    const upStaged = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY), ANDY);
     const stagedNow = String(gitIn(work, ['diff', '--cached', '--name-only']).stdout || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
     if (!why(upStaged) && headOf() === headStaged && /staged/i.test(String(upStaged.commit || '')) && /not committed/i.test(String(upStaged.commit || ''))) test.check('with other changes staged the update lands but nothing is committed, and the reply says why: ' + upStaged.commit);
     else test.fail(OWED + 'update with README.md staged answered ' + short(upStaged) + (headOf() === headStaged ? '' : '; HEAD moved'));
@@ -779,6 +804,8 @@ function clickTab(el, tab) {
       if (verb === 'stackFrameChecks.doors.search') return Promise.resolve({ items: DOORS.map(function (d) { return { key: d.id, label: JSON.stringify(d) }; }), more: false });
       if (verb === 'stackFrameChecks.run') return Promise.resolve({ queued: true, said: 'queued with deskVerify; its output is in the Verifier tab\'s console' });
       if (verb === 'stackFrameChecks.runState') return Promise.resolve(runState);
+      // goal/G40.3: make answers the new door's id, so the face can add its paths and suites to it one a write.
+      if (verb === 'stackFrameChecks.make') return Promise.resolve({ id: GOAL + '.2', door: 'd3', change: 9, commit: '' });
       return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
     }, onPublished: function (fn, server) { uiPublished.push({ fn: fn, server: String(server || '') }); return function () {}; },
       callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); } });
@@ -889,8 +916,12 @@ function clickTab(el, tab) {
     asked.length = 0;
     click('sfc-make');
     await sleep(20);
+    // goal/G40.3: Add sends make with the gate and endpoint alone, then each path and each suite as its own row on the
+    // new door; it sent them as lists in make before.
     const add = asked.filter(function (x) { return x[0] === 'stackFrameChecks.make'; })[0];
-    if (add && add[1].endpoint === 'node:http+https' && JSON.stringify(add[1].paths) === '["/api/relay/"]' && JSON.stringify(add[1].suites) === '["serverSurface.js","everyVerb.js"]') test.check('Add sends make with the paths and the suites as lists');
+    const rowsSent = asked.filter(function (x) { return /^stackFrameChecks\.(paths|suites)\.add$/.test(x[0]); }).map(function (x) { return [x[0].split('.')[1], x[1].id, x[1].path]; });
+    if (add && add[1].endpoint === 'node:http+https' && JSON.stringify(Object.keys(add[1]).sort()) === '["endpoint","gate"]' &&
+      JSON.stringify(rowsSent) === '[["paths","d3","/api/relay/"],["suites","d3","serverSurface.js"],["suites","d3","everyVerb.js"]]') test.check('Add sends make {gate, endpoint}, then paths.add and suites.add one row each on the new door');
     else test.fail(OWED + 'Add asked ' + short(asked));
 
     // THE DOOR'S DIALOG (goal/G27.2, D1): Open on a row opens the shell dialog shell/stackFrameCheckDetail with its id.
@@ -967,8 +998,12 @@ function clickTab(el, tab) {
     dAsked.length = 0;
     dclick('sfcd-save');
     await sleep(20);
+    // goal/G40.3: Save sends update {id, gate, endpoint}, then a row write for each path or suite the form added or
+    // dropped against the door as read; it sent the whole lists in update before.
     const up = dAsked.filter(function (x) { return x[0] === 'stackFrameChecks.update'; })[0];
-    if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(up[1].paths) === '["/api/relay/"]' && JSON.stringify(up[1].suites) === '["agentOnboard.js","serverSurface.js"]') test.check('Save sends update {id, gate, endpoint, paths, suites}');
+    const dRows = dAsked.filter(function (x) { return /^stackFrameChecks\.(paths|suites)\.(add|remove)$/.test(x[0]); }).map(function (x) { return [x[0], x[1].id, x[1].path]; });
+    if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(Object.keys(up[1]).sort()) === '["endpoint","gate","id"]' &&
+      JSON.stringify(dRows) === '[["stackFrameChecks.suites.add","d2","agentOnboard.js"],["stackFrameChecks.suites.add","d2","serverSurface.js"]]') test.check('Save sends update {id, gate, endpoint}, then suites.add for each suite the form added, the path left alone');
     else test.fail(OWED + 'Save asked ' + short(dAsked));
 
     // Run: started here, said so; running and elapsed, then the verdict and each path, on the plugin's publish.

@@ -24,9 +24,9 @@ module.exports = {
     'check.add': { id: 'id', kind: 'id', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
     'check.set': { id: 'id', check: 'id', state: 'id' },
-    // commit may be '' only for a plain item's build claim. suites (goal/G33.4, box v44-45): the red claim's spirit/test/
-    // paths, the item's suites table; a build claim takes none.
-    claim: { id: 'id', phase: 'id', commit: 'text', suites: 'list?' },
+    // commit may be '' only for a plain item's build claim. No suites (goal/G40.3): a red claim names the item's suite
+    // rows, added with item.suites.add, and is refused while there are none.
+    claim: { id: 'id', phase: 'id', commit: 'text' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'id' },
     // The title passes the label rule (fieldWhy); blocks may be left out or '' (the goal).
@@ -43,12 +43,18 @@ module.exports = {
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
     'item.files': { id: 'id', under: 'text?' },
-    // Each path a non-empty string without '..'; the server checks the entries.
-    'item.files.add': { id: 'id', paths: 'list' },
+    // One row a write (goal/G40.3): one path, never a list; no '..'. A path already there (add) or not there (remove) is
+    // refused, naming it. A suite is a spirit/test/ .js path, the red writer's.
+    'item.files.add': { id: 'id', path: 'text' },
+    'item.files.remove': { id: 'id', path: 'text' },
+    'item.suites.add': { id: 'id', path: 'text' },
+    'item.suites.remove': { id: 'id', path: 'text' },
     'item.get': { id: 'id' },
     'item.release': { id: 'id' },
     'item.rename': { id: 'id', title: 'text' },
-    'item.status': { id: 'id', word: 'text' },
+    // tone (goal/G33.11): test or code, the deskClient's file report; '' or left out for a plain status word. Missing
+    // here, the spirit object refused every report before it left (found on goal/G40.3).
+    'item.status': { id: 'id', word: 'text', tone: 'text?' },
     'item.take': { id: 'id' },
     'agents.search': { text: 'text' },
     'items.search': { text: 'text', currentGoalOnly: 'bool', goalsOnly: 'bool', includeClosed: 'bool' },
@@ -79,11 +85,19 @@ module.exports = {
     // goal/G33.7: the door list as a bounded search, and one door's read (stackFrameChecks.doors went).
     'stackFrameChecks.door': { id: 'id' },
     'stackFrameChecks.doors.search': { text: 'text' },
-    'stackFrameChecks.make': { gate: 'id', endpoint: 'id', paths: 'list', suites: 'list' },
+    // goal/G40.3: a door from its gate and endpoint; its paths and suites one row a write (path: the request path, or the
+    // suite's file name of spirit/test), each its own search.
+    'stackFrameChecks.make': { gate: 'id', endpoint: 'id' },
+    'stackFrameChecks.paths.add': { id: 'id', path: 'text' },
+    'stackFrameChecks.paths.remove': { id: 'id', path: 'text' },
+    'stackFrameChecks.paths.search': { id: 'id', text: 'text' },
+    'stackFrameChecks.suites.add': { id: 'id', path: 'text' },
+    'stackFrameChecks.suites.remove': { id: 'id', path: 'text' },
+    'stackFrameChecks.suites.search': { id: 'id', text: 'text' },
     'stackFrameChecks.remove': { id: 'id' },
     'stackFrameChecks.run': { id: 'id' },
     'stackFrameChecks.runState': { id: 'id' },
-    'stackFrameChecks.update': { id: 'id', gate: 'id', endpoint: 'id', paths: 'list', suites: 'list' },
+    'stackFrameChecks.update': { id: 'id', gate: 'id', endpoint: 'id' },
     unblock: { id: 'id', blocks: 'id' },
     // why may be '': the desk words a rejection without one.
     'work.open': {},

@@ -116,7 +116,9 @@ async function main() {
   test.subHeading('4. every table has its probability search, from one component');
   await call('box.write', { id: two, text: 'first walrus box', version: 0 }, ANDY);
   await call('box.write', { id: two, text: 'second box', version: 1 }, ANDY);
-  await call('item.files.add', { id: two, paths: ['spirit/test/zzWalrus.js', 'spirit/test/zzOther.js'] }, AGENT);
+  // goal/G40.3: one row a write, so the two paths are two adds.
+  await call('item.files.add', { id: two, path: 'spirit/test/zzWalrus.js' }, AGENT);
+  await call('item.files.add', { id: two, path: 'spirit/test/zzOther.js' }, AGENT);
   await call('check.add', { id: two, kind: 'Q', words: 'Is the walrus here?', test: '' }, ANDY);
   await call('chat.add', { id: two, text: 'the walrus line' }, ANDY);
   const SEARCHES = {
@@ -172,7 +174,7 @@ async function main() {
   const answers = {
     'item.get': await call('item.get', { id: three }, AGENT),
     'chat.add': await call('chat.add', { id: three, text: 'the holder answers' }, AGENT),
-    'item.files.add': await call('item.files.add', { id: three, paths: ['spirit/test/zzHeld.js'] }, AGENT),
+    'item.files.add': await call('item.files.add', { id: three, path: 'spirit/test/zzHeld.js' }, AGENT),
     'box.write': await call('box.write', { id: three, text: 'the holder\'s box', version: 0 }, AGENT),
   };
   const joined = Object.keys(answers).filter(function (v) { const r = answers[v]; return !took(r) || bytes(r.body) > MAX || 'andy' in r.body; });

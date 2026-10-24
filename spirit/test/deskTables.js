@@ -201,7 +201,9 @@ function makeOldDesk(d, elsewhere) {
   rec('chat.add', AGENT, { id: 'goal/G7.1', text: 'MIGRATED-AGENT-LINE' });
   rec('chat.add', ANDY, { id: 'desk/G0.0', text: 'MIGRATED-GROUP-LINE' });
   rec('check.add', AGENT, { id: 'goal/G7.1', kind: 'Q', words: 'Is the migration whole?', test: '' });
-  rec('item.files.add', AGENT, { id: 'goal/G7.1', paths: ['spirit/test/deskTables.js'] });
+  // goal/G40.3: one path a record, the shape the walk replays since the whole-list {paths} write went (a log still
+  // holding the old {paths} shape now migrates to a row with path "undefined": the walk no longer reads it).
+  rec('item.files.add', AGENT, { id: 'goal/G7.1', path: 'spirit/test/deskTables.js' });
   rec('press', ANDY, { id: 'goal/G7', what: 'end-design' });
   rec('press', ANDY, { id: 'goal/G7.2', what: 'go', rules: {} });
   rec('press', AGENT, { id: 'goal/G7.2', what: 'claim-done' });
@@ -242,7 +244,8 @@ async function freshDesk() {
   if (!took(claim)) test.comment('the claim answered ' + short(claim.body));
   await A.call('check.add', { id: iid, kind: 'Q', words: 'Is the table keyed?', test: '' }, AGENT);
   const core = ['spirit/run/js/kernel.js', 'spirit/run/js/relay.js', 'spirit/run/js/appServer.js'].filter(function (p) { return coreFiles.isCore(p) === true; })[0] || '';
-  await A.call('item.files.add', { id: iid, paths: [core, 'spirit/test/deskTables.js'] }, AGENT);
+  // goal/G40.3: one add per path.
+  for (const p of [core, 'spirit/test/deskTables.js']) await A.call('item.files.add', { id: iid, path: p }, AGENT);
 
   test.subHeading('1. the database holds keyed tables, each row with its creator, and no log of writes');
   const seen = withDb(A, function (db) {

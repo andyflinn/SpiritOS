@@ -170,9 +170,10 @@ async function main() {
   else test.fail(OWED + 'the ungranted core file: commit ' + coreOne.status + ' (' + n3 + ' commits): ' + String(coreOne.stderr).trim().slice(0, 160));
   if (!raised.length && /item\.files\.add/.test(coreOne.stderr + coreOne.stdout)) test.check('the refusal raises no grant of its own and says to list the files with item.files.add');
   else test.fail('OWED by goal/G32.2: the refusal raised ' + short(raised) + ' and said ' + String(coreOne.stderr).trim().slice(0, 160));
-  await desk('item.files.add', { id: 'goal/G100.1', paths: ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js'] }, SELF_AT_DESK);
+  // goal/G40.3: one add per path (the whole-list {id, paths} went), and the one grant is for the list, naming no path.
+  for (const p of ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js']) await desk('item.files.add', { id: 'goal/G100.1', path: p }, SELF_AT_DESK);
   const asked = (((await desk('item.checks', { id: 'goal/G100.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
-  if (asked.length === 1) test.check('the list raised one open grant for both core files: ' + asked[0].number + ' "' + asked[0].words + '"');
+  if (asked.length === 1 && asked[0].words === 'core grant: every core file on this item\'s list') test.check('the list raised one open grant for both core files, naming no path: ' + asked[0].number + ' "' + asked[0].words + '"');
   else test.fail(OWED + 'open G checks after item.files.add: ' + short(asked));
   if (asked.length) await desk('check.set', { id: 'goal/G100.1', check: asked[0].number, state: 'granted' }, ANDY);
   const part = await commitWith(repo, 'spirit/run/js/one.js', 'x', 'goal/G100.1: js/one.js is only the end of js/client/js/one.js, not granted');

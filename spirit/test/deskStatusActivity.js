@@ -122,8 +122,10 @@ function ok(r) { return r && r.status === 200; }
   test.subHeading('3. a failed verify sets the status, never a chat line');
   // Two agents of its own: claude-windows and wsl-claude each hold a red above, and one agent holds one task at a time.
   await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, UBI);
-  // Since 3b a red finishes only after its red claim with suites (goal/G33.11).
-  await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskStatusActivity.js'] }, UBI);
+  // Since 3b a red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added
+  // first, and the claim carries none.
+  await call('item.suites.add', { id: 'goal/G100.3', path: 'spirit/test/deskStatusActivity.js' }, UBI);
+  await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1' }, UBI);
   await call('phase.done', { id: 'goal/G100.3', phase: 'red' }, UBI);
   await call('phase.take', { id: 'goal/G100.3', phase: 'build' }, LEV);
   await call('phase.done', { id: 'goal/G100.3', phase: 'build' }, LEV);
@@ -140,19 +142,23 @@ function ok(r) { return r && r.status === 200; }
   // Andy, 2026-10-24, extending the item: "red cannot be claimed without delivering the list of suites to the item."
   test.subHeading('3b. no red without its suites');
   await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, BOB);
+  // goal/G40.3: the suites are the item's suite rows (item.suites.add), so a red claim on an item with none is refused,
+  // and a claim carrying suites of its own is refused whatever it carries.
   const bare = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1' }, BOB);
   const empty = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: [] }, BOB);
-  if (!ok(bare) && !ok(empty) && /suite/.test(JSON.stringify(((bare.body || {}).extra || {}).why || (bare.body || {}).error || ''))) test.check('a red claim naming no suite is refused, saying why: ' + short(bare.body && ((bare.body.extra || {}).why || bare.body.error)));
-  else test.fail(OWED + 'a red claim with no suites answered ' + short(bare.status + ' ' + JSON.stringify(bare.body)) + ', with suites [] ' + short(empty.status));
+  if (!ok(bare) && !ok(empty) && /suite/.test(JSON.stringify(((bare.body || {}).extra || {}).why || (bare.body || {}).error || ''))) test.check('a red claim on an item with no suite rows is refused, saying why: ' + short(bare.body && ((bare.body.extra || {}).why || bare.body.error)) + '; one carrying suites is refused too');
+  else test.fail(OWED + 'a red claim with no suite rows answered ' + short(bare.status + ' ' + JSON.stringify(bare.body)) + ', one carrying suites [] ' + short(empty.status));
   const early = await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, BOB);
   const f4 = await facts('goal/G100.4');
   if (!ok(early) && f4.phase === 'red') test.check('the red cannot be finished before a red claim with suites is on record');
   else test.fail(OWED + 'the red was finished with no suites delivered: ' + short(early.status) + ', phase now ' + short(f4.phase));
-  const full = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskStatusActivity.js'] }, BOB);
+  // goal/G40.3: the red writer adds the suite row, then claims with no suites of its own.
+  const row4 = await call('item.suites.add', { id: 'goal/G100.4', path: 'spirit/test/deskStatusActivity.js' }, BOB);
+  const full = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1' }, BOB);
   const done4 = await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, BOB);
   const suites4 = ((((await call('item.suites.search', { id: 'goal/G100.4', text: '' }, ANDY)).body) || {}).items) || [];
-  if (ok(full) && ok(done4) && suites4.length === 1) test.check('with its suite delivered, the red claim lands, the suite is on the item, and the red finishes');
-  else test.fail(OWED + 'with its suite: the red claim ' + short(full.status) + ', its finish ' + short(done4.status) + ', suites ' + suites4.length);
+  if (ok(row4) && ok(full) && ok(done4) && suites4.length === 1) test.check('with its suite row added, the red claim lands, the suite is on the item, and the red finishes');
+  else test.fail(OWED + 'with its suite row: item.suites.add ' + short(row4.status) + ', the red claim ' + short(full.status) + ', its finish ' + short(done4.status) + ', suites ' + suites4.length);
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
 
@@ -170,8 +176,15 @@ function ok(r) { return r && r.status === 200; }
 
   test.subHeading('6. the deskClient watches its checkout and reports to the status');
   const dc = code('process/js/deskClient/deskClient.js');
-  if (/fs\.watch\s*\(/.test(dc) && /'item\.status'/.test(dc) && /tone/.test(dc)) test.check('the deskClient watches with fs.watch and reports item.status with a tone');
-  else test.fail(OWED + 'the deskClient has no watch reporting item.status with a tone (fs.watch ' + /fs\.watch\s*\(/.test(dc) + ', item.status ' + /'item\.status'/.test(dc) + ')');
+  // goal/G40.3: with the node's own watcher component, chokidar, never a hand-rolled fs.watch (Andy: "use that chokidar
+  // component then on the whole repo."), and the word says what happened to the file.
+  if (/require\('chokidar'\)\.watch\(/.test(dc) && !/fs\.watch\s*\(/.test(dc) && /'item\.status'/.test(dc) && /tone/.test(dc) && /added/.test(dc) && /deleted/.test(dc))
+    test.check('the deskClient watches with chokidar, no fs.watch, and reports item.status with a tone and changed, added or deleted');
+  else test.fail(OWED + 'the deskClient watch: chokidar ' + /require\('chokidar'\)\.watch\(/.test(dc) + ', fs.watch still ' + /fs\.watch\s*\(/.test(dc) + ', item.status ' + /'item\.status'/.test(dc) + ')');
+  // goal/G40.3: the desk's api.js declares tone on item.status, or the spirit object refuses every report before it leaves.
+  const deskApi = require(path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'api.js')).verbs['item.status'] || {};
+  if (deskApi.tone) test.check('the desk\'s api.js lets item.status carry its tone: ' + deskApi.tone);
+  else test.fail(OWED + 'the desk\'s api.js declares item.status as ' + JSON.stringify(deskApi) + ', so the spirit object refuses a tone');
   if (/spirit\/test\//.test(dc)) test.check('a path under spirit/test/ is told apart as a test file');
   else test.fail(OWED + 'the deskClient tells no test file from a production file');
 

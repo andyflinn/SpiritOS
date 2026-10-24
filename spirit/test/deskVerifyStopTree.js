@@ -162,8 +162,8 @@ async function deskHalf() {
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await d.call('item.take', { id: 'goal/G100.1' }, CW);
-    const bad = (await d.call('item.files.add', { id: 'goal/G100.1', paths: ['spirit/test/../../x.js'] }, CW)).body || {};
-    const good = (await d.call('item.files.add', { id: 'goal/G100.1', paths: ['spirit/test/zzFine.js'] }, CW)).body || {};
+    const bad = (await d.call('item.files.add', { id: 'goal/G100.1', path: 'spirit/test/../../x.js' }, CW)).body || {};
+    const good = (await d.call('item.files.add', { id: 'goal/G100.1', path: 'spirit/test/zzFine.js' }, CW)).body || {};
     if (bad.ok === false && bad.extra && /\.\./.test(String(bad.extra.why))) test.check('a path with .. is refused, saying why (' + bad.extra.why + ')');
     else test.fail(OWED + 'item.files.add of spirit/test/../../x.js answered ' + short(bad));
     if (good.change) test.check('a plain path is still taken');

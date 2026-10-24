@@ -97,6 +97,9 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     else test.fail('goal/G100.2 claimed after Go: ' + JSON.stringify(wentClaimed));
 
     test.subHeading('3. a Go pressed where Done is offered does not mark the item gone');
+    // goal/G40.3: Reopen put goal/G100.1 back into design, so it takes his End design and a fresh Go before a claim.
+    await call('press', { id: 'goal/G100.1', what: 'end-design' }, ANDY);
+    await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
     // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
     const goAnswer = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);

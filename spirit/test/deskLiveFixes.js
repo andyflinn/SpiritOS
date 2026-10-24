@@ -118,7 +118,7 @@ async function serverHalf() {
     test.subHeading('2. a write that changes the checks publishes them');
     published.length = 0;
     await call('item.take', { id: 'goal/G100.2' }, CW);
-    await call('item.files.add', { id: 'goal/G100.2', paths: ['spirit/run/js/zzLiveFixesCore.js'] }, CW);
+    await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/js/zzLiveFixesCore.js' }, CW);
     await sleep(500);
     // goal/G33.4: each check is a row of its own, pushed on its own.
     const pub = published.filter(function (o) { return o && o.table === 'checks' && o.id === 'goal/G100.2' && o.row; }).map(function (o) { return o.row; });

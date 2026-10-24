@@ -134,7 +134,7 @@ async function suite() {
   test.subHeading('1. the desk tells agents four more verbs (verify.again went with goal/G33.3)');
   const verbs = deskVerbFiles();
   // verify.again went with goal/G33.3 (Andy's yes, "box this and continue"): deskVerify reads no desk record.
-  const want = { 'box.write': ['id', 'text', 'version'], press: ['id', 'what'], 'check.set': ['id', 'check', 'state'], 'item.files.add': ['id', 'paths'] };
+  const want = { 'box.write': ['id', 'text', 'version'], press: ['id', 'what'], 'check.set': ['id', 'check', 'state'], 'item.files.add': ['id', 'path'] };
   Object.keys(want).forEach(function (v) {
     const f = verbs[v];
     const keys = f && f.request ? Object.keys(f.request).sort() : [];

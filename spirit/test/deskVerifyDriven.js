@@ -260,7 +260,12 @@ async function deskAndVerify() {
   const overLines = async function (id) { return (await chat(id)).filter(function (l) { return l.by === 'desk' && /went over/i.test(String(l.text || '')); }); };
   const asCW = function (verb, a) { return d.call(verb, a, CW); };
   // A red claim with its suites (goal/G33.4, box v44-45).
-  const redWith = function (id, suites) { return asCW('claim', { id: id, phase: 'red', commit: 'abcdef1', suites: suites }); };
+  // goal/G40.3: the suites are rows added one a write before the claim, which carries none. The red is not taken here
+  // (one task at a time), so Andy, who may write any item's suites, adds them; the claim is still claude-windows'.
+  const redWith = async function (id, suites) {
+    for (const p of suites) await d.call('item.suites.add', { id: id, path: p }, ANDY);
+    return asCW('claim', { id: id, phase: 'red', commit: 'abcdef1' });
+  };
   const done = function (id) { return d.call('press', { id: id, what: 'done' }, ANDY); };
   const took = function (r) { return r.status === 200 && r.body && r.body.ok !== false; };
   // Red and build done, so the verify phase is open: the item is one verify pass away from waiting.
@@ -306,17 +311,17 @@ async function deskAndVerify() {
     await d.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     for (const id of Object.keys(FILES)) {
       await d.call('press', { id: id, what: 'go' }, ANDY);
-      await asCW('item.files.add', { id: id, paths: FILES[id] });
+      for (const p of FILES[id]) await asCW('item.files.add', { id: id, path: p });   // goal/G40.3: one row a write
       // THE RED WRITER SUPPLIES THE SUITES (goal/G33.4, box v44-45): its red claim carries them.
       await redWith(id, FILES[id].filter(function (p) { return /^spirit\/test\//.test(p); }));
     }
     await d.call('press', { id: 'goal/G100.10', what: 'go' }, ANDY);
-    await asCW('item.files.add', { id: 'goal/G100.10', paths: [GREEN4, RED] });
+    for (const p of [GREEN4, RED]) await asCW('item.files.add', { id: 'goal/G100.10', path: p });   // goal/G40.3: one row a write
     for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) await toVerify(id);
     await d.call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
-    await asCW('item.files.add', { id: 'goal/G101.1', paths: [GREEN] });
+    await asCW('item.files.add', { id: 'goal/G101.1', path: GREEN });   // goal/G40.3: one row a write
     await d.call('press', { id: 'goal/G100', what: 'make-current' }, ANDY);
 
     v.start();
@@ -475,7 +480,7 @@ async function deskAndVerify() {
 
     // ── 2c. THE SUITES TABLE (goal/G33.4, box v44-45): the red writer supplies an item's suites with its red claim, and a
     // Verify runs exactly them, never a guess from the file list.
-    test.subHeading('2c. a red claim with suites fills the item\'s suites table; Verify hands exactly those; the file list never changes them');
+    test.subHeading('2c. suite rows added before the red claim fill the item\'s suites table; Verify hands exactly those; the file list never changes them');
     await free();
     const none10 = await verify('goal/G100.10');
     const sent10 = runsSent(Date.now() - 2000);
@@ -486,10 +491,10 @@ async function deskAndVerify() {
     const v10At = Date.now();
     const vp10 = await verify('goal/G100.10');
     const r10 = runsSent(v10At);
-    if (claimed10.status === 200 && took(vp10) && r10.length === 1 && sameSet(r10[0].args.suites, [GREEN])) test.check('a red claim with suites [' + GREEN + '] filled the table: his Verify handed exactly those, not the file list');
+    if (claimed10.status === 200 && took(vp10) && r10.length === 1 && sameSet(r10[0].args.suites, [GREEN])) test.check('suite rows [' + GREEN + '] then a red claim filled the table: his Verify handed exactly those, not the file list');   // goal/G40.3: the rows, not the claim, carry the suites
     else test.fail('OWED by goal/G33.4: the red claim with suites answered ' + short(claimed10.status) + ' ' + short(claimed10.body) + '; his Verify answered ' + short(vp10.body) + ' and asked ' + short(sentNames(v10At)));
     await free();
-    await asCW('item.files.add', { id: 'goal/G100.10', paths: [GREEN2] });
+    await asCW('item.files.add', { id: 'goal/G100.10', path: GREEN2 });   // goal/G40.3: one row a write
     const v10bAt = Date.now();
     await verify('goal/G100.10');
     const r10b = runsSent(v10bAt);
