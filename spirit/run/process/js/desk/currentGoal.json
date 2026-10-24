@@ -1,25 +1,24 @@
 {
- "change": 96977,
+ "change": 96979,
  "goal": "goal/G33",
  "items": [
   {
    "id": "goal/G33",
    "title": "Small fixes in existing apps.",
    "goal": "",
-   "status": "",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "done",
-    "verify",
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "codeOffered": false,
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -40,11 +39,10 @@
    "verified": "red",
    "verifyFailures": [
     "spirit/test/deskClientPush.js red: FAILURE #1.1: OWED by goal/G33.4 (push): its wait ended with [\"NEWS check.set {\\\"id\\\":\\\"goal/G100.7\\\",\\\"check\\\":\\\"C2\\\",\\\"kind\\\":\\\"C\\\",\\\"state\\\":\\\"open\\\"}\",\"NEWS goal.whole {\\\"id\\\":\\\"goal/G100.2\\\",\\\"with\\\":\\\"claude-windows\\\"}\",\"DESK desk goal.whole {\\\"id\\\":\\\"goal/G1",
-    "spirit/test/deskIssues.js red: FAILURE #1.1: OWED by goal/G2.1: the dialog has no older-change guard",
-    "spirit/test/deskVerifyQueueKept.js not run: missing from this checkout"
+    "spirit/test/deskIssues.js red: FAILURE #1.1: OWED by goal/G2.1: the dialog has no older-change guard"
    ],
    "verifyFailuresMore": false,
-   "verifyRed": 3,
+   "verifyRed": 2,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
