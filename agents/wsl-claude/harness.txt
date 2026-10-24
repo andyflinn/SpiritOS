@@ -1,465 +1,470 @@
 
-459 suites, 6 at a time
+462 suites, 6 at a time
 
-  ok  agentNodeRows.js             7 ✅                        118ms
-  ok  agentsAppGone.js             3 ✅                        222ms
-  ok  answerRelay.js              10 ✅                       2045ms
-  ok  answersCarryMore.js         11 ✅                       2291ms
-  ok  apiBranchSelector.js         4 ✅                        106ms
-  ok  apiDoorNoOwnerName.js        4 ✅                        256ms
-  ok  apiGate.js                  10 ✅                        554ms
-  ok  appAgentsFile.js             5 ✅                       1296ms
-  ok  appApi.js                    8 ✅                        545ms
-  ok  appApiDoor.js                5 ✅                        427ms
-  ok  appClient.js                15 ✅                       3137ms
-  ok  appClientName.js             3 ✅                        227ms
-  ok  appDependencies.js           9 ✅                       2405ms
-  ok  appErrorCodes.js             9 ✅                        357ms
-  ok  appHeader.js                 8 ✅                        151ms
-  ok  appReferences.js             4 ✅                         86ms
-  ok  appServer.js                11 ✅                       1191ms
-  ok  appServerSelector.js         5 ✅                         84ms
-FAIL  appServerStream.js           7 ✅   1 ❌               11777ms
-  ok  appsApp.js                  21 ✅                        296ms
-  ok  armedButtons.js              8 ✅                        126ms
-FAIL  arrivals.js                 23 ✅   1 ❌               16281ms
-  ok  arrivalsBacklogQuick.js      5 ✅                      39542ms
-  ok  authTables.js                7 ✅                      11266ms
-FAIL  authWorld.js                 7 ✅   3 ❌               17751ms
-  ok  backupRoundTrip.js           5 ✅                       5960ms
-  ok  backupServer.js             18 ✅                       5183ms
-  ok  boardPostSuite.js            3 ✅                        110ms
-  ok  boardRankSuite.js           16 ✅                        140ms
-  ok  bodiesJoinedOnce.js         12 ✅                        723ms
-  ok  boundedByTime.js             8 ✅                       6593ms
-  ok  boxesSuite.js                6 ✅                        117ms
-  ok  budgetChain.js               9 ✅                       1367ms
-  ok  buildStamp.js                9 ✅                        485ms
-  ok  capacityFresh.js             6 ✅                        104ms
-  ok  capacityRule.js              8 ✅                       1089ms
-  ok  cardFetch.js                12 ✅                       9500ms
-  ok  cardRotation.js              9 ✅                       7792ms
-  ok  chatClerverLines.js         13 ✅                      21062ms
-  ok  chatClerverWrite.js         12 ✅                       1631ms
-  ok  chatMemory.js                8 ✅                        731ms
-FAIL  chatsSearch.js              26 ✅   1 ❌                7900ms
-  ok  chatter.js                  53 ✅                        232ms
-  ok  chosenMarks.js              11 ✅                      35441ms
-  ok  circularity.js               1 ✅                        120ms
-  ok  cleanupDead.js               8 ✅                        163ms
-  ok  clientLayer.js              17 ✅                        634ms
-  ok  contactCard.js              17 ✅                       1137ms
-FAIL  contactLabel.js             19 ✅   1 ❌                3074ms
-  ok  contactSearchTiers.js       18 ✅                       1103ms
-  ok  contactSelector.js           4 ✅                         80ms
-  ok  contactSelectorPane.js      19 ✅                        144ms
-  ok  contacts.js                 78 ✅                       3506ms
-  ok  contactsDetails.js          52 ✅                        147ms
-  ok  contactsFilter.js            5 ✅                        163ms
-  ok  contactsListSearch.js       22 ✅                        270ms
-  ok  coreFilesMove.js            15 ✅                        110ms
-  ok  counterLog.js                2 ✅                       1498ms
-  ok  counterPage.js               4 ✅                        541ms
-  ok  counterPort.js               3 ✅                       1084ms
-  ok  cycle10Pending.js            1 ✅                        104ms
-  ok  cycleA.js                   28 ✅                       9619ms
-FAIL  cycleCitations.js            1 ✅   2 ❌                 483ms
-  ok  cycleRequirements.js       145 ✅                        178ms
-  ok  debugSwitch.js              12 ✅                       2924ms
-  ok  deprecations.js             12 ✅                        123ms
-  ok  deskAddBlocking.js          13 ✅                       1111ms
-  ok  deskAddGoal.js               9 ✅                        736ms
-  ok  deskAddKeepsCurrent.js       5 ✅                       1179ms
-  ok  deskAdjustments.js          28 ✅                       1393ms
-  ok  deskAgentAbort.js           32 ✅                      26685ms
-  ok  deskAgentAgent.js           18 ✅                       4151ms
-  ok  deskAgentCommand.js         11 ✅                       2974ms
-  ok  deskAgentCommandJob.js       9 ✅                      27461ms
-  ok  deskAgentConnectTable.js    12 ✅                        556ms
-  ok  deskAgentContext.js         14 ✅                      15992ms
-  ok  deskAgentCurrentGoal.js      6 ✅                       3808ms
-  ok  deskAgentDesk.js            13 ✅                       2346ms
-  ok  deskAgentDeskName.js         6 ✅                       3923ms
-  ok  deskAgentEarJobs.js          7 ✅                      15016ms
-  ok  deskAgentEarState.js         3 ✅                       1527ms
-  ok  deskAgentEarThin.js          8 ✅                       2988ms
-  ok  deskAgentEffort.js          21 ✅                       1348ms
-  ok  deskAgentFileEdit.js        12 ✅                        697ms
-  ok  deskAgentFileRange.js       10 ✅                        403ms
-  ok  deskAgentFileSearch.js      14 ✅                       7039ms
-  ok  deskAgentFs.js              16 ✅                       2512ms
-FAIL  deskAgentGo.js               4 ✅   1 ❌                 112ms
-  ok  deskAgentLearnsContext.js    7 ✅                       1587ms
-  ok  deskAgentModels.js          37 ✅                      43384ms
-  ok  deskAgentModelsSearch.js    13 ✅                       1748ms
-  ok  deskAgentOneAnswer.js        6 ✅                       6285ms
-  ok  deskAgentPairs.js           27 ✅                       9304ms
-  ok  deskAgentPlainContext.js     9 ✅                       1389ms
-  ok  deskAgentRecommend.js       14 ✅                       3300ms
-  ok  deskAgentRemoteHidden.js     3 ✅                        187ms
-  ok  deskAgentRemoteTabs.js      25 ✅                        733ms
+labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. — the lab suites will say so themselves
+
+  ok  agentNodeRows.js             7 ✅                        139ms
+  ok  agentReadme.js              10 ✅                        197ms
+  ok  agentsAppGone.js             3 ✅                        302ms
+  ok  answerRelay.js              10 ✅                       1887ms
+  ok  answersCarryMore.js         11 ✅                       2506ms
+  ok  apiBranchSelector.js         4 ✅                        107ms
+  ok  apiDoorNoOwnerName.js        4 ✅                        251ms
+  ok  apiGate.js                  10 ✅                        586ms
+  ok  appAgentsFile.js             5 ✅                       1458ms
+  ok  appApi.js                    8 ✅                        510ms
+  ok  appApiDoor.js                5 ✅                        397ms
+  ok  appClient.js                15 ✅                       3130ms
+  ok  appClientName.js             3 ✅                        201ms
+  ok  appDependencies.js           9 ✅                       2677ms
+  ok  appErrorCodes.js             9 ✅                        358ms
+  ok  appHeader.js                 8 ✅                        155ms
+  ok  appReferences.js             4 ✅                        114ms
+  ok  appServer.js                11 ✅                       1196ms
+  ok  appServerSelector.js         5 ✅                         66ms
+FAIL  appServerStream.js           7 ✅   1 ❌               11816ms
+  ok  appsApp.js                  21 ✅                        223ms
+  ok  armedButtons.js              8 ✅                        147ms
+FAIL  arrivals.js                 23 ✅   1 ❌               16167ms
+  ok  arrivalsBacklogQuick.js      5 ✅                      39785ms
+  ok  authTables.js                7 ✅                      10700ms
+FAIL  authWorld.js                 2 ✅   1 ❌                 320ms
+  ok  backupRoundTrip.js           5 ✅                       5736ms
+  ok  backupServer.js             18 ✅                       5082ms
+  ok  boardPostSuite.js            3 ✅                        116ms
+  ok  boardRankSuite.js           16 ✅                        131ms
+  ok  bodiesJoinedOnce.js         12 ✅                        702ms
+  ok  boundedByTime.js             8 ✅                       6594ms
+  ok  boxesSuite.js                6 ✅                        127ms
+  ok  budgetChain.js               9 ✅                       1242ms
+  ok  buildStamp.js                9 ✅                        268ms
+FAIL  capacityFresh.js             5 ✅   1 ❌                 153ms
+FAIL  capacityRule.js              7 ✅   1 ❌                 993ms
+  ok  cardFetch.js                12 ✅                       9603ms
+  ok  cardRotation.js              9 ✅                       7851ms
+  ok  chatClerverLines.js         13 ✅                      21027ms
+  ok  chatClerverWrite.js         12 ✅                       1752ms
+  ok  chatMemory.js                8 ✅                        612ms
+FAIL  chatsSearch.js              26 ✅   1 ❌                8111ms
+  ok  chatter.js                  53 ✅                        247ms
+  ok  chosenMarks.js              11 ✅                      35129ms
+  ok  circularity.js               1 ✅                        110ms
+  ok  cleanupDead.js               8 ✅                        146ms
+  ok  clientLayer.js              17 ✅                        585ms
+  ok  contactCard.js              17 ✅                       1125ms
+FAIL  contactLabel.js             19 ✅   1 ❌                3358ms
+  ok  contactSearchTiers.js       18 ✅                       1097ms
+  ok  contactSelector.js           4 ✅                        137ms
+  ok  contactSelectorPane.js      19 ✅                        123ms
+  ok  contacts.js                 78 ✅                       3667ms
+  ok  contactsDetails.js          52 ✅                        142ms
+  ok  contactsFilter.js            5 ✅                        126ms
+  ok  contactsListSearch.js       22 ✅                        289ms
+  ok  coreFilesMove.js            15 ✅                         98ms
+  ok  counterLog.js                2 ✅                       1499ms
+  ok  counterPage.js               4 ✅                        531ms
+  ok  counterPort.js               3 ✅                       1067ms
+  ok  cycle10Pending.js            1 ✅                        125ms
+  ok  cycleA.js                   28 ✅                       9235ms
+FAIL  cycleCitations.js            1 ✅   2 ❌                 461ms
+  ok  cycleRequirements.js       145 ✅                         99ms
+  ok  debugSwitch.js              12 ✅                       3151ms
+  ok  deprecations.js             12 ✅                        163ms
+  ok  deskAddBlocking.js          13 ✅                       1185ms
+  ok  deskAddGoal.js               9 ✅                        695ms
+  ok  deskAddKeepsCurrent.js       5 ✅                       1238ms
+  ok  deskAdjustments.js          28 ✅                       1481ms
+  ok  deskAgentAbort.js           32 ✅                      26776ms
+  ok  deskAgentAgent.js           18 ✅                       4077ms
+  ok  deskAgentCommand.js         11 ✅                       3103ms
+  ok  deskAgentCommandJob.js       9 ✅                      27432ms
+  ok  deskAgentConnectTable.js    12 ✅                        544ms
+  ok  deskAgentContext.js         14 ✅                      16061ms
+  ok  deskAgentCurrentGoal.js      6 ✅                       3797ms
+  ok  deskAgentDesk.js            13 ✅                       2262ms
+  ok  deskAgentDeskName.js         6 ✅                       3874ms
+  ok  deskAgentEarJobs.js          7 ✅                      14855ms
+  ok  deskAgentEarState.js         3 ✅                       1484ms
+  ok  deskAgentEarThin.js          8 ✅                       3004ms
+  ok  deskAgentEffort.js          21 ✅                       1317ms
+  ok  deskAgentFileEdit.js        12 ✅                        660ms
+  ok  deskAgentFileRange.js       10 ✅                        358ms
+  ok  deskAgentFileSearch.js      14 ✅                       6862ms
+  ok  deskAgentFs.js              16 ✅                       1862ms
+FAIL  deskAgentGo.js               4 ✅   1 ❌                 113ms
+  ok  deskAgentLearnsContext.js    7 ✅                       1620ms
+  ok  deskAgentModels.js          37 ✅                      43461ms
+  ok  deskAgentModelsSearch.js    13 ✅                       1704ms
+  ok  deskAgentOneAnswer.js        6 ✅                       6348ms
+  ok  deskAgentPairs.js           27 ✅                       9344ms
+  ok  deskAgentPlainContext.js     9 ✅                       1250ms
+  ok  deskAgentRecommend.js       14 ✅                       3207ms
+  ok  deskAgentRemoteHidden.js     3 ✅                        215ms
+  ok  deskAgentRemoteTabs.js      25 ✅                        704ms
   ok  deskAgentRename.js           4 ✅                        123ms
-  ok  deskAgentRepoRoot.js         5 ✅                        759ms
-  ok  deskAgentSwitch.js          19 ✅                       4560ms
-  ok  deskAgentSwitchKept.js       7 ✅                       9618ms
-  ok  deskAgentTabs.js             3 ✅                        129ms
-  ok  deskAgentTakesLine.js        8 ✅                       2796ms
-  ok  deskAgentToolRounds.js      10 ✅                       2685ms
-  ok  deskAgentTools.js           19 ✅                       3194ms
-  ok  deskAgentToolsMore.js       18 ✅                        135ms
-  ok  deskAgentVerbFiles.js       17 ✅                        116ms
-  ok  deskAgentWorkspace.js       14 ✅                       1422ms
-  ok  deskArchive.js               5 ✅                       1277ms
-  ok  deskBackupFresh.js           1 ✅                        158ms
-  ok  deskBindingNick.js          38 ✅                      14031ms
-  ok  deskBlocks.js               17 ✅                       1772ms
-  ok  deskBoundedInterface.js      7 ✅                      10904ms
-  ok  deskBoxTake.js              17 ✅                       1107ms
-  ok  deskBusyReply.js             5 ✅                        884ms
-  ok  deskChatBubbles.js           6 ✅                        139ms
-  ok  deskChatFlowOneTask.js      18 ✅                       2159ms
-  ok  deskChatFollowsAddress.js    7 ✅                       1837ms
-  ok  deskChatFormat.js           15 ✅                        162ms
-  ok  deskChatQuestion.js         12 ✅                       1203ms
-  ok  deskChatSearch.js           11 ✅                       3903ms
-  ok  deskCheckNumbers.js          5 ✅                        838ms
-  ok  deskChecksPanel.js          10 ✅                       1518ms
-  ok  deskClaimCommit.js          16 ✅                        799ms
-  ok  deskClientAsk.js            12 ✅                      16758ms
-  ok  deskClientNext.js           11 ✅                      35589ms
-  ok  deskClientPull.js            6 ✅                      10777ms
-  ok  deskClientPush.js           28 ✅                     139676ms
-  ok  deskClientQuiet.js           8 ✅                      12627ms
-  ok  deskClientStatus.js          4 ✅                        107ms
-  ok  deskClosedBlocker.js        10 ✅                        963ms
-  ok  deskCodeToggle.js           13 ✅                       1617ms
-  ok  deskCoreGrants.js            8 ✅                       3375ms
-  ok  deskDelete.js               17 ✅                       1424ms
-  ok  deskDeleteOutsideDesign.js  15 ✅                       1104ms
-  ok  deskDesignButtons.js         8 ✅                        113ms
-  ok  deskDetailsPanels.js        15 ✅                        137ms
-  ok  deskDialog.js               23 ✅                        111ms
-  ok  deskDialogClose.js           4 ✅                         69ms
-  ok  deskDialogFollowsItem.js    22 ✅                       1001ms
-  ok  deskDoneAsks.js              6 ✅                        871ms
-  ok  deskEmptyBox.js              5 ✅                        119ms
-  ok  deskExclusiveToggles.js      7 ✅                        142ms
-  ok  deskExplainTop.js            1 ✅                        142ms
-  ok  deskFallout.js              32 ✅                       4464ms
-  ok  deskFilesTouched.js         16 ✅                       1353ms
-  ok  deskFold.js                  2 ✅                        142ms
-  ok  deskForAgents.js             6 ✅                       1040ms
-  ok  deskForAndy.js              37 ✅                       1052ms
-  ok  deskFresh.js                 2 ✅                        385ms
-  ok  deskFrontPage.js             9 ✅                        113ms
-  ok  deskG3.js                   11 ✅                        940ms
-  ok  deskGoOrDone.js              9 ✅                        849ms
-  ok  deskGoalClose.js             6 ✅                        171ms
-  ok  deskGoalDone.js              5 ✅                       1041ms
-  ok  deskGoalFile.js             14 ✅                       3207ms
-  ok  deskGroupChat.js            10 ✅                       1843ms
-  ok  deskHeaderArea.js            8 ✅                        123ms
-  ok  deskIds.js                  12 ✅                       1129ms
-FAIL  deskIssues.js                6 ✅   1 ❌                1461ms
-  ok  deskItemAddGrant.js         17 ✅                       1048ms
-  ok  deskItemsFind.js             6 ✅                       5613ms
-  ok  deskKnownAgents.js           9 ✅                       1034ms
-  ok  deskLatest.js               12 ✅                       1338ms
-  ok  deskLayout.js               14 ✅                        144ms
-  ok  deskLimbo.js                 7 ✅                        913ms
-  ok  deskLimboHolder.js           4 ✅                       1094ms
-  ok  deskLineTakeAddressed.js    18 ✅                       2910ms
-  ok  deskList.js                 22 ✅                        142ms
-  ok  deskListTakesAdditions.js   14 ✅                        641ms
-  ok  deskLiveFixes.js            16 ✅                       2193ms
-  ok  deskLog.js                   9 ✅                        177ms
-  ok  deskMakeCurrent.js          14 ✅                       2102ms
-  ok  deskMirror.js                7 ✅                       4866ms
-  ok  deskOnServer.js             10 ✅                        675ms
-  ok  deskPageNoNudge.js           8 ✅                        113ms
-  ok  deskPanels.js                7 ✅                       1237ms
-  ok  deskPhaseRestart.js          8 ✅                       1299ms
-  ok  deskPhases.js                9 ✅                       2089ms
-  ok  deskPlainTake.js             3 ✅                       1868ms
-  ok  deskPluginsGg.js           140 ✅                       8929ms
-  ok  deskProfiles.js              8 ✅                       1240ms
-  ok  deskQuickFixes.js            7 ✅                       1102ms
-  ok  deskRealtimeFace.js         13 ✅                       1967ms
-  ok  deskRealtimeServer.js        4 ✅                       1113ms
-  ok  deskRedQOnPurpose.js        29 ✅                       7830ms
-  ok  deskRefusalReason.js         8 ✅                        899ms
-  ok  deskRows.js                  5 ✅                       2377ms
-  ok  deskRuleChatPublish.js       4 ✅                       1487ms
-  ok  deskRuleTable.js            12 ✅                       1297ms
-  ok  deskRules.js                23 ✅                      45390ms
-  ok  deskRulesAtGo.js             7 ✅                       1183ms
-  ok  deskRulesTab.js             10 ✅                        146ms
-  ok  deskSearchLines.js           6 ✅                        992ms
-  ok  deskSearches.js             10 ✅                       1023ms
-  ok  deskServer.js               13 ✅                       2472ms
-  ok  deskSignoffGrants.js        12 ✅                       1260ms
-  ok  deskSmallFixes.js           18 ✅                        966ms
-  ok  deskSplitGreen.js           10 ✅                       1177ms
-  ok  deskSplitRelation.js         9 ✅                        877ms
-  ok  deskStacksDialog.js         27 ✅                       6961ms
-  ok  deskStacksDoorSearch.js      6 ✅                       1990ms
-  ok  deskState.js                25 ✅                       1043ms
-  ok  deskSword.js                 8 ✅                        120ms
-  ok  deskTables.js               45 ✅                      14477ms
-  ok  deskTakeToAnswer.js          8 ✅                       1584ms
-  ok  deskVerbListingSlash.js     20 ✅                        125ms
-  ok  deskVerifyCommitBound.js     4 ✅                       1999ms
-  ok  deskVerifyDataset.js        14 ✅                       3236ms
-  ok  deskVerifyDriven.js         60 ✅                      15094ms
-  ok  deskVerifyFixes.js          45 ✅                      29329ms
-  ok  deskVerifyFull.js            4 ✅                       2195ms
-  ok  deskVerifyLive.js           17 ✅                       4908ms
-  ok  deskVerifyModes.js           5 ✅                       1382ms
+  ok  deskAgentRepoRoot.js         5 ✅                        743ms
+  ok  deskAgentSwitch.js          19 ✅                       4505ms
+  ok  deskAgentSwitchKept.js       7 ✅                       9435ms
+  ok  deskAgentTabs.js             3 ✅                         86ms
+  ok  deskAgentTakesLine.js        8 ✅                       2935ms
+  ok  deskAgentToolRounds.js      10 ✅                       2726ms
+  ok  deskAgentTools.js           19 ✅                       3188ms
+  ok  deskAgentToolsMore.js       18 ✅                        160ms
+  ok  deskAgentVerbFiles.js       17 ✅                        120ms
+  ok  deskAgentWorkspace.js       14 ✅                       1430ms
+  ok  deskArchive.js               5 ✅                       1505ms
+  ok  deskBackupFresh.js           1 ✅                        129ms
+  ok  deskBindingNick.js          38 ✅                      14352ms
+  ok  deskBlocks.js               17 ✅                       1928ms
+  ok  deskBoundedInterface.js      7 ✅                       9965ms
+  ok  deskBoxTake.js              17 ✅                       1065ms
+  ok  deskBusyReply.js             5 ✅                        999ms
+  ok  deskChatBubbles.js           6 ✅                        141ms
+  ok  deskChatFlowOneTask.js      18 ✅                       2086ms
+  ok  deskChatFollowsAddress.js    7 ✅                       1659ms
+  ok  deskChatFormat.js           15 ✅                        131ms
+  ok  deskChatQuestion.js         12 ✅                       1131ms
+  ok  deskChatSearch.js           11 ✅                       4183ms
+  ok  deskCheckNumbers.js          5 ✅                        820ms
+  ok  deskChecksPanel.js          10 ✅                       1550ms
+  ok  deskClaimCommit.js          16 ✅                        837ms
+  ok  deskClientAsk.js            12 ✅                      16886ms
+  ok  deskClientNext.js           11 ✅                      35663ms
+  ok  deskClientPull.js            6 ✅                      20915ms
+  ok  deskClientPush.js           28 ✅                     139427ms
+  ok  deskClientQuiet.js           8 ✅                      12651ms
+  ok  deskClientStatus.js          4 ✅                        126ms
+  ok  deskClosedBlocker.js        10 ✅                       1037ms
+  ok  deskCodeToggle.js           13 ✅                       1654ms
+  ok  deskCoreGrants.js            8 ✅                       3797ms
+  ok  deskDelete.js               17 ✅                       1606ms
+  ok  deskDeleteOutsideDesign.js  15 ✅                       1261ms
+  ok  deskDesignButtons.js         8 ✅                        144ms
+  ok  deskDetailsPanels.js        15 ✅                        116ms
+  ok  deskDialog.js               23 ✅                        125ms
+  ok  deskDialogClose.js           4 ✅                        126ms
+  ok  deskDialogFollowsItem.js    22 ✅                       1038ms
+  ok  deskDoneAsks.js              6 ✅                        928ms
+  ok  deskEmptyBox.js              5 ✅                        131ms
+  ok  deskExclusiveToggles.js      7 ✅                        139ms
+  ok  deskExplainTop.js            1 ✅                        146ms
+  ok  deskFallout.js              32 ✅                       4153ms
+  ok  deskFilesTouched.js         16 ✅                       1629ms
+  ok  deskFold.js                  2 ✅                        137ms
+  ok  deskForAgents.js             6 ✅                       1045ms
+  ok  deskForAndy.js              37 ✅                       1221ms
+  ok  deskFresh.js                 2 ✅                        444ms
+  ok  deskFrontPage.js             9 ✅                        107ms
+  ok  deskG3.js                   11 ✅                        924ms
+  ok  deskGoOrDone.js              9 ✅                        911ms
+  ok  deskGoalClose.js             6 ✅                        144ms
+  ok  deskGoalDone.js              5 ✅                       1082ms
+  ok  deskGoalFile.js             14 ✅                       3545ms
+  ok  deskGroupChat.js            10 ✅                       1724ms
+  ok  deskHeaderArea.js            8 ✅                         89ms
+  ok  deskIds.js                  12 ✅                       1042ms
+FAIL  deskIssues.js                6 ✅   1 ❌                1400ms
+  ok  deskItemAddGrant.js         17 ✅                       1107ms
+  ok  deskItemsFind.js             6 ✅                       5252ms
+  ok  deskKnownAgents.js           9 ✅                       1266ms
+  ok  deskLatest.js               12 ✅                       1278ms
+  ok  deskLayout.js               14 ✅                        108ms
+  ok  deskLimbo.js                 7 ✅                        946ms
+  ok  deskLimboHolder.js           4 ✅                       1010ms
+  ok  deskLineTakeAddressed.js    18 ✅                       2884ms
+  ok  deskList.js                 22 ✅                        150ms
+  ok  deskListTakesAdditions.js   14 ✅                        601ms
+  ok  deskLiveFixes.js            16 ✅                       2160ms
+  ok  deskLog.js                   9 ✅                        143ms
+  ok  deskMakeCurrent.js          14 ✅                       2140ms
+  ok  deskMirror.js                7 ✅                       4624ms
+  ok  deskOnServer.js             10 ✅                        483ms
+  ok  deskPageNoNudge.js           8 ✅                        140ms
+  ok  deskPanels.js                7 ✅                       1206ms
+  ok  deskPhaseRestart.js          8 ✅                       1308ms
+  ok  deskPhases.js                9 ✅                       2238ms
+  ok  deskPlainTake.js             3 ✅                       1864ms
+  ok  deskPluginsGg.js           140 ✅                       8648ms
+  ok  deskProfiles.js              8 ✅                       1076ms
+  ok  deskQuickFixes.js            7 ✅                       1255ms
+  ok  deskRealtimeFace.js         13 ✅                       1979ms
+  ok  deskRealtimeServer.js        4 ✅                       1153ms
+  ok  deskRedQOnPurpose.js        29 ✅                       7931ms
+  ok  deskRefusalReason.js         8 ✅                        892ms
+  ok  deskRows.js                  5 ✅                       2324ms
+  ok  deskRuleChatPublish.js       4 ✅                       1251ms
+  ok  deskRuleTable.js            12 ✅                       1215ms
+  ok  deskRules.js                23 ✅                      45291ms
+  ok  deskRulesAtGo.js             7 ✅                       1274ms
+  ok  deskRulesTab.js             10 ✅                         90ms
+  ok  deskSearchLines.js           6 ✅                        897ms
+  ok  deskSearches.js             10 ✅                       1141ms
+  ok  deskServer.js               13 ✅                       2733ms
+  ok  deskSignoffGrants.js        12 ✅                       1208ms
+  ok  deskSmallFixes.js           18 ✅                       1125ms
+  ok  deskSplitGreen.js           10 ✅                       1324ms
+  ok  deskSplitRelation.js         9 ✅                       1028ms
+  ok  deskStacksDialog.js         27 ✅                       6847ms
+  ok  deskStacksDoorSearch.js      6 ✅                       1997ms
+  ok  deskState.js                25 ✅                       1384ms
+  ok  deskStatusActivity.js       21 ✅                       2047ms
+  ok  deskSword.js                 8 ✅                        131ms
+  ok  deskTables.js               45 ✅                      14324ms
+  ok  deskTakeToAnswer.js          8 ✅                       1513ms
+  ok  deskVerbListingSlash.js     20 ✅                        124ms
+  ok  deskVerifyCommitBound.js     4 ✅                       1665ms
+  ok  deskVerifyDataset.js        14 ✅                       3037ms
+  ok  deskVerifyDriven.js         60 ✅                      15005ms
+  ok  deskVerifyFixes.js          45 ✅                      27980ms
+  ok  deskVerifyFull.js            4 ✅                       2067ms
+  ok  deskVerifyLive.js           17 ✅                       4740ms
+  ok  deskVerifyModes.js           5 ✅                       1297ms
   ok  deskVerifyRunsSearch.js      6 ✅                       1074ms
-  ok  deskVerifyStopTree.js        7 ✅                      11819ms
-  ok  deskVerifyTab.js            12 ✅                       3308ms
-  ok  deskVision.js               24 ✅                       1359ms
-  ok  deskWaive.js                19 ✅                       1178ms
-  ok  deskWhileBackup.js           2 ✅                       8275ms
-  ok  deskWorking.js               3 ✅                         84ms
-  ok  deskWriterKey.js             7 ✅                       1408ms
-FAIL  deviceGone.js                1 ✅   1 ❌                 215ms
-  ok  dialogClose.js               4 ✅                        151ms
-  ok  discBound.js                 9 ✅                       1412ms
-  ok  discFull.js                 12 ✅                        481ms
-  ok  diskClient.js               10 ✅                       1066ms
-FAIL  doorContract.js              7 ✅   3 ❌                 160ms
-FAIL  everyVerb.js                 8 ✅   2 ❌                2743ms
-  ok  faceApply.js                21 ✅                       1833ms
-  ok  faceDevices.js               6 ✅                        697ms
-  ok  faceFixes.js                 8 ✅                       1690ms
-FAIL  faceHome.js                  7 ✅   1 ❌                 714ms
-  ok  faceKeys.js                  3 ✅                        235ms
-  ok  faceLogin.js                14 ✅                        664ms
-  ok  faceRouteSuite.js            6 ✅                        119ms
-FAIL  faceSealed.js                6 ✅   1 ❌                 684ms
-  ok  faceStream.js                8 ✅                        466ms
-  ok  faceUpload.js                4 ✅                        591ms
-  ok  fieldRules.js               27 ✅                       1325ms
-  ok  fileBottom.js                9 ✅                        383ms
-  ok  fileCap.js                   5 ✅                        479ms
-  ok  fileCore.js                 12 ✅                       1569ms
-  ok  fileFetch.js                11 ✅                       1055ms
-  ok  fileIntrinsic.js             2 ✅                        803ms
-  ok  fileOneLabel.js              7 ✅                        932ms
-  ok  fileSlots.js                 7 ✅                       2081ms
-FAIL  filesContentsSearch.js      19 ✅   2 ❌                 243ms
-  ok  filesSharedList.js          13 ✅                       4825ms
-  ok  filesViewers.js             10 ✅                        119ms
-  ok  firstOwner.js               12 ✅                        760ms
-  ok  fixedAllowance.js            6 ✅                       1005ms
-  ok  forwardKey.js                4 ✅                        679ms
-  ok  frontDoor.js                18 ✅                       4915ms
-  ok  fsWatcherCommands.js        15 ✅                       8190ms
-  ok  fsWatcherConsole.js          7 ✅                       1159ms
-  ok  fsWatcherQuiet.js            5 ✅                       3694ms
-  ok  gitHelpersOwnOnly.js        18 ✅                       7914ms
-  ok  goalShare.js                14 ✅                       8869ms
+  ok  deskVerifyStopTree.js        7 ✅                      11842ms
+  ok  deskVerifyTab.js            12 ✅                       3338ms
+  ok  deskVision.js               24 ✅                       1453ms
+  ok  deskWaive.js                19 ✅                       1377ms
+  ok  deskWhileBackup.js           2 ✅                       8269ms
+  ok  deskWorking.js               3 ✅                        102ms
+  ok  deskWriterKey.js             7 ✅                       1295ms
+FAIL  deviceGone.js                1 ✅   1 ❌                 184ms
+  ok  dialogClose.js               4 ✅                        112ms
+  ok  discBound.js                 9 ✅                       1713ms
+  ok  discFull.js                 12 ✅                        439ms
+  ok  diskClient.js               10 ✅                       1042ms
+FAIL  doorContract.js              8 ✅   2 ❌                 196ms
+FAIL  everyVerb.js                 8 ✅   2 ❌                2615ms
+  ok  faceApply.js                21 ✅                       1923ms
+  ok  faceDevices.js               6 ✅                        678ms
+  ok  faceFixes.js                 8 ✅                       1612ms
+FAIL  faceHome.js                  7 ✅   1 ❌                 784ms
+  ok  faceKeys.js                  3 ✅                        260ms
+  ok  faceLogin.js                14 ✅                        557ms
+  ok  faceRouteSuite.js            6 ✅                        143ms
+FAIL  faceSealed.js                6 ✅   1 ❌                 826ms
+  ok  faceStream.js                8 ✅                        600ms
+  ok  faceUpload.js                4 ✅                        584ms
+  ok  fieldRules.js               27 ✅                       1398ms
+  ok  fileBottom.js                9 ✅                        377ms
+  ok  fileCap.js                   5 ✅                        468ms
+  ok  fileCore.js                 12 ✅                       1573ms
+  ok  fileFetch.js                11 ✅                       1005ms
+  ok  fileIntrinsic.js             2 ✅                        793ms
+  ok  fileOneLabel.js              7 ✅                        944ms
+  ok  fileSlots.js                 7 ✅                       2465ms
+FAIL  filesContentsSearch.js      19 ✅   2 ❌                 249ms
+  ok  filesSharedList.js          13 ✅                       4829ms
+  ok  filesViewers.js             10 ✅                        120ms
+  ok  firstOwner.js               12 ✅                        785ms
+  ok  fixedAllowance.js            6 ✅                        999ms
+  ok  forwardKey.js                4 ✅                        626ms
+  ok  frontDoor.js                18 ✅                       5243ms
+  ok  fsOwnerUnlimited.js         16 ✅                       1548ms
+  ok  fsWatcherCommands.js        15 ✅                       8215ms
+  ok  fsWatcherConsole.js          7 ✅                       1430ms
+  ok  fsWatcherQuiet.js            5 ✅                       3775ms
+  ok  gitHelpersOwnOnly.js        18 ✅                       7933ms
+  ok  goalShare.js                14 ✅                       8774ms
 FAIL  grantsApp.js                 2 ✅   1 ❌                  99ms
-FAIL  grantsSharedList.js         11 ✅  14 ❌                1193ms
-FAIL  guarantees.js               10 ✅   1 ❌                1159ms
-  ok  harnessAppSuites.js          5 ✅                        325ms
-  ok  harnessRetry.js              4 ✅                        124ms
-  ok  heldStranger.js             11 ✅                       3340ms
-FAIL  hostHardening.js            45 ✅   1 ❌                 142ms
-  ok  htmlEscaping.js             29 ✅                        100ms
-  ok  hubPost.js                  14 ✅                       1713ms
-  ok  hygieneG19_11.js            29 ✅                       1465ms
-FAIL  iconIndex.js                29 ✅   2 ❌                 113ms
-  ok  identityAtBoot.js           11 ✅                       5123ms
-  ok  identityPerception.js       26 ✅                       2798ms
-FAIL  introSpectorApp.js          17 ✅   1 ❌                 740ms
-  ok  introSpectorFamily.js        9 ✅                        621ms
-  ok  introSpectorNode.js         14 ✅                         72ms
-  ok  introspectSearch.js         13 ✅                        110ms
-  ok  introspectionCleanup.js     26 ✅                        225ms
-  ok  inviteLock.js                5 ✅                        620ms
-  ok  inviteMint.js               21 ✅                       2488ms
-  ok  inviteRedeem.js              8 ✅                        616ms
-  ok  inviteSpeakable.js          15 ✅                       1598ms
-  ok  invites.js                  26 ✅                       2134ms
-  ok  jobCallback.js              22 ✅                       4751ms
-FAIL  jobCycle.js                 14 ✅   3 ❌                 931ms
-FAIL  jobsApiGone.js              13 ✅   1 ❌                 279ms
-  ok  jobsAuth.js                 14 ✅                       2653ms
-  ok  jobsCleanUp.js              10 ✅                       5356ms
-  ok  jobsDetails.js              20 ✅                        183ms
-FAIL  jobsLifecycle.js             5 ✅   2 ❌                 118ms
-  ok  jobsSearch.js               39 ✅                       1471ms
-  ok  joinOnboarding.js           40 ✅                       2747ms
-  ok  joinSteps.js                18 ✅                       1151ms
-  ok  keyPermissions.js            4 ✅                        114ms
-  ok  keyTail.js                   4 ✅                        161ms
-  ok  labGone.js                   3 ✅                        209ms
-  ok  labHome.js                   1 ✅                       1736ms
-FAIL  labLifecycle.js             14 ✅   1 ❌                6794ms
-  ok  labPanel.js                 14 ✅                        101ms
-FAIL  labPersistence.js            7 ✅   1 ❌                6737ms
-  ok  labRefusals.js               5 ✅                       8597ms
-  ok  labRelaySurface.js          12 ✅                       1078ms
-  ok  labRunLock.js               10 ✅                        481ms
-FAIL  labServableStatic.js        14 ✅   2 ❌                1666ms
-  ok  labelIsOwned.js             22 ✅                       2789ms
-  ok  labelShape.js               20 ✅                       1929ms
-  ok  lever.js                    26 ✅                        104ms
-  ok  listElements.js             11 ✅                        152ms
-  ok  listSearch.js               19 ✅                        664ms
-  ok  listSearchModes.js          16 ✅                        174ms
-  ok  listeningApp.js             15 ✅                        165ms
-  ok  liveFrontDoor.js            22 ✅                      40480ms
-  ok  logIndexes.js                7 ✅                      29910ms
-  ok  logMigration.js              7 ✅                       1784ms
-  ok  logTable.js                  4 ✅                        943ms
-  ok  memberBroadcast.js           6 ✅                        900ms
-  ok  memberCard.js                8 ✅                        827ms
-  ok  moduleIds.js                 5 ✅                        525ms
-  ok  monitorApp.js               38 ✅                        113ms
-  ok  natterDetails.js            72 ✅                        213ms
-  ok  natterShellFixes.js         23 ✅                       2213ms
-  ok  netFence.js                 20 ✅                       1482ms
-  ok  noCoalescing.js              3 ✅                        130ms
-  ok  noKeylessNode.js             6 ✅                       1025ms
-  ok  nodeCardSigned.js           17 ✅                        169ms
-  ok  nodeInfo.js                 55 ✅                       4949ms
-  ok  nodeServerSettings.js        9 ✅                        895ms
-  ok  nodeSettings.js             11 ✅                        859ms
-  ok  nodeStore.js                32 ✅                      25116ms
-FAIL  noderoutesAlive.js           0 ✅   3 ❌               19227ms
-  ok  oldSearchGone.js             6 ✅                        310ms
-  ok  oneDeclaration.js            2 ✅                        239ms
-FAIL  oneDecoder.js                8 ✅   2 ❌                 170ms
-FAIL  oneDoor.js                   9 ✅   1 ❌                 281ms
-  ok  oneNodeName.js               8 ✅                       3122ms
-  ok  oversize.js                 13 ✅                       1601ms
-  ok  ownStateFolder.js            6 ✅                        224ms
-  ok  ownerAtInstall.js           20 ✅                       1318ms
-  ok  ownerCommand.js             10 ✅                        122ms
-FAIL  ownerFile.js                16 ✅   1 ❌                 965ms
-  ok  ownerLog.js                 37 ✅                       8079ms
-  ok  ownerPost.js                 7 ✅                        414ms
-  ok  ownerToken.js                1 ✅                        760ms
-  ok  packet.js                   34 ✅                        264ms
-  ok  pathCanonicalization.js    100 ✅                        129ms
-  ok  pathJail.js                 13 ✅                         98ms
-  ok  payloadCeiling.js            6 ✅                        702ms
-  ok  peerFile.js                 16 ✅                        172ms
-FAIL  peerPost.js                 47 ✅   1 ❌               20532ms
-  ok  peerPostWiring.js            3 ✅                        112ms
-  ok  peerSearchShared.js         16 ✅                         72ms
-  ok  peerStats.js                20 ✅                        131ms
+FAIL  grantsSharedList.js         11 ✅  14 ❌                1108ms
+FAIL  guarantees.js               10 ✅   1 ❌                1373ms
+  ok  harnessAppSuites.js          5 ✅                        306ms
+  ok  harnessRetry.js              4 ✅                        136ms
+  ok  heldStranger.js             11 ✅                       3206ms
+FAIL  hostHardening.js            45 ✅   1 ❌                  99ms
+  ok  htmlEscaping.js             29 ✅                         56ms
+  ok  hubPost.js                  14 ✅                       1511ms
+  ok  hygieneG19_11.js            29 ✅                       1331ms
+FAIL  iconIndex.js                29 ✅   2 ❌                  95ms
+  ok  identityAtBoot.js           11 ✅                       4792ms
+  ok  identityPerception.js       26 ✅                       2646ms
+FAIL  introSpectorApp.js          17 ✅   1 ❌                 647ms
+  ok  introSpectorFamily.js        9 ✅                        630ms
+  ok  introSpectorNode.js         14 ✅                        145ms
+  ok  introspectSearch.js         13 ✅                        132ms
+  ok  introspectionCleanup.js     26 ✅                        203ms
+  ok  inviteLock.js                5 ✅                        700ms
+  ok  inviteMint.js               21 ✅                       2443ms
+  ok  inviteRedeem.js              8 ✅                        547ms
+  ok  inviteSpeakable.js          15 ✅                       1554ms
+  ok  invites.js                  26 ✅                       2144ms
+  ok  jobCallback.js              22 ✅                       4611ms
+FAIL  jobCycle.js                 14 ✅   3 ❌                 942ms
+FAIL  jobsApiGone.js              13 ✅   1 ❌                 217ms
+  ok  jobsAuth.js                 14 ✅                       2308ms
+  ok  jobsCleanUp.js              10 ✅                       5051ms
+  ok  jobsDetails.js              20 ✅                        150ms
+FAIL  jobsLifecycle.js             5 ✅   2 ❌                 160ms
+  ok  jobsSearch.js               39 ✅                       1514ms
+  ok  joinOnboarding.js           40 ✅                       2578ms
+  ok  joinSteps.js                18 ✅                       1147ms
+  ok  keyPermissions.js            4 ✅                        128ms
+  ok  keyTail.js                   4 ✅                        120ms
+  ok  labGone.js                   3 ✅                        215ms
+FAIL  labHome.js                   0 ✅   1 ❌                 266ms
+  ok  labLifecycle.js              0 ✅                1 ⏭     292ms
+  ok  labPanel.js                 14 ✅                         99ms
+  ok  labPersistence.js            0 ✅                1 ⏭     248ms
+  ok  labRefusals.js               0 ✅                1 ⏭     268ms
+  ok  labRelaySurface.js           0 ✅                1 ⏭     117ms
+  ok  labRunLock.js               10 ✅                        337ms
+  ok  labServableStatic.js         0 ✅                1 ⏭     139ms
+  ok  labelIsOwned.js             22 ✅                       2889ms
+  ok  labelShape.js               20 ✅                       2222ms
+  ok  lever.js                    26 ✅                        125ms
+  ok  listElements.js             11 ✅                         90ms
+  ok  listSearch.js               19 ✅                        697ms
+  ok  listSearchModes.js          16 ✅                        199ms
+  ok  listeningApp.js             15 ✅                        204ms
+  ok  liveFrontDoor.js             0 ✅                1 ⏭     307ms
+  ok  logIndexes.js                7 ✅                      23499ms
+  ok  logMigration.js              7 ✅                       1719ms
+  ok  logTable.js                  4 ✅                        971ms
+  ok  memberBroadcast.js           6 ✅                        863ms
+  ok  memberCard.js                8 ✅                        700ms
+  ok  moduleIds.js                 5 ✅                        534ms
+  ok  monitorApp.js               38 ✅                         60ms
+  ok  natterDetails.js            72 ✅                        210ms
+  ok  natterShellFixes.js         23 ✅                       2263ms
+  ok  netFence.js                 20 ✅                       1377ms
+  ok  noCoalescing.js              3 ✅                        146ms
+  ok  noKeylessNode.js             6 ✅                       1149ms
+  ok  nodeCardSigned.js           17 ✅                        126ms
+  ok  nodeInfo.js                 55 ✅                       4677ms
+  ok  nodeServerSettings.js        9 ✅                        920ms
+  ok  nodeSettings.js             11 ✅                        840ms
+  ok  nodeStore.js                32 ✅                      19106ms
+FAIL  noderoutesAlive.js           0 ✅   3 ❌                 480ms
+  ok  oldSearchGone.js             6 ✅                        295ms
+  ok  oneDeclaration.js            2 ✅                        230ms
+FAIL  oneDecoder.js                8 ✅   2 ❌                 140ms
+FAIL  oneDoor.js                   9 ✅   1 ❌                 297ms
+  ok  oneNodeName.js               8 ✅                       2914ms
+  ok  oversize.js                 13 ✅                       1661ms
+  ok  ownStateFolder.js            6 ✅                        245ms
+  ok  ownerAtInstall.js           20 ✅                       1297ms
+  ok  ownerCommand.js             10 ✅                        178ms
+FAIL  ownerFile.js                16 ✅   1 ❌                 993ms
+  ok  ownerLog.js                 37 ✅                       6987ms
+  ok  ownerPost.js                 7 ✅                        417ms
+  ok  ownerToken.js                1 ✅                        787ms
+  ok  packet.js                   34 ✅                        276ms
+  ok  pathCanonicalization.js    100 ✅                        142ms
+  ok  pathJail.js                 13 ✅                        107ms
+  ok  payloadCeiling.js            6 ✅                        734ms
+  ok  peerFile.js                 16 ✅                        265ms
+  ok  peerPost.js                 48 ✅                      14154ms
+  ok  peerPostWiring.js            3 ✅                        119ms
+  ok  peerSearchShared.js         16 ✅                         69ms
+  ok  peerStats.js                20 ✅                        125ms
   ok  postQueue.js                28 ✅                        128ms
-  ok  postQueueBusyAdaptive.js     4 ✅                        111ms
-  ok  postWaitFields.js            5 ✅                       2744ms
-  ok  presenceFeeding.js          17 ✅                       3577ms
-  ok  presenceLearned.js           7 ✅                       5740ms
-  ok  presenceNode.js             42 ✅                       9674ms
-  ok  presenceProof.js            11 ✅                       1877ms
-  ok  presenceReconcile.js        11 ✅                       4343ms
-  ok  presenceStream.js           25 ✅                       1209ms
-  ok  presenceWire.js             10 ✅                      15725ms
-  ok  probabilityBucket.js        12 ✅                         87ms
-  ok  probabilitySearch.js         3 ✅                        113ms
+  ok  postQueueBusyAdaptive.js     4 ✅                         99ms
+  ok  postWaitFields.js            5 ✅                       2055ms
+  ok  presenceFeeding.js          17 ✅                       2295ms
+  ok  presenceLearned.js           7 ✅                       3245ms
+  ok  presenceNode.js             42 ✅                       5832ms
+  ok  presenceProof.js            11 ✅                       1061ms
+  ok  presenceReconcile.js        11 ✅                       2630ms
+  ok  presenceStream.js           25 ✅                        911ms
+  ok  presenceWire.js             10 ✅                       8869ms
+  ok  probabilityBucket.js        12 ✅                         93ms
+  ok  probabilitySearch.js         3 ✅                        170ms
   ok  probabilityStringMatch.js   13 ✅                        113ms
-  ok  probabilityStringObjectMatch.js   8 ✅                        119ms
-FAIL  processBrowserGone.js        4 ✅   1 ❌                 162ms
-  ok  processPipe.js               6 ✅                        347ms
-FAIL  protocolSurface.js          12 ✅   1 ❌                 116ms
-  ok  puppetCommands.js            4 ✅                        344ms
-  ok  puppetDoor.js               10 ✅                        722ms
-  ok  puppetStream.js             12 ✅                        421ms
-  ok  puppetsPending.js            7 ✅          2 ⏳           106ms
-  ok  pushOrigin.js               10 ✅                       5104ms
-  ok  queueRestart.js              9 ✅                       4752ms
-  ok  queueUnderLoad.js            6 ✅                      11202ms
-FAIL  receiptBindsReply.js         5 ✅   4 ❌                 154ms
-  ok  refusalCodes.js              6 ✅                       1378ms
-  ok  relayAdd.js                  4 ✅                         97ms
-  ok  relayCannotRead.js           7 ✅                       1037ms
-  ok  relayCompact.js              6 ✅                        847ms
-  ok  relayConfig.js              20 ✅                         94ms
-  ok  relayConfigWire.js          13 ✅                      16766ms
-  ok  relayForwardedAddress.js     8 ✅                        145ms
-  ok  relayGates.js               11 ✅                       3455ms
-  ok  relayHashDiffers.js          4 ✅                       3238ms
-  ok  relayIntrospection.js       12 ✅                       1233ms
-  ok  relayKeyDoor.js             14 ✅                      35496ms
-  ok  relayKeys.js                18 ✅                       3805ms
-  ok  relayLimits.js              24 ✅                        112ms
-  ok  relayLimitsTool.js          12 ✅                         89ms
-FAIL  relayListIsNodeState.js     19 ✅   3 ❌                2864ms
-  ok  relayListNoCall.js          14 ✅                       2193ms
-  ok  relayMeter.js               21 ✅                       2542ms
-  ok  relayMonitor.js             23 ✅                      10984ms
-  ok  relayOwnerContacts.js        8 ✅                       4794ms
-  ok  relayReconfigure.js         22 ✅                      10875ms
-  ok  relayRecord.js              29 ✅                      92284ms
-  ok  relaySearch.js               8 ✅                       1695ms
-  ok  relaySearchMatcher.js       12 ✅                      11441ms
-  ok  relaySeats.js                8 ✅                       4852ms
-  ok  relayStatus.js              15 ✅                       1055ms
-  ok  relayStore.js               22 ✅                       3102ms
-  ok  relayStrangerDoor.js        35 ✅                      41721ms
-  ok  relayTableByKey.js          28 ✅                       5630ms
-  ok  removePeer.js               18 ✅                       3647ms
-  ok  replayIndex.js               9 ✅                       7489ms
-  ok  replyCap.js                  3 ✅                        577ms
-FAIL  reviewCleanup.js            11 ✅   1 ❌                 239ms
-  ok  rollNarrow.js               10 ✅                        119ms
-  ok  routeStash.js               11 ✅                       8249ms
-  ok  router.js                   30 ✅                        104ms
-  ok  routerPost.js               19 ✅                       1314ms
-FAIL  rowElements.js               1 ✅   2 ❌                 108ms
-  ok  ruleDetails.js              12 ✅                        126ms
-FAIL  runStandsAlone.js            2 ✅   2 ❌                 178ms
-  ok  seal.js                     15 ✅                        159ms
-  ok  sealKeys.js                 12 ✅                        127ms
+  ok  probabilityStringObjectMatch.js   8 ✅                        123ms
+FAIL  processBrowserGone.js        4 ✅   1 ❌                 192ms
+  ok  processPipe.js               6 ✅                        341ms
+FAIL  protocolSurface.js          12 ✅   1 ❌                 118ms
+  ok  puppetCommands.js            4 ✅                        373ms
+  ok  puppetDoor.js               10 ✅                        699ms
+  ok  puppetStream.js             12 ✅                        407ms
+  ok  puppetsPending.js            7 ✅          2 ⏳           128ms
+  ok  pushOrigin.js               10 ✅                       4329ms
+  ok  queueRestart.js              9 ✅                       2931ms
+  ok  queueUnderLoad.js            6 ✅                      10540ms
+FAIL  receiptBindsReply.js         5 ✅   4 ❌                 123ms
+  ok  refusalCodes.js              6 ✅                       1162ms
+  ok  relayAdd.js                  4 ✅                         92ms
+  ok  relayCannotRead.js           7 ✅                        637ms
+  ok  relayCompact.js              6 ✅                        566ms
+  ok  relayConfig.js              20 ✅                        120ms
+  ok  relayConfigWire.js          13 ✅                      16659ms
+  ok  relayForwardedAddress.js     8 ✅                        114ms
+  ok  relayGates.js               11 ✅                       3274ms
+  ok  relayHashDiffers.js          4 ✅                       1622ms
+  ok  relayIntrospection.js       12 ✅                        797ms
+  ok  relayKeyDoor.js             14 ✅                      18002ms
+  ok  relayKeys.js                18 ✅                       2204ms
+  ok  relayLimits.js              24 ✅                        128ms
+  ok  relayLimitsTool.js          12 ✅                        131ms
+FAIL  relayListIsNodeState.js     19 ✅   3 ❌                1566ms
+  ok  relayListNoCall.js          14 ✅                       1279ms
+  ok  relayMeter.js               21 ✅                       2219ms
+  ok  relayMonitor.js             23 ✅                       5326ms
+  ok  relayOwnerContacts.js        8 ✅                       2438ms
+  ok  relayReconfigure.js         22 ✅                       6013ms
+  ok  relayRecord.js              29 ✅                      79576ms
+  ok  relaySearch.js               8 ✅                        929ms
+  ok  relaySearchMatcher.js       12 ✅                       6043ms
+  ok  relaySeats.js                8 ✅                       2789ms
+  ok  relayStatus.js              15 ✅                        650ms
+  ok  relayStore.js               22 ✅                       1669ms
+  ok  relayStrangerDoor.js        35 ✅                      40706ms
+  ok  relayTableByKey.js          28 ✅                       3280ms
+  ok  removePeer.js               18 ✅                       2345ms
+  ok  replayIndex.js               9 ✅                       4678ms
+  ok  replyCap.js                  3 ✅                        591ms
+FAIL  reviewCleanup.js            11 ✅   1 ❌                 263ms
+  ok  rollNarrow.js               10 ✅                        229ms
+  ok  routeStash.js               11 ✅                       6346ms
+  ok  router.js                   30 ✅                        143ms
+  ok  routerPost.js               19 ✅                        932ms
+FAIL  rowElements.js               1 ✅   2 ❌                 124ms
+  ok  ruleDetails.js              12 ✅                        120ms
+FAIL  runStandsAlone.js            2 ✅   3 ❌                 154ms
+  ok  seal.js                     15 ✅                        130ms
+  ok  sealKeys.js                 12 ✅                        103ms
   ok  sealedDerivation.js          9 ✅                        207ms
-  ok  sealedLayering.js            5 ✅                       2146ms
-  ok  searchMemory.js             14 ✅                      11890ms
-  ok  seatsKept.js                38 ✅                      11151ms
-  ok  seenPeers.js                16 ✅                      56804ms
-  ok  selfTargetCapacity.js        7 ✅                       2687ms
-  ok  servableAssets.js           80 ✅                        157ms
-  ok  serverKinds.js               6 ✅                       5222ms
-  ok  serverSurface.js            27 ✅                       3464ms
-  ok  sharedLimit.js               5 ✅                       1821ms
-FAIL  shellAppNeedsServer.js       0 ✅   ? ❌                 131ms
-  ok  shellElements.js             8 ✅                         80ms
-  ok  shellRename.js               3 ✅                       7125ms
-  ok  shellStreamSenders.js       20 ✅                       1903ms
-  ok  shutdownWire.js              9 ✅                       6376ms
-  ok  silentNoMore.js              5 ✅                        367ms
-  ok  spiritDataSearch.js          4 ✅                        102ms
-FAIL  spiritErrors.js             13 ✅   2 ❌                  93ms
-  ok  spiritNamespace.js           4 ✅                        212ms
-  ok  spiritObject.js              8 ✅                        135ms
-FAIL  spiritServers.js             9 ✅   1 ❌                 172ms
-FAIL  stackFrameTestItems.js       5 ✅   2 ❌                 119ms
-  ok  stackFrameViolators.js      18 ✅                        113ms
-  ok  stalledReader.js            12 ✅                       3289ms
-  ok  storeImport.js               9 ✅                       1061ms
-  ok  storeOwnership.js           11 ✅                        351ms
-  ok  storeSheds.js                6 ✅                     109848ms
-  ok  streamHeaderNamesRelay.js    7 ✅                       1888ms
-FAIL  streamReconnect.js           0 ✅   1 ❌                 118ms
-  ok  streamSig.js                20 ✅                       2249ms
-  ok  targetBusy.js                6 ✅                       4544ms
-  ok  testHome.js                  2 ✅                       2712ms
-FAIL  textViewCodeMirror.js       19 ✅   1 ❌                 317ms
-  ok  trafficLog.js               23 ✅                      15045ms
-  ok  transportPending.js          0 ✅          2 ⏳           123ms
-  ok  vaultGuardBattery.js         0 ✅                1 ⏭      77ms
+  ok  sealedLayering.js            5 ✅                       1867ms
+  ok  searchMemory.js             14 ✅                      10834ms
+  ok  seatsKept.js                38 ✅                      10469ms
+  ok  seenPeers.js                16 ✅                      55514ms
+  ok  selfTargetCapacity.js        7 ✅                       2633ms
+  ok  servableAssets.js           80 ✅                        136ms
+  ok  serverKinds.js               6 ✅                       5241ms
+  ok  serverSurface.js            27 ✅                       3260ms
+  ok  sharedLimit.js               5 ✅                       1652ms
+FAIL  shellAppNeedsServer.js       0 ✅   ? ❌                  87ms
+  ok  shellElements.js             8 ✅                        139ms
+  ok  shellRename.js               3 ✅                       7421ms
+  ok  shellStreamSenders.js       20 ✅                       1695ms
+  ok  shutdownWire.js              9 ✅                       6183ms
+  ok  silentNoMore.js              5 ✅                        393ms
+  ok  spiritDataSearch.js          4 ✅                        166ms
+FAIL  spiritErrors.js             13 ✅   2 ❌                 124ms
+  ok  spiritNamespace.js           4 ✅                        213ms
+  ok  spiritObject.js              8 ✅                        118ms
+FAIL  spiritServers.js             9 ✅   1 ❌                 179ms
+FAIL  stackFrameTestItems.js       5 ✅   2 ❌                  65ms
+  ok  stackFrameViolators.js      18 ✅                        123ms
+  ok  stalledReader.js            12 ✅                       3341ms
+  ok  storeImport.js               9 ✅                       1073ms
+  ok  storeOwnership.js           11 ✅                        390ms
+  ok  storeSheds.js                6 ✅                     106711ms
+  ok  streamHeaderNamesRelay.js    7 ✅                       1750ms
+FAIL  streamReconnect.js           0 ✅   1 ❌                 114ms
+  ok  streamSig.js                20 ✅                       2048ms
+  ok  targetBusy.js                6 ✅                       4599ms
+  ok  testHome.js                  2 ✅                       2698ms
+FAIL  textViewCodeMirror.js       19 ✅   1 ❌                 330ms
+  ok  trafficLog.js               23 ✅                      14147ms
+  ok  transportPending.js          0 ✅          2 ⏳           107ms
+  ok  vaultGuardBattery.js         0 ✅                1 ⏭      63ms
   ok  verbTable.js                13 ✅                        101ms
-  ok  verifiedEmail.js            18 ✅                       4372ms
-  ok  worldBuilder.js             22 ✅                       3858ms
-  ok  writableRoots.js            12 ✅                        137ms
-  ok  wslDesktop.js               10 ✅                        141ms
-FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
+  ok  verifiedEmail.js            18 ✅                       4020ms
+  ok  worldBuilder.js             22 ✅                       3689ms
+  ok  writableRoots.js            12 ✅                        110ms
+  ok  wslDesktop.js               10 ✅                        104ms
+FAIL  visualScenarios.js           7 ✅   1 ❌                1979ms
 
 --- RED: something that used to hold does not. These are unmet assertions or suites that died — not the awaiting group below, which is work nobody has written yet.
 
@@ -470,9 +475,13 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
     ***   FAILURE #1.1: kept: [] ❌
 
 --- authWorld.js
-    ***   FAILURE #1.1: OWED by apiAuth/G1.0: noGrant asks "api": expected refused not-granted, got not posted: {"error":"that peer is not reachable right now"} ❌
-    ***   FAILURE #1.2: OWED by apiAuth/G1.0: verbPeer asks {"desk":{"items.search":{"text":"","currentGoalOnly":false,": expected answered, got not posted: {"error":"that peer is not reachable right now"} ❌
-    ***   FAILURE #1.3: OWED by apiAuth/G1.0: verbPeer asks {"desk":{"chat.add":{"id":"x","text":"y","by":"verbPeer"}}}: expected refused not-granted, got not posted: {"error":"that peer is not reachable right now"} ❌
+    ***   FAILURE #1.1: OWED by apiAuth/G1.0: the auth world did not build: {"ok":false,"error":"the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_ ❌
+
+--- capacityFresh.js
+    ***   FAILURE #1.1: FIGURES THAT CANNOT DEPEND ON THE BOX DISAGREE ACROSS BOXES. Either a schema change landed on one box and not the other, or one of these is not box-independent and capacityKinds.js is wrong: perMemberRowBytesUncarded: claude-ubuntu=206, claude-windows=199, wsl-claude=206; cardBytes: claude-ubuntu=387, claude-windows=376, wsl-claude=387; perShadowRowBytes: claude-ubuntu=165, claude-windows=159, wsl-claude=165; perReachablePeerBytes: claude-ubuntu=585, claude-windows=579, wsl-claude=585 ❌
+
+--- capacityRule.js
+    ***   FAILURE #1.1: OWED by goal/G4.19: capacityFresh.js fails: ***   FAILURE #1.1: FIGURES THAT CANNOT DEPEND ON THE BOX DISAGREE ACROSS BOXES. Either a schema change landed on one box and not the other, or one of these is  ❌
 
 --- chatsSearch.js
     ***   FAILURE #1.1: OWED by goal/G29.18: 303 chats answered 503, 0 rows, 107 bytes, more undefined ❌
@@ -491,12 +500,11 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
     ***   FAILURE #1.1: OWED by goal/G2.1: the dialog has no older-change guard ❌
 
 --- deviceGone.js
-    ***   FAILURE #1.1: OWED by goal/G28.2: 61 file(s) still say "device", first: spirit-publish-tree-a5F8Yi/spirit/run/face/face.css, spirit-publish-tree-a5F8Yi/spirit/run/face/shell.js, spirit-publish-tree-a5F8Yi/spirit/run/face.html, spirit-publish-tree-a5F8Yi/spirit/run/index.html, spirit-publish-tree-a5F8Yi/spirit/run/js/answerRelay.js ❌
+    ***   FAILURE #1.1: OWED by goal/G28.2: 61 file(s) still say "device", first: spirit-publish-tree-vFbOAJ/spirit/run/face/face.css, spirit-publish-tree-vFbOAJ/spirit/run/face/shell.js, spirit-publish-tree-vFbOAJ/spirit/run/face.html, spirit-publish-tree-vFbOAJ/spirit/run/index.html, spirit-publish-tree-vFbOAJ/spirit/run/js/answerRelay.js ❌
 
 --- doorContract.js
     ***   FAILURE #1.1: undocumented: none | on the page but not in the tree: config.searchModules, config.setModules, contact.accept, contact.block, contact.forget, contact.get, contact.label, contact.search, contact.senders, contact.setSenders, contact.unblock, fs.annotate, fs.annotations, fs.delete, fs.load, fs.save, fs.search, fs.stat, jobs.api, jobs.authGrant, jobs.authPeer, jobs.authQuery, jobs.authRelabel, jobs.authRevoke, jobs.authSearch, jobs.cancel, jobs.create, jobs.delete, jobs.get, jobs.search, jobs.update, net.fetch, owner.boxGet, owner.boxSearch, owner.command, node.card, node.debug, node.rotateCipher, node.setDescription, node.setName, peer.acquire, peer.post, peer.search, proxy.allow, proxy.close, proxy.get, proxy.open, proxy.remove, proxy.search, relay.claim, relay.get, relay.partnerCheck, relay.record, relay.remove, relay.search ❌
     ***   FAILURE #1.2: the page says 55/10, the tree has 0/0 ❌
-    ***   FAILURE #1.3: the page says 96, the catalogue has 95 ❌
 
 --- everyVerb.js
     ***   FAILURE #1.1: verbs that did not answer properly: config.search (400), config.stat (400), config.load (400), config.annotations (400), config.save (400), config.delete (400), config.annotate (400) ❌
@@ -517,9 +525,9 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
 
 --- grantsSharedList.js
     ***   FAILURE #1.1: OWED by goal/G29.7: Grants did not mount: TypeError: Cannot read properties of undefined (reading 'create')
-        at Object.mount (eval at load (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/grantsSharedList.js:127:40), <anonymous>:173:52)
-        at /tmp/spirit-publish-tree-a5F8Yi/spirit/test/grantsSharedList.js:137:16
-        at Object.<anonymous> (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/grantsSharedList.js:264:3)
+        at Object.mount (eval at load (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/grantsSharedList.js:127:40), <anonymous>:173:52)
+        at /tmp/spirit-publish-tree-vFbOAJ/spirit/test/grantsSharedList.js:137:16
+        at Object.<anonymous> (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/grantsSharedList.js:264:3)
     ***   FAILURE #1.2: OWED by goal/G29.7: the line is {"line":true,"display":"flex","children":[]} ❌
     ***   FAILURE #1.3: OWED by goal/G29.7: native selects made: 0; branch markup  ❌
     ***   FAILURE #1.4: OWED by goal/G29.7: the verb selector before a server: none ❌
@@ -530,7 +538,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
     ***   FAILURE #1.9: OWED by goal/G29.7: the contact dropdown's None:  (cells before it -1) ❌
 
 --- guarantees.js
-    ***   FAILURE #1.1: the published block and the measurement disagree — run `node spirit/test/publishCapacity.js`: README.md capacity block is OUT OF DATE against claude-ubuntu (3ce4152). Run: ❌
+    ***   FAILURE #1.1: the published block and the measurement disagree — run `node spirit/test/publishCapacity.js`: README.md: What one small server holds is OUT OF DATE against agents/claude-ubuntu/summary.json. Run: ❌
 
 --- hostHardening.js
     ***   FAILURE #1.1: added from Windows without --chmod=+x: bash/card-ask.js is 100644 ❌
@@ -554,15 +562,8 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
     ***   FAILURE #1.1: a 'completed' job could not be deleted ❌
     ***   FAILURE #1.2: a 'cancelled' job could not be deleted ❌
 
---- labLifecycle.js
-    ***   FAILURE #1.1: claim: 507 {"error":"this relay is full: 1 of 0 members, which is what 7 MB of RAM can serve at once, three streams each. Its owner must raise ramLimitMB or remove members.","mine":false} ❌
-
---- labPersistence.js
-    ***   FAILURE #1.1: reclaim after restart: 507 {"error":"this relay is full: 1 of 0 members, which is what 1 MB of RAM can serve at once, three streams each. Its owner must raise ramLimitMB or remove members."} — expected 403 "invite required" from a box that remembers it has an owner ❌
-
---- labServableStatic.js
-    ***   FAILURE #1.1: GET /shell/natter/natter.js → 404, expected 200 (the shell fetches app entry scripts) ❌
-    ***   FAILURE #1.2: GET /shell/natter/natter.json → 404, expected 200 (ordinary scoped app data) ❌
+--- labHome.js
+    ***   FAILURE #1.1: no labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. ❌
 
 --- noderoutesAlive.js
     ***   FAILURE #1.1: a card ask on https://noderoutes.net was not answered as a relay: status 429 {"error":"too early — wait Infinity ms","inFlight":false,"busy":false,"retryAfterMs":null,"tooLittleTime":false,"code":" ❌
@@ -578,9 +579,6 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
 
 --- ownerFile.js
     ***   FAILURE #1.1: OWED by cleanup/G1.7: still named in: spirit/run/face/spirit.js ❌
-
---- peerPost.js
-    ***   FAILURE #1.1: after a slow answer: {"ok":false,"status":504,"hash":"64cd365f0c465ba056952bb0e4884cd64bbf4909dd20b4d7a36706eed5996087","error":"no answer yet","stillOpen":true} ❌
 
 --- processBrowserGone.js
     ***   FAILURE #1.1: OWED by goal/G29.13: the file viewer's start form is gone ❌
@@ -608,18 +606,19 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
 
 --- runStandsAlone.js
     ***   FAILURE #1.1: process/js/desk/desk.family/claim.json — the path spirit/test: "description": "Claim a phase of an item as finished, with the commit it was finished at: phase build is the claim-done  ❌
-    ***   FAILURE #1.2: process/js/desk/desk.js — the path spirit/test: if (notTest.length) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(notTest[ ❌
+    ***   FAILURE #1.2: process/js/desk/desk.js — the path spirit/test: if (phase === 'red' && !suites.length) throw refusedWhy('bad-request', 'a red claim delivers its suites: name the spirit ❌
+    ***   FAILURE #1.3: process/js/deskClient/deskClient.js — the path spirit/test: countedAsk(to, 'item.status', { id: id, word: rel, tone: rel.indexOf('spirit/test/') === 0 ? 'test' : 'code' }).answer.c ❌
 
 --- shellAppNeedsServer.js never reported (exit 1)
     ReferenceError: window is not defined
-        at stepsOf (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:591:17)
-        at openStep (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:598:13)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:621:20)
-        at renderDesktop (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:613:23)
-        at declareDynamicApp (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2733:27)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2766:7)
-        at declareIntrinsicApps (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2758:27)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2841:3)
+        at stepsOf (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:591:17)
+        at openStep (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:598:13)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:621:20)
+        at renderDesktop (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:613:23)
+        at declareDynamicApp (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2733:27)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2766:7)
+        at declareIntrinsicApps (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2758:27)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2841:3)
 
 --- spiritErrors.js
     ***   FAILURE #1.1: uncatalogued errors — add each to spiritErrors.js with its meaning:
@@ -634,8 +633,8 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
 
 --- streamReconnect.js
     ***   FAILURE #1.1: the run broke: TypeError: Cannot set properties of undefined (setting 'readyState')
-        at /tmp/spirit-publish-tree-a5F8Yi/spirit/test/streamReconnect.js:53:20
-        at Object.<anonymous> (/tmp/spirit-publish-tree-a5F8Yi/spirit/test/streamReconnect.js:130:3)
+        at /tmp/spirit-publish-tree-vFbOAJ/spirit/test/streamReconnect.js:53:20
+        at Object.<anonymous> (/tmp/spirit-publish-tree-vFbOAJ/spirit/test/streamReconnect.js:130:3)
 
 --- textViewCodeMirror.js
     ***   FAILURE #1.1: OWED by goal/G29.12: the text launcher draws  ❌
@@ -671,9 +670,27 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1841ms
 
 --- stood down: these suites ran, diagnosed the MACHINE rather than the tree, and declined. Not red and not awaiting — the board below is that much smaller than it looks, and clearing the condition is what makes them run.
 
+    liveFrontDoor.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+
+    labLifecycle.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+
+    labPersistence.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+
+    labRefusals.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-vFbOAJ), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+
+    labRelaySurface.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not this checkout — run your own: LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own when none is up.
+
+    labServableStatic.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not this checkout — run your own: LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own when none is up.
+
     vaultGuardBattery.js
       STOOD DOWN: this box does not identify its agent — this box does not say where its vault is: SPIRIT_VAULT is unset, no .spiritbox at the checkout root, and none beside this checkout (expected spirit/run/brains/VAULT_RULES.md). On a box whose agent works in a clone of its own, the vault sits elsewhere and only the box can say where — write .spiritbox, see .spiritbox.example. An unidentified box must not default to either agent: it would assert that one guard should behave like the other, which is how this suite read eight failures against a guard that was right every time
 
-459 suites, 6257 green, 81 red, 45 unhappy, 4 awaiting, 1 stood down
+462 suites, 6224 green, 77 red, 44 unhappy, 4 awaiting, 7 stood down
 
 --- 4 owed

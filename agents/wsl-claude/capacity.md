@@ -1,6 +1,6 @@
 # Capacity on `linux-6.18`
 
-**Measured 2026-10-24, against `cb790a62`.**
+**Measured 2026-10-24, against `36123dfe`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 |
 | node | v24.21.0 |
 | cpus / ram | 32 / 64148 MB |
-| measured at | 2026-10-24T00:20:39.744Z |
-| tree | `cb790a62` |
+| measured at | 2026-10-24T07:46:53.812Z |
+| tree | `36123dfe` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,7 +18,7 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-24, against `cb790a62`
+measured 2026-10-24, against `36123dfe`
 on linux, Node v24.21.0
 
 | minimum to run | |
@@ -27,7 +27,7 @@ on linux, Node v24.21.0
 | dependencies | **none** — built-ins only, no `npm install` |
 | RAM, personal node | **84 MB** at rest |
 | RAM, relay | **61 MB** at rest, before any connection |
-| disc, the install | **4474 KB** in 371 files |
+| disc, the install | **4550 KB** in 372 files |
 
 | fixed cost | RSS |
 |---|---|
@@ -46,9 +46,9 @@ on linux, Node v24.21.0
 
 **~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 0 KB, which is the spread to expect).
 
-**And ~-1 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
+**And ~0 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
 
-So the figure a ceiling should be derived from is the **total**, ~-1 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
+So the figure a ceiling should be derived from is the **total**, ~0 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
 `STREAMS_PER_MB = 16` implies 64 KB, so the guess is 100% pessimistic.
 
 | disc | bytes per row |

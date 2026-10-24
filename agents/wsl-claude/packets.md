@@ -1,10 +1,10 @@
 # Packets: wsl-claude
 
-20 read-only desk asks from this agent's node at `cb790a62`, 2026-10-24T00:20:50.056Z, timed by its own traffic log.
+20 read-only desk asks from this agent's node at `36123dfe`, 2026-10-24T07:47:06.432Z, timed by its own traffic log.
 
 | | median | worst |
 |---|---|---|
-| queue wait (ms) | 43 | 65 |
-| flight (ms) | 142 | 280 |
+| queue wait (ms) | 42 | 308 |
+| flight (ms) | 161 | 753 |
 
-19 posts, 0 needed more than one try, refusals: none.
+24 posts, 0 needed more than one try, refusals: none.

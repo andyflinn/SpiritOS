@@ -1,0 +1,11 @@
+{
+  "agent": "wsl-claude",
+  "members": 2406,
+  "ramMB": 512,
+  "perMember": 3,
+  "streams": 7218,
+  "peers": 917728,
+  "diskMB": 512,
+  "measuredAt": "2026-10-24T07:46:53.812Z",
+  "commit": "36123dfe"
+}
