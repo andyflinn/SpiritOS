@@ -1,5 +1,5 @@
 {
- "change": 96685,
+ "change": 96691,
  "goal": "goal/G33",
  "items": [
   {
@@ -57,7 +57,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -65,7 +65,10 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4751,11 +4754,10 @@
    "id": "goal/G33.8",
    "title": "cleaning up addServer",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "version": 16,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -5604,11 +5606,10 @@
    "id": "goal/G33.10",
    "title": "Allowing owner-faces unlimited fs.saveFile",
    "goal": "goal/G33",
-   "status": "running",
-   "with": "",
+   "status": "writing red",
+   "with": "wsl-claude",
    "version": 5,
    "buttons": [
-    "delete",
     "verify"
    ],
    "blocking": [
@@ -5621,13 +5622,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "wsl-claude",
    "builder": "",
    "verifier": "",
    "creator": "andy",
@@ -5672,8 +5673,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
+    "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -5830,11 +5833,10 @@
    "id": "goal/G33.11",
    "title": "More Desk changes",
    "goal": "goal/G33",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "version": 8,
    "buttons": [
-    "delete",
     "verify"
    ],
    "blocking": [
@@ -5847,13 +5849,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "creator": "andy",
@@ -5900,6 +5902,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
