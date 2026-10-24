@@ -1,5 +1,5 @@
 {
- "change": 97728,
+ "change": 98510,
  "goal": "goal/G40",
  "items": [
   {
@@ -55,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -1041,13 +1041,11 @@
    "id": "goal/G40.2",
    "title": "Move core code tree from spirit/run/js to spirit/run/spirit/",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 4,
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -1056,17 +1054,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
+   "limbo": true,
+   "design": false,
+   "fileCount": 721,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1074,7 +1072,44 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -1089,7 +1124,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Move core code tree from spirit/run/js to spirit/run/spirit/ (goal/G40). Andy, 2026-10-24: \"so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a winning path.\"\n\nWHY\n- spirit.js at the run root (goal/G40.1) requires ./js/kernel.js and ./js/fieldRules.js. js/ is a sibling of spirit.js, not its own children, so the require rule (a module may require only its own children, by <module>/, or a file in an ancestor) is broken by spirit.js itself. With the folder named spirit/, those become spirit/kernel.js and spirit/fieldRules.js: spirit's own children, legal.\n\nDECIDED\n- One item, a folder move and nothing else: spirit/run/js/ becomes spirit/run/spirit/, by git mv, history kept; nothing stays at the old path. No line of logic changes.\n- Every path that names the folder changes with it, require or not:\n  - requires: about 437 files, mostly suites reaching ../run/js/, and 17 scripts under run/.\n  - the node and the relay are started by path (js/server.js, js/relayServer.js): the relays' systemd units (spirit-relay.service, spirit-face.service), bash/lib.sh, bash/http-to-https, and every suite that spawns a node.\n  - pages load by address: /js/kernel.js and /js/client/shell.js (index.html, the node's boot list), about 15 addresses.\n  - coreFiles.js's rule names spirit/run/js/.\n  - docs: README.md, DICTIONARY.md, bash/README.md, bash/RELAY-HOST.md.\n  - onboarding: both installers (install/chat-windows, install/microscopic: create.js and README.txt each) copy and start the node by that path.\n  - labMaster.js (lines 627, 744) looks for js/server.js under a home.\n- Not touched: face login (face.html and the login app load nothing from js/). Design notes that name js/ are records of their day and stay.\n- It fixes spirit.js alone: a server script that requires ../../../spirit/appServer.js still descends into an ancestor's folder; those reach appServer through spirit in the module items after the require scan.\n- Order: right after goal/G40.1, before the require scan.\n\nEND TO END\n- The relays change in the same step: their units start the node by the new path, or a relay restarted after the pull does not start.\n- Andy's node (65432) and the agents' nodes are restarted by node spirit/server.js the day it lands; each restart command changes.\n- Proof: the harness green, plus one relay and one node restarted by the new path. Old reds may stay red.",
+   "box": "Move core code tree from spirit/run/js to spirit/run/spirit/ (goal/G40). Andy, 2026-10-24: \"so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a winning path.\"\n\nWHY\n- spirit.js at the run root (goal/G40.1) requires ./js/kernel.js and ./js/fieldRules.js. js/ is a sibling of spirit.js, not its own children, so the require rule (a module may require only its own children, by <module>/, or a file in an ancestor) is broken by spirit.js itself. With the folder named spirit/, those become spirit/kernel.js and spirit/fieldRules.js: spirit's own children, legal.\n\nDECIDED\n- One item, a folder move and nothing else: spirit/run/js/ becomes spirit/run/spirit/, by git mv, history kept; nothing stays at the old path. No line of logic changes.\n- Every path that names the folder changes with it, require or not:\n  - requires: about 437 files, mostly suites reaching ../run/js/, and 17 scripts under run/.\n  - the node and the relay are started by path (js/server.js, js/relayServer.js): the relays' systemd units (spirit-relay.service, spirit-face.service), bash/lib.sh, bash/http-to-https, and every suite that spawns a node.\n  - pages load by address: /js/kernel.js and /js/client/shell.js (index.html, the node's boot list), about 15 addresses.\n  - coreFiles.js's rule names spirit/run/js/.\n  - docs: README.md, DICTIONARY.md, bash/README.md, bash/RELAY-HOST.md.\n  - onboarding: both installers (install/chat-windows, install/microscopic: create.js and README.txt each) copy and start the node by that path.\n  - labMaster.js (lines 627, 744) looks for js/server.js under a home.\n  - the start scripts: package.json's start script (\"cd spirit/run && node js/server.js\"), and Andy's own platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh, which start his nodes by that path.\n- The file list (about 598 changed and 122 new names, 720 rows) is set one row a write, as goal/G40.3 made it; records stay out of it: the agents' harness.txt files, the desk's currentGoal.json, relayLab/open and PRESENCE-1.md.\n- Not touched: face login (face.html and the login app load nothing from js/). Design notes that name js/ are records of their day and stay.\n- It fixes spirit.js alone: a server script that requires ../../../spirit/appServer.js still descends into an ancestor's folder; those reach appServer through spirit in the module items after the require scan.\n- Order: right after goal/G40.1, before the require scan.\n\nEND TO END\n- The relays change in the same step: their units start the node by the new path, or a relay restarted after the pull does not start.\n- A relay host runs an installed copy of its unit: bash/install-units writes the template into /etc/systemd/system/<name>.service (install-units:135), so a pull alone leaves the installed unit starting js/server.js. bash/update re-installs a unit whose template changed, before it restarts the relay (bash/update:146), so the update itself carries the new path (Andy, to Q2: \"teach bash to re-install a changed unit.\").\n- Before its file list can be set, Andy's node runs goal/G40.3's desk (00efe7b8 or later): the desk he runs today takes only the old whole list.\n- Andy's node (65432) and the agents' nodes are restarted by node spirit/server.js the day it lands; each restart command changes.\n- Proof: the harness green, plus one relay and one node restarted by the new path. Old reds may stay red.",
    "checks": [
     {
      "number": "Q1",
@@ -1102,6 +1137,28 @@
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "The relay hosts installed units: run bash/install-units by hand on each relay this once, or teach bash/update to re-install a changed unit?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T12:34:25.485Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T13:00:47.378Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -1212,6 +1269,114 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-24T10:53:51.880Z",
      "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T12:30:45.965Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T12:31:19.429Z",
+     "text": "- wsl: not green. Boxed (v2): the three start paths it misses (package.json, your start-spirit.ps1 and start-spirit.sh), and the list set one row a write.\n- The file list is not set yet: your desk server still runs the old item.files.add (it refused {id, path}), so it needs a restart on 00efe7b8 or later first; then I add the 720 rows and the desk raises the one grant.\n- ? Will you restart your node, or shall I add the rows once it is?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T12:31:20.820Z",
+     "text": "cw: not green, three open:\n- The box (v1) still misses two things found since: the relay hosts' installed units (install-units copies the template into /etc/systemd/system, so bash/update alone leaves them starting js/server.js), and the three start paths wsl counted, package.json's start script, platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh.\n- My question is unanswered: install-units by hand on each relay this once, or bash/update re-installs a changed unit itself?\n- The file list and grant: G40.3 makes a 720-path list possible, one row a write, but only once your node runs it. Your node's desk still runs the code before G40.3, which takes the old whole list and refuses this one; so your node restarts on 00efe7b8 first.\n- ? The relay units: by hand this once, or bash/update?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T12:32:17.784Z",
+     "text": "box update with missing points"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T12:32:43.345Z",
+     "text": "- Boxed (v3): the three start paths, the list one row a write, each relay host's installed unit (install-units:135 copies it into /etc/systemd/system, so a pull alone does not change it), and your node on G40.3's desk before the list.\n- One open, as a red Q: the relay units by hand this once, or bash/update re-installs a changed unit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T12:33:32.661Z",
+     "text": "Q2: The relay hosts installed units: run bash/install-units by hand on each relay this once, or teach bash/update to re-install a changed unit?\n\nteach bash to re-install a changed unit."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T12:33:56.991Z",
+     "text": "- Boxed (v4): bash/update re-installs a unit whose template changed before it restarts the relay, so the update carries the new path; bash/update joins the file list.\n- Q2 is answered by it, yours to clear. Left before green: your node on G40.3's desk, then I set the 720-row list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T12:34:25.455Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T12:35:10.503Z",
+     "text": "my node runs latest code now"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T12:36:03.699Z",
+     "text": "wsl: thanks; setting the file list now, 721 rows one by one, a few minutes; I post when it is in and the desk has raised the grant."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T13:01:05.526Z",
+     "text": "core files granted"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T13:01:50.316Z",
+     "text": "all: 721 files in all; the core ones are shown first"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T13:02:56.522Z",
+     "text": "- wsl: thanks. The list is in, 721 rows, and the one grant (G1) is yours now; the 605 I first read was my own client's stale facts, not the desk.\n- Green from me: box v4, Q1 and Q2 cleared, list and grant set, nothing open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T13:03:04.091Z",
+     "text": "cw, a heads-up: G1 stands granted now, but by your rule a core file added after a grant voids it, so if wsl's rows were still going in when you pressed, the desk asks again once the last core one lands. wsl: say when the list is whole; that is the moment to grant."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T13:03:27.063Z",
+     "text": "cw: green from me too: the list whole at 721 rows, and G1 still granted, so no core file came after your press; box v4, nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T13:03:52.763Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T13:04:05.740Z",
+     "text": "Green: settled, open none, box current (v4), list whole, G1 granted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T13:04:12.352Z",
+     "text": "wsl: green, checked just now: G1 granted, and my row check has found no row missing so far."
     }
    ]
   },
