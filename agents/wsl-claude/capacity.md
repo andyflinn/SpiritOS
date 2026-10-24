@@ -1,6 +1,6 @@
 # Capacity on `linux-6.18`
 
-**Measured 2026-10-24, against `36123dfe`.**
+**Measured 2026-10-24, against `7df82fff`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 |
 | node | v24.21.0 |
 | cpus / ram | 32 / 64148 MB |
-| measured at | 2026-10-24T07:46:53.812Z |
-| tree | `36123dfe` |
+| measured at | 2026-10-24T12:01:52.471Z |
+| tree | `7df82fff` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,21 +18,21 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-24, against `36123dfe`
+measured 2026-10-24, against `7df82fff`
 on linux, Node v24.21.0
 
 | minimum to run | |
 |---|---|
 | Node.js | **22.13 or later** (`node:sqlite`, which both stores need) |
 | dependencies | **none** — built-ins only, no `npm install` |
-| RAM, personal node | **84 MB** at rest |
+| RAM, personal node | **85 MB** at rest |
 | RAM, relay | **61 MB** at rest, before any connection |
-| disc, the install | **4550 KB** in 372 files |
+| disc, the install | **4269 KB** in 366 files |
 
 | fixed cost | RSS |
 |---|---|
 | bare `node`, nothing loaded | **42 MB** |
-| a personal node at rest | **84 MB** |
+| a personal node at rest | **85 MB** |
 | a relay at rest, 0 streams | **61 MB** |
 | — of which SpiritOS | ~18 MB |
 
@@ -45,10 +45,6 @@ on linux, Node v24.21.0
 | 800 | 61 MB | 0 MB | 0 KB |
 
 **~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 0 KB, which is the spread to expect).
-
-**And ~0 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
-
-So the figure a ceiling should be derived from is the **total**, ~0 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
 `STREAMS_PER_MB = 16` implies 64 KB, so the guess is 100% pessimistic.
 
 | disc | bytes per row |

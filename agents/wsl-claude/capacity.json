@@ -1,43 +1,43 @@
 {
-  "measuredAt": "2026-10-24T07:46:53.812Z",
-  "commit": "36123dfe",
+  "measuredAt": "2026-10-24T12:01:52.471Z",
+  "commit": "7df82fff",
   "platform": "linux",
   "release": "6.18.33.2-microsoft-standard-WSL2",
   "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
   "node": "v24.21.0",
   "cpus": 32,
   "totalRamBytes": 67263688704,
-  "bareNodeRss": 44449792,
-  "relayAtRestRss": 63762432,
-  "nodeAtRestRss": 88449024,
+  "bareNodeRss": 44441600,
+  "relayAtRestRss": 63746048,
+  "nodeAtRestRss": 89448448,
   "perStreamProcessBytes": 0,
-  "perStreamKernelBytes": 0,
+  "perStreamKernelBytes": null,
   "kernelCounter": "/proc/net/sockstat TCP mem",
   "streamSteps": [
     {
       "n": 0,
-      "rss": 63762432,
-      "kernel": 1040384
+      "rss": 63746048,
+      "kernel": null
     },
     {
       "n": 100,
-      "rss": 63762432,
-      "kernel": 1040384
+      "rss": 63746048,
+      "kernel": null
     },
     {
       "n": 200,
-      "rss": 63762432,
-      "kernel": 1040384
+      "rss": 63746048,
+      "kernel": null
     },
     {
       "n": 400,
-      "rss": 63762432,
-      "kernel": 1040384
+      "rss": 63746048,
+      "kernel": null
     },
     {
       "n": 800,
-      "rss": 63762432,
-      "kernel": 1040384
+      "rss": 63746048,
+      "kernel": null
     }
   ],
   "perMemberRowBytes": 603,
@@ -47,8 +47,8 @@
   "perRouteRowBytes": 420,
   "perReachablePeerBytes": 585,
   "perLogEntryBytesSynthetic": 295,
-  "installBytes": 4658973,
-  "installFiles": 372,
+  "installBytes": 4371521,
+  "installFiles": 366,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
@@ -58,23 +58,23 @@
   "spread": {
     "relayAtRestRss": {
       "runs": 1,
-      "median": 63762432,
-      "low": 63762432,
-      "high": 63762432,
+      "median": 63746048,
+      "low": 63746048,
+      "high": 63746048,
       "spreadPct": 0
     },
     "nodeAtRestRss": {
       "runs": 1,
-      "median": 88449024,
-      "low": 88449024,
-      "high": 88449024,
+      "median": 89448448,
+      "low": 89448448,
+      "high": 89448448,
       "spreadPct": 0
     },
     "bareNodeRss": {
       "runs": 1,
-      "median": 44449792,
-      "low": 44449792,
-      "high": 44449792,
+      "median": 44441600,
+      "low": 44441600,
+      "high": 44441600,
       "spreadPct": 0
     },
     "perMemberRowBytes": {
