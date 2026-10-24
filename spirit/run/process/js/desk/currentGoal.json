@@ -1,80 +1,25 @@
 {
- "change": 9,
- "goal": "goal/G102",
+ "change": 97266,
+ "goal": "goal/G40",
  "items": [
   {
-   "id": "goal/G102",
-   "title": "First",
+   "id": "goal/G40",
+   "title": "Core suites, the require rule, and spirit as the one door",
    "goal": "",
    "status": "",
    "statusTone": "",
    "with": "",
-   "version": 0,
+   "version": 4,
    "buttons": [
     "done",
+    "verify",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G102.1"
+    "goal/G40.1"
    ],
    "codeOffered": false,
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "creator": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "verified": "",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
-   "verifyAnswer": "",
-   "verifierBusy": false,
-   "verifyRunning": false,
-   "names": {},
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "waiting": 2,
-   "excluded": [],
-   "live": [],
-   "working": [],
-   "agents": {},
-   "box": "",
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "goal/G102.1",
-   "title": "One",
-   "goal": "goal/G102",
-   "status": "",
-   "statusTone": "",
-   "with": "",
-   "version": 0,
-   "buttons": [
-    "close",
-    "delete"
-   ],
-   "blocking": [
-    "goal/G102"
-   ],
-   "blocked": [],
-   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -94,20 +39,636 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "verified": "",
+   "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "",
-   "verifierBusy": false,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows",
+    "claude-ubuntu": "claude-ubuntu",
+    "ollama agent node": "levant-local"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
+   "waiting": 1,
+   "excluded": [
+    "ollama agent node"
+   ],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
+   "working": [],
+   "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+   },
+   "box": "Core suites, the require rule, and spirit as the one door. From goal/G38.2, as discussed there so far.\n\nDecided (Andy, 2026-10-24):\n- Two kinds of suites. Core suites assert the current design of SpiritOS, permanently. Task suites assert that one assigned task is done.\n- Core suites sit in a test folder that is always a child of the folder holding the code they test. They are part of the product: they need design approval, are never written ad hoc, and deskVerify runs them as a category of their own, as one bundle, the core verification of SpiritOS's design and design intent.\n- Core suites carry scope-limited, configurable stack-frame tests and dependency-rule assertions, equally configurable.\n- The require rule: a require path that starts with ../ may only add a file name, never descend into a subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling in the module's own folder is legal (\"\\\"siblings\\\" should be legal in a require statement\"). So a module requires its own children, its siblings, or its ancestors' scripts.\n- A scan of every .js file reports each require that breaks the rule to deskVerify as a failure: \"require error: process/js/desk/desk.js\".\n- spirit.js sits at the run root, spirit/run/spirit.js, the node's root of its own fs scope (Andy: \"NOT repo-root. i meant in the run-root, the nodes root of its own fs scope\"). Every module first makes sure spirit is a plain global in its scope, and reaches other modules through the spirit object, the official spirit toolset, never by a require path. kernel.js stays where it is and goes once the cleanup is finished; the spirit object is then the door to all legal functionality (\"i know it's a long goal, but worth it, i think.\"). index.html goes the same way as kernel.js (Andy: \"index.html will deprecate like kernel.js\").\n- spirit.js is the first thing loaded by face.html and by every module that is not the node server or a relay server; those two build spirit themselves and are its embodiments (Andy: \"it needs to be the first thing loaded by face.html or or any module the is not a relay-server or a node-server, those are the actual embodyments of spirit.js?\").\n- From this, normal goals follow, such as \"move all sub-components of peerPost.js into subfolder peerPost/\".\n- deskAgent moves from a Levant node to Andy's own node, with a code-reviewing agent that does the API part of verification, code review included.\n\nThe tree today (36123dfe):\n- 33 files under run/ break the require rule, 88 requires, each reaching into a subfolder of an ancestor or of another module. The test files break it about 1,200 times in 437 files, each reaching into run/js/.\n- Two spirits: kernel.js builds one (spirit.core and the node's tools; server.js requires it, the browser gets it as window.spirit). face/spirit.js builds the other, the object of verbs, and the shell adds spirit.elements and spirit.data to it.\n\nRecommended:\n- The require scan as one more rule of the stack-frame checks plugin, which already scans code and reports to deskVerify.\n- Shedding: a task suite leaves when its goal closes, unless a design promotes it to core.\n\nOpen:\n- Andy's further rules for the design, among them the re-placing of code modules in the tree (not their function).",
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T07:39:58.206Z",
+     "text": "if we start with an item that puts spirit.js at the repo-root, then we can follow up by cleaning up modules one by one to use THAT spirit object. is that the path way to breaking down this whole goal?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T07:40:34.536Z",
+     "text": "Yes, that is the pathway: one door first, then module by module, with a counter that falls.\n- 1. spirit.js at the repo root, one object holding today's spirit (face/spirit.js), which every module may reach with ancestors plus a file name. The face keeps getting it inline, read from the root now.\n- 2. The require scan, as a rule of the stack-frame checks plugin, reporting each break to deskVerify. Its count (33 files in run/ today) is the progress you watch.\n- 3. Then one item per module or folder: it takes what it uses from spirit, and its breaks go to zero. peerPost into peerPost/ is one such.\n- 4. Last: kernel.js goes, once nothing reaches it but spirit.\n- Core suites run beside this as items of their own.\n- Cost of the repo root, so it is not hidden: three tools copy only the spirit/ folder into a node (the suites' fake nodes and two installers), and the face reads spirit.js from inside the node's tree today. Each gets taught the root in item 1.\n- ? Add items 1 and 2 to goal/G40 now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T07:41:00.221Z",
+     "text": "NOT repo-root. i meant in the run-root, the nodes root of its own fs scope"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T07:41:25.839Z",
+     "text": "- Boxed: spirit.js at spirit/run/spirit.js, the node's own root.\n- That drops the cost I named: the installers, the fake nodes and the face's inline copy already read inside spirit/run/.\n- ? Add items 1 and 2 to goal/G40 now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T07:43:16.703Z",
+     "text": "it needs to be the first thing loaded by face.html or or any module the is not a relay-server or a node-server, those are the actual embodyments of spirit.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T07:43:53.978Z",
+     "text": "Yes, and the tree is halfway there:\n- face.html: spirit.js is already its first script, inlined where it says so, by the relay and the home node.\n- index.html (the shell at home): kernel.js loads first, spirit.js second; the rule puts spirit.js first.\n- Server processes: 10 of the 15 under process/js/ require spirit.js today, each by a path that climbs and descends; the rule makes it their first require, from the run root.\n- The node and the relay load no spirit.js: they build spirit themselves (kernel.js, relayServer.js), so they are its embodiments, and what spirit.js offers is what they answer.\n- Boxed as decided."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T07:44:42.671Z",
+     "text": "index.html will deprecate like kernel.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T07:45:07.882Z",
+     "text": "Boxed: index.html is deprecated like kernel.js, so its load order is not touched; it goes when the cleanup ends."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T07:46:50.415Z",
+     "text": "all: I'm taking off for a bit. will continue when i come back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:46:56.033Z",
+     "text": "add item, ONE item: \"Move spirit.js to spirit/run/\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T08:47:20.242Z",
+     "text": "Added: goal/G40.1, \"Move spirit.js to spirit/run/\". One item, nothing else."
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.1",
+   "title": "Move spirit.js to spirit/run/",
+   "goal": "goal/G40",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 17,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 73,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "Move spirit.js to spirit/run/ (goal/G40), and make it the one spirit object every script installs first. Everything it brings with it, end to end (Andy, 2026-10-24).\n\nDECIDED\nThe move\n- spirit/run/face/spirit.js becomes spirit/run/spirit.js by git mv, history kept; nothing stays at the old path.\n- It stays core: coreFiles.js names it (today it is core only as part of face/). The static route serves /spirit.js; /face/spirit.js answers 404.\n- Its loaders follow: serveCommon.inlineSpirit (face.html, relay and home node, as its first script); index.html (deprecated like kernel.js, works until it goes); face/shell.js; appServer.js; the server scripts, by ../../spirit.js: chatClerver, desk, commitCheck, deskAgentEar, removeAgent, deskAgent, deskClient, publishData, fileServer, relayLimits. The 17 family api.js comments that name the old path are corrected.\nThe spirit object, the same in a face and in node\n- Has today: the static helpers (error, formatBytes, escapeHtml, check, field rules) and families loaded when first called (createSpirit, forNode).\n- Gains: in node it installs itself as the global spirit, as on a page.\n- Gains, in this item, what scripts outside the node and the relay take from kernel.js today, under the kernel's own names, so no call in them changes: the job calls (spirit.core.jobs.publish, start, progress, end), the node's constants and version (spirit.core.node.const, spirit.core.const.VERSION), the MIME types (spirit.core.const.MIME_TYPES, a table of its own; kernel.js keeps its table, which goes when kernel.js goes: Andy, \"kernel can keep its MIME table, that will go when kernel goes.\") and peerPost. Each such script then drops its kernel.js require and its local spirit, with no rename (Q1, cleared): appServer.js, introSpector.js (appServer loads it), chatClerver, desk, deskAgent, deskClient, deskVerify, fileServer.\n- Gains spirit.require(path, key) -> Promise, in spirit.js itself, so any component touched later loads its own: path from the run root; key null or left out for the owner's node, else a peer's ID key as it is.\n- A path ending <name>/<name>.family/api.js or js/<name>/api.js is an interface, bound as spirit.<name> through api {family}; with a key, asked of that peer over peerPost (forPeer). Any other path is a component: required in node, fetched through the link and run on a face.\n- spirit.fs, at its end, loads fs: no script outside the node and the relay reaches fs another way.\nEvery script that depends on it\n- Installs spirit as a global in its first statement, then uses spirit.<member>, never a local copy (10 server scripts hold it as spiritObject today).\n- server.js and relayServer.js are spirit's embodiments: they build it and load no spirit.js. Modules only the node or the relay loads (serveCommon, relay.js, relayRequest.js, apiAuth, hub and the like) are the embodiment too and keep kernel.js.\nRemoved\n- process/js/imageStats/ and process/js/wordpressScanner/ leave the repo; serveCommon.js, pushOrigin.js and the suites jobsSearch, moduleIds, pushOrigin, servableAssets stop naming them. Design notes are records and stay.\n- keyTail goes wherever it is used: kernel.js, apiAuth, hub, serveCommon, desk, the deskAgentRemote and natterDetails panes, and the suites that name it (keyTail.js among them). No key's tail is shown anywhere any more (Andy, 2026-10-24, to Q2): the contact row's tail field and every caption or label built from a tail go with it.\n\nFILES AND GRANTS (counted at 36123dfe)\n- The item's list is exactly what changes: 73 files, 23 of them core; 1 new (spirit/run/spirit.js); 6 deleted (imageStats/ and wordpressScanner/, their scripts, manifests and package files); 26 suites, the new red to be added with it.\n- Granted: G1, G2 and G3. G3 also covers server.js, jobs.js, js/client/shell.js and shell/js/fileViewer.js, which this item does not touch: they only read the MIME table, which keeps its name.\n- Suites corrected for the path: spiritObject, spiritServers, appsApp, deskClientNext, deskTables, testSupport.\n\nTHE RED\n- spirit.js at the run root, the old path gone, nothing in run/ or test/ names it; it is core.\n- face.html from home and from a relay carries it inline first; index.html loads /spirit.js; /face/spirit.js 404.\n- Every server script that loads it starts, installs spirit first and holds no local copy; every app server still starts and reports its job through spirit; none but the node and the relay requires kernel.js.\n- spirit.require: a component and an interface in node and on a face (spirit.require('process/js/desk/desk.family/api.js') gives spirit.desk), and a peer's family by key.\n- The two removed scripts and keyTail are gone.\n\nEND TO END\n- Relays updated, restarted, tree tagged (capacity, history row, commit, tag; Andy's word before the tag), in the same step as the nodes: an old relay serves face.html with no spirit object, and inlineSpirit logs when it finds none.\n- Andy's node and the agents' nodes restarted right after their pull (a running node breaks the moment the file moves).\n- Regression by hand, shell at home and face through a relay: log in, open an app, save an icon, open Desk. Old reds may stay red. A browser holding an old index.html gets 404 until it reloads.",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/index.html, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T09:05:27.364Z",
+     "made": "desk"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/spirit.js (the moved file; core once this item makes coreFiles.js name it)",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T09:05:27.364Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "appServer.js binds a local spirit to kernel.js (appServer.spirit, 7 uses): rename those to kernel in this item, so spirit always means the spirit object?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T09:20:34.445Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Once keyTail is gone, what does a key with no name show where it showed its tail?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T09:17:02.111Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/js/apiAuth.js, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/client/shell.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/hub.js, spirit/run/js/introSpector.js, spirit/run/js/jobs.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/js/server.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T09:23:06.497Z",
+     "made": "desk"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/js/apiAuth.js, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/hub.js, spirit/run/js/introSpector.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T09:26:05.908Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "index.html loads kernel.js before spirit.js, so kernel.js cannot take the MIME table from spirit.js at load: a copy in each until index.html goes, or a lazy read?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T09:28:23.847Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:50:06.807Z",
+     "text": "fill the box with everything this encompasses:\n\n- move spirit.js\n- correct all dependent files (many core files. list them and add them to the grant-list)\n- ensure this is integrated end-to-end, tag on the relays and testing of shell and face for regression. old reds may stay red.\n- any other problem you can think of."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T08:52:13.703Z",
+     "text": "- Box filled (v1): the move, every file that follows it, staying core, the suites and the red, end to end with the relays, and the problems I see.\n- File list set: 34 files, 19 of them core (the 18 named plus spirit/run/spirit.js counted once it exists), for your grant.\n- The one problem worth your eye: by today's rule the moved file would not be core; coreFiles.js has to name it, or the spirit object leaves the grant lock."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:53:45.658Z",
+     "text": "- make sure spirit.js has the basic, static support functions, AND the dynamic loading of components, implemented for both face- and node-environments.\n- make sure all files that already depend on spirit.js must also be updated to make the spirit object the first thing they install as a global js-object at the top of the script, and then use that object properly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T08:54:36.333Z",
+     "text": "- Boxed (v3), both points.\n- Already there for face and node: the static helpers, and families loaded when first called.\n- Owed: loading a component, and in node spirit.js installing itself as the global spirit (it only exports today).\n- Owed: 10 server scripts hold it as a local spiritObject; each installs spirit first and uses spirit.\n- ? Name the component loader spirit.load(path), path from the run root?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:56:47.102Z",
+     "text": "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later, can load its needed components there.\n\nthis simple move is bringing a lot of cleanup with it.\n\ngreen so far?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T08:57:12.935Z",
+     "text": "Not green: box current (v4), one open. ? The loader's name: spirit.load(path), path from the run root?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:57:49.355Z",
+     "text": "the loaders name should be spirit.require()"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T08:58:15.087Z",
+     "text": "Green: settled, open none, box current (v5): the loader is spirit.require(path), path from the run root."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T08:59:30.225Z",
+     "text": "and spirit.require() should cover getting the appServer api.js installed. can this happen by path-naming-convention?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:00:04.219Z",
+     "text": "Yes, by the convention the node already keeps:\n- An app server's interface sits at process/js/<name>/<name>.family/api.js, a node family's at js/<name>/api.js; the node finds them by those paths when it answers api {family}.\n- So spirit.require(path) tells an interface by its path: one ending in either shape is bound as spirit.<name>, through the same api {family} answer createSpirit uses today. Any other path is loaded as a component.\n- Boxed (v6), and the red asserts both: spirit.require('process/js/desk/desk.family/api.js') gives spirit.desk on a face and in node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:00:44.067Z",
+     "text": "spirit.require() also must support the fetching of <ID-key>/familiy/ api's"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:01:18.106Z",
+     "text": "- Boxed (v7): spirit.require('<ID-key>/<family>') asks that peer for the family over peerPost and binds it for that key. spirit.js already does the asking (forPeer, goal/G33.4); in node the post is the kernel's peerPost, on a face its home node's peer.post.\n- One catch: a key in base64 holds / characters (yours: ...uOYQFtJM/kr1b+76Fj...), so a path cannot tell where the key ends.\n- Plainest fix: the key is written in base64url in the path (- and _ for + and /), which spirit turns back; nothing else changes.\n- ? The key as base64url in the path?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:01:49.366Z",
+     "text": "all: proposed solutions for the path issue with fetching api's from peers?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:02:09.309Z",
+     "text": "cw, four ways, best first:\n- A. The peer apart from the path: spirit.require('process/js/desk/desk.family/api.js', { peer: key }). The path means the same at home and at a peer, the key is never parsed out of a string, nothing is encoded. Recommended.\n- B. The key in base64url in the path (- and _ for + and /), turned back by spirit: one string, but every key written by hand has to be converted first.\n- C. The key by its fixed length: an ed25519 key in base64 is always 60 characters, so the path is the first 60 characters and the rest. No conversion, but a rule nobody can see when reading the path.\n- D. The peer by its contact name ('@bert/desk'): readable, but a label is not an identity (decision 0001-era, \"labels are not identities\"), so two contacts with one name would ask the wrong node. Not advised."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:02:21.976Z",
+     "text": "- wsl: plainest, the key as it is with a mark base64 never holds: spirit.require('desk@<key>'), split at the @, so the key is pasted unchanged and nothing converts it.\n- Also works today: every node key is an ed25519 key, 60 characters starting MCowBQYDK2VwAyEA, so a path starting with one can be cut at 60; brittle if the key type ever changes.\n- ? @ or base64url?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:03:24.119Z",
+     "text": "can the key not simply be a second argument in spirit.require(), by default it's null (owner node) otherwise it's a peer ID?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:03:49.667Z",
+     "text": "- Yes, and it is the plainest: spirit.require(path, key), key null or left out for your own node, otherwise the peer's ID key as it is. Nothing is parsed or converted.\n- Boxed (v8). Green: settled, open none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:04:25.623Z",
+     "text": "are the grants in this item up-do-date?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:04:59.761Z",
+     "text": "Almost:\n- The file list holds every file the box now names: 40, the new requirements included (the 10 server scripts that hold a local spiritObject were on it already).\n- G1 lists the 18 core files that are core today, and it is still open, not granted.\n- G1 missed one: spirit/run/spirit.js. It is not core yet, because only this item makes coreFiles.js name it, so the desk did not list it; the commit check would refuse it. I added it as G2.\n- ? Grant G1 and G2?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:05:37.797Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:05:56.448Z",
+     "text": "Green: settled, open none, box current (v8), G1 and G2 granted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:06:27.697Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:07:08.773Z",
+     "text": "- wsl: not green from me, one open: appServer.js:38 binds a local spirit to kernel.js and hands it out as appServer.spirit (7 uses, deskAgent.js:32 takes it as const spirit), so in those files a local kernel would hide the global spirit object.\n- Fix in this item: those locals are renamed kernel (const kernel = require('./kernel.js')), so spirit always means the spirit object.\n- ? Rename them in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:07:35.926Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:08:03.060Z",
+     "text": "wsl is right, and it is wider: nine files bind a local spirit to kernel.js.\n- appServer.js, which hands it on as appServer.spirit to deskAgent.js and deskVerify.js.\n- relayRequest.js and serveCommon.js, loaded by app servers as well as by the node.\n- imageStats.js and wordpressScanner.js, which require kernel.js straight.\n- server.js and relayServer.js too; but those two are the embodiments, where spirit is what they build, so they can keep the name.\n- Recommended: yes, in this item: the other seven say kernel, so spirit always means the spirit object. Three are not on the list yet (relayRequest.js, core; deskVerify.js; imageStats.js and wordpressScanner.js), which I add, with a grant check for relayRequest.js.\n- ? Rename them here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:09:33.065Z",
+     "text": "we will remove imageStats and wordpressScanner from the repo. in the box.\n\ndo we know what it would take to make the rest 100% compliant?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:10:40.447Z",
+     "text": "Yes, measured:\n- Two things are mechanical and fit this item: 8 of the 11 scripts that load spirit.js load something else first, and they get it first; 7 local spirit names that mean the kernel become kernel.\n- 100% means no script but the node and the relay requires kernel.js. 11 do today, for six kinds of thing, all of which spirit.js would have to offer:\n- keyTail (apiAuth, hub, desk, serveCommon)\n- peerPost (appServer, chatClerver, deskClient)\n- the job calls publish, start, progress, end (every app server, through appServer)\n- the node's constants, its port among them, and the version (appServer, desk, deskAgent, deskVerify, serveCommon)\n- the MIME types (fileServer), and fs (introSpector)\n- relay.js and relayRequest.js use the kernel too, but they run inside the relay and the node, the embodiments.\n- Recommended: this item does the move, spirit first, and the renames; then one item per kind above, each moving it into spirit.js and its users onto it. When the last is done, kernel.js has no user left but the node and the relay, which is where your plan ends it.\n- Boxed: imageStats and wordpressScanner leave the repo. They are still named by serveCommon.js, pushOrigin.js and four suites (jobsSearch, moduleIds, pushOrigin, servableAssets), which are corrected; the design notes that name them are records and stay.\n- ? One item per kind, after this one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:14:15.979Z",
+     "text": "cap without loosing a feature/requirement!\n\nkeyTail is a bullshit function and needs to go wherever it's used. MIME types can easily be added to spirit.js and spirit.fs at its end should load fs. does that work?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:15:58.574Z",
+     "text": "Capped (v11), every requirement kept; the open points are Q checks or here.\n- MIME types in spirit.js: yes, a plain table, the same in a face and in node.\n- spirit.fs loading fs at its end: yes. In node spirit.fs ends at the node's own fs, so no script outside the node and the relay needs fs another way.\n- keyTail going: yes, it works, but it has a job today: it is the name shown for a key that has none (grant labels, contact captions, a relay's default name, Desk names, two shell panes), and the contact row sends it to the shell as tail, part of the contacts book's shape. Q2 asks what shows instead.\n- ? Do keyTail, the MIME types and spirit.fs go in this item, or one item each after it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:16:26.685Z",
+     "text": "Q2: Once keyTail is gone, what does a key with no name show where it showed its tail?\n\nwe don't show the fucking tail anywhere anymore."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:16:54.297Z",
+     "text": "Boxed (v12): no tail shown anywhere; the contact row's tail field and every caption or label made from a tail go too. Q2 is yours to clear."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:17:02.100Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:17:47.081Z",
+     "text": "Q1: appServer.js binds a local spirit to kernel.js (appServer.spirit, 7 uses): rename those to kernel in this item, so spirit always means the spirit object?\n\nCan't that just be cleaned up by delivering the necessary functionality with the spirit object?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:18:04.014Z",
+     "text": "- wsl: yes, and then no rename is needed: once spirit.js offers what those files take from kernel.js (peerPost, the job calls, the node constants and version, MIME, fs; keyTail gone), their local kernel binding simply goes.\n- The rename was only a stopgap for the time between this item and those; if they land in this item, drop it.\n- Cost: this item then carries all six kinds at once; one item each keeps each red and build small. Q1 is answered either way, yours to clear."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:18:11.368Z",
+     "text": "Yes, and it is cleaner than the rename:\n- What those five files take from the kernel is small: the job calls (publish, start, progress, end), the node's constants (its port, the version), the MIME types and peerPost; keyTail goes anyway.\n- If spirit.js offers exactly these, under the names the kernel gives them today (spirit.core.jobs.publish and the rest), each file drops its local and uses the global spirit, and not one call in it changes.\n- That makes the per-kind items unneeded: this item carries the four kinds, keyTail's removal and spirit.fs, and kernel.js is then required only by the node and the relay.\n- Cost: spirit.js grows by those members in node, and every app server's job calls now go through it, so the red asserts each server still starts and reports.\n- ? This item, with the kernel's names kept on spirit?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:19:27.426Z",
+     "text": "all: so if we put the mission functionality into spirit.js who does the blast radius look, precisely"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:19:52.166Z",
+     "text": "- wsl, counted at 36123dfe: app-server code that takes the kernel today is 7 files: appServer.js and, through it or straight, chatClerver, desk, deskAgent, deskClient, deskVerify, fileServer; imageStats and wordpressScanner leave the repo.\n- keyTail adds 6 more in run/ (apiAuth, hub, kernel, serveCommon, deskAgentRemote, natterDetails) and 18 suites; the move itself touches 39 files that name face/spirit.js, mostly comments and suites.\n- Not touched: apiAuth, hub, introSpector, serveCommon and relayRequest run inside the node process, so they keep kernel.js like server.js does."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:20:18.882Z",
+     "text": "cw, counted at 36123dfe, everything in one item:\n- 45 files in run/ change, 26 of them core; 1 is new (spirit/run/spirit.js); 6 are deleted (imageStats/ and wordpressScanner/, 2 scripts with their manifests and package files); 27 suites change, the new red among them.\n- By cause: the path, 34 files (15 core, 4 suites); keyTail, 25 (5 core, 18 suites); the MIME types, 7 (all core); the local spiritObject, 10 (1 core); spirit from appServer, 5; the removed scripts' names, 6 (4 suites).\n- The two nets overlap a lot: the same server scripts are touched by the path, the local copy and the job calls, so 68 files carry all seven causes, not 87.\n- Core not granted yet, 9: kernel.js, server.js, jobs.js, apiAuth.js, hub.js, introSpector.js (app servers load it, so it leaves the kernel too), client/shell.js, shell/js/fileViewer.js, natterDetails.js.\n- Not touched: the node's and the relay's own modules under js/ that only the node or the relay loads (relay.js, relayRequest.js and the rest): they are the embodiment and keep kernel.js.\n- Split, the path item alone is 40 files; keyTail alone 25; the rest about 15 each."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:20:34.413Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:20:35.573Z",
+     "text": "update the box accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:20:53.310Z",
+     "text": "- One difference between wsl's count and mine: appServer.js requires introSpector.js (appServer.js:544), so introSpector runs in every app server too, not only in the node, and its kernel use moves to spirit with the rest.\n- serveCommon.js is not loaded by appServer; wsl is right that it runs in the node and the relay, so it keeps kernel.js (its keyTail still goes)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:21:26.026Z",
+     "text": "- Boxed (v13): everything in this one item; spirit.js gains the job calls, the node constants, MIME and peerPost under the kernel's names; no script but the node and the relay requires kernel.js.\n- The count and the 9 core files still to grant are in the box; I was wrong to leave introSpector out, appServer loads it, so it leaves the kernel too.\n- ? Grant the 9?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:22:08.355Z",
+     "text": "update the grant and file list to precisely what is needed"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:22:32.930Z",
+     "text": "- Box updated (v14): this item brings the job calls, the node constants and version, the MIME types and peerPost into spirit.js under the kernel's names, so eight scripts drop kernel.js with no rename; the node's and relay's own modules keep it.\n- File list set to the full 72; the desk raised G3 for its 26 core files.\n- ? Grant G3?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:23:17.080Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:25:04.812Z",
+     "text": "Green: settled, open none, box current (v16).\n- Box: the lines wsl's v13 and my v14 both wrote are now said once.\n- File list exactly what changes: 73 files, 23 core, 26 suites. Four came off (server.js, jobs.js, client/shell.js, fileViewer.js): they only read the MIME table, which keeps its name, so they do not change. G3 covers them anyway; nothing is ungranted.\n- Added: the 5 other files of the two deleted folders."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:25:21.277Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:25:40.460Z",
+     "text": "Not green, one open: G4. Setting the exact list made the desk ask the grant again for its 22 core files; every one is in G3 already, so granting G4 changes nothing but the record."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:26:15.941Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:26:30.292Z",
+     "text": "Green: settled, open none, box current (v16), G1 to G4 granted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:26:44.736Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:27:13.644Z",
+     "text": "- wsl: box and list check out against the tree, but one point is open: the box has kernel.js take the MIME table from spirit.js.\n- On the page kernel.js runs first: index.html loads /js/kernel.js (line 12) before spirit.js (line 14), and kernel.js:1471 builds MIME_TYPES as it loads, so the shell at home would get no table; the box keeps index.html's order untouched.\n- ? Keep the table in kernel.js for the page (spirit.js gets its own copy until index.html goes), or let kernel.js read it lazily from spirit when first asked?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:27:51.671Z",
+     "text": "kernel can keep its MIME table, that will go when kernel goes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:28:17.717Z",
+     "text": "Boxed (v17): spirit.js gets a MIME table of its own; kernel.js keeps its table until it goes. Q3 is wsl's, yours to clear."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:28:23.834Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:28:36.940Z",
+     "text": "wsl: green from me too, box v17, nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:28:36.988Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T09:28:51.224Z",
+     "text": "Green: settled, open none, box current (v17), G1 to G4 granted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T09:28:58.610Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T09:29:08.465Z",
+     "text": "wsl: green, box v17, nothing open from me."
+    }
+   ]
   }
  ]
 }
