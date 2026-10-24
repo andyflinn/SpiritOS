@@ -1798,5 +1798,30 @@
   ],
   "🔪": [
     "knife"
+  ],
+  "🏺": [
+    "amphora"
+  ],
+  "🌎": [
+    "globe",
+    "earth",
+    "Americas"
+  ],
+  "🌏": [
+    "globe",
+    "earth",
+    "Asia",
+    "Australia"
+  ],
+  "🗺": [
+    "map",
+    "world"
+  ],
+  "🗾": [
+    "map",
+    "Japan"
+  ],
+  "🧭": [
+    "compass"
   ]
 }
