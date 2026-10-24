@@ -1,5 +1,5 @@
 {
- "change": 97727,
+ "change": 97728,
  "goal": "goal/G40",
  "items": [
   {
@@ -55,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -1219,12 +1219,11 @@
    "id": "goal/G40.3",
    "title": "File lists past MAX_PAYLOAD break no item",
    "goal": "goal/G40",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 14,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
