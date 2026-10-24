@@ -145,6 +145,29 @@ unit_known() {
   systemctl cat "$1.service" >/dev/null 2>&1
 }
 
+# ── THE INSTALLED UNIT FOLLOWS ITS TEMPLATE (goal/G40.2) ──────────────
+#
+# Andy, to the relays' units: "teach bash to re-install a changed unit." The unit systemd runs is a copy
+# install-units wrote into /etc/systemd/system; a pull does not change it. When the script it starts differs
+# from the template's (G40.2 moved the start script into spirit/), install-units runs again under the owner
+# the relay already has (it refuses without OWNER_KEY and never replaces an owner), and the unit restarts.
+unit_current() {
+  local unit="$1" want have owner
+  unit_known "$unit" || return 0
+  want=$(sed -n 's/^ExecStart=[^ ]* \([^ ]*\).*/\1/p' "$REPO_ROOT/bash/systemd/${UNIT_TEMPLATE}.service" | tail -1)
+  have=$(systemctl cat "$unit.service" 2>/dev/null | sed -n 's/^ExecStart=[^ ]* \([^ ]*\).*/\1/p' | tail -1)
+  [ -n "$want" ] && [ -n "$have" ] && [ "$want" != "$have" ] || return 0
+  owner=$(node -e 'process.stdout.write(require(process.argv[1] + "/spirit/relayAuth").loadOwner(process.argv[2]) || "")' \
+    "$RUN_DIR" "$RUN_DIR" 2>/dev/null) || owner=""
+  if [ -z "$owner" ]; then
+    warn "the installed $unit starts $have, the template $want, and no owner is on record here: run OWNER_KEY=<owner key> $REPO_ROOT/bash/install-units by hand"
+    return 0
+  fi
+  say "the installed $unit starts $have, the template $want — install-units again"
+  OWNER_KEY="$owner" "$REPO_ROOT/bash/install-units" || die "install-units failed; the installed unit still starts $have"
+  systemctl restart "$unit"
+}
+
 say() { echo "==> $*"; }
 
 ok() { echo "    ok  $*"; }
@@ -165,6 +188,10 @@ warn() { echo "    !!  $*" >&2; }
 # the refusal from the journal and fail.
 check_started() {
   local unit="$1"
+  # A unit older than its template is installed again first (goal/G40.2), so the very first update to a tree
+  # that moved its start path still comes up: that update runs the bash/update it started with, which may
+  # know nothing of this, but it sources this lib.sh from the new tree and calls check_started.
+  unit_current "$unit"
   sleep 3
   if systemctl is-active --quiet "$unit"; then
     ok "$unit is running"

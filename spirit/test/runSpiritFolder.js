@@ -98,7 +98,11 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
   if (units.every(function (u) { return / spirit\/server\.js /.test(u.exec); })) test.check('both unit templates start node spirit/server.js');
   else test.fail(OWED + 'the units start ' + short(units.map(function (u) { return u.f + ': ' + u.exec; })));
   const update = read('bash/update') || '';
-  if (/install-units/.test(update)) test.check('bash/update re-installs the units (install-units) when it updates');
+  // Since the first update to a moved start path runs the bash/update it started with, the re-install lives in lib.sh's
+  // unit_current, which bash/update and check_started both call (wsl-claude, building goal/G40.2).
+  const lib = read('bash/lib.sh') || '';
+  const current = (/unit_current\(\)\s*\{[\s\S]*?\n\}/.exec(lib) || [''])[0];
+  if (/install-units/.test(current) && /unit_current "\$UNIT_NAME"/.test(update) && /check_started\(\)\s*\{[\s\S]*?unit_current/.test(lib)) test.check('bash/update re-installs a changed unit (install-units, through lib.sh unit_current), and check_started does too');
   else test.fail(OWED + 'bash/update does not re-install a changed unit before it restarts the relay');
 
   // ── 5. THE START PATHS ───────────────────────────────────────────────
