@@ -1,5 +1,5 @@
 {
- "change": 96975,
+ "change": 96977,
  "goal": "goal/G33",
  "items": [
   {
@@ -16,9 +16,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G33.10"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -59,7 +57,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -5679,13 +5677,12 @@
    "id": "goal/G33.10",
    "title": "Allowing owner-faces unlimited fs.saveFile",
    "goal": "goal/G33",
-   "status": "verified green",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 5,
    "buttons": [
-    "done",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G33"
@@ -5751,7 +5748,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "The fs family is owner only, hard-coded, and its loadFile and saveFile have no size limit.\n\nAndy, 2026-10-24: \"would i allow a peer fs access, ever? it could un-install apps from my face etc...\" and \"i want fs to be hard-coded owner only, with no size limits on it's loadFile and saveFile....\", and on the work file: \"it is understood, we will always copy, then delete the temp file.... but that's what a temp folder is for, if garbage accidentally remains (node-restart etc) the garbage is where it belongs....\"\n\n- Owner only: the owner on his node's loopback and the node's own faces. No peer reaches any fs verb, whatever the grants: the gate refuses fs as it refuses DEBUG and DEPENDENCIES, and a grant naming fs cannot be made.\n- No size limit: fs.loadFile and fs.saveFile take and answer a file of any size. From a face, the answer comes down in sealed pieces, as today, and the save goes up in parts.\n- A save from a face names its size up front. Your node streams each part, as it arrives, into a work file in the system's temp folder, never holding the whole file in memory.\n- On the last part, the work file is copied to the target (a pre-existing file, or a new one in the tree), then deleted.\n- A transfer that fails is dropped: a work file with no new part for an hour is deleted. Garbage left by a node restart stays in the system temp folder, where it belongs.\n- A refusal for size, wherever one is left, says too big and gives the size; never \"Invalid JSON body\".\n- Done when: the whole icon set saves from the face; a peer holding an fs grant is refused; a file larger than one request saves and loads whole from the face; a broken upload leaves the target as it was and its work file gone after the hour.",
