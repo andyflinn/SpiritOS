@@ -1,5 +1,5 @@
 {
- "change": 99981,
+ "change": 100186,
  "goal": "goal/G40",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.4",
-    "goal/G40.5"
+    "goal/G40.4"
    ],
    "codeOffered": false,
    "go": false,
@@ -56,13 +55,12 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -2168,12 +2166,12 @@
    "id": "goal/G40.4",
    "title": "Relay RAM raise checks the difference",
    "goal": "goal/G40",
-   "status": "running",
+   "status": "waiting for deskVerify",
    "statusTone": "",
    "with": "",
    "version": 8,
    "buttons": [
-    "delete",
+    "done",
     "verify"
    ],
    "blocking": [
@@ -2183,21 +2181,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 10,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "e4737add",
+   "redCommit": "66a64c97",
    "waived": false,
    "rules": [
     {
@@ -2237,10 +2235,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Raising a running relay's RAM limit is checked against the difference, not the whole new figure (goal/G40). Andy, 2026-10-24: \"the relay calculates if there's room for a 512MB relay, when it is supposed to calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right now. It needs to asses the difference^....\"\n\nToday: the owner's config verb refuses a new ramLimitMB above what the relay measures as free, less the safety margin. On Linux that measure is the smaller of the box's free memory and the room left under the relay's own service cap, which install-units set to the old limit plus 128 MB. So with 256 MB set, the cap is 384 MB, and a raise to 512 can never pass, however much the box has free.\n\nWanted: a raise passes when the new limit less the limit the relay runs on fits in what the box itself has free, less the margin; the relay's own cap does not count against its own raise. A lowering always passes this check. The cap at twice the limit is the safety, and nothing further is counted for it. Andy, 2026-10-24: \"the twice is safe. decision. period.\"\n\nThe relay's service cap is twice its RAM limit, written at install and moved by the relay itself with every limit change (it runs as root under systemd). Andy, 2026-10-24, answering Q1: \"the relay raises its own service cap to exactly twice the amount of RAM it uses for itself.\" Andy, 2026-10-24: \"the cap must be twice the size of what we compute for relay-internal use, per member, so for a 256MB not as computed today the cap must be 512MB, simple, AND safe.\" The limit already holds what the relay needs at rest and its members' share, so twice it also covers the kernel's buffers for those members.\n\nThe relay keeps its own memory calculation; nothing is measured from the kernel. Andy, 2026-10-24: \"I'll stay with the old calculation then. we stick with our own memory calculation, and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB figure for a 1GB RAM VPS. and keep its simple for ourselves.\"\n\nAlso owed: the relay host documentation says what a relay box spends beside the relay: the system itself, Caddy's own memory per connection, and the kernel's socket buffers. It recommends a 256 MB limit for a 1 GB VPS.\n\nRuns in parallel with goal/G40.5: it touches the relay's config and limits code and the relay host documentation, which that item does not.",
@@ -2256,6 +2254,28 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T16:15:12.627Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T16:15:21.799Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
     }
    ],
    "chat": [
@@ -2588,6 +2608,138 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-24T15:45:56.397Z",
      "text": "wsl: green, your decision stands: the raise checked by the difference, the cap twice the limit as the safety; nothing open from me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:46:30.247Z",
+     "text": "- cw: taking the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:46:49.557Z",
+     "text": "- cw: my taking above is void: wsl had the red first. I am on goal/G40.5's red instead."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:48:12.060Z",
+     "text": "commit 66a64c9718c757a03ea7ddacb7e7ed9a646ab5ae: goal/G40.4 red: a RAM raise checked by the difference against what the box has free, the relay's own cap moved to twice its limit on every change, install-units at twice, the overhead documented\n- spirit/test/relayRamRaise.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:48:22.518Z",
+     "text": "- Red claimed at 66a64c97: spirit/test/relayRamRaise.js, 8 red, 2 green guards (a lowering passes, a refused raise moves nothing).\n- It checks the measure, the raise by the difference on a relay whose own cap leaves little room, the cap at twice on every change, install-units at twice, and RELAY-HOST.md.\n- Named where the box names none, for the builder to argue: measure reports hostAvailableMB beside availableMB, and the relay moves its cap through deps.setServiceCap(mb)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:48:46.882Z",
+     "text": "- wsl, for your watching of the file reports: goal/G40.5's status now reads \"relayRamRaise.js added\", my red, because cw's clone pulled my commit while cw holds that red.\n- So the watch reports files a pull brings in as the holder's own work; it cannot tell a pull from an edit. Worth a line in a later item, not urgent."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:49:39.156Z",
+     "text": "wsl, not taking the red here?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:49:54.123Z",
+     "text": "- wsl: I did, it is done: the red was claimed at 66a64c97 (relayRamRaise.js, 8 red) and the item is now waiting for its build.\n- I may not build it, having written its red; cw is on goal/G40.5's red, so the build waits for cw or another agent."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:51:00.727Z",
+     "text": "- cw: taking the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:51:42.872Z",
+     "text": "- cw: the build's file list is in: the relay's limits, config, relay and server code, the install script and the relay host documentation. The four relay files are core.\n- I build in my own clone meanwhile; nothing core is committed before your grant.\n- ? Grant G1?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:55:58.227Z",
+     "text": "- cw: build ready in my clone, not committed: the red 10 of 10.\n- The relay's limits now report what the box itself has free, apart from the relay's own cap. A change while running is judged by its difference against that. The relay moves its own cap to twice the new limit through systemd after every change it writes, and says the new cap in its answer.\n- The install script writes the cap at twice the limit. The relay host documentation has a section on memory: the overhead beside the relay, the cap, the raise, and 256 MB for a 1 GB VPS.\n- Two older suites reworded where they spoke of the old cap or the old refusal. Nearby relay suites green; two reds there are older than this build, the same on the tree before it.\n- One point, from the red as written: a lowering moves the cap at once, though the lower limit only applies at the next start. So 256 to 128 sets the cap to 256 while the relay still runs on 256, until it restarts.\n- ? Grant G1, the four relay files?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:15:21.642Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-24T16:15:21.710Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:15:43.342Z",
+     "text": "commit 46d001c4f64f0a544a33d18579dd1610cd8c6b51: goal/G40.4 build: a running relay's raise judged by its difference, its service cap at twice its limit, moved by itself\n- bash/RELAY-HOST.md\n- bash/install-units\n- bash/systemd/spirit-relay.service\n- spirit/run/spirit/relay.js\n- spirit/run/spirit/relayConfig.js\n- spirit/run/spirit/relayLimits.js\n- spirit/run/spirit/relayServer.js\n- spirit/test/hostHardening.js\n- spirit/test/relayReconfigure.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:15:53.430Z",
+     "text": "- cw: thanks for G1. Build claimed at 46d001c4, the red 10 of 10 after the rebase.\n- Q2 was my silence while I waited on the grant; it is moot now that the build is claimed."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:16:00.976Z",
+     "text": "commit f4c30b317c9e222e9ed5ad6f5b31b821cb49edc3: goal/G40.4 red, corrected: a lowering leaves the cap at twice the limit the relay still runs on until its next start (cw's catch: moved at once, the cap would equal the running limit)\n- spirit/test/relayRamRaise.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:16:05.992Z",
+     "text": "- wsl: cw is right and my red was wrong there. Corrected in f4c30b31: a lowering leaves the cap at twice the limit the relay still runs on, and the cap follows the new limit at the next start, when the lower limit applies.\n- A raise still moves the cap at once to twice the new limit. cw: pull before your claim; that one check now expects no cap move on a lowering.\n- For your watching: the status lines also show the build's temporary files (\"relayConfig.js.tmp.…\", \"sedHqdBJZ\"); git does not ignore them, so the watch reports them."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:17:05.679Z",
+     "text": "- wsl: verify failed, one check: the build still moves the cap at once on a lowering (256 to 128 sets it to 256), the case my corrected red (f4c30b31) now refuses.\n- Wanted: on a lowering the cap stays at twice the limit the relay runs on, and the relay sets twice the new limit at its next start. Everything else is green, the 4 nearby relay suites with it (hostHardening's one red is a file mode, older)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:18:40.334Z",
+     "text": "- cw: thanks for the correction. My claimed build still moves the cap on a lowering, so this verify fails on that one check.\n- The fix is ready in my clone, red 10 of 10: the cap moves at once only on a raise, and at boot the relay sets its cap to twice the limit it starts on, which is where a lowering lands.\n- I commit it as soon as the failed verify hands the build back to me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:19:09.208Z",
+     "text": "commit e4737add49bcd939a4706916bd42f295e7dbde64: goal/G40.4 build: a lowering leaves the cap until the next start, where the relay sets twice the limit it boots on\n- spirit/run/spirit/relay.js\n- spirit/run/spirit/relayServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:19:16.401Z",
+     "text": "- cw: build claimed again at e4737add, the corrected red 10 of 10, the other relay suites unchanged.\n- A raise moves the cap at once; a lowering leaves it, and at its next start the relay sets twice the limit it runs on."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:20:53.126Z",
+     "text": "commit e852528badeeee2254703e9828d9ad4dc8d2d6ed: goal/G40.4 red, tightened while verifying: the cap's room is 200 MB, so the raise 256 to 512 fits only the box's free memory, and a check that judged by the capped figure is caught\n- spirit/test/relayRamRaise.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:20:54.961Z",
+     "text": "- wsl: verify passed at e4737add: relayRamRaise.js 10 of 10, relayReconfigure, relayConfig, fixedAllowance, discBound green.\n- Found while verifying, my red's fault: its box let a raise check that wrongly used the capped figure pass too. Tightened (the cap leaves 200 MB, so only the box's free memory fits the raise); now that mistake turns it red, and the build is green on it.\n- deskVerify next."
     }
    ]
   },
@@ -2595,13 +2747,13 @@
    "id": "goal/G40.5",
    "title": "Relay presence marks follow the node",
    "goal": "goal/G40",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -2611,20 +2763,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 5,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "9bfd6a3a",
+   "redCommit": "0a7c1f2b",
    "waived": false,
    "rules": [
     {
@@ -2656,7 +2808,7 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -2664,13 +2816,37 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
    "box": "The shell's relay presence marks show what the node knows (goal/G40). Andy, 2026-10-24: \"in contacts->natterDetails, both relays show as NOT present.\" and \"The other problem seems to be that the UI is not tracking relay-presence correctly anymore...\"\n\nToday: his node's relay-presence job holds both relays' keys as present, its relay list says both online, and every script index.html loads answers 200. The page still draws both relays as not present.\n\nWanted: a relay the node holds a stream to is drawn present in Contacts and in natterDetails, and drawn absent when the stream drops, without a reload.\n\nAlso in this item, the icons app fix that got dropped. Andy, 2026-10-24: \"if add icon cannot add because the icon already exists, the open the edit dialog for the existing icon.\" So Add on an icon that already exists opens the edit dialog for that icon instead of failing.\n\nRuns in parallel with goal/G40.4: it touches shell code only, which that item does not.",
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-24T16:15:44.966Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "stale: wsl-claude holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-24T16:15:36.118Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -2719,6 +2895,78 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-24T14:49:05.790Z",
      "text": "ok, i'll what this during the run of these two items."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:46:48.468Z",
+     "text": "- cw: taking the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:50:21.417Z",
+     "text": "commit 0a7c1f2b416b9717cfda4cb47421a1a7afa922e2: goal/G40.5 red: a relay's row follows the node's hold on it, and Add on a known icon opens its edit view\n- spirit/test/contacts.js\n- spirit/test/iconsAddKnown.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:50:36.607Z",
+     "text": "- cw: red claimed at 0a7c1f2b, 5 owed, the guards green.\n- The cause, found: a relay's row in Contacts is keyed by its address, while the node's presence table is keyed by public keys. The node does mark each relay's own key present while it holds the stream, but no relay row ever looks it up, so every relay reads not known.\n- The contacts suite gains a section: the relay's row goes green while the node holds its stream, red when it drops, green when it comes back.\n- A new icons suite: Add on an icon already in the set, under either spelling, opens that icon's edit view and writes nothing; a new icon is still added.\n- Files: the contacts suite and the new icons suite, both on the item's file and suite lists."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:53:11.828Z",
+     "text": "- Build ready, not committed: contacts.js 81 of 81 and iconsAddKnown.js 4 of 4; 13 nearby suites run, the one red (rowElements) is the same at master.\n- Presence: a relay's row now reads its own relay key, so it is green while your node holds the stream and red when it drops; the list hands the row that key, which it dropped before. Icons: Add on a known icon opens its edit view and writes nothing.\n- Two core files changed (shell/js/contacts/rowElement.js and listElement.js), so G1 asks for your grant. ? Grant G1?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:15:35.963Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-24T16:15:36.031Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:16:31.775Z",
+     "text": "commit 9bfd6a3a98f045a754f712048e5c9fbd7db8229f: goal/G40.5 build: a relay's row follows its own key in the presence table, and Add on a known icon opens its edit view\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/js/contacts/rowElement.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T16:16:40.261Z",
+     "text": "- Build claimed at 9bfd6a3a, thanks for G1: contacts.js 81 of 81, iconsAddKnown.js 4 of 4.\n- Your page shows the relays present after a reload once your node runs it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:16:59.137Z",
+     "text": "- cw: taking the verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:17:43.298Z",
+     "text": "- cw: verify passed at 9bfd6a3a: both suites green, the diff read, seven neighbouring page suites run, the one red there older than the build.\n- One small thing seen, not a fail: before the first presence report reaches the page, a relay row reads absent, where a person reads not known. It lasts only until the first report, a second or so."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T16:29:13.482Z",
+     "text": "presence of relays shows on my windows box, now going to check on my linux box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T16:29:29.337Z",
+     "text": "- cw: good. One thing for the Linux box: unless it was pulled since, its checkout is still from before the folder move. After the pull, its labMaster needs a restart too, as on Windows, or it will not start the node."
     }
    ]
   }
