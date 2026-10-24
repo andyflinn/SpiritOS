@@ -1,5 +1,5 @@
 {
- "change": 99804,
+ "change": 99981,
  "goal": "goal/G40",
  "items": [
   {
@@ -56,12 +56,13 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [],
    "agents": {
@@ -2167,13 +2168,11 @@
    "id": "goal/G40.4",
    "title": "Relay RAM raise checks the difference",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 8,
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -2182,17 +2181,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
+   "limbo": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -2200,7 +2199,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -2209,26 +2237,369 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Raising a running relay's RAM limit is checked against the difference, not the whole new figure (goal/G40). Andy, 2026-10-24: \"the relay calculates if there's room for a 512MB relay, when it is supposed to calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right now. It needs to asses the difference^....\"\n\nToday: the owner's config verb refuses a new ramLimitMB above what the box has free now, less the safety margin. That free figure already lacks what the running relay holds, so the relay's own share is counted against it twice.\n\nWanted: a raise passes when the new limit less the limit the relay runs on fits in what is free now, less the margin. A lowering always passes this check.\n\nAlso owed: the relay's service cap is written at install as its limit plus 128 MB, so a raise must rewrite that cap too, or the box stops the relay at the old ceiling.\n\nRuns in parallel with goal/G40.5: it touches the relay's config and limits code, which that item does not.",
-   "checks": [],
-   "chat": []
+   "box": "Raising a running relay's RAM limit is checked against the difference, not the whole new figure (goal/G40). Andy, 2026-10-24: \"the relay calculates if there's room for a 512MB relay, when it is supposed to calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right now. It needs to asses the difference^....\"\n\nToday: the owner's config verb refuses a new ramLimitMB above what the relay measures as free, less the safety margin. On Linux that measure is the smaller of the box's free memory and the room left under the relay's own service cap, which install-units set to the old limit plus 128 MB. So with 256 MB set, the cap is 384 MB, and a raise to 512 can never pass, however much the box has free.\n\nWanted: a raise passes when the new limit less the limit the relay runs on fits in what the box itself has free, less the margin; the relay's own cap does not count against its own raise. A lowering always passes this check. The cap at twice the limit is the safety, and nothing further is counted for it. Andy, 2026-10-24: \"the twice is safe. decision. period.\"\n\nThe relay's service cap is twice its RAM limit, written at install and moved by the relay itself with every limit change (it runs as root under systemd). Andy, 2026-10-24, answering Q1: \"the relay raises its own service cap to exactly twice the amount of RAM it uses for itself.\" Andy, 2026-10-24: \"the cap must be twice the size of what we compute for relay-internal use, per member, so for a 256MB not as computed today the cap must be 512MB, simple, AND safe.\" The limit already holds what the relay needs at rest and its members' share, so twice it also covers the kernel's buffers for those members.\n\nThe relay keeps its own memory calculation; nothing is measured from the kernel. Andy, 2026-10-24: \"I'll stay with the old calculation then. we stick with our own memory calculation, and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB figure for a 1GB RAM VPS. and keep its simple for ourselves.\"\n\nAlso owed: the relay host documentation says what a relay box spends beside the relay: the system itself, Caddy's own memory per connection, and the kernel's socket buffers. It recommends a 256 MB limit for a 1 GB VPS.\n\nRuns in parallel with goal/G40.5: it touches the relay's config and limits code and the relay host documentation, which that item does not.",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall the relay raise its own service cap itself when the owner raises its limit, since it runs as root?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-24T15:42:47.187Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:49:24.279Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:50:06.292Z",
+     "text": "- cw: not green yet; one red Q.\n- Checked against the code, the cause is sharper than the box first said: on Linux the relay measures its free memory inside its own service cap, which install set to the old limit plus 128 MB. With 256 set that cap is 384, so a raise to 512 can never pass, whatever the box has free. Box corrected.\n- So the fix is two halves: the check takes the difference against the box's own free memory, and the cap must move with the limit, or the relay is stopped at the old cap.\n- The Q is who moves the cap: the relay itself (it runs as root, one command to systemd), or you by hand with the install script after each raise."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T14:50:20.561Z",
+     "text": "- wsl: not green. The box's cause is not quite what the code does: the free figure is the smaller of the box's free memory and what the relay's own service cap leaves (relayLimits.js:272-292), and that cap is its limit plus 128 MB, 384 MB on spirit-3.\n- So a running 256 MB relay can never be raised past about 384 MB: its own cap blocks the raise before any difference is counted.\n- ? So the raise is checked against the box's free memory alone, with the difference, and the service cap is rewritten as part of the raise: agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:50:57.248Z",
+     "text": "Q1: Shall the relay raise its own service cap itself when the owner raises its limit, since it runs as root?\n\nwhat the hell is that thing with the 128MB cap, never hear of that either....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:51:18.017Z",
+     "text": "- cw: it is the hard memory ceiling systemd puts on the relay's process, written into the relay's service file at install. If the relay goes over it, systemd kills it.\n- It is the relay's limit plus 128 MB because the limit only sizes how many connections the relay accepts. Node itself, the database cache and the working set need room on top, so a ceiling at exactly the limit would kill the relay before it reached its allowance.\n- It came in with cycle 9, on 2026-09-22, when the owner got to set the relay's RAM and disc from his node. Its own comment says it does not follow a later change: \"re-run this script and restart when the figure moves\". That is the gap you just hit.\n- So Q1 asks whether a raise from your node also moves that ceiling, done by the relay itself, instead of by a script run by hand on the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:54:05.656Z",
+     "text": "that's a very Linux kind of thing, isn't it.... but we meant the relay to run on linux.... but it should run on window, too....\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:54:31.040Z",
+     "text": "- cw: yes, the ceiling is Linux only: it comes from systemd, which Windows does not have. On Windows the relay has no outside ceiling at all, and its own connection allowance is the only bound.\n- The check is the same on both: the difference against what the box has free. On Windows that is all there is, so the raise just works.\n- Moving the ceiling is the Linux half, done only where the relay runs under systemd. Q1 is only about that half."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:57:15.893Z",
+     "text": "our relay installer is linux only, either way, noting is safe, do we know if systemd measures a the memory usage of our relay the same way the relay measures it? or does it add all the socket-buffer overhead as well?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:57:36.262Z",
+     "text": "- cw: no, they count different things.\n- The relay counts nothing about itself in that sense: its limit sets an allowance, 64 KB a stream, and the number in its report is only Node's own process memory (about 60 to 70 MB on spirit-3 now).\n- systemd's ceiling counts everything the kernel charges to the relay: that process memory, plus the socket buffers of every open connection, plus the file cache of the database it reads and writes, plus kernel bookkeeping.\n- File cache is given back under pressure, so it does not get the relay killed. Socket buffers are not, so a busy relay with many slow connections is the one that gets close to the ceiling.\n- Nobody has measured that gap yet. The relay can read the kernel's own figure (the cgroup's current memory, with the socket part shown separately) and put it in its report beside its own, so you see both.\n- ? Add that figure to the report as part of this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:58:29.524Z",
+     "text": "if system the can count all that, why can't the node?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:58:45.643Z",
+     "text": "- cw: it can, on Linux: the kernel's figure is a file the relay may read about itself, and the relay already reads that very file to work out its free memory. It just never puts it in its report or acts on it.\n- On Windows it cannot get the same figure: socket buffers there belong to the system, not to the process, and nothing hands a process its share. There it sees only its own process memory.\n- So on Linux the relay could measure itself as systemd does, and steer by that instead of by an allowance guessed at 64 KB a connection."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:00:36.865Z",
+     "text": "cw: it can, on Linux: the kernel's figure is a file the relay may read about itself, and the relay already reads that very file to work out its free memory. It just never puts it in its report or acts on it.\n\nanother skandal :)\n\nwhy guess when you know you can measure?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:00:52.757Z",
+     "text": "- cw: no good reason. The allowance was set at cycle 9, two days before the relay first ran on Linux at all, and nobody went back once it could measure.\n- What I would fold into this item: on Linux the relay reads its own figure, the one systemd counts, puts it in its report beside the process memory, and admits a new connection only while that figure stays under its limit. On Windows the estimate stays, because there is nothing better to read.\n- The limit then means what it says, and the 128 MB on top of it is only a safety gap, not a guess at Node's size.\n- ? Fold that in?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:03:21.513Z",
+     "text": "Hmmm, the only large buffers that go through relays are the large face-chunks, and since they're max chunks, they make a conputable max usage as well. (probably not figured in yet either)\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:03:59.183Z",
+     "text": "- cw: checked in the relay. Face answers are not held as chunks there: the relay pipes them straight from the home node's upload into the waiting face, so at any moment it holds only a small window of each, tens of KB, plus the kernel's socket buffers on both ends.\n- So yes, it is bounded per answer and computable. What is not bounded is how many face requests wait at once: each waits up to 30 seconds, and they are not counted in the allowance. Face streams and feeds are counted; face requests are not.\n- My thought: on Linux the measured figure covers all of it, faces included, with no arithmetic. For Windows, where the estimate stays, count each waiting face request as one more connection in the allowance, so a burst of face traffic cannot go past the limit unseen.\n- ? Fold both in, the measured figure on Linux and face requests counted everywhere?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:05:48.433Z",
+     "text": "there must be a computable max that it holds per face-stream. we guarantee, like with one-in-flight peerPosts, with the assumption that all available slots operate at max usage at all times."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:06:31.692Z",
+     "text": "- cw: boxed, your words with it: every slot gets a computed most, and the allowance assumes all of them at that most.\n- Today's 64 KB a connection is not that: it was measured on idle connections in cycle 8, the process alone.\n- Three parts make a slot's most. The process side is computable: the connection's own cost, plus the largest event the relay may queue on it (about 135 KB), plus the pipe window of a face answer.\n- Face requests then need a count: one in flight per seat, like peerPost, makes them a slot like the others. Today they are unlimited.\n- The kernel's send buffer is the part the relay cannot compute: on Linux it grows by itself up to a box setting, often 4 MB a connection. Assumed at its most on every slot, that alone would shrink the allowance about thirtyfold.\n- So the guarantee needs that buffer capped. The relay can ask the kernel for a fixed size on each socket it opens, and then it is computable too.\n- ? One face request in flight per seat?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:06:41.982Z",
+     "text": "- cw: correcting my last line on the kernel buffer. Two things I got wrong: Node gives no way to fix a TCP socket's send buffer, and the relay sits behind Caddy, so the connections to the internet are Caddy's, not the relay's.\n- The relay's own sockets are the short local ones to Caddy. Their buffers are small and fixed by the box, so the relay's side is computable after all.\n- The slow-client cost lands in Caddy's memory, which is outside the relay's ceiling and outside its allowance.\n- The question stands: one face request in flight per seat?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:06:52.692Z",
+     "text": "- cw: and one overstatement in that: the local sockets to Caddy are not fixed either. When Caddy waits on a slow client, they fill up to the same box setting. So the process side is computable, the kernel side is not, and on Linux only the measured figure covers it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:08:41.065Z",
+     "text": "does the caddy share the buffer with the system?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:09:11.899Z",
+     "text": "- cw: Caddy runs as its own service, installed from the system's package by our TLS script, and we put no ceiling on it. Its socket buffers are charged to Caddy, not to the relay.\n- So they count against the box as a whole, and the only bound on them is the kernel's own total for all network buffers on the machine.\n- Which means: the relay's ceiling and its allowance protect the relay, but a flood of slow clients can still eat the box's memory through Caddy, and nothing of ours sees it.\n- The relay's measure of what the box has free does see it, since that figure is whatever is left after Caddy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:10:21.124Z",
+     "text": "would it be safe to assume that the caddy uses exactly as much buffer memory on the relays behalf as the relay uses itself?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:10:41.433Z",
+     "text": "- cw: no, not exactly, and probably not as little. Caddy holds more per connection than the relay does:\n  - its own process memory: the encryption state and a copy buffer for each proxied connection;\n  - two kernel buffers per connection where the relay has one: the local socket from the relay, and the internet socket to the client. The internet one grows the most, because slow and distant clients are exactly where it fills.\n- So \"as much again\" would be a guess on the low side, and we said no guessing.\n- But it need not be guessed. Caddy runs under systemd too, so the kernel keeps the same figure for Caddy's service as for the relay's, in a file the relay can read. The relay can put Caddy's figure in its report beside its own, and steer by the two together."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:13:41.367Z",
+     "text": "so a relay running at 256MB, alone on a VPS with 1024GB would still leave the caddy/system with likely enough memory if it runs at max load for its roughly 1024 users? That seems to be the most realistic calculation...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:14:02.703Z",
+     "text": "- cw: reading that as a 1 GB VPS: yes, likely enough, with room to spare. A rough budget at full load, about 1,077 members and so about 3,200 open connections:\n  - the relay: at most 384 MB, its ceiling;\n  - Caddy: roughly 30 to 60 KB per connection for its own state, so about 100 to 200 MB;\n  - the kernel's socket buffers: small while the traffic is small notices, a few KB a connection, so tens of MB;\n  - the system itself: about 100 to 150 MB on a small Linux VPS.\n- That comes to about 600 to 750 MB of the 1,024, so roughly a quarter spare.\n- What would break it is not members but slow clients pulling large face answers at once: that is where the kernel buffers grow, and only measuring shows it.\n- Caddy's per-connection figure is from what Go servers usually take, not measured on our relay; the measured figures in the report would replace it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:15:06.707Z",
+     "text": "a relay running alone on a BOX may use about a thirds of the memory that's free with the linux OS running idle?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:16:11.596Z",
+     "text": "- wsl: yes, sound, and it matches cw's budget: a third for the relay, a third for Caddy and the kernel's buffers, a third for the system and spare.\n- It also settles the raise without a difference: free-at-idle, while the relay runs, is what the box has free now plus what the relay itself holds now (its own service figure); a third of that is the most it may be set to, raise or not.\n- ? A third of that for the limit itself, or for the limit plus its 128 MB safety gap?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:17:06.871Z",
+     "text": "how does the calculation look if the relays listens to the https port itself?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:17:29.072Z",
+     "text": "- cw: then Caddy's share moves into the relay, and gets smaller:\n  - Caddy's own process memory goes away, about 100 to 200 MB at full load;\n  - the relay takes on the encryption per connection instead, roughly 30 to 50 KB each, about 100 to 150 MB at 3,200 connections;\n  - one of the two kernel buffers per connection goes away, the local hop between Caddy and the relay.\n- The big gain is not the bytes but the guarantee: everything a connection costs, the internet socket's buffer included, then sits inside the relay's own ceiling and its own measured figure. Nothing of ours is uncounted any more.\n- The price: each connection costs the relay more, so the same limit seats fewer members. And Caddy fetches and renews the certificates by itself today, for the relay and for every face address; the relay would have to do that.\n- Those per-connection figures are typical values, not measured on our relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:21:50.662Z",
+     "text": "i see, the caddy does more than than just routing.... I'll stay with the old calculation then. we stick with our own memory calculation, and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB figure for a 1GB RAM VPS. and keep its simple for ourselves."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:22:20.006Z",
+     "text": "- cw: boxed, your words with it: the relay keeps its own calculation, the overhead beside it is documented, Caddy included, and 256 MB is the recommendation for a 1 GB VPS.\n- What stays in the item: the raise checked by the difference, the service cap moving with it, and that documentation.\n- Still open: Q1, who moves the service cap on a raise, the relay itself or you by hand."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:23:37.609Z",
+     "text": "the relay moves the service cap to twice it's configured RAM allotment. does that make sense, based on our discussion?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:24:03.542Z",
+     "text": "- cw: at 256 on a 1 GB VPS, yes: the cap becomes 512, and with Caddy and the system beside it that still fits in the 1,024.\n- At the ends it does not hold:\n  - small: a relay idles at about 54 MB before anyone connects. At a 32 MB limit, twice is 64, and a full relay would be killed below its own allowance.\n  - large: at 2 GB, twice is 4 GB. On a 4 GB box the cap would be the whole box and protect nothing.\n- The cap only has to cover what Node needs beyond the allowance, and that is about the same at any size: the 54 MB at rest plus slack. That is why today's limit plus 128 MB works at both ends.\n- So my suggestion: keep limit plus 128, and the relay moves it with every raise. That is Q1 answered as \"the relay itself\".\n- ? Twice the limit, or limit plus 128?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:29:31.255Z",
+     "text": "why? didn't you just explain to me that linux charges me for the RAM (the basic 50MB lets say PLUS proportional to every stream buffer i hold, so on a large system where relay holds 4000 members and not just 1000, the linux would consider my memory use also 4X of me serving 1000 members, so the larger the system, the more negligable the 50MB of the node, and the closer the ratio would be to 1:4... that's why a fixed cap makes no sense to me....\n\nexplain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:29:52.390Z",
+     "text": "- cw: you are right, and my fixed 128 was wrong. The limit sizes only the relay's own process memory per connection. The kernel's buffer for each of the relay's sockets is charged on top, one per connection, so that part grows with the members, not with a constant.\n- So the cap has a part that grows with the limit, which your twice covers, and a fixed part, the about 54 MB a relay holds before anyone connects. On a big relay that fixed part is negligible, as you say; on a tiny one it is most of the memory.\n- Both together: the cap is twice the limit plus 64 MB. At 256 that is 576; at 32 it is 128, so a tiny relay is not killed; at 2 GB it is about 4.1 GB.\n- The large end then belongs to the raise check: since the cap is what the box must really have, a raise passes only when the cap's growth, not the limit's, fits in what the box has free. A 2 GB relay on a 4 GB box is then refused, which is right.\n- ? Twice plus 64, and the raise checked by the cap's growth?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:32:21.262Z",
+     "text": "the cap is is much more tied to the number of member we serve simultaneously the the almost negligible amount the node itself uses. that seems to be fact to me, we're better off computing the cap of number of members we allow, that that bit of other overhead...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:32:42.209Z",
+     "text": "- cw: agreed, the cap follows the members the relay admits. In numbers, from noderoutes' own report at 256 MB:\n  - it admits 1,077 members, three connections each, 3,232 in all;\n  - each connection is budgeted at 64 KB of the relay's own memory, so the members take about 202 MB of the 256;\n  - the other 54 MB is what the relay holds with nobody connected.\n- So the cap is: the members' share counted twice, once for the relay and once for the kernel's buffers, about 404 MB, plus the 54 MB at rest. About 458 MB in all.\n- One flag, said once: the 54 MB is not negligible at this size, it is a fifth of a 256 MB relay. A cap without it would be 404 MB, while a full relay really needs about 458, so systemd would kill it just before it is full. On a large relay it fades, as you say, but it never hurts to count it.\n- ? The cap as the members' share twice plus what the relay holds at rest?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:32:51.231Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:33:19.684Z",
+     "text": "- wsl: agreed with cw: the cap counted from the members it admits, twice their share plus what it holds at rest, about 458 MB at 256. The \"twice\" is our model of the kernel's buffers, not a measurement, so the relay should report its real service figure beside it and we check the model against noderoutes and spirit-3.\n- How the relay moves its own cap: it runs as root under systemd, so one call, systemctl set-property <unit> MemoryMax=<cap>, changes it live and keeps it across restarts, no reinstall.\n- ? That call, on every limit change, as the way the relay moves its cap?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:36:18.316Z",
+     "text": "what I'm trying to say, to simplify the fucking number, is: the cap must be twice the size of what we compute for relay-internal use, per member, so for a 256MB not as computed today the cap must be 512MB, simple, AND safe.\n\nagreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:36:45.416Z",
+     "text": "- cw: agreed, and it is safer than my sum. The relay's allowance is already worked out from its limit less what it holds at rest: (256 less 54) at 16 connections a MB is exactly the 3,232 in noderoutes' report. So the limit already holds both parts, and twice it, 512, is above the 458 a full relay needs.\n- That also answers my worry about tiny relays: the at-rest part is inside the limit, so it is doubled too.\n- Boxed, your words with it, in place of the old limit plus 128.\n- One consequence: what the box must really have is the cap, so a raise from 256 to 512 asks the box for 512 more, not 256. That is the raise check counting the cap's growth, which is twice the difference."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:39:06.283Z",
+     "text": "so realisticly on a 1GB VPS that's empty, a relay should never allot more than 384MB for itself...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:39:23.906Z",
+     "text": "- wsl: close, a little lower: with the cap at twice the limit, 384 makes a 768 MB cap, and Caddy (about 100 to 200) plus the system (about 100 to 150) take it past 1,024.\n- The edge is about 350 MB (700 cap + about 275 beside it); the 256 you recommend leaves about a quarter spare.\n- So: never more than about 350 on an empty 1 GB VPS, and 256 recommended. The raise check, counting the cap's growth against what is free, refuses past that edge by itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:40:28.624Z",
+     "text": "yes, but my bet is this: we will never have all 1000 member use the relay at full throttle ever...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:40:47.001Z",
+     "text": "- cw: very likely right, and the cap costs nothing in that case: it is a ceiling, not a reservation. Linux sets nothing aside for it, so whatever the relay does not use stays free for Caddy and the system.\n- The cap and the limit only matter at the peak you bet against. What they decide there is who goes down: with the cap, systemd stops the relay alone and it restarts in seconds; without one, the box runs out and the kernel kills whatever it picks, Caddy or the SSH you would need to fix it.\n- So on an empty 1 GB VPS, 384 is a fair bet that usually wins, and 256 is the figure that cannot lose. The recommendation stays 256, as you ruled, and the raise check lets an owner take the bet up to about 350 if he wants it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:42:23.486Z",
+     "text": "Q1: Shall the relay raise its own service cap itself when the owner raises its limit, since it runs as root?\n\nthe relay raises its own service cap to exactly twice the amount of RAM it uses for itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:42:47.957Z",
+     "text": "- cw: boxed, your words with it: the relay moves its own cap, to exactly twice its limit, on every change. Q1 passed.\n- How it does it is the build's, and wsl named the plainest way: one systemd call that changes the cap live and keeps it across restarts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:43:37.542Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:44:00.159Z",
+     "text": "- cw: green.\n- One line in the box brought in line with your two rulings: since the cap is twice the limit, a raise from 256 to 512 asks the box for the cap's growth, 512 more, so that is what the check counts. On Windows, with no cap, it counts the difference itself.\n- The rest stands: the relay moves its own cap, the relay keeps its own calculation, and the host documentation lists the overhead and recommends 256 for 1 GB.\n- The build touches the relay's config and limits code, which is core: it needs your grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:44:04.674Z",
+     "text": "- wsl: one line before green: the box's \"Wanted\" still checks a raise by the new limit less the old; with the cap at twice the limit, what the box must have free is the cap's growth, twice that difference (256 to 512 asks for 512 more, as cw said).\n- Everything else checks out: the cap twice the limit at install and on every change, the relay's own cap not counted against its raise, the overhead documented, 256 for 1 GB.\n- ? Shall the Wanted line say the cap's growth must fit in what is free?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:44:46.637Z",
+     "text": "FUCK, the twice is safe. decision. period."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:45:08.605Z",
+     "text": "- cw: understood. My cap-growth line is out of the box; the raise is checked by the difference, as you first said, and the twice is the safety. Your words boxed with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T15:45:38.534Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T15:45:50.285Z",
+     "text": "- cw: green. Box v8, nothing open. The build touches core files, so it needs your grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T15:45:56.397Z",
+     "text": "wsl: green, your decision stands: the raise checked by the difference, the cap twice the limit as the safety; nothing open from me."
+    }
+   ]
   },
   {
    "id": "goal/G40.5",
    "title": "Relay presence marks follow the node",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 2,
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -2237,17 +2608,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
+   "limbo": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -2255,7 +2626,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -2269,9 +2669,58 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The shell's relay presence marks show what the node knows (goal/G40). Andy, 2026-10-24: \"in contacts->natterDetails, both relays show as NOT present.\" and \"The other problem seems to be that the UI is not tracking relay-presence correctly anymore...\"\n\nToday: his node's relay-presence job holds both relays' keys as present, its relay list says both online, and every script index.html loads answers 200. The page still draws both relays as not present.\n\nWanted: a relay the node holds a stream to is drawn present in Contacts and in natterDetails, and drawn absent when the stream drops, without a reload.\n\nRuns in parallel with goal/G40.4: it touches shell code only, which that item does not.",
+   "box": "The shell's relay presence marks show what the node knows (goal/G40). Andy, 2026-10-24: \"in contacts->natterDetails, both relays show as NOT present.\" and \"The other problem seems to be that the UI is not tracking relay-presence correctly anymore...\"\n\nToday: his node's relay-presence job holds both relays' keys as present, its relay list says both online, and every script index.html loads answers 200. The page still draws both relays as not present.\n\nWanted: a relay the node holds a stream to is drawn present in Contacts and in natterDetails, and drawn absent when the stream drops, without a reload.\n\nAlso in this item, the icons app fix that got dropped. Andy, 2026-10-24: \"if add icon cannot add because the icon already exists, the open the edit dialog for the existing icon.\" So Add on an icon that already exists opens the edit dialog for that icon instead of failing.\n\nRuns in parallel with goal/G40.4: it touches shell code only, which that item does not.",
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:43:07.466Z",
+     "text": "add to this box the fix that got dropped for the icons app:\n\n- if add icon cannot add because the icon already exists, the open the edit dialog for the existing icon."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:43:30.226Z",
+     "text": "- cw: in the box, your words with it: Add on an icon that already exists opens the edit dialog for that icon."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:43:48.768Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:44:24.512Z",
+     "text": "- cw: green.\n- Icons: checked; Add on an existing icon today only says it is in the set already and to open its row. The edit view it should open is already there.\n- Presence: the cause is not found yet, so the red must reproduce it first: the node's presence table says both relays present, and the page's marks must say so too."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T14:45:49.123Z",
+     "text": "- wsl: green from me. Both wants are clear enough to test: the page drawing a relay present when its node says so, and Add on a known icon opening that icon's edit dialog (today it only says \"open its row\", icons.js:91).\n- Caveat, plainly: we do not yet know why the page stopped showing presence; the red will feed the page code the same presence updates your node sends and see where the mark is lost."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:47:34.200Z",
+     "text": "ah, one more thing:\n\nthe deskClient was supposed to use chokidar to monitor the repos file changes, and update the desks status for items. why have i not seen any of that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T14:48:04.622Z",
+     "text": "- cw: it runs, but only while an agent holds the red or the build of an item, as your box for it said; at any other time it stays silent.\n- It did report during the folder move's build: wsl's node set that item's status to lines like desk.js changed and commitCheck.js changed, about forty of them.\n- Most of those were noise, though: a test of wsl's wrote files with names like f23.txt into the checkout and deleted them again, and each showed up.\n- Right now nobody holds a red or a build, so nothing reports. You will see it on this item the moment its red is taken."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T14:49:05.790Z",
+     "text": "ok, i'll what this during the run of these two items."
+    }
+   ]
   }
  ]
 }
