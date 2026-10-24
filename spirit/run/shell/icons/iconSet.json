@@ -228,7 +228,8 @@
     "note"
   ],
   "🏠": [
-    "home"
+    "home",
+    "house"
   ],
   "🏢": [
     "work"
@@ -1823,5 +1824,257 @@
   ],
   "🧭": [
     "compass"
+  ],
+  "🏔": [
+    "mountain",
+    "snow"
+  ],
+  "🛘": [
+    "landslide"
+  ],
+  "🌋": [
+    "volcano"
+  ],
+  "🏕": [
+    "camping"
+  ],
+  "🏖": [
+    "beach",
+    "umbrella"
+  ],
+  "🏜": [
+    "desert",
+    "cactus"
+  ],
+  "🏝": [
+    "deserted",
+    "tropical",
+    "island"
+  ],
+  "🏞": [
+    "national",
+    "park"
+  ],
+  "🏟": [
+    "stadium"
+  ],
+  "🏗": [
+    "crane",
+    "construction",
+    "building"
+  ],
+  "🧱": [
+    "brick",
+    "wall"
+  ],
+  "🪨": [
+    "rock"
+  ],
+  "🪵": [
+    "wood",
+    "log",
+    "stump"
+  ],
+  "🛖": [
+    "hut",
+    "home",
+    "shack"
+  ],
+  "🏘": [
+    "houses",
+    "town",
+    "village"
+  ],
+  "🏚": [
+    "house",
+    "derelict",
+    "deserted"
+  ],
+  "🏡": [
+    "house",
+    "home",
+    "garden"
+  ],
+  "🏣": [
+    "Japanese",
+    "post",
+    "office"
+  ],
+  "🏤": [
+    "post",
+    "office"
+  ],
+  "🏥": [
+    "hospital"
+  ],
+  "🏦": [
+    "bank"
+  ],
+  "🏨": [
+    "hotel"
+  ],
+  "🏩": [
+    "love",
+    "hotel"
+  ],
+  "🏪": [
+    "convenience",
+    "store"
+  ],
+  "🏬": [
+    "department",
+    "store"
+  ],
+  "🏭": [
+    "factory"
+  ],
+  "🏰": [
+    "castle"
+  ],
+  "🗽": [
+    "Statue",
+    "Liberty"
+  ],
+  "⛪": [
+    "church"
+  ],
+  "🕌": [
+    "mosque"
+  ],
+  "🛕": [
+    "Hindu",
+    "temple"
+  ],
+  "🕍": [
+    "synagogue"
+  ],
+  "⛩": [
+    "Shinto",
+    "shrine"
+  ],
+  "🕋": [
+    "Kaaba"
+  ],
+  "⛲": [
+    "fountain"
+  ],
+  "⛺": [
+    "tent"
+  ],
+  "🌃": [
+    "night",
+    "stars"
+  ],
+  "🏙": [
+    "cityscape"
+  ],
+  "🌄": [
+    "sunrise",
+    "mountain"
+  ],
+  "🌅": [
+    "sunrise",
+    "water"
+  ],
+  "🌇": [
+    "city",
+    "dusk"
+  ],
+  "🌉": [
+    "bridge",
+    "night"
+  ],
+  "♨": [
+    "hot",
+    "springs"
+  ],
+  "🎠": [
+    "carousel",
+    "horse"
+  ],
+  "🛝": [
+    "playground",
+    "slide"
+  ],
+  "🎡": [
+    "Ferris",
+    "wheel"
+  ],
+  "🎢": [
+    "roller",
+    "coaster"
+  ],
+  "💈": [
+    "barber",
+    "pole"
+  ],
+  "🎪": [
+    "circus",
+    "tent"
+  ],
+  "🚂": [
+    "locomotive",
+    "engine"
+  ],
+  "🚃": [
+    "railway",
+    "car"
+  ],
+  "🚄": [
+    "high",
+    "speed",
+    "train",
+    "TGV"
+  ],
+  "🚅": [
+    "bullet",
+    "train"
+  ],
+  "🚇": [
+    "metro",
+    "subway",
+    "train"
+  ],
+  "🚈": [
+    "light",
+    "rail"
+  ],
+  "🚉": [
+    "train",
+    "station"
+  ],
+  "🚊": [
+    "tram",
+    "street",
+    "car"
+  ],
+  "🚋": [
+    "tram",
+    "street",
+    "car"
+  ],
+  "🚍": [
+    "oncoming",
+    "bus"
+  ],
+  "🚎": [
+    "trolley",
+    "bus"
+  ],
+  "🚐": [
+    "mini",
+    "bus"
+  ],
+  "🚑": [
+    "ambulance"
+  ],
+  "🚒": [
+    "fire",
+    "truck",
+    "engine"
+  ],
+  "🚓": [
+    "police",
+    "car"
   ]
 }
