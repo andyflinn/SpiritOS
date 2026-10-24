@@ -23,7 +23,7 @@ const RUN = path.join(__dirname, '..', 'run');
 
 test.startTest('apiAuth/G1.7: the contact selector is a shell element, found by search, replacing the hand-rolled select');
 
-const shell = fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8');
+const shell = fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8');
 // The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
 const elements = fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8');
 

@@ -108,8 +108,11 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
   const starts = [['package.json start', / spirit\/server\.js/.test(pkg) ? '' : pkg],
     ['platform/windows/start-spirit.ps1', /spirit[\\/]server\.js/.test(read('platform/windows/start-spirit.ps1') || '') ? '' : 'no spirit/server.js'],
     ['platform/wsl/start-spirit.sh', /spirit\/server\.js/.test(read('platform/wsl/start-spirit.sh') || '') ? '' : 'no spirit/server.js'],
-    ['install/chat-windows/create.js', /spirit[\\/]server\.js|'spirit', 'server\.js'/.test(read('install/chat-windows/create.js') || '') ? '' : 'no spirit/server.js'],
-    ['install/microscopic/create.js', /spirit[\\/]server\.js|'spirit', 'server\.js'/.test(read('install/microscopic/create.js') || '') ? '' : 'no spirit/server.js']]
+    // An installer's create.js only zips; the start path lives in the files it ships: chat-windows' start.ps1 and
+    // README.txt, microscopic's README.txt (wsl-claude, building goal/G40.2).
+    ['install/chat-windows/start.ps1', /spirit\\server\.js/.test(read('install/chat-windows/start.ps1') || '') && !/[^A-Za-z]js\\server\.js/.test(read('install/chat-windows/start.ps1') || '') ? '' : 'no spirit\\server.js'],
+    ['install/chat-windows/README.txt', /node spirit\/server\.js/.test(read('install/chat-windows/README.txt') || '') ? '' : 'no spirit/server.js'],
+    ['install/microscopic/README.txt', /node spirit\/server\.js/.test(read('install/microscopic/README.txt') || '') ? '' : 'no spirit/server.js']]
     .filter(function (s) { return s[1]; });
   if (!starts.length) test.check('package.json, start-spirit.ps1, start-spirit.sh and both installers start spirit/server.js');
   else test.fail(OWED + 'still starting the old path: ' + short(starts));

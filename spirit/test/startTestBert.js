@@ -9,7 +9,7 @@ const targets = setupRelayFakes();
 
 spawn(
   process.execPath,
-  [path.join(targets.bert, 'js', 'server.js'), '--port', '65432'],
+  [path.join(targets.bert, 'spirit', 'server.js'), '--port', '65432'],
   {
     cwd: targets.bert,
     stdio: 'inherit',

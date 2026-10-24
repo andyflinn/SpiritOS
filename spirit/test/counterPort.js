@@ -22,7 +22,7 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const test = require('./testSupport.js');
 
 test.startTest('processes/G1.2: the counter server declares its port, and refuses a bad one by name');

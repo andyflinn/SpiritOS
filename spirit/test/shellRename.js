@@ -31,7 +31,7 @@ const crypto = require('crypto');
 const { execSync, spawn } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const auth = require('../run/js/relayAuth.js');
+const auth = require('../run/spirit/relayAuth.js');
 // IS IT LISTENING? A LIVENESS PROBE, NOT A PAGE FETCH (goal/G16.6).
 // This asked relayRequest for GET / and read its status. Since a relay
 // answer is bounded by limits.BODY_MAX (Andy, 2026-10-11: "an answer from
@@ -101,7 +101,7 @@ async function nodeWith(leftovers, already) {
   const said = [];
   async function start() {
     const port = await freePort();
-    const kid = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
+    const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
     const out = [];
     kid.stdout.on('data', function (b) { out.push(String(b)); });
     kid.stderr.on('data', function (b) { out.push(String(b)); });
@@ -132,7 +132,7 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   // ── T1 ──────────────────────────────────────────────────────────────
   test.subHeading('T1: no node code names app/ as a folder; shell/ is the write root in its place');
   const hits = appFolderUses();
-  const kernel = require('../run/js/kernel.js');
+  const kernel = require('../run/spirit/kernel.js');
   const writable = kernel.core.fs.fileWritable;
   // Since goal/G30.21 the gate names no folder: app/ is as writable as any non-core folder, so only shell/ is asked.
   const gate = { shell: writable('shell/probeapp/data.json'), app: '(no folder is special since goal/G30.21)' };

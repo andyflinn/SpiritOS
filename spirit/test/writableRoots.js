@@ -10,7 +10,7 @@
 // restored rather than left holding this test's probe value.
 const fs = require('fs');
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 
@@ -104,7 +104,7 @@ if (preferencesBackup !== null) {
 // ---- a root-level file and core are NOT writable; process/ is, since goal/G30.21 (only core is protected) ----
 expectForbidden('a random root-level file', '__writableRootsProbe__.txt');
 expectWritable('process/ (writable since goal/G30.21: only core files are protected)', 'process/js/__writableRootsProbe__.json');
-expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js');
+expectForbidden('spirit/ (the kernel itself)', 'spirit/__writableRootsProbe__.js');
 
 // ---- app entry scripts and manifests are shell files like any other ----
 //

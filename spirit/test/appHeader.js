@@ -32,7 +32,7 @@ const OWED = 'OWED by goal/G6.1: ';
 const RUN = path.join(__dirname, '..', 'run');
 const FILE = path.join(RUN, 'shell', 'js', 'appHeader', 'appHeader.js');
 const INDEX = path.join(RUN, 'index.html');
-const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
+const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const DESK = path.join(RUN, 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
 
@@ -135,8 +135,8 @@ else {
 pending = pending.then(function () {
   test.subHeading('3. loaded by index.html before the shell, handed to apps as api.ui.elements');
   const at = index.indexOf('src="/shell/js/appHeader/appHeader.js"');
-  const atShell = index.indexOf('src="/js/client/shell.js"');
-  if (at !== -1 && atShell !== -1 && at < atShell) test.check('index.html loads /shell/js/appHeader/appHeader.js before /js/client/shell.js');
+  const atShell = index.indexOf('src="/spirit/client/shell.js"');
+  if (at !== -1 && atShell !== -1 && at < atShell) test.check('index.html loads /shell/js/appHeader/appHeader.js before /spirit/client/shell.js');
   else test.fail(OWED + 'index.html: appHeader at ' + at + ', shell at ' + atShell);
   if (/createAppHeader\s*:\s*shellElements\.createAppHeader/.test(shell)) test.check('shell.js hands createAppHeader to apps from spirit.elements, beside the others');
   else test.fail(OWED + 'shell.js does not hand createAppHeader: spirit.elements.createAppHeader under ui.elements (shell.js 1338-1344 hands each by name)');

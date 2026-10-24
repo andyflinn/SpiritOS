@@ -28,11 +28,11 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G10.5: ';
 const REPO = path.join(__dirname, '..', '..');
-const INTROSPECTOR_REL = 'spirit/run/js/introSpector.js';
+const INTROSPECTOR_REL = 'spirit/run/spirit/introSpector.js';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -82,7 +82,7 @@ let kid = null;
 let boot = '';
 async function start() {
   kid = spawn(process.execPath, [script, '{}', '--pipe', pipe, '--state', state],
-    { stdio: ['ignore', 'pipe', 'pipe', 'ipc'], env: Object.assign({}, process.env, { PROBE_APPSERVER: path.join(REPO, 'spirit', 'run', 'js', 'appServer.js') }) });
+    { stdio: ['ignore', 'pipe', 'pipe', 'ipc'], env: Object.assign({}, process.env, { PROBE_APPSERVER: path.join(REPO, 'spirit', 'run', 'spirit', 'appServer.js') }) });
   kid.stdout.on('data', function (d) { boot += String(d); });
   kid.stderr.on('data', function (d) { boot += String(d); });
   for (let i = 0; i < 60; i++) {

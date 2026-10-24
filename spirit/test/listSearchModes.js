@@ -51,7 +51,7 @@ function page() {
   };
   const win = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   new Function('document', 'window', fs.readFileSync(FILE, 'utf8'))(doc, win);
   return { byId: byId, doc: doc, win: win };

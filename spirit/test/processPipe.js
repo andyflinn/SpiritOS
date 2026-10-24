@@ -23,15 +23,15 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const jobs = require('../run/js/jobs.js')(spirit, 65432);
+const appClient = require('../run/spirit/appClient.js');
+const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
 
 test.startTest('desk/G1.6: the node names the pipe of a process/js server it starts');
 
 const OWED = 'OWED by desk/G1.6: ';
-const HELPER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const HELPER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 
 // A node's folder with one node-operated server built on appServer.js.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-procpipe-'));
@@ -41,7 +41,7 @@ fs.writeFileSync(path.join(dir, 'pinger.json'), JSON.stringify({ name: 'pinger',
 fs.writeFileSync(path.join(dir, 'pinger.js'), 'require(' + JSON.stringify(HELPER) + ').serve(' +
   "{ ping: { request: { say: '' }, reply: { pong: '' }, handler: function (a) { return { pong: 'pong ' + a.say }; } } });\n");
 // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
-require('../run/js/relayAuth.js').saveIdentity(root, require('../run/js/relayAuth.js').generateIdentity('procpipe'));
+require('../run/spirit/relayAuth.js').saveIdentity(root, require('../run/spirit/relayAuth.js').generateIdentity('procpipe'));
 
 function waitFor(fn, ms) {
   const until = Date.now() + (ms || 6000);

@@ -25,7 +25,7 @@ function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 test.startTest('goal/G30.10: the face uploads through relayRequest, the one outbound door');
 
-const relayRequest = require('../run/js/relayRequest');
+const relayRequest = require('../run/spirit/relayRequest');
 const made = typeof relayRequest.relayUpload === 'function';
 
 // The stand-in relay: it notes each chunk as it arrives, and when the upload ended.
@@ -68,7 +68,7 @@ const done = new Promise(function (resolve) { server.listen(0, '127.0.0.1', reso
   else test.fail(OWED + 'a plain-http upload off loopback got ' + short(refused));
 
   test.subHeading('2. faceHome uses it, and reaches for nothing itself');
-  const fh = code('js/faceHome.js');
+  const fh = code('spirit/faceHome.js');
   const reaches = (fh.match(/\bfetch\s*\(|require\(\s*['"]https?['"]\s*\)|\bhttps?\.request\s*\(|\bnew\s+EventSource\b|\bnew\s+XMLHttpRequest\b/g) || []).length;
   if (reaches === 0 && /relayUpload/.test(fh))
     test.check('faceHome uploads through relayRequest.relayUpload and holds no http of its own (oneDoor tally zero)');
@@ -76,7 +76,7 @@ const done = new Promise(function (resolve) { server.listen(0, '127.0.0.1', reso
 
   // Andy, on the relay's 5-minute cut of a long upload (Node's default requestTimeout): "lift the 5 minute limit."
   test.subHeading('3. the relay lets the face\'s live upload stay open');
-  const rs = code('js/relayServer.js');
+  const rs = code('spirit/relayServer.js');
   if (/\bserver\.requestTimeout\s*=\s*0\b/.test(rs) && !/\bserver\.headersTimeout\s*=\s*0\b/.test(rs))
     test.check('relayServer sets no request timeout, so faceStream\'s upload outlives 5 minutes; the header limit stays');
   else test.fail(OWED + 'relayServer keeps Node\'s 5-minute request timeout, or dropped the header limit too');

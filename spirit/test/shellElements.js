@@ -8,7 +8,7 @@
 //   interface passed to shell-apps during mount." — then "yes." to the move as an item.
 //   In the tree: createIconSelector (js/client/shell.js:762), createContactSelector (:915), createAppServerSelector
 //   (:963), createApiBranchSelector (:1002), closed over shell.js's helpers and handed out at shell.js:1634 as
-//   api.ui.elements; index.html loads /js/client/shell.js last (index.html:1366). No shell/js/ folder exists.
+//   api.ui.elements; index.html loads /spirit/client/shell.js last (index.html:1366). No shell/js/ folder exists.
 // AMENDED, the same day (Andy, verbatim, on the one elements.js the first build made): "why all in one?" — no
 // good reason, said back — "i can guarantee you: there will be many". So one file per element.
 // The contract the builder follows (the shape in goal/G2.12's box):
@@ -17,7 +17,7 @@
 //      whichever loads first), on the globals every shell script has (spirit, window.spirit.iconIndex,
 //      window.spirit.apiTreeIndex, document) and nothing inside shell.js or another element's closure; the
 //      api-branch selector reaches the app-server one through window.spirit.elements. elements.js is gone.
-//   2. index.html loads the four before /js/client/shell.js, appServerSelector.js before apiBranchSelector.js,
+//   2. index.html loads the four before /spirit/client/shell.js, appServerSelector.js before apiBranchSelector.js,
 //      and no longer loads elements.js.
 //   3. shell.js defines none of the four and hands spirit.elements.createXSelector under api.ui.elements — the api
 //      an app sees is unchanged.
@@ -28,14 +28,14 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 // The split was ruled after G2.12 closed on the one-file build; it is goal/G2.14's.
 const OWED = 'OWED by goal/G2.14: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'shell', 'js');
 const FILES = { createIconSelector: 'iconSelector.js', createContactSelector: 'contactSelector.js', createAppServerSelector: 'appServerSelector.js', createApiBranchSelector: 'apiBranchSelector.js' };
-const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
+const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const INDEX = path.join(RUN, 'index.html');
 const FOUR = ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'];
 
@@ -79,9 +79,9 @@ else test.fail(OWED + 'shell/js/elements.js still exists');
 
 test.subHeading('2. loaded by index.html before the shell, app-server before api-branch');
 const at = {}; FOUR.forEach(function (n) { at[n] = index.indexOf('src="/shell/js/' + FILES[n] + '"'); });
-const atShell = index.indexOf('src="/js/client/shell.js"');
+const atShell = index.indexOf('src="/spirit/client/shell.js"');
 if (FOUR.every(function (n) { return at[n] !== -1 && at[n] < atShell; }) && at.createAppServerSelector < at.createApiBranchSelector && index.indexOf('/shell/js/elements.js') === -1) {
-  test.check('index.html loads the four before /js/client/shell.js, app-server before api-branch, and no elements.js');
+  test.check('index.html loads the four before /spirit/client/shell.js, app-server before api-branch, and no elements.js');
 } else test.fail(OWED + 'index.html positions ' + JSON.stringify(at) + ', shell at ' + atShell + ', elements.js tag ' + (index.indexOf('/shell/js/elements.js') !== -1));
 
 test.subHeading('3. the shell defines none of them and hands them out as before');
@@ -114,7 +114,7 @@ if (missing.length) {
   let tripped = null;
   // goal/G29.6: as index.html loads them, the probability modules and the shared list (shell/shared/js/listSearch.js)
   // come before contactSelector.js, which builds on window.spirit.elements.shellCreateListSearch.
-  const before = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); })
+  const before = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'spirit', f); })
     .concat([path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js')]);
   try {
     vm.createContext(ctx);

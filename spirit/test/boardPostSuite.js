@@ -5,7 +5,7 @@
 
 const test = require('./testSupport.js');
 const boardPost = require('./boardPost.js');
-const limits = require('../run/js/limits.js');
+const limits = require('../run/spirit/limits.js');
 
 test.startTest('The lead posts the board when it changed, and refuses one too big to send');
 

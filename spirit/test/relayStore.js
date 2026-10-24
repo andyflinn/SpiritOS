@@ -15,9 +15,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const relayStore = require('../run/js/relayStore');
-const relayDump = require('../run/js/relayDump');
-const auth = require('../run/js/relayAuth');
+const relayStore = require('../run/spirit/relayStore');
+const relayDump = require('../run/spirit/relayDump');
+const auth = require('../run/spirit/relayAuth');
 
 function home() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-store-'));

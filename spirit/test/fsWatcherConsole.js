@@ -23,7 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G2.16: ';
 const DIALOG_SCRIPT = path.join(__dirname, '..', 'run', 'shell', 'jobsDetails', 'jobsDetails.js');

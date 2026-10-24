@@ -22,7 +22,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by fileTransfer goal/G1.5: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'fileServer', 'fileServer.js');

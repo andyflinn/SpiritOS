@@ -161,7 +161,7 @@ else {
   test.fail(branches.length + ' lines still carry a no-identity branch', branches.slice(0, 40).join(', '));
 }
 
-const errors = require('../run/js/spiritErrors.js');
+const errors = require('../run/spirit/spiritErrors.js');
 ['node-no-key', 'node-no-identity', 'no-identity'].forEach(function (code) {
   if (!errors.byCode(code)) test.check('spiritErrors defines no ' + code);
   else test.fail('spiritErrors still defines ' + code, JSON.stringify(errors.byCode(code).texts));

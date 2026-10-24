@@ -69,8 +69,8 @@ const REACHES = [
 // is what has not been moved onto it yet.
 const TALLY = {
   // THE INTERFACE. Counted like everything else.
-  'js/relayRequest.js': 2,   // http + https, the outbound socket
-  'js/sseClient.js': 0,      // global fetch, via a capability probe
+  'spirit/relayRequest.js': 2,   // http + https, the outbound socket
+  'spirit/sseClient.js': 0,      // global fetch, via a capability probe
 
   // kernel.js HAS NO ENTRY — EXEMPT BY ANDY'S RULING, 2026-10-02:
   // "we exempt kernel.js from the oneDoor contract." and "because
@@ -147,12 +147,12 @@ const TALLY = {
 
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
-  'js/server.js': 2,
+  'spirit/server.js': 2,
   // THE RELAY'S OWN SERVER: http.createServer, moved out of server.js when
   // node and relay became separate startup modules (cycle 0). A new line,
   // and so an exception — GRANTED BY ANDY 2026-09-19 in the cycle 0 plan.
   // The reach is the one the relay always had; it now lives in its own file.
-  'js/relayServer.js': 1,
+  'spirit/relayServer.js': 1,
   // THE APP SERVER'S (js/faceServer.js, cycle 2) and THE FACE'S ENTRY POINT
   // (js/puppetPost.js, G17 slice 1) stood here, 0 and 1. Both files are
   // gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into
@@ -162,7 +162,7 @@ const TALLY = {
   // on the pipe the node names. RESTING ON ANDY'S "go." ON G1.2, 2026-09-29,
   // whose whole content is that listener, and told him the same hour
   // ("say no if you want it done differently").
-  'js/appServer.js': 1,
+  'spirit/appServer.js': 1,
 
   // ── TESTS ARE NOT COUNTED ── ANDY'S RULING, 2026-10-02 ─────────────────
   //
@@ -237,10 +237,10 @@ function reachesIn(file) {
 
 test.startTest('One door — every file, always');
 
-const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
+const files = walk(path.join(SPIRIT, 'run', 'spirit'), 'spirit/', [])
   // kernel.js is exempt (Andy, 2026-10-02: "we exempt kernel.js from the
   // oneDoor contract") — it IS the shared loopback client, see the tally.
-  .filter(function (f) { return f.rel !== 'js/kernel.js'; })
+  .filter(function (f) { return f.rel !== 'spirit/kernel.js'; })
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
   // The folders of process/ that are walked: the granted exceptions above.
@@ -315,7 +315,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
       .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
       .join('\n');
   };
-  const peerPost = code('js/peerPost.js');
+  const peerPost = code('spirit/peerPost.js');
 
   const owns =
     /opts\.request/.test(peerPost) &&
@@ -328,7 +328,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
     test.fail('peerPost no longer owns the request mechanics');
   }
 
-  if (reachesIn(path.join(SPIRIT, 'run', 'js', 'peerPost.js')) === 0) {
+  if (reachesIn(path.join(SPIRIT, 'run', 'spirit', 'peerPost.js')) === 0) {
     test.check('and it reaches for no socket of its own — the transport is injected');
   } else {
     test.fail('peerPost reached for a socket; opts.request is the only way out');
@@ -348,7 +348,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   // AND THE TRANSPORT IS REACHABLE BY BOTH. It sat inside hub.js until
   // 2026-09-16, which is why a relay had no way to obey the rule and the
   // shortcut was available to take.
-  const wire = code('js/relayRequest.js');
+  const wire = code('spirit/relayRequest.js');
   if (/function relayRequest/.test(wire) && !/contactBook|ownerBadge|peerStats/.test(wire)) {
     test.check('and relayRequest is its own module, with none of the node on it');
   } else {
@@ -379,7 +379,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
         if (PRIMITIVES.test(fs.readFileSync(f.full, 'utf8'))) owners.push(f.rel);
       });
     });
-    if (owners.length === 1 && owners[0] === 'js/seal.js') {
+    if (owners.length === 1 && owners[0] === 'spirit/seal.js') {
       test.check('the sealing primitives exist in exactly one file — seal.js, and nothing beside it');
     } else {
       test.fail('sealing is implemented in ' + owners.length + ' places: ' + owners.join(', '));
@@ -413,7 +413,7 @@ test.subHeading('No module offers a way past its own front door');
   const HATCHES = [/\binternal\s*:/, /\b_[a-z]\w*\s*:\s*function/];
   const offenders = [];
   files.forEach(function (f) {
-    if (f.rel.indexOf('js/') !== 0) return;
+    if (f.rel.indexOf('spirit/') !== 0) return;
     const src = fs.readFileSync(f.full, 'utf8')
       .split('\n')
       .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })

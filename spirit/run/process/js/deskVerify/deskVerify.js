@@ -36,10 +36,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../js/appServer.js');
-const appClient = require('../../../js/appClient.js');
-const probabilityStringMatch = require('../../../js/probabilityStringMatch.js').probabilityStringMatch;
-const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const appServer = require('../../../spirit/appServer.js');
+const appClient = require('../../../spirit/appClient.js');
+const probabilityStringMatch = require('../../../spirit/probabilityStringMatch.js').probabilityStringMatch;
+const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

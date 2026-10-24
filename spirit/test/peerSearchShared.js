@@ -33,8 +33,8 @@ test.startTest('goal/G29.17: the peer search on the probability modules and the 
 
 test.subHeading('1. one ranker for relay and node: js/peerRank.js');
 let rank = null;
-try { rank = require('../run/js/peerRank.js').rank; } catch (e) { rank = null; }
-if (typeof rank === 'function') test.check('js/peerRank.js exports rank(rows, q, slots)');
+try { rank = require('../run/spirit/peerRank.js').rank; } catch (e) { rank = null; }
+if (typeof rank === 'function') test.check('spirit/peerRank.js exports rank(rows, q, slots)');
 else test.fail(OWED + 'no js/peerRank.js with rank()');
 const row = function (label, key) { return { publicKey: key || ('K-' + label), publicLabel: label }; };
 const ROWS = [row('bob'), row('alicia smith'), row('alice'), row('Alice Cooper'), row('carol')];
@@ -58,22 +58,22 @@ if (kept && kept.rows[0] === ROWS[2]) test.check('the rows come back as given, u
 else test.fail(OWED + 'the rows were copied or changed');
 
 test.subHeading('2. the relay and the node rank with it; the old peer search is gone');
-const relay = code('js/relay.js');
-const hub = code('js/hub.js');
+const relay = code('spirit/relay.js');
+const hub = code('spirit/hub.js');
 if (/require\('\.\/peerRank'\)/.test(relay) && /peerRank\.rank\(/.test(relay)) test.check('relay.js ranks its connected members with peerRank');
 else test.fail(OWED + 'relay.js does not rank with peerRank');
 if (/require\('\.\/peerRank'\)/.test(hub) && /peerRank\.rank\(/.test(hub)) test.check('hub.js merges the relays\' answers and memory with peerRank');
 else test.fail(OWED + 'hub.js does not rank with peerRank');
-if (!/require\('\.\/peerSearch'\)/.test(relay + hub) && !fs.existsSync(path.join(RUN, 'js', 'peerSearch.js'))) test.check('js/peerSearch.js is gone, and nothing requires it');
+if (!/require\('\.\/peerSearch'\)/.test(relay + hub) && !fs.existsSync(path.join(RUN, 'spirit', 'peerSearch.js'))) test.check('spirit/peerSearch.js is gone, and nothing requires it');
 else test.fail(OWED + 'peerSearch.js is still there or still required');
 if (!fs.existsSync(path.join(__dirname, 'peerSearch.js'))) test.check('its suite, test/peerSearch.js, is retired with it');
 else test.fail(OWED + 'spirit/test/peerSearch.js still tests the graded peer search');
-const ranker = code('js/peerRank.js');
+const ranker = code('spirit/peerRank.js');
 if (/probabilityStringObjectMatch/.test(ranker) && /probabilityBucket/.test(ranker) && !/gradedSearch/.test(ranker)) test.check('peerRank uses the probability modules, not the graded search');
 else test.fail(OWED + 'peerRank does not stand on the probability modules');
 
 test.subHeading('3. the network search answers the shared shape (contact.search, goal/G30.19)');
-const server = code('js/server.js');
+const server = code('spirit/server.js');
 // contact.search in the flat door's tables: q and the state filters in, the shared shape out.
 const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*'',\s*owned[^\n]*/.exec(server) || [''])[0];
 if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /more:\s*false/.test(decl) && /hub\.contactSearch\(/.test(decl)) test.check('server.js declares contact.search answering {items: [{key, label}], more, ...}');

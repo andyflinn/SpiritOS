@@ -31,7 +31,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const sqlite = require('node:sqlite');
-const appServer = require('../../../js/appServer.js');
+const appServer = require('../../../spirit/appServer.js');
 
 const argv = process.argv;
 function arg(name) { const at = argv.indexOf(name); return at !== -1 ? argv[at + 1] : ''; }

@@ -20,11 +20,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const RUN_JS = path.join(__dirname, '..', 'run', 'js');
+const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 const FILES = ['relayAuth.js', 'fieldRules.js'];
 
 function ensureAt(root, name) {
-  const js = path.join(root, 'js');
+  const js = path.join(root, 'spirit');
   fs.mkdirSync(js, { recursive: true });
   FILES.forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(js, f)); });
   FILES.forEach(function (f) { delete require.cache[require.resolve(path.join(js, f))]; });

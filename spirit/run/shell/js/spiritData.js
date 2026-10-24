@@ -104,8 +104,8 @@
   var SEARCH_SCANNED = 1000;
   function ranking() {
     if (typeof require === 'function' && typeof module !== 'undefined' && module) {
-      return { match: require('../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
-        bucket: require('../../js/probabilityBucket.js').createProbabilityBucket, limits: require('../../js/limits.js') };
+      return { match: require('../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
+        bucket: require('../../spirit/probabilityBucket.js').createProbabilityBucket, limits: require('../../spirit/limits.js') };
     }
     var p = (root.spirit && root.spirit.probability) || {};
     return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };

@@ -9,7 +9,7 @@
 //   "The fix is in introSpector.js, common code: the query that spans everything, "**", as log.search already uses."
 //   "Test: a verb file whose description holds a "/" is listed by AGENTS.introspect, and item.get is offered to Levant."
 //
-// WHERE, READ AT 1712394c: AGENTS.introspect builds its bucket with `query: '*'` (spirit/run/js/introSpector.js, the
+// WHERE, READ AT 1712394c: AGENTS.introspect builds its bucket with `query: '*'` (spirit/run/spirit/introSpector.js, the
 // handler of prefix + 'AGENTS.introspect'), and offers each verb file's description as the label; a label holding a
 // "/" never matches a single "*", so the bucket drops it and says nothing (more stays false).
 //
@@ -35,7 +35,7 @@ const OWED = 'OWED by goal/G24.5: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // <module>.family since goal/G30.4
 const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
-const introSpector = require('../run/js/introSpector.js');
+const introSpector = require('../run/spirit/introSpector.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
@@ -119,9 +119,9 @@ async function suite() {
     const dir = path.join(RUN, 'process', 'js', n, n + '.family');
     if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
   });
-  fs.readdirSync(path.join(RUN, 'js')).forEach(function (n) {
-    const dir = path.join(RUN, 'js', n);
-    if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'js/' + n, dir: dir, manifest: '', prefix: n + '.' });
+  fs.readdirSync(path.join(RUN, 'spirit')).forEach(function (n) {
+    const dir = path.join(RUN, 'spirit', n);
+    if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'spirit/' + n, dir: dir, manifest: '', prefix: n + '.' });
   });
   if (folders.some(function (f) { return f.name === 'process/js/desk/desk.family'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found: ' + folders.map(function (f) { return f.name; }).join(', '));
   else test.fail('the world: the families found are ' + short(folders.map(function (f) { return f.name; })));

@@ -50,8 +50,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const { createRelay } = require('../run/spirit/relay');
 
 function sinkFor(bag) {
   return {
@@ -256,7 +256,7 @@ if (!leaked.length) {
 // AND THE RING IS BOUNDED, because the resource it reports on is the one
 // it spends. A ring that grew under load would be the instrument
 // consuming what it was built to measure.
-const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
 if (/METER_SLOTS\s*=\s*\d+/.test(src) && /slots\.length > METER_SLOTS/.test(src)) {
   test.check('and the ring is a fixed size, overwriting rather than growing');
 } else {
@@ -424,8 +424,8 @@ test.subHeading('A search answer is cut to what the wire holds');
 // THE RANKING IS peerRank's SINCE goal/G29.17, on the probability modules, and the partners whose `vias` overflowed
 // the wire went with goal/G22.6: a row is its own few fields again. What stays is the order of the work: the ranker
 // decides which rows and in what order; the relay alone knows the envelope, and cuts from the bottom of that order.
-const peerRank = require('../run/js/peerRank.js');
-const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+const peerRank = require('../run/spirit/peerRank.js');
+const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
 
 const budget = R.box.matchBudget();
 

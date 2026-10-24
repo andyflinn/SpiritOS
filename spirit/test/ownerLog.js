@@ -48,8 +48,8 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const { sealFor } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const trafficLog = require('../run/js/trafficLog');
+const auth = require('../run/spirit/relayAuth');
+const trafficLog = require('../run/spirit/trafficLog');
 const world = require('./world');
 
 function fakeSink() {
@@ -309,7 +309,7 @@ test.subHeading('A stranger cannot drive the owner’s stream');
   const box = L.box;
   const ownerSink = fakeSink();
   openStream(box, L.owner, ownerSink);
-  const seal = require('../run/js/seal');
+  const seal = require('../run/spirit/seal');
 
   const before = ownerSink.owned().length;
   for (let i = 0; i < 100; i += 1) {

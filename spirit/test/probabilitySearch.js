@@ -40,7 +40,7 @@ test.startTest('goal/G30.17: probabilitySearch, the standard shell list-tool');
 const window = test.withSpirit({ 'spirit.elements': {} });
 const ctx = vm.createContext({ window: window, console: console, document: { addEventListener: function () {} } });
 const loaded = {};
-['js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
+['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });

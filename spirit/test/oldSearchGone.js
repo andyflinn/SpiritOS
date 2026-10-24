@@ -19,7 +19,7 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G29.22: ';
 const RUN = path.join(__dirname, '..', 'run');
-const JS = path.join(RUN, 'js');
+const JS = path.join(RUN, 'spirit');
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
 function keysOf(r) { return ((r && r.items) || []).map(function (i) { return i.key; }); }
 function load(name) { try { return require(path.join(JS, name)); } catch (e) { return null; } }

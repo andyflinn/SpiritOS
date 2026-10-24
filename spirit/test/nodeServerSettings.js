@@ -31,14 +31,14 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const auth = require('../run/js/relayAuth.js');
+const kernel = require('../run/spirit/kernel.js');
+const auth = require('../run/spirit/relayAuth.js');
 
 const OWED = 'OWED by goal/G33.9: ';
 const REPO = path.join(__dirname, '..', '..');
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-const jobs = require('../run/js/jobs.js')(kernel, 65433);
+const jobs = require('../run/spirit/jobs.js')(kernel, 65433);
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodeserversettings-'));
 const started = [];
 

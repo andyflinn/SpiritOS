@@ -11,9 +11,9 @@
 // rested on stays, and is what is asserted here.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayKeys = require('../run/js/relayKeys');
-const answerRelay = require('../run/js/answerRelay');
+const auth = require('../run/spirit/relayAuth');
+const relayKeys = require('../run/spirit/relayKeys');
+const answerRelay = require('../run/spirit/answerRelay');
 const world = require('./world');
 
 const RELAY_URL = 'http://relay.example';

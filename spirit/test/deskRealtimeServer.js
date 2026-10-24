@@ -20,7 +20,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G27.9 (S1): ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');

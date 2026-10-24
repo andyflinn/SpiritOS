@@ -59,15 +59,15 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const { rememberKeys, sealKeyFor } = require('./openReply');
-const nodeCard = require('../run/js/nodeCard');
-const auth = require('../run/js/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const hub = require('../run/js/hub');
-const buildStamp = require('../run/js/buildStamp');
+const hub = require('../run/spirit/hub');
+const buildStamp = require('../run/spirit/buildStamp');
 const plantRun = require('./plantRun');
-const sseClient = require('../run/js/sseClient');
-const peerPost = require('../run/js/peerPost');
-const { createRelay } = require('../run/js/relay');
+const sseClient = require('../run/spirit/sseClient');
+const peerPost = require('../run/spirit/peerPost');
+const { createRelay } = require('../run/spirit/relay');
 
 // Below 49152, outside Windows' ephemeral range — see presenceWire.js:41
 // for what a port inside it costs, and targetBusy.js for the neighbour.
@@ -128,7 +128,7 @@ function plant(w) {
 // stderr is kept, not ignored — partnerWire.js records what discarding it
 // cost: `listen EACCES` was invisible and read as a regression.
 async function startRelay(w, port) {
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
   w.why = '';

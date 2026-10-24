@@ -30,8 +30,8 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../js/appServer.js');
-const appClient = require('../../../js/appClient.js');
+const appServer = require('../../../spirit/appServer.js');
+const appClient = require('../../../spirit/appClient.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -189,9 +189,9 @@ function walked(walk, pairOf, room) {
 //
 // Until this the desk's searches graded nothing: a substring filter, then the graded bucket in the walk's order. With no
 // text every probability is 0 and the bucket keeps the walk's order, so the List reads as it did.
-const probabilityStringMatch = require('../../../js/probabilityStringMatch.js').probabilityStringMatch;
-const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringMatch = require('../../../spirit/probabilityStringMatch.js').probabilityStringMatch;
+const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
 function itemProbability(text, it, lines) {
@@ -477,7 +477,7 @@ function coreGrantAfter(it, r, added) {
   if (!hasCore) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
   const granted = it.checks.filter(function (c) { return isCoreGrant(c) && c.state === 'granted'; });
   if (granted.length) {
-    if (!added || require('../../../js/coreFiles.js').isCore(added) !== true) return;
+    if (!added || require('../../../spirit/coreFiles.js').isCore(added) !== true) return;
     granted.forEach(function (c) { c.state = 'voided'; c.at = r.at; });
   }
   if (it.checks.some(function (c) { return isCoreGrant(c) && c.state === 'open'; })) return;
@@ -521,7 +521,7 @@ function rowsOf(s, it) {
   it.checks.forEach(function (c, i) {
     out.push({ key: 'checks|' + c.number, table: 'checks', id: c.number, cols: [c.number, i, String(c.made || c.placedKey || c.placedBy || c.by || 'desk'), JSON.stringify(c)], out: function () { return c; } });
   });
-  const core = require('../../../js/coreFiles.js');
+  const core = require('../../../spirit/coreFiles.js');
   Object.keys(it.files || {}).forEach(function (holder) {
     (Array.isArray(it.files[holder]) ? it.files[holder] : []).forEach(function (p, i) {
       const isCore = core.isCore(String(p)) === true;
@@ -1835,14 +1835,14 @@ function mayTake(s, it, phase, who) {
 
 // WHICH RULES APPLY (goal/G5.8). Andy: "if a job involves ui, there are rules of that type to considered", "is there a
 // mechanical way to attach applicable rules to an item before or when it's given a go?". The desk rules always, plus
-// the types the item's box names paths of: spirit/run/js/ and process/js/ are code, spirit/run/shell/ is ui.
+// the types the item's box names paths of: spirit/run/spirit/ and process/js/ are code, spirit/run/shell/ is ui.
 // AND THE DESIGN RULES ALWAYS (goal/G2.20). Asked what the type design should attach to, Andy, 2026-10-06: "every
 // item". Until this, a design rule matched no item at all, whatever its box said, and his Go stamped nothing of it:
 // the kind of rule that governs how the work is done belongs on every item, like a desk rule.
 function typesOf(it) {
   const box = String(it.box || '');
   const types = ['desk', 'design'];
-  if (/spirit\/run\/js\/|process\/js\//.test(box)) types.push('code');
+  if (/spirit\/run\/spirit\/|process\/js\//.test(box)) types.push('code');
   if (/spirit\/run\/shell\//.test(box)) types.push('ui');
   return types;
 }
@@ -1906,7 +1906,7 @@ function liveAgents(s) {
 // THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by, core }, sorted by path
 // so the Details draws it the same way twice. core is coreFiles.isCore, never a second list of its own.
 function filesOf(it) {
-  const core = require('../../../js/coreFiles.js');
+  const core = require('../../../spirit/coreFiles.js');
   const held = it.files || {};
   const out = [];
   Object.keys(held).forEach(function (by) {
@@ -2069,7 +2069,7 @@ function refused(code) { const e = new Error(code); e.refusal = code; return e; 
 function refusedWhy(code, why) { const e = refused(code); e.extra = { why: String(why) }; return e; }
 // A FIELD RULE'S ANSWER IN WORDS: what was wrong with which field, and its bytes against the limit when it is the size.
 function fieldWhy(what, value, paragraph) {
-  const fr = require('../../../js/fieldRules.js');
+  const fr = require('../../../spirit/fieldRules.js');
   const p = paragraph ? fr.paragraphProblem(value) : fr.problem(value);
   if (!p) return '';
   const max = paragraph ? fr.PARAGRAPH_MAX_BYTES : fr.MAX_BYTES;
@@ -2683,7 +2683,7 @@ function pluginDesk(name, manifest, goal) {
     writeAs: function (verb, body, caller, check) { const w = writerOf(caller); body.by = w.by; body.key = w.key; return write(verb, body, check); },
     writerOf: writerOf,
     refused: refusedWhy,
-    fieldRules: require('../../../js/fieldRules.js'),
+    fieldRules: require('../../../spirit/fieldRules.js'),
     fieldWhy: fieldWhy,
     nextItemId: nextItemId,
     // goal/G33.4: an id written before the ids became numbers (plugin/<name>.<n>, as a plugin's own list may still hold
@@ -3358,7 +3358,7 @@ appServer.serve(withPlugins({
     handler: function (a, caller) {
       const w = writerOf(caller);
       mayWrite(walkState(), w);
-      const fr = require('../../../js/fieldRules.js');
+      const fr = require('../../../spirit/fieldRules.js');
       if (RULE_TYPES.indexOf(a.type) === -1) throw refusedWhy('bad-request', 'a rule type is one of ' + RULE_TYPES.join(', '));
       if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
@@ -3381,7 +3381,7 @@ appServer.serve(withPlugins({
     request: { key: '', text: '' }, reply: { key: '' },
     handler: function (a, caller) {
       ownerOnly(caller);
-      const fr = require('../../../js/fieldRules.js');
+      const fr = require('../../../spirit/fieldRules.js');
       if (!newestRule.get(String(a.key))) throw refused('no-such-item');
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
@@ -3393,7 +3393,7 @@ appServer.serve(withPlugins({
     request: { key: '', text: '', status: '' }, reply: { key: '' },
     handler: function (a, caller) {
       ownerOnly(caller);
-      const fr = require('../../../js/fieldRules.js');
+      const fr = require('../../../spirit/fieldRules.js');
       const r = newestRule.get(String(a.key));
       if (!r) throw refused('no-such-item');
       if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));

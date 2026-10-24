@@ -22,14 +22,14 @@
 //   appApiDoor.js builds its doors with no auth; once this lands its fakes grant 'alpha', or it reads as denied.
 
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
 
 test.startTest('apiAuth/G1.2: the gate decides every member call by its grants');
 
 const OWED = 'OWED by apiAuth/G1.2: ';
 let apiDoor = null;
-try { apiDoor = require('../run/js/apiDoor.js'); } catch (e) { apiDoor = null; }
+try { apiDoor = require('../run/spirit/apiDoor.js'); } catch (e) { apiDoor = null; }
 
 const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
 const VERB = { request: {}, reply: { ok: true } };

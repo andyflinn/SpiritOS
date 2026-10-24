@@ -48,10 +48,10 @@ function src(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); }
 function tracked(dir) { return execSync('git ls-files -- ' + dir, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }
 
 // The scripts the box lists as loading spirit.js, and those of them that leave the kernel (box v17).
-const LOADERS = ['js/appServer.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js', 'process/js/desk/commitCheck.js',
+const LOADERS = ['spirit/appServer.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js', 'process/js/desk/commitCheck.js',
   'process/js/desk/deskAgentEar.js', 'process/js/desk/removeAgent.js', 'process/js/deskAgent/deskAgent.js', 'process/js/deskClient/deskClient.js',
   'process/js/deskClient/publishData.js', 'process/js/fileServer/fileServer.js', 'process/js/relayLimits/relayLimits.js'];
-const OFF_KERNEL = ['js/appServer.js', 'js/introSpector.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js',
+const OFF_KERNEL = ['spirit/appServer.js', 'spirit/introSpector.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js',
   'process/js/deskAgent/deskAgent.js', 'process/js/deskClient/deskClient.js', 'process/js/deskVerify/deskVerify.js', 'process/js/fileServer/fileServer.js'];
 
 // A script's first statement, past 'use strict', comments and blank lines.
@@ -98,7 +98,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   if (!naming.length) test.check('no tracked file in run/ or test/ names the old path');
   else test.fail(OWED + naming.length + ' tracked files still name the old path: ' + short(naming.slice(0, 8)));
   let core = null;
-  try { core = require('../run/js/coreFiles.js').isCore('spirit/run/spirit.js', REPO); } catch (e) { core = 'threw ' + e.message; }
+  try { core = require('../run/spirit/coreFiles.js').isCore('spirit/run/spirit.js', REPO); } catch (e) { core = 'threw ' + e.message; }
   if (core === true) test.check('spirit/run/spirit.js is core');
   else test.fail(OWED + 'coreFiles.isCore(spirit/run/spirit.js) answered ' + short(core));
 
@@ -107,7 +107,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-atrunroot-'));
   try {
     fs.writeFileSync(path.join(scratch, 'spirit.js'), '/* the run root spirit */');
-    const out = require('../run/js/serveCommon.js').inlineSpirit('<head><!-- spirit.js --></head>', scratch);
+    const out = require('../run/spirit/serveCommon.js').inlineSpirit('<head><!-- spirit.js --></head>', scratch);
     if (/the run root spirit/.test(out)) test.check('serveCommon.inlineSpirit inlines the run root\'s spirit.js');
     else test.fail(OWED + 'inlineSpirit with a spirit.js at the run root gave ' + short(out));
   } catch (e) { test.fail(OWED + 'inlineSpirit threw ' + e.message); }
@@ -129,7 +129,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   if (fs.existsSync(NEW)) { try { fs.rmSync(path.join(home, 'face', 'spirit.js'), { force: true }); } catch (e) { /* none */ } }
   const port = await freePort();
   let said = '';
-  const child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   child.stderr.on('data', function (c) { said = (said + c).slice(-4096); });
   try {
     let up = 0;
@@ -142,14 +142,14 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
     // NAMED BY THE BUILDER (goal/G40.1): node's global spirit binds an interface from this process's own node, the one
     // SPIRIT_CALLBACK_URL names (the node that started it, as the kernel's peerPost reads it), never the default port.
     const bind = function (env) {
-      const r = spawnSync(process.execPath, ['-e', "require('./spirit.js'); global.spirit.require('js/fs/api.js').then(function (f) {" +
+      const r = spawnSync(process.execPath, ['-e', "require('./spirit.js'); global.spirit.require('spirit/fs/api.js').then(function (f) {" +
         " console.log(JSON.stringify({ bound: global.spirit.fs === f && typeof f.load === 'function' })); }," +
         " function (e) { console.log(JSON.stringify({ refused: String(e && e.code || e) })); });"],
         { cwd: RUN, encoding: 'utf8', timeout: 20000, env: Object.assign({}, process.env, env) });
       try { return JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { return { failed: String(r.stderr || '').slice(-200) }; }
     };
     const own = bind({ SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + port + '/api/jobs/x' });
-    if (own.bound === true) test.check('in node, spirit.require(\'js/fs/api.js\') binds spirit.fs from the node SPIRIT_CALLBACK_URL names');
+    if (own.bound === true) test.check('in node, spirit.require(\'spirit/fs/api.js\') binds spirit.fs from the node SPIRIT_CALLBACK_URL names');
     else test.fail(OWED + 'spirit.require of an interface in node, its own node at ' + port + ': ' + short(own));
     const none = bind({ SPIRIT_CALLBACK_URL: '' });
     if (none.refused === 'no-node') test.check('with no node of its own named, it refuses no-node, and asks no default port');
@@ -160,7 +160,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
 
   // ── 3. IN NODE ───────────────────────────────────────────────────────
   test.subHeading('3. in node, requiring spirit.js installs the global spirit');
-  const g = inNode("require('./spirit.js'); const s = global.spirit; const k = require('./js/kernel.js');" +
+  const g = inNode("require('./spirit.js'); const s = global.spirit; const k = require('./spirit/kernel.js');" +
     "console.log(JSON.stringify({ type: typeof s," +
     " helpers: !!s && ['error', 'formatBytes', 'escapeHtml', 'check'].every(function (n) { return typeof s[n] === 'function'; })," +
     " loaders: !!s && typeof s.createSpirit === 'function' && typeof s.forNode === 'function' && typeof s.forPeer === 'function'," +
@@ -176,11 +176,11 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   if (Array.isArray(g.jobs) && !g.jobs.length && g.consts && g.version && g.mime && g.peerPost)
     test.check('under the kernel\'s names: core.jobs publish/start/progress/end, core.node.const, core.const.VERSION and MIME_TYPES, peerPost');
   else test.fail(OWED + 'the kernel\'s members on spirit: jobs missing ' + short(g.jobs) + ', node.const ' + g.consts + ', VERSION ' + g.version + ', MIME_TYPES ' + g.mime + ', peerPost ' + g.peerPost);
-  const comp = inNode("require('./spirit.js'); Promise.resolve(global.spirit && typeof global.spirit.require === 'function' ? global.spirit.require('js/limits.js') : null)" +
-    ".then(function (m) { console.log(JSON.stringify({ ok: !!m && m.BODY_MAX === require('./js/limits.js').BODY_MAX })); }," +
+  const comp = inNode("require('./spirit.js'); Promise.resolve(global.spirit && typeof global.spirit.require === 'function' ? global.spirit.require('spirit/limits.js') : null)" +
+    ".then(function (m) { console.log(JSON.stringify({ ok: !!m && m.BODY_MAX === require('./spirit/limits.js').BODY_MAX })); }," +
     " function (e) { console.log(JSON.stringify({ failed: String(e && e.message || e) })); });");
-  if (comp.ok === true) test.check('spirit.require(\'js/limits.js\') loads the component by its run-root path');
-  else test.fail(OWED + 'spirit.require(\'js/limits.js\') in node gave ' + short(comp));
+  if (comp.ok === true) test.check('spirit.require(\'spirit/limits.js\') loads the component by its run-root path');
+  else test.fail(OWED + 'spirit.require(\'spirit/limits.js\') in node gave ' + short(comp));
 
   // ── 4. ON A FACE ─────────────────────────────────────────────────────
   test.subHeading('4. on a face, spirit.require loads a component, an interface by its path, and a peer\'s family');
@@ -257,8 +257,8 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   });
   if (!tails.length) test.check('no tracked file in run/ or test/ names ' + TAIL);
   else test.fail(OWED + tails.length + ' tracked files still name ' + TAIL + ': ' + short(tails.slice(0, 8)));
-  if (!/\btail:\s/.test(src('js/hub.js') || '')) test.check('hub\'s contact rows carry no tail field');
-  else test.fail(OWED + 'js/hub.js still sends a tail field');
+  if (!/\btail:\s/.test(src('spirit/hub.js') || '')) test.check('hub\'s contact rows carry no tail field');
+  else test.fail(OWED + 'spirit/hub.js still sends a tail field');
 
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });

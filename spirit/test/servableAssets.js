@@ -15,7 +15,7 @@
 // Purely predicate/read checks — nothing here writes to disk, so it's
 // safe to run against a live checkout.
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const fileServable = spirit.core.fs.fileServable;
@@ -84,20 +84,20 @@ function expectWritable(label, filePath) {
 // the page's own boot script — but that exception lives in the static
 // route, deliberately NOT here, so the generic capability below stays shut.
 test.subHeading('Node-only js/ modules are unservable');
-expectUnservable('js/kernel.js', 'js/kernel.js');
-expectUnservable('js/jobs.js', 'js/jobs.js');
-expectUnservable('js/server.js', 'js/server.js');
-expectUnservable('js/relay.js', 'js/relay.js');
-expectUnservable('js/hub.js', 'js/hub.js');
-expectUnservable('js/relayAuth.js', 'js/relayAuth.js');
+expectUnservable('spirit/kernel.js', 'spirit/kernel.js');
+expectUnservable('spirit/jobs.js', 'spirit/jobs.js');
+expectUnservable('spirit/server.js', 'spirit/server.js');
+expectUnservable('spirit/relay.js', 'spirit/relay.js');
+expectUnservable('spirit/hub.js', 'spirit/hub.js');
+expectUnservable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 
 // None of them are writable either — not because they're on a denylist,
 // but because js/ was never a writable root. Asserted anyway so a future
 // change to the writable roots can't quietly open them up.
-expectNotWritable('js/kernel.js', 'js/kernel.js');
-expectNotWritable('js/relay.js', 'js/relay.js');
-expectNotWritable('js/hub.js', 'js/hub.js');
-expectNotWritable('js/relayAuth.js', 'js/relayAuth.js');
+expectNotWritable('spirit/kernel.js', 'spirit/kernel.js');
+expectNotWritable('spirit/relay.js', 'spirit/relay.js');
+expectNotWritable('spirit/hub.js', 'spirit/hub.js');
+expectNotWritable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 
 // ---- genuine browser assets stay open ----
 test.subHeading('Client assets stay servable');
@@ -105,15 +105,15 @@ expectLoads('index.html (desktop homepage)', 'index.html');
 // relay.html (the --relay homepage) went with the relay's public door
 // (Andy's decision, goal/G22.6).
 expectLoads('favicon.svg', 'favicon.svg');
-expectLoads('js/client/shell.js (browser boot)', 'js/client/shell.js');
+expectLoads('spirit/client/shell.js (browser boot)', 'spirit/client/shell.js');
 // packet.js moved down here out of js/. If it ever stops serving, no app can
 // send or read an envelope, and the shell can only say so in the console —
 // so the serving is asserted rather than discovered.
-expectLoads('js/client/packet.js (the app envelope)', 'js/client/packet.js');
-expectLoads('js/client/chatLog.js', 'js/client/chatLog.js');
-expectLoads('js/client/iconIndex.js', 'js/client/iconIndex.js');
-expectLoads('js/limits.js (the size both ends refuse at)', 'js/limits.js');
-expectLoads('js/peerFile.js', 'js/peerFile.js');
+expectLoads('spirit/client/packet.js (the app envelope)', 'spirit/client/packet.js');
+expectLoads('spirit/client/chatLog.js', 'spirit/client/chatLog.js');
+expectLoads('spirit/client/iconIndex.js', 'spirit/client/iconIndex.js');
+expectLoads('spirit/limits.js (the size both ends refuse at)', 'spirit/limits.js');
+expectLoads('spirit/peerFile.js', 'spirit/peerFile.js');
 
 // ---- app code and app data stay open ----
 // An app's entry script and manifest are readable (the shell fetches the
@@ -189,7 +189,7 @@ expectNotWritable('relay-state/mailbox.json', 'relay-state/mailbox.json');
 // real walk over the real js/ folder rather than trusting the predicate.
 test.subHeading('scanFolder listings honour the same gate');
 {
-  const entries = spirit.core.node.util.scanFolder(path.join(ROOT_DIR, 'js'));
+  const entries = spirit.core.node.util.scanFolder(path.join(ROOT_DIR, 'spirit'));
   const names = entries.filter(function (e) { return e.isFile(); }).map(function (e) { return e.name; });
 
   ['kernel.js', 'jobs.js', 'server.js', 'relay.js', 'hub.js', 'relayAuth.js'].forEach(function (name) {

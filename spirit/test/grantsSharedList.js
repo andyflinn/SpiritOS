@@ -25,7 +25,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.7: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -68,11 +68,11 @@ function page() {
   test.subHeading('1. auth.search on the new search');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grants-'));
   try {
-    const store = require('../run/js/nodeStore').open(root).auth;
+    const store = require('../run/spirit/nodeStore').open(root).auth;
     store.grant(ALICE, 'desk.item.get', 'alice');
     store.grant(ALICE, 'chatter', 'alice');
     store.grant(BOB, 'desk', 'bob');
-    const auth = require('../run/js/apiAuth').createApiAuth({ rootDir: root });
+    const auth = require('../run/spirit/apiAuth').createApiAuth({ rootDir: root });
     const all = auth.search({ text: '' });
     const rows = ((all && all.items) || []).map(function (i) { return { key: i.key, label: parse(i.label) }; });
     if (rows.length === 3 && rows.every(function (r) { return r.label && r.label.name && r.label.key && r.label.path && r.key === r.label.key + '\n' + r.label.path; })) test.check('no words: every grant, each {key: key + newline + path, label: {name, key, path}}');
@@ -84,13 +84,13 @@ function page() {
     const keyCut = auth.search({ text: ALICE.slice(20, 34) });
     if (!((keyCut && keyCut.items) || []).length) test.check('the key itself is never matched');
     else test.fail(OWED + 'a cut of the key found ' + short(keyCut));
-    if (!/searchBucket/.test(code(path.join(RUN, 'js', 'apiAuth.js')))) test.check('apiAuth.js holds no old search (searchBucket gone from it)');
+    if (!/searchBucket/.test(code(path.join(RUN, 'spirit', 'apiAuth.js')))) test.check('apiAuth.js holds no old search (searchBucket gone from it)');
     else test.fail(OWED + 'apiAuth.js still requires searchBucket');
   } catch (e) {
     test.fail(OWED + 'the store could not be searched: ' + (e && e.message || e));
   } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   // Since goal/G30.4 the jobs family is mounted with its verbs bare: authSearch inside loopbackVerbs.mount('jobs', ...).
-  const server = code(path.join(RUN, 'js', 'server.js'));
+  const server = code(path.join(RUN, 'spirit', 'server.js'));
   // The grant verbs are the auth family's since goal/G30.6.
   const jobsMount = (/loopbackVerbs\.mount\('auth',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
   if (/'search':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(jobsMount)) test.check('server.js declares auth.search {text} answering LIST');
@@ -104,9 +104,9 @@ function page() {
   const p = page();
   const win = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
-  (win.spirit = win.spirit || {}).apiTreeIndex = require(path.join(RUN, 'js', 'client', 'apiTreeIndex.js'));
+  (win.spirit = win.spirit || {}).apiTreeIndex = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'));
   const VERB = { request: {}, reply: { x: '' } };
   const TREE = { desk: { 'item.get': VERB, 'item.add': VERB }, chatter: { 'chat.add': VERB } };
   const GRANTS = [{ name: 'alice', key: ALICE, path: 'desk.item.get' }, { name: 'alice', key: ALICE, path: 'chatter' }, { name: 'bob', key: BOB, path: 'desk' }];
@@ -188,7 +188,7 @@ function page() {
   const p2 = page();
   const w2 = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(w2, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(w2, undefined);
   });
   new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(p2.doc, w2);
   const box2 = p2.node('span');

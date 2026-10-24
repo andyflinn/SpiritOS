@@ -38,10 +38,10 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const router = require('../run/js/router');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const router = require('../run/spirit/router');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 test.startTest('Published guarantees hold, not just the halves they rest on');
 
@@ -284,8 +284,8 @@ test.subHeading('GUARANTEE: no relay can read what one node says to another');
 // ═══════════════════════════════════════════════════════════════════════
 
 {
-  const seal = require('../run/js/seal');
-  const nodeCard = require('../run/js/nodeCard');
+  const seal = require('../run/spirit/seal');
+  const nodeCard = require('../run/spirit/nodeCard');
 
   const w = relayWith(1);
   const anna = join(w, 'anna');
@@ -387,8 +387,8 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
 // ═══════════════════════════════════════════════════════════════════════
 
 {
-  const auth2 = require('../run/js/relayAuth');
-  const card2 = require('../run/js/nodeCard');
+  const auth2 = require('../run/spirit/relayAuth');
+  const card2 = require('../run/spirit/nodeCard');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-precycle10-'));
   homes.push(home);
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
@@ -430,12 +430,12 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
   // ever wrong. Since goal/G22.5 the call is relayAuth.js's own, on its
   // first load, for the spirit/run it sits in; server.js reaches it by
   // requiring relayAuth (through hub.js) before it listens.
-  const authSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relayAuth.js'), 'utf8');
+  const authSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relayAuth.js'), 'utf8');
   const calls = authSrc.split(String.fromCharCode(10)).filter(function (line) {
     return /ensureIdentity\s*\(\s*path\.resolve\(\s*__dirname/.test(line) && !/^\s*\/\//.test(line);
   });
-  const boot = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
-  const hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
+  const boot = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'server.js'), 'utf8');
+  const hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'hub.js'), 'utf8');
   const reached = /require\('\.\/hub'\)/.test(boot) && /require\('\.\/relayAuth'\)/.test(hubSrc);
 
   if (calls.length >= 1 && reached) {

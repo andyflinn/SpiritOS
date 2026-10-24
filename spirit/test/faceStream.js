@@ -40,9 +40,9 @@ const homes = [];
 
 test.startTest('goal/G30.14: the face request as a stream event, and faceStream');
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3014-'));
 homes.push(home);
 plant.ensureAt(home, 'relay');
@@ -52,7 +52,7 @@ fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
 fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
 const mails = [];
 let now = Date.now();
-const box = require('../run/js/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+const box = require('../run/spirit/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
 const has = function (fn) { return typeof box[fn] === 'function'; };
 const relayKey = box.relayPublicKey();
 
@@ -151,7 +151,7 @@ const done = (async function () {
   else test.fail(OWED + 'no face-close after the face\'s stream ended');
 
   test.subHeading('4. the routes, and the signature');
-  const server = code('js/relayServer.js');
+  const server = code('spirit/relayServer.js');
   if (['/face/call', '/face/file', '/face/stream', '/api/relay/face/answer', '/api/relay/face/stream'].every(function (p) { return server.indexOf("'" + p + "'") !== -1; })
       && /faceCall\(/.test(server) && /faceAnswer\(/.test(server) && /faceOpen\(/.test(server) && /faceFeed\(/.test(server) && /x-spirit-sig/.test(server))
     test.check('relayServer serves /face/call, /face/file and /face/stream to the face, /api/relay/face/answer and /api/relay/face/stream to the home node');

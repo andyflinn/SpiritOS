@@ -19,8 +19,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const { createRelay } = require('../run/spirit/relay');
 const { claimOwner, ownHome } = require('./ownerClaim');
 
 function relayWith(config) {
@@ -79,7 +79,7 @@ test.subHeading('A full relay refuses the next claim, and says what the owner ca
 
   test.subHeading('…and the invite is NOT burned, so the seat is not lost to nobody');
   const stillThere = R.box.inviteRows ? R.box.inviteRows() : null;
-  const live = require('../run/js/invites').load(R.home).filter(function (row) {
+  const live = require('../run/spirit/invites').load(R.home).filter(function (row) {
     return row.token === refused.token && !row.consumedAt;
   });
   if (live.length === 1) {
@@ -89,7 +89,7 @@ test.subHeading('A full relay refuses the next claim, and says what the owner ca
   }
 
   test.subHeading('…and the members it already has are untouched');
-  if (require('../run/js/relayStore').open(R.home).members.count() === 1) {
+  if (require('../run/spirit/relayStore').open(R.home).members.count() === 1) {
     test.check('the owner is still on the roll — full means no new claims, never an eviction');
   } else {
     test.fail('the roll changed when a claim was refused');
@@ -107,7 +107,7 @@ test.subHeading('The owner is never turned away by the figure');
   let ok = false;
   try {
     claimOwner(R.box, owner, 'owner', 'disc-owner');
-    ok = require('../run/js/relayStore').open(R.home).members.count() === 1;
+    ok = require('../run/spirit/relayStore').open(R.home).members.count() === 1;
   } catch (e) { ok = false; }
   if (ok) {
     test.check('the first owner claims a box that is already over its disc figure');

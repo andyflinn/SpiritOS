@@ -28,7 +28,7 @@
 const test = require('./testSupport.js');
 const wirePaths = require('./tools/wirePaths.js');
 
-function short(file) { return String(file).replace(/^spirit\/run\/js\//, '').replace(/\.js$/, ''); }
+function short(file) { return String(file).replace(/^spirit\/run\/spirit\//, '').replace(/\.js$/, ''); }
 
 test.startTest('One door, by stack: nobody but the gate reaches its endpoint');
 
@@ -37,7 +37,7 @@ test.startTest('One door, by stack: nobody but the gate reaches its endpoint');
 // before any door is judged.
 test.subHeading('the frame and the gate');
 (function () {
-  const F = 'spirit/run/js/peerPost.js';
+  const F = 'spirit/run/spirit/peerPost.js';
   const cases = [
     ['Object.post', F + ':802:post'], ['peerPost.post', F + ':802:post'], ['async post', F + ':802:post'],
     ['Object.holdStreams [as hold]', F + ':802:holdStreams'], ['new Thing', F + ':802:Thing'],
@@ -49,10 +49,10 @@ test.subHeading('the frame and the gate');
   else test.fail('OWED by goal/G22.3: frameName gives ' + JSON.stringify(got) + ' against ' + JSON.stringify(cases.map(function (c) { return c[1]; })));
   const gm = wirePaths.gateMatches;
   const ok = typeof gm === 'function' && gm(F + ':802:post', F + '::post') && !gm(F + ':900:sendAttempt', F + '::post') &&
-    !gm(F + ':802', F + '::post') && !gm('spirit/run/js/hub.js:5:post', F + '::post') && !gm(F + ':802:post', F) &&
+    !gm(F + ':802', F + '::post') && !gm('spirit/run/spirit/hub.js:5:post', F + '::post') && !gm(F + ':802:post', F) &&
     // The complete frame (goal/G22.3): written inside counts, in its own file only.
     gm(F + ':657 in sendAttempt in createPeerPost', F + '::createPeerPost') && gm(F + ':899:post in createPeerPost', F + '::createPeerPost') &&
-    !gm('spirit/run/js/hub.js:5:post in createPeerPost', F + '::createPeerPost') && !gm(F + ':657 in sendAttempt', F + '::pump');
+    !gm('spirit/run/spirit/hub.js:5:post in createPeerPost', F + '::createPeerPost') && !gm(F + ':657 in sendAttempt', F + '::pump');
   if (ok) test.check('a gate file::function matches a frame in that file with that function, and nothing else; a gate with no function matches nothing');
   else test.fail('OWED by goal/G22.3: gateMatches is ' + typeof gm + ' or matches wrongly');
 })();
@@ -70,7 +70,7 @@ function underProbe(prefix, name, source, marker) {
   const path = require('path');
   const { spawnSync } = require('child_process');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  const dir = path.join(home, 'spirit', 'run', 'js');
+  const dir = path.join(home, 'spirit', 'run', 'spirit');
   fs.mkdirSync(dir, { recursive: true });
   const fixture = path.join(dir, name);
   const log = path.join(home, 'wire.tsv');
@@ -103,7 +103,7 @@ test.subHeading('a callback carries its placer');
     'placeFromThen();',
     '',
   ], '/selftest/async');
-  const placer = 'spirit/run/js/asyncPlacer.js::placeFromThen';
+  const placer = 'spirit/run/spirit/asyncPlacer.js::placeFromThen';
   if (framesOfLine(line).some(function (f) { return wirePaths.gateMatches(f, placer); })) {
     test.check('a request made in an anonymous .then records the named function that placed the callback');
   } else {
@@ -135,7 +135,7 @@ test.subHeading('a frame carries what it is written inside');
     'thing.go();',
     '',
   ], '/selftest/lexical');
-  const gate = 'spirit/run/js/lexicalThing.js::makeThing';
+  const gate = 'spirit/run/spirit/lexicalThing.js::makeThing';
   if (framesOfLine(line).some(function (f) { return wirePaths.gateMatches(f, gate); })) {
     test.check('thing.go(), called from outside, holds the gate of the factory makeThing it is written inside');
   } else {

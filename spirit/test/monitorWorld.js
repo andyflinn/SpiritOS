@@ -17,9 +17,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { sealFor, sealedPost, openBody } = require('./openReply');
-const nodeCard = require('../run/js/nodeCard');
-const auth = require('../run/js/relayAuth');
-const createRelay = require('../run/js/relay');
+const nodeCard = require('../run/spirit/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const createRelay = require('../run/spirit/relay');
 
 function sinkFor(bag) {
   return {

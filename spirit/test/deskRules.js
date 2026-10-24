@@ -75,10 +75,10 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
-const verbTable = require('../run/js/verbTable.js');
-const packet = require('../run/js/client/packet.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const verbTable = require('../run/spirit/verbTable.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G3.9: ';
 const OWED19 = 'owed by goal/G4.19: ';

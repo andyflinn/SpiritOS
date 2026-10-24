@@ -48,8 +48,8 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 const deskFake = require('./deskFake.js');
 
 const OWED = 'OWED by desk/G1.4: ';

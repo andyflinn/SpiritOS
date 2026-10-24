@@ -22,7 +22,7 @@
 // checkout.
 const fs = require('fs');
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 const SSE_LISTENERS_PER_CONNECTION = 2;
@@ -30,7 +30,7 @@ const PLAUSIBLE_OPEN_TABS = 16;
 
 test.startTest('Jobs registry lifecycle (jobs.js)');
 
-const jobs = require('../run/js/jobs.js')(spirit, 65432);
+const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
 
 // ---- 1. a job that failed must be removable ----
 test.subHeading('Terminal states can be deleted');
@@ -56,7 +56,7 @@ test.subHeading('Terminal states can be deleted');
 // producer is an fs.watch 'error' event, which a test can't provoke
 // reliably; a hand-set status would only be testing this test.
 {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'jobs.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'jobs.js'), 'utf8');
   const KNOWN_STATUSES = new Set(['completed', 'failed', 'cancelled', 'stopped', 'running', 'pending']);
 
   const assigned = new Set();

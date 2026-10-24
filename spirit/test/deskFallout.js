@@ -18,7 +18,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G27.14: ';
 // goal/G29.5: Fallout talks to deskVerify only, its Reds list a shellCreateListSearch (goal/G29.4). Its box: "server
@@ -231,11 +231,11 @@ async function paneHalf() {
   if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED29 + 'no shell/desk/plugins/fallout/fallout.js'); return; }
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} });
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js'), 'spirit.deskPlugins': {} });
   // The shell's modules as index.html loads them, and the shared container as the pane loads it on demand; a fake
   // page cannot load a script, so the world puts it there and watches what the pane makes of it.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
   if (fs.existsSync(LIST)) new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
@@ -352,7 +352,7 @@ async function historyHalf() {
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   let app = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(DIR, 'falloutHistory.js'), 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, doc, { addEventListener: function () {} });
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(DIR, 'falloutHistory.js'), 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/spirit/kernel.js').core }, doc, { addEventListener: function () {} });
   const calls = [];
   const FLIPS = [
     { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'red', commit: 'bbb2222', at: '2026-10-17T09:00:00.000Z', failure: 'boom again' },
@@ -360,7 +360,7 @@ async function historyHalf() {
   ];
   const box = fakeElement('dlg');
   app.mount(box, {
-    escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
+    escapeHtml: require('../run/spirit/kernel.js').core.util.escapeHtml,
     verb: function (name, body) {
       // A server's verb by name (<server>.<verb>, goal/G30.6), folded back to {server: {verb: args}}.
       const ask = test.foldAsk(Object.assign({}, body, { verb: name })) || {};

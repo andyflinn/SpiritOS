@@ -33,7 +33,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G23.6: ';
 const ROOT = path.join(__dirname, '..', '..');

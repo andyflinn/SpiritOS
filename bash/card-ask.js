@@ -16,7 +16,7 @@
 // 2 on usage.
 
 const path = require('path');
-const auth = require(path.join(__dirname, '..', 'spirit', 'run', 'js', 'relayAuth.js'));
+const auth = require(path.join(__dirname, '..', 'spirit', 'run', 'spirit', 'relayAuth.js'));
 
 const url = String(process.argv[2] || '').trim().replace(/\/+$/, '');
 if (!/^https?:\/\/[^\s/]+/.test(url)) {

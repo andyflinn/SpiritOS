@@ -14,8 +14,8 @@
 //      is how the collision gets back in.
 
 const test = require('./testSupport.js');
-const iconIndex = require('../run/js/client/iconIndex.js');
-const spirit = require('../run/js/kernel.js');
+const iconIndex = require('../run/spirit/client/iconIndex.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const ICON = spirit.core.const.ICON;
 

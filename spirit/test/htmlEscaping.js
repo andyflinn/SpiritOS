@@ -22,7 +22,7 @@
 // Being a DOM round-trip also made it untestable — no DOM in node, so no
 // test could reach it at all. Moving it into the kernel's isomorphic half
 // is what makes this file possible; that is half the fix.
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 const escapeHtml = spirit.core.util.escapeHtml;

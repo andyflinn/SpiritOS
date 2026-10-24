@@ -38,9 +38,9 @@ const exists = function (rel) { return fs.existsSync(path.join(RUN, rel)); };
 
 test.startTest('goal/G30.19: one contact search in two tiers');
 
-const auth = require('../run/js/relayAuth');
-const contactBook = require('../run/js/contacts');
-const hubModule = require('../run/js/hub');
+const auth = require('../run/spirit/relayAuth');
+const contactBook = require('../run/spirit/contacts');
+const hubModule = require('../run/spirit/hub');
 
 function tmpHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3019-'));
@@ -119,11 +119,11 @@ const done = (async function () {
 
   // ── 3. peer.search is gone ─────────────────────────────────────────────────────────────────────────────────────────
   test.subHeading('3. peer.search and peerFind are deleted, their users moved');
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   const peerMount = (/loopbackVerbs\.mount\('peer'[\s\S]*?\}, \{ wire: true, by: 'hub\.js' \}\)/.exec(server) || [''])[0];
-  if (peerMount && !/'search':/.test(peerMount) && !exists('js/peer/search.json') && typeof hub.handleSearch === 'undefined')
+  if (peerMount && !/'search':/.test(peerMount) && !exists('spirit/peer/search.json') && typeof hub.handleSearch === 'undefined')
     test.check('the peer verbs have no search: no route, no declaration, no hub.handleSearch');
-  else test.fail(OWED + 'peer.search still stands: route ' + /'search':/.test(peerMount) + ', declaration ' + exists('js/peer/search.json') + ', handleSearch ' + typeof hub.handleSearch);
+  else test.fail(OWED + 'peer.search still stands: route ' + /'search':/.test(peerMount) + ', declaration ' + exists('spirit/peer/search.json') + ', handleSearch ' + typeof hub.handleSearch);
   if (/hub\.contactSearch\(b, \{[^}]*jobs/.test(server)) test.check('server.js hands contact.search the jobs');
   else test.fail(OWED + 'server.js does not hand contact.search its jobs');
   if (!exists('shell/js/peerFind.js') && !/peerFind/.test(code('index.html')) && !/peerFind/.test(code('shell/contacts/contacts.js')) && !/peerFind/.test(code('shell/join/join.js')))
@@ -141,11 +141,11 @@ const done = (async function () {
   test.subHeading('4. the face gets the peer-search rows and contact renames');
   const me = auth.generateIdentity('home');
   const fjobs = fakeJobs();
-  const renames = require('../run/js/arrivals').createFanOut();
+  const renames = require('../run/spirit/arrivals').createFanOut();
   const written = [];
   let face = null;
   try {
-    face = require('../run/js/faceHome').createFaceHome({
+    face = require('../run/spirit/faceHome').createFaceHome({
       call: function () { return Promise.resolve({ status: 200, body: {} }); }, serveFile: function () {},
       identity: function () { return me; }, relayKey: function () { return ''; }, jobs: fjobs, renames: renames, log: function () {},
       upload: function () { return { write: function (c) { written.push(String(c)); return true; }, end: function () {}, on: function () {}, once: function () {} }; },
@@ -180,7 +180,7 @@ const done = (async function () {
   window.spirit = spirit;
   const ctx = vm.createContext({ window: window, spirit: spirit, console: console, Promise: Promise, document: { addEventListener: function () {} } });
   const loaded = {};
-  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js', 'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js'].forEach(function (rel) {
+  ['spirit/probabilityBucket.js', 'spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/fieldRules.js', 'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js'].forEach(function (rel) {
     try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
     catch (e) { loaded[rel] = e.message; }
   });

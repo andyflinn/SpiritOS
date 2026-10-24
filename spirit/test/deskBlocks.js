@@ -25,9 +25,9 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
-const fieldRules = require('../run/js/fieldRules.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const fieldRules = require('../run/spirit/fieldRules.js');
 
 const OWED = 'OWED by goal/G27.5: ';
 const RUN = path.join(__dirname, '..', 'run');

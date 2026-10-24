@@ -17,7 +17,7 @@
 //   - A stranger has no introspection; it keeps the card and the four public posts.
 //   - Otherwise no behaviour change: the existing relay suites stay green.
 // NAMED HERE where the box names none:
-//   - The folder is spirit/run/js/relaySelf/ (js/relay/ is the node's own relay verbs).
+//   - The folder is spirit/run/spirit/relaySelf/ (js/relay/ is the node's own relay verbs).
 //   - The member verbs are card, face, removePeer, rename and search; the owner's are those and config, debug,
 //     invite, monitor, relayLabel and revoke.
 //   - The DEBUG refusal is { ok: false, status: 403, code: 'not-granted', error }.
@@ -47,13 +47,13 @@ const OWNER_ONLY = ['config', 'debug', 'invite', 'monitor', 'relayLabel', 'revok
 const keysOf = function (a) { return a && Array.isArray(a.items) ? a.items.map(function (i) { return i.key; }).sort() : null; };
 
 test.subHeading('1. the folder');
-const SELF = path.join(RUN, 'js', 'relaySelf');
+const SELF = path.join(RUN, 'spirit', 'relaySelf');
 const files = (function () { try { return fs.readdirSync(SELF); } catch (e) { return []; } }());
 const described = MEMBER.concat(OWNER_ONLY).filter(function (v) {
   try { return typeof JSON.parse(fs.readFileSync(path.join(SELF, v + '.json'), 'utf8')).description === 'string'; } catch (e) { return false; }
 });
-if (files.indexOf('AGENTS.md') !== -1 && described.length === MEMBER.length + OWNER_ONLY.length) test.check('js/relaySelf/ holds AGENTS.md and a description file for each of the ' + described.length + ' relay verbs');
-else test.fail(OWED + 'js/relaySelf/ holds ' + short(files) + ', described ' + short(described));
+if (files.indexOf('AGENTS.md') !== -1 && described.length === MEMBER.length + OWNER_ONLY.length) test.check('spirit/relaySelf/ holds AGENTS.md and a description file for each of the ' + described.length + ' relay verbs');
+else test.fail(OWED + 'spirit/relaySelf/ holds ' + short(files) + ', described ' + short(described));
 
 // THE FOLDER IS READ THROUGH FS (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb on the relay; members get
 // nothing of it (Andy, 2026-10-20: "don't build shit nobody asked for.").
@@ -99,7 +99,7 @@ if ((two.sent && two.sent.ok === false && two.sent.status === 400) || (two.answe
 else test.fail(OWED + 'two verbs in one body answered ' + short(two));
 
 test.subHeading('4. introSpector alone');
-const relayJs = code('js/relay.js');
+const relayJs = code('spirit/relay.js');
 if (/require\('\.\/introSpector'\)\.family\(/.test(relayJs) && !/require\('\.\/(appServer|apiDoor|verbTable|appClient)'\)/.test(relayJs))
   test.check('relay.js calls introSpector.family and requires none of appServer, apiDoor, verbTable, appClient');
 else test.fail(OWED + 'relay.js does not use introSpector.family alone');

@@ -19,7 +19,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by apiAuth/G1.8: ';
-const CLIENT = path.join(__dirname, '..', 'run', 'js', 'client');
+const CLIENT = path.join(__dirname, '..', 'run', 'spirit', 'client');
 
 test.startTest('apiAuth/G1.8: the appServer selector lists the servers on the owner\'s api tree');
 
@@ -44,8 +44,8 @@ if (!index || typeof index.servers !== 'function') {
 
 test.subHeading('the page loads it, and the shell hands apps the element');
 const html = fs.readFileSync(path.join(__dirname, '..', 'run', 'index.html'), 'utf8');
-if (/<script src="\/js\/client\/apiTreeIndex\.js"><\/script>/.test(html)) test.check('index.html loads /js/client/apiTreeIndex.js');
-else test.fail(OWED + 'index.html does not load /js/client/apiTreeIndex.js');
+if (/<script src="\/spirit\/client\/apiTreeIndex\.js"><\/script>/.test(html)) test.check('index.html loads /spirit/client/apiTreeIndex.js');
+else test.fail(OWED + 'index.html does not load /spirit/client/apiTreeIndex.js');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
 // The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
 const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'appServerSelector.js'), 'utf8');

@@ -19,9 +19,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
-const boxes = require('../run/js/boxes');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
+const boxes = require('../run/spirit/boxes');
 
 test.startTest('His boxes add up from his own servers, and over-committed is only ever a warning');
 

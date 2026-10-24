@@ -67,16 +67,16 @@ const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 
 const REPO = path.join(__dirname, '..', '..');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
-const hub = require('../run/js/hub');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const hub = require('../run/spirit/hub');
 const plantRun = require('./plantRun');
-const buildStamp = require('../run/js/buildStamp');
-const sseClient = require('../run/js/sseClient');
-const relayStore = require('../run/js/relayStore');
-const nodeStore = require('../run/js/nodeStore');
+const buildStamp = require('../run/spirit/buildStamp');
+const sseClient = require('../run/spirit/sseClient');
+const relayStore = require('../run/spirit/relayStore');
+const nodeStore = require('../run/spirit/nodeStore');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 
 // Below 49152, outside Windows' ephemeral range — see presenceWire.js:41.
 const RELAY_PORT = 48795;
@@ -294,7 +294,7 @@ function discPerRow() {
   // so the measurement includes whatever the logger actually writes.
   const th = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-log-'));
   fs.mkdirSync(path.join(th, 'relay-state'), { recursive: true });
-  const traffic = require('../run/js/trafficLog').createTrafficLog({ rootDir: th });
+  const traffic = require('../run/spirit/trafficLog').createTrafficLog({ rootDir: th });
   // A FLOOR, NOT THE FIGURE. These entries are composed here, so they
   // carry a short relay URL and no label; a working node's log measured
   // 438 bytes an entry across 695 real ones. The synthetic number is kept
@@ -398,7 +398,7 @@ async function main() {
   // A personal node at rest, which is the number a person installing this
   // actually needs.
   const nodeRun = path.join(REPO, 'spirit', 'run');
-  const nodeKid = spawn(process.execPath, ['js/server.js', '--port', String(NODE_PORT)],
+  const nodeKid = spawn(process.execPath, ['spirit/server.js', '--port', String(NODE_PORT)],
     { cwd: nodeRun, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(nodeKid);
   await sleep(3000);
@@ -407,7 +407,7 @@ async function main() {
 
   // A relay, then streams against it.
   const w = await plantedRelay(STEPS[STEPS.length - 1]);
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(RELAY_PORT), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(RELAY_PORT), '--relay'],
     { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
   let why = '';

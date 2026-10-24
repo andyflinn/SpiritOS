@@ -17,10 +17,10 @@ const os = require('os');
 const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by goal/G29.16: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -54,7 +54,7 @@ const kids = [];
 
 (async function () {
   test.subHeading('1. the job system: no option, the rule itself');
-  const jobs = require('../run/js/jobs.js')(spirit, 65432);
+  const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
   const deleted = [];
   jobs.events.on('job-deleted', function (id) { deleted.push(id); });
 
@@ -90,7 +90,7 @@ const kids = [];
   const home = path.join(scratch, 'node', 'spirit', 'run');
   plantRun.plantRunTree(home);
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
   kids.push(node);
   const ask = function (body) {
     return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
@@ -109,7 +109,7 @@ const kids = [];
   else test.fail(OWED + 'jobs.create answered ' + made.status + '; jobs.get while running ' + seen + '; gone after ' + !!removed);
   // A job that says complete() and is still alive: removed on its word, not only on its exit.
   const says = path.join(scratch, 'says.js');
-  fs.writeFileSync(says, 'const spirit = require(' + JSON.stringify(path.join(RUN, 'js', 'kernel.js')) + ');\n' +
+  fs.writeFileSync(says, 'const spirit = require(' + JSON.stringify(path.join(RUN, 'spirit', 'kernel.js')) + ');\n' +
     'spirit.core.jobs.complete({ done: true }).then(function () { setTimeout(function () { process.exit(0); }, 4000); });');
   const told = await ask({ verb: 'jobs.create', command: process.execPath, args: [says], type: 'utility' });
   const tid = (told.body && (told.body.id || (told.body.job && told.body.job.id))) || '';

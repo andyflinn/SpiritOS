@@ -94,7 +94,7 @@ if listening $PORT; then
   echo "wsl-claude node :$PORT already running"
 else
   # The server refuses to start unless its working directory is spirit/run.
-  setsid -f env -C "$ROOT/spirit/run" "$NODE_BIN" js/server.js --port $PORT \
+  setsid -f env -C "$ROOT/spirit/run" "$NODE_BIN" spirit/server.js --port $PORT \
     >> "$ROOT/node.log" 2>&1 < /dev/null
   if wait_for node $PORT "node_answers $PORT"; then
     echo "wsl-claude node :$PORT started"
@@ -117,10 +117,10 @@ PORT=45442
 TWO="$HOME/SpiritOS-agent-wsl-claude-2"
 if listening $PORT; then
   echo "wsl-claude-2 node :$PORT already running"
-elif [ ! -f "$TWO/spirit/run/js/server.js" ]; then
+elif [ ! -f "$TWO/spirit/run/spirit/server.js" ]; then
   echo "wsl-claude-2 node :$PORT DID NOT COME UP (no checkout at $TWO)"
 else
-  setsid -f env -C "$TWO/spirit/run" "$NODE_BIN" js/server.js --port $PORT \
+  setsid -f env -C "$TWO/spirit/run" "$NODE_BIN" spirit/server.js --port $PORT \
     >> "$TWO/node.log" 2>&1 < /dev/null
   # It answers `node.card` only once it holds a key, which a node gets when
   # it claims its relay seat — so a node awaiting its invite is UP and

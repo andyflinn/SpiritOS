@@ -2,13 +2,13 @@
 
 // spirit/test/deviceGone.js
 // goal/G28.2: GET RID OF THE LAST "DEVICE" REMNANTS. Andy, 2026-10-16: "KILL it. COMPLETELY." (the folder
-// spirit/run/js/device and every "device" reference in code, comments, tests and documentation).
+// spirit/run/spirit/device and every "device" reference in code, comments, tests and documentation).
 //
 // Scope, as posted on the item: media and published content are Andy's and are left alone, and so are brains and
 // the suite itself, which names the word to find it.
 //
 // WHAT IS ASSERTED (red on today's code)
-//   1. the folder spirit/run/js/device is absent.
+//   1. the folder spirit/run/spirit/device is absent.
 //   2. no file in the code, shell, process, test or documentation trees mentions "device" (case-insensitive).
 
 const fs = require('fs');
@@ -37,9 +37,9 @@ test.startTest('goal/G28.2: no "device" remnants');
 
 test.subHeading('1. the device folder is gone');
 {
-  const dir = path.join(RUN, 'js', 'device');
-  if (!fs.existsSync(dir)) test.check('spirit/run/js/device is absent');
-  else test.fail(OWED + 'spirit/run/js/device still exists, with: ' + fs.readdirSync(dir).join(', '));
+  const dir = path.join(RUN, 'spirit', 'device');
+  if (!fs.existsSync(dir)) test.check('spirit/run/spirit/device is absent');
+  else test.fail(OWED + 'spirit/run/spirit/device still exists, with: ' + fs.readdirSync(dir).join(', '));
 }
 
 test.subHeading('2. no reference to "device" in code, shell, process, tests or documentation');

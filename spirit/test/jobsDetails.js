@@ -31,7 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G2.11: ';
 const RUN_DIR = path.join(__dirname, '..', 'run');
@@ -103,7 +103,7 @@ function load(script, d, calls) {
   // The shared list and its probability modules, as index.html loads them before any app (goal/G29.14: Jobs is on it).
   const win = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN_DIR, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN_DIR, 'spirit', f), 'utf8'))(win, undefined);
   });
   new Function('document', 'window', fs.readFileSync(path.join(RUN_DIR, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(d.doc, win);
   new Function('spirit', 'document', 'window', 'console', fs.readFileSync(script, 'utf8'))(shellSpirit, d.doc, win, { error: function () {}, log: function () {} });

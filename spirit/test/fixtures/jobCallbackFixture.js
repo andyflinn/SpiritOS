@@ -3,7 +3,7 @@
 // Spawned by jobCallback.js as a real child process (same shape as any
 // process/js/<name>/<name>.js script) to exercise the actual
 // SPIRIT_JOB_ID / SPIRIT_CALLBACK_URL contract end-to-end, not a mock of it.
-const spirit = require('../../run/js/kernel.js');
+const spirit = require('../../run/spirit/kernel.js');
 
 const args = JSON.parse(process.argv[2] || '{}');
 

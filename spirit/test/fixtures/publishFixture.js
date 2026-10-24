@@ -2,7 +2,7 @@
 
 // Spawned by publishChecks.js as a real app server (appServer.serve, a --pipe of its own).
 // argv[2] says what it publishes once it is up: 'small', 'big' or 'burst'.
-const appServer = require('../../run/js/appServer.js');
+const appServer = require('../../run/spirit/appServer.js');
 
 const mode = process.argv[2] || 'small';
 appServer.serve({

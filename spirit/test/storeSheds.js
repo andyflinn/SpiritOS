@@ -24,7 +24,7 @@ const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 
 
 test.startTest('goal/G30.19: the node store sheds, and never grows past 16 MB');
 
-const nodeStore = require('../run/js/nodeStore');
+const nodeStore = require('../run/spirit/nodeStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3019-sheds-'));
 fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
 const store = nodeStore.open(home);
@@ -66,7 +66,7 @@ if (back.indexOf('new-untaken') !== -1 && back.indexOf('old-untaken') === -1) te
 else test.fail(OWED + 'the backlog holds ' + short(back.filter(function (h) { return /untaken/.test(h); })));
 
 test.subHeading('4. the log is not permanent any more');
-if (!/nothing is pruned at all/.test(fs.readFileSync(path.join(RUN, 'js', 'trafficLog.js'), 'utf8')) && /MAX_DB_BYTES/.test(code('js/nodeStore.js')))
+if (!/nothing is pruned at all/.test(fs.readFileSync(path.join(RUN, 'spirit', 'trafficLog.js'), 'utf8')) && /MAX_DB_BYTES/.test(code('spirit/nodeStore.js')))
   test.check('trafficLog no longer says nothing is pruned; nodeStore holds the cap');
 else test.fail(OWED + 'trafficLog still says nothing is pruned, or nodeStore has no cap');
 

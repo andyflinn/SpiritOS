@@ -44,8 +44,8 @@ function recording(fn) {
   return { out: out, sql: sql };
 }
 
-const { createTrafficLog } = require('../run/js/trafficLog.js');
-const nodeStore = require('../run/js/nodeStore.js');
+const { createTrafficLog } = require('../run/spirit/trafficLog.js');
+const nodeStore = require('../run/spirit/nodeStore.js');
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-logindexes-'));
 const dbFile = path.join(root, 'relay-state', 'node.db');

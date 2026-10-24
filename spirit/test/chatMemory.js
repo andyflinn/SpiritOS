@@ -43,7 +43,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G4.8: ';
 const DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'chatClerver');

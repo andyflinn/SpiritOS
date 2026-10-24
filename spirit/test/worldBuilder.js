@@ -21,7 +21,7 @@ const rollOf = require('./rollOf');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const scenario = require('./scenario');
 const world = require('./world');
 

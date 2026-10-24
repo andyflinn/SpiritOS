@@ -24,7 +24,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G14.9: ';
 const APP = path.join(__dirname, '..', 'run', 'shell', 'deskAgentRemote', 'deskAgentRemote.js');

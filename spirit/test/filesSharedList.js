@@ -20,7 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.8: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -76,7 +76,7 @@ function entry(p, kind, size) {
   return { name: p.slice(cut + 1), relativePath: p, kind: kind, fullPath: p, parentPath: cut === -1 ? '' : p.slice(0, cut), size: kind === 'file' ? size : 0, modified: MOD };
 }
 const TREE = [
-  entry('js', 'folder'), entry('js/server.js', 'file', 2048),
+  entry('js', 'folder'), entry('spirit/server.js', 'file', 2048),
   entry('media', 'folder'), entry('media/cat.png', 'file', 5000),
   entry('shell', 'folder'), entry('shell/shared', 'folder'), entry('shell/shared/js', 'folder'), entry('shell/shared/js/listSearch.js', 'file', 12000),
 ];
@@ -91,8 +91,8 @@ const TREE = [
   let jobs = null;
   let job = null;
   try {
-    const spirit = require('../run/js/kernel.js');
-    jobs = require('../run/js/jobs.js')(spirit, 65432);
+    const spirit = require('../run/spirit/kernel.js');
+    jobs = require('../run/spirit/jobs.js')(spirit, 65432);
     const seen = [];
     jobs.events.on('job-updated', function (u) { if (job && u.id === job.id && u.data && u.data.command) seen.push(u.data.command); });
     job = jobs.startFsWatcherJob(home);
@@ -139,7 +139,7 @@ const TREE = [
 
   // ── 5. the node's fs.search ──
   test.subHeading('5. the node\'s fs.search ranks words over its own tree');
-  const searches = require('../run/js/nodeSearches.js').createNodeSearches({
+  const searches = require('../run/spirit/nodeSearches.js').createNodeSearches({
     jobs: { fsTreeEntries: function () { return TREE.map(function (f) { return { name: f.name, relativePath: f.relativePath, kind: f.kind }; }); } },
     rootDir: RUN, fsPath: function (r, raw) { const p = path.resolve(r, raw); return p.indexOf(r) === 0 ? p : null; } });
   const keysFor = function (q) { const r = searches.fsSearch({ q: q }); return ((r && r.items) || []).map(function (x) { return x.key; }); };
@@ -151,22 +151,22 @@ const TREE = [
   const everything = keysFor('');
   if (JSON.stringify(everything) === JSON.stringify(TREE.map(function (f) { return f.relativePath + (f.kind === 'folder' ? '/' : ''); }))) test.check('no words: the whole tree in path order, a folder with its slash');
   else test.fail(OWED + 'no words answered ' + short(everything));
-  if (typeof searches.cleanPattern !== 'function' && !/\bcleanPattern\b|\bgradedSearch\b/.test(code(path.join(RUN, 'js', 'nodeSearches.js')))) test.check('the patterns are gone from nodeSearches.js (no cleanPattern, no gradedSearch)');
+  if (typeof searches.cleanPattern !== 'function' && !/\bcleanPattern\b|\bgradedSearch\b/.test(code(path.join(RUN, 'spirit', 'nodeSearches.js')))) test.check('the patterns are gone from nodeSearches.js (no cleanPattern, no gradedSearch)');
   else test.fail(OWED + 'nodeSearches.js still holds the patterns');
 
   // ── 6. what moves and what goes ──
   test.subHeading('6. Files, the text editor and Desk on the shell\'s tree; pathSelector gone');
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
-  if (!fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
-  else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'js', 'client', 'shell.js'))));
+  if (!fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
+  else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js'))));
   if (!/contact-selector-face-dropdown\s+\.contact-selector-pane\s*\{[^}]*position:\s*absolute/.test(index)) test.check('index.html no longer floats the contact selector\'s whole pane');
   else test.fail(OWED + 'index.html still floats .contact-selector-face-dropdown .contact-selector-pane');
   const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));
   if (!/['"]fs\.search['"]/.test(desk)) test.check('Desk\'s plugin finder asks the node nothing: it reads the shell\'s tree');
   else test.fail(OWED + 'shell/desk/desk.js still asks fs.search');
   // The box: "an app's own folder (kernel's scanDirectory) keeps the rows under its folder", from the shell's tree.
-  const kern = code(path.join(RUN, 'js', 'kernel.js'));
+  const kern = code(path.join(RUN, 'spirit', 'kernel.js'));
   const scan = (/scanDirectory\s*:\s*function[\s\S]*?\n {6}\},/.exec(kern) || [''])[0];
   if (scan && !/fs\.search/.test(scan) && /currentFiles/.test(scan)) test.check('kernel.js\'s scanDirectory reads the shell\'s tree, not fs.search');
   else test.fail(OWED + 'kernel.js\'s scanDirectory: ' + short(scan));
@@ -209,8 +209,8 @@ function bootShell() {
       jobs: { subscribe: function (h) { subscribers.push(h); } },
     },
   };
-  new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8'))(
-    sp, doc, function () {}, test.withSpirit({ 'spirit.packet': require('../run/js/client/packet'), 'spirit.limits': require('../run/js/limits.js') }));
+  new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'))(
+    sp, doc, function () {}, test.withSpirit({ 'spirit.packet': require('../run/spirit/client/packet'), 'spirit.limits': require('../run/spirit/limits.js') }));
   const send = function (command) { subscribers.forEach(function (h) { if (typeof h.onUpdate === 'function') h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: command } }); }); };
   subscribers.forEach(function (h) { if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]); });
   send({ op: 'createDirectory', path: 'shell', at: '', modified: MOD });

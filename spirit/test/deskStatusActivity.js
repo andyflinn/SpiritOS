@@ -30,7 +30,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G33.11: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -106,7 +106,7 @@ function ok(r) { return r && r.status === 200; }
   db.close();
   if (!await start()) { test.fail('the desk server did not start again'); return; }
   // claude-windows' deskClient reports a file change; wsl-claude says nothing. Then a write of Andy's walks the state.
-  await call('item.status', { id: 'goal/G100.1', word: 'spirit/run/js/faceHome.js', tone: 'code' }, CW);
+  await call('item.status', { id: 'goal/G100.1', word: 'spirit/run/spirit/faceHome.js', tone: 'code' }, CW);
   await call('chat.add', { id: 'goal/G100.3', text: 'a write, so the desk walks its state' }, ANDY);
   await sleep(500);
   const moving = await staleQs('goal/G100.1');

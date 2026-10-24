@@ -27,10 +27,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayKeys = require('../run/js/relayKeys');
-const ownerBadge = require('../run/js/ownerBadge');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const relayKeys = require('../run/spirit/relayKeys');
+const ownerBadge = require('../run/spirit/ownerBadge');
+const nodeCard = require('../run/spirit/nodeCard');
 
 const OWED = 'OWED by goal/G28.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -85,7 +85,7 @@ test.subHeading('2. a refused name changes nothing');
 // ── 3 ───────────────────────────────────────────────────────────────
 test.subHeading('3. the window title reads the node\'s name, not the Natter session file');
 {
-  const src = stripComments(fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8'));
+  const src = stripComments(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'));
   const readsSession = /shell\/natter\/session\.json/.test(src);
   const readsCard = /node\.card|nodeCard|\.name\b/.test(src.slice(src.indexOf('function readNodeLabel'), src.indexOf('function readNodeLabel') + 1200));
   if (!readsSession) test.check('shell.js no longer loads shell/natter/session.json for the title');

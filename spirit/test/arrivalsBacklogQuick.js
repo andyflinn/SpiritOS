@@ -27,14 +27,14 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const trafficLog = require('../run/js/trafficLog.js');
-const arrivalsModule = require('../run/js/arrivals.js');
-const packet = require('../run/js/client/packet.js');
+const trafficLog = require('../run/spirit/trafficLog.js');
+const arrivalsModule = require('../run/spirit/arrivals.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G4.31: ';
 
 function removeHome(home) {
-  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* no store */ }
+  try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* no store */ }
   fs.rmSync(home, { recursive: true, force: true });
 }
 function logAt(home) { return trafficLog.createTrafficLog({ rootDir: home, relayMode: false }); }
@@ -92,7 +92,7 @@ test.startTest('goal/G4.31: opening the event stream asks only for undelivered a
   // TWENTY THOUSAND TAKEN ROWS IN ONE TRANSACTION, written to the table directly ("tests can read what they need to
   // read", arrivals.js): one note() a row is a write to disk each, and 20,000 of them did not finish in five minutes.
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(require('../run/js/nodeStore.js').dbPath(home));
+  const db = new DatabaseSync(require('../run/spirit/nodeStore.js').dbPath(home));
   const put = db.prepare('INSERT INTO traffic (at, dir, kind, peer, relay, hash, outcome, admitted, payload, mark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const t0 = Date.parse('2026-09-22T00:00:00Z');
   db.exec('BEGIN');

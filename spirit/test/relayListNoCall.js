@@ -17,7 +17,7 @@
 //      owner) shows "yours" with this node's key as its owner; one seated shows "member"; the relay's key is the
 //      one pinned at the seat (offboard reads it as roll.relayKey).
 //   3. A seated relay with no stream shows offline; a relay never met (no seat, no stream) shows "not joined".
-//   4. relayRequest.js no longer exports assertRelayUrl (or isLoopbackHost); spirit/run/js/relayUrl.js does, with
+//   4. relayRequest.js no longer exports assertRelayUrl (or isLoopbackHost); spirit/run/spirit/relayUrl.js does, with
 //      the same rules: https anywhere, http only to loopback, anything else and a bad url refused.
 //
 // In process, the way relaySearchMatcher.js builds its hub: a temp root of this suite's own, with a router standing
@@ -31,9 +31,9 @@ const https = require('https');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G22.4: ';
-const RUN_JS = path.join(__dirname, '..', 'run', 'js');
-const relayKeys = require('../run/js/relayKeys.js');
-const auth = require('../run/js/relayAuth.js');
+const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
+const relayKeys = require('../run/spirit/relayKeys.js');
+const auth = require('../run/spirit/relayAuth.js');
 
 const roots = [];
 function freshRoot() {
@@ -96,7 +96,7 @@ relayKeys.list(root, STRANGER, 'stranger', 'RELAYKEY-stranger');
 
 const asked = [];
 const deps = { router: fakeRouter(asked) };
-const hub = require('../run/js/hub.js').createHub(root);
+const hub = require('../run/spirit/hub.js').createHub(root);
 const restore = watchWire();
 
 function label(items, url) {
@@ -167,10 +167,10 @@ Promise.resolve()
     let mod = null;
     try { mod = require(path.join(RUN_JS, 'relayUrl.js')); } catch (e) { mod = null; }
     if (!mod || typeof mod.assertRelayUrl !== 'function') {
-      test.fail(OWED + 'spirit/run/js/relayUrl.js does not export assertRelayUrl');
+      test.fail(OWED + 'spirit/run/spirit/relayUrl.js does not export assertRelayUrl');
       return;
     }
-    test.check('spirit/run/js/relayUrl.js exports assertRelayUrl');
+    test.check('spirit/run/spirit/relayUrl.js exports assertRelayUrl');
     function verdict(u) { try { mod.assertRelayUrl(u); return 'ok'; } catch (e) { return String(e.message); } }
     const ok = ['https://noderoutes.net', 'https://1.2.3.4:8443/x', 'http://127.0.0.1:9', 'http://localhost:7'];
     const bad = ['http://noderoutes.net', 'http://10.0.0.1:9', 'ftp://127.0.0.1', 'not a url', ''];

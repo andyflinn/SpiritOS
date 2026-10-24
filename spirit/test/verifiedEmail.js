@@ -38,10 +38,10 @@ function home(name) { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-' + 
 
 test.startTest('goal/G30.1: a verified email per member on a relay, added and changed through the join loop');
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const { createRelay } = require('../run/js/relay');
-const relayStore = require('../run/js/relayStore');
+const { createRelay } = require('../run/spirit/relay');
+const relayStore = require('../run/spirit/relayStore');
 const boxHome = home('relay');
 plant.ensureAt(boxHome, 'relay');
 const owner = auth.generateIdentity('andy');
@@ -96,7 +96,7 @@ if (ownerJoin && ownerJoin.ok && ownerOk && ownerOk.ok && r4.email === 'andy@exa
 else test.fail(OWED + 'the owner\'s join ' + short(ownerJoin) + ' / ' + short(ownerOk) + ', row ' + short(r4));
 
 test.subHeading('4. the node keeps the verified email on that relay\'s row');
-const relayKeys = require('../run/js/relayKeys');
+const relayKeys = require('../run/spirit/relayKeys');
 const nodeHome = home('node');
 plant.ensureAt(nodeHome, 'andy');
 let held = null;
@@ -107,10 +107,10 @@ try {
 } catch (e) { held = { threw: e.message }; }
 if (held && held.email === 'andy@example.org' && held.verified === true) test.check('relayKeys keeps the email and its flag on the relay\'s row (node.db relays.email, emailVerified)');
 else test.fail(OWED + 'relayKeys.emailOf answered ' + short(held));
-const hub = code('js/hub.js');
+const hub = code('spirit/hub.js');
 if (/relayKeys\.keepEmail\(/.test(hub) && /emailOf\(/.test(hub)) test.check('relay.join keeps what the confirm answered, and relay.get\'s row carries it');
 else test.fail(OWED + 'hub.js keeps no email from the join, or relay.get carries none');
-const peerPost = code('js/peerPost.js');
+const peerPost = code('spirit/peerPost.js');
 if (/email: said\.email/.test(peerPost) && /emailVerified: said\.emailVerified/.test(peerPost)) test.check('peerPost hands the confirm\'s email and flag back');
 else test.fail(OWED + 'peerPost drops the confirm\'s email');
 
@@ -132,8 +132,8 @@ const subjects = mails.map(function (m) { return m.subject; });
 if (subjects[0] === 'Join this relay' && subjects[1] === 'Confirm your email address' && subjects[2] === 'Confirm your email address')
   test.check('a first join mails Join this relay; a seated key (the owner too) gets Confirm your email address');
 else test.fail(OWED + 'the mail subjects were ' + short(subjects));
-const relayJoinSrc = (/function relayJoin\([\s\S]*?\n  \}/.exec(code('js/hub.js')) || [''])[0];
-const shellSrc = code('js/client/shell.js');
+const relayJoinSrc = (/function relayJoin\([\s\S]*?\n  \}/.exec(code('spirit/hub.js')) || [''])[0];
+const shellSrc = code('spirit/client/shell.js');
 if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email address verified/.test(shellSrc))
   test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
 else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
@@ -197,10 +197,10 @@ const freshHome = home('fresh');
 plant.ensureAt(freshHome, 'carl');
 let fresh = null;
 try {
-  require('../run/js/ownerBadge').ensureRelays(freshHome);
-  fresh = require('../run/js/hub').createHub(freshHome).relaySearch({ q: '*' }, {});
+  require('../run/spirit/ownerBadge').ensureRelays(freshHome);
+  fresh = require('../run/spirit/hub').createHub(freshHome).relaySearch({ q: '*' }, {});
 } catch (e) { fresh = Promise.resolve({ threw: e.message }); }
-const server = code('js/server.js');
+const server = code('spirit/server.js');
 elementDone.then(function () { return fresh; }).then(function (r) {
   const items = (r && r.items) || [];
   const seed = items.filter(function (i) { return i.key === 'https://noderoutes.net'; })[0];

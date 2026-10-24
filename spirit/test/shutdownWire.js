@@ -27,13 +27,13 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const hub = require('../run/js/hub');
-const buildStamp = require('../run/js/buildStamp');
-const sseClient = require('../run/js/sseClient');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const hub = require('../run/spirit/hub');
+const buildStamp = require('../run/spirit/buildStamp');
+const sseClient = require('../run/spirit/sseClient');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 const REPO_RUN = path.join(__dirname, '..', 'run');
 // Below 49152, outside Windows' ephemeral range — see partnerWire.js and
@@ -97,7 +97,7 @@ function plant(w) {
 // Spawned with its output piped, so the goodbye line can be read and the
 // exit code seen.
 async function startRelay(w, port) {
-  const kid = spawn(process.execPath, ['js/relayServer.js', '--port', String(port)],
+  const kid = spawn(process.execPath, ['spirit/relayServer.js', '--port', String(port)],
     { cwd: w.runDir, stdio: ['ignore', 'pipe', 'pipe'] });
   kids.push(kid);
   w.kid = kid;
@@ -127,7 +127,7 @@ async function run() {
     // Linux run exercises is registered in both startup files. A guard
     // against it being deleted, not proof that it works.
     ['relayServer.js', 'server.js'].forEach(function (f) {
-      const src = fs.readFileSync(path.join(REPO_RUN, 'js', f), 'utf8');
+      const src = fs.readFileSync(path.join(REPO_RUN, 'spirit', f), 'utf8');
       if (/process\.on\('SIGTERM'/.test(src) && /goingAway|sayGoingAway/.test(src)) {
         test.check(f + ' registers its SIGTERM goodbye (proven on the wire only under Linux)');
       } else {

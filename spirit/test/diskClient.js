@@ -29,10 +29,10 @@ const v8 = require('v8');
 const vm = require('vm');
 const test = require('./testSupport.js');
 const { sealFor, openBody } = require('./openReply');
-const nodeCard = require('../run/js/nodeCard');
-const auth = require('../run/js/relayAuth');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const nodeCard = require('../run/spirit/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 v8.setFlagsFromString('--expose-gc');
 const gc = vm.runInNewContext('gc');

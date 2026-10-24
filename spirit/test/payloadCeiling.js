@@ -31,12 +31,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const limits = require('../run/js/limits');
-const nodeCard = require('../run/js/nodeCard');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const limits = require('../run/spirit/limits');
+const nodeCard = require('../run/spirit/nodeCard');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 test.startTest('A full-size message survives sealing and routing');
 

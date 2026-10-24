@@ -34,8 +34,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const spirit = require('../run/js/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G3.10: ';
 const RUN = path.join(__dirname, '..', 'run');

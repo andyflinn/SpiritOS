@@ -32,7 +32,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G8.5: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
@@ -124,7 +124,7 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
   const ready = await facts('goal/G100.2');
   if ((ready.buttons || []).indexOf('done') !== -1) test.check('the world: with its verify passed, goal/G100.2 offers Done');
   else { test.fail('the world: goal/G100.2 offers ' + short(ready.buttons)); return; }
-  await call('check.add', { id: 'goal/G100.2', kind: 'G', words: 'core grant: spirit/run/js/kernel.js', test: '' }, CW);
+  await call('check.add', { id: 'goal/G100.2', kind: 'G', words: 'core grant: spirit/run/spirit/kernel.js', test: '' }, CW);
   const withGrant = await facts('goal/G100.2');
   if ((withGrant.buttons || []).indexOf('done') === -1) test.check('an open grant takes Done away');
   else test.fail(OWED + 'with a grant open it still offers ' + short(withGrant.buttons));

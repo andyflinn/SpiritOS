@@ -33,14 +33,14 @@ const ORIGIN = 'http://127.0.0.1:' + ANDY_PORT;
 // would prove nothing. servableAssets.js covers both against the real tree.
 const STATIC_ROUTES = [
   // Node-only modules: no browser half, no legitimate read path.
-  { path: '/js/kernel.js', expect: 200, why: 'BOOT_ASSETS exception — the page boots on it' },
-  { path: '/js/jobs.js', expect: 404, why: 'Node-only' },
-  { path: '/js/server.js', expect: 404, why: 'Node-only' },
-  { path: '/js/relay.js', expect: 404, why: 'Node-only' },
-  { path: '/js/hub.js', expect: 404, why: 'Node-only' },
-  { path: '/js/relayAuth.js', expect: 404, why: 'Node-only' },
+  { path: '/spirit/kernel.js', expect: 200, why: 'BOOT_ASSETS exception — the page boots on it' },
+  { path: '/spirit/jobs.js', expect: 404, why: 'Node-only' },
+  { path: '/spirit/server.js', expect: 404, why: 'Node-only' },
+  { path: '/spirit/relay.js', expect: 404, why: 'Node-only' },
+  { path: '/spirit/hub.js', expect: 404, why: 'Node-only' },
+  { path: '/spirit/relayAuth.js', expect: 404, why: 'Node-only' },
   // Genuine browser assets and ordinary app data stay reachable.
-  { path: '/js/client/shell.js', expect: 200, why: 'browser boot' },
+  { path: '/spirit/client/shell.js', expect: 200, why: 'browser boot' },
   { path: '/index.html', expect: 200, why: 'desktop homepage' },
   // relay.html, the relay's brochure, is gone with the relay's public door
   // (Andy's decision, goal/G22.6), so a node no longer serves it either.

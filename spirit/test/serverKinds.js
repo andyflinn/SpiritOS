@@ -22,9 +22,9 @@ const net = require('net');
 const path = require('path');
 const vm = require('vm');
 const { spawn } = require('child_process');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 test.startTest('processes/G1.3: node-operated and user-operated servers');
 
@@ -33,7 +33,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const COUNTER = path.join(RUN, 'process', 'js', 'counterServer', 'counterServer.js');
 // The Cancel rule lives in the job's dialog since goal/G2.11 (the row offers no action); read there.
 const JOBS_APP = path.join(RUN, 'shell', 'jobsDetails', 'jobsDetails.js');
-const jobs = require('../run/js/jobs.js')(spirit, 65432);
+const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
 
 function freePort() {
   return new Promise(function (resolve) {
@@ -77,7 +77,7 @@ function home(nodePort, userPort) {
     }));
   });
   // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
-  require('../run/js/relayAuth.js').saveIdentity(root, require('../run/js/relayAuth.js').generateIdentity('serverkinds'));
+  require('../run/spirit/relayAuth.js').saveIdentity(root, require('../run/spirit/relayAuth.js').generateIdentity('serverkinds'));
   return root;
 }
 
@@ -174,8 +174,8 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
   const p2 = await freePort();
   const root2 = home(p1, p2);
   ['counterNode', 'counterUser'].forEach(function (n) { require('./tools/runsHome.js')(root2, 'process/js/' + n); });
-  const driver = 'const spirit=require(' + JSON.stringify(path.join(RUN, 'js', 'kernel.js')) + ');' +
-    'const jobs=require(' + JSON.stringify(path.join(RUN, 'js', 'jobs.js')) + ')(spirit,65432);' +
+  const driver = 'const spirit=require(' + JSON.stringify(path.join(RUN, 'spirit', 'kernel.js')) + ');' +
+    'const jobs=require(' + JSON.stringify(path.join(RUN, 'spirit', 'jobs.js')) + ')(spirit,65432);' +
     'if(!jobs.startJob||!jobs.startNodeServers){process.exit(3);}' +
     'jobs.startNodeServers(' + JSON.stringify(root2) + ');' +
     'jobs.startJob("node",[' + JSON.stringify(path.join(root2, 'process', 'js', 'counterUser', 'counterUser.js')) + ',JSON.stringify({port:' + p2 + '})],{});' +

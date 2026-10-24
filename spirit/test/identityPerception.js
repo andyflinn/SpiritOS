@@ -5,10 +5,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, installedRelay } = require('./ownerClaim');
-const contactBook = require('../run/js/contacts');
-const invites = require('../run/js/invites');
+const contactBook = require('../run/spirit/contacts');
+const invites = require('../run/spirit/invites');
 const world = require('./world');
 
 // Bare directories for the node-side checks — a node with an address book

@@ -7,7 +7,7 @@ Documentation=https://github.com/andyflinn/SpiritOS
 Type=simple
 # One-operator host. root is spirit. No second Unix user.
 WorkingDirectory=__RUN_DIR__
-ExecStart=/usr/bin/node js/server.js --relay --port __PORT__
+ExecStart=/usr/bin/node spirit/server.js --relay --port __PORT__
 # ALWAYS, NOT on-failure (cycle 9). An owner may now ask his relay to
 # restart from his own node — `{ config: { …, restart: true } }`, signed,
 # over the wire — and that goodbye exits 0 so members are told to come

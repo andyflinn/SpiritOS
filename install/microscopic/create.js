@@ -59,7 +59,7 @@ function toDosDateTime(date) {
 // file, then the central directory, then the End Of Central Directory
 // record. No directory entries — extractors create parent directories
 // implicitly from each entry's path. Each entry is { fullPath, zipPath }
-// — zipPath (e.g. "spirit/run/js/kernel.js") is what an extractor
+// — zipPath (e.g. "spirit/run/spirit/kernel.js") is what an extractor
 // writes to disk, so extracting reproduces a top-level spirit/ folder
 // wrapping run/ — exactly what server.js's verifyStartupCwd() requires
 // (cwd's parent must be literally named "spirit"). fullPath is where

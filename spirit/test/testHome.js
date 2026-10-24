@@ -26,7 +26,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const auth = require('../run/js/relayAuth.js');
+const auth = require('../run/spirit/relayAuth.js');
 // IS IT LISTENING? A LIVENESS PROBE, NOT A PAGE FETCH (goal/G16.6).
 // This asked relayRequest for GET / and read its status. Since a relay
 // answer is bounded by limits.BODY_MAX (Andy, 2026-10-11: "an answer from
@@ -81,7 +81,7 @@ test.startTest('A suite never writes into the real home');
   const port = await freePort();
   // It backs up only if it includes the backup (its manifest runs it at home, goal/G30.20).
   require('./tools/runsHome.js')(run, 'process/js/backup');
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) {
     await sleep(250);

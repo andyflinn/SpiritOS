@@ -18,3 +18,5 @@ The lines before 2026-09-27's first automatic one were backfilled once from wsl-
 | 2026-09-27 | puppets/G3 | one suite that makes every api call | ad0b289 | everyVerb.js, oneDoor.js |
 | 2026-09-27 | public-app-server/G18 | the app process serves its owner node over a named pipe, not a TCP port | 3b4133e | **no test names it: built, or dropped?** |
 | 2026-09-28 | public-app-server/G19 | A member's app answers through the face | 6f976b07 | **no test names it: built, or dropped?** |
+| 2026-10-24 | public-app-server/G17 | join's answer travels back to the browser | 242d3543 | faceRouteSuite.js |
+| 2026-10-24 | puppets/G2 | Generalizing the search approach to serving collections | 242d3543 | contacts.js, contactsDetails.js, everyVerb.js, hubPost.js, presenceShow.js, relayLimitsTool.js, relayListIsNodeState.js, relayRecord.js, spiritServers.js, testSupport.js |

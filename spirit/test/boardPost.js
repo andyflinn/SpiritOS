@@ -19,7 +19,7 @@
 // escaping cost depends on content (limits.js says why at length).
 
 const crypto = require('crypto');
-const limits = require('../run/js/limits.js');
+const limits = require('../run/spirit/limits.js');
 
 function decide(jsonText, lastHash, envelopeText) {
   const text = String(jsonText || '');

@@ -4,7 +4,7 @@ const STARS = '*****************************************************************
 const LINE_LENGTH = STARS.length;
 const INDENT_LENGTH = 3;
 const MAX_TITLE_LENGTH = LINE_LENGTH - INDENT_LENGTH*4;
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const ICON = spirit.core.const.ICON;
 
 let PAD_STARS = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_STARS += '*'; }
@@ -516,7 +516,7 @@ const test = {
     spiritFor: function (ask, onto) {
         const S = require('../run/spirit.js');
         const defs = {};
-        ['auth', 'config', 'contact', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'].forEach(function (f) { defs[f] = require('../run/js/' + f + '/api.js'); });
+        ['auth', 'config', 'contact', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'].forEach(function (f) { defs[f] = require('../run/spirit/' + f + '/api.js'); });
         const made = S.assemble({ ask: function (v, a) { return Promise.resolve(ask(v, a)); }, file: function () { return Promise.resolve({ status: 404, bytes: new Uint8Array(0) }); } }, defs);
         const target = onto || {};
         Object.keys(made).forEach(function (k) { target[k] = made[k]; });
@@ -596,7 +596,7 @@ const test = {
       if (!body || body.verb !== 'api' || typeof body.family !== 'string') return null;
       const run = require('path').join(__dirname, '..', 'run');
       const f = body.family;
-      const tried = [require('path').join(run, 'js', f, 'api.js'), require('path').join(run, 'process', 'js', f, f + '.family', 'api.js')];
+      const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, 'process', 'js', f, f + '.family', 'api.js')];
       for (const file of tried) {
         if (/^[A-Za-z]\w*$/.test(f) && require('fs').existsSync(file)) return { status: 200, body: { family: f, interface: require('fs').readFileSync(file, 'utf8') } };
       }

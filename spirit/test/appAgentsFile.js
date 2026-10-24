@@ -26,10 +26,10 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by slim/G1.8: ';
-const HELPER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const HELPER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 

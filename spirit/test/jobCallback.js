@@ -11,7 +11,7 @@
 // (fs-watcher, stats job, static serving).
 const http = require('http');
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 test.startTest('Job report/complete/fail over the callback URL');
@@ -77,7 +77,7 @@ function withJobsServer(fn) {
     var jobs; // set once we know the port we're actually listening on
     callbackServer.listen(0, '127.0.0.1', function () {
       const port = callbackServer.address().port;
-      jobs = require('../run/js/jobs.js')(spirit, port);
+      jobs = require('../run/spirit/jobs.js')(spirit, port);
       jobs.events.on('job-updated', function (j) { lastSeen[j.id] = JSON.parse(JSON.stringify(j)); });
       fn(jobs)
         .then(function (result) { callbackServer.close(); resolve(result); })

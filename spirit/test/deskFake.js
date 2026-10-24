@@ -19,9 +19,9 @@
 //   fake.items   -> the item labels (objects) items.search answers, as the
 //                   server's facts (desk/G2.6); a press is recorded in calls
 
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
-const createProbabilityBucket = require('../run/js/probabilityBucket.js').createProbabilityBucket;
+const createProbabilityBucket = require('../run/spirit/probabilityBucket.js').createProbabilityBucket;
 
 const ROOM = appClient.ANSWER_MAX - 512;
 

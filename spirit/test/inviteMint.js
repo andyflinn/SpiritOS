@@ -37,12 +37,12 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const { openReply, sealFor } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
-const invites = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const invites = require('../run/spirit/invites');
 const world = require('./world');
 const scenario = require('./scenario');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 
 // A relay with an owner on it and nobody else, built from the scenario
 // every suite shares. It was four lines written out here, and the same

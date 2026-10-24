@@ -27,8 +27,8 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G18.3: ';
-const MODULE = path.join(__dirname, '..', 'run', 'js', 'probabilityStringObjectMatch.js');
-const psm = require('../run/js/probabilityStringMatch.js').probabilityStringMatch;
+const MODULE = path.join(__dirname, '..', 'run', 'spirit', 'probabilityStringObjectMatch.js');
+const psm = require('../run/spirit/probabilityStringMatch.js').probabilityStringMatch;
 
 test.startTest('goal/G18.3: probabilityStringObjectMatch(string, object), a weighted probability from 0 to 1');
 

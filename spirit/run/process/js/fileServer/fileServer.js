@@ -33,7 +33,7 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const appServer = require('../../../js/appServer.js');
+const appServer = require('../../../spirit/appServer.js');
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 const argv = process.argv;

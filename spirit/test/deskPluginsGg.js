@@ -84,8 +84,8 @@ const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const kernel = require('../run/js/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G22.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -166,7 +166,7 @@ function fakeDocument() {
 // The face mounted with a window it shares with a plugin's UI, every desk ask kept, every stream subscriber kept.
 function mountFace(answers) {
   const doc = fakeDocument();
-  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
   const asked = [];
   const published = [];
   const servers = [];
@@ -210,7 +210,7 @@ function clickTab(el, tab) {
     if (!d) return { id: id, running: false, queued: false, ran: false, green: false, around: 0, of: 0, paths: [], pathsLeft: 0, why: '', startedAt: '', endedAt: '', commit: '', stopped: false };
     const done = Date.now() - d.at >= 1500;
     return { id: id, running: !done, queued: false, ran: done, green: false, around: done ? 2 : 0, of: done ? 5 : 0,
-      paths: done ? ['POST /x from spirit/run/js/a.js:1:f', 'POST /y from spirit/run/js/b.js:2:g'] : [], pathsLeft: 0, why: '',
+      paths: done ? ['POST /x from spirit/run/spirit/a.js:1:f', 'POST /y from spirit/run/spirit/b.js:2:g'] : [], pathsLeft: 0, why: '',
       startedAt: new Date(d.at).toISOString(), endedAt: done ? new Date(d.at + 1500).toISOString() : '', commit: 'abc12345', stopped: false };
   };
   const node = await new Promise(function (resolve) {
@@ -366,8 +366,8 @@ function clickTab(el, tab) {
     else test.fail('the ordinary presses answered ' + short([oDone, oClose, oAbandon]));
 
     test.subHeading('e. the dialog\'s verb makes a goal/G22.2-type item');
-    const GATE = 'spirit/run/js/peerPost.js::post';
-    const END = 'spirit/run/js/presenceNode.js';
+    const GATE = 'spirit/run/spirit/peerPost.js::post';
+    const END = 'spirit/run/spirit/presenceNode.js';
     // goal/G40.3: make takes the gate and the endpoint alone (a request is exact: every key, every time); a door's paths
     // and suites are rows, added one a write after it.
     const head0 = headOf();
@@ -398,14 +398,14 @@ function clickTab(el, tab) {
     const bad = [
       ['an empty gate', { gate: '', endpoint: END }],
       ['an empty endpoint', { gate: GATE, endpoint: '  ' }],
-      ['a gate with a control character', { gate: 'spirit/run/js/peer\u0007Post.js::post', endpoint: END }],
-      ['a whole module as the gate', { gate: 'spirit/run/js/peerPost.js', endpoint: 'spirit/run/js/postQueue.js' }, /cheating/],
-      ['an endpoint naming a function', { gate: GATE, endpoint: 'spirit/run/js/postQueue.js::createQueue' }, /whole module/],
-      ['a gate outside spirit/run', { gate: 'js/peerPost.js::post', endpoint: END }],
-      ['a gate file that is not there', { gate: 'spirit/run/js/noSuchDoor.js::post', endpoint: END }, /not there|no such/],
-      ['a gate function its file does not hold', { gate: 'spirit/run/js/peerPost.js::noSuchFunctionHere', endpoint: END }, /noSuchFunctionHere/],
-      ['an endpoint file that is not there', { gate: GATE, endpoint: 'spirit/run/js/noSuchEndpoint.js' }, /not there|no such/],
-      ['the gate in the endpoint\'s own file', { gate: 'spirit/run/js/postQueue.js::createQueue', endpoint: 'spirit/run/js/postQueue.js' }],
+      ['a gate with a control character', { gate: 'spirit/run/spirit/peer\u0007Post.js::post', endpoint: END }],
+      ['a whole module as the gate', { gate: 'spirit/run/spirit/peerPost.js', endpoint: 'spirit/run/spirit/postQueue.js' }, /cheating/],
+      ['an endpoint naming a function', { gate: GATE, endpoint: 'spirit/run/spirit/postQueue.js::createQueue' }, /whole module/],
+      ['a gate outside spirit/run', { gate: 'spirit/peerPost.js::post', endpoint: END }],
+      ['a gate file that is not there', { gate: 'spirit/run/spirit/noSuchDoor.js::post', endpoint: END }, /not there|no such/],
+      ['a gate function its file does not hold', { gate: 'spirit/run/spirit/peerPost.js::noSuchFunctionHere', endpoint: END }, /noSuchFunctionHere/],
+      ['an endpoint file that is not there', { gate: GATE, endpoint: 'spirit/run/spirit/noSuchEndpoint.js' }, /not there|no such/],
+      ['the gate in the endpoint\'s own file', { gate: 'spirit/run/spirit/postQueue.js::createQueue', endpoint: 'spirit/run/spirit/postQueue.js' }],
       ['the same gate and endpoint again', { gate: GATE, endpoint: END }],
     ];
     for (const t of bad) {
@@ -448,7 +448,7 @@ function clickTab(el, tab) {
     // A node: endpoint, then its paths and suites of spirit/test that are there.
     // goal/G40.3: the door is made from its gate and endpoint alone, and its paths and suites come one row a write
     // (stackFrameChecks.paths.add / .suites.add on the door's id), each checked under the same rules make used to apply.
-    const RELAY = { gate: 'spirit/run/js/peerPost.js::onRequest', endpoint: 'node:http+https+fetch' };
+    const RELAY = { gate: 'spirit/run/spirit/peerPost.js::onRequest', endpoint: 'node:http+https+fetch' };
     const RELAY_PATHS = ['/api/relay/'];
     const RELAY_SUITES = ['deskServer.js'];
     const ftp = await call('stackFrameChecks.make', Object.assign({}, RELAY, { endpoint: 'node:ftp' }), ANDY);
@@ -462,7 +462,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'the relay door made with no paths answered ' + short(madeB) + ', read back ' + short(bare));
     const badRows = [
       ['a suite that is not in spirit/test', 'stackFrameChecks.suites.add', idB, 'noSuchSuiteHere.js', /noSuchSuiteHere/],
-      ['a suite outside spirit/test', 'stackFrameChecks.suites.add', idB, '../run/js/hub.js', /suite/],
+      ['a suite outside spirit/test', 'stackFrameChecks.suites.add', idB, '../run/spirit/hub.js', /suite/],
       ['a path that is no request path', 'stackFrameChecks.paths.add', idB, 'api relay', /path/],
       ['paths on a module endpoint', 'stackFrameChecks.paths.add', idA, '/api/relay/', /paths/],
     ];
@@ -493,7 +493,7 @@ function clickTab(el, tab) {
     const upUnknown = await call('stackFrameChecks.update', Object.assign({ id: 'noSuchDoor' }, RELAY), ANDY);
     if (why(upUnknown) && /noSuchDoor/.test(why(upUnknown))) test.check('update of an unknown door is refused: ' + why(upUnknown));
     else test.fail(OWED + 'update of an unknown door answered ' + short(upUnknown));
-    const upBad = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { gate: 'spirit/run/js/peerPost.js' }), ANDY);
+    const upBad = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { gate: 'spirit/run/spirit/peerPost.js' }), ANDY);
     if (why(upBad) && /cheating/.test(why(upBad))) test.check('update under the add rules: a whole module as the gate is refused: ' + why(upBad));
     else test.fail(OWED + 'update with a whole module as the gate answered ' + short(upBad));
     // goal/G40.3: update takes {id, gate, endpoint} only; one still carrying suites is refused (they are rows now).
@@ -784,16 +784,16 @@ function clickTab(el, tab) {
   try {
     if (!fs.existsSync(PLUGIN_UI)) throw new Error('no ' + path.relative(RUN, PLUGIN_UI));
     const doc = fakeDocument();
-    const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
     new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
     const ui = win.spirit.deskPlugins && win.spirit.deskPlugins.stackFrameChecks;
     if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spirit.deskPlugins.stackFrameChecks.open');
     const asked = [];
     const box = fakeElement('box');
     const NEVER = { running: false, ran: false, green: false, around: 0, of: 0, startedAt: '', endedAt: '', stopped: false };
-    const DOORS = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: 'spirit/run/js/presenceNode.js', suites: ['serverSurface.js'], item: 'goal/G19.14',
+    const DOORS = [{ id: 'd1', gate: 'spirit/run/spirit/peerPost.js::holdStreams', endpoint: 'spirit/run/spirit/presenceNode.js', suites: ['serverSurface.js'], item: 'goal/G19.14',
       last: { running: false, ran: true, green: true, around: 0, of: 12, startedAt: '2026-10-13T10:00:00.000Z', endedAt: '2026-10-13T10:01:00.000Z', stopped: false } },
-    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: [], item: 'goal/G22.2', last: NEVER }];
+    { id: 'd2', gate: 'spirit/run/spirit/peerPost.js::sendAttempt', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: [], item: 'goal/G22.2', last: NEVER }];
     // runState answers what the test sets: running first, then the verdict.
     let runState = { id: 'd2', running: true, startedAt: new Date(Date.now() - 3000).toISOString(), endedAt: '', stopped: false, tail: '',
       verdict: { ran: false, green: false, around: 0, of: 0, paths: [], why: '' } };
@@ -826,20 +826,20 @@ function clickTab(el, tab) {
       return doc.getElementById(id + '-left').textContent;
     };
     // A whole module typed as the gate: said as typed, and Make is off.
-    let left = typed('sfc-gate', 'spirit/run/js/peerPost.js');
+    let left = typed('sfc-gate', 'spirit/run/spirit/peerPost.js');
     if (/cheating/.test(left) && doc.getElementById('sfc-make').disabled === true) test.check('a whole module typed as the gate is said as typed (' + left + ') and Make is off');
     else test.fail(OWED + 'typed a whole module as the gate: the note reads ' + short(left) + ', Make disabled ' + doc.getElementById('sfc-make').disabled);
-    typed('sfc-gate', 'spirit/run/js/peerPost.js::post');
-    left = typed('sfc-endpoint', 'spirit/run/js/postQueue.js::createQueue');
+    typed('sfc-gate', 'spirit/run/spirit/peerPost.js::post');
+    left = typed('sfc-endpoint', 'spirit/run/spirit/postQueue.js::createQueue');
     if (/whole module/.test(left) && doc.getElementById('sfc-make').disabled === true) test.check('an endpoint naming a function is said as typed (' + left + ') and Make is off');
     else test.fail(OWED + 'typed a function as the endpoint: the note reads ' + short(left) + ', Make disabled ' + doc.getElementById('sfc-make').disabled);
-    left = typed('sfc-endpoint', 'spirit/run/js/postQueue.js');
+    left = typed('sfc-endpoint', 'spirit/run/spirit/postQueue.js');
     if (doc.getElementById('sfc-make').disabled === false) test.check('both forms right: Make is on (' + left + ')');
     else test.fail(OWED + 'both forms right, and Make is still off: ' + short(left));
     box.fire('click', { target: { id: 'sfc-make', getAttribute: function () { return null; } } });
     await sleep(20);
     const sent = asked.filter(function (x) { return x[0] === 'stackFrameChecks.make'; })[0];
-    if (sent && sent[1].gate === 'spirit/run/js/peerPost.js::post' && sent[1].endpoint === 'spirit/run/js/postQueue.js') test.check('Make sends stackFrameChecks.make with the gate and the endpoint');
+    if (sent && sent[1].gate === 'spirit/run/spirit/peerPost.js::post' && sent[1].endpoint === 'spirit/run/spirit/postQueue.js') test.check('Make sends stackFrameChecks.make with the gate and the endpoint');
     else test.fail(OWED + 'Make asked ' + short(asked));
     if (asked.filter(function (x) { return x[0] === 'stackFrameChecks.doors.search'; }).length >= 2) test.check('a made door reads the list of doors again');
     else test.fail(OWED + 'after Make the doors were not read again');
@@ -901,8 +901,8 @@ function clickTab(el, tab) {
     const emptySays = ['gate', 'endpoint', 'paths', 'suites'].filter(function (f) { return !doc.getElementById('sfc-' + f + '-says').textContent; });
     if (!emptySays.length) test.check('each empty field of the add form says in words what goes in it (gate: ' + doc.getElementById('sfc-gate-says').textContent + ')');
     else test.fail(OWED + 'the add form says nothing for ' + short(emptySays));
-    typedAs('sfc-gate', 'gate', 'spirit/run/js/peerPost.js::post');
-    typedAs('sfc-endpoint', 'endpoint', 'spirit/run/js/postQueue.js');
+    typedAs('sfc-gate', 'gate', 'spirit/run/spirit/peerPost.js::post');
+    typedAs('sfc-endpoint', 'endpoint', 'spirit/run/spirit/postQueue.js');
     let left2 = typedAs('sfc-suites', 'suites', 'serverSurface.js, ../hub.js');
     if (/\.\.\/hub\.js/.test(left2) && doc.getElementById('sfc-make').disabled === true) test.check('a suite that is no file name of spirit/test is said as typed (' + left2 + ') and Add is off');
     else test.fail(OWED + 'typed a bad suite: the note reads ' + short(left2) + ', Add disabled ' + doc.getElementById('sfc-make').disabled);
@@ -931,7 +931,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'Open opened ' + short(dialogs));
     // The dialog app, mounted as the shell mounts it, its verbs answered as the plugin answers them.
     const ddoc = fakeDocument();
-    const dwin = withShared(ddoc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    const dwin = withShared(ddoc, test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
     let dApp = null;
     new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { dApp = x; } }, core: kernel.core }, ddoc, dwin);
     const dAsked = [];
@@ -975,9 +975,9 @@ function clickTab(el, tab) {
     const dSays = function (f) { return ddoc.getElementById('sfcd-' + f + '-says').textContent; };
     if (dSays('endpoint') === 'Node\'s own network calls: http, https, fetch') test.check('the dialog\'s filled endpoint reads what it means: ' + dSays('endpoint'));
     else test.fail(OWED + 'the dialog\'s endpoint node:http+https+fetch reads ' + short(dSays('endpoint')));
-    dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js::createPeerPost');
-    if (dSays('gate') === 'one function, createPeerPost, in spirit/run/js/peerPost.js') test.check('the dialog\'s gate block reads what its value means, as typed: ' + dSays('gate'));
-    else test.fail(OWED + 'the dialog\'s gate spirit/run/js/peerPost.js::createPeerPost reads ' + short(dSays('gate')));
+    dTyped('sfcd-gate', 'gate', 'spirit/run/spirit/peerPost.js::createPeerPost');
+    if (dSays('gate') === 'one function, createPeerPost, in spirit/run/spirit/peerPost.js') test.check('the dialog\'s gate block reads what its value means, as typed: ' + dSays('gate'));
+    else test.fail(OWED + 'the dialog\'s gate spirit/run/spirit/peerPost.js::createPeerPost reads ' + short(dSays('gate')));
     dTyped('sfcd-gate', 'gate', DOORS[1].gate);
     const dButtons = ['sfcd-run', 'sfcd-save', 'sfcd-remove'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
     if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Save and Remove, each 1em after itself, in a block with its leading 1em');
@@ -990,10 +990,10 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'its chat asked ' + short(dAsked.filter(function (x) { return x[0] === 'item.chat'; })));
 
     // Edit in the dialog, said as typed, saved through update.
-    let dl = dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js');
+    let dl = dTyped('sfcd-gate', 'gate', 'spirit/run/spirit/peerPost.js');
     if (/cheating/.test(dl) && ddoc.getElementById('sfcd-save').disabled === true) test.check('the dialog\'s gate is checked as typed (' + dl + ') and Save is off');
     else test.fail(OWED + 'typed a whole module in the dialog: ' + short(dl) + ', Save disabled ' + ddoc.getElementById('sfcd-save').disabled);
-    dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js::onRequest');
+    dTyped('sfcd-gate', 'gate', 'spirit/run/spirit/peerPost.js::onRequest');
     dTyped('sfcd-suites', 'suites', 'agentOnboard.js,serverSurface.js');
     dAsked.length = 0;
     dclick('sfcd-save');
@@ -1002,7 +1002,7 @@ function clickTab(el, tab) {
     // dropped against the door as read; it sent the whole lists in update before.
     const up = dAsked.filter(function (x) { return x[0] === 'stackFrameChecks.update'; })[0];
     const dRows = dAsked.filter(function (x) { return /^stackFrameChecks\.(paths|suites)\.(add|remove)$/.test(x[0]); }).map(function (x) { return [x[0], x[1].id, x[1].path]; });
-    if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(Object.keys(up[1]).sort()) === '["endpoint","gate","id"]' &&
+    if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/spirit/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(Object.keys(up[1]).sort()) === '["endpoint","gate","id"]' &&
       JSON.stringify(dRows) === '[["stackFrameChecks.suites.add","d2","agentOnboard.js"],["stackFrameChecks.suites.add","d2","serverSurface.js"]]') test.check('Save sends update {id, gate, endpoint}, then suites.add for each suite the form added, the path left alone');
     else test.fail(OWED + 'Save asked ' + short(dAsked));
 
@@ -1019,7 +1019,7 @@ function clickTab(el, tab) {
     if (/running/.test(runEl.innerHTML) && /\d+ s/.test(runEl.innerHTML)) test.check('the dialog shows the run under way and its elapsed time: ' + short(runEl.innerHTML));
     else test.fail(OWED + 'while running the dialog shows ' + short(runEl.innerHTML));
     runState = { id: 'd2', running: false, startedAt: new Date(Date.now() - 9000).toISOString(), endedAt: new Date().toISOString(), stopped: false,
-      verdict: { ran: true, green: false, around: 2, of: 7, paths: ['POST /api/relay/post from spirit/run/js/hub.js:5:post', 'GET /api/relay/key from spirit/run/js/offboard.js:9:main'], why: '' } };
+      verdict: { ran: true, green: false, around: 2, of: 7, paths: ['POST /api/relay/post from spirit/run/spirit/hub.js:5:post', 'GET /api/relay/key from spirit/run/spirit/offboard.js:9:main'], why: '' } };
     const fromDesk = dPub.filter(function (x) { return x.server === 'desk'; });
     fromDesk.forEach(function (x) { x.fn({ plugin: 'stackFrameChecks', data: { what: 'run', id: 'd2' } }); });
     await sleep(30);

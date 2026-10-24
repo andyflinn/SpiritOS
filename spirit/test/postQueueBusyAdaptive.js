@@ -21,7 +21,7 @@
 // LEFT OPEN, not asserted: busy with no quote (retryAfterMs 0), today backoffStart (2000 ms).
 
 const test = require('./testSupport.js');
-const pq = require('../run/js/postQueue.js');
+const pq = require('../run/spirit/postQueue.js');
 
 const OWED = 'OWED by goal/G4.30: ';
 

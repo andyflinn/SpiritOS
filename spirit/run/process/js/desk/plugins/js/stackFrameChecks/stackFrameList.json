@@ -1,8 +1,8 @@
 [
   {
     "id": "d1",
-    "gate": "spirit/run/js/peerPost.js::createPeerPost",
-    "endpoint": "spirit/run/js/presenceNode.js",
+    "gate": "spirit/run/spirit/peerPost.js::createPeerPost",
+    "endpoint": "spirit/run/spirit/presenceNode.js",
     "suites": [
       "agentOnboard.js",
       "serverSurface.js",
@@ -12,8 +12,8 @@
   },
   {
     "id": "d2",
-    "gate": "spirit/run/js/peerPost.js::createPeerPost",
-    "endpoint": "spirit/run/js/postQueue.js",
+    "gate": "spirit/run/spirit/peerPost.js::createPeerPost",
+    "endpoint": "spirit/run/spirit/postQueue.js",
     "suites": [
       "agentOnboard.js",
       "serverSurface.js",
@@ -23,7 +23,7 @@
   },
   {
     "id": "d3",
-    "gate": "spirit/run/js/peerPost.js::createPeerPost",
+    "gate": "spirit/run/spirit/peerPost.js::createPeerPost",
     "endpoint": "node:http+https+fetch",
     "paths": [
       "/api/"
@@ -37,8 +37,8 @@
   },
   {
     "id": "d4",
-    "gate": "spirit/run/js/peerPost.js::createPeerPost",
-    "endpoint": "spirit/run/js/relayRequest.js",
+    "gate": "spirit/run/spirit/peerPost.js::createPeerPost",
+    "endpoint": "spirit/run/spirit/relayRequest.js",
     "suites": [
       "agentOnboard.js",
       "serverSurface.js",

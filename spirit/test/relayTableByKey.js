@@ -32,12 +32,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const ownerBadge = require('../run/js/ownerBadge.js');
-const relayKeys = require('../run/js/relayKeys.js');
-const nodeStore = require('../run/js/nodeStore.js');
+const ownerBadge = require('../run/spirit/ownerBadge.js');
+const relayKeys = require('../run/spirit/relayKeys.js');
+const nodeStore = require('../run/spirit/nodeStore.js');
 
 const OWED = 'OWED by goal/G19.15: ';
-const JS = path.join(__dirname, '..', 'run', 'js');
+const JS = path.join(__dirname, '..', 'run', 'spirit');
 
 const SPIRIT = { url: 'https://spirit.andyflinn.com', key: 'MCowBQYDK2VwAyEAV2NFEWo+LGgWl0WRr6M8gWDiRfdn4tKTKEdkbCAsCR4=' };
 const ROUTES = { url: 'https://noderoutes.net', key: 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=' };

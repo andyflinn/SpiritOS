@@ -17,7 +17,7 @@
 // THE SHAPES (the box's):
 //   1  next hands a job at once: a code item in red, open to this agent, comes back as a JOB line without waiting.
 //   2  on his Go the item records the active rules that apply: the desk rules always, plus the types its box's paths
-//      fall in (spirit/run/js/ and process/js/: code; spirit/run/shell/: ui); the JOB line names those rules.
+//      fall in (spirit/run/spirit/ and process/js/: code; spirit/run/shell/: ui); the JOB line names those rules.
 //   3  every rule change writes the active rules (only active ones) into the rules file, and puts a line before the
 //      agents naming the rule.
 //   4  a commit line landing while the agent listens and its clone is clean pulls the clone; with an unsaved edit the
@@ -32,8 +32,8 @@ const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 const plantRun = require('./plantRun.js');
 
 const OWED = 'OWED by goal/G5.8: ';
@@ -191,7 +191,7 @@ async function main() {
   if (!deskRule || !codeRule || !uiRule) { test.fail('the world: rules could not be made: ' + short([deskRule, codeRule, uiRule])); return; }
 
   const box = await desk('item.box', { id: 'goal/G100.1' }, ANDY);
-  await desk('box.write', { id: 'goal/G100.1', text: 'Change spirit/run/js/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
+  await desk('box.write', { id: 'goal/G100.1', text: 'Change spirit/run/spirit/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
   await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const go = await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   if (go.status !== 200) { test.fail('the world: his Go answered ' + go.status + ' ' + short(go.body)); return; }
@@ -246,7 +246,7 @@ async function main() {
   if (head(w.clone) === landed) test.check('the commit line pulled the listening agent\'s clean clone to ' + landed.slice(0, 8));
   else test.fail(OWED + 'the clone stayed at ' + head(w.clone).slice(0, 8) + ' after ' + landed.slice(0, 8) + ' landed');
   const before = head(w.clone);
-  const notes = path.join(w.clone, 'spirit', 'run', 'js', 'router.js');
+  const notes = path.join(w.clone, 'spirit', 'run', 'spirit', 'router.js');
   const original = fs.readFileSync(notes, 'utf8');
   fs.writeFileSync(notes, original + '\n// unsaved\n');
   const second = pushFromOther(w, 'second.txt', 'another build landed');

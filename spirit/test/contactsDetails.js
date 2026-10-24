@@ -22,7 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'contactsDetails', 'contactsDetails.js');
@@ -878,7 +878,7 @@ function theMarkIsChromeSized() {
   // a launcher, and a dialog may not launch — so this had to be a
   // different kind of thing, not a link with its click removed. A pointer
   // cursor over something unclickable is a promise.
-  const shell = fs.readFileSync(path.join(RUN_DIR, 'js', 'client', 'shell.js'), 'utf8');
+  const shell = fs.readFileSync(path.join(RUN_DIR, 'spirit', 'client', 'shell.js'), 'utf8');
   if (/createElement\('span'\)[\s\S]{0,200}titlebar-mark/.test(shell) ||
       /titlebar-mark[\s\S]{0,200}createElement\('span'\)/.test(shell)) {
     test.check('and a span rather than a button — it answers no click');

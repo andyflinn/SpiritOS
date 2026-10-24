@@ -23,7 +23,7 @@
 // cases only ask fileWritable's verdict, they never call saveFile), so
 // it's safe to run against a live checkout.
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 const fileServable = spirit.core.fs.fileServable;
 const fileWritable = spirit.core.fs.fileWritable;
@@ -107,7 +107,7 @@ expectEverySpellingUnservable('a relay-state folder anywhere', 'shell/someApp/re
 
 // ---- Node-only modules stay invisible however they are spelled ----
 test.subHeading('Node-only js/ modules are unreadable in every spelling');
-['js/kernel.js', 'js/jobs.js', 'js/server.js', 'js/relay.js', 'js/hub.js', 'js/relayAuth.js']
+['spirit/kernel.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js']
   .forEach(function (modulePath) {
     expectEverySpellingUnservable(modulePath, modulePath);
   });
@@ -152,8 +152,8 @@ test.subHeading('Sidecars stay unwritable in every spelling');
 expectEverySpellingUnwritable('a media sidecar', 'media/001.jpg.sidecar.json');
 
 test.subHeading('Non-writable roots stay unwritable in every spelling');
-expectEverySpellingUnwritable('js/kernel.js', 'js/kernel.js');
-expectEverySpellingUnwritable('js/relayAuth.js', 'js/relayAuth.js');
+expectEverySpellingUnwritable('spirit/kernel.js', 'spirit/kernel.js');
+expectEverySpellingUnwritable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 
 // ---- the fix must not over-correct ----
 // Canonicalizing must not turn into "deny anything that isn't already
@@ -166,7 +166,7 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
 [
   ['./index.html', 'index.html'],
   ['x/../index.html', 'index.html'],
-  ['js/./client/shell.js', 'js/client/shell.js'],
+  ['spirit/./client/shell.js', 'spirit/client/shell.js'],
   // A TRACKED app file, because this check loads it. It was relays.json,
   // which .gitignore keeps out of every clone on purpose — so it passed
   // only on a working copy that happened to hold one, and went red on the

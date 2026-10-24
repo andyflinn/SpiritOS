@@ -13,7 +13,7 @@ Not spirit-3. Not pretty UI.
 
 ## What this pack is
 
-- `spirit/run/js/contacts.js` — private contacts book on a personal node (`whoBook.js` until 2026-09-18)
+- `spirit/run/spirit/contacts.js` — private contacts book on a personal node (`whoBook.js` until 2026-09-18)
 - `spirit/test/identityPerception.js` — two johns as two keys; captions stay local
 - labMaster recipe below — sticks, not a new framework
 

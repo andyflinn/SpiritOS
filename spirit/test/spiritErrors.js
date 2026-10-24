@@ -22,9 +22,9 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const errs = require('../run/js/spiritErrors');
+const errs = require('../run/spirit/spiritErrors');
 
-const JS = path.join(__dirname, '..', 'run', 'js');
+const JS = path.join(__dirname, '..', 'run', 'spirit');
 
 test.startTest('spiritErrors — what an error means, in one place');
 

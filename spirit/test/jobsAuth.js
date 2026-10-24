@@ -29,7 +29,7 @@ const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by apiAuth/G1.4: ';
@@ -76,7 +76,7 @@ function post(body) {
 const ask = function (verb, args) { const b = Object.assign({ verb: verb }, args || {}); return post(b); };
 async function boot() {
   port = await freePort();
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
   // The node boots waiting for its servers (Andy's rule), but give desk a moment regardless.
   // The tree by the verb api on the flat apiDoor (goal/G30.6).
@@ -172,7 +172,7 @@ function down() {
   // The desk server off for this boot: its manifest in this scratch copy runs nowhere (goal/G30.20).
   (function () { const f = path.join(root, 'process', 'js', 'desk', 'desk.json'); const m = JSON.parse(fs.readFileSync(f, 'utf8')); m.runs = []; fs.writeFileSync(f, JSON.stringify(m, null, 2)); }());
   port = await freePort();
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up2 = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
   if (!up2) test.fail('the node did not reboot without the desk server');
   const qKept = (await ask('auth.query', { key: KEYA, path: 'desk' })).body;
@@ -183,7 +183,7 @@ function down() {
   } else test.fail(OWED + 'the suspended app answered ' + JSON.stringify({ kept: qKept, known: gKnown, ghost: gGhost }).slice(0, 260));
 
   test.subHeading('the new refusal codes live in spiritErrors.js');
-  const errs = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'spiritErrors.js'), 'utf8');
+  const errs = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'spiritErrors.js'), 'utf8');
   const missing = ['already-granted', 'not-granted', 'unknown-path', 'not-a-path', 'store-unavailable'].filter(function (c) {
     return errs.indexOf("define('" + c + "'") === -1;
   });

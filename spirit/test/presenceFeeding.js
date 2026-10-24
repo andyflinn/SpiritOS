@@ -35,11 +35,11 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const presenceNode = require('../run/js/presenceNode');
-const relayKeys = require('../run/js/relayKeys');
-const hubModule = require('../run/js/hub');
-const contactBook = require('../run/js/contacts');
+const auth = require('../run/spirit/relayAuth');
+const presenceNode = require('../run/spirit/presenceNode');
+const relayKeys = require('../run/spirit/relayKeys');
+const hubModule = require('../run/spirit/hub');
+const contactBook = require('../run/spirit/contacts');
 
 const OWED = 'OWED by goal/G2.9: ';
 const JOHN = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnjohnjohn=';

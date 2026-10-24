@@ -30,8 +30,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G18.5: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -118,7 +118,7 @@ async function serverHalf() {
     test.subHeading('2. a write that changes the checks publishes them');
     published.length = 0;
     await call('item.take', { id: 'goal/G100.2' }, CW);
-    await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/js/zzLiveFixesCore.js' }, CW);
+    await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/spirit/zzLiveFixesCore.js' }, CW);
     await sleep(500);
     // goal/G33.4: each check is a row of its own, pushed on its own.
     const pub = published.filter(function (o) { return o && o.table === 'checks' && o.id === 'goal/G100.2' && o.row; }).map(function (o) { return o.row; });
@@ -132,8 +132,8 @@ async function serverHalf() {
     // chat lines, 0 with none ("that half is going to default to a probability of 0"); a chat line scores
     // probabilityStringMatch(text, its text).
     test.subHeading('4. the desk searches rank by probability');
-    const psm = require('../run/js/probabilityStringMatch.js').probabilityStringMatch;
-    const psom = require('../run/js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+    const psm = require('../run/spirit/probabilityStringMatch.js').probabilityStringMatch;
+    const psom = require('../run/spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
     await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     // Since goal/G21.4 an agent holds one task at a time: claude-windows lets goal/G100.2 go before it takes goal/G101.3.
@@ -255,7 +255,7 @@ async function dialogHalf() {
   const calls = [];
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
   const line = function (i, by, text) { return { key: String(i), label: JSON.stringify({ by: by, at: '2026-10-12T10:0' + i + ':00.000Z', text: text }) }; };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,

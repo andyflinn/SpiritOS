@@ -19,16 +19,16 @@ const fs = require('fs');
 const os = require('os');
 const net = require('net');
 const path = require('path');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { spawn, execFileSync } = require('child_process');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by desk/G2.5: ';
 const RUN = path.join(__dirname, '..', 'run');
-const KERNEL = path.join(RUN, 'js', 'kernel.js');
+const KERNEL = path.join(RUN, 'spirit', 'kernel.js');
 const FIXTURE = path.join(__dirname, 'fixtures', 'debugFixture.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -66,7 +66,7 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   const kid = spawn(process.execPath, [FIXTURE, '--pipe', pipe], { stdio: ['ignore', 'pipe', 'ignore'] });
   let out = '';
   kid.stdout.on('data', function (c) { out += c; });
-  const appClient = require('../run/js/appClient.js');
+  const appClient = require('../run/spirit/appClient.js');
   const client = appClient.createAppClient({ rootDir: scratch });
   if (typeof client.register === 'function') client.register('debugFixture', pipe);
   const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ debugFixture: b }).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
@@ -89,7 +89,7 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
 
   // ── MEMBERS NEVER REACH IT ──────────────────────────────────────────
   test.subHeading('apiDoor refuses DEBUG to a member; the owner\'s flat door reaches it');
-  const apiDoor = require('../run/js/apiDoor.js');
+  const apiDoor = require('../run/spirit/apiDoor.js');
   const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
   const asked = [];
   const posted = [];
@@ -114,14 +114,14 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   asked.length = 0;
   // The owner's way in since goal/G30.6: /api/spirit hands grantFace.DEBUG to the flat door (verbTable's door), whose
   // in-process call is what the loopback front and the owner door both run.
-  const ownDoor = require('../run/js/verbTable.js').createVerbTable().door({ apps: function () { return ['grantFace']; }, ask: servers.ask });
+  const ownDoor = require('../run/spirit/verbTable.js').createVerbTable().door({ apps: function () { return ['grantFace']; }, ask: servers.ask });
   await ownDoor.call('grantFace.DEBUG', {});
   if (asked.length === 1 && asked[0].grantFace && asked[0].grantFace.DEBUG) test.check('the owner\'s way in (grantFace.DEBUG by name on the flat door) still reaches DEBUG');
   else test.fail(OWED + 'the loopback way in no longer reaches DEBUG');
 
   // ── THE RELAY ───────────────────────────────────────────────────────
   test.subHeading('the relay keeps no DEBUG of its own');
-  if (!/\bvar\s+debugging\b|\blet\s+debugging\b/.test(code(path.join(RUN, 'js', 'relay.js')))) test.check('relay.js has no debugging flag of its own');
+  if (!/\bvar\s+debugging\b|\blet\s+debugging\b/.test(code(path.join(RUN, 'spirit', 'relay.js')))) test.check('relay.js has no debugging flag of its own');
   else test.fail(OWED + 'relay.js still keeps its own debugging flag');
 
   // ── THE NODE ────────────────────────────────────────────────────────
@@ -131,13 +131,13 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   // Mounted since goal/G30.4: the node family's block declares its verbs bare ('debug'), the table names it node.debug.
-  const nodeBlock = /loopbackVerbs\.mount\('node',[\s\S]*?\n {2}\}, \{ wire:/.exec(fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8'));
+  const nodeBlock = /loopbackVerbs\.mount\('node',[\s\S]*?\n {2}\}, \{ wire:/.exec(fs.readFileSync(path.join(root, 'spirit', 'server.js'), 'utf8'));
   const claimed = !!nodeBlock && new RegExp("^ {4}'debug':", 'm').test(nodeBlock[0]);
   if (claimed) test.check('node.debug is mounted in server.js, so the owner door reaches it too');
   else test.fail(OWED + 'node.debug is not mounted in server.js');
   const boot = async function () {
     const port = await freePort();
-    const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+    const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
     const ok = await until(function () { return post(port, { verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 10000);
     return { port: port, node: node, ok: ok };
   };

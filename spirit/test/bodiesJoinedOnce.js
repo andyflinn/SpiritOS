@@ -49,7 +49,7 @@ function splitAnswer(res, prefix) {
 test.startTest('goal/G16.6: bytes copied, bytes counted');
 
 async function suite() {
-  const spirit = require('../run/js/kernel.js');
+  const spirit = require('../run/spirit/kernel.js');
 
   // ── 1. THE SHARED UTILITY ───────────────────────────────────────────────
   test.subHeading('1. kernel.js readBody copies raw bytes and decodes once');
@@ -84,7 +84,7 @@ async function suite() {
     if (p === '/huge') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(Buffer.alloc(4 * 1024 * 1024, 120)); return; }
     if (p === '/hang') { hang = res; res.writeHead(200, { 'Content-Type': 'application/json' }); res.write('{'); return; }
     if (p === '/echo') {
-      require('../run/js/serveCommon.js').readJsonBody(req).then(function (body) {
+      require('../run/spirit/serveCommon.js').readJsonBody(req).then(function (body) {
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ got: body }));
       }, function (e) { res.writeHead(e.statusCode || 500); res.end(String(e.message)); });
       return;
@@ -94,13 +94,13 @@ async function suite() {
   });
   await new Promise(function (r) { server.listen(0, '127.0.0.1', r); });
   const base = 'http://127.0.0.1:' + server.address().port;
-  const rr = require('../run/js/relayRequest.js');
+  const rr = require('../run/spirit/relayRequest.js');
   const a1 = await rr.relayRequest(base, 'GET', '/split', null).catch(function (e) { return { text: 'threw ' + e.message }; });
   if (a1 && a1.text === '{"text":"x' + EMOJI + '"}') test.check('relayRequest resolves an answer split mid-character whole');
   else test.fail(OWED + 'relayRequest gave ' + short(a1 && a1.text));
   // THE CAP IS BODY_MAX (Andy, 2026-10-11: "and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell
   // could it be otherwise?"): exactly BODY_MAX bytes is accepted, one byte more is refused by name.
-  const limitsMod = require('../run/js/limits.js');
+  const limitsMod = require('../run/spirit/limits.js');
   const atCap = await rr.relayRequest(base, 'GET', '/sized?n=' + limitsMod.BODY_MAX, null).then(function (a) { return { len: Buffer.byteLength(a.text) }; }, function (e) { return e; });
   const overCap = await rr.relayRequest(base, 'GET', '/sized?n=' + (limitsMod.BODY_MAX + 1), null).then(function (a) { return { len: Buffer.byteLength(a.text) }; }, function (e) { return e; });
   if (atCap && atCap.len === limitsMod.BODY_MAX && overCap && overCap.code === 'relay-answer-too-large') test.check('relayRequest\'s cap is limits.BODY_MAX: ' + limitsMod.BODY_MAX + ' bytes pass, one more is refused by name (relay-answer-too-large)');
@@ -134,7 +134,7 @@ async function suite() {
   let echoed = null; try { echoed = JSON.parse(e1.text).got; } catch (e) { echoed = null; }
   if (echoed && echoed.label === 'an ' + EMOJI + ' label') test.check('readJsonBody parses a request split mid-character whole');
   else test.fail(OWED + 'readJsonBody gave ' + short(e1.text));
-  const limits = require('../run/js/limits.js');
+  const limits = require('../run/spirit/limits.js');
   const over = await new Promise(function (resolve) {
     const big = Buffer.alloc(limits.BODY_MAX + 1, 120);
     const req = http.request(base + '/echo', { method: 'POST', headers: { 'Content-Type': 'application/json' } }, function (res) { res.resume(); resolve(res.statusCode); });
@@ -152,19 +152,19 @@ async function suite() {
 
   // ── 3 and 4. THE PROXY AND THE TREE ─────────────────────────────────────
   test.subHeading('3. the proxy caps an outside reply; 4. no chunk glue, no length against the routed cap');
-  const serverSrc = fs.readFileSync(path.join(RUN, 'js', 'server.js'), 'utf8');
+  const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
   const proxy = (serverSrc.split('function handleGenericProxy')[1] || '').split('\nfunction ')[0];
   // NO NUMBER AT ALL (Andy, 2026-10-11: "agreed. no number at all."): the outside reply is passed straight to the
   // asker as it arrives, unread, so the node holds nothing and needs no cap.
   const proxyCode = stripComments(proxy);
   if (/\.pipe\(\s*res\s*\)/.test(proxyCode) && !/readBody\(|chunks\.push|Buffer\.concat|PROXY_REPLY_MAX/.test(proxyCode) && !/PROXY_REPLY_MAX/.test(stripComments(serverSrc))) test.check('handleGenericProxy pipes the outside reply straight to the asker, reads none of it and has no cap');
   else test.fail(OWED + 'handleGenericProxy still reads or caps the outside reply instead of passing it through');
-  const relaySrc = stripComments(fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8'));
+  const relaySrc = stripComments(fs.readFileSync(path.join(RUN, 'spirit', 'relay.js'), 'utf8'));
   const lengths = relaySrc.split('\n').filter(function (l) { return /\.length\s*>\s*MAX_ROUTED_TEXT/.test(l); });
   if (!lengths.length && /byteLength\([^)]*\)\s*>\s*MAX_ROUTED_TEXT/.test(relaySrc)) test.check('relay.js compares bytes against MAX_ROUTED_TEXT, never a .length');
   else test.fail(OWED + 'relay.js still compares .length against MAX_ROUTED_TEXT in ' + lengths.length + ' place(s)');
   const glue = ['kernel.js', 'relayRequest.js', 'serveCommon.js'].filter(function (f) {
-    return /(\+=\s*(chunk|c)\b)|(\+=\s*c\s*\))/.test(stripComments(fs.readFileSync(path.join(RUN, 'js', f), 'utf8')));
+    return /(\+=\s*(chunk|c)\b)|(\+=\s*c\s*\))/.test(stripComments(fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8')));
   });
   if (!glue.length) test.check('kernel.js, relayRequest.js and serveCommon.js glue no chunk into a string');
   else test.fail(OWED + 'chunks still glued into a string in ' + glue.join(', '));

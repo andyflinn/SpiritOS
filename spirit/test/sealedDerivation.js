@@ -30,9 +30,9 @@
 'use strict';
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const limits = require('../run/js/limits');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const limits = require('../run/spirit/limits');
 
 test.startTest('The sealed ceiling derives from the wire bound, and the cipher agrees');
 
@@ -177,7 +177,7 @@ test.subHeading('A packet the composer accepts always seals within the wire boun
   // THE COMPOSER IS THE ONLY GATE, so this is the assertion that matters more
   // than the formula: the formula being right is useless if the thing that
   // refuses uses a different one.
-  const packet = require('../run/js/client/packet.js');
+  const packet = require('../run/spirit/client/packet.js');
   const classes = [['ascii', 'y'], ['quote', QUOTE], ['backslash', BACKSLASH],
     ['newline', NEWLINE], ['accented', ACCENTED], ['han', HAN]];
   const bad = [];

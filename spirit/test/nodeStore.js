@@ -25,7 +25,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const nodeStore = require('../run/js/nodeStore');
+const nodeStore = require('../run/spirit/nodeStore');
 
 function home() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodestore-'));

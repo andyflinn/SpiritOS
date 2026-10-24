@@ -29,12 +29,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayKeys = require('../run/js/relayKeys');
-const ownerBadge = require('../run/js/ownerBadge');
-const peerPost = require('../run/js/peerPost');
-const spiritErrors = require('../run/js/spiritErrors');
-const spirit = require('../run/js/kernel.js');
+const auth = require('../run/spirit/relayAuth');
+const relayKeys = require('../run/spirit/relayKeys');
+const ownerBadge = require('../run/spirit/ownerBadge');
+const peerPost = require('../run/spirit/peerPost');
+const spiritErrors = require('../run/spirit/spiritErrors');
+const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G19.1: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -49,7 +49,7 @@ function show(v) { return JSON.stringify(v); }
 function rowOf(home, url) { return relayKeys.listed(home).filter(function (r) { return r && r.url === url; })[0] || null; }
 function keyRow(home, url) { return relayKeys.load(home)[relayKeys.normalizeUrl(url)] || null; }
 function table() { return typeof relayKeys.refusal === 'function' ? relayKeys : null; }
-function nodeRow(home, key) { return require('../run/js/nodeStore.js').open(home).relays.byKey(key); }
+function nodeRow(home, key) { return require('../run/spirit/nodeStore.js').open(home).relays.byKey(key); }
 // A relay this node met at a claim: listed under its key, and seated.
 function seated(home, url, label, relayKey, seatLabel) {
   relayKeys.list(home, url, label, relayKey);
@@ -76,7 +76,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const rid = auth.generateIdentity('relay-one');
     seated(home, U, 'one', rid.publicKey, 'jazz');
     // The first stream pins through answerRelay, exactly as presenceNode's pinRelay does.
-    const answerer = require('../run/js/answerRelay').createAnswerer({
+    const answerer = require('../run/spirit/answerRelay').createAnswerer({
       rootDir: home,
       // The relay's card, as peerPost.relayKey resolves it (goal/G22.6).
       askKey: function () { return Promise.resolve(JSON.parse(signedKeyAnswer(rid, 'one'))); },
@@ -119,7 +119,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     };
     const server = { close: function () {} };
     const U = 'http://127.0.0.1:65009';
-    const hub = require('../run/js/hub.js').createHub(home);
+    const hub = require('../run/spirit/hub.js').createHub(home);
     function claim(name) {
       return new Promise(function (resolve) {
         const res = {
@@ -318,7 +318,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     else test.fail(OWED + 'streams opened after a restart: ' + show(s2.opened));
 
     // sseClient's half: the refusal's code and sentence reach onClose, and a close there stops the retry.
-    const sse = require('../run/js/sseClient');
+    const sse = require('../run/spirit/sseClient');
     let fetches = 0, detailSeen = null, handle = null;
     await new Promise(function (resolve) {
       handle = sse.connect({
@@ -411,7 +411,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const ONLY = ownerBadge.KEPT_RELAY.url, OTHER = 'https://other.example';
     relayKeys.assertSeeds(h2, ownerBadge.SEED_RELAYS);
     seated(h2, OTHER, 'o', rA.publicKey, 'jazz');
-    const hub2 = require('../run/js/hub.js').createHub(h2);
+    const hub2 = require('../run/spirit/hub.js').createHub(h2);
     const kept = hub2.relayRemove({ key: ONLY });
     if (!kept.ok) test.check('relay.remove refuses the relay a node must keep: ' + kept.error);
     else test.fail('relay.remove took the kept relay');
@@ -535,7 +535,7 @@ function mountDetails(row, rows) {
   };
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', 'navigator',
     fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'))(
-    shellSpirit, doc, test.withSpirit({ 'spirit.ownerBadge': require('../run/js/ownerBadge') }), fakeFetch, function () { return 1; }, function () {}, {});
+    shellSpirit, doc, test.withSpirit({ 'spirit.ownerBadge': require('../run/spirit/ownerBadge') }), fakeFetch, function () { return 1; }, function () {}, {});
   const answers = [];
   const api = {
     verb: function (name, args) {

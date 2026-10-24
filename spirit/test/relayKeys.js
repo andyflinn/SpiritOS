@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const relayKeys = require('../run/js/relayKeys');
+const relayKeys = require('../run/spirit/relayKeys');
 const world = require('./world');
 
 // The pins as they stand on disc, by url, read through a connection of

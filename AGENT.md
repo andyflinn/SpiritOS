@@ -70,12 +70,12 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 **Do not show chrome that is not useful to Andy in that state.** A control whose every value would be refused, a form for a capability this node does not have, a field asking a question already answered — none of those are neutral. Each one is a thing to read, decide about and dismiss, and together they are what makes a screen read as a debug console instead of an app. Prefer not building it over hiding it: an intrinsic app has no Location picker in the markup, a node that owns no mailbox has no invite panel in the page, a node already bound has no claim row. When state changes, the chrome comes back on its own — the invite panel when a badge appears, the claim row when the mailbox stops recognising the label — so nothing is lost, only unasked. Where the answer is the mailbox's rather than the app's, ask the mailbox: that is what the owner badge is.
 
 - Target: every **app** will live at `shell/<appName>/<appName>.js` plus sibling manifest. Today nine ids still live in `index.html` (stats, files, text-file-launcher, media-launcher, process-browser, jobs, app-manager, group-manager, spirit). They move only per `CLEANUP-PLAN.md`. Intrinsic still does not earn a seat in `index.html`.
-- Not apps (do not tidy into `app/`): `js/kernel.js`, `js/client/shell.js`, `index.html`, `js/ownerBadge.js` (script-tag helper).
+- Not apps (do not tidy into `app/`): `spirit/kernel.js`, `spirit/client/shell.js`, `index.html`, `spirit/ownerBadge.js` (script-tag helper).
 - `mount(container, api, params)` — third argument is real; viewers use it.
 - **Apps do not name HTTP paths and do not call `fetch`.** Methods live on `api`; the shell reaches the node, the node reaches the wire — see **Comms** above. This was written as a *target* with a standing pass for Relay Chat, and that is precisely how twelve direct `fetch`es accumulated across six apps: one file had a named exemption, so the next file took one too. The twelve are now a frozen, dated list in `spirit/test/oneDoor.js` — the count goes down or the harness goes red. **Nothing is added to it without Andy granting the exception explicitly.**
 - `api.hub.status` means the **badge summary** (`rows`, `ownedUrls`, `mustPick`), not the relay roll (`/api/relay/status`).
 - `api.fs` is scoped to `shell/<name>/` **by convention**. The jail is server-side `fileWritable`. Shared reads via `spirit.core.fs` are not a security regression.
-- Kernel rules may be `js/*.js` modules on `api` or a documented script-tag global (`spiritOwnerBadge`). Do not delete `js/ownerBadge.js` as a stray.
+- Kernel rules may be `spirit/*.js` modules on `api` or a documented script-tag global (`spiritOwnerBadge`). Do not delete `spirit/ownerBadge.js` as a stray.
 - Intrinsic apps sit in the **Spirit** group and cannot be moved or hidden. **Name and icon lock is not true in the tree yet** — later sitting, and it must land *before* Stats/Processes/Jobs/Apps/Groups move.
 - First paint must not depend on a failed fs-watcher leaving an empty shell. Decide eager manifest read vs snapshot before that move.
 - Natter is the reference *shape* (folder + manifest + `api.fs`). It still uses `spiritOwnerBadge` for the last-relay rule.
@@ -107,7 +107,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   (`VSCode-Brain`), gitignored, cloned into the checkout so the in-studio
   agent can reach it without leaving the workspace. **Not a node feature:**
   no gate names it, no schema describes it, no test asserts it, and nothing
-  in `js/` reads it. ~~Not a SpiritOS concept~~ — *struck 2026-09-22.*
+  in `spirit/` reads it. ~~Not a SpiritOS concept~~ — *struck 2026-09-22.*
   Andy: *"which does in fact represent one of the concepts SpiritOS is
   dreamt for. in the course of the SpiritOS project, i meant for this
   example to be tested."* It is a concept being tested here, not code —

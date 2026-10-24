@@ -57,7 +57,7 @@
   function leverLib() {
     if (typeof window !== 'undefined' && window.spirit && window.spirit.lever) return window.spirit.lever;
     if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
-      try { return require('../../js/lever.js'); } catch (e) { return null; }
+      try { return require('../../spirit/lever.js'); } catch (e) { return null; }
     }
     return null;
   }

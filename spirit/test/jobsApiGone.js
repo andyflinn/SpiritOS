@@ -53,14 +53,14 @@ function walk(dir, out) {
   else test.fail(OWED + naming.length + ' files still name jobs.api: ' + short(naming.slice(0, 12)));
 
   test.subHeading('2. jobs declares no api');
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   const jobsMount = (/loopbackVerbs\.mount\('jobs'[\s\S]*?\}, \{ wire: false, by: 'server\.js' \}\);/.exec(server) || [''])[0];
   if (jobsMount && !/'api':\s*\{/.test(jobsMount)) test.check('the jobs mount in server.js declares no api verb');
   else test.fail(OWED + (jobsMount ? 'the jobs mount still declares api' : 'the jobs mount was not found'));
 
   test.subHeading('3. the door calls in-process, for the owner door');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'g306-'));
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   table.mount('xfs', dir, {
     stat: { request: { path: '' }, reply: { size: 0 }, handler: function (rq, rs) { rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end(JSON.stringify({ size: 7 })); } },
   }, { wire: false, by: 'test' });
@@ -113,12 +113,12 @@ function walk(dir, out) {
   if (jobsVerbs && JSON.stringify(jobsVerbs) === JSON.stringify(['cancel', 'create', 'delete', 'get', 'search', 'update']))
     test.check('the jobs mount declares jobs alone: search, get, create, update, cancel, delete');
   else test.fail(OWED + 'the jobs mount declares ' + short(jobsVerbs));
-  const authDir = path.join(RUN, 'js', 'auth');
-  const jobsDir = path.join(RUN, 'js', 'jobs');
+  const authDir = path.join(RUN, 'spirit', 'auth');
+  const jobsDir = path.join(RUN, 'spirit', 'jobs');
   const ls = function (d) { try { return fs.readdirSync(d); } catch (e) { return []; } };
   if (ls(authDir).indexOf('AGENTS.md') !== -1 && ls(authDir).indexOf('grant.warning.txt') !== -1 && !ls(jobsDir).some(function (f) { return /^(auth|api\.)/.test(f); }))
-    test.check('js/auth/ holds AGENTS.md and grant.warning.txt; js/jobs/ keeps no auth or api file');
-  else test.fail(OWED + 'js/auth/ holds ' + short(ls(authDir)) + ', js/jobs/ ' + short(ls(jobsDir)));
+    test.check('spirit/auth/ holds AGENTS.md and grant.warning.txt; js/jobs/ keeps no auth or api file');
+  else test.fail(OWED + 'spirit/auth/ holds ' + short(ls(authDir)) + ', js/jobs/ ' + short(ls(jobsDir)));
   const namingAuth = files.filter(function (f) { try { return /jobs\.auth|jobs\/auth|authGrant\.warning/.test(fs.readFileSync(f, 'utf8')); } catch (e) { return false; } })
     .map(function (f) { return path.relative(path.join(__dirname, '..'), f).split(path.sep).join('/'); });
   if (!namingAuth.length) test.check('nothing names jobs.auth* any more');

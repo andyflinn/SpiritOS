@@ -29,10 +29,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
-const jobs = require('../run/js/jobs.js')(spirit, 65432);
+const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
 
 test.startTest('The fs-watcher is quiet when nothing changed');
 

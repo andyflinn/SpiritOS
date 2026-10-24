@@ -15,8 +15,8 @@
 // Both are tested against here on purpose.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const peerFile = require('../run/js/peerFile.js');
+const auth = require('../run/spirit/relayAuth');
+const peerFile = require('../run/spirit/peerFile.js');
 
 const SAFE = /^[A-Za-z0-9._-]+$/;
 

@@ -30,8 +30,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G33.6: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -145,7 +145,7 @@ async function dialogHalf() {
   };
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -354,7 +354,7 @@ async function runHalf() {
   const dHandlers = {};
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, ddoc, sharedWindow(test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') })));
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, ddoc, sharedWindow(test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') })));
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {

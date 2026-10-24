@@ -23,7 +23,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const seen = require('../run/js/seenPeers');
+const seen = require('../run/spirit/seenPeers');
 
 // ── EVERY SHADOW GETS ITS OWN HOME (cycle R26) ───────────────────────
 //
@@ -246,7 +246,7 @@ test.subHeading('It survives the process, which is what the store bought (R26)')
   // A SECOND INSTANCE OVER THE SAME HOME. Not the same object, and not
   // the same connection once the first is closed — what answers can only
   // have come off the disc.
-  require('../run/js/nodeStore').open(home).close();
+  require('../run/spirit/nodeStore').open(home).close();
   const second = seen.createSeenPeers({ rootDir: home, now: c.now });
   const kept = second.get('KEY-PERSISTS');
 

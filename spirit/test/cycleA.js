@@ -24,14 +24,14 @@ const path = require('path');
 const { URL } = require('url');
 const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const invites = require('../run/js/invites');
+const invites = require('../run/spirit/invites');
 // Where this node holds a seat — its own record, written at claim.
-const relayKeys = require('../run/js/relayKeys');
-const ownerBadge = require('../run/js/ownerBadge');
-const { createRelay } = require('../run/js/relay');
-const { createHub } = require('../run/js/hub');
+const relayKeys = require('../run/spirit/relayKeys');
+const ownerBadge = require('../run/spirit/ownerBadge');
+const { createRelay } = require('../run/spirit/relay');
+const { createHub } = require('../run/spirit/hub');
 
 function tmpHome(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cycleA-' + tag + '-'));
@@ -196,7 +196,7 @@ test.subHeading('What counts as a badge');
   // credential at all, so a node may ask it of every relay in its list
   // including ones it has no relationship with.
   const src = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'js', 'ownerBadge.js'), 'utf8');
+    path.join(__dirname, '..', 'run', 'spirit', 'ownerBadge.js'), 'utf8');
   // Called, not merely named. The tombstone explaining what statusPath
   // was has to stay readable, so a scanner that cannot tell a call from
   // an epitaph would make the history undeletable.

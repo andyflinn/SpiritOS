@@ -43,13 +43,13 @@ const homes = [];
 test.startTest('goal/G30.13: the home node answers its face, and streams to it');
 
 let faceHome = null;
-try { faceHome = require('../run/js/faceHome'); } catch (e) { faceHome = null; }
+try { faceHome = require('../run/spirit/faceHome'); } catch (e) { faceHome = null; }
 const made = !!(faceHome && typeof faceHome.createFaceHome === 'function');
 
 // The relay, as in faceStream.js: bert seated with a verified email, a face name, his node's stream kept, a login.
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3013-'));
 homes.push(home);
 plant.ensureAt(home, 'relay');
@@ -59,7 +59,7 @@ fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
 fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
 const mails = [];
 let now = Date.now();
-const box = require('../run/js/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+const box = require('../run/spirit/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
 const relayKey = box.relayPublicKey();
 const URL_ = 'https://relay.example';
 const events = [];
@@ -116,7 +116,7 @@ jobs.fsTreeCommands = function () { return [{ createDirectory: 'shell' }, { crea
 const calls = [];
 const node = made ? faceHome.createFaceHome({
   call: function (verb, body) { calls.push({ verb: verb, body: body }); return Promise.resolve({ ok: true, status: 200, body: { verb: verb, card: 'bert-card' } }); },
-  serveFile: function (rel, res) { require('../run/js/serveCommon').sendFile(res, path.join(RUN, rel)); },
+  serveFile: function (rel, res) { require('../run/spirit/serveCommon').sendFile(res, path.join(RUN, rel)); },
   upload: upload,
   identity: function () { return bert; },
   relayKey: function () { return relayKey; },
@@ -225,8 +225,8 @@ const done = (async function () {
     test.check('after face-close nothing more is streamed and no upload is opened');
   else test.fail(OWED + 'after face-close the face still got ' + short(view.text.slice(atClose)));
 
-  const pn = code('js/presenceNode.js');
-  const srv = code('js/server.js');
+  const pn = code('spirit/presenceNode.js');
+  const srv = code('spirit/server.js');
   if (/'face'/.test(pn) && /'face-open'/.test(pn) && /'face-close'/.test(pn) && /onFace\b/.test(pn) && /onFaceOpen/.test(pn) && /onFaceClose/.test(pn)
       && /createFaceHome\(/.test(srv) && /nodeDoor\.call\(/.test(srv) && /serveGet\(/.test(srv))
     test.check('presenceNode hands face, face-open and face-close on; server.js builds faceHome on nodeDoor.call and the GET it serves files with');

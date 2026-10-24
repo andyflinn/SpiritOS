@@ -26,8 +26,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const peerFile = require('../run/js/peerFile.js');
-const peerStats = require('../run/js/peerStats.js');
+const peerFile = require('../run/spirit/peerFile.js');
+const peerStats = require('../run/spirit/peerStats.js');
 
 const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
 const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';

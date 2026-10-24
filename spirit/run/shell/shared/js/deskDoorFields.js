@@ -101,7 +101,7 @@
   // EACH INPUT IN ITS OWN FRAMED BLOCK (goal/G22.3). Andy, 2026-10-13: "input fields will look less crappy if arranged
   // in a block, that itself act's like an inline element".
   function html(pre) {
-    var place = { gate: 'spirit/run/js/peerPost.js::createPeerPost', endpoint: 'spirit/run/js/presenceNode.js, or node:http+https+fetch',
+    var place = { gate: 'spirit/run/spirit/peerPost.js::createPeerPost', endpoint: 'spirit/run/spirit/presenceNode.js, or node:http+https+fetch',
       paths: '/api/relay/', suites: 'serverSurface.js, everyVerb.js' };
     var label = { gate: 'Gate', endpoint: 'Endpoint', paths: 'Paths', suites: 'Suites' };
     return FIELDS.map(function (f) {

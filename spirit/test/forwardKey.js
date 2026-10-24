@@ -23,14 +23,14 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const { pipeRequest } = require('../run/js/relayRequest.js');
-const apiDoor = require('../run/js/apiDoor.js');
+const appClient = require('../run/spirit/appClient.js');
+const { pipeRequest } = require('../run/spirit/relayRequest.js');
+const apiDoor = require('../run/spirit/apiDoor.js');
 
 const OWED = 'OWED by apiAuth/G1.13: ';
 const KEY = 'MCowBQYDK2VwAyEAforwardKeyTestPeerAAAAAAAAAAAAAAAAAAA=';
 const OWNKEY = 'MCowBQYDK2VwAyEAforwardKeyTestOwnerAAAAAAAAAAAAAAAAAA=';
-const APPSERVER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const APPSERVER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 

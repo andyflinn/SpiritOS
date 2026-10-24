@@ -13,7 +13,7 @@
 //   "and the appServer publisings will be serialized at their source? they are peerposts after all."
 //
 // WHAT IS ASSERTED (the box, SHAPE 1 to 3)
-//   1. spirit/run/js/puppetStream.js: createPuppetStream({puppet, route, post, encode, log}).onJob(job): on a
+//   1. spirit/run/spirit/puppetStream.js: createPuppetStream({puppet, route, post, encode, log}).onJob(job): on a
 //      puppet, a job-updated carrying a changed app object of a process/js module posts {module, app} to the owner
 //      as a packet named published, once per change; the same object again, a log line, a job without an app, a
 //      module not under process/js, and a node that is not a puppet post nothing.
@@ -31,7 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G14.5: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -53,7 +53,7 @@ function world(opts) {
   let hold = null;      // when set, posts wait on this promise
   let answer = { ok: true, hash: 'h' };
   let mod = null;
-  try { mod = require('../run/js/puppetStream.js'); } catch (e) { mod = null; }
+  try { mod = require('../run/spirit/puppetStream.js'); } catch (e) { mod = null; }
   const stream = mod && typeof mod.createPuppetStream === 'function' ? mod.createPuppetStream({
     puppet: function () { return puppet; },
     route: function (to) { return to === OWNER ? route : { unreachable: true }; },
@@ -82,7 +82,7 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
   test.subHeading('1. a changed published object goes to the owner as a packet named published, once');
   {
     const w = world();
-    if (!w.stream) { test.fail(OWED + 'no spirit/run/js/puppetStream.js with createPuppetStream'); }
+    if (!w.stream) { test.fail(OWED + 'no spirit/run/spirit/puppetStream.js with createPuppetStream'); }
     else {
       w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm1' }));
       await sleep(20);
@@ -162,11 +162,11 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
   // ── 4. THE WIRING ──────────────────────────────────────────────────────
   test.subHeading('4. server.js hands job-updated to the stream; shell.js routes a published packet to onPublished');
   {
-    const srv = code('js/server.js');
+    const srv = code('spirit/server.js');
     if (/puppetStream/.test(srv) && /createPuppetStream\(/.test(srv) && /jobs\.events\.on\('job-updated',\s*\w+\.onJob\)/.test(srv) && /puppetIn\(/.test(srv)) {
       test.check('server.js builds the stream with puppetIn, chooseRoute and the router\'s post, and listens to job-updated');
     } else test.fail(OWED + 'server.js: requires puppetStream ' + /puppetStream/.test(srv) + ', listens to job-updated with onJob ' + /jobs\.events\.on\('job-updated',\s*\w+\.onJob\)/.test(srv));
-    const sh = code('js/client/shell.js');
+    const sh = code('spirit/client/shell.js');
     if (/info\.app === 'published'/.test(sh) && /streamedLast/.test(sh) && /publishedHandlers\['shell\/' \+/.test(sh)) {
       test.check('shell.js routes a packet named published to the published handlers of the module\'s app and keeps the last streamed object for a late subscriber');
     } else test.fail(OWED + 'shell.js: routes published packets ' + /info\.app === 'published'/.test(sh) + ', keeps the last streamed ' + /streamedLast/.test(sh));

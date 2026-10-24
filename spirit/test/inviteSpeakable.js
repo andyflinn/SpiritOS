@@ -31,8 +31,8 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
 const world = require('./world');
 const scenario = require('./scenario');
 

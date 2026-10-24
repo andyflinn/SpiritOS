@@ -22,7 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const APP_DIR = path.join(__dirname, '..', 'run', 'shell');
 const DESK = path.join(APP_DIR, 'desk', 'desk.js');

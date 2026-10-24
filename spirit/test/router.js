@@ -9,7 +9,7 @@
 // those are the two ways a hop breaks it.
 
 const test = require('./testSupport.js');
-const router = require('../run/js/router');
+const router = require('../run/spirit/router');
 
 function clock() {
   let t = 1000;
@@ -207,7 +207,7 @@ function run() {
     // partnering (goal/G22.6).
     // The live relay passes only its own key (selfKey, goal/G16.2): no cap
     // option, so the defaults above are still the numbers it runs.
-    const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+    const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
     const made = live.match(/routerTable\.createRouter\((.*)\);/);
     if (made && !/max|ttl/i.test(made[1])) test.check('relay.js creates its router with no cap options, so these defaults are what a live relay runs');
     else test.fail('relay.js no longer creates its router with the defaults; assert the numbers where it now sets them');

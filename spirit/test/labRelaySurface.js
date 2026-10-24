@@ -215,7 +215,7 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 404) test.check("GET /api/events 404 on relay — the node's own stream is not served here");
     else test.fail('node stream on relay → ' + r.status + ' ' + r.text);
-    return request(ORIGIN + '/js/server.js', 'GET', null);
+    return request(ORIGIN + '/spirit/server.js', 'GET', null);
   })
   .then(function (r) {
     if (r.status === 404) test.check('GET /js/server.js 404');

@@ -12,9 +12,9 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const puppetMode = require('../run/js/puppetMode');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const puppetMode = require('../run/spirit/puppetMode');
+const { createRelay } = require('../run/spirit/relay');
 const world = require('./world');
 const UNCLAIMED = require('./scenario').UNCLAIMED;
 

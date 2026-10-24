@@ -16,11 +16,11 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
-const contacts = require('../run/js/contacts');
-const trafficLog = require('../run/js/trafficLog');
-const errors = require('../run/js/spiritErrors');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const contacts = require('../run/spirit/contacts');
+const trafficLog = require('../run/spirit/trafficLog');
+const errors = require('../run/spirit/spiritErrors');
 const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
 test.startTest('A node rotates its cipher key, and every peer moves to the new one exactly once');

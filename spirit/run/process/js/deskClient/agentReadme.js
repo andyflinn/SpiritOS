@@ -37,7 +37,7 @@ function mb(bytes) { return n(Math.round(Number(bytes || 0) / 1048576)) + ' MB';
 
 function summaryOf(cap) {
   if (!cap || !(Number(cap.relayAtRestRss) > 0)) return null;
-  const relay = require('../../../js/relay.js');
+  const relay = require('../../../spirit/relay.js');
   const allowance = relay.allowanceFor(RAM_MB, Number(cap.relayAtRestRss) / 1048576);
   const members = allowance ? Math.floor(allowance / relay.SEAT_STREAMS) : 0;
   const perPeer = Number(cap.perReachablePeerBytes) || 0;
@@ -48,12 +48,12 @@ function summaryOf(cap) {
   };
 }
 
-// The SpiritOS node processes on this machine: node processes running js/server.js.
+// The SpiritOS node processes on this machine: node processes running spirit/server.js.
 function spiritNodes() {
   const lines = process.platform === 'win32'
     ? spawnSync('powershell', ['-NoProfile', '-Command', "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ForEach-Object { $_.CommandLine }"], { encoding: 'utf8', windowsHide: true }).stdout
     : spawnSync('ps', ['-eo', 'args'], { encoding: 'utf8' }).stdout;
-  return String(lines || '').split(/\r?\n/).filter(function (l) { return /\bnode(\.exe)?["']?\s/i.test(l) && /js[\/\\]server\.js/.test(l); }).length;
+  return String(lines || '').split(/\r?\n/).filter(function (l) { return /\bnode(\.exe)?["']?\s/i.test(l) && /spirit[\/\\]server\.js/.test(l); }).length;
 }
 function machineOf() {
   return {
@@ -88,7 +88,7 @@ function write(out, agent, machine) {
     '## Summary', '',
   ].concat(s ? [
     '- **' + n(s.members) + ' members** can be served with a ' + s.ramMB + ' MB allotment of RAM (this relay\'s own rule, ' +
-      'js/relay.js, applied to its measured memory at rest).',
+      'spirit/relay.js, applied to its measured memory at rest).',
     '- That is **' + n(s.streams) + ' live streams**, ' + s.perMember + ' per member: ' + STREAM_NAMES.join(', ') + '.',
     '- **' + n(s.peers) + ' peers** can be remembered with ' + s.diskMB + ' MB of disk, each a peer a node can reach.',
   ] : ['- not measured yet']).concat([

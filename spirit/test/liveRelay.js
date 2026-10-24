@@ -23,7 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 
 const FAKES = path.join(
   process.env.TEMP || process.env.TMPDIR || '/tmp', 'spiritos-relay-fakes'
@@ -184,9 +184,9 @@ async function run() {
   test.subHeading('The relay it accepted, and one that answers differently');
 
   {
-    const relayKeys = require('../run/js/relayKeys');
-    const answerRelay = require('../run/js/answerRelay');
-    const hub = require('../run/js/hub');
+    const relayKeys = require('../run/spirit/relayKeys');
+    const answerRelay = require('../run/spirit/answerRelay');
+    const hub = require('../run/spirit/hub');
 
     // A FRESH HOME, so this is genuinely first contact. Not the subject's:
     // pinning is about a node meeting a relay, and reusing a home that has
@@ -223,8 +223,8 @@ async function run() {
       rootDir: meeting,
       // The relay's card, as a node asks it (peerPost.relayKey, goal/G22.6).
       askKey: function (url) {
-        return require('../run/js/peerPost').createPeerPost({
-          rootDir: meeting, request: require('../run/js/hub').relayRequest,
+        return require('../run/spirit/peerPost').createPeerPost({
+          rootDir: meeting, request: require('../run/spirit/hub').relayRequest,
         }).relayKey(url);
       },
       onKeyChanged: function (url, had, got) { changes.push({ had: had, got: got }); },

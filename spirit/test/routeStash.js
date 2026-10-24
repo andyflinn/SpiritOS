@@ -33,9 +33,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const contactBook = require('../run/js/contacts');
-const hub = require('../run/js/hub');
-const seenPeers = require('../run/js/seenPeers');
+const contactBook = require('../run/spirit/contacts');
+const hub = require('../run/spirit/hub');
+const seenPeers = require('../run/spirit/seenPeers');
 
 function freshRoot() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-routestash-'));

@@ -28,7 +28,7 @@ const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const limits = require('../run/js/limits.js');
+const limits = require('../run/spirit/limits.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 test.startTest('Every verb the node claims is called, and answers');
@@ -52,7 +52,7 @@ try { fs.unlinkSync(path.join(root, 'shell', 'desk', 'linkout')); } catch (e) { 
 try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'shell', 'desk', 'linkout')); }
 catch (e) { linked = false; }
 
-const serverSrc = fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8');
+const serverSrc = fs.readFileSync(path.join(root, 'spirit', 'server.js'), 'utf8');
 // doorContract.js's pattern: every claim line, whatever its value is. SINCE goal/G30.4 a family is mounted with its
 // verbs bare (loopbackVerbs.mount('fs', dir, {'stat': ...})), and the table names them fs.stat: so each mount block
 // gives its family, and each of its four-space keys a verb of that family.
@@ -164,7 +164,7 @@ let said = '';
   }
 
   const port = await freePort();
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], {
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], {
     cwd: root, stdio: ['ignore', 'ignore', 'pipe'],
   });
   child.stderr.on('data', function (c) { said = (said + c).slice(-4096); });

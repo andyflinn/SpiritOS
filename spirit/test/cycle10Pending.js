@@ -78,10 +78,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const limits = require('../run/js/limits.js');
-const relayStore = require('../run/js/relayStore');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
+const limits = require('../run/spirit/limits.js');
+const relayStore = require('../run/spirit/relayStore');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
 
 test.startTest('Cycle 10 — what is declared and not built yet');
 

@@ -351,7 +351,7 @@
       }).filter(function (p) {
         // The old shell stays on loopback; CodeMirror loads when an app needs it.
         // spirit.js is in this page already, inline and first (goal/G32.1, goal/G40.1).
-        return p && p !== 'js/client/shell.js' && p !== 'spirit.js' && p.indexOf('shell/node_modules/') !== 0;
+        return p && p !== 'spirit/client/shell.js' && p !== 'spirit.js' && p.indexOf('shell/node_modules/') !== 0;
       });
       return parts.reduce(function (chain, p) {
         return chain.then(function () { return fileText(p); }).then(function (text) { inject(p, text); }, function () { /* one part missing is said by the app that needs it */ });
@@ -433,7 +433,7 @@
       verb: function (name, args) { return spirit.core.ask(name, args); },
       sendMessagePacket: function (packetApp, toId, body, opts) {
         var envelope = window.spirit.packet || null;
-        if (!envelope) return Promise.resolve({ status: 0, text: '{"error":"js/client/packet.js is not loaded"}' });
+        if (!envelope) return Promise.resolve({ status: 0, text: '{"error":"spirit/client/packet.js is not loaded"}' });
         var made = envelope.encode(packetApp, body, { re: (opts && opts.re) || '' });
         if (!made.ok) return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
         var args = { to: toId, text: made.text };

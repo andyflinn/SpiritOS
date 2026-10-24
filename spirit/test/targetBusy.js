@@ -47,13 +47,13 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const hub = require('../run/js/hub');
-const buildStamp = require('../run/js/buildStamp');
+const hub = require('../run/spirit/hub');
+const buildStamp = require('../run/spirit/buildStamp');
 const plantRun = require('./plantRun');
-const sseClient = require('../run/js/sseClient');
-const { createRelay } = require('../run/js/relay');
+const sseClient = require('../run/spirit/sseClient');
+const { createRelay } = require('../run/spirit/relay');
 
 // Below 49152, outside Windows' ephemeral range — see partnerWire.js and
 // presenceWire.js:41 for what a port inside it costs.
@@ -106,7 +106,7 @@ function plant(w, config) {
 // stderr is kept, not ignored — see partnerWire.js for what discarding it
 // cost. The server names its own refusal; this hands that to the failure.
 async function startRelay(w, port) {
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
   w.why = '';

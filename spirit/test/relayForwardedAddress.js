@@ -12,7 +12,7 @@
 // table). Asserted here with stand-in requests, so no relay is started.
 
 const test = require('./testSupport.js');
-const common = require('../run/js/serveCommon.js');
+const common = require('../run/spirit/serveCommon.js');
 
 function req(remote, xff) {
   const headers = {};

@@ -31,21 +31,21 @@ test.startTest('goal/G30.21: the Apps app, end to end from the shell to the face
 
 const done = (async function () {
   test.subHeading('1. the write gate protects core files only');
-  const spirit = require('../run/js/kernel.js');
+  const spirit = require('../run/spirit/kernel.js');
   const W = spirit.core.fs.fileWritable;
   const want = {
     'process/js/desk/desk.json': true, 'process/js/desk/desk.js': true, 'shell/contacts/contacts.json': true,
     'media/a.png': true, 'my-own-folder/notes.txt': true, 'preferences.json': true,
-    'js/kernel.js': false, 'shell/js/spiritData.js': false, 'shell/contacts/contacts.js': false, 'index.html': false,
+    'spirit/kernel.js': false, 'shell/js/spiritData.js': false, 'shell/contacts/contacts.js': false, 'index.html': false,
     'relay-state/identity.json': false, 'shell/files/files.js.sidecar.json': false,
   };
   const wrong = Object.keys(want).filter(function (p) { return !!W(p) !== want[p]; });
   if (!wrong.length) test.check('writable: every non-core file, server scripts and manifests among them; not: core, relay-state, a sidecar\'s own path');
   else test.fail(OWED + 'the gate answers wrongly for ' + wrong.map(function (p) { return p + '=' + !!W(p); }).join(', '));
-  const kern = code('js/kernel.js');
+  const kern = code('spirit/kernel.js');
   if (!/WRITABLE_ROOT_NAMES|'media'|'published'/.test(kern)) test.check('the core names no user folder: media/ and published/ have no special status');
   else test.fail(OWED + 'kernel.js still names media/ or published/');
-  const core = require('../run/js/coreFiles.js');
+  const core = require('../run/spirit/coreFiles.js');
   if (core.isCore('spirit/run/face/shell.js') && core.isCore('spirit/run/face/login/login.js') && core.isCore('spirit/run/face.html'))
     test.check('the face folder and face.html are core');
   else test.fail(OWED + 'coreFiles: face/shell.js ' + core.isCore('spirit/run/face/shell.js') + ', face.html ' + core.isCore('spirit/run/face.html'));
@@ -75,10 +75,10 @@ const done = (async function () {
   const asked = { annotateFace: [], call: [] };
   // The answer is signed and uploaded to the relay; a scratch identity signs it, and the upload to a relay that is not
   // there fails on its own without touching anything.
-  const me = require('../run/js/relayAuth.js').generateIdentity('apps-app-test');
+  const me = require('../run/spirit/relayAuth.js').generateIdentity('apps-app-test');
   let answered = null;
   try {
-    const home = require('../run/js/faceHome.js').createFaceHome({
+    const home = require('../run/spirit/faceHome.js').createFaceHome({
       call: function (verb, args) { asked.call.push(verb); return Promise.resolve({ status: 200, body: { ok: true } }); },
       annotateFace: function (p, payload) { asked.annotateFace.push({ p: p, payload: payload }); return { ok: true }; },
       serveFile: function () {}, identity: function () { return me; }, relayKey: function () { return ''; },
@@ -142,7 +142,7 @@ const done = (async function () {
 
   test.subHeading('5. core files seen');
   const row = code('shell/js/files/rowElement.js');
-  if (/coreFiles/.test(code('js/jobs.js')) && /core/.test(code('shell/js/files/data.js')) && /core/.test(row) && /yellow|--spirit-core/.test(row))
+  if (/coreFiles/.test(code('spirit/jobs.js')) && /core/.test(code('shell/js/files/data.js')) && /core/.test(row) && /yellow|--spirit-core/.test(row))
     test.check('an fs-watcher command marks a core file; the files list paints it yellow');
   else test.fail(OWED + 'core files are not marked or not painted');
 
@@ -158,7 +158,7 @@ const done = (async function () {
   let mode = 'relayJson';
   const transport = {
     ask: function (verb, args) {
-      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: raw('js/' + args.family + '/api.js') } });
+      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: raw('spirit/' + args.family + '/api.js') } });
       if (verb === 'api') return Promise.resolve({ status: 200, body: { fs: {} } });
       return Promise.resolve(answers[mode]);
     },
@@ -187,7 +187,7 @@ const done = (async function () {
   const sent = [];
   let pieceAnswer = null;
   try {
-    const FH = require('../run/js/faceHome.js');
+    const FH = require('../run/spirit/faceHome.js');
     const home2 = FH.createFaceHome({
       call: function (verb, args) { ran.push({ verb: verb, bytes: String((args && args.content) || '').length }); return Promise.resolve({ status: 204, body: null }); },
       annotateFace: function () { return { ok: true }; }, serveFile: function () {}, identity: function () { return me; }, relayKey: function () { return ''; },

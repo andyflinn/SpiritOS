@@ -1,0 +1,954 @@
+// ── THE PUBLIC RELAY'S OWN STARTUP MODULE ────────────────────────────
+//
+// Cycle 0 (design/principles/NODE-AND-RELAY.md, decided by Andy
+// 2026-09-19): a node and a relay are two different things, and the first
+// step of separating them is two startup modules. Until then one
+// spirit/server.js booted either, and a --relay process loaded the node's half
+// and left it sitting in memory — hub, the traffic log, the jobs module
+// with an fs-watcher scanning the whole root for a Files app a relay never
+// serves. A relay's RAM is the most expensive thing it has (standing rule,
+// same document), so it no longer loads any of that.
+//
+// `node spirit/server.js --relay` still works: server.js hands off to this
+// file before it loads anything (the systemd unit starts it that way).
+// `node spirit/relayServer.js` is the same process without the hand-off.
+// (The Procfile and install-public-relay.js used to as well; both went in
+// cycle 3 — a relay needs a persistent disc and SSH.)
+//
+// What a relay IS stays in relay.js. This file is only the HTTP in front
+// of it: the one door and the members' stream, the bind, and the goodbye.
+'use strict';
+
+const http = require('http');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const relayConfig = require('./relayConfig');
+const relayLimits = require('./relayLimits');
+const spirit = require('./kernel');
+const createRelay = require('./relay');
+// The build stamp for GET /api/version stood here; that route is closed
+// (goal/G22.6), and a relay's version reaches its owner in relay-status
+// (relay.js, RUNNING).
+const common = require('./serveCommon');
+const streamSink = require('./streamSink');
+// R36 phase B: a refusal carries the catalogue's code beside its sentence.
+const spiritErrors = require('./spiritErrors');
+const readJsonBody = common.readJsonBody;
+const nodeRefusal = common.nodeRefusal;
+
+// THE RELAY'S PORT, which is not the node's (65432). Caddy proxies :443 to
+// 127.0.0.1:65430 on spirit-3 (bash/caddy/Caddyfile, bash/lib.sh), so a
+// bare `node spirit/relayServer.js` lands where Caddy looks. Andy, 2026-09-19.
+// --port and PORT still override it, and every deploy script passes one.
+const DEFAULT_RELAY_PORT = 65430;
+
+// How long a stream refused for being FULL is told to wait. The allowance
+// is fixed at boot now (cycle 8), so it frees only when somebody leaves:
+// half a minute is a guess at that, not a Governor's tick any more.
+const FULL_RETRY_S = 30;
+
+// The peerPost a relay posted to its partners from (partnerRouter) STOOD
+// HERE. A relay posts to nobody since partnering went (Andy's decision,
+// goal/G22.6).
+
+// Checked before verifyStartupCwd, on purpose — --help should work
+// regardless of which directory this was launched from.
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log(
+    'Usage: node spirit/relayServer.js [--port <number>]\n' +
+    '   or: node spirit/server.js --relay [--port <number>]   (the same process)\n\n' +
+    '  Runs a public relay: answers only its one door (POST /api/relay/post, and\n' +
+    '  /api/relay/reply) and its members\' stream (GET /api/relay/stream), and\n' +
+    '  404s everything else. A card ask on the door answers with its key.\n' +
+    '  Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is meant\n' +
+    '  to be reached from the internet. A personal node is spirit/server.js.\n\n' +
+    '  --port <number>   Listen on this port instead of the default (' + DEFAULT_RELAY_PORT + ').\n' +
+    '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
+    '  --help, -h        Show this message and exit.\n\n' +
+    'Must be run from spirit/run/ (this directory\'s parent must be named "spirit").'
+  );
+  process.exit(0);
+}
+
+common.verifyStartupCwd('spirit/relayServer.js');
+
+const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
+const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
+
+// ── ONE EXIT CODE FOR EVERY REFUSAL TO START (cycle 3, Part B) ───────
+//
+// 78 is EX_CONFIG (sysexits.h): "something was found in an unconfigured or
+// misconfigured state". Every refusal below — node:sqlite missing, a store
+// that cannot be opened, a config.json the box cannot honour, members with
+// no owner — is a state a restart cannot fix. bash/systemd/
+// spirit-relay.service names this code in RestartPreventExitStatus, so
+// systemd stops retrying it every three seconds, and bash/restart and
+// bash/update print the refusal from the journal (Andy: "forcing the owner
+// to ssh and investigate").
+const STARTUP_REFUSED = 78;
+
+function refuseToStart(why) {
+  console.error('Refusing to start: ' + why);
+  process.exit(STARTUP_REFUSED);
+}
+
+// ── THE RELAY'S DATA IS ON DISC, OR THERE IS NO RELAY (cycle 3) ──────
+//
+// Members and invites live in relay-state/relay.db
+// through node:sqlite (relayStore.js), and RAM is its client — there is
+// no in-memory copy to fall back on. A Node too old to load the driver
+// (floor 22.13) cannot be a relay, and says so now rather than on the
+// first claim. The node never loads this module.
+const relayStore = require('./relayStore');
+if (!relayStore.available()) {
+  refuseToStart('node:sqlite is not available in Node ' +
+    process.version + ' — a relay needs 22.13 or later (relayStore.js)');
+}
+// Opened here, not on the first request, so a store that cannot be opened
+// — a pre-cycle-3 file that cannot be imported — stops the start instead
+// of the first member who knocks.
+try { relayStore.open(spirit.core.node.const.ROOT_DIR); }
+catch (e) {
+  refuseToStart(e.message);
+}
+
+// ── COMPACTED BEFORE IT SERVES ANYTHING (cycle 9) ───────────────────
+//
+//   Andy, 2026-09-22: "compacting at restart sound like a good
+//   stop-gap-measure."
+//
+// A deleted row frees a page and does not shorten the file, and cycle 9
+// bounds the roll by the file's size — so without this, an owner who
+// removes members to make room would be refused the shrink he just made
+// room for. Here, before `server.listen`, because `node:sqlite` is
+// synchronous and a VACUUM while serving is dead air for every member.
+// It refuses itself when the disc cannot afford the copy, and says so.
+{
+  const room = relayLimits.measure(ROOT_DIR);
+  const squeezed = relayStore.compact(ROOT_DIR, room.discFreeMB);
+  if (squeezed.ok && squeezed.after < squeezed.before) {
+    console.log('    compacted relay.db: ' + (squeezed.before / 1048576).toFixed(2) + ' MB → ' +
+      (squeezed.after / 1048576).toFixed(2) + ' MB in ' + squeezed.ms + ' ms');
+  } else if (!squeezed.ok && squeezed.why && !/no database yet/.test(squeezed.why)) {
+    console.log('    relay.db NOT compacted: ' + squeezed.why);
+  }
+}
+
+// ── MEMBERS BUT NO OWNER: REFUSE, AND LET SSH DECIDE (cycle 3, B4) ───
+//
+// Decided (Andy): a relay whose store holds members but whose allow.json
+// has no owner refuses to start — "forcing the owner to ssh and
+// investigate". Since goal/G16.8 no claim can take an unowned box, but a
+// relay with people on it and nobody answering for them is still broken,
+// not new, so it does not start. No members and no owner is a relay that
+// was never installed: bash/install-units writes owner.json first.
+if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
+    relayStore.open(ROOT_DIR).members.count() > 0) {
+  refuseToStart('relay-state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
+    ' member(s) but relay-state/owner.json names no owner. Restore owner.json over SSH ' +
+    '({ "owner": "<key>" }); the wire cannot prove ownership.');
+}
+
+// ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
+//
+// relay-state/config.json, beside allow.json. Bounded by the box: a
+// ceiling larger than this machine can GIVE refuses to start rather than
+// being honoured (relayConfig.js, relayLimits.js). Never re-read — the
+// configuration is not a real-time tool (NODE-AND-RELAY §5, scope).
+//
+// ── AND WRITTEN, THE FIRST TIME, SO NOTHING IS IMPLICIT (cycle 9) ────
+//
+//   Andy, 2026-09-22: "on first start, relay may initialize config.json
+//   with a default, or the command-line provides args so the first start
+//   already confines the relay to those sizes."
+//
+// A relay used to fall back to a 256 MB constant and write nothing, so
+// the figures it was running on existed nowhere an owner could read. Now
+// the first start writes what it measured — half of the box, clamped to
+// what the box can give — or what `--ram` / `--disc` asked for. After
+// that the file is the record, and `source: 'default'` stops being a
+// state that hides.
+//
+// THE SAME ARITHMETIC THE INSTALLER USES (relayLimits.js), so `node
+// install` and a bare first start cannot propose different figures for
+// the same machine.
+const MEASURED = relayLimits.measure(ROOT_DIR);
+const CONFIG = (function () {
+  const file = path.join(ROOT_DIR, 'relay-state', 'config.json');
+  let text = null;
+  try { text = fs.readFileSync(file, 'utf8'); }
+  catch (e) { text = null; }
+
+  // Args are only read when there is no file: they configure a relay's
+  // first start, they do not override an owner's written choice. A figure
+  // on the command line of an already-configured relay would be a limit
+  // that changes on a restart nobody remembers typing.
+  let fromArgs = false;
+  if (text == null) {
+    const ramAsked = argMB('--ram');
+    const discAsked = argMB('--disc');
+    if (ramAsked !== null || discAsked !== null) {
+      const proposed = relayLimits.defaults(MEASURED);
+      text = relayConfig.fileText({
+        ramLimitMB: ramAsked === null ? proposed.ramLimitMB : ramAsked,
+        discLimitMB: discAsked === null ? proposed.discLimitMB : discAsked,
+      });
+      fromArgs = true;
+    }
+  }
+
+  // AT BOOT the ceiling clamps rather than refuses (relayConfig.js): a
+  // figure that stopped fitting because the box filled up is not a reason
+  // to keep a relay down. Nonsense in the file still refuses — that is a
+  // state a restart cannot fix.
+  const read = relayConfig.parse(text, MEASURED, { atBoot: true });
+  if (!read.ok) refuseToStart(read.error);
+
+  // `--ram` / `--disc` CONFIGURE A FIRST START; they do not haunt it.
+  //
+  // Found by wsl-claude on Linux, 2026-09-22: figures given as arguments
+  // were honoured for that run and never written, so the next start —
+  // from systemd, from a script, from anywhere without the flags —
+  // silently went back to the measured defaults. A limit that evaporates
+  // when somebody restarts the box is not a limit. They are written like
+  // any other first start, and the source says where they came from
+  // rather than claiming a file that did not exist.
+  if (fromArgs) read.config.source = 'argument';
+
+  if (text == null || fromArgs || read.config.source === 'default') {
+    // Written before the relay serves anything, so a box that dies in its
+    // first minute still says what it had decided. A failure here is not
+    // fatal: a relay that cannot write its own config can still run on
+    // what it measured, and the owner has a bigger problem to find.
+    try {
+      fs.mkdirSync(path.join(ROOT_DIR, 'relay-state'), { recursive: true });
+      // What was ASKED for, never a boot-time clamp: a busy afternoon
+      // must not shrink a relay's configuration permanently.
+      fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
+      console.log('    wrote relay-state/config.json (' + (fromArgs ? 'from --ram/--disc' : 'measured') + ': ' +
+        read.config.ramLimitMB + ' MB RAM, ' + read.config.discLimitMB + ' MB disc)');
+    } catch (e) {
+      console.error('    could not write relay-state/config.json: ' + e.message);
+    }
+  } else if (text !== null && read.config.source === 'file') {
+    try {
+      const had = JSON.parse(text);
+      if (had && had.discLimitMB === undefined) {
+        fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
+        console.log('    added discLimitMB ' + read.config.discLimitMB + ' MB to relay-state/config.json');
+      }
+    } catch (e) { /* an unreadable file already refused above */ }
+  }
+  return read.config;
+}());
+
+// `--ram 256`, `--disc 64`. Megabytes, positive, integers; anything else
+// is refused rather than rounded, because a typed limit that silently
+// becomes something else is worse than no limit at all.
+function argMB(flag) {
+  const args = process.argv.slice(2);
+  const i = args.indexOf(flag);
+  if (i === -1) return null;
+  const raw = args[i + 1];
+  const mb = Number(raw);
+  if (!isFinite(mb) || mb <= 0 || Math.floor(mb) !== mb) {
+    refuseToStart(flag + ' wants a positive whole number of megabytes, got ' + JSON.stringify(raw));
+  }
+  return mb;
+}
+
+// HOW THIS RELAY ASKED A PARTNER (`askPartner`, over its own peerPost)
+// STOOD HERE; partnering as a permission is gone (Andy's decision,
+// goal/G22.6), and a relay makes no outbound request at all.
+// THE RELAY SENDS MAIL THROUGH A DRIVER (goal/G30.2): the join link goes to the user's email. Only when the owner has
+// placed relay-state/mail.json naming its driver (sendMail.js); without it the relay takes no join, and its card says
+// services.sendMail false.
+const mailSender = require('./sendMail').createSender(ROOT_DIR);
+console.log(mailSender ? 'mail: sent through the ' + mailSender.driver + ' driver' : 'mail: none (no relay-state/mail.json naming a driver), so no join by email');
+
+const relay = createRelay.createRelay(undefined, {
+  config: CONFIG,
+  sendMail: mailSender ? mailSender.send : null,
+
+  // ── THE OWNER'S `config` VERB NEEDS HANDS (cycle 9) ───────────────
+  //
+  // relay.js decides — is this the owner, is the figure inside the
+  // ceiling, would it strand members — and these three do the parts that
+  // touch the box. Injected rather than reached for, so a relay built in
+  // a suite simply has no hands and says so honestly instead of writing
+  // into somebody's checkout.
+  measure: function () { return relayLimits.measure(ROOT_DIR); },
+
+  writeConfig: function (next) {
+    try {
+      fs.writeFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), relayConfig.fileText(next));
+      console.log(`    owner reconfigured: ${next.ramLimitMB} MB RAM, ${next.discLimitMB} MB disc (a raise applies now, a cut at next start)`);
+      return true;
+    } catch (e) {
+      console.error('    could not write relay-state/config.json: ' + e.message);
+      return false;
+    }
+  },
+
+  // THE FILE AS IT STANDS (goal/G30.15), so the owner's read shows a Save at once rather than what this process
+  // booted with. null when there is none or it does not parse.
+  readConfig: function () {
+    try { return JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8')); }
+    catch (e) { return null; }
+  },
+
+  // ── A RESTART THIS PROCESS CANNOT PROMISE ON ITS OWN ──────────────
+  //
+  // Exiting is easy; COMING BACK is somebody else's job. Under systemd
+  // with `Restart=always` the unit brings it back in seconds; started
+  // from a shell it just stops, and an owner in a datacentre would be
+  // left with a box that went quiet because he changed a number.
+  //
+  // So it answers first and acts second, and it only claims a restart
+  // when systemd is the thing that started it — INVOCATION_ID is set by
+  // systemd for every service it runs, and by nothing else.
+  //
+  // The goodbye is the one that already exists: members are told to come
+  // back in three seconds, the store is closed, and the process exits 0.
+  // `Restart=on-failure` would NOT bring back a clean exit, which is why
+  // bash/systemd/spirit-relay.service now says `always`.
+  restart: function () {
+    if (!process.env.INVOCATION_ID) {
+      return {
+        will: false,
+        why: 'this relay was not started by systemd, so nothing would bring it back — ' +
+          'the figures are written and apply the next time it starts',
+      };
+    }
+    // ── SYSTEMD IS NOT ENOUGH; THE POLICY HAS TO SAY `always` ────────
+    //
+    // A unit with `Restart=on-failure` does NOT bring back a clean exit,
+    // and the goodbye exits 0 on purpose so members are told to come
+    // back rather than seeing a crash. So a relay running under the
+    // old unit would take this verb, stop, and stay stopped until
+    // somebody SSH'd in — the exact outage this verb exists to avoid.
+    //
+    // `bash/update` pulls and restarts but does not reinstall the unit,
+    // so this is the live state of every relay between a pull and the
+    // next `./bash/install-units`. Asked of systemd rather than assumed,
+    // and a box that will not answer is treated as "will not come back".
+    const policy = restartPolicy();
+    if (policy !== 'always' && policy !== 'on-success') {
+      // TWO DIFFERENT TRUTHS, AND THEY READ DIFFERENTLY AT 3AM. A policy
+      // that was read says what it said; a miss means no unit answered at
+      // all, and claiming "Restart=unknown" there would put words in
+      // systemd's mouth. wsl-claude, staging the miss by moving a running
+      // relay into a cgroup nothing had loaded: the old sentence "is the
+      // one sentence in that answer that is not true".
+      return {
+        will: false,
+        why: policy
+          ? 'the unit says Restart=' + policy + ', which does not bring back a clean exit — ' +
+            'the figures are written; run ./bash/install-units and ./bash/restart to apply them'
+          : 'no unit by that name is loaded, so nothing is known to bring this relay back — ' +
+            'the figures are written and apply the next time it starts',
+      };
+    }
+    // After the answer has been written to the wire, not before: an owner
+    // who asked for a restart should still receive the report of what he
+    // just changed.
+    setTimeout(function () { restartNow(); }, 250);
+    return { will: true };
+  },
+});
+
+// A relay is a party to conversations, and `relay` is the caption it
+// answers to, not an identity. A node that keeps one file per peer cannot
+// file the relay anywhere without a key, so the relay gets one: made
+// once, by relayAuth.js on its first load (goal/G22.5), into this
+// process's own relay-state beside allow.json. Here it is only NAMED
+// 'relay' over the machine-name default, keys untouched. It is handed out
+// as the answer to a card ask on the one door (relay.js relayCard,
+// goal/G22.6), and it is NOT the owner's key — the owner is a peer who
+// claimed, the relay is the box.
+require('./relayAuth').nameIdentity(ROOT_DIR, 'relay');
+// FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
+try { require('./serveCommon').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
+catch (e) { /* a caption must never be the reason a relay will not boot */ }
+
+// handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
+// goal/G16.2 with the device enrolment.
+
+// ── THE PUBLIC DOOR IS CLOSED (goal/G22.6) ───────────────────────────
+//
+// Andy's decision (goal/G22.6, 2026-10-13): "The relay's public door, the
+// one any curl can reach without key or signature, is killed in this item:
+// /api/relay/key, /api/relay/claim, /api/version and the brochure all
+// close. The relay keeps its one door (post) and its members' stream."
+//
+// What they did moved onto the one door, signed: the relay's key is the
+// answer to a card ask (relay.js relayCard), and a claim is a post sealed
+// to that key (relay.js answerPublic), both answered on the post itself.
+// A relay's version reaches its owner in his relay-status report. The
+// claim route's handler (handleRelayClaim, openClaim) and the brochure
+// (relay.html, favicon.svg) went with them.
+function isRelayPublicPath(method, pathname) {
+  // The presence wire, the members' stream: gated inside relay.streamOpen,
+  // which refuses an identity this box does not hold before it allocates
+  // anything.
+  if (method === 'GET' && pathname === '/api/relay/stream') return true;
+  // THE ONE DOOR, and the reply that answers what came through it: gated
+  // inside relay.js by a signature, and refused instantly if the peer is
+  // not there to receive it (decision 0006).
+  if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
+  // THE HOME NODE'S UPLOADS TO ITS FACE (goal/G30.14): gated inside relay.js by a signature naming this relay and the
+  // request's id.
+  if (method === 'POST' && (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream')) return true;
+  return false;
+}
+
+// ── A MEMBER'S FACE (goal/G30.9) ─────────────────────────────────────
+//
+// The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
+// home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
+// relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
+// The face shell's files are served from spirit/run/face/ alone. Nothing reaches the home node yet: that is the
+// plumbing, the next item.
+//
+// /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
+// fetches a certificate for that name on demand (bash/face-setup).
+const FACE_DIR = path.join(__dirname, '..', 'face');
+// /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
+// (goal/G30.9, box v16); face.css turns its colours green.
+// face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
+const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/seal.js': 'seal.js', '/face/favicon.svg': 'favicon.svg', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+function faceCookie(req) {
+  const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
+  return m ? m[1] : '';
+}
+function faceSetCookie(res, sid) {
+  res.setHeader('Set-Cookie', 'spirit_face=' + sid + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + (7 * 24 * 60 * 60));
+}
+function faceSend(res, status, file) {
+  fs.readFile(path.join(FACE_DIR, file), function (err, data) {
+    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
+    res.writeHead(status, { 'Content-Type': FACE_TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    // face.html carries the spirit object inline as its first script (goal/G32.1).
+    if (path.basename(file) === 'face.html') { res.end(common.inlineSpirit(data.toString('utf8'), path.join(FACE_DIR, '..'))); return; }
+    res.end(data);
+  });
+}
+function faceJson(res, body) {
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
+// True when the request was a face's and is answered here.
+function faceDoor(req, res, url, pathname) {
+  if (req.method === 'GET' && pathname === '/face/allowed') {
+    const asked = relay.faceAt(url.searchParams.get('domain') || '');
+    res.writeHead(asked.ok ? 200 : 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(asked.ok ? 'ok' : 'no');
+    return true;
+  }
+  const at = relay.faceAt(req.headers.host || '');
+  if (!at.face) return false;
+  if (!at.ok) {
+    res.writeHead(at.status || 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
+    return true;
+  }
+  if (req.method === 'GET' && (pathname === '/' || pathname === '/face.html')) {
+    // The mailed link, /?<token>: the token logs in once, and the page opens logged in.
+    const token = (url.search || '').replace(/^\?/, '');
+    if (token && /^[A-Za-z0-9_-]+$/.test(token)) {
+      const said = relay.faceLogin(at.name, token);
+      if (said.loggedIn) faceSetCookie(res, said.session);
+    }
+    faceSend(res, 200, '../face.html');
+    return true;
+  }
+  if (req.method === 'GET' && FACE_FILES[pathname]) { faceSend(res, 200, FACE_FILES[pathname]); return true; }
+  // THE FACE REACHES ITS HOME NODE (goal/G30.14), by its login: a call or a file is a stream event to the home node,
+  // and this response waits for the home node's upload; /face/stream is the face's own stream of live updates.
+  if ((req.method === 'POST' && pathname === '/face/call') || (req.method === 'GET' && pathname === '/face/file')) {
+    const sidNow = faceCookie(req);
+    const refuse = function (said) {
+      if (res.headersSent) return;
+      res.writeHead(said.status || 502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: said.error }));
+    };
+    if (req.method === 'GET') {
+      const said = relay.faceCall(sidNow, { get: url.searchParams.get('path') || '' }, res);
+      if (!said.ok) refuse(said);
+      return true;
+    }
+    readJsonBody(req).then(function (body) {
+      const said = relay.faceCall(sidNow, body || {}, res);
+      if (!said.ok) refuse(said);
+    }, function () { refuse({ status: 400, error: 'the body is not json' }); });
+    return true;
+  }
+  if (req.method === 'GET' && pathname === '/face/stream') {
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
+    // ?here=1 is the face's Connect here press (goal/G30.12): it moves the stream from another device.
+    // ?key= is the face's sealing key (goal/G30.11), handed to the home node in face-open.
+    const said = relay.faceOpen(faceCookie(req), res, { here: url.searchParams.get('here') === '1', key: url.searchParams.get('key') || '' });
+    if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, code: said.code || '', error: said.error }) + '\n');
+    return true;
+  }
+  if (req.method === 'POST' && pathname === '/face/api') {
+    readJsonBody(req).then(function (body) {
+      const verb = String((body && body.verb) || '');
+      const sid = faceCookie(req);
+      if (verb === 'state') {
+        const s = relay.faceSession(sid);
+        faceJson(res, { ok: true, face: at.name, loggedIn: !!(s.ok && s.name === at.name) });
+        return;
+      }
+      if (verb === 'login') {
+        const said = relay.faceLogin(at.name, String((body && body.text) || ''));
+        if (said.loggedIn) faceSetCookie(res, said.session);
+        faceJson(res, { ok: true, loggedIn: !!said.loggedIn });
+        return;
+      }
+      if (verb === 'logout') {
+        relay.faceLogout(sid);
+        res.setHeader('Set-Cookie', 'spirit_face=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
+        faceJson(res, { ok: true, loggedIn: false });
+        return;
+      }
+      faceJson(res, { ok: false, error: 'no such verb' });
+    }, function () { faceJson(res, { ok: false, error: 'the body is not json' }); });
+    return true;
+  }
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Not found');
+  return true;
+}
+
+const server = http.createServer((req, res) => {
+  // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
+  // one's: a relay is meant to be reached from the internet, and a
+  // deployed relay is reached by whatever name the platform gave it. What
+  // stands in for that gate is not "nothing": isRelayPublicPath (above)
+  // reduces the answerable surface to the one door and the members'
+  // stream, and both are gated by signature checks in relayAuth.js.
+  // The home node's uploads to its face are not posts: faceStream has no size cap (goal/G30.14, Andy's yes), and
+  // they are piped through as they arrive, never held whole.
+  const faceUpload = req.method === 'POST' && /^\/api\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
+  if (!faceUpload && common.refuseTooBig(req, res)) return;
+
+  const parsed = common.parseRequestPath(req, res);
+  if (!parsed) return;
+  const url = parsed.url;
+  const pathname = parsed.pathname;
+
+  // A MEMBER'S FACE (goal/G30.9), answered before the relay's own door: its host is <face>.<the face domain>.
+  if (faceDoor(req, res, url, pathname)) return;
+
+  if (!isRelayPublicPath(req.method, pathname)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
+
+  // GET /api/relay/key STOOD HERE (closed by goal/G22.6): its answer is the
+  // relay's card, given to a card ask on the one door (relay.js relayCard).
+
+  // GET /api/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
+  // the tombstone in server.js's history and decision 0012: no party may
+  // ask a relay for its whole enrolment list.
+
+  // THE DEVICE PAGE (/<key>/device, device.html) was removed by goal/G16.2
+  // with the device enrolment.
+
+  // One held connection per identity, carrying who is reachable. The
+  // signature is a HEADER for the same reason device-pending's is: a
+  // query string is written to every access log the request passes, and
+  // this one buys a STANDING grant rather than a single read. Same
+  // function enforces it, so there is one rule and not two.
+  if (req.method === 'GET' && pathname === '/api/relay/stream') {
+    const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
+    if (!from.ok) {
+      nodeRefusal(res, from.status);
+      return;
+    }
+    const token = url.searchParams.get('key') || '';
+
+    // A sink, not a response: relay.js and presence.js hold this and
+    // neither knows what http is. Why its head is written lazily, and
+    // why it cuts a reader that has stopped reading (R35), is in
+    // streamSink.js.
+    //
+    // Declared before the sink, because the sink can call teardown: a
+    // stream cut for not reading is torn down by the cut, not left to
+    // whether the socket's own close event comes.
+    let torndown = false;
+    let heartbeat = null;
+    let live = false;
+    const sink = streamSink.createStreamSink(res, {
+      onStall: function () { if (live) teardown(); },
+    });
+
+    const opened = relay.streamOpen(token, from.sig, sink);
+    if (!opened || !opened.ok) {
+      // SAY HOW LONG, because this box is the only one that knows. A 429
+      // here is the connect allowance — six a minute, one per ten seconds
+      // — and a client left to guess will guess with a constant that has
+      // no idea what this relay allows.
+      //
+      // RFC 9110 Retry-After, in seconds. sseClient honours it over its
+      // own backoff, so the number that governs the retry is the number
+      // that governs the refusal.
+      if (opened && opened.status === 429) {
+        try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
+        catch (e) { /* headers already sent */ }
+      }
+      // FULL: the fixed allowance (cycle 8) is taken. Come back when
+      // somebody may have left — not in a second.
+      if (opened && opened.status === 503) {
+        try { res.setHeader('Retry-After', String(FULL_RETRY_S)); }
+        catch (e) { /* headers already sent */ }
+      }
+      // A NODE THAT IS NOT A MEMBER IS TOLD WHY (goal/G19.1, Andy, granted
+      // 2026-10-12): the refusal names the sender, "your id is not a valid
+      // sender here", code not-a-sender, as on a post and a reply, so an
+      // evicted node's peerPost stops dialling and tells its user.
+      // (A partner relay was told the same here until partnering went.)
+      if (opened && opened.status === 403 &&
+          spiritErrors.classify(403, opened.error).code === 'not-a-sender') {
+        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
+        return;
+      }
+      nodeRefusal(res, opened && opened.status);
+      return;
+    }
+
+    live = true;
+
+    // Through the sink, so a heartbeat counts toward the backlog like
+    // any other byte a stopped reader is not taking.
+    heartbeat = setInterval(() => {
+      try { sink.write(':\n\n'); } catch (e) { /* teardown will follow */ }
+    }, 20000);
+
+    // Bound to 'error' as well as 'close', and once-guarded. The bug
+    // that guards against is worse here than anywhere: a socket that
+    // dies without a clean close would leave a peer reading as PRESENT
+    // forever, which is the relay lying — and lying is the one thing this
+    // design cannot afford.
+    //
+    // WHICH CLOSE IT WAS is asked of the sink, not of which event came
+    // first: the cut destroys the socket, so 'close' may well beat the
+    // sink's own call, and the stalled path must run either way.
+    function teardown() {
+      if (torndown) return;
+      torndown = true;
+      clearInterval(heartbeat);
+      relay.streamClose(token, sink, sink.stalled() ? 'stalled' : undefined);
+    }
+    req.on('close', teardown);
+    req.on('error', teardown);
+    return;
+  }
+
+  // GET /api/version and the brochure (/, /index.html, /relay.html,
+  // /favicon.svg) STOOD HERE, closed by goal/G22.6.
+
+  if (req.method === 'POST') {
+    // POST /api/relay/claim STOOD HERE (closed by goal/G22.6): a claim is a
+    // post on the one door, sealed to the relay's key.
+
+    if (pathname === '/api/relay/post') {
+      readJsonBody(req).then(function (body) {
+        // ROUTE HINTS are no longer read (goal/G22.6): with no partner to
+        // carry to, a relay has nothing to do with them.
+        // `budgetMs` — how long the ASKER is still willing to wait, a
+        // remaining duration and never a deadline. Informational: the
+        // relay grants min(asked, its own ceiling), so a number from the
+        // wire can only ever buy less than this box already allows
+        // (0017, and the gap cycle's R5).
+        // A number is a DECLARATION, including zero — a chain that has
+        // run out of time says so, and is refused rather than being
+        // handed this box's default and starting again.
+        const budgetMs = (body && typeof body.budgetMs === 'number' && isFinite(body.budgetMs))
+          ? Math.max(0, body.budgetMs)
+          : undefined;
+        // THE ADDRESS IT CAME FROM, read by relay.js only for a sender it
+        // does not hold: the strangers' address table (goal/G22.6).
+        const posted = relay.routePost(
+          body && body.from, body && body.to, body && body.text, body && body.sig,
+          budgetMs, common.clientKeyFor(req)
+        );
+        // A POST ANSWERED ON ITSELF (R13; goal/G22.6): a card ask, a claim,
+        // or a stranger's post to a member. relay.js hands back `held`, a
+        // promise of the answer, and this request stays open until it
+        // settles — with the reply packet, or with the refusal when the
+        // time this relay granted runs out. Every other post is answered at
+        // once, exactly as before.
+        // It never rejects: holdOnPost settles with the answer or, when
+        // the time runs out, with 504 "no answer yet".
+        if (posted && posted.held && typeof posted.held.then === 'function') {
+          posted.held.then(writePosted);
+          return;
+        }
+        writePosted(posted);
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+
+      function writePosted(result) {
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        // A WHITELIST, AND IT STAYS ONE. What a refusal carries is part of
+        // the protocol, so it is named here rather than being whatever
+        // relay.js happened to put on the object — the alternative leaks
+        // internals to anybody who can provoke an error.
+        //
+        // The cost is that a new field is invisible until it is added
+        // here, which `busy` nearly paid: the router refuses with
+        // { busy, retryAfterMs } and this dropped both on the floor, so
+        // the wire would have said 503 "target is busy" and no scheduler
+        // could have told it from 503 "peer not reachable".
+        res.end(JSON.stringify(result.ok ? result : {
+          error: result.error,
+          inFlight: !!result.inFlight,
+          // THE TARGET IS FINE AND SIMPLY OCCUPIED (0016). Distinct from
+          // "peer not reachable", which is the same status and the
+          // opposite situation: that one says do not expect an answer,
+          // this one says ask again in `retryAfterMs`.
+          busy: !!result.busy,
+          retryAfterMs: typeof result.retryAfterMs === 'number' ? result.retryAfterMs : 0,
+          // NOT ENOUGH TIME TO TRY, which is a third kind of no: the peer
+          // is fine and this box is fine, and what was offered was too
+          // little to attempt anything with. Named here for the reason
+          // `busy` is — a whitelist means a new field is invisible until
+          // somebody adds it, and that has cost this file twice.
+          tooLittleTime: !!result.tooLittleTime,
+          // WHAT IT MEANS, by the catalogue (R36 phase B), BESIDE the
+          // sentence and never instead of it: an older node still reads
+          // `error`. Grok's review: "{ status, error, code } … Keep the
+          // sentence."
+          code: spiritErrors.classify(result.status, result.error, result).code,
+        }));
+      }
+      return;
+    }
+
+    // THE HOME NODE ANSWERS ITS FACE (goal/G30.14): the raw body is piped into the face's waiting response, or into
+    // its open stream, as it arrives. Who it is, and the signature over this relay and the id, are headers, so the
+    // body is never read here.
+    if (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream') {
+      const from = String(req.headers['x-spirit-from'] || '');
+      const sig = String(req.headers['x-spirit-sig'] || '');
+      const said = pathname === '/api/relay/face/answer'
+        ? relay.faceAnswer(from, url.searchParams.get('id') || '', sig, req, { status: req.headers['x-spirit-status'], type: req.headers['x-spirit-type'] })
+        : relay.faceFeed(from, sig, req);
+      if (!said.ok) {
+        res.writeHead(said.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: said.error, code: spiritErrors.classify(said.status, said.error, said).code }));
+        req.resume();
+        return;
+      }
+      // Answered once the upload has been carried through.
+      req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: true })); });
+      return;
+    }
+
+    if (pathname === '/api/relay/reply') {
+      readJsonBody(req).then(function (body) {
+        const result = relay.routeReply(
+          body && body.from, body && body.hash, body && body.text, body && body.sig
+        );
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result.ok ? result : {
+          error: result.error,
+          code: spiritErrors.classify(result.status, result.error, result).code,
+        }));
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+      return;
+    }
+
+  }
+
+  // Unreachable while isRelayPublicPath and the branches above agree; a
+  // 404 rather than a hang if they ever stop agreeing.
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Not found');
+});
+
+// A relay binds 0.0.0.0: it is the one server that genuinely needs to be
+// reachable from another machine — required by every platform that
+// health-checks the port it assigned (Heroku, Fly, a plain VPS). Bind
+// loopback there and the health check fails, the dyno is killed, and it
+// reads as "SpiritOS is broken" rather than as a bind mistake.
+const BIND_HOST = '0.0.0.0';
+
+common.refuseListenError(server, port, 'spirit/relayServer.js');
+
+// ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
+//
+// It spends its moment on `retry:`, which is SSE's own field for when to
+// come back. So a hundred members do not all reconnect one second later
+// into a box that is still booting, get refused, and back off further
+// than they needed to. `bash/update` restarts a relay every time it takes
+// a tag: this is a routine Tuesday, not an outage.
+//
+// THREE SECONDS is a guess at a node boot, and a cheap one to be wrong
+// about: too low and a member is refused once and retries on its own
+// backoff, which is where it would have been anyway.
+//
+// The node's own goodbye (server.js) tells its browser pages the same
+// thing, through the same presence.sayGoingAway.
+// WHAT SYSTEMD WOULD DO IF THIS PROCESS EXITED CLEANLY.
+//
+// The unit's own name is not handed to a service, so it is read from the
+// cgroup path, which ends in `<unit>.service` for anything systemd runs.
+// Then systemd is asked directly: no guessing from a file in the
+// checkout, which may not be the file that was installed.
+//
+// Every failure answers null, and the caller reads null as "will not come
+// back" — the safe direction: a relay that refuses to restart itself is
+// an inconvenience, one that stops and stays stopped is an outage.
+function restartPolicy() {
+  try {
+    const cgroup = fs.readFileSync('/proc/self/cgroup', 'utf8');
+    // THE LEAF, not the first thing that looks like a unit. A user unit's
+    // path holds two — `user@1000.service` and the unit itself — and the
+    // one that owns this process is the last.
+    const units = String(cgroup).match(/[A-Za-z0-9@_.\\-]+\.service/g);
+    if (!units || !units.length) return null;
+    const unit = units[units.length - 1];
+
+    // ── WHICH MANAGER, AND WHY IT IS NOT ALWAYS THE SYSTEM ONE ──────
+    //
+    // Found by wsl-claude, 2026-09-22, rehearsing the restart on a real
+    // transient unit: the unit was `Restart=always` and this read `no`,
+    // because it asked the SYSTEM manager about a unit only the USER
+    // manager knows. A relay under a user unit could therefore never
+    // restart itself.
+    //
+    // The cgroup path says which: anything under `/user@<uid>.service/`
+    // belongs to that user's manager.
+    const user = /\/user@\d+\.service\//.test(cgroup);
+    const args = (user ? ['--user'] : []).concat(['show', '-p', 'LoadState', '-p', 'Restart', unit]);
+    const out = String(require('child_process').execFileSync('systemctl', args,
+      { encoding: 'utf8', timeout: 2000 }) || '');
+
+    // ── A MISS ANSWERS "no", CONFIDENTLY, AND EXITS 0 ───────────────
+    //
+    // The same finding's second half: `systemctl show -p Restart` for a
+    // unit the manager has never heard of prints `Restart=no` and
+    // succeeds. So a name that misses did not read as "unknown", it read
+    // as "this will not come back" — right by luck — and, worse, a
+    // DIFFERENT unit of that name would have been answered for.
+    //
+    // LoadState is what tells the two apart: only `loaded` means the
+    // manager is talking about this unit.
+    const loaded = /^LoadState=(.*)$/m.exec(out);
+    if (!loaded || loaded[1].trim() !== 'loaded') return null;
+    const restart = /^Restart=(.*)$/m.exec(out);
+    return restart ? restart[1].trim() || null : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// The owner's `config` verb asks for this one by name (relay.js
+// reconfigure), so it is reachable from outside the block that arms the
+// signal handlers. One goodbye, three ways in: SIGTERM, SIGINT, and an
+// owner who asked.
+let goodbyeFn = null;
+function restartNow() {
+  if (goodbyeFn) goodbyeFn('the owner asked for a restart');
+}
+
+{
+  let leaving = false;
+  const goodbye = function (signal) {
+    if (leaving) return;
+    leaving = true;
+    let told = 0;
+    try { told += relay.presence.goingAway(3000); }
+    catch (e) { /* nothing to tell, or already gone */ }
+    console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
+    try { server.close(); } catch (e) { /* not listening */ }
+    // Every commit is already on disc (synchronous=FULL); closing is so
+    // the journal is gone before the next process opens the file.
+    try { relayStore.closeAll(); } catch (e) { /* never opened */ }
+    process.exit(0);
+  };
+  goodbyeFn = goodbye;
+  process.on('SIGTERM', function () { goodbye('SIGTERM'); });
+  process.on('SIGINT', function () { goodbye('SIGINT'); });
+}
+
+// NO REQUEST TIMEOUT (goal/G30.10; Andy: "lift the 5 minute limit."). Node ends any request whose body is still
+// arriving after 5 minutes, and faceStream's live upload stays open as long as the face does. The limit on headers
+// (headersTimeout) stays, and every body but the face uploads is still bounded by refuseTooBig.
+server.requestTimeout = 0;
+
+server.listen(port, BIND_HOST, () => {
+  console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
+  // THE RELAY'S OWN MEMORY AT REST, measured at the end of boot and kept until the next start (goal/G30.15; Andy: "i
+  // think measuring at end-of-boot is fair, then using that number as a constant until the next startup."): the
+  // allowance is the owner's RAM less this.
+  const atRestMB = relay.atRest(process.memoryUsage().rss / (1024 * 1024));
+  console.log(`    at rest ${atRestMB} MB; ${relay.capacity().members === null ? 'no allowance' : relay.capacity().members + ' member seat(s) at three streams each'}`);
+  // UNOWNED, SAID OUT LOUD. A relay with no owner takes no claim at all:
+  // the owner is written at install time and never over the wire
+  // (goal/G16.8 — Andy: "the relays should do first-claim, it should
+  // happen at install time. that's the only \"safe\" way."). Saying so at
+  // boot is what tells an operator why nobody can get in.
+  if (!require('./relayAuth').loadOwner(ROOT_DIR)) {
+    console.warn(
+      '    UNOWNED — no owner in relay-state/owner.json, so this relay refuses every claim.\n' +
+      '    The owner is written at install: OWNER_KEY=<your node\'s public key> ./bash/install-units'
+    );
+  }
+
+  // THE HEARTBEAT STOOD HERE, and it was wrong from the day it shipped.
+  // R9 pushed a status report every ten seconds for ever, watched or not.
+  // What replaced it: the owner POSTS to the relay and the relay answers
+  // by hash on their own stream. A relay nobody is watching now does
+  // exactly nothing about being watched.
+
+  // THE PEERPOST IT ASKED ITS PARTNERS THROUGH (partnerRouter, unsealed)
+  // was built here; partnering is gone (goal/G22.6), so a relay builds no
+  // peerPost and makes no outbound request.
+
+  // THE GOVERNOR'S TICK STOOD HERE (cycle 1), every five seconds. Deleted in
+  // cycle 8: the relay manages itself within a fixed allowance, set once at
+  // boot from the owner's RAM, and tells the owner on every event instead.
+  console.log(`    RAM limit ${CONFIG.ramLimitMB} MB (${CONFIG.source}); ${relay.allowance()} streams allowed, fixed`);
+
+  // ── BOTH BOUNDS ON ONE LINE, AND THE OVERFLOW IF THERE IS ONE ──────
+  //
+  // A relay can be over its disc figure without anybody shrinking
+  // anything: a later boot measures a lower ceiling on a box that has
+  // filled up, or an owner edits the file downward while it is stopped.
+  //
+  // IT STILL STARTS. A relay that refused to boot because a number moved
+  // would take everybody's messages down to enforce an accounting rule,
+  // and the owner would need SSH to undo it. So it comes up, says so
+  // here and in the owner's report, takes no new claims — and evicts
+  // nobody. Andy: "the owner must evict before shrinkage."
+  const usedMB = Math.round((relayStore.open(ROOT_DIR).bytes() / (1024 * 1024)) * 100) / 100;
+  console.log(`    disc limit ${CONFIG.discLimitMB} MB; ${usedMB} MB used by relay-state/relay.db`);
+  if (CONFIG.overflow) {
+    const o = CONFIG.overflow;
+    if (o.ramAsked) {
+      console.log(`    NOTE: config.json asks for ${o.ramAsked} MB of RAM and the box can give ` +
+        `${CONFIG.ramLimitMB} MB today — running on what it can give. The file is unchanged.`);
+    }
+    if (o.discAsked) {
+      console.log(`    NOTE: config.json asks for ${o.discAsked} MB of disc and ${CONFIG.discLimitMB} MB ` +
+        `is free today — running on what is free. The file is unchanged.`);
+    }
+  }
+  if (usedMB >= CONFIG.discLimitMB) {
+    console.log(`    FULL: the roll is at its disc limit — no new claims until discLimitMB is raised ` +
+      `or members are removed. Nobody has been evicted.`);
+  }
+});

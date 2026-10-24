@@ -37,9 +37,9 @@ if (manifest && manifest.name === 'Grants' && manifest.intrinsic === true && man
 
 test.subHeading('apiTreeIndex.serves tells a live grant from a deprecated one');
 let index = null;
-try { index = require(path.join(RUN, 'js', 'client', 'apiTreeIndex.js')); } catch (e) { index = null; }
+try { index = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js')); } catch (e) { index = null; }
 if (!index || typeof index.serves !== 'function') {
-  test.fail(OWED + 'js/client/apiTreeIndex.js has no serves(tree, path)');
+  test.fail(OWED + 'spirit/client/apiTreeIndex.js has no serves(tree, path)');
 } else {
   const VERB = { request: {}, reply: { x: '' } };
   const tree = { desk: { 'item.get': VERB, DEBUG: VERB }, grantFace: { ok: false, code: 'app-not-running' } };

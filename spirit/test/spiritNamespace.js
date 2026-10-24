@@ -55,7 +55,7 @@ try {
   const g = globalThis;
   g.window = g.window || g;
   g.spirit = g.spirit || {};
-  g.spirit.fieldRules = require('../run/js/fieldRules.js');
+  g.spirit.fieldRules = require('../run/spirit/fieldRules.js');
   delete require.cache[require.resolve('../run/shell/js/fieldInput.js')];
   require('../run/shell/js/fieldInput.js');
   const F = g.spirit.elements && g.spirit.elements.fieldInput;

@@ -37,10 +37,10 @@ function Install-PortableNode {
   if (-not (Test-Path $NodeExe)) { throw 'Download finished but node.exe is missing.' }
 }
 
-if (-not (Test-Path (Join-Path $Run 'js\server.js'))) {
+if (-not (Test-Path (Join-Path $Run 'spirit\server.js'))) {
   Add-Type -AssemblyName System.Windows.Forms
   [System.Windows.Forms.MessageBox]::Show(
-    'spirit\run\js\server.js is missing. Unzip the whole SpiritOS-chat folder.',
+    'spirit\run\spirit\server.js is missing. Unzip the whole SpiritOS-chat folder.',
     'SpiritOS'
   )
   exit 1
@@ -59,4 +59,4 @@ if (-not $bin) {
 
 Start-Process "http://127.0.0.1:65432/"
 Set-Location $Run
-& $bin js\server.js --port 65432
+& $bin spirit\server.js --port 65432

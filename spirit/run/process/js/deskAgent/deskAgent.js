@@ -30,7 +30,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
 const https = require('https');
-const appServer = require('../../../js/appServer');
+const appServer = require('../../../spirit/appServer');
 
 // ── THE TWO FILES, ITS OWN STATE FOLDER'S (goal/G10.3 point 4) ────────
 //
@@ -1051,7 +1051,7 @@ function loadedEntryOf(have) {
 //   that apply; and the answer fits one tunnelled reply. The cost, stated (rule/5): one ask per keystroke.
 // What one answer of this door may carry (appClient ANSWER_MAX), less room for its envelope: tighter than a tunnelled
 // reply, so it fits both.
-const SEARCH_ROOM = require('../../../js/appClient').ANSWER_MAX - 1024;
+const SEARCH_ROOM = require('../../../spirit/appClient').ANSWER_MAX - 1024;
 const MARKS = {
   'desk-tested': function (m) { return m.recommended === true; },
   vision: function (m) { return m.vision === true; },
@@ -1063,8 +1063,8 @@ const MARKS = {
 // and cut in bytes. The marks pressed are an exact filter on the walk. THE LOADED MODEL GOES INTO THE BUCKET FIRST, AT
 // PROBABILITY 1 (Andy, 2026-10-17: "the loaded model just get's thrown into the bucket first, with a probability of
 // 1.0"): seated first, nothing seats above it.
-const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 function modelsSearch(text, marks) {
   const wanted = (Array.isArray(marks) ? marks : []).map(String).filter(function (k) { return MARKS[k]; });
   return Promise.resolve(models()).then(function (m) {
@@ -1234,7 +1234,7 @@ function probe() {
 // of that name, and uses it, as a set always did; connection.use {name} switches; connection.remove {name} takes one
 // out, never the one in use. A name is a label (rule/12, js/fieldRules.js).
 function nameWhy(name) {
-  const fr = require('../../../js/fieldRules.js');
+  const fr = require('../../../spirit/fieldRules.js');
   const p = fr.problem(name);
   if (!p) return '';
   const bytes = fr.byteLength(fr.normalize(name));
@@ -1244,7 +1244,7 @@ function connectionsNow() { return CONNECTIONS.map(function (p) { return { name:
 function setConnection(name, url, key, workspace) {
   const why = nameWhy(name);
   if (why) throw refused(why);
-  const n = require('../../../js/fieldRules.js').normalize(name);
+  const n = require('../../../spirit/fieldRules.js').normalize(name);
   let p = pairNamed(n);
   if (!p) { p = { name: n, url: '', key: '', use: false, model: '', workspace: '', effort: {} }; CONNECTIONS.push(p); }
   p.url = String(url || '');
@@ -1330,7 +1330,7 @@ function fenced(rel) {
     return fence[rel];
   });
 }
-const LOAD_MAX = require('../../../js/appClient').ANSWER_MAX - 1024;
+const LOAD_MAX = require('../../../spirit/appClient').ANSWER_MAX - 1024;
 // A FILE OF ANY SIZE, PART BY PART (goal/G23.3): Levant could not read a file bigger than one answer. Andy: "so let
 // him read files with a tool that matches yours." With no range the file comes whole, as before, when it fits; with
 // offset (the first line, from 1) and/or limit (how many lines) the answer is {path, text, lines, next}: the lines as
@@ -1666,7 +1666,7 @@ function chatAnswer(id) {
 // hand back in one answer. A paragraph is never cut in two: whole in one line, in order, as many to a line as fit.
 // The first line carries the persona's name, so the desk shows who spoke; no "[loop.js]" anywhere — that prefix was
 // the hack's.
-const LINE_ROOM = require('../../../js/appClient').ANSWER_MAX - 1024;
+const LINE_ROOM = require('../../../spirit/appClient').ANSWER_MAX - 1024;
 
 function linesOf(answer) {
   const paragraphs = String(answer).split(/\n{2,}/).map(function (p) { return p.trim(); }).filter(Boolean);

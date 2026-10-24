@@ -48,7 +48,7 @@ test.startTest('goal/G30.4: introSpector is family alone; one flat table of fami
 
 async function main() {
   test.subHeading('1. introSpector is family alone');
-  const intro = require('../run/js/introSpector');
+  const intro = require('../run/spirit/introSpector');
   const keys = Object.keys(intro).sort().join(',');
   if (keys === 'AGENTS_FILE,family') test.check('introSpector exports family and AGENTS_FILE only (claim is gone)');
   else test.fail(OWED + 'introSpector exports ' + keys);
@@ -91,7 +91,7 @@ async function main() {
   try { fs.rmSync(bare, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
   test.subHeading('2. verbTable mounts a module under a name it gives');
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   const handled = [];
   const decl = { stat: { request: { path: '' }, reply: { size: 0 }, handler: function (rq, rs) {
     let t = ''; rq.on('data', function (c) { t += c; }); rq.on('end', function () { handled.push(t); rs.writeHead(200); rs.end(JSON.stringify({ size: 7 })); });
@@ -130,7 +130,7 @@ async function main() {
   else test.fail(OWED + 'the door routed ' + short(toNode) + ' and ' + short(toApp));
 
   test.subHeading('4. the grant gate over every family');
-  const apiDoor = require('../run/js/apiDoor');
+  const apiDoor = require('../run/spirit/apiDoor');
   const granted = door ? await apiDoor.answer(door, { xfs: { stat: { path: 'c' } } }, { key: 'K1', auth: { pathsOf: function () { return ['xfs.stat']; } } }) : null;
   const refused = door ? await apiDoor.answer(door, { xfs: { stat: { path: 'd' } } }, { key: 'K2', auth: { pathsOf: function () { return ['desk']; } } }) : null;
   if (granted && granted.body && granted.body.size === 7 && refused && refused.body && refused.body.code === 'not-granted')
@@ -143,7 +143,7 @@ async function main() {
   test.subHeading('5. no app named like a node family');
   let refusedName = null;
   try {
-    const apps = require('../run/js/appClient').createAppClient({ rootDir: dir, reserved: function () { return ['fs', 'xfs']; } });
+    const apps = require('../run/spirit/appClient').createAppClient({ rootDir: dir, reserved: function () { return ['fs', 'xfs']; } });
     refusedName = { xfs: apps.register('xfs', '\\\\.\\pipe\\x'), other: apps.register('otherapp', '\\\\.\\pipe\\y') };
   } catch (e) { refusedName = { threw: e.message }; }
   if (refusedName && refusedName.xfs === false && refusedName.other === true) test.check('an app named like a node family (xfs) is refused at register; another name mounts');
@@ -151,21 +151,21 @@ async function main() {
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
   test.subHeading('6. the node uses it');
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   if (!/introSpector\.claim\(/.test(server) && !/'(net|jobs|config|fs|node|owner|relay|contact|peer)\.[a-zA-Z]+':\s*\{/.test(server) && /loopbackVerbs\.mount\(/.test(server))
     test.check('server.js mounts each node module with bare verbs; no introSpector.claim and no family.verb names in its declarations');
   else test.fail(OWED + 'server.js still claims through introSpector or names verbs with their family');
   if (/loopbackVerbs\.door\(/.test(server) && /createApiDoor\(\{[\s\S]{0,200}servers:\s*nodeDoor/.test(server)) test.check('apiDoor and /api/spirit go through the one door (nodeDoor)');
   else test.fail(OWED + 'server.js does not hand apiDoor the one door');
-  const pm = code('js/puppetMode.js');
+  const pm = code('spirit/puppetMode.js');
   if (!/function shim\(/.test(pm) && /\.call\(/.test(pm)) test.check('puppetMode runs node verbs through table.call and keeps no shim of its own');
   else test.fail(OWED + 'puppetMode still has its own shim');
 
   test.subHeading('7. the warning, and the grants app');
   let warn = '';
-  try { warn = fs.readFileSync(path.join(RUN, 'js', 'auth', 'grant.warning.txt'), 'utf8').trim(); } catch (e) { warn = ''; }
-  if (warn.length) test.check('js/auth/grant.warning.txt is there: ' + short(warn));
-  else test.fail(OWED + 'js/auth/grant.warning.txt is missing');
+  try { warn = fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt'), 'utf8').trim(); } catch (e) { warn = ''; }
+  if (warn.length) test.check('spirit/auth/grant.warning.txt is there: ' + short(warn));
+  else test.fail(OWED + 'spirit/auth/grant.warning.txt is missing');
   const grants = code('shell/grants/grants.js');
   if (/FS\.loadFile/.test(grants) && /\.warning\.txt/.test(grants) && !/'AGENTS\.' \+ verb/.test(grants)) test.check('the grants app reads <verb>.warning.txt through the family\'s FS and shows it before the grant');
   else test.fail(OWED + 'the grants app does not read warnings through FS');
@@ -173,8 +173,8 @@ async function main() {
   test.subHeading('7b. deskAgent reads the table, AGENTS.md and each verb file through FS; nothing asks AGENTS');
   const tools = code('process/js/deskAgent/tools.js');
   const agentJs = code('process/js/deskAgent/deskAgent.js');
-  const apiDoorJs = code('js/apiDoor.js');
-  const noAgents = ['js/apiDoor.js', 'js/appServer.js', 'js/verbTable.js', 'process/js/deskAgent/tools.js', 'process/js/deskAgent/deskAgent.js']
+  const apiDoorJs = code('spirit/apiDoor.js');
+  const noAgents = ['spirit/apiDoor.js', 'spirit/appServer.js', 'spirit/verbTable.js', 'process/js/deskAgent/tools.js', 'process/js/deskAgent/deskAgent.js']
     .filter(function (f) { return /AGENTS\.introspect|'AGENTS\.'\s*\+|\.AGENTS\.|'AGENTS'/.test(code(f)); });
   // The route names the FS verb (fs('loadJsonValue') becomes ns.FS.loadJsonValue or FS.loadJsonValue).
   if (/fs\('loadJsonValue'\)/.test(tools) && /\.FS\.'/.test(tools) && /'api'/.test(tools) && /FS\.loadFile/.test(agentJs) && !noAgents.length)
@@ -194,16 +194,16 @@ async function main() {
   });
   if (!wrong.length) test.check('desk, deskAgent and deskVerify keep AGENTS.md, their verb files and their api.js in <module>.family beside <module>.js, with no other code in it');
   else test.fail(OWED + 'not moved to <module>.family: ' + short(wrong));
-  const appServerJs = code('js/appServer.js');
+  const appServerJs = code('spirit/appServer.js');
   if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
   else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
   // The picker lists spirit.apiTreeIndex.servers of the verb api's answer, which is now the flat table.
   let listed = null;
   try {
     global.window = global.window || {};
-    delete require.cache[require.resolve('../run/js/client/apiTreeIndex.js')];
-    require('../run/js/client/apiTreeIndex.js');
-    const idx = (global.window && global.window.spirit && global.window.spirit.apiTreeIndex) || require('../run/js/client/apiTreeIndex.js');
+    delete require.cache[require.resolve('../run/spirit/client/apiTreeIndex.js')];
+    require('../run/spirit/client/apiTreeIndex.js');
+    const idx = (global.window && global.window.spirit && global.window.spirit.apiTreeIndex) || require('../run/spirit/client/apiTreeIndex.js');
     listed = idx.servers({ fs: { stat: {} }, jobs: { authGrant: {} }, desk: { items: {} } });
   } catch (e) { listed = { threw: e.message }; }
   const picker = code('shell/js/appServerSelector.js');

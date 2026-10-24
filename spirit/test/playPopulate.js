@@ -54,7 +54,7 @@
 // quietly enrols ten people and reports success — which cost an hour in
 // `boundedByTime` before it was noticed.
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 
 // ── THE TEXT ─────────────────────────────────────────────────────────
 //

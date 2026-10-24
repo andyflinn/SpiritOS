@@ -24,7 +24,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G27.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -152,7 +152,7 @@ async function faceHalf() {
   if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED + 'no shell/desk/plugins/vision/vision.js'); return; }
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} });
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js'), 'spirit.deskPlugins': {} });
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spirit.deskPlugins.vision;
   if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spirit.deskPlugins.vision.open'); return; }
@@ -203,9 +203,9 @@ async function faceHalf() {
     const ids = {};
     const d2 = { getElementById: function (id) { return ids[id] || (ids[id] = fakeElement(id)); } };
     let app = null;
-    new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/spirit/kernel.js').core }, d2, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
     const f = { id: 'goal/G101.1', title: 'an item', goal: 'goal/G101', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
-    app.mount(fakeElement('dd'), { escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
+    app.mount(fakeElement('dd'), { escapeHtml: require('../run/spirit/kernel.js').core.util.escapeHtml,
       verb: function (n, body) { const q = (test.foldAsk(Object.assign({}, body, { verb: n })) || {}).desk; const v = q && Object.keys(q)[0];
         if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
         if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [], chatMore: false } });

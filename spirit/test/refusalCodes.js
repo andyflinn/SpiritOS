@@ -17,15 +17,15 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const { rememberKeys, sealKeyFor } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const hub = require('../run/js/hub');
-const buildStamp = require('../run/js/buildStamp');
+const auth = require('../run/spirit/relayAuth');
+const hub = require('../run/spirit/hub');
+const buildStamp = require('../run/spirit/buildStamp');
 const plantRun = require('./plantRun');
-const spiritErrors = require('../run/js/spiritErrors');
-const serveCommon = require('../run/js/serveCommon');
-const peerPost = require('../run/js/peerPost');
+const spiritErrors = require('../run/spirit/spiritErrors');
+const serveCommon = require('../run/spirit/serveCommon');
+const peerPost = require('../run/spirit/peerPost');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 
 const PORT = 48781;
 let kid = null;
@@ -99,7 +99,7 @@ async function run() {
     const stamp = buildStamp.fromGit(path.join(__dirname, '..', '..'));
     if (stamp) buildStamp.write(runDir, stamp);
 
-    kid = spawn(process.execPath, ['js/relayServer.js', '--port', String(PORT)], { cwd: runDir, stdio: 'ignore' });
+    kid = spawn(process.execPath, ['spirit/relayServer.js', '--port', String(PORT)], { cwd: runDir, stdio: 'ignore' });
     const base = 'http://127.0.0.1:' + PORT;
     let up = false;
     for (let n = 0; n < 40 && !up; n += 1) {

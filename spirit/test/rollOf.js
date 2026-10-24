@@ -19,8 +19,8 @@ function rollOf(box) {
   // The store module beside the relay that wrote it (a suite may run a
   // relay out of a copied tree), else this checkout's.
   let relayStore;
-  try { relayStore = require(path.join(home, 'js', 'relayStore.js')); }
-  catch (e) { relayStore = require('../run/js/relayStore'); }
+  try { relayStore = require(path.join(home, 'spirit', 'relayStore.js')); }
+  catch (e) { relayStore = require('../run/spirit/relayStore'); }
   const rows = [];
   relayStore.open(home).members.each(function (p) {
     rows.push({ publicLabel: p.publicLabel, publicKey: p.publicKey, claimedAt: p.claimedAt });

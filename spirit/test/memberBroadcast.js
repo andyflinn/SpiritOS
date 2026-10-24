@@ -13,8 +13,8 @@
 
 const test = require('./testSupport.js');
 const { sealFor } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const relayStore = require('../run/js/relayStore');
+const auth = require('../run/spirit/relayAuth');
+const relayStore = require('../run/spirit/relayStore');
 const world = require('./world');
 
 function sinkFor(bag) {

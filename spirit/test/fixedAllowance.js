@@ -15,9 +15,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 const { claimOwner, ownHome } = require('./ownerClaim');
 
 function sinkFor(bag) {

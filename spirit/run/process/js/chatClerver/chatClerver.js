@@ -26,13 +26,13 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../js/appServer.js');
-const packet = require('../../../js/client/packet.js');
-const limits = require('../../../js/limits.js');
-const appClient = require('../../../js/appClient.js');
+const appServer = require('../../../spirit/appServer.js');
+const packet = require('../../../spirit/client/packet.js');
+const limits = require('../../../spirit/limits.js');
+const appClient = require('../../../spirit/appClient.js');
 // The probability modules (goal/G29.18).
-const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }

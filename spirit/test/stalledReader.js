@@ -17,9 +17,9 @@
 
 const net = require('net');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const limits = require('../run/js/limits');
-const streamSink = require('../run/js/streamSink');
+const auth = require('../run/spirit/relayAuth');
+const limits = require('../run/spirit/limits');
+const streamSink = require('../run/spirit/streamSink');
 const world = require('./world');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

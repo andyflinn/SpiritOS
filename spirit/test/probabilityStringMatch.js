@@ -21,7 +21,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G18.2: ';
-const MODULE = path.join(__dirname, '..', 'run', 'js', 'probabilityStringMatch.js');
+const MODULE = path.join(__dirname, '..', 'run', 'spirit', 'probabilityStringMatch.js');
 
 test.startTest('goal/G18.2: probabilityStringMatch(A, B), a probability from 0 to 1');
 

@@ -39,13 +39,13 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const hub = require('../run/js/hub');
-const buildStamp = require('../run/js/buildStamp');
+const hub = require('../run/spirit/hub');
+const buildStamp = require('../run/spirit/buildStamp');
 const plantRun = require('./plantRun');
-const router = require('../run/js/router');
-const { createRelay } = require('../run/js/relay');
+const router = require('../run/spirit/router');
+const { createRelay } = require('../run/spirit/relay');
 
 // Below 49152, outside Windows' ephemeral range — see partnerWire.js.
 const PORT = 48791;
@@ -196,7 +196,7 @@ async function overTheWire() {
   const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
   if (mine) buildStamp.write(runDir, mine);
 
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(PORT), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(PORT), '--relay'],
     { cwd: runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
   let why = '';

@@ -16,7 +16,7 @@
 // rule/11: through testSupport only; no server, no port.
 
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 test.startTest('goal/G33.7: searchDataSet, a cache-only search across every branch of spirit.data');
 // No transport of any kind: any ask would have to go through one of these, and there are none.

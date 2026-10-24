@@ -11,7 +11,7 @@
 // The jail is only one of two gates loadFile passes through — what may be
 // read once a path is confirmed inside ROOT_DIR is fileServable's job, and
 // lives in servableAssets.js.
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 
@@ -24,7 +24,7 @@ if (spirit.core.fs.loadFile('index.html') !== null) {
   test.fail('a real relative path (index.html) should have loaded but returned null');
 }
 
-if (spirit.core.fs.loadFile('js/client/shell.js') !== null) {
+if (spirit.core.fs.loadFile('spirit/client/shell.js') !== null) {
   test.check('a real nested relative path (js/client/shell.js) loads');
 } else {
   test.fail('a real nested relative path (js/client/shell.js) should have loaded but returned null');
@@ -38,16 +38,16 @@ if (spirit.core.fs.loadFile('js/client/shell.js') !== null) {
 // refuses it anyway. Do NOT "fix" a failure here by making kernel.js
 // loadable again — server.js's BOOT_ASSETS list is what still gets it to
 // the browser as the page's boot script.
-if (spirit.core.node.util.fsPath(ROOT_DIR, 'js/kernel.js') !== null) {
-  test.check('js/kernel.js is a legal path string — the jail itself does not reject it');
+if (spirit.core.node.util.fsPath(ROOT_DIR, 'spirit/kernel.js') !== null) {
+  test.check('spirit/kernel.js is a legal path string — the jail itself does not reject it');
 } else {
-  test.fail('js/kernel.js should be a legal path string but fsPath returned null');
+  test.fail('spirit/kernel.js should be a legal path string but fsPath returned null');
 }
 
-if (spirit.core.fs.fileServable('js/kernel.js') === false && spirit.core.fs.loadFile('js/kernel.js') === null) {
-  test.check('js/kernel.js is refused by the read gate (fileServable), not the jail');
+if (spirit.core.fs.fileServable('spirit/kernel.js') === false && spirit.core.fs.loadFile('spirit/kernel.js') === null) {
+  test.check('spirit/kernel.js is refused by the read gate (fileServable), not the jail');
 } else {
-  test.fail('js/kernel.js should have been refused by fileServable but loadFile returned content');
+  test.fail('spirit/kernel.js should have been refused by fileServable but loadFile returned content');
 }
 
 if (spirit.core.fs.loadFile('./index.html') !== null) {

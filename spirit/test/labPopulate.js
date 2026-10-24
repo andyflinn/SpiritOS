@@ -37,7 +37,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const scenarioGrammar = require('./scenario');
 const labWorld = require('./labWorld');
 

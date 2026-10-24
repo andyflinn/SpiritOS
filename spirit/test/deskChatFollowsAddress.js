@@ -19,8 +19,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G27.10: ';
 const RUN = path.join(__dirname, '..', 'run');

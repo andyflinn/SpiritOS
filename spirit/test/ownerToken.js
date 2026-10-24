@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 
 const REPO = path.join(__dirname, '..', '..');
 const REPO_RUN = path.join(REPO, 'spirit', 'run');
@@ -47,7 +47,7 @@ store.members.put({ publicKey: 'K1', publicLabel: 'andy', claimedAt: '2026-09-19
 store.members.put({ publicKey: 'K2', publicLabel: 'bert', claimedAt: '2026-09-19' });
 relayStore.closeAll();
 
-const refused = spawnSync(process.execPath, ['js/relayServer.js', '--port', '0'],
+const refused = spawnSync(process.execPath, ['spirit/relayServer.js', '--port', '0'],
   { cwd: B.run, encoding: 'utf8', timeout: 20000 });
 const said = (refused.stderr || '') + (refused.stdout || '');
 if (refused.status === 78 && /2 member\(s\) but relay-state\/owner\.json names no owner/.test(said)) {

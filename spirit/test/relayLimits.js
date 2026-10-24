@@ -17,7 +17,7 @@
 //   accumulation etc".
 
 const test = require('./testSupport.js');
-const limits = require('../run/js/relayLimits');
+const limits = require('../run/spirit/relayLimits');
 
 test.startTest('Relay limits — half the box, bounded by what it can give');
 

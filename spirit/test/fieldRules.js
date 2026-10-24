@@ -34,12 +34,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.16: ';
-const RULE_FILE = path.join(RUN, 'js', 'fieldRules.js');
-const OLD_FILE = path.join(RUN, 'js', 'labelRule.js');
+const RULE_FILE = path.join(RUN, 'spirit', 'fieldRules.js');
+const OLD_FILE = path.join(RUN, 'spirit', 'labelRule.js');
 
 const BIDI = '‮';
 function ascii(n) { return 'a'.repeat(n); }
@@ -67,10 +67,10 @@ function walk(dir, out) {
 
 function theName() {
   test.subHeading('1. js/labelRule.js is js/fieldRules.js, and the old name is gone');
-  if (fs.existsSync(RULE_FILE) && loadRule()) test.check('js/fieldRules.js exists and loads');
+  if (fs.existsSync(RULE_FILE) && loadRule()) test.check('spirit/fieldRules.js exists and loads');
   else test.fail(OWED + 'there is no js/fieldRules.js');
-  if (!fs.existsSync(OLD_FILE)) test.check('js/labelRule.js is gone');
-  else test.fail(OWED + 'js/labelRule.js is still there');
+  if (!fs.existsSync(OLD_FILE)) test.check('spirit/labelRule.js is gone');
+  else test.fail(OWED + 'spirit/labelRule.js is still there');
 
   const me = path.resolve(__filename);
   // currentGoal.json is Desk's copy of the goal's chat, which quotes the old name; it is not code.
@@ -82,7 +82,7 @@ function theName() {
   else test.fail(OWED + naming.length + ' files still name labelRule: ' + naming.map(function (f) { return path.relative(path.join(RUN, '..'), f); }).join(', '));
 
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
-  if (/<script src="\/js\/fieldRules\.js"><\/script>/.test(index)) test.check('index.html loads /js/fieldRules.js');
+  if (/<script src="\/spirit\/fieldRules\.js"><\/script>/.test(index)) test.check('index.html loads /js/fieldRules.js');
   else test.fail(OWED + 'index.html does not load /js/fieldRules.js');
 
   let win = {};
@@ -118,7 +118,7 @@ function aLabel() {
 
 // ── 3. A DESCRIPTION ─────────────────────────────────────────────────
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 
 function tmpHome(name) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-fieldrules-'));
@@ -170,7 +170,7 @@ async function aDescription() {
 
   const home2 = tmpHome();
   auth.setDescription(home2, 'the one before');
-  const hub = require('../run/js/hub').createHub(home2);
+  const hub = require('../run/spirit/hub').createHub(home2);
   const res = fakeRes();
   hub.handleNodeDescription({}, res, readBody({ description: ascii(129) }));
   await within(res.wait(), 3000);
@@ -181,7 +181,7 @@ async function aDescription() {
 
 // ── 4. YOUR OWN NAME FOR A PEER ──────────────────────────────────────
 
-const contactBook = require('../run/js/contacts');
+const contactBook = require('../run/spirit/contacts');
 const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerp=';
 const STRANGER = 'MCowBQYDK2VwAyEAstrangerstrangerstrangerstrangerstr=';
 const OTHER = 'MCowBQYDK2VwAyEAotherotherotherotherotherotherother=';
@@ -200,7 +200,7 @@ async function yourOwnName() {
   const home = tmpHome();
   contactBook.acquire(home, { publicKey: PEER, publicLabel: 'peer', relay: 'https://lab.example' }, 'handle');
   contactBook.setMyLabel(home, PEER, 'Pete');
-  const hub = require('../run/js/hub').createHub(home);
+  const hub = require('../run/spirit/hub').createHub(home);
   const mine = function () { return String((contactBook.byPublicKey(home, PEER) || {}).myLabel || ''); };
 
   const long = await ask(hub, 'label', { publicKey: PEER, myLabel: ascii(65) });
@@ -222,7 +222,7 @@ async function yourOwnName() {
 async function givenByHand() {
   test.subHeading('5. a publicLabel given by hand, on block and on acquire, is checked first');
   const home = tmpHome();
-  const hub = require('../run/js/hub').createHub(home);
+  const hub = require('../run/spirit/hub').createHub(home);
 
   const bad = await ask(hub, 'block', { publicKey: STRANGER, publicLabel: ascii(65) });
   if (bad.status >= 400 && bad.status < 500 && !contactBook.byPublicKey(home, STRANGER)) test.check('contact.block with a 65-byte label is refused, no row written');

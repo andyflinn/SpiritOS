@@ -31,22 +31,22 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G19.17: ';
-const HUB = path.join(__dirname, '..', 'run', 'js', 'hub.js');
-const relayKeys = require('../run/js/relayKeys.js');
-const ownerBadge = require('../run/js/ownerBadge.js');
-const limits = require('../run/js/limits.js');
+const HUB = path.join(__dirname, '..', 'run', 'spirit', 'hub.js');
+const relayKeys = require('../run/spirit/relayKeys.js');
+const ownerBadge = require('../run/spirit/ownerBadge.js');
+const limits = require('../run/spirit/limits.js');
 
 const roots = [];
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearchmatcher-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   // Since goal/G22.5: a node's root always holds its identity, and the relay probe is asked with its key.
-  const auth = require('../run/js/relayAuth.js');
+  const auth = require('../run/spirit/relayAuth.js');
   auth.saveIdentity(root, auth.generateIdentity('relaysearchmatcher'));
   roots.push(root);
   return root;
 }
-function hubOf(root) { return require('../run/js/hub.js').createHub(root); }
+function hubOf(root) { return require('../run/spirit/hub.js').createHub(root); }
 function keysOf(r) { return ((r && r.items) || []).map(function (i) { return i.key; }); }
 
 test.startTest('relay.search ranks the node\'s relays with probabilityStringObjectMatch (goal/G19.17)');

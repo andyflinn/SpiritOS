@@ -22,8 +22,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G33.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -207,7 +207,7 @@ async function dialogHalf() {
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, addEventListener: function () {}, removeEventListener: function () {}, activeElement: null };
   let dd = null;
-  const kernel = require('../run/js/kernel.js');
+  const kernel = require('../run/spirit/kernel.js');
   const win = { spirit: globalThis.spirit, addEventListener: function () {} };
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))({ shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, win);
   const item = { id: 'goal/G100.3', title: 'Opened', goal: 'goal/G100', status: 'design', buttons: [], blocking: ['goal/G100'], blocked: [] };

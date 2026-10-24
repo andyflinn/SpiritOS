@@ -44,10 +44,10 @@ const homes = [];
 
 test.startTest('goal/G30.15: fixes to the face found on spirit-3');
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 function relayWith(config) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3015-'));
@@ -113,7 +113,7 @@ const done = (async function () {
   test.subHeading('3. the owner\'s relay events reach the face; the keys carry the node\'s name');
   const me = (function () { const h = fs.mkdtempSync(path.join(os.tmpdir(), 'g3015n-')); homes.push(h); plant.ensureAt(h, 'bert'); return auth.loadIdentity(h); }());
   const up = {};
-  const node = require('../run/js/faceHome').createFaceHome({
+  const node = require('../run/spirit/faceHome').createFaceHome({
     call: function () { return Promise.resolve({ ok: true, status: 200, body: {} }); },
     serveFile: function () {},
     upload: function (url, p) { const pt = new PassThrough(); up[p] = ''; pt.on('data', function (c) { up[p] += c.toString('utf8'); }); return pt; },
@@ -137,9 +137,9 @@ const done = (async function () {
   else test.fail(OWED + 'the face stream got ' + short(lines) + '; keys ' + short(keys));
 
   test.subHeading('4. the wiring, the screens and the files');
-  const srv = code('spirit/run/js/server.js');
+  const srv = code('spirit/run/spirit/server.js');
   const shell = code('spirit/run/face/shell.js');
-  const rs = code('spirit/run/js/relayServer.js');
+  const rs = code('spirit/run/spirit/relayServer.js');
   const nd = code('spirit/run/shell/natterDetails/natterDetails.js');
   const cs = code('spirit/run/shell/js/contacts/listElement.js');
   const ct = code('spirit/run/shell/contacts/contacts.js');
@@ -150,7 +150,7 @@ const done = (async function () {
     favicon: /🤓/.test(raw('spirit/run/face/favicon.svg')) && /favicon\.svg/.test(raw('spirit/run/face.html')) && /'\/face\/favicon\.svg'/.test(rs),
     tabTitle: /document\.title\s*=/.test(shell),
     atRestAtBoot: /\.atRest\(/.test(rs) && /memoryUsage\(\)\.rss/.test(rs),
-    statusParts: /capacity/.test(code('spirit/run/js/relayStatus.js')) && /capacity/.test(nd) && /members a megabyte|members per megabyte|membersPerMB/.test(nd),
+    statusParts: /capacity/.test(code('spirit/run/spirit/relayStatus.js')) && /capacity/.test(nd) && /members a megabyte|members per megabyte|membersPerMB/.test(nd),
     allocationScreen: /ramLimitMB/.test(nd) && /discLimitMB/.test(nd) && /restart:\s*true/.test(nd) && /next restart/i.test(nd),
     listFillsWhenDrawn: /\n\s*list\.refresh\(\);\s*\n\s*return \{/.test(cs) && /spirit\.elements.contactList\.create\(/.test(ct),
     noGzip: !/encode gzip/.test(code('bash/face-setup')),
@@ -200,7 +200,7 @@ const done = (async function () {
     discInGB: /Disc, GB/.test(nd2) && /\* 1024/.test(nd2),
     restartOnly: /\{\s*restart:\s*true\s*\}/.test(nd2) && !/discLimitMB[^}\n]*restart:\s*true/.test(nd2),
     refusalStays: /ndAllocSaid\s*=\s*\(b && b\.error\)|ndAllocSaid\s*=\s*.*refused/.test(nd2),
-    relayReadsFile: /deps\.readConfig/.test(code('spirit/run/js/relay.js')) && /readConfig/.test(code('spirit/run/js/relayServer.js')),
+    relayReadsFile: /deps\.readConfig/.test(code('spirit/run/spirit/relay.js')) && /readConfig/.test(code('spirit/run/spirit/relayServer.js')),
   };
   // Box v17-v19 (Andy: "why would the relay not stash my login on my member-row?", "save the cookie 1. after login 2.
   // after re-connect 3. every day", "delete it on logoff/logout"; one login per device): a face login survives a relay

@@ -45,7 +45,7 @@ const { spawn } = require('child_process');
 const { setupRelayFakes } = require('../setupRelayFakes');
 
 const RUN = path.join(__dirname, '..', '..', 'run');
-const SERVER = path.join(RUN, 'js', 'server.js');
+const SERVER = path.join(RUN, 'spirit', 'server.js');
 
 // ── THE CHEAT, IN ONE FUNCTION SO IT IS DELETABLE IN ONE EDIT ────────
 function verbsFromSource() {
@@ -151,7 +151,7 @@ let child = null;
 let said = '';
 
 freePort().then(function (port) {
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], {
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], {
     cwd: nodeRoot, stdio: ['ignore', 'ignore', 'pipe'],
   });
   child.stderr.on('data', function (c) { said = (said + c).slice(-4096); });

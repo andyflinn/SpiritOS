@@ -31,7 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.14: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -64,7 +64,7 @@ function target(attrs, rowKey) {
 
 const win = {};
 ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-  new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
 });
 const p = page();
 function loadInto(rel) {
@@ -88,7 +88,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const unknown = typeof bar === 'function' ? String(bar(1, 0, 'counting')) : '';
   if (/<progress/.test(unknown) && !/\bvalue=/.test(unknown) && /counting/.test(unknown)) test.check('total 0 draws an indeterminate bar: a progress tag with no value');
   else test.fail(OWED + 'progressBar(1, 0) drew ' + short(unknown));
-  if (/progressBar:\s*shellElements\.progressBar/.test(read('js/client/shell.js'))) test.check('apps get it as api.ui.elements.progressBar');
+  if (/progressBar:\s*shellElements\.progressBar/.test(read('spirit/client/shell.js'))) test.check('apps get it as api.ui.elements.progressBar');
   else test.fail(OWED + 'shell.js does not hand progressBar to apps');
   if (/<script src="\/shell\/shared\/js\/progressBar\.js"><\/script>/.test(read('index.html'))) test.check('index.html loads it');
   else test.fail(OWED + 'index.html does not load progressBar.js');

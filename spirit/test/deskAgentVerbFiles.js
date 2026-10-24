@@ -90,7 +90,7 @@ async function suite() {
   const existing = fs.readdirSync(FAMILY_DIR).filter(function (f) { return /\.json$/.test(f) && f !== 'desk.json' && f !== 'currentGoal.json'; }).map(function (f) { return f.replace(/\.json$/, ''); });
   const declared = existing.concat(SEVENTEEN.filter(function (v) { return existing.indexOf(v) === -1; }));
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(FAMILY_DIR, { declared: declared }); } catch (e) { family = null; }
+  try { family = require('../run/spirit/introSpector.js').family(FAMILY_DIR, { declared: declared }); } catch (e) { family = null; }
   if (!family) { test.fail('the world: introSpector.family threw on the desk folder'); return; }
   // Since goal/G30.4 the folder is read through its FS: FS.search names the files, FS.loadJsonValue reads each.
   let listed = [];

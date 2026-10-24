@@ -30,7 +30,7 @@ const strip = function (src) { return src.split('\n').filter(function (l) { retu
 test.startTest('goal/G29.6: the peer picker on the shared list, Contacts first');
 
 // ── THE NODE: contact.search's rows and its ranking ──
-const hub = require('../run/js/hub.js');
+const hub = require('../run/spirit/hub.js');
 const PEOPLE = [
   { publicKey: 'K-bert', tail: 'aaaaaa', publicLabel: 'Bert', myLabel: '', held: false, blocked: false, owned: false },
   { publicKey: 'K-bertie', tail: 'bbbbbb', publicLabel: 'Bertie', myLabel: '', held: false, blocked: false, owned: false },
@@ -53,7 +53,7 @@ test.subHeading('2. it ranks with the probability modules');
 const bert = rowsOf(hub.searchPeople(PEOPLE, 'Bert'));
 if (bert.length && bert[0].key === 'K-bert' && bert.some(function (r) { return r.key === 'K-bertie'; }) && !bert.some(function (r) { return r.key === 'K-carol'; })) test.check('"Bert" answers Bert first, then Bertie, and not carol');
 else test.fail(OWED + '"Bert" answers ' + short(bert.map(function (r) { return r.key; })));
-const hubSrc = strip(fs.readFileSync(path.join(RUN, 'js', 'hub.js'), 'utf8'));
+const hubSrc = strip(fs.readFileSync(path.join(RUN, 'spirit', 'hub.js'), 'utf8'));
 const fnBody = function (src, name) {
   const at = src.indexOf('function ' + name + '(');
   if (at === -1) return '';
@@ -73,12 +73,12 @@ const only = function (f) { return rowsOf(hub.searchPeople(PEOPLE, '', f)).map(f
 if (JSON.stringify(only({ owned: 'yes' })) === '["K-pup"]' && JSON.stringify(only({ blocked: 'yes' })) === '["K-dave"]' && JSON.stringify(only({ held: 'yes' })) === '["K-carol"]') test.check('owned: yes answers the puppets only; blocked: yes and held: yes alike');
 else test.fail(OWED + 'filters answer ' + short([only({ owned: 'yes' }), only({ blocked: 'yes' }), only({ held: 'yes' })]));
 const cs = fnBody(hubSrc, 'contactSearch');
-const server = fs.readFileSync(path.join(RUN, 'js', 'server.js'), 'utf8');
+const server = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
 // The contact family's search in the flat door's tables since goal/G30.5: the 'search' whose handler is hub.contactSearch.
 const route = (server.match(/'search':\s*\{\s*request:\s*\{[^}]*\}[^\n]*hub\.contactSearch/) || [''])[0];
 if (/searchPeople\([^;]*body\s*\)/.test(cs) && /owned/.test(route) && /blocked/.test(route) && /held/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares owned, blocked and held');
 else test.fail(OWED + 'contactSearch ' + short(cs.slice(0, 200)) + '; the route ' + short(route));
-const shellJs = strip(fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8'));
+const shellJs = strip(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'));
 if (/contact\.search['"],\s*\{[^}]*owned:\s*['"]yes['"]/.test(shellJs) && !/contact\.search['"],\s*\{\s*q:\s*['"]owned['"]/.test(shellJs)) test.check('shell.js finds the puppets with owned: yes, not by the word owned');
 else test.fail(OWED + 'shell.js still finds puppets by the word: ' + short((shellJs.match(/contact\.search[^)]*\)/g) || []).join(' | ')));
 
@@ -106,7 +106,7 @@ function page(asks) {
   };
   const win = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   const ICON = { STAR: '⭐', GREEN_CIRCLE: '🟢', WHITE_CIRCLE: '⚪', WAITING: '⏳', NO: '🚫' };
   const spirit = { core: { util: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); } }, const: { ICON: ICON },

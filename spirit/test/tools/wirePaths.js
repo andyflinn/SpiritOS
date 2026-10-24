@@ -260,8 +260,8 @@ try {
 // anything that reaches endpoint. do it." A frame carries, after its own function, every named function its position
 // is written inside in the source, innermost first, each after " in ":
 //
-//   spirit/run/js/peerPost.js:657 in sendAttempt in createPeerPost
-//   spirit/run/js/peerPost.js:899:post in createPeerPost
+//   spirit/run/spirit/peerPost.js:657 in sendAttempt in createPeerPost
+//   spirit/run/spirit/peerPost.js:899:post in createPeerPost
 //
 // WHY: peerPost's instance functions (post, onRequest, holdStreams, sendAttempt, pump ...) are all written inside
 // createPeerPost, which has returned long before any of them runs, so no live frame names it. The source does.
@@ -483,7 +483,7 @@ function enclosingAt(file, line, col) {
 //
 // A PLANTED COPY OF spirit/run IS OURS TOO (goal/G19.14). A suite that
 // boots a real node copies the run tree into a temp home (plantRun.js)
-// and starts js/server.js there, so every frame of that node sat outside
+// and starts spirit/server.js there, so every frame of that node sat outside
 // the repo and was dropped — and a node is exactly where a component is
 // reached in production. Named by its path from `spirit/run/` on, as if
 // it were the repo's.

@@ -21,7 +21,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by apiAuth/G1.9: ';
-const CLIENT = path.join(__dirname, '..', 'run', 'js', 'client');
+const CLIENT = path.join(__dirname, '..', 'run', 'spirit', 'client');
 
 test.startTest('apiAuth/G1.9: the api-branch selector picks a path, app or app.verb, never an owner verb');
 
@@ -29,7 +29,7 @@ test.subHeading('apiTreeIndex.verbs lists one server\'s verbs, the owner\'s two 
 let index = null;
 try { index = require(path.join(CLIENT, 'apiTreeIndex.js')); } catch (e) { index = null; }
 if (!index || typeof index.verbs !== 'function') {
-  test.fail(OWED + 'js/client/apiTreeIndex.js has no verbs(tree, server)');
+  test.fail(OWED + 'spirit/client/apiTreeIndex.js has no verbs(tree, server)');
 } else {
   const VERB = { request: {}, reply: { x: '' } };
   const tree = {

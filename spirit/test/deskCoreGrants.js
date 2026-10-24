@@ -8,7 +8,7 @@
 // item?", "the scope still has a grant-lock on core files.", "basicall run/js and intrinsics".
 //
 // ASSERTED
-//   1  THE CORE TABLE: spirit/run/js/coreFiles.js isCore(repoPath): every file under spirit/run/js/, and every file in
+//   1  THE CORE TABLE: spirit/run/spirit/coreFiles.js isCore(repoPath): every file under spirit/run/spirit/, and every file in
 //      the folder of a shell app whose manifest says "intrinsic": true.
 //   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope since goal/G10.8); a
 //      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it. Since
@@ -22,16 +22,16 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const verbTable = require('../run/js/verbTable.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const verbTable = require('../run/spirit/verbTable.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G4.23 (core grants): ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
-const CORE = path.join(RUN, 'js', 'coreFiles.js');
+const CORE = path.join(RUN, 'spirit', 'coreFiles.js');
 
 const SELF_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestSelfAAAAAAAAAAAAAAAAAAAAAAAAA=';
 const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestOtherAAAAAAAAAAAAAAAAAAAAAAAA=';
@@ -136,13 +136,13 @@ async function main() {
 
   test.subHeading('1. the core table: run/js and the intrinsic apps');
   let core = null;
-  try { core = require('../run/js/coreFiles.js'); } catch (e) { core = null; }
-  const cases = [['spirit/run/js/jobs.js', true], ['spirit/run/js/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
+  try { core = require('../run/spirit/coreFiles.js'); } catch (e) { core = null; }
+  const cases = [['spirit/run/spirit/jobs.js', true], ['spirit/run/spirit/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
     ['spirit/run/shell/files/files.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
     ['spirit/test/deskCoreGrants.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
   const wrong = core && typeof core.isCore === 'function' ? cases.filter(function (c) { return core.isCore(c[0]) !== c[1]; }) : cases;
   if (!wrong.length) test.check('isCore: run/js and the intrinsic apps\' folders (files) are core; deskDetails (intrinsic: false since 6698275a), desk, chatter, tests, design and process folders are not');
-  else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/js/coreFiles.js exporting isCore'));
+  else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/spirit/coreFiles.js exporting isCore'));
 
   test.subHeading('2. the commit check takes any file with Go, and refuses a core file nobody granted');
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: 400, historyMax: 100 }), '--pipe', clientPipe, '--state', clientState, '--node', JSON.stringify({ name: 'claude-windows', publicKey: SELF_KEY })], {
@@ -162,7 +162,7 @@ async function main() {
   const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'goal/G100.1: anywhere in the repo');
   if (anywhere.status === 0 && (await commits(repo)) === 2 && !/scope/i.test(anywhere.stderr + anywhere.stdout)) test.check('a file anywhere in the repo is taken too: no scope since goal/G10.8');
   else test.fail('OWED by goal/G10.8: a file outside any folder answered ' + anywhere.status + ' ' + String(anywhere.stderr + anywhere.stdout).trim().slice(0, 160));
-  const coreOne = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'goal/G100.1: a core file, not granted');
+  const coreOne = await commitWith(repo, 'spirit/run/spirit/core.js', 'x', 'goal/G100.1: a core file, not granted');
   const n3 = await commits(repo);
   const checks = ((await desk('item.checks', { id: 'goal/G100.1' }, ANDY)).body || {}).checks || [];
   const raised = checks.filter(function (c) { return c.kind === 'G'; });
@@ -171,15 +171,15 @@ async function main() {
   if (!raised.length && /item\.files\.add/.test(coreOne.stderr + coreOne.stdout)) test.check('the refusal raises no grant of its own and says to list the files with item.files.add');
   else test.fail('OWED by goal/G32.2: the refusal raised ' + short(raised) + ' and said ' + String(coreOne.stderr).trim().slice(0, 160));
   // goal/G40.3: one add per path (the whole-list {id, paths} went), and the one grant is for the list, naming no path.
-  for (const p of ['spirit/run/js/core.js', 'spirit/run/js/client/js/one.js']) await desk('item.files.add', { id: 'goal/G100.1', path: p }, SELF_AT_DESK);
+  for (const p of ['spirit/run/spirit/core.js', 'spirit/run/spirit/client/js/one.js']) await desk('item.files.add', { id: 'goal/G100.1', path: p }, SELF_AT_DESK);
   const asked = (((await desk('item.checks', { id: 'goal/G100.1' }, ANDY)).body || {}).checks || []).filter(function (c) { return c.kind === 'G' && c.state === 'open'; });
   if (asked.length === 1 && asked[0].words === 'core grant: every core file on this item\'s list') test.check('the list raised one open grant for both core files, naming no path: ' + asked[0].number + ' "' + asked[0].words + '"');
   else test.fail(OWED + 'open G checks after item.files.add: ' + short(asked));
   if (asked.length) await desk('check.set', { id: 'goal/G100.1', check: asked[0].number, state: 'granted' }, ANDY);
-  const part = await commitWith(repo, 'spirit/run/js/one.js', 'x', 'goal/G100.1: js/one.js is only the end of js/client/js/one.js, not granted');
+  const part = await commitWith(repo, 'spirit/run/spirit/one.js', 'x', 'goal/G100.1: js/one.js is only the end of js/client/js/one.js, not granted');
   if (part.status !== 0) test.check('a path that is only the end of a granted one is not covered by it');
   else test.fail('OWED by goal/G32.2: js/one.js was taken under the grant naming js/client/js/one.js');
-  const granted = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'goal/G100.1: the core file, granted');
+  const granted = await commitWith(repo, 'spirit/run/spirit/core.js', 'x', 'goal/G100.1: the core file, granted');
   if (granted.status === 0 && (await commits(repo)) === 3) test.check('once he granted it, the same commit is taken');
   else test.fail(OWED + 'after his grant the commit answered ' + granted.status + ' ' + String(granted.stderr).trim().slice(0, 160));
 }

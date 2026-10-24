@@ -13,11 +13,11 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel.js');
+const packet = require('../run/spirit/client/packet');
 
 const OWED = 'OWED by desk/G3.5: ';
-const SHELL = path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js');
+const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
 const INDEX = path.join(__dirname, '..', 'run', 'index.html');
 
 function fakeElement(tag) {

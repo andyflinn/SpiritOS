@@ -77,7 +77,7 @@ console.log('Was a circular reference found?', result.hasCircular); // true
 console.log('Number of distinct objects visited:', result.visited.length);
    ------------------------------------------------------------- */
 
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 test.startTest('testing if the spirit object has circular')

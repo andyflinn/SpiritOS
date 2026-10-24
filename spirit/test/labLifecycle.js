@@ -36,9 +36,9 @@ const path = require('path');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { ownHome } = require('./ownerClaim');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
-const relayStore = require('../run/js/relayStore');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
+const relayStore = require('../run/spirit/relayStore');
 
 // Inside labMaster's own 65400-65429 range. Distinct from every other
 // lab suite's ports so the harness can run them in the same lane pass —

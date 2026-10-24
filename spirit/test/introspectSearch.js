@@ -37,7 +37,7 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   fs.writeFileSync(path.join(dir, 'tree.walk.json'), JSON.stringify({ description: 'walks the folders one by one' }));
   fs.writeFileSync(path.join(dir, 'search.json'), JSON.stringify({ description: 'searches the tree for words' }));
   let fam = null;
-  try { fam = require('../run/js/introSpector.js').family(dir, { declared: ['item.get', 'tree.walk', 'search'], prefix: '' }); } catch (e) { fam = null; }
+  try { fam = require('../run/spirit/introSpector.js').family(dir, { declared: ['item.get', 'tree.walk', 'search'], prefix: '' }); } catch (e) { fam = null; }
   const intro = fam && fam.verbs['FS.search'];
   if (intro && JSON.stringify(intro.request) === JSON.stringify({ q: '' })) test.check('FS.search takes {q}');
   else test.fail(OWED + 'FS.search takes ' + short(intro && intro.request));
@@ -59,7 +59,7 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   const none = intro ? ask('zebra') : null;
   if (none && !keys(none).length && none.more === false) test.check('a word nothing has: nothing, more false');
   else test.fail(OWED + 'zebra answered ' + short(none));
-  const src = code('js/introSpector.js');
+  const src = code('spirit/introSpector.js');
   if (!/searchBucket/.test(src) && /probabilityStringObjectMatch|probabilityStringMatch/.test(src) && /probabilityBucket/.test(src)) test.check('introSpector ranks on the probability modules and requires no searchBucket');
   else test.fail(OWED + 'introSpector still on searchBucket, or not on the probability modules');
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* scratch */ }
@@ -67,7 +67,7 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   // SINCE goal/G30.4 apiDoor has no AGENTS special case: the folder's FS verbs are granted like any other verb, so a
   // member reads a family's folder only when granted the app, or the exact FS verb, and nothing is cut from an answer.
   test.subHeading('2. a member reaches the folder only as granted; the owner sees all');
-  const door = require('../run/js/apiDoor.js');
+  const door = require('../run/spirit/apiDoor.js');
   const FILES = ['AGENTS.md', 'item.add.json', 'item.get.json', 'rule.get.json'];
   const servers = {
     ask: function (q) {

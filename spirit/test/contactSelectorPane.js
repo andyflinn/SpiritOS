@@ -46,7 +46,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.14: ';
@@ -173,7 +173,7 @@ function load() {
   test.spiritFor(sp.core.ask, sp);
   // As index.html loads them (goal/G29.6): the probability modules, the shared list, then the selector.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(FILE, 'utf8'))(sp, doc, win, Event, CustomEvent);

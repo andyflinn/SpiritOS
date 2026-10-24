@@ -12,15 +12,15 @@ const os = require('os');
 const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 test.startTest('processes/G1.4: the test server logs to its Jobs console');
 
 const OWED = 'OWED by processes/G1.4: ';
 const COUNTER = path.join(__dirname, '..', 'run', 'process', 'js', 'counterServer', 'counterServer.js');
-const jobs = require('../run/js/jobs.js')(spirit, 65432);
+const jobs = require('../run/spirit/jobs.js')(spirit, 65432);
 
 function freePort() {
   return new Promise(function (resolve) {

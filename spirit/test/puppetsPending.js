@@ -109,7 +109,7 @@ test.subHeading('one return bound, both paths');
   // NOTHING IN limits.js BOUNDS A RESPONSE — every bound there is on a
   // request or a packet. That absence is the requirement, so the unit is
   // a named export and the check is for one.
-  const limits = exports_('spirit/run/js/limits.js');
+  const limits = exports_('spirit/run/spirit/limits.js');
   const bound = limits.filter(function (k) { return /RETURN|RESPONSE|ANSWER/.test(k); });
   test.awaiting('puppets/G1', 'a response bound in limits.js', bound.length > 0,
     'one number that bounds what a verb hands back, so a call cannot succeed on loopback and fail as a packet. ' +
@@ -151,13 +151,13 @@ test.subHeading('one return bound, both paths');
 // better be call peerOwnerPost()"*, *"it's more true."*
 test.subHeading('peerOwnerPost — the owner configures a puppet over the wire');
 {
-  const server = read('spirit/run/js/server.js');
+  const server = read('spirit/run/spirit/server.js');
   // ── puppets/G4 IS BUILT: peerOwnerPost ────────────────────────────
   //
   // Built by claude-windows at 8c8347c (ownerPost.js, verb owner.command);
   // asserted in spirit/test/ownerPost.js end to end against a real
   // puppetDoor. Only reachability here, as for G5, G6 and G7.
-  if (/peerOwnerPost/.test(server) && typeof require('../run/js/ownerPost').createOwnerPost === 'function') {
+  if (/peerOwnerPost/.test(server) && typeof require('../run/spirit/ownerPost').createOwnerPost === 'function') {
     test.check('the sending end exists as a unit — ownerPost.createOwnerPost, wired as peerOwnerPost, '
       + 'asserted in ownerPost.js: signed, answered only by that puppet, once, within the wait');
   } else {
@@ -167,7 +167,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // The receiving half, and the reason it is its own requirement: the
   // switch is where a remote packet becomes local authority, so it is
   // the whole security boundary of this feature.
-  const puppetMode = read('spirit/run/js/puppetMode.js');
+  const puppetMode = read('spirit/run/spirit/puppetMode.js');
   // ── puppets/G5 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
   //
   // This suite told me so in those words — "puppets/G5 EXISTS NOW. It was
@@ -176,7 +176,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // asserted in spirit/test/ownerCommand.js, ten checks; what is asserted HERE
   // is only that the unit exists and is reachable, so this file keeps saying
   // what is owed and does not become a second copy of that suite.
-  if (typeof require('../run/js/puppetMode').ownerCommandIn === 'function') {
+  if (typeof require('../run/spirit/puppetMode').ownerCommandIn === 'function') {
     test.check('the owner switch exists as a unit — puppetMode.ownerCommandIn, asserted in '
       + 'ownerCommand.js: the mode gate, no signature, a lifted transport signature, '
       + 'a sibling-signed command, a replay at a sibling, a signature moved to another '
@@ -197,7 +197,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // this credits the suite that asserts the lock now, ownerFile.js.
   // relay-state/owner.json, { owner } (cleanup/G1.7)
   // -- after Andy ruled "a node OWNED by another node's ID is a puppet".
-  if (typeof require('../run/js/puppetMode').puppetIn === 'function' && /owner\.json/.test(puppetMode)) {
+  if (typeof require('../run/spirit/puppetMode').puppetIn === 'function' && /owner\.json/.test(puppetMode)) {
     test.check('the owner lock exists as a unit — puppetMode.puppetIn and the node\'s owner.json, asserted '
       + 'in ownerFile.js: owner.json { owner } makes a puppet, read on every call, a node owning itself is '
       + 'none, anything not a key means nobody');
@@ -217,7 +217,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // not yet written, and the one built used none of them. So the
   // declaration could not see a built, tested door. A probe must name what
   // was AGREED, which is why G10 below names puppetMode.faceDoor.
-  if (typeof require('../run/js/puppetMode').puppetDoor === 'function') {
+  if (typeof require('../run/spirit/puppetMode').puppetDoor === 'function') {
     test.check('the owner door exists as a unit — puppetMode.puppetDoor, asserted in puppetDoor.js: the '
       + 'owner\'s signed command to a carried group runs and is answered, an uncarried group is refused by '
       + 'name, strangers get silence, a failing handler fails alone, now or later');
@@ -235,7 +235,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // AGREED with claude-windows for slice 2, puppetMode.faceDoor, so it goes
   // red the moment the unit exists and asks for its assertions.
   test.awaiting('puppets/G10', 'the face door and the puppet group',
-    typeof require('../run/js/puppetMode').faceDoor === 'function',
+    typeof require('../run/spirit/puppetMode').faceDoor === 'function',
     'visitors through the face reach only the puppet group; a face request naming a node verb answers '
     + 'exactly as an unknown verb; both ends of the face door are app-blind',
     { there: 0, cost: 'a sitting, after its prerequisite',
@@ -277,7 +277,7 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
   // node's router sends it signed by THIS node key. The basis of the sibling case stands.
   // SINCE goal/G30.4 the peer family is mounted with bare verbs ('post' in loopbackVerbs.mount('peer', ...)), so the
   // declaration is looked for from the start of that mount on.
-  const surface = read('spirit/run/js/server.js');
+  const surface = read('spirit/run/spirit/server.js');
   const peerMount = surface.indexOf("loopbackVerbs.mount('peer',");
   const takesText = peerMount !== -1 && surface.indexOf("'post': { request: { to: '', text: ''", peerMount) !== -1;
   const passesThrough = surface.indexOf('hub.handlePost(rq, rs, readJsonBody, { router: peerRouter') !== -1;
@@ -323,7 +323,7 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
 // that the signed format exists and is distinct from the transport one, which
 // is the property the whole requirement rests on.
 {
-  const a = require('../run/js/relayAuth');
+  const a = require('../run/spirit/relayAuth');
   const owner = a.generateIdentity('o');
   const target = a.generateIdentity('t');
   const cmd = 'x';

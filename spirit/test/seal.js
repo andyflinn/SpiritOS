@@ -17,8 +17,8 @@
 // only thing it must not have is meaning.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
 
 test.startTest('A sealed post opens for one recipient and nobody else');
 

@@ -2,9 +2,9 @@
 const rollOf = require('./rollOf');
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, installedRelay } = require('./ownerClaim');
-const invites = require('../run/js/invites');
+const invites = require('../run/spirit/invites');
 // A relay installed for its owner with nobody on its roll yet, which is the
 // only world in which the act of claiming can be watched happening. Since
 // goal/G16.8 the install names the owner (ownerClaim.installedRelay), so the

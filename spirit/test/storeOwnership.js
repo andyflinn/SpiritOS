@@ -37,7 +37,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 
-const RUN_JS = path.join(__dirname, '..', 'run', 'js');
+const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 
 test.startTest('Store ownership — one module per store, and no way round it');
 

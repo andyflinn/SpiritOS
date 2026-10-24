@@ -38,7 +38,7 @@ const scenarioGrammar = require('./scenario');
 // READ ONLY, and the same rule labPopulate carries at the top of itself:
 // the key in spirit/run/relay-state/identity.json owns
 // spirit.andyflinn.com. This file signs with it and never writes it.
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 
 const MASTER = require('./labMaster/labPaths').MASTER;
 const WORK_URL = 'http://127.0.0.1:65432';

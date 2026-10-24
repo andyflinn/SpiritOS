@@ -40,11 +40,11 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const nodeCard = require('../run/js/nodeCard');
-const relayStore = require('../run/js/relayStore');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const nodeCard = require('../run/spirit/nodeCard');
+const relayStore = require('../run/spirit/relayStore');
+const { createRelay } = require('../run/spirit/relay');
 
 test.startTest('Sealed, then signed, then hashed — and nobody is exempt');
 
@@ -162,7 +162,7 @@ test.subHeading("cycle 10's R7, closed by goal/G22.6: no place in the tree turns
   //
   // `oneDoor.js` counts implementations for the same reason (cycle 10's
   // R8 amended, same cycle). This is that discipline pointed at an exemption.
-  const root = path.resolve(__dirname, '..', 'run', 'js');
+  const root = path.resolve(__dirname, '..', 'run', 'spirit');
   const found = [];
   (function walk(dir) {
     fs.readdirSync(dir).forEach(function (name) {

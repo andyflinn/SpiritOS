@@ -55,9 +55,9 @@ const http = require('http');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const PAYLOAD_MAX = require('../run/js/limits.js').PAYLOAD_MAX;
-const coreFiles = require('../run/js/coreFiles.js');
+const appClient = require('../run/spirit/appClient.js');
+const PAYLOAD_MAX = require('../run/spirit/limits.js').PAYLOAD_MAX;
+const coreFiles = require('../run/spirit/coreFiles.js');
 
 const OWED = 'OWED by goal/G33.4: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
@@ -243,7 +243,7 @@ async function freshDesk() {
   const claim = await A.call('claim', { id: iid, phase: 'build', commit: 'abcdef1' }, AGENT);
   if (!took(claim)) test.comment('the claim answered ' + short(claim.body));
   await A.call('check.add', { id: iid, kind: 'Q', words: 'Is the table keyed?', test: '' }, AGENT);
-  const core = ['spirit/run/js/kernel.js', 'spirit/run/js/relay.js', 'spirit/run/js/appServer.js'].filter(function (p) { return coreFiles.isCore(p) === true; })[0] || '';
+  const core = ['spirit/run/spirit/kernel.js', 'spirit/run/spirit/relay.js', 'spirit/run/spirit/appServer.js'].filter(function (p) { return coreFiles.isCore(p) === true; })[0] || '';
   // goal/G40.3: one add per path.
   for (const p of [core, 'spirit/test/deskTables.js']) await A.call('item.files.add', { id: iid, path: p }, AGENT);
 

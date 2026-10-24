@@ -28,7 +28,7 @@ test.startTest('fileTransfer goal/G1.4: appServer publishes every object, no coa
 
 test.subHeading('the coalescing machinery is gone from appServer');
 // publish moved into spirit.core.jobs (kernel.js) under goal/G29.15, so both files are read.
-const appServer = code(path.join(RUN, 'js', 'appServer.js')) + '\n' + code(path.join(RUN, 'js', 'kernel.js'));
+const appServer = code(path.join(RUN, 'spirit', 'appServer.js')) + '\n' + code(path.join(RUN, 'spirit', 'kernel.js'));
 const left = ['PUBLISH_EVERY_MS', 'publishPending', 'publishTimer', 'publishLast'].filter(function (name) {
   return appServer.indexOf(name) !== -1;
 });
@@ -41,7 +41,7 @@ else test.fail(OWED + 'the size cap went with the coalescing');
 
 test.subHeading('no comment still describes the coalescing');
 const said = [
-  path.join(RUN, 'js', 'appServer.js'),
+  path.join(RUN, 'spirit', 'appServer.js'),
   path.join(RUN, 'process', 'js', 'desk', 'desk.js'),
   path.join(RUN, 'shell', 'desk', 'desk.js'),
   path.join(__dirname, 'deskRows.js'),

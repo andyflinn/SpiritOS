@@ -35,10 +35,10 @@ const OWED = 'OWED by goal/G4.19: ';
 const ROOT = path.resolve(__dirname, '..', '..');
 const WORST = path.join(__dirname, 'memberRowWorst.js');
 const FRESH = path.join(__dirname, 'capacityFresh.js');
-const rules = require('../run/js/fieldRules.js');
-const relayStore = require('../run/js/relayStore');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
+const rules = require('../run/spirit/fieldRules.js');
+const relayStore = require('../run/spirit/relayStore');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
 
 // The lines that are code: a whole-line // comment dropped (capacityFresh's header holds a /* inside a path).
 function code(file) { return fs.readFileSync(file, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); }

@@ -91,9 +91,9 @@ async function pickModel(wanted, fallback, waitHours, log) {
 // Which files, in which order: those changed since `since` first, then the
 // rest of spirit/run/js, smallest first — the most reviewed per hour.
 function filesToReview(since) {
-  const all = fs.readdirSync(path.join(REPO, 'spirit', 'run', 'js'))
+  const all = fs.readdirSync(path.join(REPO, 'spirit', 'run', 'spirit'))
     .filter(function (f) { return f.endsWith('.js'); })
-    .map(function (f) { return 'spirit/run/js/' + f; });
+    .map(function (f) { return 'spirit/run/spirit/' + f; });
   let changed = [];
   if (since) {
     try {

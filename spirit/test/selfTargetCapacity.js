@@ -31,8 +31,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
-const { createRelay } = require('../run/js/relay.js');
+const auth = require('../run/spirit/relayAuth.js');
+const { createRelay } = require('../run/spirit/relay.js');
 const { sealFor } = require('./openReply.js');
 
 const OWED = 'OWED by goal/G16.2: ';
@@ -98,7 +98,7 @@ test.startTest('goal/G16.2: the relay as target has capacity of its own');
 // then checks that the relay hands the router what it needs to apply it.
 test.subHeading('1. the router does not count a route whose target is the relay itself');
 {
-  const routerTable = require('../run/js/router.js');
+  const routerTable = require('../run/spirit/router.js');
   const RELAY_KEY = 'MCowBQYDK2VwAyEAselfTargetCapacityRelayOwnKeyAAAAAAAA=';
   const A = 'MCowBQYDK2VwAyEAselfTargetCapacityRequesterAAAAAAAAA=';
   const B = 'MCowBQYDK2VwAyEAselfTargetCapacityRequesterBBBBBBBBB=';
@@ -130,7 +130,7 @@ test.subHeading('1. the router does not count a route whose target is the relay 
 // ── 2. AND THE RELAY TELLS IT WHICH KEY IS ITS OWN ─────────────────
 test.subHeading('2. the relay hands the router its own key, or the rule cannot fire');
 {
-  const src = fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8')
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'relay.js'), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
   const made = (src.match(/createRouter\(([\s\S]{0,200}?)\)/) || [''])[0];
   if (/selfKey/.test(made)) test.check('relay.js builds its router with selfKey, so the router can tell its own traffic from a member\'s');
@@ -159,7 +159,7 @@ test.subHeading('3. a member\'s own in-flight cap still bounds what it asks the 
 // rather than by sending the 600 posts a minute the cap allows.
 test.subHeading('5. a post is charged to the sender only once its signature is proven (S4)');
 {
-  const src = fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8')
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'relay.js'), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
   const fn = src.indexOf('function routePost');
   const body = fn === -1 ? '' : src.slice(fn, src.indexOf('\n  function ', fn + 10));

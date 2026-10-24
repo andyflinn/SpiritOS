@@ -41,7 +41,7 @@
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
-const limits = require('../run/js/limits.js');
+const limits = require('../run/spirit/limits.js');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
@@ -214,7 +214,7 @@ function shutdown() {
 
 freePort()
   .then(function (port) {
-    child = spawn(process.execPath, ['js/server.js', '--port', String(port)], {
+    child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], {
       cwd: nodeRoot,
       env: Object.assign({}, process.env, { ANTHROPIC_API_KEY: ENV_KEY_SENTINEL, GROK_API_KEY: GROK_KEY_SENTINEL }),
       stdio: ['ignore', 'ignore', 'pipe'],
@@ -242,11 +242,11 @@ freePort()
   .then(function (port) {
     // Same gate, a module rather than a key: js/relayAuth.js is on
     // UNSERVABLE_FILES and has no browser half at all.
-    return request(port, 'GET', '/x%2f..%2fjs%2frelayAuth.js').then(function (r) {
+    return request(port, 'GET', '/x%2f..%2fspirit%2frelayAuth.js').then(function (r) {
       if (r.status === 200 && r.text.indexOf('function verify') !== -1) {
-        test.fail('encoded traversal SERVED js/relayAuth.js source');
+        test.fail('encoded traversal SERVED spirit/relayAuth.js source');
       } else {
-        test.check('encoded traversal to js/relayAuth.js refused (HTTP ' + r.status + ')');
+        test.check('encoded traversal to spirit/relayAuth.js refused (HTTP ' + r.status + ')');
       }
       return port;
     });
@@ -303,16 +303,16 @@ freePort()
       fs.writeFileSync(ENTRY_SCRIPT, before, 'utf8');
       return request(port, 'POST', '/api/spirit', {
         verb: 'fs.save',
-        path: 'shell/../js/serverSurface-probe.js',
+        path: 'shell/../spirit/serverSurface-probe.js',
         content: '// serverSurface.js probe — must never reach disk',
       });
     }).then(function (r) {
-      const escaped = fs.existsSync(path.join(nodeRoot, 'js', 'serverSurface-probe.js'));
+      const escaped = fs.existsSync(path.join(nodeRoot, 'spirit', 'serverSurface-probe.js'));
       if (r.status === 403 && !escaped) {
         test.check('fs.save refused a non-canonical spelling that leaves the writable roots (HTTP 403)');
       } else {
-        test.fail('fs.save answered HTTP ' + r.status + ' to shell/../js/, on disk ' + escaped);
-        try { fs.unlinkSync(path.join(nodeRoot, 'js', 'serverSurface-probe.js')); } catch (e) { /* none */ }
+        test.fail('fs.save answered HTTP ' + r.status + ' to shell/../spirit/, on disk ' + escaped);
+        try { fs.unlinkSync(path.join(nodeRoot, 'spirit', 'serverSurface-probe.js')); } catch (e) { /* none */ }
       }
       return port;
     });
@@ -692,7 +692,7 @@ freePort()
       // server, because there is no verb that lists verbs — and inventing
       // one to satisfy a test would put a door in the register to check
       // the register.
-      const serverSrc = fs.readFileSync(path.join(nodeRoot, 'js', 'server.js'), 'utf8');
+      const serverSrc = fs.readFileSync(path.join(nodeRoot, 'spirit', 'server.js'), 'utf8');
       const claimed = [];
       // EVERY CLAIM, WHATEVER ITS VALUE. This matched only `': function`,
       // so a verb claimed as `proxyVerb(...)` or `handleCreateJob` was
@@ -770,7 +770,7 @@ freePort()
       // yet. That is the failure mode the doors had — correct in
       // isolation, and one more place for the next one to be forgotten.
       let hubSrc = '';
-      try { hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8'); }
+      try { hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'hub.js'), 'utf8'); }
       catch (e) { hubSrc = ''; }
       const callers = [];
       hubSrc.split('\n').forEach(function (line, i) {

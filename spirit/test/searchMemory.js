@@ -17,12 +17,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayKeys = require('../run/js/relayKeys');
-const contactBook = require('../run/js/contacts');
+const auth = require('../run/spirit/relayAuth');
+const relayKeys = require('../run/spirit/relayKeys');
+const contactBook = require('../run/spirit/contacts');
 // goal/G29.22: the old graded search is gone; the peer search's slots live in peerRank.
-const peerRank = require('../run/js/peerRank');
-const hubModule = require('../run/js/hub');
+const peerRank = require('../run/spirit/peerRank');
+const hubModule = require('../run/spirit/hub');
 
 const RELAY = 'http://relay-a.example';
 const SLOTS = peerRank.SLOTS;
@@ -190,7 +190,7 @@ async function run() {
     T.note('K-OLD-FRIEND', { at: 'RK-B', label: 'carl friend' });
     for (let n = 0; n < 10; n += 1) T.note('K-CARL-' + n, { at: 'RK-B', label: 'carl ' + n });
     // seen is a millisecond clock; make the order unambiguous.
-    const st = require('../run/js/nodeStore').open(C);
+    const st = require('../run/spirit/nodeStore').open(C);
     st.seen.put('K-OLD-FRIEND', { seen: 1 });
     for (let n = 0; n < 10; n += 1) st.seen.put('K-CARL-' + n, { seen: 100 + n });
 

@@ -20,15 +20,15 @@
 const test = require('./testSupport.js');
 const wirePaths = require('./tools/wirePaths.js');
 
-const PEER_POST = 'spirit/run/js/peerPost.js';
+const PEER_POST = 'spirit/run/spirit/peerPost.js';
 const GATE_RE = /^spirit\/run\/[A-Za-z0-9_\-/.]+\.js::[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 // The items that asked for a door before the list existed, and what each asked: goal/G19.14 the two components of
 // peerPost, goal/G22.2 the relay (Node's http, https and fetch, filtered to /api/relay/), each gated inside peerPost.
 const WANTED = {
   'goal/G19.14': [
-    { endpoint: 'spirit/run/js/presenceNode.js' },
-    { endpoint: 'spirit/run/js/postQueue.js' },
+    { endpoint: 'spirit/run/spirit/presenceNode.js' },
+    { endpoint: 'spirit/run/spirit/postQueue.js' },
   ],
   'goal/G22.2': [
     // NO PATHS PINNED (Andy, 2026-10-13: no silent filters; every entry point is tested). Which requests the door

@@ -26,13 +26,13 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by slim/G1.5: ';
 const RUN = path.join(__dirname, '..', 'run');
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-const jobs = require('../run/js/jobs.js')(kernel, 65433);
+const jobs = require('../run/spirit/jobs.js')(kernel, 65433);
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-moduleids-'));
 const started = [];
 const runsHome = require('./tools/runsHome.js');
@@ -50,7 +50,7 @@ function plantNode() {
   fs.writeFileSync(path.join(srv, 'keeper.js'), 'setInterval(function () {}, 1000);\n');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
-  const auth = require('../run/js/relayAuth.js');
+  const auth = require('../run/spirit/relayAuth.js');
   auth.saveIdentity(run, auth.generateIdentity('moduleids'));
   // Run at home: this suite is about ids, not about where a module runs (goal/G30.20).
   runsHome(run, 'process/js/counter');

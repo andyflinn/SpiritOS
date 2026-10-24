@@ -74,7 +74,7 @@ function run(handler, body) {
 
   test.subHeading('1. the flat apiDoor has its own front');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'g305-'));
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   table.mount('xfs', dir, {
     stat: { request: { path: '' }, reply: { size: 0 }, handler: function (rq, rs) { rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end(JSON.stringify({ size: 7 })); } },
   }, { wire: false, by: 'test' });
@@ -113,7 +113,7 @@ function run(handler, body) {
   if (none === null) test.check('a family nobody serves has no handler, so the door answers it no such verb');
   else test.fail(OWED + 'nope.x has a handler: ' + short(typeof none));
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* busy */ }
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   if (/nodeDoor\.handlerFor\(verb\)/.test(server) && !/loopbackVerbs\.handlerFor\(verb\)/.test(server)) test.check('server.js: /api/spirit dispatches through nodeDoor.handlerFor, not the verb table alone');
   else test.fail(OWED + 'server.js /api/spirit does not dispatch through the flat apiDoor');
 
@@ -146,7 +146,7 @@ function run(handler, body) {
   const manifest = (function () { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'introSpector', 'introSpector.json'), 'utf8')); } catch (e) { return null; } }());
   if (manifest && manifest.name === 'introSpector' && manifest.icon === 'GLASSES' && manifest.intrinsic === true) test.check('shell/introSpector/introSpector.json: name introSpector, icon GLASSES, intrinsic');
   else test.fail(OWED + 'the manifest is ' + short(manifest));
-  if (/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'introSpector'/.test(code('js/client/shell.js'))) test.check('introSpector is on INTRINSIC_APP_FOLDERS');
+  if (/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'introSpector'/.test(code('spirit/client/shell.js'))) test.check('introSpector is on INTRINSIC_APP_FOLDERS');
   else test.fail(OWED + 'introSpector is not on INTRINSIC_APP_FOLDERS');
   const app = code('shell/introSpector/introSpector.js');
   const uses = {

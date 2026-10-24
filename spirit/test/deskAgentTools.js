@@ -35,7 +35,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G14.6: ';
 const ROOT = path.join(__dirname, '..', '..');
@@ -197,10 +197,10 @@ async function suite() {
   // describes fetch to an agent again, as goal/G14.6 first built it; netFence.js asserts the fence.
   test.subHeading('1. net.fetch is described to agents again');
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(path.join(RUN, 'js', 'net'), { declared: ['fetch'], prefix: 'net.' }); } catch (e) { family = null; }
+  try { family = require('../run/spirit/introSpector.js').family(path.join(RUN, 'spirit', 'net'), { declared: ['fetch'], prefix: 'net.' }); } catch (e) { family = null; }
   // Since goal/G30.4 the family carries FS, and fetch.json is read through net.FS.loadJsonValue.
   const fetchFile = family && family.verbs['net.FS.loadJsonValue'] ? family.verbs['net.FS.loadJsonValue'].handler({ path: 'fetch.json' }).value : null;
-  if (fs.existsSync(path.join(RUN, 'js', 'net', 'fetch.json')) && fetchFile && typeof fetchFile.description === 'string' && !family.stale.length) test.check('js/net/fetch.json, and the family of js/net reads it through net.FS.loadJsonValue');
+  if (fs.existsSync(path.join(RUN, 'spirit', 'net', 'fetch.json')) && fetchFile && typeof fetchFile.description === 'string' && !family.stale.length) test.check('spirit/net/fetch.json, and the family of js/net reads it through net.FS.loadJsonValue');
   else test.fail('goal/G29.20: the net family does not describe fetch: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale }));
 
   // ── 2. THE OBJECT ───────────────────────────────────────────────────────

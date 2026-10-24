@@ -50,7 +50,7 @@ const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
+const auth = require('../run/spirit/relayAuth.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const ROTATION_CLAIMS = 50;
@@ -61,7 +61,7 @@ test.startTest('Relay route gates (relay.js / relayAuth.js)');
 const targets = setupRelayFakes();
 const relayNode = targets.relay;
 const RELAY_STATE = path.join(relayNode, 'relay-state');
-const createRelay = require(path.join(relayNode, 'js', 'relay.js')).createRelay;
+const createRelay = require(path.join(relayNode, 'spirit', 'relay.js')).createRelay;
 
 // createRelay() reads both files at construction, so each phase below gets
 // a clean slate written before it builds its own relay.
@@ -69,7 +69,7 @@ function resetState(ownerKey) {
   // The relay's data is a SQLite file since cycle 3, and Windows will not
   // delete a directory holding an open one: release it first.
   // The relay's own copy of the module — it runs out of the fake tree.
-  require(path.join(relayNode, 'js', 'relayStore.js')).closeAll();
+  require(path.join(relayNode, 'spirit', 'relayStore.js')).closeAll();
   fs.rmSync(RELAY_STATE, { recursive: true, force: true });
   fs.mkdirSync(RELAY_STATE, { recursive: true });
   // The relay's own identity, which lives in this folder: a stream header
@@ -226,14 +226,14 @@ test.subHeading('Keys mode: what a signature is actually required for');
 // not hold, rotating both the name and the key, all from one address.
 test.subHeading('A claim flood from one address is held, whatever names and keys it rotates');
 {
-  const seal = require(path.join(relayNode, 'js', 'seal.js'));
+  const seal = require(path.join(relayNode, 'spirit', 'seal.js'));
   const owner = auth.generateIdentity('owner');
   const squatters = [];
   for (let i = 0; i < ROTATION_CLAIMS; i++) {
     squatters.push(auth.generateIdentity('squatter' + i));
   }
   resetState(owner.publicKey);
-  const relayInvites = require(path.join(relayNode, 'js', 'invites.js'));
+  const relayInvites = require(path.join(relayNode, 'spirit', 'invites.js'));
   const tokens = squatters.map(function (s, i) {
     return relayInvites.add(relayNode, { label: 'squatter' + i, days: 1 }).token;
   });
@@ -328,7 +328,7 @@ resetState(null); // no owner.json: unowned, refuses every claim (goal/G16.8)
 freePort()
   .then(function (port) {
     let output = '';
-    child = spawn(process.execPath, ['js/server.js', '--relay', '--port', String(port)], {
+    child = spawn(process.execPath, ['spirit/server.js', '--relay', '--port', String(port)], {
       cwd: relayNode,
       stdio: ['ignore', 'pipe', 'pipe'],
     });

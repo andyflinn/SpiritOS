@@ -138,6 +138,24 @@ git reset --hard "$REMOTE"
 # shellcheck source=lib.sh
 source "$REPO_ROOT/bash/lib.sh"
 
+# A CHANGED UNIT TEMPLATE IS INSTALLED AGAIN (goal/G40.2). Andy, to the
+# relays' units: "teach bash to re-install a changed unit." The unit
+# systemd runs is a copy install-units wrote into /etc/systemd/system, so
+# a pull alone leaves it as it was (G40.2 moved the start path to
+# spirit/server.js). When this update changed the template, install-units
+# runs again before the restart, under the owner the relay already has:
+# it refuses without OWNER_KEY and never replaces an owner.
+if unit_known "$UNIT_NAME" && ! git diff --quiet "$LOCAL" "$REMOTE" -- "bash/systemd/${UNIT_TEMPLATE}.service"; then
+  CURRENT_OWNER=$(node -e 'process.stdout.write(require(process.argv[1] + "/spirit/relayAuth").loadOwner(process.argv[2]) || "")' \
+    "$RUN_DIR" "$RUN_DIR" 2>/dev/null) || CURRENT_OWNER=""
+  if [ -n "$CURRENT_OWNER" ]; then
+    say "the unit template changed — install-units again"
+    OWNER_KEY="$CURRENT_OWNER" "$REPO_ROOT/bash/install-units" || die "install-units failed; the installed unit still starts the old path"
+  else
+    warn "the unit template changed, but no owner is on record here: run OWNER_KEY=<owner key> $REPO_ROOT/bash/install-units by hand"
+  fi
+fi
+
 # No pipe: see `unit_known` in lib.sh. This line reported "not
 # installed" on a box where the unit was installed, enabled and active,
 # so an update never restarted anything.

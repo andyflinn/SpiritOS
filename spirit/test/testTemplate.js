@@ -1,6 +1,6 @@
 'use strict';
 
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 test.startTest('Template Test');

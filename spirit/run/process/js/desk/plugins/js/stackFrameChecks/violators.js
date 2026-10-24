@@ -32,7 +32,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LIBRARY = 'spirit/run/js/relayRequest.js';
+const LIBRARY = 'spirit/run/spirit/relayRequest.js';
 const LIBRARY_NAME = 'relayRequest';
 const FRAME_RE = /^(spirit\/run\/(?:[^\s:]+\/)*[^\s:/]+\.js):(\d+)(?::([^\s]+))?((?: in [^\s]+)*)$/;
 

@@ -19,7 +19,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 // Since goal/G22.5 relayAuth does not export ensureIdentity: its first load
 // ensures the identity of the root it sits in. So each "start" below plants
 // relayAuth in the scratch root and loads it (plantIdentity.js), which is

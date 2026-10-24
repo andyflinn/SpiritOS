@@ -17,9 +17,9 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const appServer = require('../run/js/appServer.js');
-const limits = require('../run/js/limits.js');
+const appClient = require('../run/spirit/appClient.js');
+const appServer = require('../run/spirit/appServer.js');
+const limits = require('../run/spirit/limits.js');
 
 const OWED = 'OWED by oversize: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');

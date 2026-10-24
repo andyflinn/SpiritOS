@@ -10,7 +10,7 @@ say "2. stop anything still bound to public :80 that is not caddy"
 if have ss; then
   ss -tlnp | grep ':80 ' || true
 fi
-# Old stitch: node js/server.js --relay on PORT=80. Stop our unit first so
+# Old stitch: node spirit/server.js --relay on PORT=80. Stop our unit first so
 # we can re-start it on 65430; operator may still have a manual node on :80.
 if have systemctl; then
   systemctl stop "$UNIT_NAME" 2>/dev/null || true

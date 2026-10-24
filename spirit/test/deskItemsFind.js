@@ -24,7 +24,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G3.13 (goal/G33.7): ';
 const RUN = path.join(__dirname, '..', 'run');

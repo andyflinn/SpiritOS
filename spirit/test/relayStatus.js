@@ -22,10 +22,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const relayStatus = require('../run/js/relayStatus');
-const createRelay = require('../run/js/relay');
-const invitesModule = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const relayStatus = require('../run/spirit/relayStatus');
+const createRelay = require('../run/spirit/relay');
+const invitesModule = require('../run/spirit/invites');
 
 test.startTest('Relay status — the owner is told, and only the owner');
 

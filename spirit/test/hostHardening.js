@@ -88,10 +88,10 @@ test.subHeading('It is still the relay this repo means to run');
   } else {
     test.fail('ExecStart does not pass --relay: ' + JSON.stringify(exec));
   }
-  if (exec && exec.indexOf('js/server.js') !== -1) {
-    test.check('ExecStart is js/server.js from WorkingDirectory');
+  if (exec && exec.indexOf('spirit/server.js') !== -1) {
+    test.check('ExecStart is spirit/server.js from WorkingDirectory');
   } else {
-    test.fail('ExecStart is not js/server.js: ' + JSON.stringify(exec));
+    test.fail('ExecStart is not spirit/server.js: ' + JSON.stringify(exec));
   }
 }
 

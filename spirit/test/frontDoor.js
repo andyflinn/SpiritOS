@@ -29,12 +29,12 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { sealedPost } = require('./openReply');
-const peerPost = require('../run/js/peerPost');
-const relayKeys = require('../run/js/relayKeys');
-const contactBook = require('../run/js/contacts');
-const hub = require('../run/js/hub');
+const peerPost = require('../run/spirit/peerPost');
+const relayKeys = require('../run/spirit/relayKeys');
+const contactBook = require('../run/spirit/contacts');
+const hub = require('../run/spirit/hub');
 const world = require('./world');
 
 test.startTest('The front door — a signature is not an introduction');

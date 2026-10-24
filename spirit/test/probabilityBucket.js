@@ -27,7 +27,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G18.4: ';
-const MODULE = path.join(__dirname, '..', 'run', 'js', 'probabilityBucket.js');
+const MODULE = path.join(__dirname, '..', 'run', 'spirit', 'probabilityBucket.js');
 
 test.startTest('goal/G18.4: probabilityBucket, seated by probability, serialized to a ceiling');
 

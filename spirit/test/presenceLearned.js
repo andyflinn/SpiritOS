@@ -17,7 +17,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const hub = require('../run/js/hub');
+const hub = require('../run/spirit/hub');
 
 function home() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-learned-'));

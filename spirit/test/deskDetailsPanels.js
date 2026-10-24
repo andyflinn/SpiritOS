@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G30.8: ';
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
@@ -83,11 +83,11 @@ function dialog(answer) {
   return { dd: dd, asked: asked, html: html, page: page, click: click };
 }
 const facts = JSON.stringify({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: '', buttons: ['done'],
-  blocking: ['t/G1'], blocked: [], files: [{ path: 'spirit/run/js/hub.js', by: 'claude-windows', core: true }] });
+  blocking: ['t/G1'], blocked: [], files: [{ path: 'spirit/run/spirit/hub.js', by: 'claude-windows', core: true }] });
 function answer(checks) {
   // goal/G33.8: item.files answers the file the grant covers, so the files panel draws both.
   return { item: facts, box: 'BOX-TEXT', version: 2, change: 7, checks: checks, chat: [{ by: 'andy', at: '2026-10-20T10:00:00Z', text: 'CHAT-HELLO' }],
-    files: [{ path: 'spirit/run/js/hub.js', by: 'claude-windows', core: true }], filesMore: false };
+    files: [{ path: 'spirit/run/spirit/hub.js', by: 'claude-windows', core: true }], filesMore: false };
 }
 
 (async function () {

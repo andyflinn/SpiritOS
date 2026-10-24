@@ -39,9 +39,9 @@ const read = (rel) => {
 
 test.startTest('The transport cycle, what is still owed');
 
-const shell = read('spirit/run/js/client/shell.js');
-const server = read('spirit/run/js/server.js');
-const trafficLog = read('spirit/run/js/trafficLog.js');
+const shell = read('spirit/run/spirit/client/shell.js');
+const server = read('spirit/run/spirit/server.js');
+const trafficLog = read('spirit/run/spirit/trafficLog.js');
 
 test.subHeading('the transport cycle R12 — an app can reply, and a reply is the only evidence of being delivered');
 

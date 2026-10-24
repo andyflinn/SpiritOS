@@ -46,12 +46,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const peerPost = require('../run/js/peerPost');
-const trafficLog = require('../run/js/trafficLog');
-const routerTable = require('../run/js/router');
-const nodeCard = require('../run/js/nodeCard');
-const contacts = require('../run/js/contacts');
+const auth = require('../run/spirit/relayAuth');
+const peerPost = require('../run/spirit/peerPost');
+const trafficLog = require('../run/spirit/trafficLog');
+const routerTable = require('../run/spirit/router');
+const nodeCard = require('../run/spirit/nodeCard');
+const contacts = require('../run/spirit/contacts');
 
 test.startTest('A node with no card asks for one before it posts');
 

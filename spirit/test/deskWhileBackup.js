@@ -23,7 +23,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by the desk-while-backup finding: ';
 const RUN_JS = path.join(__dirname, '..', 'run', 'process', 'js');

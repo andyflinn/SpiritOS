@@ -5,10 +5,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const invites = require('../run/spirit/invites');
+const { createRelay } = require('../run/spirit/relay');
 
 function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-invites-'));
@@ -325,7 +325,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
     // expired row, which is correct and makes one unmakeable through the
     // door. (It was a hand-written invites.json until cycle 3 moved the
     // waiting room into relay-state/relay.db.)
-    require('../run/js/relayStore').open(home).invites.add({
+    require('../run/spirit/relayStore').open(home).invites.add({
       token: token, label: label, invitedBy: 'andy',
       expiresAt: new Date(Date.now() - 60000).toISOString(),
     });

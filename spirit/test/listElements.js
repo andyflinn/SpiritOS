@@ -35,8 +35,8 @@ const missing = typed.filter(function (f) { return !exists(f) || index.indexOf('
 if (!missing.length) test.check('files and contacts each have rowElement, listElement and data.js, loaded by index.html');
 else test.fail(OWED + 'missing or not loaded: ' + missing.join(', '));
 const gone = ['shell/js/rows/fileElement.js', 'shell/js/rows/contactElement.js', 'shell/js/contactSearch.js', 'shell/js/fileSelector.js'].filter(exists);
-if (!gone.length && !/createFileSelector/.test(code('js/client/shell.js'))) test.check('the old places are gone: rows/, contactSearch.js, the file selector and its api entry');
-else test.fail(OWED + 'still there: ' + gone.join(', ') + (/createFileSelector/.test(code('js/client/shell.js')) ? ', createFileSelector' : ''));
+if (!gone.length && !/createFileSelector/.test(code('spirit/client/shell.js'))) test.check('the old places are gone: rows/, contactSearch.js, the file selector and its api entry');
+else test.fail(OWED + 'still there: ' + gone.join(', ') + (/createFileSelector/.test(code('spirit/client/shell.js')) ? ', createFileSelector' : ''));
 const sd = code('shell/js/spiritData.js');
 if (sd && !/fs-watcher|relay-presence|peer-search/.test(sd) && /translate/.test(sd) && /fs-watcher/.test(code('shell/js/files/data.js')) && /relay-presence/.test(code('shell/js/contacts/data.js')))
   test.check('spirit.data is the tree only; each type\'s translator is its data.js');
@@ -94,13 +94,13 @@ const faceOf = function (m) { try { return (JSON.parse(raw(m + '/' + m.split('/'
 const faced = ['shell/contacts', 'shell/files', 'shell/mediaViewer'].filter(function (m) { const r = runsOf(m) || []; return faceOf(m) && r.indexOf('home') !== -1; });
 if (manifests.length > 10 && !noRuns.length && faced.length === 3) test.check('every manifest says where it runs; Contacts, Files and Media Viewer at home and on the face');
 else test.fail(OWED + 'no runs in ' + noRuns.join(', ') + '; home and face: ' + faced.join(', '));
-const listGone = ['js/includeList.js', 'process/js/desk/onboard.js', 'process/js/desk/offboard.js'].filter(exists);
-const verbsLeft = ['js/server.js', 'js/jobs.js', 'js/client/shell.js', 'face/shell.js', 'shell/js/textViewer.js']
+const listGone = ['spirit/includeList.js', 'process/js/desk/onboard.js', 'process/js/desk/offboard.js'].filter(exists);
+const verbsLeft = ['spirit/server.js', 'spirit/jobs.js', 'spirit/client/shell.js', 'face/shell.js', 'shell/js/textViewer.js']
   .filter(function (f) { return /searchModules|setModules|includeList/.test(code(f)); });
 if (!listGone.length && !verbsLeft.length) test.check('the include list is gone: its file, its reader, config.setModules and config.searchModules, onboarding and offboarding');
 else test.fail(OWED + 'still there: ' + listGone.concat(verbsLeft).join(', '));
 const faceCode = code('face/shell.js');
-if (/watch\('files'/.test(faceCode) && /'fs\.annotations'/.test(faceCode) && /runs/.test(code('js/client/shell.js')) && /runs/.test(code('js/jobs.js')))
+if (/watch\('files'/.test(faceCode) && /'fs\.annotations'/.test(faceCode) && /runs/.test(code('spirit/client/shell.js')) && /runs/.test(code('spirit/jobs.js')))
   test.check('both shells find their apps in data.files and read runs; the node starts what says home');
 else test.fail(OWED + 'the face does not read data.files, or a shell or the node does not read runs');
 

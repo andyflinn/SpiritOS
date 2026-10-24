@@ -32,17 +32,17 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const errors = require('../run/js/spiritErrors.js');
-const { pipeRequest } = require('../run/js/relayRequest.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const errors = require('../run/spirit/spiritErrors.js');
+const { pipeRequest } = require('../run/spirit/relayRequest.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'owed by goal/G4.19: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const EAR = path.join(RUN, 'process', 'js', 'desk', 'deskAgentEar.js');
-const appServer = require('../run/js/appServer.js');
+const appServer = require('../run/spirit/appServer.js');
 
 const OWNER = { owner: true, key: 'MCowBQYDK2VwAyEAanswersCarryMoreOwnerAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const DESK_KEY = 'MCowBQYDK2VwAyEAanswersCarryMoreDeskNodeAAAAAAAAAAAAA=';

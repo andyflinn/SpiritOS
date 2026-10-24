@@ -23,7 +23,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.11: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -51,7 +51,7 @@ function page() {
   const doc = { createElement: node, getElementById: function (id) { if (!byId[id]) { byId[id] = node(); byId[id].id = id; } return byId[id]; }, addEventListener: function () {} };
   const win = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
   return { doc: doc, win: win, node: node };
@@ -72,13 +72,13 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const write = function (rel, text) { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
   write('notes/todo.txt', 'buy milk\nfix the shelf\nwhere did I put my screwdriver?\n');
   write('notes/many.txt', 'screwdriver one\nscrewdriver two\nno\nscrewdriver three\nscrewdriver four\nscrewdriver five\n');
-  write('js/tools.js', 'var a = 1;\n// the Screwdriver lives here\n');
+  write('spirit/tools.js', 'var a = 1;\n// the Screwdriver lives here\n');
   write('media/cat.png', 'screwdriver in a picture');
   write('big/huge.txt', 'x'.repeat(1024 * 1024 + 10) + '\nscrewdriver at the end\n');
   write('screwdriver/readme.md', 'nothing to see\n');
-  const tree = ['notes', 'notes/todo.txt', 'notes/many.txt', 'js', 'js/tools.js', 'media', 'media/cat.png', 'big', 'big/huge.txt', 'screwdriver', 'screwdriver/readme.md']
+  const tree = ['notes', 'notes/todo.txt', 'notes/many.txt', 'js', 'spirit/tools.js', 'media', 'media/cat.png', 'big', 'big/huge.txt', 'screwdriver', 'screwdriver/readme.md']
     .map(function (p) { return { name: path.basename(p), relativePath: p, kind: path.extname(p) ? 'file' : 'folder' }; });
-  const searches = require('../run/js/nodeSearches.js').createNodeSearches({
+  const searches = require('../run/spirit/nodeSearches.js').createNodeSearches({
     jobs: { fsTreeEntries: function () { return tree; } }, rootDir: root, mimeTypes: kernel.core.const.MIME_TYPES });
   const answer = searches.fsSearch({ q: 'screwdriver', contents: 'yes' });
   const order = ((answer && answer.items) || []).map(function (it) { return it.key; });
@@ -88,8 +88,8 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const many = byKey['notes/many.txt'] || {};
   if (todo.path === 'notes/todo.txt' && todo.line === 3 && typeof todo.score === 'number') test.check('notes/todo.txt is found by its contents: label {path, score, line}, line 3');
   else test.fail(OWED + 'notes/todo.txt answered ' + short(todo) + ' (all: ' + short(order) + ')');
-  if (byKey['js/tools.js'] && byKey['js/tools.js'].line === 2) test.check('case ignored: js/tools.js found at line 2 (Screwdriver)');
-  else test.fail(OWED + 'js/tools.js answered ' + short(byKey['js/tools.js']));
+  if (byKey['spirit/tools.js'] && byKey['spirit/tools.js'].line === 2) test.check('case ignored: js/tools.js found at line 2 (Screwdriver)');
+  else test.fail(OWED + 'spirit/tools.js answered ' + short(byKey['spirit/tools.js']));
   if (order[0] === 'notes/many.txt' && many.score > todo.score) test.check('more matched lines rank higher: notes/many.txt (5 lines) first, above notes/todo.txt (1 line)');
   else test.fail(OWED + 'the order is ' + short(order) + '; scores many ' + short(many.score) + ', todo ' + short(todo.score));
   if (todo.score > 0 && todo.score <= 1 / 11 + 1e-9 && many.score <= 5 / 15 + 1e-9) test.check('a file\'s score is at most m / (m + 10): ' + todo.score.toFixed(3) + ' for 1 line, ' + many.score.toFixed(3) + ' for 5');
@@ -106,15 +106,15 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
   // Since goal/G30.4 the fs family is mounted with its verbs bare: search inside loopbackVerbs.mount('fs', ...).
-  const server = code(path.join(RUN, 'js', 'server.js'));
+  const server = code(path.join(RUN, 'spirit', 'server.js'));
   const fsMount = (/loopbackVerbs\.mount\('fs',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
   if (/'search':\s*\{\s*request:\s*\{\s*q:\s*''\s*,\s*contents:\s*''\s*\}/.test(fsMount)) test.check('the node declares fs.search {q, contents}');
   else test.fail(OWED + 'server.js declares fs.search as ' + short((/'search':[^\n]*/.exec(fsMount) || [''])[0]));
   if (/createNodeSearches\(\{[^}]*rootDir[^}]*mimeTypes/.test(server)) test.check('the node hands the searches its run folder and the kernel\'s mimetypes');
   else test.fail(OWED + 'server.js makes the searches as ' + short((/createNodeSearches\([^\n]*/.exec(server) || [''])[0]));
-  const tool = parse(fs.readFileSync(path.join(RUN, 'js', 'fs', 'search.json'), 'utf8')) || {};
+  const tool = parse(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'search.json'), 'utf8')) || {};
   if (/contents/.test(String(tool.description)) && /score/.test(String(tool.description))) test.check('the agents\' tool says what contents does, and that it answers a score');
-  else test.fail(OWED + 'js/fs/search.json says ' + short(tool.description));
+  else test.fail(OWED + 'spirit/fs/search.json says ' + short(tool.description));
 
   // ── 2. the rank bar, every search ──
   test.subHeading('2. every search on the shared list shows its ranking as a bar');

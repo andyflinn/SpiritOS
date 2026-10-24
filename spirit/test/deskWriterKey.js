@@ -18,8 +18,8 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const { pipeRequest } = require('../run/js/relayRequest.js');
+const appClient = require('../run/spirit/appClient.js');
+const { pipeRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by apiAuth/G1.13: ';
 const RUN = path.join(__dirname, '..', 'run');

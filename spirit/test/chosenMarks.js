@@ -18,10 +18,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const seenPeers = require('../run/js/seenPeers');
-const nodeStore = require('../run/js/nodeStore');
-const contactBook = require('../run/js/contacts');
-const hub = require('../run/js/hub');
+const seenPeers = require('../run/spirit/seenPeers');
+const nodeStore = require('../run/spirit/nodeStore');
+const contactBook = require('../run/spirit/contacts');
+const hub = require('../run/spirit/hub');
 
 function home(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chosen-' + (tag || '') + '-'));

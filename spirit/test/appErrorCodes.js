@@ -35,13 +35,13 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const errors = require('../run/js/spiritErrors.js');
-const { pipeRequest } = require('../run/js/relayRequest.js');
-const appClient = require('../run/js/appClient.js');
+const errors = require('../run/spirit/spiritErrors.js');
+const { pipeRequest } = require('../run/spirit/relayRequest.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G16.11: ';
 const RUN = path.join(__dirname, '..', 'run');
-const HELPER = path.join(RUN, 'js', 'appServer.js');
+const HELPER = path.join(RUN, 'spirit', 'appServer.js');
 
 const APP_CODES = {
   desk: ['taken', 'box-moved', 'not-offered', 'no-such-item'],

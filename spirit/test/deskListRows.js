@@ -28,7 +28,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G40.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -111,8 +111,8 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 
   // ── 3. ONE GRANT FOR THE LIST ────────────────────────────────────────
   test.subHeading('3. one grant for the list, naming no path, living until Done');
-  await call('item.files.add', { id: ID, path: 'spirit/run/js/limits.js' }, CW);
-  await call('item.files.add', { id: ID, path: 'spirit/run/js/kernel.js' }, CW);
+  await call('item.files.add', { id: ID, path: 'spirit/run/spirit/limits.js' }, CW);
+  await call('item.files.add', { id: ID, path: 'spirit/run/spirit/kernel.js' }, CW);
   const g1 = (await grants(ID)).filter(function (c) { return c.state === 'open'; });
   if (g1.length === 1 && !/spirit\//.test(String(g1[0].words))) test.check('one open grant for the list, its words naming no path: ' + short(g1[0].words));
   else test.fail(OWED + 'the open grants are ' + short(g1.map(function (c) { return c.words; })));
@@ -126,7 +126,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   if (ok(pressed) && ok(moved) && keep.some(function (c) { return c.state === 'granted'; }) && !keep.some(function (c) { return c.state === 'open'; }))
     test.check('his one press grants it; a non-core add and the red finishing leave it granted, nothing asked again');
   else test.fail(OWED + 'after his grant, a non-core add and the red finishing (' + short(moved.status + ' ' + why(moved)) + '): ' + short(keep.map(function (c) { return c.number + ' ' + c.state; })));
-  await call('item.files.add', { id: ID, path: 'spirit/run/js/hub.js' }, CW);
+  await call('item.files.add', { id: ID, path: 'spirit/run/spirit/hub.js' }, CW);
   const voided = await grants(ID);
   if (voided.some(function (c) { return c.state === 'open'; }) && !voided.some(function (c) { return c.state === 'granted' && c.number === (g1[0] && g1[0].number); }))
     test.check('a core file added after the grant voids it; the item asks for the grant again');

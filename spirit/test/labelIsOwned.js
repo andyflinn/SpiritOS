@@ -38,8 +38,8 @@ const rollOf = require('./rollOf');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
 const world = require('./world');
 
 // Two johns, because duplicate labels are the case every rule here has
@@ -125,7 +125,7 @@ test.subHeading('A row written by older code is read, not reconciled');
   });
   fs.writeFileSync(path.join(oldHome, 'relay-state', 'routingTable.json'), JSON.stringify(doc));
 
-  const reopened = require('../run/js/relay').createRelay(oldHome);
+  const reopened = require('../run/spirit/relay').createRelay(oldHome);
   const seen = rollOf(reopened).map(function (p) { return p.publicLabel; }).sort();
   if (seen.join(',') === 'andy,bert') {
     test.check('a row carrying only `name` comes back with its label intact');
@@ -168,7 +168,7 @@ test.subHeading('The key may move its label; nobody else may');
   // owner path: evicting somebody is the owner's business, renaming them
   // is not.
   const src = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+    path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
   const verb = src.split('body.rename')[1] || '';
   if (verb.slice(0, 200).indexOf('.key') === -1 && /renameSelf\(who,/.test(verb)) {
     test.check('the verb takes no key — the owner cannot rename a peer, it is not expressible');
@@ -346,7 +346,7 @@ test.subHeading('It adds nothing to the protocol');
   // a route and not a signed format. The register does not move for
   // this, and protocolSurface.js would go red if it had.
   const src = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
+    path.join(__dirname, '..', 'run', 'spirit', 'server.js'), 'utf8');
   if (src.indexOf('/api/relay/rename') === -1) {
     test.check('no route was added for it');
   } else {
@@ -354,7 +354,7 @@ test.subHeading('It adds nothing to the protocol');
   }
 
   const authSrc = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'js', 'relayAuth.js'), 'utf8');
+    path.join(__dirname, '..', 'run', 'spirit', 'relayAuth.js'), 'utf8');
   if (!/function renameMessage/.test(authSrc)) {
     test.check('and no signed format — it rides the post that was already there');
   } else {

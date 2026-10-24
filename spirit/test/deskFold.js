@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';

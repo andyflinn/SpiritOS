@@ -19,14 +19,14 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const errors = require('../run/js/spiritErrors.js');
-const { pipeRequest } = require('../run/js/relayRequest.js');
-const appClient = require('../run/js/appClient.js');
+const errors = require('../run/spirit/spiritErrors.js');
+const { pipeRequest } = require('../run/spirit/relayRequest.js');
+const appClient = require('../run/spirit/appClient.js');
 
 test.startTest('appPair/G1.2: appServer.js, the server-side request router');
 
 const OWED = 'OWED by appPair/G1.2: ';
-const HELPER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const HELPER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 const helper = fs.existsSync(HELPER) ? require(HELPER) : null;
 const has = function (name) { return !!helper && typeof helper[name] === 'function'; };
 

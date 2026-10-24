@@ -23,9 +23,9 @@
 'use strict';
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/client/packet');
-const puppetMode = require('../run/js/puppetMode');
+const auth = require('../run/spirit/relayAuth');
+const packet = require('../run/spirit/client/packet');
+const puppetMode = require('../run/spirit/puppetMode');
 
 test.startTest('A puppet takes commands from its owner and from nobody else');
 
@@ -51,7 +51,7 @@ function commandFor(toKey, verb, body, signAs, opts) {
 // The envelope is read once, by the node layer's one reader, and handed in
 // (goal/G16.5): ownerCommandIn is given no decoder of its own any more, so
 // this helper does what the puppet door does on a real arrival.
-const arrivals = require('../run/js/arrivals.js');
+const arrivals = require('../run/spirit/arrivals.js');
 const switchIn = (arrival, ownerKey, selfKey) => puppetMode.ownerCommandIn({
   from: arrival.from,
   envelope: arrivals.envelopeOf(arrival.text),

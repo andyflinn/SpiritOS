@@ -42,7 +42,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by desk/G1.7: ';
 const SCRIPT = path.join(__dirname, '..', 'run', 'process', 'js', 'backup', 'backup.js');
@@ -266,14 +266,14 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   const probeRun = path.join(scratch, 'probe', 'spirit', 'run');
   fs.mkdirSync(path.join(probeRun, 'process', 'js', 'probe'), { recursive: true });
   fs.mkdirSync(path.join(probeRun, 'relay-state'), { recursive: true });
-  const auth = require('../run/js/relayAuth.js');
+  const auth = require('../run/spirit/relayAuth.js');
   const probeId = auth.generateIdentity('probe-node');
   auth.saveIdentity(probeRun, probeId);
   const argvFile = path.join(scratch, 'probe-argv.json');
   fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ kind: 'server', operated: 'node', args: [] }));
   fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.js'),
     'require("fs").writeFileSync(' + JSON.stringify(argvFile) + ', JSON.stringify(process.argv.slice(2)));\n');
-  const jobs = require('../run/js/jobs.js')(require('../run/js/kernel.js'), 65432);
+  const jobs = require('../run/spirit/jobs.js')(require('../run/spirit/kernel.js'), 65432);
   // A test node runs at home what it starts, for this run (goal/G30.20: its manifest says so).
   require('./tools/runsHome.js')(probeRun, 'process/js/probe');
   const probeJobs = jobs.startNodeServers(probeRun) || [];

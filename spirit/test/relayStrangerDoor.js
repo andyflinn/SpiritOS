@@ -30,15 +30,15 @@ const path = require('path');
 const net = require('net');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const nodeCard = require('../run/js/nodeCard');
-const routerTable = require('../run/js/router');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const nodeCard = require('../run/spirit/nodeCard');
+const routerTable = require('../run/spirit/router');
 const { ownHome, claimOwner } = require('./ownerClaim');
 const plantRun = require('./plantRun');
 const rollOf = require('./rollOf');
 const door = require('./relayDoor');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 
 let child = null;
 
@@ -234,7 +234,7 @@ async function inProcess() {
   } else {
     test.fail('the router still has a partner class');
   }
-  const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+  const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
   if (!/PARTNER_FLOOR_PER_MIN|partnerHits|partnerPerMin|CLAIM_PER_MIN|claimHits/.test(relaySrc)) {
     test.check('relay.js holds no partner budget and no per-address claim limit (the address table replaced it)');
   } else {
@@ -242,7 +242,7 @@ async function inProcess() {
   }
 
   // Old data stays readable: a relay.db that still has a partners table opens and its roll is read.
-  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+  try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
   let oldOpens = false;
   try {
     const { DatabaseSync } = require('node:sqlite');
@@ -253,7 +253,7 @@ async function inProcess() {
     db.close();
     oldOpens = rollOf(home).length === 3;
   } catch (e) { oldOpens = false; }
-  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+  try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
   if (oldOpens) test.check('a relay.db that still holds a partners table opens, and its roll reads whole');
   else test.fail('a relay.db with an old partners table did not open with its roll');
 }
@@ -273,7 +273,7 @@ function buildRelayHome() {
   claimOwner(box, owner, 'andy');
   const minted = box.mint('andy', 'carol', 7);
   const minted2 = box.mint('andy', 'dave', 7);
-  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+  try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
 
   const runDir = path.join(home, 'spirit', 'run');
   plantRun.plantRunTree(runDir);
@@ -289,7 +289,7 @@ function buildRelayHome() {
 async function startRelay(runDir) {
   const port = await freePort();
   const said = [];
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: runDir, stdio: ['ignore', 'pipe', 'pipe'] });
   kid.stdout.on('data', function (b) { said.push(String(b)); });
   kid.stderr.on('data', function (b) { said.push(String(b)); });
@@ -388,11 +388,11 @@ async function overTheWire() {
 
   test.subHeading('peerPost carries both public services');
 
-  const { createPeerPost } = require('../run/js/peerPost');
+  const { createPeerPost } = require('../run/spirit/peerPost');
   const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-stranger-node-'));
   fs.mkdirSync(path.join(nodeHome, 'relay-state'), { recursive: true });
   auth.saveIdentity(nodeHome, auth.generateIdentity('dave'));
-  const pp = createPeerPost({ rootDir: nodeHome, request: require('../run/js/relayRequest').relayRequest });
+  const pp = createPeerPost({ rootDir: nodeHome, request: require('../run/spirit/relayRequest').relayRequest });
   if (typeof pp.relayKey === 'function') test.check('peerPost exposes relayKey(url)');
   else test.fail('peerPost exposes no relayKey(url)');
   if (typeof pp.claim === 'function') test.check('peerPost exposes claim(url, name, invite, inviteLabel, known)');
@@ -433,7 +433,7 @@ async function overTheWire() {
   });
   let rows = [];
   try { rows = rollOf(lab.runDir); } catch (e) { rows = []; }
-  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+  try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
   if (rows.some(function (r) { return r.publicKey === carol.publicKey; }) &&
       (!daveKey || rows.some(function (r) { return r.publicKey === daveKey; }))) {
     test.check('and the strangers hold rows on the relay\'s roll afterwards');
@@ -451,6 +451,6 @@ run()
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () {
     if (child) { try { child.kill(); } catch (e) { /* gone */ } child = null; }
-    try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+    try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
     test.reportSuccessFailureCount();
   });

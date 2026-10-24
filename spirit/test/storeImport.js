@@ -15,7 +15,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 
 test.startTest('The one-time import — JSON to relay.db, and never again');
 

@@ -154,10 +154,10 @@ test.subHeading('And the relay does not serve it');
 // BOTH STARTUP MODULES. The relay's routes moved to relayServer.js with
 // cycle 0 (node and relay as separate startup modules); a roll door
 // would have to be in one of the two.
-const server = codeOf(path.join('js', 'server.js')) + '\n' + codeOf(path.join('js', 'relayServer.js'));
+const server = codeOf(path.join('spirit', 'server.js')) + '\n' + codeOf(path.join('spirit', 'relayServer.js'));
 // AND EVERY OTHER FILE UNDER js/ (goal/G19.11): a route is a string any
 // module could match on, so the two startup modules were half the guard.
-const allJs = walk(path.join(RUN, 'js'), []).map(function (rel) { return codeOf(rel); }).join('\n');
+const allJs = walk(path.join(RUN, 'spirit'), []).map(function (rel) { return codeOf(rel); }).join('\n');
 
 if (!/['"]\/api\/relay\/who['"]/.test(server) && !/['"]\/api\/relay\/who['"]/.test(allJs)) {
   test.check('no file under js/ has a route for it, or an entry in the public-path list');
@@ -182,14 +182,14 @@ test.subHeading('And the questions it used to answer have homes');
 
 // WHO A BOX IS: since goal/G22.6 its card, the answer to a card ask on its
 // one door (relay.js relayCard), at fixed cost; GET /api/relay/key is closed.
-const relaySrc = codeOf(path.join('js', 'relay.js'));
+const relaySrc = codeOf(path.join('spirit', 'relay.js'));
 if (/function relayCard\b/.test(relaySrc) && !/['"]\/api\/relay\/key['"]/.test(server)) {
   test.check('who a box is and who runs it — the relay\'s card on its one door, fixed cost');
 } else {
   test.fail('the relay\'s card is missing, or the closed key route is back');
 }
 
-const badge = codeOf(path.join('js', 'ownerBadge.js'));
+const badge = codeOf(path.join('spirit', 'ownerBadge.js'));
 
 if (/relayKeys\.seatedUrls/.test(badge)) {
   test.check('where this node holds a seat — its own record, written at claim');
@@ -197,7 +197,7 @@ if (/relayKeys\.seatedUrls/.test(badge)) {
   test.fail('ownerBadge no longer reads the seat record');
 }
 
-const hub = codeOf(path.join('js', 'hub.js'));
+const hub = codeOf(path.join('spirit', 'hub.js'));
 
 if (/relayKeys\.seat\(/.test(hub)) {
   test.check('and the claim writes that record, which is what made the rest possible');

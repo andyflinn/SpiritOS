@@ -33,7 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
+const auth = require('../run/spirit/relayAuth.js');
 const world = require('./world');
 const scenario = require('./scenario');
 
@@ -208,7 +208,7 @@ test.subHeading('The gate refuses before it allocates');
 test.subHeading('The route takes it from a header, and only a header');
 
 {
-  const { streamSignatureFrom } = require('../run/js/relay.js');
+  const { streamSignatureFrom } = require('../run/spirit/relay.js');
 
   const fromHeader = streamSignatureFrom(null, { 'x-spirit-sig': 'SIGNATURE' });
   if (fromHeader.ok && fromHeader.sig === 'SIGNATURE') {
@@ -247,7 +247,7 @@ test.subHeading('The route takes it from a header, and only a header');
   // THE NAME IS GONE, not aliased. `inboxSignatureFrom` was the only
   // export of this rule and keeping it alive under both names is how a
   // caller stays unfixed.
-  const relayModule = require('../run/js/relay.js');
+  const relayModule = require('../run/spirit/relay.js');
   if (typeof relayModule.inboxSignatureFrom === 'undefined') {
     test.check('and the name it had under the ring is not still exported');
   } else {
@@ -258,7 +258,7 @@ test.subHeading('The route takes it from a header, and only a header');
 test.subHeading('Nothing puts it back on the URL');
 
 {
-  const RUN = path.join(__dirname, '..', 'run', 'js');
+  const RUN = path.join(__dirname, '..', 'run', 'spirit');
 
   // presenceNode is the one caller now: the node opening its stream to
   // every relay it holds a row on. It must not be building a query

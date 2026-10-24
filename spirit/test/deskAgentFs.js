@@ -12,7 +12,7 @@
 //    gated by the commit hooks as "core"?"; "strike the red Q and i press go".
 //
 // WHAT IS ASSERTED (the box)
-//   1. THE VERB FILES: spirit/run/js/fs/load.json and save.json describe fs.load and fs.save; the fs AGENTS.md no
+//   1. THE VERB FILES: spirit/run/spirit/fs/load.json and save.json describe fs.load and fs.save; the fs AGENTS.md no
 //      longer says the writes wait; the family's FS then reads both (introSpector.family against the real folder).
 //   2. THE NODE: fs.load {path} answers {path, text} for a served file and 404 for none or for relay-state; the
 //      gate is open: fs.save writes an app's entry script and its manifest under shell as any other file there,
@@ -31,7 +31,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by goal/G14.8: ';
@@ -78,7 +78,7 @@ let child = null;
 let said = '';
 function lastWords() { const tail = said.trim().split('\n').slice(-8).join('\n    '); return tail ? '\n    ' + tail : ' (it said nothing)'; }
 async function bootNode(port) {
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: nodeRoot, env: Object.assign({}, process.env), stdio: ['ignore', 'ignore', 'pipe'] });
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: nodeRoot, env: Object.assign({}, process.env), stdio: ['ignore', 'ignore', 'pipe'] });
   child.stderr.on('data', function (c) { said = (said + c).slice(-8192); });
   const t0 = Date.now();
   for (;;) {
@@ -182,18 +182,18 @@ test.startTest('goal/G14.8: fs tools for Levant, fs.load and fs.save opened');
 async function suite() {
   // ── 1. THE VERB FILES ───────────────────────────────────────────────────
   test.subHeading('1. fs.load and fs.save are described to agents by their verb files');
-  function verbFile(stem) { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'js', 'fs', stem + '.json'), 'utf8')); } catch (e) { return null; } }
+  function verbFile(stem) { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'fs', stem + '.json'), 'utf8')); } catch (e) { return null; } }
   const loadFile = verbFile('load'), saveFile = verbFile('save');
-  if (loadFile && /path/.test(String(loadFile.description)) && /text/.test(String(loadFile.description))) test.check('spirit/run/js/fs/load.json describes fs.load: a file by path, its text');
-  else test.fail(OWED + 'spirit/run/js/fs/load.json is ' + short(loadFile));
-  if (saveFile && /path/.test(String(saveFile.description)) && /writable root/.test(String(saveFile.description))) test.check('spirit/run/js/fs/save.json describes fs.save: a file by path under a writable root');
-  else test.fail(OWED + 'spirit/run/js/fs/save.json is ' + short(saveFile));
+  if (loadFile && /path/.test(String(loadFile.description)) && /text/.test(String(loadFile.description))) test.check('spirit/run/spirit/fs/load.json describes fs.load: a file by path, its text');
+  else test.fail(OWED + 'spirit/run/spirit/fs/load.json is ' + short(loadFile));
+  if (saveFile && /path/.test(String(saveFile.description)) && /writable root/.test(String(saveFile.description))) test.check('spirit/run/spirit/fs/save.json describes fs.save: a file by path under a writable root');
+  else test.fail(OWED + 'spirit/run/spirit/fs/save.json is ' + short(saveFile));
   let agentsMd = '';
-  try { agentsMd = fs.readFileSync(path.join(RUN, 'js', 'fs', 'AGENTS.md'), 'utf8'); } catch (e) { agentsMd = ''; }
+  try { agentsMd = fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'AGENTS.md'), 'utf8'); } catch (e) { agentsMd = ''; }
   if (agentsMd && !/until a goal opens them/.test(agentsMd) && /fs\.load/.test(agentsMd) && /fs\.save/.test(agentsMd)) test.check('the fs AGENTS.md names fs.load and fs.save and no longer says the writes wait');
   else test.fail(OWED + 'the fs AGENTS.md still says the writes wait, or does not name load and save');
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(path.join(RUN, 'js', 'fs'), { declared: ['search', 'stat', 'annotations', 'save', 'delete', 'annotate', 'load'], prefix: 'fs.' }); } catch (e) { family = null; }
+  try { family = require('../run/spirit/introSpector.js').family(path.join(RUN, 'spirit', 'fs'), { declared: ['search', 'stat', 'annotations', 'save', 'delete', 'annotate', 'load'], prefix: 'fs.' }); } catch (e) { family = null; }
   // Since goal/G30.4 the family is FS: the two verb files are read through fs.FS.loadJsonValue.
   const readJson = function (p) { try { return family.verbs['fs.FS.loadJsonValue'].handler({ path: p }).value; } catch (e) { return null; } };
   const loadDesc = family && readJson('load.json'), saveDesc = family && readJson('save.json');
@@ -229,7 +229,7 @@ async function suite() {
   const wroteManifest = await post(DOOR, { verb: 'fs.save', path: MANIFEST, content: manifestOnDisk });
   if (wroteManifest.status >= 200 && wroteManifest.status < 300) test.check('fs.save writes an app\'s manifest too');
   else test.fail(OWED + 'fs.save of the manifest answered ' + wroteManifest.status);
-  const refusedCore = await post(DOOR, { verb: 'fs.save', path: 'js/kernel.js', content: '// never' });
+  const refusedCore = await post(DOOR, { verb: 'fs.save', path: 'spirit/kernel.js', content: '// never' });
   const refusedState = await post(DOOR, { verb: 'fs.save', path: 'relay-state/probe.json', content: '{}' });
   const refusedSidecar = await post(DOOR, { verb: 'fs.save', path: 'media/probe.jpg.sidecar.json', content: '{}' });
   if (refusedCore.status === 403 && refusedState.status === 403 && refusedSidecar.status === 403 && !fs.existsSync(path.join(nodeRoot, 'relay-state', 'probe.json'))) test.check('fs.save still refuses js/, relay-state and a sidecar (HTTP 403)');
@@ -258,7 +258,7 @@ async function suite() {
   if (r2 && probeOnDisk === 'probe' && !/refused/.test(r2.text)) test.check('run fs_save writes the file under the app\'s folder');
   else test.fail(OWED + 'run fs_save answered ' + short(r2) + ', on disk ' + short(probeOnDisk));
   try { fs.unlinkSync(path.join(nodeRoot, 'shell', 'textEditor', 'deskAgentFs-probe.txt')); } catch (e) { /* none */ }
-  const r3 = await tools.run({ id: 'c3', type: 'function', function: { name: 'fs_save', arguments: JSON.stringify({ path: 'js/kernel.js', content: '// never' }) } });
+  const r3 = await tools.run({ id: 'c3', type: 'function', function: { name: 'fs_save', arguments: JSON.stringify({ path: 'spirit/kernel.js', content: '// never' }) } });
   if (r3 && /refused/.test(r3.text)) test.check('run fs_save outside the writable roots comes back as a refusal');
   else test.fail(OWED + 'run fs_save of js/kernel.js answered ' + short(r3));
 

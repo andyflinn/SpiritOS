@@ -21,12 +21,12 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const nodeCard = require('../run/spirit/nodeCard');
 // GAP 1 again: the node's own record of where it holds a seat.
-const relayKeys = require('../run/js/relayKeys');
-const buildStamp = require('../run/js/buildStamp');
+const relayKeys = require('../run/spirit/relayKeys');
+const buildStamp = require('../run/spirit/buildStamp');
 
 const MASTER = require('./labMaster/labPaths').MASTER;
 const FAKES_ROOT = require('./labMaster/labPaths').FIXTURE_ROOT;
@@ -373,7 +373,7 @@ function createWorld(opts) {
       // peer that has not acquired the owner hears every answer as
       // silence. The card rides along for the sealed paths.
       if (sc) {
-        const contactBook = require('../run/js/contacts.js');
+        const contactBook = require('../run/spirit/contacts.js');
         contactBook.acquire(node.home, { publicKey: owner.publicKey, publicLabel: ownerName }, 'invite');
         contactBook.setCard(node.home, owner.publicKey,
           nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)), 'invite');
@@ -412,7 +412,7 @@ function createWorld(opts) {
       const node = await ensureNode('owner', 'avatar', OWNER_PORT);
       if (!node.ok) return node;
       const runsHome = require('./tools/runsHome.js');
-      const contactBook = require('../run/js/contacts.js');
+      const contactBook = require('../run/spirit/contacts.js');
       auth.saveIdentity(node.home, owner);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
       // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
@@ -642,7 +642,7 @@ function createWorld(opts) {
   // post's hash. The outcome speaks expect's vocabulary: a refusal by
   // its code, any other reply 'answered', no reply at all 'silence'.
   async function oneCase(p, ask) {
-    const packet = require('../run/js/client/packet');
+    const packet = require('../run/spirit/client/packet');
     const encoded = packet.encode('api', ask);
     if (!encoded.ok) return 'could not encode: ' + encoded.error;
     const stop = new AbortController();

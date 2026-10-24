@@ -20,7 +20,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const { createTrafficLog } = require('../run/js/trafficLog.js');
+const { createTrafficLog } = require('../run/spirit/trafficLog.js');
 
 test.startTest('transport/R19.3: the node log is a table in node.db, keyed by seq');
 
@@ -105,6 +105,6 @@ if (expected !== '[]' && got === expected) {
 }
 
 // node.db stays open in this process; Windows will not remove an open file.
-require("../run/js/nodeStore.js").open(root).close();
+require("../run/spirit/nodeStore.js").open(root).close();
 fs.rmSync(root, { recursive: true, force: true });
 test.reportSuccessFailureCount();

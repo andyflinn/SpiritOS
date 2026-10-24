@@ -34,7 +34,7 @@ const test = require('./testSupport.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_DIR = path.join(RUN_DIR, 'shell');
-const SHELL = path.join(RUN_DIR, 'js', 'client', 'shell.js');
+const SHELL = path.join(RUN_DIR, 'spirit', 'client', 'shell.js');
 
 // Comments stripped first. These files discuss their own buttons at
 // length, and a test that greps the source including its comments is a

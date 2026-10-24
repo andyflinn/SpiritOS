@@ -28,7 +28,7 @@ const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G33.7 (Stacks doors): ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -36,7 +36,7 @@ const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const PLUGIN_UI = path.join(RUN, 'shell', 'desk', 'plugins', 'stackFrameChecks', 'stackFrameChecks.js');
 const DIALOG = path.join(RUN, 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.js');
 const API = path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'api.js');
-const END = 'spirit/run/js/presenceNode.js';
+const END = 'spirit/run/spirit/presenceNode.js';
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStacksDoorSearchOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const DOORS = 40;
 const SUITES = 32;
@@ -80,7 +80,7 @@ async function main() {
   for (let n = 1; n <= DOORS; n++) {
     const suites = [];
     for (let k = 1; k <= SUITES; k++) suites.push('doorSearchProbeSuiteNumber' + k + 'ForDoor' + n + '.js');
-    list.push({ id: 'd' + n, gate: 'spirit/run/js/peerPost.js::gateNumber' + n + 'Of' + DOORS, endpoint: END, suites: suites, item: '' });
+    list.push({ id: 'd' + n, gate: 'spirit/run/spirit/peerPost.js::gateNumber' + n + 'Of' + DOORS, endpoint: END, suites: suites, item: '' });
   }
   fs.writeFileSync(listFile, JSON.stringify(list, null, 2) + '\n');
   gitIn(work, ['add', 'stackFrameList.json']);

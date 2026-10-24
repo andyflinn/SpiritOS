@@ -29,8 +29,8 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const kernel = require('../run/js/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G8.8: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
@@ -39,8 +39,8 @@ const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskD
 const CW = { key: 'MCowBQYDK2VwAyEAdeskFilesTouchedTestCWAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskFilesTouchedTestWSLAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskFilesTouchedTestOwnerAAAAAAAAAAAA=', label: 'andy' };
-const CORE = 'spirit/run/js/kernel.js';
-const CORE2 = 'spirit/run/js/appClient.js';
+const CORE = 'spirit/run/spirit/kernel.js';
+const CORE2 = 'spirit/run/spirit/appClient.js';
 const PLAIN = 'spirit/test/deskSword.js';
 const PLAIN2 = 'spirit/run/shell/desk/desk.js';
 
@@ -135,7 +135,7 @@ async function server() {
   test.subHeading('3b. a list larger than one answer is taken, and answered core first (goal/G32.2)');
   // G32.2 listed 142 files, 64 of them core: the list in the facts made every write to the item too large to come back.
   const many = [];
-  for (let i = 0; i < 150; i++) many.push(i % 3 ? 'spirit/test/manyFilesSuite' + String(i).padStart(3, '0') + '.js' : 'spirit/run/js/manyCore' + String(i).padStart(3, '0') + '.js');
+  for (let i = 0; i < 150; i++) many.push(i % 3 ? 'spirit/test/manyFilesSuite' + String(i).padStart(3, '0') + '.js' : 'spirit/run/spirit/manyCore' + String(i).padStart(3, '0') + '.js');
   // goal/G40.3: the list is built one add per path; big is the first refused add, if any.
   const bigAdds = await addEach('goal/G100.2', many, CW);
   const big = bigAdds.filter(function (a) { return !took(a); })[0] || { status: 200, body: { ok: true } };

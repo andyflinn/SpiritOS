@@ -26,7 +26,7 @@ const crypto = require('crypto');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { MASTER, FIXTURE_ROOT } = require('./labMaster/labPaths');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by the labMaster (desk/G1.7 finding): ';
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

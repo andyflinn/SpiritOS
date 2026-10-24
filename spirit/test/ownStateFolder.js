@@ -13,7 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 
 const OWED = 'OWED by desk/G2.4: ';
@@ -33,7 +33,7 @@ test.startTest('desk/G2.4: a process reaches its own state folder, and nothing e
 
 fs.mkdirSync(DIR, { recursive: true });
 fs.writeFileSync(PROBE, [
-  "const spirit = require('../../../js/kernel.js');",
+  "const spirit = require('../../../spirit/kernel.js');",
   'const P = ' + JSON.stringify(PATHS) + ';',
   'const out = {};',
   "Object.keys(P).forEach(function (k) { out[k] = { servable: !!spirit.core.fs.fileServable(P[k]), writable: !!spirit.core.fs.fileWritable(P[k]) }; });",

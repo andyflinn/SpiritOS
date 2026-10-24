@@ -44,8 +44,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G4.6: ';
 const OWED7 = 'OWED by goal/G4.7: ';

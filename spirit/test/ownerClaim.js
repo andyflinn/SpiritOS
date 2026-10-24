@@ -38,8 +38,8 @@
 // Until goal/G16.8 this file minted an owner invite and the first claim
 // presenting it became the owner; that path is gone from the relay.
 
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -70,7 +70,7 @@ function claimOwner(box, identity, label, clientKey) {
 function installedRelay(identity) {
   // Required here, not at the top: relay.js is heavy, and the suites that
   // only want ownHome should not pay for it.
-  const { createRelay } = require('../run/js/relay');
+  const { createRelay } = require('../run/spirit/relay');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-installed-'));
   // The mailbox's own key, which is not the owner's, made before
   // createRelay reads it (world.js does the same).

@@ -24,10 +24,10 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const hubMod = require('../run/js/hub');
+const hubMod = require('../run/spirit/hub');
 const hub = hubMod.createHub(process.cwd());
 const os = require('os');
-const seenPeers = require('../run/js/seenPeers');
+const seenPeers = require('../run/spirit/seenPeers');
 
 test.startTest('hub.handlePost — the router verb, callable without a server');
 
@@ -355,13 +355,13 @@ function noAppNamesTheRing() {
       const rel = path.relative(RUN, full).split(path.sep).join('/');
       // hub.js implements it and server.js routes it; both are the
       // system layer and are R8's business, not an app's.
-      if (rel === 'js/hub.js' || rel === 'js/server.js') return;
+      if (rel === 'spirit/hub.js' || rel === 'spirit/server.js') return;
       looked.push(rel);
       if (fs.readFileSync(full, 'utf8').indexOf('/api/hub/send') !== -1) named.push(rel);
     });
   }
   scan(path.join(RUN, 'shell'), 4);
-  scan(path.join(RUN, 'js'), 3);
+  scan(path.join(RUN, 'spirit'), 3);
 
   if (!named.length && looked.length > 20) {
     test.check('nothing above the boundary names /api/hub/send — ' + looked.length + ' files scanned');

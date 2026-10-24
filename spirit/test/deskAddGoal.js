@@ -27,7 +27,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G9.11: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');

@@ -26,10 +26,10 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G16.5: ';
-const JS = path.join(__dirname, '..', 'run', 'js');
+const JS = path.join(__dirname, '..', 'run', 'spirit');
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 function code(file) {
   return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
@@ -38,7 +38,7 @@ function code(file) {
 
 test.startTest('goal/G16.5: one decoder in the node layer, and a guard that sees it');
 
-const arrivalsMod = require('../run/js/arrivals.js');
+const arrivalsMod = require('../run/spirit/arrivals.js');
 
 // ── 1. THE ONE DECODER ──────────────────────────────────────────────────
 test.subHeading('1. arrivals.js envelopeOf reads an envelope once');

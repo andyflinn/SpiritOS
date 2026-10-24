@@ -47,8 +47,8 @@ test.startTest('goal/G32.3: the servers on the spirit object, every interface fr
 
 const done = (async function () {
   test.subHeading('1. no api.js names its own family');
-  const apis = fs.readdirSync(path.join(RUN, 'js'), { withFileTypes: true }).filter(function (d) { return d.isDirectory(); })
-    .map(function (d) { return path.join(RUN, 'js', d.name, 'api.js'); })
+  const apis = fs.readdirSync(path.join(RUN, 'spirit'), { withFileTypes: true }).filter(function (d) { return d.isDirectory(); })
+    .map(function (d) { return path.join(RUN, 'spirit', d.name, 'api.js'); })
     .concat(fs.readdirSync(PROC).map(function (n) { return path.join(PROC, n, n + '.family', 'api.js'); }))
     .filter(function (f) { return fs.existsSync(f); });
   const claiming = apis.filter(function (f) { const s = raw(f); return /\bfamily\s*:/.test(s) || /\.families\b/.test(s) || /\broot\.spirit\b|\bwindow\.spirit\b/.test(s); });
@@ -102,7 +102,7 @@ const done = (async function () {
   else test.fail(OWED + 'relay.status still asked in ' + short(gone.map(rel)));
 
   test.subHeading('4. api {family} answers the interface, and the gate holds');
-  const vt = require('../run/js/verbTable.js');
+  const vt = require('../run/spirit/verbTable.js');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-servers-'));
   const famDir = path.join(dir, 'zzfam');
   fs.mkdirSync(famDir, { recursive: true });
@@ -125,7 +125,7 @@ const done = (async function () {
   else test.fail(OWED + 'api {family} answered ' + short(byAsk) + ' / ' + short(byCall));
   if (none && none.status >= 400) test.check('a family the node does not serve answers no interface: ' + none.status);
   else test.fail(OWED + 'an unknown family answered ' + short(none));
-  const apiDoor = require('../run/js/apiDoor.js');
+  const apiDoor = require('../run/spirit/apiDoor.js');
   const servers2 = { ask: function (ask) { return Promise.resolve({ status: 200, body: { family: ask.api && ask.api.family, interface: 'x' } }); } };
   const granted = { key: 'K', auth: { pathsOf: function () { return ['zzfam.ping']; } } };
   const answer = apiDoor.answer || (apiDoor._test && apiDoor._test.answer);

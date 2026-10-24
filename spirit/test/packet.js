@@ -18,9 +18,9 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet.js');
-const limits = require('../run/js/limits.js');
-const hub = require('../run/js/hub.js');
+const packet = require('../run/spirit/client/packet.js');
+const limits = require('../run/spirit/limits.js');
+const hub = require('../run/spirit/hub.js');
 
 test.startTest('Packets — an envelope the relay never has to understand');
 
@@ -149,7 +149,7 @@ test.subHeading('One number, in one place');
   // js/ AND js/client/: packet.js moved down there, and shell.js — which
   // refuses an oversized send before it posts — is exactly the file that
   // would grow a second number if this scan could not see it.
-  const jsDir = path.join(__dirname, '..', 'run', 'js');
+  const jsDir = path.join(__dirname, '..', 'run', 'spirit');
   const offenders = [];
   [jsDir, path.join(jsDir, 'client')].forEach(function (dir) {
     const where = dir === jsDir ? '' : 'client/';
@@ -318,7 +318,7 @@ test.subHeading('The node exposes nothing that reads an envelope');
   // No exclusion needed: packet.js is not in this directory any more. It
   // sits in js/client/ with the shell, which is the same rule written as
   // a path rather than as a test.
-  const nodeDir = path.join(__dirname, '..', 'run', 'js');
+  const nodeDir = path.join(__dirname, '..', 'run', 'spirit');
   const offenders = fs.readdirSync(nodeDir)
     .filter(function (f) { return f.endsWith('.js'); })
     .filter(function (f) {
@@ -372,7 +372,7 @@ test.subHeading('relay.js did not have to change');
   // grew a router — prose about a packet, not knowledge of one. A check
   // a comment can fail is the /api/hub/peer trap wearing the other face,
   // and it cost a green harness to find again.
-  const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+  const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
   const relayCode = relaySrc
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -545,7 +545,7 @@ test.subHeading('Re: a packet regarding another packet');
   // that is how long a sender stands waiting for a reply. `re` is not
   // that: it is a new post NAMING an old packet, and it works as long as
   // somebody kept the packet, not as long as a route is open.
-  const router = require('../run/js/router.js');
+  const router = require('../run/spirit/router.js');
   const ttl = router.createRouter().ttlMs;
   if (typeof ttl === 'number' && ttl <= 60000) {
     test.check('the route table forgets in ' + (ttl / 1000) + 's, which is why `re` is a stored hash and not a route key');

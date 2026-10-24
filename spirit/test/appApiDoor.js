@@ -21,14 +21,14 @@
 
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
 
 test.startTest('appPair/G1.3: a member asks the node for api by packet, and only a member is answered');
 
 const OWED = 'OWED by appPair/G1.3: ';
 let apiDoor = null;
-try { apiDoor = require('../run/js/apiDoor.js'); } catch (e) { apiDoor = null; }
+try { apiDoor = require('../run/spirit/apiDoor.js'); } catch (e) { apiDoor = null; }
 const has = apiDoor && typeof apiDoor.createApiDoor === 'function';
 
 const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';

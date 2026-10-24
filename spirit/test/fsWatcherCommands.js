@@ -19,7 +19,7 @@
 //   3  THE TREE AT CONNECT: jobs.fsTreeCommands() answers the create commands for the tree as it stands (a
 //      createDirectory before anything inside it); the node writes those to a page that connects, each its own
 //      fs-watcher job-updated, after the snapshot, whose fs-watcher job no longer carries a file list.
-//      Files the kernel never lists (UNSERVABLE_FILES, kernel.js 297: js/server.js among them) are in no command, as
+//      Files the kernel never lists (UNSERVABLE_FILES, kernel.js 297: spirit/server.js among them) are in no command, as
 //      they were in no file list (claude-windows's review of this red).
 //   4  ERADICATED: the hand-rolled fs.watch reader and its rescan, and every reader of data.files (jobs.js, server.js,
 //      nodeSearches.js, js/client/shell.js, shell/files, shell/process-browser). fs.search keeps answering, from the
@@ -88,13 +88,13 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
     else test.fail(OWED + name + ': package.json ' + fs.existsSync(pkg) + ', licence ' + licence + ', tracked by git ' + !!tracked);
   });
   let resolved = '';
-  try { resolved = require.resolve('chokidar', { paths: [path.join(RUN, 'js')] }); } catch (e) { resolved = ''; }
+  try { resolved = require.resolve('chokidar', { paths: [path.join(RUN, 'spirit')] }); } catch (e) { resolved = ''; }
   if (resolved && resolved.indexOf(path.join(RUN, 'node_modules')) === 0) test.check('require(\'chokidar\') from spirit/run/js resolves to that copy');
   else test.fail(OWED + 'require(\'chokidar\') from spirit/run/js resolves to ' + short(resolved));
 
   // ── 2. the watcher ──
   test.subHeading('2. Andy\'s mirror: a tree built only from the commands matches the disk');
-  const jobsJs = path.join(RUN, 'js', 'jobs.js');
+  const jobsJs = path.join(RUN, 'spirit', 'jobs.js');
   const jc = code(jobsJs);
   if (/require\(\s*['"]chokidar['"]\s*\)/.test(jc) && !/\bfs\.watch\s*\(/.test(jc)) test.check('jobs.js requires chokidar and calls no fs.watch');
   else test.fail(OWED + 'jobs.js: requires chokidar ' + /require\(\s*['"]chokidar['"]\s*\)/.test(jc) + ', still calls fs.watch ' + /\bfs\.watch\s*\(/.test(jc));
@@ -106,8 +106,8 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
   let jobs = null;
   let job = null;
   try {
-    const spirit = require('../run/js/kernel.js');
-    jobs = require('../run/js/jobs.js')(spirit, 65432);
+    const spirit = require('../run/spirit/kernel.js');
+    jobs = require('../run/spirit/jobs.js')(spirit, 65432);
     const seen = [];
     let biggest = 0;
     let listCarried = false;
@@ -171,7 +171,7 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
 
   // ── 4. eradicated ──
   test.subHeading('4. nothing reads or sends the whole file list any more');
-  const readers = ['js/jobs.js', 'js/server.js', 'js/nodeSearches.js', 'js/client/shell.js', 'shell/files/files.js'];
+  const readers = ['spirit/jobs.js', 'spirit/server.js', 'spirit/nodeSearches.js', 'spirit/client/shell.js', 'shell/files/files.js'];
   const still = readers.filter(function (r) { return /\bdata\.files\b/.test(code(path.join(RUN, r))); });
   if (!still.length) test.check('no data.files in ' + readers.join(', '));
   else test.fail(OWED + 'data.files still read in ' + still.join(', '));
@@ -204,10 +204,10 @@ async function theNode() {
     require('./plantRun.js').plantRunTree(home);
     fs.writeFileSync(path.join(home, 'fswatch-probe-g425.txt'), 'x');
     const port = await freePort();
-    node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
+    node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
     let said = '';
     node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
-    const up = await waitFor(function () { return post(port, { verb: 'fs.search', q: 'js/server.js' }).then(function (r) { return r.status === 200; }); }, 20000);
+    const up = await waitFor(function () { return post(port, { verb: 'fs.search', q: 'spirit/server.js' }).then(function (r) { return r.status === 200; }); }, 20000);
     if (!up) { test.fail('the planted node did not answer' + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : '')); return; }
     const events = [];
     let buf = '';
@@ -225,7 +225,7 @@ async function theNode() {
     });
     stream.on('error', function () {});
     const commandsOf = function () { return events.filter(function (e) { return e.event === 'job-updated' && e.data && e.data.type === 'fs-watcher' && e.data.data && e.data.data.command; }).map(function (e) { return e.data.data.command; }); };
-    await waitFor(function () { return commandsOf().some(function (c) { return c.op === 'createFile' && c.path === 'js/client/shell.js'; }); }, 8000);
+    await waitFor(function () { return commandsOf().some(function (c) { return c.op === 'createFile' && c.path === 'spirit/client/shell.js'; }); }, 8000);
     const snap = events.filter(function (e) { return e.event === 'snapshot'; })[0];
     const watcher = snap && snap.data && (snap.data.jobs || []).filter(function (j) { return j.type === 'fs-watcher'; })[0];
     if (snap && watcher && !(watcher.data && watcher.data.files !== undefined)) test.check('the snapshot\'s fs-watcher job carries no file list');
@@ -234,9 +234,9 @@ async function theNode() {
     const m = mirror();
     cmds.forEach(m.apply);
     const has = function (k) { return m.list().indexOf(k) !== -1; };
-    if (has('d:js') && has('f:js/client/shell.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'js'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'js/client/shell.js'; })[0])) {
-      test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, js before js/client/shell.js');
-    } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds js ' + has('d:js') + ', js/client/shell.js ' + has('f:js/client/shell.js'));
+    if (has('d:spirit') && has('f:spirit/client/shell.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit/client/shell.js'; })[0])) {
+      test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, spirit before spirit/client/shell.js');
+    } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds spirit ' + has('d:spirit') + ', spirit/client/shell.js ' + has('f:spirit/client/shell.js'));
     const found = await post(port, { verb: 'fs.search', q: 'fswatch-probe-g425.txt' });
     const keys = ((found.body || {}).items || []).map(function (x) { return x.key; });
     if (found.status === 200 && keys.indexOf('fswatch-probe-g425.txt') !== -1) test.check('fs.search still finds a file by its path');

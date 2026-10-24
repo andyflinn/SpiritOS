@@ -19,7 +19,7 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by fileTransfer goal/G1.6: ';
 const REPO_RUN = path.join(__dirname, '..', 'run');
-const jobs = require('../run/js/jobs.js')(require('../run/js/kernel.js'), 65432);
+const jobs = require('../run/spirit/jobs.js')(require('../run/spirit/kernel.js'), 65432);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 async function waitFor(fn, ms) { for (let t = 0; t < ms; t += 100) { if (fn()) return true; await sleep(100); } return fn(); }
@@ -43,7 +43,7 @@ const run = path.join(scratch, 'n', 'spirit', 'run');
 });
 fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
 // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
-require('../run/js/relayAuth.js').saveIdentity(run, require('../run/js/relayAuth.js').generateIdentity('n'));
+require('../run/spirit/relayAuth.js').saveIdentity(run, require('../run/spirit/relayAuth.js').generateIdentity('n'));
 
 (async function () {
   test.subHeading('a fresh node starts it');

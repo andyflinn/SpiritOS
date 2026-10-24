@@ -19,8 +19,8 @@
 // party on the wire — but it must still do the real work with them, which
 // is what this does.
 
-const seal = require('../run/js/seal');
-const auth = require('../run/js/relayAuth');
+const seal = require('../run/spirit/seal');
+const auth = require('../run/spirit/relayAuth');
 
 // What the relay said, as the object a member's node would hand its app.
 //

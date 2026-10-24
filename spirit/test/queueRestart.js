@@ -15,11 +15,11 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const { rememberKeys, sealKeyFor } = require('./openReply');
-const seal = require('../run/js/seal');
-const auth = require('../run/js/relayAuth');
-const peerPost = require('../run/js/peerPost');
-const nodeStore = require('../run/js/nodeStore');
-const trafficLog = require('../run/js/trafficLog');
+const seal = require('../run/spirit/seal');
+const auth = require('../run/spirit/relayAuth');
+const peerPost = require('../run/spirit/peerPost');
+const nodeStore = require('../run/spirit/nodeStore');
+const trafficLog = require('../run/spirit/trafficLog');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -53,7 +53,7 @@ function fakeRelay(answer) {
 // grows, and pass or fail for the wrong reason. read() answers the same
 // rows wherever they live.
 function logLines(h) {
-  try { return require('../run/js/trafficLog').createTrafficLog({ rootDir: h }).read(); }
+  try { return require('../run/spirit/trafficLog').createTrafficLog({ rootDir: h }).read(); }
   catch (e) { return []; }
 }
 

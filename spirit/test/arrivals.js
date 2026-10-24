@@ -25,14 +25,14 @@ const test = require('./testSupport.js');
 // THE LOG LIVES IN node.db SINCE transport/R19.3, and this process keeps it
 // open; Windows will not remove an open file. So a home is closed, then removed.
 function removeHome(home) {
-  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* no store: nothing to close */ }
+  try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* no store: nothing to close */ }
   fs.rmSync(home, { recursive: true, force: true });
 }
 const { sealedPost } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/client/packet');
-const arrivalsModule = require('../run/js/arrivals');
-const trafficLog = require('../run/js/trafficLog');
+const auth = require('../run/spirit/relayAuth');
+const packet = require('../run/spirit/client/packet');
+const arrivalsModule = require('../run/spirit/arrivals');
+const trafficLog = require('../run/spirit/trafficLog');
 
 test.startTest('Arrivals — a packet from a peer reaches something');
 
@@ -439,9 +439,9 @@ test.subHeading('Connected: peerPost actually notes into it');
 // door, and asks whether a packet came out the other side.
 
 (function peerPostFeedsTheSeam() {
-  const peerPost = require('../run/js/peerPost');
-  const trafficLog = require('../run/js/trafficLog');
-  const contactBook = require('../run/js/contacts');
+  const peerPost = require('../run/spirit/peerPost');
+  const trafficLog = require('../run/spirit/trafficLog');
+  const contactBook = require('../run/spirit/contacts');
 
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-arrivals-'));
   const me = auth.generateIdentity('me');
@@ -461,7 +461,7 @@ test.subHeading('Connected: peerPost actually notes into it');
   const router = peerPost.createPeerPost({
     rootDir: home,
     request: function () { return Promise.resolve({ status: 200, text: '{}' }); },
-    admit: function (from) { return require('../run/js/hub').frontDoor(home, from); },
+    admit: function (from) { return require('../run/spirit/hub').frontDoor(home, from); },
     remember: function () {},
     traffic: trafficLog.createTrafficLog({ rootDir: home, relayMode: false }),
     onArrival: arrivals.note,
@@ -548,7 +548,7 @@ function theLastHop() {
       // loud: a suite that starts posting should say so, not quietly
       // reach a global.
       ask: function () { throw new Error('this fixture hands shell.js no fetch'); },
-      const: { ICON: require('../run/js/kernel').core.const.ICON, MIME: {} },
+      const: { ICON: require('../run/spirit/kernel').core.const.ICON, MIME: {} },
       util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
       fs: {
         loadFile: function (rel) {
@@ -568,7 +568,7 @@ function theLastHop() {
   };
 
   var src = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js'), 'utf8'
+    path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js'), 'utf8'
   );
   new Function('spirit', 'document', src)(shellSpirit, doc);
 

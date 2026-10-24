@@ -20,7 +20,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const nodeStore = require('../run/js/nodeStore');
+const nodeStore = require('../run/spirit/nodeStore');
 
 const MIN = 60 * 1000;
 const DAY = 24 * 60 * MIN;
@@ -368,7 +368,7 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
   }
 
   // WRITTEN WHERE THE RULING SAYS: at boot, and in the graceful goodbye.
-  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8')
+  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'server.js'), 'utf8')
     .replace(/\/\/[^\n]*/g, '');
   const bye = src.indexOf('const goodbye = function');
   const byeBody = bye === -1 ? '' : src.slice(bye, src.indexOf('};', bye));
@@ -424,7 +424,7 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
 //   no longer paging. The hub's handler answers the NEWEST rows in the
 //   window that fit one answer, in time order, and says more.
 function askRecord(dir, body) {
-  const hub = require('../run/js/hub').createHub(dir);
+  const hub = require('../run/spirit/hub').createHub(dir);
   return new Promise(function (resolve) {
     let status = 0;
     hub.handleRecord({}, {
@@ -440,7 +440,7 @@ function askRecord(dir, body) {
   const base = Math.floor((Date.now() - 2 * DAY) / MIN) * MIN;
   // A day of minute rows is far more than one answer carries.
   for (let i = 0; i < 1440; i += 1) w.store.record.put(RELAY, report(10 + (i % 5)), base + i * MIN);
-  const limits = require('../run/js/limits');
+  const limits = require('../run/spirit/limits');
   return askRecord(w.dir, { relay: RELAY, from: base, to: base + DAY }).then(function (r) {
     const s = r.body.series || [];
     const bytes = Buffer.byteLength(JSON.stringify(r.body), 'utf8');

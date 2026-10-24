@@ -47,10 +47,10 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../js/appServer.js');
-const appClient = require('../../../js/appClient.js');
-const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const appServer = require('../../../spirit/appServer.js');
+const appClient = require('../../../spirit/appClient.js');
+const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }

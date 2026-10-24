@@ -33,9 +33,9 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
-const fieldRules = require('../run/js/fieldRules.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const fieldRules = require('../run/spirit/fieldRules.js');
 
 const OWED = 'OWED by goal/G14.10: ';
 const ROOT = path.join(__dirname, '..', '..');

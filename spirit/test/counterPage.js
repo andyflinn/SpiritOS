@@ -20,7 +20,7 @@
 
 const fs = require('fs');
 const net = require('net');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');

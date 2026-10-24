@@ -26,8 +26,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G33.4 (push): ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -322,7 +322,7 @@ async function main() {
   await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await call('desk', 'press', { id: grantId, what: 'go' }, ANDY);
   await call('desk', 'phase.take', { id: grantId, phase: 'red' }, B_AT_DESK);
-  const raised = await call('desk', 'check.add', { id: grantId, kind: 'G', words: 'core grant: spirit/run/js/kernel.js', test: '' }, B_AT_DESK);
+  const raised = await call('desk', 'check.add', { id: grantId, kind: 'G', words: 'core grant: spirit/run/spirit/kernel.js', test: '' }, B_AT_DESK);
   await waitFor(15000);
   const grantWait = waitFor(15000);
   await sleep(1000);

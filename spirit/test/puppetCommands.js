@@ -21,11 +21,11 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const puppetMode = require('../run/js/puppetMode');
-const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
-const common = require('../run/js/serveCommon');
+const puppetMode = require('../run/spirit/puppetMode');
+const auth = require('../run/spirit/relayAuth');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
+const common = require('../run/spirit/serveCommon');
 
 const OWED = 'OWED by goal/G14.1: ';
 
@@ -72,7 +72,7 @@ function world() {
   };
   // THE HANDLERS RUN AS THE NODE RUNS THEM (goal/G30.4): claimed on a verb table and called through the table's
   // call, which server.js hands the door; the shim these checks describe is that call now.
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   table.claim('jobs', 'puppetCommands.js', handlers, { wire: false });
   const door = puppetMode.puppetDoor({
     rootDir: root,

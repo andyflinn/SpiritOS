@@ -21,7 +21,7 @@ cd /root/SpiritOS
 ## Never on this box
 
 - `node spirit/test/labMaster/labMaster.js`
-- personal-node mode (`node js/server.js` without `--relay`)
+- personal-node mode (`node spirit/server.js` without `--relay`)
 - Jobs, App Builder, LM Studio, the desktop shell
 - extra Node processes “just to check”
 

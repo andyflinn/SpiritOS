@@ -21,7 +21,7 @@ HOW TO RUN IT
 
 3. Start the server:
 
-       node js/server.js
+       node spirit/server.js
 
 4. Open a web browser to:
 
@@ -33,10 +33,10 @@ HOW TO RUN IT
 To use a different port instead of 65432 (for example, to run this
 alongside another SpiritOS instance already using 65432):
 
-       node js/server.js --port 65431
+       node spirit/server.js --port 65431
 
 (Setting a PORT environment variable first works too, but --port is
-simpler.) Run "node js/server.js --help" to see all options.
+simpler.) Run "node spirit/server.js --help" to see all options.
 
 WHAT THIS IS
 ------------

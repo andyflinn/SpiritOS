@@ -15,7 +15,7 @@ Type=simple
 # only (server.js BIND_HOST), and so does the face (appFaceApp.js FACE_BIND);
 # Caddy is the only thing that reaches the face from outside.
 WorkingDirectory=__RUN_DIR__
-ExecStart=/usr/bin/node js/server.js --port __PORT__
+ExecStart=/usr/bin/node spirit/server.js --port __PORT__
 Restart=always
 RestartSec=3
 Environment=PORT=__PORT__

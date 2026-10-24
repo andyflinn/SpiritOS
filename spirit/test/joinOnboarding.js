@@ -28,7 +28,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const world = require('./world');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const rollOf = require('./rollOf');
 
 const OWED = 'OWED by goal/G30.2: ';
@@ -47,7 +47,7 @@ const sent = [];
 let clock = Date.now();
 let relay = null;
 try {
-  relay = require('../run/js/relay').createRelay(home, { now: function () { return clock; }, sendMail: function (m) { sent.push(m); return Promise.resolve({ ok: true }); } });
+  relay = require('../run/spirit/relay').createRelay(home, { now: function () { return clock; }, sendMail: function (m) { sent.push(m); return Promise.resolve({ ok: true }); } });
 } catch (e) { relay = null; }
 const ann = auth.generateIdentity('ann');
 const eve = auth.generateIdentity('eve');
@@ -111,7 +111,7 @@ async function main() {
   test.subHeading('4. the door takes join and joinConfirm from a stranger');
   let doorStatus = 0;
   try {
-    const seal = require('../run/js/seal.js');
+    const seal = require('../run/spirit/seal.js');
     const dora = auth.generateIdentity('dora');
     const text = JSON.stringify(seal.seal(relay.relaySealKey(), dora.publicKey, relay.relayPublicKey(),
       JSON.stringify({ v: 1, body: { join: { email: 'dora@example.org', port: 65432 } } })));
@@ -123,7 +123,7 @@ async function main() {
   else test.fail(OWED + 'a stranger\'s join on the door answered ' + doorStatus + ', mails to dora ' + doraMail);
 
   test.subHeading('5. the node verb and the shell');
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   // The relay family's verbs since the flat door (goal/G30.5): 'join' in the relay table, its handler hub.relayJoin.
   if (/'join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
   else test.fail(OWED + 'server.js declares no relay.join {url, email, code}');
@@ -132,7 +132,7 @@ async function main() {
   const joinLine = (server.split('\n').filter(function (l) { return /'join':\s*\{[\s\S]*hub\.relayJoin/.test(l); })[0]) || '';
   if (/port:\s*Number\(port\)\s*\|\|/.test(joinLine)) test.check('relay.join hands on the port this node listens on, before any stored default');
   else test.fail(OWED + 'relay.join hands on ' + short((/port:\s*[^,]+/.exec(joinLine) || [''])[0]) + ', not the listening port first');
-  const shell = code('js/client/shell.js');
+  const shell = code('spirit/client/shell.js');
   if (/relay\.join/.test(shell) && /[?&]?join=|get\('join'\)/.test(shell)) test.check('the shell asks relay.join and reads ?join= on load');
   else test.fail(OWED + 'the shell neither asks relay.join nor reads ?join=');
   // THE EMAIL, TYPED ONCE ON FIRST START: an unbound node opens Natter, which opens the claim screen of its relay
@@ -142,7 +142,7 @@ async function main() {
   const jf = code('shell/js/joinForm.js');
   if (/spirit\.elements\.joinForm/.test(nd) && /type="email"/.test(jf) && /\.relay\.join\(\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
-  const relayServer = code('js/relayServer.js');
+  const relayServer = code('spirit/relayServer.js');
   // Through the driver loader since the box's v28 (no vendor in core).
   if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /require\('\.\/sendMail'\)\.createSender/.test(relayServer)) test.check('relayServer hands the relay the sender sendMail.js made from mail.json');
   else test.fail(OWED + 'relayServer hands the relay no mailer');
@@ -150,12 +150,12 @@ async function main() {
   test.subHeading('6. the first round\'s pages are gone');
   // goal/G30.9 brings a face login back by Andy's new design (relay.faceLogin, its suite spirit/test/faceLogin.js,
   // sessions in the relay's memory). What stays gone is the first round's: its module and the login code it stored.
-  const gone = ['spirit/run/js/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
-  if (!gone.length && !/keepCode|takeCode|loginHash/.test(code('js/relayStore.js'))) test.check('the first round\'s faceLogin.js and its stored login code columns are gone');
-  else test.fail(OWED + 'still there: ' + short(gone.concat(/keepCode|takeCode|loginHash/.test(code('js/relayStore.js')) ? ['login code in relayStore'] : [])));
+  const gone = ['spirit/run/spirit/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
+  if (!gone.length && !/keepCode|takeCode|loginHash/.test(code('spirit/relayStore.js'))) test.check('the first round\'s faceLogin.js and its stored login code columns are gone');
+  else test.fail(OWED + 'still there: ' + short(gone.concat(/keepCode|takeCode|loginHash/.test(code('spirit/relayStore.js')) ? ['login code in relayStore'] : [])));
 
   // ── 7. THE NODE STARTED WITH --email (the box, v26) ─────────────────────────────────────────────────
-  // The user starts the node with node js/server.js --email <address>. While the node holds no seat it asks its kept
+  // The user starts the node with node spirit/server.js --email <address>. While the node holds no seat it asks its kept
   // relay to join with that email and the port it listens on; with a seat, --email does nothing. On stdout it prints
   // that a mail will arrive shortly, or why the join did not start (the relay named, what went wrong, what to do
   // next), and then node is listening on 127.0.0.1:<port>. The email is optional; the README documents it as the
@@ -166,7 +166,7 @@ async function main() {
   //     line, none without an email or with a seat. It asks through relay.join's own path (hub.relayJoin).
   test.subHeading('7. the node started with --email');
   let emailFromArgs = null;
-  try { emailFromArgs = require('../run/js/serveCommon').emailFromArgs; } catch (e) { emailFromArgs = null; }
+  try { emailFromArgs = require('../run/spirit/serveCommon').emailFromArgs; } catch (e) { emailFromArgs = null; }
   const parsed = typeof emailFromArgs === 'function'
     ? [emailFromArgs(['--email', 'ann@example.org']), emailFromArgs(['--port', '11112', '--email=ann@example.org']), emailFromArgs(['--port', '11112'])]
     : null;
@@ -185,7 +185,7 @@ async function main() {
   }
   const real = carrier(function (url, email, port, c) { return c ? relay.joinConfirm(fern.publicKey, c) : relay.join(fern.publicKey, email, port); });
   let nodeHub = null;
-  try { nodeHub = require('../run/js/hub').createHub(nodeHome); } catch (e) { nodeHub = null; }
+  try { nodeHub = require('../run/spirit/hub').createHub(nodeHome); } catch (e) { nodeHub = null; }
   function atStart(email, router) {
     if (!nodeHub || typeof nodeHub.joinAtStart !== 'function') return Promise.resolve({ missing: true, lines: [] });
     return Promise.resolve(nodeHub.joinAtStart(email, { router: router, port: 11112, keptUrl: KEPT })).then(function (r) { return r || { lines: [] }; }, function (e) { return { threw: e.message, lines: [] }; });
@@ -207,7 +207,7 @@ async function main() {
 
   let seatedHome = null;
   try {
-    const rk = require('../run/js/relayKeys');
+    const rk = require('../run/spirit/relayKeys');
     rk.accept(nodeHome, KEPT, 'MCowBQYDK2VwAyEAjoinAtStartKeptRelayKeyAAAAAAAAAAAAAAAAA=');
     rk.seat(nodeHome, KEPT, 'fern');
     seatedHome = rk.seatedUrls(nodeHome);
@@ -216,7 +216,7 @@ async function main() {
   const seatedRun = await atStart('fern@example.org', carrier(function () { askedWhileSeated += 1; return { ok: true, status: 200 }; }));
   if (!seatedRun.missing && askedWhileSeated === 0 && (seatedRun.lines || []).length === 0) test.check('a node that holds a seat ignores --email: nothing asked, nothing printed');
   else test.fail(OWED + 'with a seat (' + short(seatedHome) + ') a start asked ' + askedWhileSeated + ' times and printed ' + short(seatedRun));
-  try { require('../run/js/relayKeys').unseat(nodeHome, KEPT); } catch (e) { /* the refusals below would then not run */ }
+  try { require('../run/spirit/relayKeys').unseat(nodeHome, KEPT); } catch (e) { /* the refusals below would then not run */ }
 
   // EVERY REFUSAL IS A HIGH-QUALITY MESSAGE: the relay named, what went wrong, what to do next.
   const refusals = [
@@ -243,8 +243,8 @@ async function main() {
   else test.fail(OWED + '--help does not name --email');
   let readme = '';
   try { readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8'); } catch (e) { readme = ''; }
-  if (/node js\/server\.js --email /.test(readme) && /noderoutes\.net/.test(readme)) test.check('the README gives node js/server.js --email as the way onto noderoutes.net');
-  else test.fail(OWED + 'the README does not give node js/server.js --email');
+  if (/node spirit\/server\.js --email /.test(readme) && /noderoutes\.net/.test(readme)) test.check('the README gives node spirit/server.js --email as the way onto noderoutes.net');
+  else test.fail(OWED + 'the README does not give node spirit/server.js --email');
 
   // ── 8. NO VENDOR IN CORE, AND THE CARD SAYS WHAT THE RELAY OFFERS (the box, v28) ─────────────────────
   // js/sendMail.js reads relay-state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked
@@ -259,13 +259,13 @@ async function main() {
   //   - ownerBadge.probe puts the card's services on every relay row it answers for (row.services).
   //   - joinAtStart asks the card first through router.relayKey(url), the card ask relay.add already uses.
   test.subHeading('8. sendMail drivers, and services in the card');
-  const JS = path.join(RUN, 'js');
+  const JS = path.join(RUN, 'spirit');
   const moved = !fs.existsSync(path.join(JS, 'mailgun.js')) && fs.existsSync(path.join(JS, 'sendMail.js')) && fs.existsSync(path.join(JS, 'sendMail', 'mailgun.js'));
-  if (moved) test.check('js/mailgun.js is gone; js/sendMail.js and js/sendMail/mailgun.js stand');
+  if (moved) test.check('spirit/mailgun.js is gone; js/sendMail.js and js/sendMail/mailgun.js stand');
   else test.fail(OWED + 'the mail files are not in place: mailgun.js ' + fs.existsSync(path.join(JS, 'mailgun.js')) + ', sendMail.js ' + fs.existsSync(path.join(JS, 'sendMail.js')) + ', sendMail/mailgun.js ' + fs.existsSync(path.join(JS, 'sendMail', 'mailgun.js')));
 
   let sendMailMod = null;
-  try { sendMailMod = require('../run/js/sendMail'); } catch (e) { sendMailMod = null; }
+  try { sendMailMod = require('../run/spirit/sendMail'); } catch (e) { sendMailMod = null; }
   const mailHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-sendmail-'));
   fs.mkdirSync(path.join(mailHome, 'relay-state'), { recursive: true });
   function withMailJson(v) { fs.writeFileSync(path.join(mailHome, 'relay-state', 'mail.json'), JSON.stringify(v)); }
@@ -304,7 +304,7 @@ async function main() {
   // The card: services { sendMail, face }.
   const cardOf = function (r) { try { return r && typeof r.relayCard === 'function' ? r.relayCard() : null; } catch (e) { return { threw: e.message }; } };
   let bare = null;
-  try { bare = require('../run/js/relay').createRelay(home, { now: function () { return clock; } }); } catch (e) { bare = null; }
+  try { bare = require('../run/spirit/relay').createRelay(home, { now: function () { return clock; } }); } catch (e) { bare = null; }
   const withMail = cardOf(relay);
   const without = cardOf(bare);
   if (withMail && withMail.services && withMail.services.sendMail === true && withMail.services.face === true &&
@@ -321,11 +321,11 @@ async function main() {
   let plainRow = null;
   const cardAsks = {};
   try {
-    const badgeMod = require('../run/js/ownerBadge');
+    const badgeMod = require('../run/spirit/ownerBadge');
     badgeMod.ensureRelays(rowHome);
     badgeMod.addRelay(rowHome, 'https://mail.example', 'mail', 'MCowBQYDK2VwAyEAservicesRowMailRelayKeyAAAAAAAAAAAAAAAAAA=');
     badgeMod.addRelay(rowHome, 'https://plain.example', 'plain', 'MCowBQYDK2VwAyEAservicesRowPlainRelayKeyAAAAAAAAAAAAAAAAA=');
-    const rowHub = require('../run/js/hub').createHub(rowHome);
+    const rowHub = require('../run/spirit/hub').createHub(rowHome);
     const cardRouter = {
       relayKey: function (url) {
         cardAsks[url] = (cardAsks[url] || 0) + 1;
@@ -345,11 +345,11 @@ async function main() {
   if (!Object.keys(cardAsks).length) test.check('the list asks no relay for it: no card ask during relay.get (goal/G22.4)');
   else test.fail(OWED + 'relay.get asked cards: ' + short(cardAsks));
   // peerPost keeps what each card said, and hands it back without a call.
-  const ppNow = code('js/peerPost.js');
+  const ppNow = code('spirit/peerPost.js');
   const relayKeyBody = (ppNow.split('function relayKey(')[1] || '').split('\n  function ')[0];
   if (/servicesByUrl\[[^\]]+\]\s*=/.test(relayKeyBody) && /servicesOf:\s*servicesOf/.test(ppNow)) test.check('peerPost keeps each card\'s services when it asks the card, and answers servicesOf(url) without a call');
   else test.fail(OWED + 'peerPost does not keep the card\'s services');
-  const pp = code('js/peerPost.js');
+  const pp = code('spirit/peerPost.js');
   const relayKeyFn = (pp.split('function relayKey(')[1] || '').split('\n  function ')[0];
   if (/services/.test(relayKeyFn)) test.check('peerPost.relayKey hands the card\'s services on');
   else test.fail(OWED + 'peerPost.relayKey drops services from the card');
@@ -362,7 +362,7 @@ async function main() {
   const noMailCard = { join: function () { joinAsked += 1; return Promise.resolve({ ok: true, status: 200 }); }, relayKey: function () { return Promise.resolve({ relayPublicKey: 'x', services: { sendMail: false, face: true } }); }, startStreams: function () { return Promise.resolve(); } };
   const nodeHome2 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-joinstart-card-'));
   let hub2 = null;
-  try { hub2 = require('../run/js/hub').createHub(nodeHome2); } catch (e) { hub2 = null; }
+  try { hub2 = require('../run/spirit/hub').createHub(nodeHome2); } catch (e) { hub2 = null; }
   let cardRun = null;
   try { cardRun = hub2 && typeof hub2.joinAtStart === 'function' ? await hub2.joinAtStart('fern@example.org', { router: noMailCard, port: 11112, keptUrl: KEPT }) : null; } catch (e) { cardRun = { threw: e.message }; }
   try { fs.rmSync(nodeHome2, { recursive: true, force: true }); } catch (e) { /* busy */ }

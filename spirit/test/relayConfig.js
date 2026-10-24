@@ -10,8 +10,8 @@
 // means a constant, it means a measurement.
 
 const test = require('./testSupport.js');
-const relayConfig = require('../run/js/relayConfig');
-const relayLimits = require('../run/js/relayLimits');
+const relayConfig = require('../run/spirit/relayConfig');
+const relayLimits = require('../run/spirit/relayLimits');
 
 test.startTest('Relay configuration — bounded by the box');
 

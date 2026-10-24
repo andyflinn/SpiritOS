@@ -33,19 +33,19 @@ test.startTest('goal/G32.1: the spirit object, the node api for face apps');
 
 const done = (async function () {
   test.subHeading('1. one core file, one api.js per family');
-  const missing = ['spirit.js'].concat(FAMILIES.map(function (f) { return 'js/' + f + '/api.js'; })).filter(function (f) { return !exists(f); });
+  const missing = ['spirit.js'].concat(FAMILIES.map(function (f) { return 'spirit/' + f + '/api.js'; })).filter(function (f) { return !exists(f); });
   if (!missing.length) test.check('spirit.js and every node family\'s api.js exist');
   else test.fail(OWED + 'missing: ' + missing.join(', '));
 
   // Every verb the node mounts has its function in its family's api.js.
-  const server = raw('js/server.js');
+  const server = raw('spirit/server.js');
   const declared = [];
   for (const b of server.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',(?:(?!loopbackVerbs\.mount)[\s\S])*?\n {2}\}, \{ wire:/g)) {
     for (const m of b[0].matchAll(/^ {4}'([a-zA-Z0-9]+)':/gm)) declared.push([b[1], m[1]]);
   }
   const uncovered = declared.filter(function (fv) {
     let def = null;
-    try { def = require(path.join(RUN, 'js', fv[0], 'api.js')); } catch (e) { def = null; }
+    try { def = require(path.join(RUN, 'spirit', fv[0], 'api.js')); } catch (e) { def = null; }
     return !def || !def.verbs || !def.verbs[fv[1]];
   }).map(function (fv) { return fv[0] + '.' + fv[1]; });
   if (declared.length > 40 && !uncovered.length) test.check('every one of the node\'s ' + declared.length + ' verbs has its function in its family\'s api.js');
@@ -57,7 +57,7 @@ const done = (async function () {
   const transport = {
     ask: function (verb, args) {
       // The node's side of goal/G32.3: api answers the families, api {family} each one's interface.
-      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: fs.readFileSync(path.join(RUN, 'js', args.family, 'api.js'), 'utf8') } });
+      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: fs.readFileSync(path.join(RUN, 'spirit', args.family, 'api.js'), 'utf8') } });
       if (verb === 'api') { const t = {}; FAMILIES.forEach(function (f) { t[f] = {}; }); return Promise.resolve({ status: 200, body: t }); }
       sent.push({ verb: verb, args: args }); return Promise.resolve({ status: replyStatus, body: { ok: true, path: args.path, text: 'hello' } });
     },
@@ -105,13 +105,13 @@ const done = (async function () {
   test.subHeading('4. the pages: inline first on the face, loaded at home');
   const faceHtml = raw('face.html');
   let inlined = '';
-  try { inlined = require(path.join(RUN, 'js', 'serveCommon.js')).inlineSpirit(faceHtml, RUN) || ''; } catch (e) { inlined = ''; }
+  try { inlined = require(path.join(RUN, 'spirit', 'serveCommon.js')).inlineSpirit(faceHtml, RUN) || ''; } catch (e) { inlined = ''; }
   const firstScript = (/<script[^>]*>([\s\S]*?)<\/script>/.exec(inlined) || [])[1] || '';
-  if (/<!-- spirit\.js -->/.test(faceHtml) && firstScript.indexOf('createSpirit') !== -1 && /inlineSpirit\(/.test(raw('js/relayServer.js')))
+  if (/<!-- spirit\.js -->/.test(faceHtml) && firstScript.indexOf('createSpirit') !== -1 && /inlineSpirit\(/.test(raw('spirit/relayServer.js')))
     test.check('face.html\'s first script is spirit.js, inline, as the relay serves it');
   else test.fail(OWED + 'face.html is not served with spirit.js inline as its first script');
   const idx = raw('index.html');
-  if (idx.indexOf('/spirit.js') !== -1 && /window\.spirit/.test(raw('js/kernel.js')) && /Object\.keys\(window\.spirit\)/.test(raw('js/kernel.js')))
+  if (idx.indexOf('/spirit.js') !== -1 && /window\.spirit/.test(raw('spirit/kernel.js')) && /Object\.keys\(window\.spirit\)/.test(raw('spirit/kernel.js')))
     test.check('index.html loads spirit.js, and the kernel keeps the object\'s members when it sets window.spirit');
   else test.fail(OWED + 'index.html does not load spirit.js, or the kernel overwrites the object');
 }());

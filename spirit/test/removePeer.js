@@ -17,11 +17,11 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
 const world = require('./world');
 const rollOf = require('./rollOf');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 
 // A scenario, in the vocabulary the visual builder reads. The suite then
 // explores it — every refusal, every signature that should not work —

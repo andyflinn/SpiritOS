@@ -11,8 +11,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const settings = require('../run/js/nodeSettings');
-const hub = require('../run/js/hub');
+const settings = require('../run/spirit/nodeSettings');
+const hub = require('../run/spirit/hub');
 
 function home(json) {
   const h = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodesettings-'));

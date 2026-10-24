@@ -47,9 +47,9 @@ const MACHINE = {
 (function () {
   test.subHeading('1. the relay exports its admission rule');
   let relay = null;
-  try { relay = require(path.join(RUN, 'js', 'relay.js')); } catch (e) { relay = null; }
-  if (relay && typeof relay.allowanceFor === 'function' && relay.SEAT_STREAMS === 3 && relay.STREAMS_PER_MB === 16) test.check('js/relay.js exports allowanceFor, SEAT_STREAMS (3) and STREAMS_PER_MB (16)');
-  else test.fail(OWED + 'js/relay.js exports ' + (relay ? JSON.stringify(Object.keys(relay)) : 'nothing it loads'));
+  try { relay = require(path.join(RUN, 'spirit', 'relay.js')); } catch (e) { relay = null; }
+  if (relay && typeof relay.allowanceFor === 'function' && relay.SEAT_STREAMS === 3 && relay.STREAMS_PER_MB === 16) test.check('spirit/relay.js exports allowanceFor, SEAT_STREAMS (3) and STREAMS_PER_MB (16)');
+  else test.fail(OWED + 'spirit/relay.js exports ' + (relay ? JSON.stringify(Object.keys(relay)) : 'nothing it loads'));
 
   test.subHeading('2. an agent\'s README: Machine Description, Summary, Measurements');
   const out = path.join(scratch, 'agents', 'claude-ubuntu');

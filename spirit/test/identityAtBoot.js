@@ -11,7 +11,7 @@
 // no other component ever has to make or check for one. The law: no
 // node-boot is done until the node has a key and a default name.
 //
-// Two halves. (a) relayAuth.js planted alone into a spirit/run/js/ of its
+// Two halves. (a) relayAuth.js planted alone into a spirit/run/spirit/ of its
 // own: requiring it is enough to make the identity, and nothing afterwards
 // re-keys it. (b) a whole planted node booted on its own port: the key is
 // on disc when the port first answers, a restart keeps it, and a claim
@@ -26,7 +26,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
 
-const RUN_JS = path.join(__dirname, '..', 'run', 'js');
+const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function freePort() {
@@ -70,7 +70,7 @@ function plantedModule() {
 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-idboot-'));
   const run = path.join(scratch, 'spirit', 'run');
-  const js = path.join(run, 'js');
+  const js = path.join(run, 'spirit');
   fs.mkdirSync(js, { recursive: true });
   ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(js, f)); });
   const file = path.join(js, 'relayAuth.js');
@@ -95,7 +95,7 @@ function plantedModule() {
   }
 
   // NO PUBLIC MINTING CALL (Andy, 2026-10-13): ensureIdentity is not exported.
-  if (typeof auth.ensureIdentity === 'undefined' && typeof require('../run/js/relayAuth.js').ensureIdentity === 'undefined') {
+  if (typeof auth.ensureIdentity === 'undefined' && typeof require('../run/spirit/relayAuth.js').ensureIdentity === 'undefined') {
     test.check('relayAuth does not export ensureIdentity: its first load is the only caller');
   } else {
     test.fail('relayAuth still exports ensureIdentity');
@@ -138,9 +138,9 @@ function plantedModule() {
   } else {
     test.fail('loadIdentity answered null for a nameless identity with keys');
   }
-  fs.mkdirSync(path.join(bare, 'js'), { recursive: true });
-  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(bare, 'js', f)); });
-  freshRequire(path.join(bare, 'js', 'relayAuth.js'));
+  fs.mkdirSync(path.join(bare, 'spirit'), { recursive: true });
+  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(bare, 'spirit', f)); });
+  freshRequire(path.join(bare, 'spirit', 'relayAuth.js'));
   const keptOnDisc = readIdentity(bare);
   if (planted && keptOnDisc && keptOnDisc.publicKey === planted.publicKey && keptOnDisc.name === os.hostname()) {
     test.check('a first load keeps a nameless identity\'s key and gives it the machine name');
@@ -162,7 +162,7 @@ async function bootedNode() {
   let kid = null;
   async function start() {
     const port = await freePort();
-    kid = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
+    kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
     kid.stdout.on('data', function () {});
     kid.stderr.on('data', function () {});
     // The FIRST moment the port answers, the identity is read: never later.

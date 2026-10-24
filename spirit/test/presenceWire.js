@@ -20,17 +20,17 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const invites = require('../run/js/invites');
+const invites = require('../run/spirit/invites');
 // The node's own record of where it holds a seat — see nodeFor.
-const relayKeys = require('../run/js/relayKeys');
-const hub = require('../run/js/hub');
-const presenceNode = require('../run/js/presenceNode');
-const { createPeerPost } = require('../run/js/peerPost');
-const buildStamp = require('../run/js/buildStamp');
+const relayKeys = require('../run/spirit/relayKeys');
+const hub = require('../run/spirit/hub');
+const presenceNode = require('../run/spirit/presenceNode');
+const { createPeerPost } = require('../run/spirit/peerPost');
+const buildStamp = require('../run/spirit/buildStamp');
 const plantRun = require('./plantRun');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 const rollOf = require('./rollOf');
 
 // A port is CHOSEN AT RUN TIME, not written down, and the server is
@@ -128,7 +128,7 @@ function nodeFor(id) {
   // THE RELAY'S KEY IS A CARD ASK THROUGH THE ROUTER (goal/G22.6: GET
   // /api/relay/key is closed), wired as server.js wires it.
   const router = createPeerPost({ rootDir: home, request: hub.relayRequest });
-  const answerer = require('../run/js/answerRelay').createAnswerer({
+  const answerer = require('../run/spirit/answerRelay').createAnswerer({
     rootDir: home, askKey: function (url) { return router.relayKey(url); },
   });
   const P = presenceNode.createPresence({
@@ -167,7 +167,7 @@ test.startTest('Presence wire — a real socket, end to end');
 // The output is kept and printed with the failure instead.
 async function awaitRelay(runDir, port) {
   const said = [];
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: runDir, stdio: ['ignore', 'pipe', 'pipe'] });
   kid.stdout.on('data', function (b) { said.push(String(b)); });
   kid.stderr.on('data', function (b) { said.push(String(b)); });
@@ -359,7 +359,7 @@ async function run() {
   // the roll (rollOf.js), and closed so the tree can be removed on Windows.
   let rows = [];
   try { rows = rollOf(lab.runDir); } catch (e) { rows = []; }
-  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
+  try { require('../run/spirit/relayStore').closeAll(); } catch (e) { /* none open */ }
 
   if (said.status === 200 && rows.length) {
     test.check('and the relay that came back still knows who its members are: ' +

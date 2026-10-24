@@ -60,8 +60,8 @@ if (typeof create !== 'function') {
   test.subHeading('…and it must be a home that actually holds a node');
 
   const nowhere = create({ name: 'agent-ghost', type: 'avatar', kind: 'agent', port: 45901, home: '/nowhere/spirit/run' });
-  if (nowhere.status === 400 && /no js\/server\.js/.test(nowhere.error || '')) {
-    test.check('a home with no js/server.js is refused, naming the path');
+  if (nowhere.status === 400 && /no spirit\/server\.js/.test(nowhere.error || '')) {
+    test.check('a home with no spirit/server.js is refused, naming the path');
   } else {
     test.fail('a home that holds nothing was accepted: ' + JSON.stringify(nowhere));
   }

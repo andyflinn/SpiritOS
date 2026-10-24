@@ -14,7 +14,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const buildStamp = require('../run/js/buildStamp');
+const buildStamp = require('../run/spirit/buildStamp');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-stamp-'));

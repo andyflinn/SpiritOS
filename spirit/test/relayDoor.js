@@ -35,9 +35,9 @@
 //   signedPost(id, to, text)        { body, hash } — no network
 //   openAnswer(id, relayKey, packet)  a claim answer opened: its body or null
 
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const nodeCard = require('../run/spirit/nodeCard');
 const openReply = require('./openReply');
 
 // Past the address table's first ban (relay.js, STRANGER_BAN_START_MS = 1000).

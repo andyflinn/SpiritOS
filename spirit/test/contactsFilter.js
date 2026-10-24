@@ -22,8 +22,8 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
-const hubModule = require('../run/js/hub.js');
+const spirit = require('../run/spirit/kernel.js');
+const hubModule = require('../run/spirit/hub.js');
 
 const OWED = 'OWED by goal/G2.7: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -79,7 +79,7 @@ async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 // THE LIST AS THE SHELL GIVES IT (goal/G30.19): the scripts index.html loads for it, in its order, no module and no
 // process, as in a page.
 const PAGE_SCRIPTS = [
-  'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
+  'spirit/probabilityBucket.js', 'spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/fieldRules.js',
   'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js',
 ];
 

@@ -20,9 +20,9 @@ const SPIRIT = path.join(__dirname, '..');
 const OLD = 'app' + 'Servers';
 
 test.subHeading('T1: js/appClient.js exists and the old file does not');
-const client = fs.existsSync(path.join(SPIRIT, 'run', 'js', 'appClient.js'));
-const old = fs.existsSync(path.join(SPIRIT, 'run', 'js', OLD + '.js'));
-if (client && !old) test.check('js/appClient.js is there, the old name is gone');
+const client = fs.existsSync(path.join(SPIRIT, 'run', 'spirit', 'appClient.js'));
+const old = fs.existsSync(path.join(SPIRIT, 'run', 'spirit', OLD + '.js'));
+if (client && !old) test.check('spirit/appClient.js is there, the old name is gone');
 else test.fail(OWED + 'appClient.js ' + client + ', ' + OLD + '.js ' + old);
 
 test.subHeading('T2: no ' + OLD + ' identifier is left in spirit/run or spirit/test');

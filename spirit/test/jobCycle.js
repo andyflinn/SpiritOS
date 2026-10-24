@@ -21,11 +21,11 @@ const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const limits = require('../run/js/limits.js');
+const limits = require('../run/spirit/limits.js');
 
 const OWED = 'OWED by goal/G29.15: ';
 const RUN = path.join(__dirname, '..', 'run');
-const KERNEL = path.join(RUN, 'js', 'kernel.js');
+const KERNEL = path.join(RUN, 'spirit', 'kernel.js');
 const read = function (rel) { return fs.readFileSync(path.join(RUN, rel), 'utf8'); };
 
 test.startTest('goal/G29.15: the job cycle, one progress protocol in spirit.core.jobs');
@@ -69,7 +69,7 @@ const cycleOf = function (r) { return appsOf(r).filter(function (a) { return a.j
 (async function () {
   // ── 1. the calls ─────────────────────────────────────────────────────
   test.subHeading('1. spirit.core.jobs holds what every spawned process shares');
-  const spirit = require('../run/js/kernel.js');
+  const spirit = require('../run/spirit/kernel.js');
   const want = ['report', 'log', 'complete', 'fail', 'publish', 'start', 'progress', 'end'];
   const lacking = want.filter(function (n) { return typeof (spirit.core.jobs || {})[n] !== 'function'; });
   if (!lacking.length) test.check('spirit.core.jobs has ' + want.join(', '));
@@ -141,7 +141,7 @@ const cycleOf = function (r) { return appsOf(r).filter(function (a) { return a.j
 
   // ── 5. appServer keeps only what serving needs ───────────────────────
   test.subHeading('5. publish is gone from appServer.js');
-  const appServer = read('js/appServer.js');
+  const appServer = read('spirit/appServer.js');
   if (!/function publish\s*\(/.test(appServer) && !/\bpublish:\s*publish\b/.test(appServer) && !/PUBLISH_MAX/.test(appServer)) test.check('appServer.js defines and exports no publish, and holds no publish cap');
   else test.fail(OWED + 'appServer.js still holds publish');
 

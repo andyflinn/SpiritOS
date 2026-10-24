@@ -33,10 +33,10 @@ const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
-const arrivals = require('../run/js/arrivals.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
+const arrivals = require('../run/spirit/arrivals.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const plantRun = require('./plantRun.js');
 
 test.startTest('desk/G1.3: the desk server owns desk.db, and the node reaches it');
@@ -193,7 +193,7 @@ function freePort() {
   // ── T4 ──────────────────────────────────────────────────────────────
   test.subHeading('T4: a known member\'s packet {desk: ...} reaches it');
   let apiDoor = null;
-  try { apiDoor = require('../run/js/apiDoor.js'); } catch (e) { apiDoor = null; }
+  try { apiDoor = require('../run/spirit/apiDoor.js'); } catch (e) { apiDoor = null; }
   const posted = [];
   const door = apiDoor && apiDoor.createApiDoor({
     servers: client,
@@ -215,7 +215,7 @@ function freePort() {
 
   // ── T3 ──────────────────────────────────────────────────────────────
   test.subHeading('T3: desk.<verb> on the loopback door reaches it');
-  const flat = require('../run/js/verbTable.js').createVerbTable().door(client);
+  const flat = require('../run/spirit/verbTable.js').createVerbTable().door(client);
   const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', { id: 'goal/G0' }) : null;
   if (shared && shared.status === 200 && shared.body && shared.body.at === SEEN) test.check('the flat door /api/spirit runs (door.call(desk.seen.get)) reached the desk server');
   else test.fail(OWED + 'door.call ' + (flat && flat.call ? 'answered ' + JSON.stringify(shared) : 'is missing'));
@@ -229,7 +229,7 @@ function freePort() {
   // It starts the desk server only if it includes it (its manifest runs it at home, goal/G30.20).
   require('./tools/runsHome.js')(home, 'process/js/desk');
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(node);
   let said = '';
   node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });

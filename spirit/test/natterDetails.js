@@ -22,8 +22,8 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
-const packet = require('../run/js/client/packet.js');
+const spirit = require('../run/spirit/kernel.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'natterDetails', 'natterDetails.js');

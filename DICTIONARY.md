@@ -18,11 +18,11 @@ Format: **term** — aliases — meaning.
 
 ## Nodes and ports
 
-**Personal node** — 65432, work node, companion spirit, default server — `node js/server.js` **without** `--relay`. Loopback HTTP only. The browser UI talks to this and only this.
+**Personal node** — 65432, work node, companion spirit, default server — `node spirit/server.js` **without** `--relay`. Loopback HTTP only. The browser UI talks to this and only this.
 
 **65432** — work port — Default listen port of a personal node on the same machine as the browser. Not the public relay.
 
-**Public relay** — `--relay`, VPS relay — `node js/server.js --relay`. A **router**: it routes packets between personal nodes by public key, delivers or refuses at once, and **stores nothing on anyone's behalf** (decision 0006). On spirit-3 it binds **65430** behind Caddy, never as a public 65430.
+**Public relay** — `--relay`, VPS relay — `node spirit/server.js --relay`. A **router**: it routes packets between personal nodes by public key, delivers or refuses at once, and **stores nothing on anyone's behalf** (decision 0006). On spirit-3 it binds **65430** behind Caddy, never as a public 65430.
 
 > **"mailbox" was a synonym for this until 2026-09-15** and is retired. It described a real thing — a claim/send/inbox store — and R8 deleted that thing. `relay.js` has said *"there are no mailboxes in the system (Andy). An application may have something it chooses to call one; this layer does not"* since before the deletion; the word is dropped here so the two agree. Occurrences survive in comments about history, which is where a retired word belongs.
 

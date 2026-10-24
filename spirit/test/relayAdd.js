@@ -22,7 +22,7 @@ test.startTest('goal/G28.1: adding a relay');
 
 test.subHeading('1. the node declares relay.add');
 {
-  const server = stripComments(fs.readFileSync(path.join(RUN, 'js', 'server.js'), 'utf8'));
+  const server = stripComments(fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8'));
   // The relay family's 'add' in the flat door's tables since goal/G30.5, its handler hub.relayAdd.
   if (/'add'\s*:\s*\{[^\n]*hub\.relayAdd\(/.test(server)) test.check('server.js declares relay.add');
   else test.fail(OWED + 'server.js declares no relay.add: no node verb adds a relay');
@@ -30,7 +30,7 @@ test.subHeading('1. the node declares relay.add');
 
 test.subHeading('2. relay.add refuses an empty label, and lists nothing');
 {
-  const hub = stripComments(fs.readFileSync(path.join(RUN, 'js', 'hub.js'), 'utf8'));
+  const hub = stripComments(fs.readFileSync(path.join(RUN, 'spirit', 'hub.js'), 'utf8'));
   if (/function relayAdd\b/.test(hub) && /label[^;]*(empty|required|invalid)/i.test(hub)) test.check('hub.js refuses an empty label with a reason');
   else test.fail(OWED + 'hub.js has no relayAdd that refuses an empty label');
 }

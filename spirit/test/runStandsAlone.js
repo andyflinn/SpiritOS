@@ -109,7 +109,7 @@ const FORBIDDEN = [
 //
 // Listed as an exact file so that a second file cannot quietly inherit
 // the exemption by adopting the same string.
-const EXEMPT = { 'js/buildStamp.js': ':!spirit/test' };
+const EXEMPT = { 'spirit/buildStamp.js': ':!spirit/test' };
 // AND THE VERIFIER, WHOLE (goal/G19.12). deskVerify is the product's test runner: its job is to find and run the suites,
 // so it names their folder, and with the folder deleted it runs nothing and says so, which is no dependency of the
 // product on the harness. Andy, 2026-10-12, on this very flag: "the core hard-codes MANY folders for many reasons.
@@ -161,7 +161,7 @@ if (!offences.length) {
 // using that pathspec, this suite should stop carrying an exception for
 // it — an exemption nobody needs is a hole nobody is watching.
 (function theExemptionIsStillEarned() {
-  const rel = 'js/buildStamp.js';
+  const rel = 'spirit/buildStamp.js';
   let src = '';
   try { src = fs.readFileSync(path.join(RUN_DIR, rel), 'utf8'); }
   catch (e) { src = ''; }

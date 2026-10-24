@@ -30,7 +30,7 @@ const http = require('http');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.6: ';
 const RUN = path.join(__dirname, '..', 'run');

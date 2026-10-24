@@ -37,9 +37,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const seal = require('../run/js/seal');
-const nodeStore = require('../run/js/nodeStore');
+const auth = require('../run/spirit/relayAuth');
+const seal = require('../run/spirit/seal');
+const nodeStore = require('../run/spirit/nodeStore');
 
 test.startTest('A recipient refuses a replayed sealed message');
 

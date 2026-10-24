@@ -14,7 +14,7 @@ const os = require('os');
 const path = require('path');
 const childProcess = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 
@@ -51,7 +51,7 @@ test.subHeading('The node names each pipe, and two nodes on one box never share 
 // keeps it from drifting back.
 test.subHeading('The node knows servers by name and pipe, never a face');
 (function () {
-  const src = fs.readFileSync(path.join(RUN, 'js', 'appClient.js'), 'utf8')
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'appClient.js'), 'utf8')
     .split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (!/face/i.test(src)) test.check('appClient.js has no face vocabulary outside its comments');
   else test.fail('appClient.js code mentions a face: ' + (src.match(/.*face.*/i) || [''])[0].trim());
@@ -86,7 +86,7 @@ function refusalsByName() {
       });
     });
   }, Promise.resolve()).then(function () {
-    const codes = require('../run/js/spiritErrors.js');
+    const codes = require('../run/spirit/spiritErrors.js');
     const known = cases.every(function (c) {
       const d = codes.byCode(c[3]);
       return !!d && d.code === c[3] && d.status === c[2];
@@ -109,9 +109,9 @@ function aRealKnock() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
   fs.mkdirSync(path.join(root, 'process', 'js', 'knockServer'), { recursive: true });
   fs.writeFileSync(path.join(root, 'process', 'js', 'knockServer', 'knockServer.js'),
-    "'use strict';\nconst appServer = require('../../../js/appServer.js');\n" +
+    "'use strict';\nconst appServer = require('../../../spirit/appServer.js');\n" +
     "appServer.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { dependencies: [] });\n");
-  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
+  fs.symlinkSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), 'junction');
   const state = path.join(root, 'relay-state', 'process', 'knockServer');
   fs.mkdirSync(state, { recursive: true });
   const pipe = appClient.pipePathFor(root, 'knockServer', process.platform, 'process');
@@ -176,7 +176,7 @@ function aTrickleIsCutOff() {
     // than hanging the suite until the harness kills it.
     const guard = new Promise(function (resolve) { setTimeout(function () { resolve({ hung: true }); }, 3000); });
     return Promise.race([
-      require('../run/js/relayRequest.js').pipeRequest(pipe, 'GET', '/', '', { timeoutMs: 500 }),
+      require('../run/spirit/relayRequest.js').pipeRequest(pipe, 'GET', '/', '', { timeoutMs: 500 }),
       guard,
     ]).then(function (r) {
       const took = Date.now() - began;

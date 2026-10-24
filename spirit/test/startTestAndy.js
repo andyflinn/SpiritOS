@@ -9,7 +9,7 @@ const targets = setupRelayFakes();
 
 spawn(
   process.execPath,
-  [path.join(targets.andy, 'js', 'server.js'), '--port', '65431'],
+  [path.join(targets.andy, 'spirit', 'server.js'), '--port', '65431'],
   {
     cwd: targets.andy,
     stdio: 'inherit',

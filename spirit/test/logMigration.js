@@ -24,8 +24,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const trafficLog = require('../run/js/trafficLog.js');
-const nodeStore = require('../run/js/nodeStore.js');
+const trafficLog = require('../run/spirit/trafficLog.js');
+const nodeStore = require('../run/spirit/nodeStore.js');
 
 test.startTest('transport/R19.5: the old log file is imported, checked, and retired');
 

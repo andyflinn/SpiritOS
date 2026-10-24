@@ -60,8 +60,8 @@ const joinSteps = element('shell/js/joinSteps.js', 'joinSteps');
 let nodeSide = null;
 try {
   const plant = require('./plantIdentity.js');
-  const relayKeys = require('../run/js/relayKeys');
-  const contactBook = require('../run/js/contacts');
+  const relayKeys = require('../run/spirit/relayKeys');
+  const contactBook = require('../run/spirit/contacts');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-job-'));
   homes.push(home);
   plant.ensureAt(home, 'carl');
@@ -71,7 +71,7 @@ try {
     createJob: function (kind, type, data) { made = { id: 'job_1', kind: kind, type: type, data: data }; return made; },
     updateJob: function (id, patch) { published.push(JSON.parse(JSON.stringify(patch.data || {}))); Object.assign(made.data, patch.data || {}); return made; },
   };
-  const J = require('../run/js/joinStepsJob').create(home, jobs);
+  const J = require('../run/spirit/joinStepsJob').create(home, jobs);
   const at = function () { const s = joinSteps ? joinSteps.current(steps, joinSteps.fromJob(made.data, false)) : null; return s ? s.until : null; };
   const r = { kind: made && made.kind, type: made && made.type, start: at() };
   r.quiet = J.refresh('nothing') === false && published.length === 0;
@@ -106,13 +106,13 @@ if (n.contact === true && n.afterContact === 'face') test.check('a contact added
 else test.fail(OWED + 'after a contact: ' + short(n));
 if (n.faceUrl === 'https://harbour.relay.example' && n.afterFace === 'opened' && n.afterOpened === null) test.check('a face kept moves the open step to the face link, https://harbour.relay.example; opened, no step is open');
 else test.fail(OWED + 'after a face: ' + short(n));
-const serverSrc = code('js/server.js');
+const serverSrc = code('spirit/server.js');
 if (/require\('\.\/joinStepsJob'\)\.create\(/.test(serverSrc) && /joinSteps(Job)?\.refresh\(/.test(serverSrc) && /relay\|contact\|peer/.test(serverSrc))
   test.check('server.js makes the job and refreshes it after a relay, contact or peer verb');
 else test.fail(OWED + 'server.js does not keep the join-steps job');
 
 test.subHeading('3. the shell: the tile hears the job, the address and the link in the mail');
-const shell = code('js/client/shell.js');
+const shell = code('spirit/client/shell.js');
 const elementSrc = code('shell/js/joinSteps.js');
 if (/'join-steps'/.test(shell) && /fromJob\(/.test(shell) && /faceOpened/.test(shell) && !/askStepFacts/.test(shell) && !/ask\('relay\.search'|'contact\.search'|'relay\.get'/.test(elementSrc))
   test.check('the shell draws the Join tile from the join-steps job it hears; nothing asks the node for the steps');
@@ -123,13 +123,13 @@ else test.fail(OWED + 'the shell does not open ?app=');
 const mails = [];
 let link = '';
 try {
-  const auth = require('../run/js/relayAuth');
+  const auth = require('../run/spirit/relayAuth');
   const plant = require('./plantIdentity.js');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-steps-'));
   homes.push(home);
   plant.ensureAt(home, 'relay');
   auth.writeOwner(home, auth.generateIdentity('andy').publicKey);
-  const box = require('../run/js/relay').createRelay(home, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+  const box = require('../run/spirit/relay').createRelay(home, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
   box.join(auth.generateIdentity('bert').publicKey, 'bert@example.org', 11112, '');
   link = ((/http:\/\/127\.0\.0\.1:\d+\/?\?[^\s]+/.exec((mails[0] || {}).text || '')) || [''])[0];
 } catch (e) { link = 'threw ' + e.message; }

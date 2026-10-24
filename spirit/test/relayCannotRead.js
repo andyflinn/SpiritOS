@@ -44,8 +44,8 @@
 
 const test = require('./testSupport.js');
 const mw = require('./monitorWorld.js');
-const seal = require('../run/js/seal');
-const auth = require('../run/js/relayAuth');
+const seal = require('../run/spirit/seal');
+const auth = require('../run/spirit/relayAuth');
 
 // THE RECIPIENT ANSWERS, which is what releases the sender's route. A member
 // has one request in flight (0016, the member cap is 1 since 2026-10-02), and

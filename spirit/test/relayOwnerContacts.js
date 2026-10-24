@@ -36,8 +36,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const contactBook = require('../run/js/contacts');
+const auth = require('../run/spirit/relayAuth');
+const contactBook = require('../run/spirit/contacts');
 
 const MINE = 'https://mine.example';
 const THEIRS = 'https://theirs.example';
@@ -49,7 +49,7 @@ function tmpHome(name) {
 }
 
 function hubFor(home) {
-  return require('../run/js/hub').createHub(home);
+  return require('../run/spirit/hub').createHub(home);
 }
 
 function fakeRes() {

@@ -55,17 +55,17 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
-const errors = require('../run/js/spiritErrors.js');
-const ownerBadge = require('../run/js/ownerBadge.js');
+const spirit = require('../run/spirit/kernel.js');
+const errors = require('../run/spirit/spiritErrors.js');
+const ownerBadge = require('../run/spirit/ownerBadge.js');
 
 const OWED = 'OWED by goal/G16.3: ';
 const RUN = path.join(__dirname, '..', 'run');
-const JS = path.join(RUN, 'js');
+const JS = path.join(RUN, 'spirit');
 const APP_FILE = path.join('shell', 'natter', 'relays.json');
 const STATE_FILE = path.join('relay-state', 'relays.json');
 const DB_FILE = path.join('relay-state', 'node.db');
-const relayKeys = require('../run/js/relayKeys.js');
+const relayKeys = require('../run/spirit/relayKeys.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } }
@@ -83,7 +83,7 @@ function freshRoot() {
 function nodeFiles(into) {
   fs.readdirSync(JS).forEach(function (name) {
     if (!/\.js$/.test(name)) return;
-    into.push({ rel: 'spirit/run/js/' + name, text: read(path.join(JS, name)) });
+    into.push({ rel: 'spirit/run/spirit/' + name, text: read(path.join(JS, name)) });
   });
   return into;
 }

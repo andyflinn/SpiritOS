@@ -9,7 +9,7 @@
 //
 // EVERY PREMISE RE-CHECKED AGAINST THE TREE at d35aa3e6, because the box was checked at b355e36d and the tree has
 // moved twice since (goal/G16.2 and goal/G16.8 both deleted code it describes). What changed, so the next session
-// does not look for the old lines: the verb file is spirit/run/js/jobs/api.json, not process/js/jobs/api.json;
+// does not look for the old lines: the verb file is spirit/run/spirit/jobs/api.json, not process/js/jobs/api.json;
 // relayServer requires peerPost at 938, not 1053; the loopback subscription is kernel.js:753 and the SSE route
 // server.js:870. Every one of the six findings still holds, and each is asserted BY ITS BEHAVIOUR below rather
 // than by the line it lives on, so the build may move any of them.
@@ -56,13 +56,13 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
-const relayStatus = require('../run/js/relayStatus.js');
-const arrivals = require('../run/js/arrivals.js');
+const auth = require('../run/spirit/relayAuth.js');
+const relayStatus = require('../run/spirit/relayStatus.js');
+const arrivals = require('../run/spirit/arrivals.js');
 
 const OWED = 'OWED by goal/G16.9: ';
 const RUN = path.join(__dirname, '..', 'run');
-const JS = path.join(RUN, 'js');
+const JS = path.join(RUN, 'spirit');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } }
@@ -75,7 +75,7 @@ test.subHeading('1. the node\'s own api description names no app');
   const file = path.join(JS, 'jobs', 'api.json');
   const text = read(file);
   if (!text) {
-    test.fail(OWED + 'spirit/run/js/jobs/api.json could not be read');
+    test.fail(OWED + 'spirit/run/spirit/jobs/api.json could not be read');
   } else if (!/\bdesk\b/i.test(text)) {
     test.check('jobs/api.json describes the door without naming an app');
   } else {

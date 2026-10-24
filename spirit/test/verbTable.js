@@ -14,7 +14,7 @@
 // mistakes it turns into loud ones, and the one it must not.
 
 const test = require('./testSupport.js');
-const { createVerbTable } = require('../run/js/verbTable');
+const { createVerbTable } = require('../run/spirit/verbTable');
 
 function threw(fn) {
   try { fn(); return ''; }

@@ -41,7 +41,7 @@ const naming = walk(RUN, []).filter(function (f) { return /process-browser/.test
   .map(function (f) { return path.relative(RUN, f).split(path.sep).join('/'); });
 if (!naming.length) test.check('no file under spirit/run names process-browser: not the Spirit group, not the shell\'s intrinsic apps or renames');
 else test.fail(OWED + 'still named in ' + naming.join(', '));
-const shell = fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8');
+const shell = fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8');
 const intrinsic = (/var INTRINSIC_APP_FOLDERS = \[([^\]]*)\]/.exec(shell) || [])[1] || '';
 if (intrinsic && !/process-browser/.test(intrinsic)) test.check('the shell\'s intrinsic apps no longer list it: ' + intrinsic.replace(/\s+/g, ' ').trim());
 else test.fail(OWED + 'INTRINSIC_APP_FOLDERS reads ' + intrinsic);

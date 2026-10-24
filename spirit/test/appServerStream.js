@@ -2,7 +2,7 @@
 
 // spirit/test/appServerStream.js
 // goal/G33.4 (box v40, v41, v43) and goal/G33.8 (box v8): js/appServer.js gives every server both halves of a stream.
-// Andy: "js/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher)
+// Andy: "spirit/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher)
 // interface", "Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.", "No
 // subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers,
 // restart or not, and stops sending to a client that has disappeared (unreachable) until that client subscribes again."
@@ -26,11 +26,11 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
+const appClient = require('../run/spirit/appClient.js');
+const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G33.8 (stream): ';
-const APP_SERVER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const APP_SERVER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 const SPIRIT_DATA = path.join(__dirname, '..', 'run', 'shell', 'js', 'spiritData.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

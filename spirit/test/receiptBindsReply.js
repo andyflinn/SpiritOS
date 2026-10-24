@@ -24,10 +24,10 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
+const auth = require('../run/spirit/relayAuth.js');
 
 const OWED = 'OWED by goal/G16.1: ';
-const JS = path.join(__dirname, '..', 'run', 'js');
+const JS = path.join(__dirname, '..', 'run', 'spirit');
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 function code(file) {
   return fs.readFileSync(path.join(JS, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')

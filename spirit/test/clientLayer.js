@@ -54,10 +54,10 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel');
+const packet = require('../run/spirit/client/packet');
 
-const SHELL = path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js');
+const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
 
 function fakeElement(tag) {
   let html = '';
@@ -425,7 +425,7 @@ function laterNewsFindsWhoAsked() {
 function aBrowserOnlyFileLivesWithTheShell() {
   test.subHeading('A file js/ keeps is a file the node reads');
 
-  const jsDir = path.join(__dirname, '..', 'run', 'js');
+  const jsDir = path.join(__dirname, '..', 'run', 'spirit');
   const indexHtml = fs.readFileSync(
     path.join(__dirname, '..', 'run', 'index.html'), 'utf8');
 
@@ -456,7 +456,7 @@ function aBrowserOnlyFileLivesWithTheShell() {
   }
 
   const stranded = inJs.filter(function (f) {
-    if (indexHtml.indexOf('/js/' + f + '"') === -1) return false;  // not page-loaded
+    if (indexHtml.indexOf('/spirit/' + f + '"') === -1) return false;  // not page-loaded
     return nodeRequirersOf(f).length === 0;                        // and nobody reads it
   });
 

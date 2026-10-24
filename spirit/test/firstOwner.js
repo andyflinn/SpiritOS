@@ -4,9 +4,9 @@ const rollOf = require('./rollOf');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
+const { createRelay } = require('../run/spirit/relay');
 // A relay nobody has claimed, which is the only world in which the act of
 // claiming can be watched happening. The claims themselves stay written
 // out below: they are the subject of this file, and a helper that made

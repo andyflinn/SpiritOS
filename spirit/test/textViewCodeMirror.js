@@ -24,7 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.12: ';
 const REPO = path.resolve(__dirname, '..', '..');
@@ -161,7 +161,7 @@ function fakeElement() {
   // editor takes no words from whoever opens it; only its own picker, found by contents, hands it some.
   if (!/params\s*&&\s*params\.words|params\.words/.test(editor)) test.check('the editor takes no words from whoever opens it');
   else test.fail(OWED + 'textEditor.js still takes words from its opener');
-  if (/createTextView\s*:\s*shellElements\.createTextView/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
+  if (/createTextView\s*:\s*shellElements\.createTextView/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
   else test.fail(OWED + 'shell.js hands apps no createTextView');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();

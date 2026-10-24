@@ -21,7 +21,7 @@
 // summed, 1.10 — 1.25 keeps the worst a worst. Re-measure both if the row's schema changes; the field limits are
 // read from fieldRules each call and need nothing.
 
-const rules = require('../run/js/fieldRules.js');
+const rules = require('../run/spirit/fieldRules.js');
 
 const FIXED_BYTES = 480;
 const PER_NAME_BYTE = 5;

@@ -17,9 +17,9 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
-const apiDoor = require('../run/js/apiDoor.js');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
+const apiDoor = require('../run/spirit/apiDoor.js');
 
 const OWED = 'OWED by goal/G16.4: ';
 const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
@@ -74,7 +74,7 @@ function short(x) { return JSON.stringify(x).slice(0, 200); }
   else test.fail('DEBUG from a member: asked ' + asked.length + ', replies ' + short(r3));
 
   test.subHeading('3. the door names no owner');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'apiDoor.js'), 'utf8')
+  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'apiDoor.js'), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
   if (!/['"]andy['"]/.test(src) && !/asksAsOwner/.test(src)) test.check('apiDoor.js holds no andy literal and no asksAsOwner outside comments');
   else test.fail(OWED + 'apiDoor.js still names andy or asksAsOwner in code');

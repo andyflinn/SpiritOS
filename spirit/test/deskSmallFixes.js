@@ -29,9 +29,9 @@ const vm = require('vm');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
-const fieldRules = require('../run/js/fieldRules.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const fieldRules = require('../run/spirit/fieldRules.js');
 
 const OWED = 'OWED by goal/G10.10: ';
 const ROOT = path.join(__dirname, '..', '..');
@@ -57,7 +57,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desksmallfixes-'))
 
 function sourceHalf() {
   test.subHeading('1. no bare bad-request refusal left');
-  const files = ['spirit/run/process/js/desk/desk.js', 'spirit/run/process/js/deskClient/deskClient.js', 'spirit/run/process/js/chatClerver/chatClerver.js', 'spirit/run/js/server.js'];
+  const files = ['spirit/run/process/js/desk/desk.js', 'spirit/run/process/js/deskClient/deskClient.js', 'spirit/run/process/js/chatClerver/chatClerver.js', 'spirit/run/spirit/server.js'];
   const bare = [];
   files.forEach(function (rel) {
     const lines = fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\n');

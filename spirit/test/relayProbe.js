@@ -163,7 +163,7 @@ async function main() {
   for (let n = 0; n < LATENCY_SAMPLES; n += 1) {
     await new Promise(function (r) { setTimeout(r, door.GAP_MS); });
     const began = Date.now();
-    const one = await door.postDoor(url, door.signedPost(require('../run/js/relayAuth').generateIdentity('probe'), '', door.CARD_ASK).body);
+    const one = await door.postDoor(url, door.signedPost(require('../run/spirit/relayAuth').generateIdentity('probe'), '', door.CARD_ASK).body);
     if (one.status) samples.push(Date.now() - began);
   }
   reading.latency = samples.length

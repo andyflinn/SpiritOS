@@ -25,9 +25,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
-const hubModule = require('../run/js/hub.js');
-const auth = require('../run/js/relayAuth');
+const spirit = require('../run/spirit/kernel.js');
+const hubModule = require('../run/spirit/hub.js');
+const auth = require('../run/spirit/relayAuth');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'contacts', 'contacts.js');
@@ -120,7 +120,7 @@ function fakeDocument() {
 // window. spirit is the page's, so contactElement finds its icons and its one stream subscription there. No module and
 // no process, as in a page: fieldRules.js takes its node branch on process.
 const PAGE_SCRIPTS = [
-  'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
+  'spirit/probabilityBucket.js', 'spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/fieldRules.js',
   'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js',
 ];
 function loadPage(doc, shellSpirit) {
@@ -672,7 +672,7 @@ function relaysAreRowsToo() {
 function forgetsWithoutUnblocking() {
   test.subHeading('Forgetting somebody is not unblocking them');
 
-  const contactBook = require('../run/js/contacts');
+  const contactBook = require('../run/spirit/contacts');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-forget-'));
 
   contactBook.acquire(home, { publicKey: 'K1', publicLabel: 'sonny', relay: 'https://lab.example' }, 'handle');
@@ -1209,7 +1209,7 @@ function theDotColumn() {
 // `acquiredVia` was the one place the old word was a VALUE ON DISC, read
 // by the code that decides whom this node will hear from.
 function oldRowsStillRead() {
-  const contactBook = require('../run/js/contacts');
+  const contactBook = require('../run/spirit/contacts');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-r18-'));
   fs.mkdirSync(path.join(dir, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'relay-state', 'contacts.json'), JSON.stringify([

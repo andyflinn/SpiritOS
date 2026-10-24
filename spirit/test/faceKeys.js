@@ -27,7 +27,7 @@ function settle() { return new Promise(function (r) { setTimeout(r, 30); }); }
 
 test.startTest('goal/G30.10: the face learns the home node\'s keys from faceHome, and has factRow');
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
 const faceSeal = require('../run/face/seal.js');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3010k-'));
@@ -44,7 +44,7 @@ function upload(url, p, headers) {
   return pt;
 }
 const asked = [];
-const node = require('../run/js/faceHome').createFaceHome({
+const node = require('../run/spirit/faceHome').createFaceHome({
   call: function (verb, body) { asked.push(verb); return Promise.resolve({ ok: true, status: 200, body: { verb: verb, name: 'bert' } }); },
   serveFile: function () {},
   upload: upload,

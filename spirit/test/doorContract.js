@@ -40,8 +40,8 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const limits = require('../run/js/limits');
-const errors = require('../run/js/spiritErrors');
+const limits = require('../run/spirit/limits');
+const errors = require('../run/spirit/spiritErrors');
 
 test.startTest('The door contract matches the door');
 
@@ -49,7 +49,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = path.join(ROOT, 'design', 'protocol', 'THE-DOOR.md');
 
 const page = fs.readFileSync(PAGE, 'utf8');
-const server = fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'js', 'server.js'), 'utf8');
+const server = fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'spirit', 'server.js'), 'utf8');
 
 test.subHeading('Every verb the door answers is on the page, and nothing else is');
 
@@ -126,7 +126,7 @@ test.subHeading('The error catalogue is as large as the page claims');
   // the page understates what it can tell you — which is a smaller sin
   // than overstating, and still a drifted claim.
   const real = errors.all ? errors.all().length
-    : (fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'js', 'spiritErrors.js'), 'utf8')
+    : (fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'spirit', 'spiritErrors.js'), 'utf8')
       .match(/^define\(/gm) || []).length;
   const said = /\*\*(\d+) conditions are catalogued\*\*/.exec(page);
 

@@ -19,15 +19,15 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.5: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskCheckNumbersTestCWAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskCheckNumbersTestOwnerAAAAAAAAAAAA=', label: 'andy' };
-const CORE = 'spirit/run/js/relay.js';
+const CORE = 'spirit/run/spirit/relay.js';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -116,7 +116,7 @@ async function dialogHalf() {
   const calls = [];
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
   const facts = function (id) { return { id: id, title: id, goal: 'goal/G100', status: 'running', with: '', buttons: [], blocking: ['goal/G100'], blocked: [], asks: 0 }; };
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,

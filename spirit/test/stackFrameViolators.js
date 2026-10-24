@@ -28,15 +28,15 @@ test.startTest('Stack-frame checks: a run\'s paths as one line per violator');
 let format = null;
 try { format = require(FORMATTER).violators; } catch (e) { format = null; }
 
-const H = 'spirit/run/js/hub.js';
-const S = 'spirit/run/js/server.js';
-const RR = 'spirit/run/js/relayRequest.js:108 in relayRequest < spirit/run/js/relayRequest.js:92:relayRequest < ';
+const H = 'spirit/run/spirit/hub.js';
+const S = 'spirit/run/spirit/server.js';
+const RR = 'spirit/run/spirit/relayRequest.js:108 in relayRequest < spirit/run/spirit/relayRequest.js:92:relayRequest < ';
 const CLAIM_UP = H + ':973:guarded in createHub < ' + H + ':1024:withClaimRelay in createHub < ' + H + ':1073 in handleClaim in createHub < ' +
   H + ':1072:handleClaim in createHub < ' + S + ':2079:handler < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260';
 const SEALED = H + ':300 in sealedClaim < ' + H + ':300:sealedClaim < ' + H + ':1079 in handleClaim in createHub < ' + CLAIM_UP;
 const CLAIM = H + ':1084 in handleClaim in createHub < ' + H + ':1082 in handleClaim in createHub < ' + CLAIM_UP;
 const BADGE = function (caller, serverLine) {
-  return H + ':2784 in relaySummary in createHub < spirit/run/js/ownerBadge.js:369 in probe < spirit/run/js/ownerBadge.js:367:probe < ' +
+  return H + ':2784 in relaySummary in createHub < spirit/run/spirit/ownerBadge.js:369 in probe < spirit/run/spirit/ownerBadge.js:367:probe < ' +
     H + ':2783:relaySummary in createHub < ' + H + ':' + caller + ' in createHub < ' + S + ':' + serverLine + ' < ' + S + ':1796 in proxyVerb < ' +
     S + ':1794 in proxyVerb < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260';
 };
@@ -44,12 +44,12 @@ const PARTNER = H + ':2651 in handlePartnerCheck in createHub < ' + H + ':2618:h
   S + ':1069 < ' + S + ':1046 < ' + S + ':2260';
 const OFFBOARD = 'spirit/run/process/js/desk/offboard.js:78:main < spirit/run/process/js/desk/offboard.js:67:main < ' +
   'spirit/run/process/js/desk/offboard.js:62:main < spirit/run/process/js/desk/offboard.js:87 < spirit/run/process/js/desk/offboard.js:41:ask';
-const A = 'spirit/run/js/appClient.js';
+const A = 'spirit/run/spirit/appClient.js';
 
 const DOORS = [
   {
     name: 'the relay door, peerPost.js::createPeerPost -> node:http+https+fetch on /api/relay/',
-    door: { gate: 'spirit/run/js/peerPost.js::createPeerPost', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'] },
+    door: { gate: 'spirit/run/spirit/peerPost.js::createPeerPost', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'] },
     paths: [
       'GET /api/relay/key from ' + RR + SEALED,
       'POST /api/relay/claim from ' + RR + CLAIM,
@@ -69,22 +69,22 @@ const DOORS = [
   },
   {
     name: 'the request-library door, peerPost.js::createPeerPost -> relayRequest.js',
-    door: { gate: 'spirit/run/js/peerPost.js::createPeerPost', endpoint: 'spirit/run/js/relayRequest.js' },
+    door: { gate: 'spirit/run/spirit/peerPost.js::createPeerPost', endpoint: 'spirit/run/spirit/relayRequest.js' },
     paths: [
       'assertRelayUrl from ' + H + ':1019:withClaimRelay in createHub < ' + H + ':1073 in handleClaim in createHub < ' + H + ':1072:handleClaim in createHub < ' +
         S + ':2079:handler < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
       'relayRequest from ' + SEALED,
       'relayRequest from ' + CLAIM,
       'pipeRequest from ' + A + ':126:knock in createAppClient < ' + A + ':153 in ask in createAppClient < ' + A + ':151:ask in createAppClient < ' +
-        'spirit/run/js/apiDoor.js:77:answer < ' + S + ':1890 in handler < ' + S + ':1880:handler < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
+        'spirit/run/spirit/apiDoor.js:77:answer < ' + S + ':1890 in handler < ' + S + ':1880:handler < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
       'pipeRequest from ' + A + ':126:knock in createAppClient < ' + A + ':164:ask in createAppClient',
       'relayRequest from ' + BADGE('2864:relayGet', '2094'),
       'assertRelayUrl from ' + H + ':1774 in handleContact in createHub < ' + H + ':1737:handleContact in createHub < ' + S + ':2179:handler < ' +
         S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
-      'pipeRequest from ' + A + ':126:knock in createAppClient < ' + A + ':164:ask in createAppClient < spirit/run/js/apiDoor.js:77:answer < ' +
+      'pipeRequest from ' + A + ':126:knock in createAppClient < ' + A + ':164:ask in createAppClient < spirit/run/spirit/apiDoor.js:77:answer < ' +
         S + ':1890 in handler < ' + S + ':1880:handler < ' + S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
       'pipeRequest from ' + A + ':126:knock in createAppClient < ' + A + ':153 in ask in createAppClient < ' + A + ':151:ask in createAppClient < ' +
-        S + ':1834:tree < spirit/run/js/apiAuth.js:89:grant in createApiAuth < ' + S + ':1851 in authVerb < ' + S + ':1850 in authVerb < ' +
+        S + ':1834:tree < spirit/run/spirit/apiAuth.js:89:grant in createApiAuth < ' + S + ':1851 in authVerb < ' + S + ':1850 in authVerb < ' +
         S + ':1069 < ' + S + ':1046 < ' + S + ':2260',
       'relayRequest from ' + BADGE('2817:relaySearch', '2093'),
       'relayRequest from ' + PARTNER,
@@ -113,8 +113,8 @@ const DOORS = [
 const MEASURED_ROOT = (function () {
   const os = require('os');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-violators-'));
-  ['spirit/run/js/hub.js', 'spirit/run/js/server.js', 'spirit/run/js/ownerBadge.js',
-    'spirit/run/js/relayRequest.js', 'spirit/run/js/appClient.js'].forEach(function (rel) {
+  ['spirit/run/spirit/hub.js', 'spirit/run/spirit/server.js', 'spirit/run/spirit/ownerBadge.js',
+    'spirit/run/spirit/relayRequest.js', 'spirit/run/spirit/appClient.js'].forEach(function (rel) {
     try {
       fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
       fs.copyFileSync(path.join(REPO, rel), path.join(root, rel));

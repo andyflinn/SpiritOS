@@ -83,8 +83,8 @@ const http = require('http');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G33.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -286,7 +286,7 @@ async function deskAndVerify() {
   const free = function () { return waitFor(async function () { return ((await v.call('now', {})).body || {}).busy === false; }, 20000); };
   const verdict = function (f) { return { verified: f.verified, verifyFailures: f.verifyFailures }; };
   const t0 = Date.now();
-  const FILES = { 'goal/G100.1': [GREEN], 'goal/G100.2': [HANG], 'goal/G100.3': [GREEN3, 'spirit/run/js/kernel.js'], 'goal/G100.4': [RED], 'goal/G100.5': [GREEN4], 'goal/G100.6': [GREEN2], 'goal/G100.7': [GREEN], 'goal/G100.8': [GREEN], 'goal/G100.9': [GREEN2] };
+  const FILES = { 'goal/G100.1': [GREEN], 'goal/G100.2': [HANG], 'goal/G100.3': [GREEN3, 'spirit/run/spirit/kernel.js'], 'goal/G100.4': [RED], 'goal/G100.5': [GREEN4], 'goal/G100.6': [GREEN2], 'goal/G100.7': [GREEN], 'goal/G100.8': [GREEN], 'goal/G100.9': [GREEN2] };
 
   try {
     // goal/G33.7: session.set went. Both goals are seeded before the desk starts (which takes them in at start), and his
@@ -530,7 +530,7 @@ async function deskAndVerify() {
     if (fatSearch.status === 200 && fatRow && Buffer.byteLength(JSON.stringify(fatSearch.body), 'utf8') <= appClient.ANSWER_MAX) test.check('items.search found its row, and the answer is under one answer');
     else test.fail('OWED by goal/G33.4: items.search for goal/G100.11 answered ' + fatSearch.status + ' ' + short(fatSearch.body));
     const fatPushed = published.filter(function (p) { return p.at >= fatAt && p.app && p.app.item && p.app.item.id === 'goal/G100.11'; });
-    const PAYLOAD_MAX = require('../run/js/limits.js').PAYLOAD_MAX;
+    const PAYLOAD_MAX = require('../run/spirit/limits.js').PAYLOAD_MAX;
     const tooBig = fatPushed.filter(function (p) { return Buffer.byteLength(JSON.stringify(p.app), 'utf8') > PAYLOAD_MAX; });
     if (fatPushed.length && !tooBig.length) test.check('each of its ' + fatPushed.length + ' pushed rows is under PAYLOAD_MAX');
     else test.fail('OWED by goal/G33.4: of goal/G100.11\'s pushed rows ' + tooBig.length + ' of ' + fatPushed.length + ' pass PAYLOAD_MAX');
@@ -633,7 +633,7 @@ async function dialogHalf() {
   };
   let dd = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))(
-    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') }));
+    { shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') }));
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/shell/node_modules/codemirror/lib/codemirror.css" />
     <link rel="stylesheet" href="/shell/node_modules/codemirror/theme/material-darker.css" />
     <link rel="stylesheet" href="/shell/node_modules/codemirror/addon/dialog/dialog.css" />
-    <script src="/js/kernel.js"></script>
+    <script src="/spirit/kernel.js"></script>
     <!-- The spirit object (goal/G32.1): the node api, async and checked; its families start at once at home. -->
     <script src="/spirit.js"></script>
     <script>if (window.spirit && typeof window.spirit.start === 'function' && !window.spirit.transport) window.spirit.start();</script>
@@ -17,7 +17,7 @@
          browser has to obey too (Natter's Remove asks it whether this
          node may be left with fewer relays). Node-only code inside it
          never runs here. -->
-    <script src="/js/ownerBadge.js"></script>
+    <script src="/spirit/ownerBadge.js"></script>
     <!-- The isomorphic half of js/fieldRules.js: what a label may be.
 
          Andy: "an input field should validate before taxing the wire."
@@ -27,7 +27,7 @@
          is wrong while the cursor is still in the box, instead of paying
          a round trip to another continent to be told about a space. One
          file so the two cannot drift. -->
-    <script src="/js/fieldRules.js"></script>
+    <script src="/spirit/fieldRules.js"></script>
     <!-- The probability modules, the servers' own search code, in the shell
          (goal/G27.14). Andy: "why down't the UI run the exact same search
          code in the shell?", and "ideally we make it super-easy to implement
@@ -36,9 +36,9 @@
          Found on window.spirit.probability: probabilityStringMatch,
          probabilityStringObjectMatch (which needs the first, so it loads
          after it) and createProbabilityBucket. -->
-    <script src="/js/probabilityStringMatch.js"></script>
-    <script src="/js/probabilityStringObjectMatch.js"></script>
-    <script src="/js/probabilityBucket.js"></script>
+    <script src="/spirit/probabilityStringMatch.js"></script>
+    <script src="/spirit/probabilityStringObjectMatch.js"></script>
+    <script src="/spirit/probabilityBucket.js"></script>
     <!-- The isomorphic half of js/lever.js: what a lever is, what it may
          be set to, and how it describes itself.
 
@@ -49,11 +49,11 @@
 
          `fromReport` deliberately has no `set`: nothing on the node may
          move a relay's value except by asking the relay. -->
-    <script src="/js/lever.js"></script>
+    <script src="/spirit/lever.js"></script>
     <!-- One peer, one file, named by the peer's whole public key. Stays up
          in js/ because hub.js and peerStats.js name files with it too.
          js/client/chatLog.js reads it at load, so it comes first. -->
-    <script src="/js/peerFile.js"></script>
+    <script src="/spirit/peerFile.js"></script>
     <!-- How a conversation is filed on this node. Relay Chat holds the
          files through its own scoped api.fs; this only decides names,
          shapes and merging.
@@ -85,10 +85,10 @@
 
          What is still true: no app owns a second file, because an app is
          one script. That is not what would need building. -->
-    <script src="/js/client/chatLog.js"></script>
+    <script src="/spirit/client/chatLog.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spirit.limits,
          so the size a page refuses is the size the relay refuses. -->
-    <script src="/js/limits.js"></script>
+    <script src="/spirit/limits.js"></script>
     <!-- The envelope every app's traffic travels in, inside the relay's
          own `text` field.
 
@@ -104,18 +104,18 @@
          on the way in, and the node carries an opaque payload between
          them. The directory is the statement — a file in js/ is one a
          relay may end up loading. -->
-    <script src="/js/client/packet.js"></script>
+    <script src="/spirit/client/packet.js"></script>
     <!-- The ICON table read the other way round — one line per glyph,
          carrying every name it is keyed under. What the icon selector
          chooses from. Browser-only like chatLog.js above: the node export
          is so the grouping and the filtering can be asserted rather than
          only looked at, not because anything in the node reads it. -->
-    <script src="/js/client/iconIndex.js"></script>
+    <script src="/spirit/client/iconIndex.js"></script>
     <!-- The owner's api tree read for choosing (apiAuth/G1.8): the names
          of the servers in a jobs.api 'api' answer, a failed branch left
          out. What the appServer selector chooses from; same two-sided
          shape as iconIndex.js above. -->
-    <script src="/js/client/apiTreeIndex.js"></script>
+    <script src="/spirit/client/apiTreeIndex.js"></script>
     <!-- The shell's look is one sheet, shell.css, which the face loads too (goal/G30.9). -->
     <link rel="stylesheet" href="/shell.css" />
   </head>
@@ -184,7 +184,7 @@
     <script src="/shell/js/icons/listElement.js"></script>
     <!-- An input stops at its field rule's limit as it is typed (goal/G32.2). -->
     <script src="/shell/js/fieldInput.js"></script>
-    <script src="/js/client/shell.js"></script>
+    <script src="/spirit/client/shell.js"></script>
     <script>
       (function () {
         var ICON = spirit.core.const.ICON;

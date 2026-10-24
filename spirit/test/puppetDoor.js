@@ -20,10 +20,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const puppetMode = require('../run/js/puppetMode');
-const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
+const puppetMode = require('../run/spirit/puppetMode');
+const auth = require('../run/spirit/relayAuth');
+const packet = require('../run/spirit/client/packet');
+const arrivals = require('../run/spirit/arrivals.js');
 
 test.startTest('A puppet runs what its owner signs, across its whole surface, and nothing else');
 
@@ -77,7 +77,7 @@ function world(puppetJson) {
   };
   // THE HANDLERS RUN AS THE NODE RUNS THEM (goal/G30.4): claimed on a verb table, one namespace each, and called
   // through the table's call, which server.js hands the door.
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   const byNs = {};
   Object.keys(handlers).forEach(function (v) { const ns = v.split('.')[0]; (byNs[ns] = byNs[ns] || {})[v] = handlers[v]; });
   Object.keys(byNs).forEach(function (ns) { table.claim(ns, 'puppetDoor.js', byNs[ns], { wire: false }); });

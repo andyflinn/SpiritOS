@@ -26,11 +26,11 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const hub = require('../run/js/hub');
+const auth = require('../run/spirit/relayAuth');
+const hub = require('../run/spirit/hub');
 const plantRun = require('./plantRun');
-const sseClient = require('../run/js/sseClient');
-const { createRelay } = require('../run/js/relay');
+const sseClient = require('../run/spirit/sseClient');
+const { createRelay } = require('../run/spirit/relay');
 const { claimOwner, ownHome } = require('./ownerClaim');
 
 const PORTS = [48741, 48742, 48743, 48744, 48745];
@@ -68,7 +68,7 @@ function readConfig(w) {
 // presenceWire.js learned in this same cycle.
 async function startRelay(w, port, args) {
   const said = [];
-  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'].concat(args || []),
+  const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'].concat(args || []),
     { cwd: w.runDir, stdio: ['ignore', 'pipe', 'pipe'] });
   kids.push(kid);
   kid.stdout.on('data', function (b) { said.push(String(b)); });

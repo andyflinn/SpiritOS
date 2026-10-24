@@ -23,10 +23,10 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel');
+const packet = require('../run/spirit/client/packet');
 
-const SHELL = path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js');
+const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
 
 function fakeElement(tag) {
   let html = '';
@@ -86,7 +86,7 @@ function bootShell(manifest) {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
-    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js') }));
+    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/spirit/limits.js') }));
   // The tree as the node sends it since goal/G4.25: a snapshot without a file list, then the create commands, then
   // treeComplete.
   subscribers.forEach(function (h) {
@@ -237,7 +237,7 @@ test.subHeading('desk/G2.7: an app may listen to another server by name');
 // to any app.
 test.subHeading('the shell hands no app an object over MAX_PAYLOAD');
 (function () {
-  const limits = require('../run/js/limits.js');
+  const limits = require('../run/spirit/limits.js');
   const page = bootShell(DESK_MANIFEST);
   const got = [];
   page.load(page.scripts()[0], { mount: function (el, api) { if (typeof api.onPublished === 'function') api.onPublished(function (obj) { got.push(obj); }); } });

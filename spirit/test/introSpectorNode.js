@@ -2,13 +2,13 @@
 
 // goal/G10.5: the AGENTS family on the node's own door, and who may ask it. Red on today's code; wsl-claude wrote it
 // from the item's box at d6e9df7d and does not build it.
-//   Andy, 2026-10-09: "the module in core like hub.js could have a corresponding folder spirit/run/js/hub/ where the
+//   Andy, 2026-10-09: "the module in core like hub.js could have a corresponding folder spirit/run/spirit/hub/ where the
 //   AGENTS.md and the verb descriptions are"; ".. and if there's no AGENTS.md the verb is closed for the agent,
 //   period."; "so the introSpector could still insist on lower-case verbs to be registered, and then STILL add the
 //   uppercase set"; "that is a decision. make it so."; and "those verbs and descriptions will be provided for
 //   loopback clients the local-node-public-key only".
 //
-// WHAT IS TRUE TODAY (read in the tree at d6e9df7d): spirit/run/js/introSpector.js does not exist. The node's
+// WHAT IS TRUE TODAY (read in the tree at d6e9df7d): spirit/run/spirit/introSpector.js does not exist. The node's
 // loopback verbs are claimed in verbTable as bare functions behind a lowercase name rule (verbTable.js:92, claim),
 // eleven namespaces in server.js; no namespace has a folder, no AGENTS.md, no verb files, and the node answers no
 // AGENTS verb of its own. apiDoor lets a member call any verb of an app its grants name (apiDoor.js:101-107), so the
@@ -40,14 +40,14 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G10.5: ';
 const REPO = path.join(__dirname, '..', '..');
-const INTROSPECTOR_REL = 'spirit/run/js/introSpector.js';
+const INTROSPECTOR_REL = 'spirit/run/spirit/introSpector.js';
 const INTROSPECTOR = path.join(REPO, INTROSPECTOR_REL);
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function threw(fn) { try { fn(); return null; } catch (e) { return e; } }
 
-const verbTable = require('../run/js/verbTable.js');
-const apiDoor = require('../run/js/apiDoor.js');
+const verbTable = require('../run/spirit/verbTable.js');
+const apiDoor = require('../run/spirit/apiDoor.js');
 
 test.startTest('goal/G10.5: the AGENTS family on the node, and who may ask it');
 

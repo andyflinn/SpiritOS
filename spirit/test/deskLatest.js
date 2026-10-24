@@ -17,7 +17,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const G32 = 'OWED by desk/G3.2: ';
 const G34 = 'OWED by desk/G3.4: ';

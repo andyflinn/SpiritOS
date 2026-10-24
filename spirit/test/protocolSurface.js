@@ -34,7 +34,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 
-const RUN = path.join(__dirname, '..', 'run', 'js');
+const RUN = path.join(__dirname, '..', 'run', 'spirit');
 const DECISION = path.join(__dirname, '..', '..', 'design', 'decisions',
   '0010-fix-the-protocol-or-name-the-cheat.md');
 

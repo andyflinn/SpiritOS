@@ -31,9 +31,9 @@
 // unwatched test, and the reason this note is longer than the check was.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const limits = require('../run/js/limits');
-const rule = require('../run/js/fieldRules.js');
+const auth = require('../run/spirit/relayAuth');
+const limits = require('../run/spirit/limits');
+const rule = require('../run/spirit/fieldRules.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { ownHome } = require('./ownerClaim');
 const door = require('./relayDoor');

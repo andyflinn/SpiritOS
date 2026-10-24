@@ -34,7 +34,7 @@ const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
 const runsHome = require('./tools/runsHome.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by goal/G5.1: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -183,7 +183,7 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
   plantRun.plantRunTree(home);
   runsHome(home, 'process/js/pushOrigin');
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
   kids.push(node);
   const ask = function (body) {
     return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {

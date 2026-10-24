@@ -26,14 +26,14 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const relay = require('../run/js/relayRequest.js');
-const errors = require('../run/js/spiritErrors.js');
+const appClient = require('../run/spirit/appClient.js');
+const relay = require('../run/spirit/relayRequest.js');
+const errors = require('../run/spirit/spiritErrors.js');
 
 test.startTest('appPair/G1.3: the node answers api from its app servers, and routes a call');
 
 const OWED = 'OWED by appPair/G1.3: ';
-const HELPER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
+const HELPER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
 
 // A node's folder with three serving apps; gamma never starts.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appapi-'));

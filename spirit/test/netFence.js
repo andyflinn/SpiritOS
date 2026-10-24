@@ -21,7 +21,7 @@ const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by goal/G29.20: ';
@@ -39,8 +39,8 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
 (async function () {
   test.subHeading('1. the rule: which addresses are this machine');
   let fence = null;
-  try { fence = require('../run/js/netFence.js'); } catch (e) { fence = null; }
-  if (fence && typeof fence.isThisMachine === 'function' && typeof fence.lookup === 'function') test.check('js/netFence.js holds isThisMachine and lookup');
+  try { fence = require('../run/spirit/netFence.js'); } catch (e) { fence = null; }
+  if (fence && typeof fence.isThisMachine === 'function' && typeof fence.lookup === 'function') test.check('spirit/netFence.js holds isThisMachine and lookup');
   else test.fail(OWED + 'no js/netFence.js with isThisMachine and lookup');
   const mine = ['127.0.0.1', '127.8.9.10', '::1', '0.0.0.0', '::', '::ffff:127.0.0.1', 'localhost'];
   const notMine = ['8.8.8.8', '192.168.1.5', '10.0.0.1', '169.254.169.254', '2001:db8::1'];
@@ -71,7 +71,7 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   const root = setupRelayFakes('netFence').andy;
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const post = function (body) {
     return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
       let j = null; try { j = JSON.parse(r.text); } catch (e) { j = null; }
@@ -96,12 +96,12 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   }
 
   test.subHeading('3. agents may use it');
-  const netDir = path.join(RUN, 'js', 'net');
+  const netDir = path.join(RUN, 'spirit', 'net');
   let described = null;
   try { described = JSON.parse(fs.readFileSync(path.join(netDir, 'fetch.json'), 'utf8')); } catch (e) { described = null; }
-  if (described && typeof described.description === 'string' && /this machine/i.test(described.description)) test.check('js/net/fetch.json describes net.fetch, saying it cannot reach this machine');
-  else test.fail(OWED + 'js/net/fetch.json missing, or not saying it cannot reach this machine');
-  if (fs.existsSync(path.join(netDir, 'AGENTS.md'))) test.check('js/net/AGENTS.md opens the namespace to agents');
+  if (described && typeof described.description === 'string' && /this machine/i.test(described.description)) test.check('spirit/net/fetch.json describes net.fetch, saying it cannot reach this machine');
+  else test.fail(OWED + 'spirit/net/fetch.json missing, or not saying it cannot reach this machine');
+  if (fs.existsSync(path.join(netDir, 'AGENTS.md'))) test.check('spirit/net/AGENTS.md opens the namespace to agents');
   else test.fail(OWED + 'no js/net/AGENTS.md');
   const agent = code('process/js/deskAgent/deskAgent.js');
   const namespaces = (/const TOOL_NAMESPACES = \[([^\]]*)\]/.exec(agent) || [])[1] || '';
@@ -115,7 +115,7 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   // with from-scratch conforming designs....", "the GROK API key stuff, it all goes....".
   test.subHeading('4. no env secrets, no allow list, no proxy verbs; grokReview and the caption processes gone');
   // And all the LM Studio stuff (Andy, 2026-10-18: "delete all LM studio stuff as well. it all goes.").
-  const gone = ['js/envSecrets.js', 'js/proxyList.js', 'js/proxy', 'process/js/grokReview', 'process/js/imageCaptionClaude', 'process/js/imageCaptionClaudeBatch',
+  const gone = ['spirit/envSecrets.js', 'spirit/proxyList.js', 'spirit/proxy', 'process/js/grokReview', 'process/js/imageCaptionClaude', 'process/js/imageCaptionClaudeBatch',
     'process/js/imageCaptionLmStudio', 'process/js/lmStudioLoadModel', 'process/js/lmStudioUnloadModel']
     .filter(function (rel) { return fs.existsSync(path.join(RUN, rel)); });
   if (!gone.length) test.check('gone: js/envSecrets.js, js/proxyList.js, js/proxy/, process/js/grokReview, imageCaptionClaude, imageCaptionClaudeBatch, and every LM Studio process');
@@ -135,11 +135,11 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   const suites = ['envSecrets.js', 'proxyList.js', 'grokReview.js'].filter(function (t) { return fs.existsSync(path.join(__dirname, t)); });
   if (!suites.length) test.check('their suites retire: envSecrets.js, proxyList.js, grokReview.js');
   else test.fail(OWED + 'suites still asserting them: ' + suites.join(', '));
-  const server = code('js/server.js');
+  const server = code('spirit/server.js');
   const verbs = ['proxy.search', 'proxy.get', 'proxy.allow', 'proxy.remove', 'proxy.close', 'proxy.open'].filter(function (v) { return server.indexOf("'" + v + "'") !== -1; });
   if (!verbs.length && !/envSecrets|proxyList/.test(server) && !/\$\{ENV:/.test(server)) test.check('server.js: no proxy verbs, no envSecrets or proxyList, no ${ENV:...} fill');
   else test.fail(OWED + 'server.js still has ' + (verbs.length ? verbs.join(', ') : 'the env fill or the allow list'));
-  const errors = code('js/spiritErrors.js');
+  const errors = code('spirit/spiritErrors.js');
   if (!/'proxy-closed'|'proxy-list-broken'/.test(errors)) test.check('the refusal codes proxy-closed and proxy-list-broken are gone');
   else test.fail(OWED + 'spiritErrors.js still defines the proxy codes');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {

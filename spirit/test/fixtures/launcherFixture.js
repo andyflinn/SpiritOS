@@ -3,7 +3,7 @@
 // Spawned by oneLauncher.js as a real process, one-shot or server. It reports what it was given, then waits
 // until its node goes away (or exits at once in 'once' mode).
 const fs = require('fs');
-const spirit = require('../../run/js/kernel.js');
+const spirit = require('../../run/spirit/kernel.js');
 
 const args = JSON.parse(process.argv[2] || '{}');
 if (args.pidFile) fs.writeFileSync(args.pidFile, String(process.pid));

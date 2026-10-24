@@ -22,8 +22,8 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const { createRelay } = require('../run/js/relay');
+const auth = require('../run/spirit/relayAuth');
+const { createRelay } = require('../run/spirit/relay');
 const { claimOwner, ownHome } = require('./ownerClaim');
 
 // A box this suite invents: 1 GB, 900 MB of it available, 10 GB free disc.
@@ -249,7 +249,7 @@ test.subHeading('A shrink that would strand members is refused — the owner evi
   } else {
     test.fail('a stranding shrink was accepted: ' + JSON.stringify(out));
   }
-  if (R.written.length === 0 && require('../run/js/relayStore').open(R.home).members.count() === 19) {
+  if (R.written.length === 0 && require('../run/spirit/relayStore').open(R.home).members.count() === 19) {
     test.check('nothing was written and nobody was evicted by a number');
   } else {
     test.fail('the roll or the file changed on a refused shrink');

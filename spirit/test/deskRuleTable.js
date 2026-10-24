@@ -32,11 +32,11 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G5.5: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const fieldRules = require('../run/js/fieldRules.js');
+const fieldRules = require('../run/spirit/fieldRules.js');
 const { DatabaseSync } = require('node:sqlite');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskRulesTestCWAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskRulesTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };

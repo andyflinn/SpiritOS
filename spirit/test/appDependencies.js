@@ -20,12 +20,12 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by apiAuth/G1.10: ';
 const RUN = path.join(__dirname, '..', 'run');
 const PROC = path.join(RUN, 'process', 'js');
-const APPSERVER = path.join(RUN, 'js', 'appServer.js');
+const APPSERVER = path.join(RUN, 'spirit', 'appServer.js');
 const PATH_FORM = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

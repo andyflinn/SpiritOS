@@ -41,9 +41,9 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const { sealFor, sealedPost, openBody, openReply } = require('./openReply');
-const nodeCard = require('../run/js/nodeCard');
-const auth = require('../run/js/relayAuth');
-const createRelay = require('../run/js/relay');
+const nodeCard = require('../run/spirit/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const createRelay = require('../run/spirit/relay');
 
 test.startTest('Relay monitor — activity, only while somebody watches');
 
@@ -107,7 +107,7 @@ test.subHeading('Silent until asked');
     test.fail('row: ' + JSON.stringify(row));
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -156,7 +156,7 @@ test.subHeading('Silent until asked');
       ' said: ' + JSON.stringify(refused) + ' monitoring=' + w.box.monitoring());
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -200,7 +200,7 @@ test.subHeading('Stopping, both ways');
     test.fail('a stop signature started a monitor: ' + JSON.stringify(wrongWay));
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -219,7 +219,7 @@ test.subHeading('Stopping, both ways');
     test.fail('the monitor outlived its watcher');
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -252,7 +252,7 @@ test.subHeading('Filtered at the source');
     test.fail('filter dropped what it should have kept');
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -286,7 +286,7 @@ test.subHeading('Filtered at the source');
     test.fail('an unreadable filter silenced the stream');
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
   fs.rmSync(w2.home, { recursive: true, force: true });
 })();
@@ -322,7 +322,7 @@ test.subHeading('Filtered at the source');
       ' monitoring=' + w.box.monitoring());
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -376,7 +376,7 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('answer: ' + replies[0].data.text);
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -462,7 +462,7 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('the relay listed itself as a peer');
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -507,7 +507,7 @@ test.subHeading('A post at a key nobody holds reaches the owner');
     test.fail('a member heard the refusal: ' + JSON.stringify(events(w.heard.bella)));
   }
 
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 

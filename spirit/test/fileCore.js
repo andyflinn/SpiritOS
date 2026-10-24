@@ -33,13 +33,13 @@ const test = require('./testSupport.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'OWED by fileTransfer goal/G1.3: ';
-const appServer = require('../run/js/appServer.js');
-const appClient = require('../run/js/appClient.js');
-const apiDoor = require('../run/js/apiDoor.js');
-const hub = require('../run/js/hub').createHub(process.cwd());
-const packet = require('../run/js/client/packet.js');
-const arrivals = require('../run/js/arrivals.js');
-const spirit = require('../run/js/kernel.js');
+const appServer = require('../run/spirit/appServer.js');
+const appClient = require('../run/spirit/appClient.js');
+const apiDoor = require('../run/spirit/apiDoor.js');
+const hub = require('../run/spirit/hub').createHub(process.cwd());
+const packet = require('../run/spirit/client/packet.js');
+const arrivals = require('../run/spirit/arrivals.js');
+const spirit = require('../run/spirit/kernel.js');
 
 function fakeRes() {
   const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, end: function (b) { res.body = b || ''; } };

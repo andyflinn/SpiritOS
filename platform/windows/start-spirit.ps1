@@ -79,7 +79,7 @@ elseif (Listening 65420) {
 # at all — it asks labMaster over HTTP, which is one fewer permission
 # either agent needs.
 function EnsureAgentNode([string]$id, [int]$port, [string]$runDir) {
-  if (-not (Test-Path (Join-Path $runDir "js/server.js"))) { Write-Output ($id + " node: no clone at " + $runDir); return }
+  if (-not (Test-Path (Join-Path $runDir "spirit/server.js"))) { Write-Output ($id + " node: no clone at " + $runDir); return }
   if (-not (Listening 65420)) { Write-Output ($id + " node: no labMaster to ask"); return }
 
   # The ROW first, always — so labMaster knows about this node even when

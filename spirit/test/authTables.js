@@ -18,7 +18,7 @@ const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by apiAuth/G1.3: ';
@@ -61,7 +61,7 @@ function post(body) {
 const ask = function (verb, args) { return post(Object.assign({ verb: verb }, args || {})); };
 async function boot() {
   port = await freePort();
-  child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
   const served = await until(function () { return post({ verb: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;

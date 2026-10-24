@@ -22,11 +22,11 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { sealedPost } = require('./openReply');
-const peerPost = require('../run/js/peerPost');
-const contactBook = require('../run/js/contacts');
-const hub = require('../run/js/hub');
+const peerPost = require('../run/spirit/peerPost');
+const contactBook = require('../run/spirit/contacts');
+const hub = require('../run/spirit/hub');
 const world = require('./world');
 
 const OWED = 'OWED by goal/G16.7: ';

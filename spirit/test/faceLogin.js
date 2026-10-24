@@ -42,9 +42,9 @@ const homes = [];
 
 test.startTest('goal/G30.9: a member logs in on his face, served by the relay');
 
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g309-'));
 homes.push(home);
 plant.ensureAt(home, 'relay');
@@ -57,7 +57,7 @@ const mails = [];
 let now = Date.now();
 let box = null;
 try {
-  box = require('../run/js/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+  box = require('../run/spirit/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
 } catch (e) { box = null; }
 const has = function (fn) { return box && typeof box[fn] === 'function'; };
 const tokenOf = function () { const last = mails[mails.length - 1]; const m = last && /\?([A-Za-z0-9_-]{16,})/.exec(last.text); return m ? m[1] : ''; };
@@ -151,7 +151,7 @@ if (S.a && S.a.ok && S.a.name === 'harbour' && S.b && S.b.ok && S.c && S.c.ok &&
 else test.fail(OWED + 'the session: ' + short(S));
 
 test.subHeading('4. the relay\'s door for faces, the face shell and the login app');
-const server = code('js/relayServer.js');
+const server = code('spirit/relayServer.js');
 if (/faceAt\(/.test(server) && /\/face\/api/.test(server) && /\/face\/allowed/.test(server) && /spirit_face=/.test(server) && /face\.html/.test(server) && /HttpOnly/.test(server))
   test.check('relayServer answers a face host before its 404: face.html, the token link setting the HttpOnly cookie spirit_face, /face/api, and /face/allowed for Caddy');
 else test.fail(OWED + 'relayServer has no door for faces');
@@ -190,7 +190,7 @@ else test.fail(OWED + 'the shell\'s styles are not one shared sheet with its blu
 const faceVars = ((/:root\s*\{([^}]*)\}/.exec(faceSheet) || [])[1] || '');
 const varNames = (rootVars.match(/--shell-[a-z0-9-]+/g) || []);
 // /shell.css is one path the node serves as it is and the relay serves too, so face.html works on both (box v16).
-if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('js/relayServer.js')) && /'\/face\/face\.css'/.test(code('js/relayServer.js')))
+if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('spirit/relayServer.js')) && /'\/face\/face\.css'/.test(code('spirit/relayServer.js')))
   test.check('face.css sets every --shell-* variable green, and the relay serves both sheets to the face');
 else test.fail(OWED + 'face.css does not set every shell variable, or the relay does not serve the sheets: ' + short(varNames));
 const fh = rawFile('face.html');

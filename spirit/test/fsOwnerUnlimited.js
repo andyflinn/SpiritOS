@@ -29,7 +29,7 @@ const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by goal/G33.10: ';
 const RUN = path.join(__dirname, '..', 'run');
-const BODY_MAX = require('../run/js/limits.js').BODY_MAX;
+const BODY_MAX = require('../run/spirit/limits.js').BODY_MAX;
 const PEER = 'MCowBQYDK2VwAyEAfsOwnerUnlimitedPeerKeyXXXXXXXXXXXXXXXXXXXXX=';
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -92,7 +92,7 @@ function waitForBoot(port) {
 (async function () {
   // ── 1. THE GATE ──────────────────────────────────────────────────────
   test.subHeading('1. no peer reaches any fs verb, whatever the grants');
-  const door = require('../run/js/apiDoor.js');
+  const door = require('../run/spirit/apiDoor.js');
   for (const held of [['fs'], ['fs.save']]) {
     const servers = fakeServers();
     const r = await door.answer(servers, { fs: { save: { path: 'shell/icons/iconSet.json', content: '{}' } } }, member(held));
@@ -121,13 +121,13 @@ function waitForBoot(port) {
   test.subHeading('2. a grant naming fs cannot be made');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-fsowner-'));
   try {
-    const auth = require('../run/js/apiAuth').createApiAuth({
+    const auth = require('../run/spirit/apiAuth').createApiAuth({
       rootDir: root,
       tree: function () { return Promise.resolve({ fs: { save: {}, load: {} }, node: { card: {} } }); },
     });
     for (const p of ['fs', 'fs.save', 'fs.load']) {
       const r = await auth.grant({ key: PEER, path: p });
-      const held = require('../run/js/nodeStore').open(root).auth.paths(PEER);
+      const held = require('../run/spirit/nodeStore').open(root).auth.paths(PEER);
       if (r && r.refusal && held.indexOf(p) === -1) test.check('auth.grant ' + p + ' is refused, ' + r.refusal + ', and nothing is stored');
       else test.fail(OWED + 'auth.grant ' + p + ' answered ' + short(r) + ', stored ' + short(held));
     }
@@ -149,7 +149,7 @@ function waitForBoot(port) {
   const big = 'abcdefghij'.repeat(Math.ceil((80 * BODY_MAX) / 10));
   const port = await freePort();
   let said = '';
-  const child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   child.stderr.on('data', function (c) { said = (said + c).slice(-4096); });
   try {
     await waitForBoot(port);
@@ -177,8 +177,8 @@ function waitForBoot(port) {
   // os.tmpdir()/spirit-upload-<id>, answers 202 to each but the last, and on the last checks the size, copies the work
   // file to the target through o.saveFrom, then deletes it. Driven here on faceHome itself, its clock handed in.
   test.subHeading('4. the face\'s save in parts, streamed to a work file in the system temp folder');
-  const FH = require('../run/js/faceHome.js');
-  const me = require('../run/js/relayAuth').generateIdentity('fsowner');
+  const FH = require('../run/spirit/faceHome.js');
+  const me = require('../run/spirit/relayAuth').generateIdentity('fsowner');
   let clock = Date.now();
   const saved = [];
   const answers = [];
@@ -243,7 +243,7 @@ function waitForBoot(port) {
   try { fs.rmSync(target, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
   // Each part fits one trip once sealed: the face seals it as one request, which the relay takes up to BODY_MAX.
-  const seal = require('../run/js/seal');
+  const seal = require('../run/spirit/seal');
   const sealedPart = JSON.stringify(Object.assign(seal.seal(me.sealPublicKey, me.publicKey, me.publicKey, JSON.stringify({ upload: { id: 'x'.repeat(24), n: 99, of: 100, size: 99999999, path: 'shell/icons/iconSet.json', bytes: Buffer.alloc(PART, 255).toString('base64') } })), { k: me.publicKey }));
   const faceShell = code('face/shell.js');
   if (Buffer.byteLength(sealedPart) < BODY_MAX && /var UPLOAD_PART = 8192;/.test(faceShell) && /String\(verb\) === 'fs\.save'[\s\S]{0,200}uploadSave\(args\)/.test(faceShell))

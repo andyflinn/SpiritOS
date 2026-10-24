@@ -12,10 +12,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const sseClient = require('../run/js/sseClient');
-const presenceNode = require('../run/js/presenceNode');
-const relayKeys = require('../run/js/relayKeys');
+const auth = require('../run/spirit/relayAuth');
+const sseClient = require('../run/spirit/sseClient');
+const presenceNode = require('../run/spirit/presenceNode');
+const relayKeys = require('../run/spirit/relayKeys');
 
 // ── A NODE KNOWS ITS OWN SEATS NOW (2026-09-18) ─────────────────────
 //

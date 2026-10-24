@@ -23,7 +23,7 @@ const os = require('os');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.11: ';
 const REPO = path.join(__dirname, '..', '..');
@@ -122,14 +122,14 @@ async function fileServerCap() {
 
 async function deadVerbs() {
   test.subHeading('5. the dead verbs are gone');
-  const relay = code(read('spirit/run/js/relay.js'));
+  const relay = code(read('spirit/run/spirit/relay.js'));
   if (!/\bfunction\s+who\s*\(/.test(relay) && !/\bwho\s*:\s*who\b/.test(relay)) test.check('relay.js has no who() and does not export one');
   else test.fail(OWED + 'relay.js still has who()');
-  const hub = code(read('spirit/run/js/hub.js'));
+  const hub = code(read('spirit/run/spirit/hub.js'));
   const hubLeft = ['handleMatches', 'handleWho', 'withRelay'].filter(function (n) { return new RegExp('\\b' + n + '\\b').test(hub); });
   if (!hubLeft.length) test.check('hub.js has no handleMatches, handleWho or withRelay');
   else test.fail(OWED + 'hub.js still has ' + hubLeft.join(', '));
-  const hubModule = require('../run/js/hub.js');
+  const hubModule = require('../run/spirit/hub.js');
   if (!('handleMatches' in hubModule)) test.check('and hub.js exports no handleMatches');
   else test.fail(OWED + 'hub.js still exports handleMatches');
 
@@ -155,7 +155,7 @@ function staleWords() {
   test.subHeading('6. the stale words');
   // whoBook became contacts.js / relay-state/contacts.json on 2026-09-18 (contacts.js header). A line may still name
   // it as history: it then says so on the same line, with the date of the rename or the word historical.
-  const BOX = ['DICTIONARY.md', 'AGENT.md', 'CLAUDE.md', 'spirit/run/js/relay.js', '.gitignore', 'UI_DESIGN_STYLE.md',
+  const BOX = ['DICTIONARY.md', 'AGENT.md', 'CLAUDE.md', 'spirit/run/spirit/relay.js', '.gitignore', 'UI_DESIGN_STYLE.md',
     'spirit/test/labMaster/BONES.md', 'spirit/test/peerPostWiring.js'];
   const bad = [];
   BOX.forEach(function (rel) {
@@ -166,7 +166,7 @@ function staleWords() {
   if (!bad.length) test.check('whoBook and who.json appear only as history in the ' + BOX.length + ' files the box lists');
   else test.fail(OWED + 'whoBook / who.json as if current: ' + bad.join(', '));
 
-  const NODE = ['spirit/run/shell/natterDetails/natterDetails.js', 'spirit/run/js/hub.js', 'spirit/run/js/relay.js', 'spirit/run/js/relayStatus.js', 'spirit/run/js/server.js'];
+  const NODE = ['spirit/run/shell/natterDetails/natterDetails.js', 'spirit/run/spirit/hub.js', 'spirit/run/spirit/relay.js', 'spirit/run/spirit/relayStatus.js', 'spirit/run/spirit/server.js'];
   const leaning = [];
   NODE.forEach(function (rel) {
     read(rel).split(/\r?\n/).forEach(function (line, i) { if (/\/api\/(relay|hub)\/who\b/.test(line)) leaning.push(rel + ':' + (i + 1)); });

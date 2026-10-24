@@ -59,7 +59,7 @@
   // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
   function fieldRules() {
     if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
-    if (typeof require === 'function') { try { return require('./js/fieldRules.js'); } catch (e) { return null; } }
+    if (typeof require === 'function') { try { return require('./spirit/fieldRules.js'); } catch (e) { return null; } }
     return null;
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -391,7 +391,7 @@
   // family's), binds that family as spirit.<name>, asked as api {family} so the node still names it; with a key it is
   // asked of that peer, and the peer's spirit object answers. Any other path is a component, its module.exports.
   function interfaceName(p) {
-    var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^js\/([^/]+)\/api\.js$/.exec(p);
+    var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
   function runComponent(source, p) {
@@ -464,7 +464,7 @@
   // spirit.require: a component is required from the run root; a family is bound from this process's own node, the one
   // SPIRIT_CALLBACK_URL names (the node that started it), or with a key asked of that peer through the kernel's peerPost.
   if (typeof module === 'object' && module.exports) {
-    var kernel = require('./js/kernel.js');
+    var kernel = require('./spirit/kernel.js');
     var g = root.spirit && typeof root.spirit === 'object' ? root.spirit : {};
     Object.keys(api).forEach(function (k) { if (!(k in g)) g[k] = api[k]; });
     g.core = g.core || {};

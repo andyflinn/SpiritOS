@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/js/kernel.js');
+const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G27.16: ';
 const RUN_DIR = path.join(__dirname, '..', 'run');
@@ -70,7 +70,7 @@ function bootShell(appScripts) {
       jobs: { subscribe: function (handlers) { subscribers.push(handlers); } },
     },
   };
-  new Function('spirit', 'document', readRun('js/client/shell.js'))(shellSpirit, doc);
+  new Function('spirit', 'document', readRun('spirit/client/shell.js'))(shellSpirit, doc);
   const watcher = { id: 'fs-watcher-1', type: 'fs-watcher', data: {} };
   subscribers.forEach(function (h) { h.onSnapshot([watcher]); });
   subscribers.forEach(function (h) {
@@ -139,7 +139,7 @@ else test.fail(OWED + 'a running server job typed Desk Agent was not seen: ' + s
 booted.remove('server-desk');
 
 test.subHeading('5. shell.js names no app and no server for this');
-const shellSrc = readRun('js/client/shell.js');
+const shellSrc = readRun('spirit/client/shell.js');
 if (/manifest\.server/.test(shellSrc) && !/['"]process\/js\/(desk|deskAgent)['"]/.test(shellSrc)) test.check('shell.js reads manifest.server and names no server');
 else test.fail(OWED + 'shell.js does not read manifest.server, or names a server itself');
 

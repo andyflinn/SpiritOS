@@ -32,11 +32,11 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const presenceNode = require('../run/js/presenceNode');
-const relayKeys = require('../run/js/relayKeys');
-const spirit = require('../run/js/kernel.js');
-const hubModule = require('../run/js/hub.js');
+const auth = require('../run/spirit/relayAuth');
+const presenceNode = require('../run/spirit/presenceNode');
+const relayKeys = require('../run/spirit/relayKeys');
+const spirit = require('../run/spirit/kernel.js');
+const hubModule = require('../run/spirit/hub.js');
 
 const OWED = 'OWED by goal/G2.9: ';
 const JOHN = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnjohnjohn=';
@@ -163,7 +163,7 @@ function mountContacts(people) {
   // process, as in a page; then the app.
   const RUN = path.join(__dirname, '..', 'run');
   const win = { spirit: shellSpirit };
-  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
+  ['spirit/probabilityBucket.js', 'spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/fieldRules.js',
     'shell/js/spiritData.js', 'shell/js/contacts/data.js', 'shell/js/rowElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contacts/listElement.js'].forEach(function (rel) {
     new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);
   });

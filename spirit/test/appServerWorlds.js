@@ -41,10 +41,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
-const invites = require('../run/js/invites');
-const relayStore = require('../run/js/relayStore');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const invites = require('../run/spirit/invites');
+const relayStore = require('../run/spirit/relayStore');
 
 const ensureMaster = require('./labMaster/ensureMaster');
 const labPaths = require('./labMaster/labPaths');

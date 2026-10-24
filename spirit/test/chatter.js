@@ -73,7 +73,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.10 and G4.11: ';
@@ -287,7 +287,7 @@ function mount(opts) {
       statFile: function () { return null; },
     },
   };
-  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.elements': {} });
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js'), 'spirit.elements': {} });
   const sp = { core: { ask: coreAsk, util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: ICON } } };
   test.spiritFor(sp.core.ask, sp);
   const load = function (file) {
@@ -296,7 +296,7 @@ function mount(opts) {
   // goal/G29.6: as index.html loads them, the probability modules and the shared list before the contact selector,
   // which is now a thin wrapper around window.spirit.elements.shellCreateListSearch.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   load(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'));
   load(path.join(RUN, 'shell', 'js', 'contactSelector.js'));

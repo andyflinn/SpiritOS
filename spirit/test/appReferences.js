@@ -79,7 +79,7 @@ const SOURCES = [
   },
   {
     label: 'shell.js (INTRINSIC_APP_FOLDERS and the app id renames)',
-    file: path.join(RUN_DIR, 'js', 'client', 'shell.js'),
+    file: path.join(RUN_DIR, 'spirit', 'client', 'shell.js'),
   },
 ];
 
@@ -124,7 +124,7 @@ if (!dangling.length) {
 // one list where a missing folder is not merely untidy: declareIntrinsicApps
 // walks it on every boot.
 (function intrinsicFoldersExist() {
-  const shellSrc = fs.readFileSync(path.join(RUN_DIR, 'js', 'client', 'shell.js'), 'utf8');
+  const shellSrc = fs.readFileSync(path.join(RUN_DIR, 'spirit', 'client', 'shell.js'), 'utf8');
   const found = shellSrc.match(/INTRINSIC_APP_FOLDERS\s*=\s*\[([^\]]*)\]/);
   if (!found) {
     test.fail('INTRINSIC_APP_FOLDERS could not be found in shell.js — this check needs updating with it');

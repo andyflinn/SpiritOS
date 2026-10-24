@@ -48,8 +48,8 @@ if (/lever\.value/.test(nd) && !/lever\.position|lever\.allowed/.test(nd)) test.
 else test.fail(OWED + 'natterDetails still reads lever.position or lever.allowed');
 
 test.subHeading('2. the public label is the relay\'s own');
-const peerPost = code('js/peerPost.js');
-const hub = code('js/hub.js');
+const peerPost = code('spirit/peerPost.js');
+const hub = code('spirit/hub.js');
 if (/labelOf/.test(peerPost) && /labelOf:\s*labelOf/.test(peerPost)) test.check('peerPost keeps the relay card\'s label and answers labelOf(url)');
 else test.fail(OWED + 'peerPost keeps no label from the relay card');
 if (/relayLabel:\s*''/.test(hub) || !/labelOf\(/.test(hub)) test.fail(OWED + 'hub relaySummary still answers relayLabel empty');
@@ -70,8 +70,8 @@ if (/label:\s*JSON\.stringify\(/.test(relaySearch)) test.check('relay.search ans
 else test.fail(OWED + 'relay.search answers a plain string label');
 
 test.subHeading('4. first-run defaults in serveCommon');
-const common = require('../run/js/serveCommon');
-const auth = require('../run/js/relayAuth');
+const common = require('../run/spirit/serveCommon');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
 const nodeHome = home('node');
 plant.ensureAt(nodeHome, 'andy');
@@ -91,15 +91,15 @@ else test.fail(OWED + 'ensureFirstRun for a node: ' + short(ran) + ', ' + short(
 if (ran === true && relayId.description === 'this relay described for the first time 2026-10-20 08:00:00 UTC' && relayId.name === 'relay ' + require('os').hostname())
   test.check('a relay gets the first description and a first public label, relay and its machine\'s name');
 else test.fail(OWED + 'ensureFirstRun for a relay: ' + short({ name: relayId.name, description: relayId.description }));
-const nodeCard = code('js/nodeCard.js');
-const server = code('js/server.js');
-const relayServer = code('js/relayServer.js');
+const nodeCard = code('spirit/nodeCard.js');
+const server = code('spirit/server.js');
+const relayServer = code('spirit/relayServer.js');
 if (!/function ensureDescription/.test(nodeCard) && /ensureFirstRun\([^)]*kind:\s*'node'/.test(server) && /ensureFirstRun\([^)]*kind:\s*'relay'/.test(relayServer))
   test.check('the node and the relay call serveCommon.ensureFirstRun at boot; nodeCard keeps no ensureDescription of its own');
 else test.fail(OWED + 'the boot calls or the move from nodeCard are missing');
 
 test.subHeading('5. a relay seats its owner at boot');
-const { createRelay } = require('../run/js/relay');
+const { createRelay } = require('../run/spirit/relay');
 const boxHome = home('box');
 plant.ensureAt(boxHome, 'relay');
 const owner = auth.generateIdentity('andy');
@@ -114,7 +114,7 @@ if (again && again.peers === 1) test.check('a second boot finds the seat and add
 else test.fail(OWED + 'a second boot left ' + short(again && again.peers) + ' peers');
 
 test.subHeading('6. relays are peers in the shadow');
-const hubMod = require('../run/js/hub');
+const hubMod = require('../run/spirit/hub');
 const peerHome = home('peers');
 plant.ensureAt(peerHome, 'andy');
 let kinds = null;
@@ -128,7 +128,7 @@ if (kinds && kinds.relay === 'relay' && kinds.node === 'node') test.check('a sha
 else test.fail(OWED + 'the shadow rows answered ' + short(kinds));
 let seed = null;
 try {
-  require('../run/js/ownerBadge').ensureRelays(peerHome);
+  require('../run/spirit/ownerBadge').ensureRelays(peerHome);
   const KEY = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=';
   const row = hubMod.shadow(peerHome).get(KEY) || {};
   seed = { kind: row.kind, at: row.at };
@@ -139,7 +139,7 @@ else test.fail(OWED + 'the seed in the shadow: ' + short(seed));
 // adds (ownerBadge.addRelay) enters the shadow the same way.
 let added = null;
 try {
-  require('../run/js/ownerBadge').addRelay(peerHome, 'https://added.example', 'added', 'RELAYKEY-ADDED');
+  require('../run/spirit/ownerBadge').addRelay(peerHome, 'https://added.example', 'added', 'RELAYKEY-ADDED');
   const row = hubMod.shadow(peerHome).get('RELAYKEY-ADDED') || {};
   added = { kind: row.kind, at: row.at };
 } catch (e) { added = { threw: e.message }; }
@@ -182,7 +182,7 @@ if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\
 else test.fail(OWED + 'a relay can still show as a book contact, or be added to the book');
 
 test.subHeading('7. Natter retires');
-const shellJs = code('js/client/shell.js');
+const shellJs = code('spirit/client/shell.js');
 const natterGone = !natterApp();
 if (natterGone && !/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'natter'/.test(shellJs) && !/NATTER_ID|function firstRun/.test(shellJs))
   test.check('the Natter app is gone: its entry script and manifest, its intrinsic entry and the first-run branch');
@@ -199,7 +199,7 @@ if (iFind !== -1 && iAdd > iFind && iWrite > iAdd && /relay\.add/.test(code('she
 else test.fail(OWED + 'the Add a relay panel is not in Contacts where the box puts it (' + [iFind, iAdd, iWrite].join(', ') + ')');
 
 test.subHeading('8. a relay you own, or hold a seat on, stays on the list');
-const ownerBadge = require('../run/js/ownerBadge');
+const ownerBadge = require('../run/spirit/ownerBadge');
 const rows = [
   { url: 'https://noderoutes.net' }, { url: 'https://a.example', owned: true, claimed: true },
   { url: 'https://b.example', claimed: true }, { url: 'https://c.example' },
@@ -218,7 +218,7 @@ if (why && why.owned === 'you cannot remove a relay you own' &&
     why.kept && why.free === '')
   test.check('the rule refuses noderoutes.net, an owned relay and a seated one, each with its sentence, and lets a free one go');
 else test.fail(OWED + 'removalRefusal answered ' + short(why));
-const relayKeys = require('../run/js/relayKeys');
+const relayKeys = require('../run/spirit/relayKeys');
 const listHome = home('list');
 plant.ensureAt(listHome, 'andy');
 let refused = null;

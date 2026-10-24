@@ -89,7 +89,7 @@ async function hub(port, method, pathname, body) {
 // asserting about a log they never saw. read() answers the same rows
 // wherever they live (torn lines are the log's own business).
 function traffic(home) {
-  try { return require('../run/js/trafficLog').createTrafficLog({ rootDir: home }).read(); }
+  try { return require('../run/spirit/trafficLog').createTrafficLog({ rootDir: home }).read(); }
   catch (e) { return []; }
 }
 
@@ -370,7 +370,7 @@ async function run() {
     // was never the route: it was that the log can be read as a table,
     // that the table means ADMITTED, and that a row is addressable by its
     // hash. All three still hold and all three still matter.
-    const log = require('../run/js/trafficLog').createTrafficLog({
+    const log = require('../run/spirit/trafficLog').createTrafficLog({
       rootDir: homeOf(bravo),
     });
     const rows = log.arrivals({});
@@ -409,7 +409,7 @@ async function run() {
     // router, so a node moved across would have stopped counting in
     // silence — and a frozen figure looks like the truth while a zero
     // looks like a bug.
-    const stats = require('../run/js/peerStats').readSummary(homeOf(bravo), alfaKey);
+    const stats = require('../run/spirit/peerStats').readSummary(homeOf(bravo), alfaKey);
     if (stats && stats.unansweredInbound >= 1) {
       test.check('and alfa is counted in the per-peer numbers bravo keeps — the router moves them now, as the ring did');
     } else {
@@ -484,7 +484,7 @@ async function run() {
     // THE PIN LIVES IN node.db since goal/G19.15 (the relays table, keyed by relay key); relayKeys.json was its file
     // before, and reading that file read nothing. Asked through relayKeys, the one reader.
     let pinnedKey = '';
-    try { pinnedKey = require('../run/js/relayKeys').pinned(homeOf(bravo), 'http://127.0.0.1:' + relayPort) || ''; } catch (e) { pinnedKey = ''; }
+    try { pinnedKey = require('../run/spirit/relayKeys').pinned(homeOf(bravo), 'http://127.0.0.1:' + relayPort) || ''; } catch (e) { pinnedKey = ''; }
 
     if (relayKey && pinnedKey === relayKey) {
       test.check("bravo pinned the relay's own key by holding a stream to it, before any offer could arrive");
@@ -497,7 +497,7 @@ async function run() {
     // not remove an open file: the home survived every destroy, and the
     // next run's bravo booted on the old log (2026-09-29). Closed first,
     // as arrivals.js's removeHome does.
-    try { const b = W.peer('bravo'); if (b) require('../run/js/nodeStore.js').open(homeOf(b)).close(); } catch (e) { /* no store */ }
+    try { const b = W.peer('bravo'); if (b) require('../run/spirit/nodeStore.js').open(homeOf(b)).close(); } catch (e) { /* no store */ }
     // A lab is deletable, which is the whole reason this runs locally.
     await W.destroy();
   }

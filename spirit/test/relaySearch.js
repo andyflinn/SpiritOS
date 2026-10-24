@@ -21,7 +21,7 @@ const path = require('path');
 const vm = require('vm');
 const test = require('./testSupport.js');
 
-const KERNEL = path.join(__dirname, '..', 'run', 'js', 'kernel.js');
+const KERNEL = path.join(__dirname, '..', 'run', 'spirit', 'kernel.js');
 
 // The node, faked at the one door: what relay.search and relay.get answer.
 function browserKernel(rows, reports, opts) {
@@ -114,7 +114,7 @@ const ROWS = [
   })
   .then(function () {
     test.subHeading('The node side: labels carry the state as words');
-    const hub = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
+    const hub = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'hub.js'), 'utf8');
     // Since goal/G30.7 the label is the row as json; the ruled sentence is its text.
     if (/text: name \+ ' — ' \+ who \+ ', ' \+ up/.test(hub) && /'yours' : \(row\.claimed \? 'member' : 'not joined'\)/.test(hub)) {
       test.check('relay.search rows carry the text "<name> — yours|member|not joined, online|offline"');
@@ -136,11 +136,11 @@ const ROWS = [
     fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
     fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
     // Since goal/G22.5: a node's root always holds its identity, and the relay probe is asked with its key.
-    const auth = require('../run/js/relayAuth.js');
+    const auth = require('../run/spirit/relayAuth.js');
     auth.saveIdentity(root, auth.generateIdentity('relaysearch'));
     // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
-    require('../run/js/relayKeys.js').list(root, 'http://127.0.0.1:9', 'probe', 'RELAYKEY-probe');
-    const hub = require('../run/js/hub.js').createHub(root);
+    require('../run/spirit/relayKeys.js').list(root, 'http://127.0.0.1:9', 'probe', 'RELAYKEY-probe');
+    const hub = require('../run/spirit/hub.js').createHub(root);
     return Promise.all(['*', '', 'probe'].map(function (q) { return hub.relaySearch({ q: q, name: '' }); })).then(function (rs) {
       const keys = rs.map(function (r) { return ((r && r.items) || []).map(function (i) { return i.key; }); });
       if (keys.every(function (k) { return k.length === 1 && k[0] === 'http://127.0.0.1:9'; })) {

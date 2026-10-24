@@ -11,9 +11,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
-const presence = require('../run/js/presence');
+const auth = require('../run/spirit/relayAuth');
+const invites = require('../run/spirit/invites');
+const presence = require('../run/spirit/presence');
 const world = require('./world');
 
 function tmpHome() {

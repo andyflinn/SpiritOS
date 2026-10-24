@@ -27,8 +27,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
 
 test.startTest('A node card carries both keys and proves itself');
 

@@ -40,15 +40,15 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel.js');
+const packet = require('../run/spirit/client/packet');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.13: ';
 const OWED10 = 'owed by goal/G4.10: ';
 const ELEMENT = path.join(RUN, 'shell', 'js', 'contactLabel.js');
-const KERNEL = path.join(RUN, 'js', 'kernel.js');
-const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
+const KERNEL = path.join(RUN, 'spirit', 'kernel.js');
+const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerppeerpe=';
 const OTHER = 'MCowBQYDK2VwAyEAotherotherotherotherotherotherotherotheroth=';
 
@@ -93,9 +93,9 @@ async function theNode() {
   test.subHeading('1. a kept contact.label writes contact.rename {key, caption} on /api/events');
   const home = path.join(scratch, 'home', 'spirit', 'run');
   require('./plantRun.js').plantRunTree(home);
-  require('../run/js/contacts').acquire(home, { publicKey: PEER, publicLabel: 'peer', relay: 'https://lab.example' }, 'handle');
+  require('../run/spirit/contacts').acquire(home, { publicKey: PEER, publicLabel: 'peer', relay: 'https://lab.example' }, 'handle');
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(node);
   let said = '';
   node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
@@ -241,7 +241,7 @@ function mountElement() {
     if (verb === 'contact.label') return Promise.resolve({ status: 200, body: { publicKey: body.publicKey, myLabel: body.myLabel, caption: body.myLabel } });
     return Promise.resolve({ status: 200, body: {} });
   };
-  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js') });
+  const win = test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js') });
   const sp = { core: { ask: ask, util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: kernel.core.const.ICON } } };
   test.spiritFor(sp.core.ask, sp);
   new Function('spirit', 'document', 'window', 'CustomEvent', fs.readFileSync(ELEMENT, 'utf8'))(sp, doc, win, CustomEvent);
@@ -285,7 +285,7 @@ async function theElement() {
   input.value = 'a'.repeat(65);
   input.fire('keydown', { key: 'Enter' });
   await settle();
-  const reason = require('../run/js/fieldRules.js').problem('a'.repeat(65));
+  const reason = require('../run/spirit/fieldRules.js').problem('a'.repeat(65));
   if (labels().length === 0 && reason && shown(head).indexOf(reason) !== -1) test.check('65 bytes and Return: not asked, the rule\'s reason shown ("' + reason + '")');
   else test.fail(OWED + '65 bytes and Return: asked ' + labels().length + ' times; shown ' + JSON.stringify(shown(head)).slice(0, 160));
   input.value = '   ';

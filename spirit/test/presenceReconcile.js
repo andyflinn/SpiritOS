@@ -28,9 +28,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const presenceNode = require('../run/js/presenceNode');
-const relayKeys = require('../run/js/relayKeys');
+const auth = require('../run/spirit/relayAuth');
+const presenceNode = require('../run/spirit/presenceNode');
+const relayKeys = require('../run/spirit/relayKeys');
 
 const OWED = 'OWED by goal/G2.8: ';
 const JOHN = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnjohnjohn=';

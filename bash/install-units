@@ -35,14 +35,14 @@ OWNER_KEY="${OWNER_KEY:-}"
     Run: OWNER_KEY=<the owner node's public key, MCow...> $0"
 mkdir -p "$STATE_DIR"
 chmod 700 "$STATE_DIR"
-HAVE_OWNER=$(node -e 'process.stdout.write(require(process.argv[1] + "/js/relayAuth").loadOwner(process.argv[2]))' \
+HAVE_OWNER=$(node -e 'process.stdout.write(require(process.argv[1] + "/spirit/relayAuth").loadOwner(process.argv[2]))' \
   "$RUN_DIR" "$RUN_DIR") || die "could not ask relayAuth.loadOwner for the current owner"
 if [ -n "$HAVE_OWNER" ] && [ "$HAVE_OWNER" != "$OWNER_KEY" ]; then
   die "relay-state/owner.json already names a different owner (${HAVE_OWNER:0:24}...).
     Refusing to replace it. To change the owner, remove $STATE_DIR/owner.json by hand and re-run."
 fi
 node -e '
-  var auth = require(process.argv[1] + "/js/relayAuth");
+  var auth = require(process.argv[1] + "/spirit/relayAuth");
   var fs = require("fs"), os = require("os"), path = require("path");
   var key = process.argv[3];
   var probe = fs.mkdtempSync(path.join(os.tmpdir(), "spirit-owner-"));
@@ -105,14 +105,14 @@ if [ -f "$CONFIG_JSON" ]; then
 fi
 if [ -z "$RAM_MB" ]; then
   RAM_MB=$(node -e '
-    var L = require(process.argv[1] + "/js/relayLimits");
+    var L = require(process.argv[1] + "/spirit/relayLimits");
     var d = L.defaults(L.measure());
     if (!d || !(d.ramLimitMB > 0)) process.exit(1);
     process.stdout.write(String(d.ramLimitMB));
   ' "$RUN_DIR" 2>/dev/null) \
     || die "could not ask relayLimits.defaults() for the default RAM limit.
     The cap must equal the relay's own default and is not guessed here.
-    Check that node runs and that $RUN_DIR/js/relayLimits.js is present."
+    Check that node runs and that $RUN_DIR/spirit/relayLimits.js is present."
   [ -n "$RAM_MB" ] || die "relayLimits.defaults() named no ramLimitMB for this box"
   RAM_SOURCE="the relay's own default"
   say "no config.json yet — capping at ${RAM_MB} MB, which is what the relay will use"

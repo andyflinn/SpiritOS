@@ -30,12 +30,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel');
+const packet = require('../run/spirit/client/packet');
 
 const OWED = 'OWED by goal/G19.8: ';
 const RUN = path.join(__dirname, '..', 'run');
-const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
+const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const REMOTE = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
 
 const OWN = 'OWN-NODE-KEY';
@@ -136,7 +136,7 @@ function bootShell() {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
-    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js') }));
+    shellSpirit, doc, function () {}, test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/spirit/limits.js') }));
   subscribers.forEach(function (h) {
     if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]);
     if (typeof h.onUpdate === 'function') {
@@ -192,11 +192,11 @@ function names(list) { return list.map(function (g) { return g.who; }).sort().jo
 
 // THE NODE SIDE, in temp homes: a master, its puppet, and somebody else's.
 async function nodeSide() {
-  const auth = require('../run/js/relayAuth');
-  const nodeCard = require('../run/js/nodeCard');
-  const ownerBadge = require('../run/js/ownerBadge');
-  const book = require('../run/js/contacts');
-  const hub = require('../run/js/hub');
+  const auth = require('../run/spirit/relayAuth');
+  const nodeCard = require('../run/spirit/nodeCard');
+  const ownerBadge = require('../run/spirit/ownerBadge');
+  const book = require('../run/spirit/contacts');
+  const hub = require('../run/spirit/hub');
   const homes = [];
   function home(name) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-g198-'));
@@ -217,10 +217,10 @@ async function nodeSide() {
         ownerBadge.ownedBy('K', 'L') === false && ownerBadge.ownedBy('', '') === false && ownerBadge.ownedBy('K', '') === false) {
       test.check('ownerBadge.ownedBy(said, mine): true only for the same non-empty key');
     } else test.fail(OWED + 'ownerBadge.ownedBy missing or wrong');
-    const badgeSrc = fs.readFileSync(path.join(RUN, 'js', 'ownerBadge.js'), 'utf8');
+    const badgeSrc = fs.readFileSync(path.join(RUN, 'spirit', 'ownerBadge.js'), 'utf8');
     if (/owned: ownedBy\(said && said\.ownerKey, myKey\)/.test(badgeSrc)) test.check('probe marks a relay owned through ownedBy');
     else test.fail(OWED + 'probe does not use ownedBy');
-    const contactsSrc = fs.readFileSync(path.join(RUN, 'js', 'contacts.js'), 'utf8');
+    const contactsSrc = fs.readFileSync(path.join(RUN, 'spirit', 'contacts.js'), 'utf8');
     if (/ownerBadge\.ownedBy\(fields\.owner/.test(contactsSrc) && !/puppet/i.test(contactsSrc.replace(/\/\/.*$/gm, ''))) test.check('setCard marks a contact through the same ownedBy, with no puppet-only branch');
     else test.fail(OWED + 'setCard does not mark through ownerBadge.ownedBy');
 

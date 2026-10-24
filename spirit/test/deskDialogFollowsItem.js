@@ -30,11 +30,11 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel');
-const packet = require('../run/js/client/packet');
+const kernel = require('../run/spirit/kernel');
+const packet = require('../run/spirit/client/packet');
 
 const OWED = 'OWED by goal/G24.7: ';
-const SHELL = path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js');
+const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const DETAILS_MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.json'), 'utf8');
 const DESK_MANIFEST = JSON.stringify({ name: 'Desk', icon: 'THREAD', hidden: false, intrinsic: false });
@@ -119,7 +119,7 @@ function bootPage(desk) {
     createDocumentFragment: function () { return fakeElement('fragment'); },
     addEventListener: function () {},
   };
-  const win = test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/js/limits.js'), addEventListener: function () {} });
+  const win = test.withSpirit({ 'spirit.packet': packet, 'spirit.limits': require('../run/spirit/limits.js'), addEventListener: function () {} });
   const subscribers = [];
   const shellSpirit = {
     core: {

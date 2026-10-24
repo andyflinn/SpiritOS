@@ -34,8 +34,8 @@ const test = require('./testSupport.js');
 const OWED = 'OWED by goal/G24.4: ';
 const RUN = path.join(__dirname, '..', 'run');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
-const introSpector = require('../run/js/introSpector.js');
-const ANSWER_MAX = require('../run/js/appClient.js').ANSWER_MAX;
+const introSpector = require('../run/spirit/introSpector.js');
+const ANSWER_MAX = require('../run/spirit/appClient.js').ANSWER_MAX;
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function verbFiles(dir, manifest) {
@@ -133,9 +133,9 @@ async function suite() {
     const dir = path.join(RUN, 'process', 'js', n, n + '.family');
     if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
   });
-  fs.readdirSync(path.join(RUN, 'js')).forEach(function (n) {
-    const dir = path.join(RUN, 'js', n);
-    if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'js/' + n, dir: dir, manifest: '', prefix: n + '.' });
+  fs.readdirSync(path.join(RUN, 'spirit')).forEach(function (n) {
+    const dir = path.join(RUN, 'spirit', n);
+    if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'spirit/' + n, dir: dir, manifest: '', prefix: n + '.' });
   });
   if (folders.some(function (f) { return f.name === 'process/js/desk/desk.family'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found');
   else test.fail('the world: the families found are ' + short(folders.map(function (f) { return f.name; })));

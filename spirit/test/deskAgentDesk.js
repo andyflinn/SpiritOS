@@ -28,7 +28,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G14.7: ';
 const ROOT = path.join(__dirname, '..', '..');
@@ -175,7 +175,7 @@ async function suite() {
     // goal/G40.3: one row a write on the list tables (Andy: "yes to the named verbs").
     'item.files.remove', 'item.suites.add', 'item.suites.remove']);
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL }); } catch (e) { family = null; }
+  try { family = require('../run/spirit/introSpector.js').family(DESK_DIR, { declared: ALL }); } catch (e) { family = null; }
   // Since goal/G30.4 the folder is listed by its FS.search, and a verb is described when its file reads with a
   // description through FS.loadJsonValue, as tools.js offers it.
   const listed = [];

@@ -26,7 +26,7 @@ It runs exactly two long-lived processes:
 | Process | Port | Role |
 |---|---|---|
 | Caddy | 80, 443 | TLS, HTTP→HTTPS redirect, proxy |
-| `node js/server.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
+| `node spirit/server.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
@@ -40,7 +40,7 @@ State that is **not** in git: `spirit/run/relay-state/` (`owner.json`, `relay.db
 Do **not** run on this box:
 
 - labMaster (`http://127.0.0.1:65420`)
-- a personal spirit (`node js/server.js` without `--relay`)
+- a personal spirit (`node spirit/server.js` without `--relay`)
 - Jobs, App Builder, LM Studio, the desktop shell
 - extra Node processes “just to look”
 
@@ -330,7 +330,7 @@ On the **laptop**, after the box is on HTTPS:
 
 1. `spirit/run/app/natter/relays.json` →
    `{ "label": "kamatera", "url": "https://spirit.andyflinn.com" }`
-2. `spirit/run/js/hub.js` uses `https` and rejects remote `http://`
+2. `spirit/run/spirit/hub.js` uses `https` and rejects remote `http://`
 3. Restart the local spirit on `:65432`
 
 Until those two files are live, a personal node may still open plain

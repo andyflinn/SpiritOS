@@ -16,7 +16,7 @@ const { spawn } = require('child_process');
 const OWED = 'OWED by desk/G2.2: ';
 const FIXTURE = path.join(__dirname, 'fixtures', 'launcherFixture.js');
 const PARENT = path.join(__dirname, 'fixtures', 'launcherParent.js');
-const JOBS = path.join(__dirname, '..', 'run', 'js', 'jobs.js');
+const JOBS = path.join(__dirname, '..', 'run', 'spirit', 'jobs.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return false; } }
@@ -76,8 +76,8 @@ async function withoutDoor(test) {
 
   test.subHeading('desk/G2.2: one launcher, jobs.js spawns in one place');
   const spawns = (code(JOBS).match(/\bspawn\s*\(/g) || []).length;
-  if (spawns === 1) test.check('js/jobs.js has one spawn call');
-  else test.fail(OWED + 'js/jobs.js has ' + spawns + ' spawn calls, one per kind of job');
+  if (spawns === 1) test.check('spirit/jobs.js has one spawn call');
+  else test.fail(OWED + 'spirit/jobs.js has ' + spawns + ' spawn calls, one per kind of job');
 }
 
 module.exports = { withDoor: withDoor, withoutDoor: withoutDoor };

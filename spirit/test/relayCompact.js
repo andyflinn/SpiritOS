@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const test = require('./testSupport.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 
 test.startTest('A relay compacts its store, and refuses when the disc cannot afford it');
 

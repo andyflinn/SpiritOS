@@ -1,0 +1,398 @@
+'use strict';
+
+// spirit/run/spirit/nodeCard.js
+// WHAT A NODE ANSWERS ABOUT ITSELF, TO ANYBODY WHO ASKS.
+//
+//   Andy: "the node should have a verb that is always answered like name
+//   or description, that'll be the first two relay peerPost to test, the
+//   description is what I want to replace the ugly end-of-key stuff with
+//   in the UI."
+//
+// ── THIS OPENS A DOOR THAT WAS DELIBERATELY SHUT ─────────────────────
+//
+// design/relay/PARTNERS.md, tier three, recorded that a relay answers
+// questions about itself (`answerSelf`) and a NODE answers nothing, and
+// left it that way on purpose: crossing that line changes what a node is.
+// Today it receives messages; afterwards it answers questions, and "what
+// are you running" is the same shape as "who are you".
+//
+// It is opened here for the mildest case there is, and that is the whole
+// argument for opening it at all: a description is the thing you WANT a
+// stranger to read. It is what replaces a key ending in a list — six
+// characters somebody reads down a telephone, which UI_DESIGN_STYLE §6
+// only ever defended as the answer when there was nothing better.
+//
+// ── ALWAYS ANSWERED, WHICH IS THE POINT AND THE RISK ─────────────────
+//
+// Every other thing a node answers is gated on the front door's verdict:
+// `peerPost` will not compose a reply for a sender it would not hear from,
+// because that would put the door's judgement behind a verb. This one runs
+// IN FRONT of that gate, because a card you only show to people you
+// already know is not a card — the person asking is usually a stranger
+// deciding whether to add you.
+//
+// What that costs, said plainly rather than discovered later:
+//
+//   - Anyone holding a valid key can confirm this node is awake. The relay
+//     already publishes presence to its members, so this is not new.
+//   - Anyone holding a valid key can make this node compose one small
+//     reply. The relay rate-limits posts and the reply is bounded by the
+//     description cap, so it is a poor amplifier.
+//   - The description is PUBLIC. Not to the relay — this never leaves the
+//     node except as an answer — but to anybody who asks, which is the
+//     same reach as a public label and should be said in the words the
+//     owner types it into.
+//
+// WHAT IT IS NOT. Not a general query surface. It answers `{describe:true}`
+// and nothing else; every other system packet falls through to the gate it
+// always had. Adding a second question here is a decision about what a
+// node is, and deserves the argument this one got.
+
+const auth = require('./relayAuth');
+const fieldRules = require('./fieldRules');
+// The node layer's one reading of what arrived (N1, goal/G16.5).
+const arrivals = require('./arrivals');
+// The seats this node holds, whose labels follow its one name (goal/G28.3).
+const relayKeys = require('./relayKeys');
+
+// ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
+//
+//   Andy, 2026-09-23: "why have two calls for what could be one only?" —
+//   and, on the answer: "card & description".
+//
+// It was one call wearing two names: the request said `describe`, the
+// answer was composed by `answerCard`, and the module is `nodeCard.js`.
+// Nothing was abandoned to fix that — **the description was always a
+// FIELD of the card** — and the wire word is now `card` on both sides.
+//
+// Free to rename today only because of the flag day (cycle 10, R6): old
+// nodes must update to stay in the game, so a word that disagrees with
+// itself costs nothing to correct now and can never be corrected this
+// cheaply again.
+// Read through the node layer's one reader (N1, goal/G16.5): this parsed
+// the text itself, which made it a second decoder of the same envelope.
+function asks(text) {
+  const info = arrivals.envelopeOf(text);
+  if (!info || info.app) return false;       // an app's packet is an app's
+  const body = info.body;
+  return !!(body && body.card);
+}
+
+// ── WHAT A CARD CARRIES, AND WHY EACH FIELD IS IN THE SIGNATURE ─────
+//
+// The card introduces a node to somebody who has never met it, and after
+// cycle 10 it introduces the key everything they ever send will be sealed
+// to. So it is signed by the identity key, over every field, and it
+// verifies FROM ITS OWN BYTES — no trust in whoever handed it over.
+//
+// The reason is measured rather than assumed: a reply's signature covers
+// `receiptMessage(hash, minute)` — the hash and a clock minute, NOT the
+// text (relayAuth.js). So a relay could rewrite a card in flight today
+// without breaking anything: hand over its own cipher key, have the
+// sender seal to it, read everything and re-seal onward. Encryption built
+// on an unsigned card is encryption addressed to whoever forwards it.
+//
+//   name         what the identity was minted with, not a public label —
+//                labels belong to relays, one each, and a node has as
+//                many as it has enrolments. It is here because it is
+//                often the only word a node has beside its key — the
+//                machine's name, by default, from its first boot
+//                (goal/G22.5) — and an empty card is worse than a weak one
+//   description  the owner's own sentence about this node
+//   publicKey    the identity — in the signed bytes on purpose, so the
+//                blob is self-contained and can be checked without the
+//                envelope that carried it
+//   sealKey      what messages to this node are sealed to
+//   at           a counter that only goes up (cycle 10, C1)
+//
+// `at` IS THE ONE THAT LOOKS OPTIONAL AND IS NOT. wsl-claude, reviewing:
+// if newness were decided by arrival order or position in the roll, **the
+// relay would decide which card is newer**, and could roll a peer back to
+// a superseded cipher key — possibly the very key whose compromise caused
+// the rotation. A number inside the signature is what takes that decision
+// away from it. A receiver refuses anything not strictly greater than
+// what it holds.
+//   owner        WHO OWNS THIS NODE (goal/G19.8): the key owner.json names, or '' when the node owns itself. Andy,
+//                2026-10-12: "so the relays owner code and the puppets owner code should be the same." A relay
+//                says its owner on its card (the answer to a card ask, goal/G22.6); a node says it here, signed, and a master reads it with the
+//                same comparison (ownerBadge.ownedBy). Added on a flag day: a card signed without it does not
+//                verify, and none is defaulted.
+function cardFields(id) {
+  return {
+    name: String(id.name || ''),
+    description: String(id.description || ''),
+    publicKey: String(id.publicKey || ''),
+    sealKey: String(id.sealPublicKey || ''),
+    at: Number(id.cardAt || 1),
+    owner: String(id.owner || ''),
+  };
+}
+
+// The owner this node's card names: owner.json's key, or '' when there is none or it names this node itself
+// (puppetMode.puppetIn's rule).
+function ownerOf(rootDir, id) {
+  const owner = auth.loadOwner(String(rootDir || ''), function () {});
+  return owner && id && owner !== String(id.publicKey || '') ? owner : '';
+}
+
+// THE BYTES THAT ARE SIGNED, in one place, so the signer and the verifier
+// cannot drift apart. Ordered explicitly rather than by JSON.stringify's
+// key order, because that order is an implementation detail and this is a
+// wire format.
+function signable(fields) {
+  return 'card\n' +
+    fields.name + '\n' +
+    fields.description + '\n' +
+    fields.publicKey + '\n' +
+    fields.sealKey + '\n' +
+    fields.at + '\n' +
+    fields.owner;
+}
+
+// The card as it travels: the fields, and a signature over exactly those
+// bytes. Answers a STRING, because that is what peerPost sends as the
+// reply text, and the same envelope a relay answers in.
+// THE SIGNING, SEPARATED FROM THE LOADING (cycle 10, R5). A card is made
+// from an identity, and reading that identity off a disc is a different
+// concern — one that a relay enrolling a member, or anything holding an
+// identity it did not load from its own home, does not have.
+//
+// ── IT HAS NO PRODUCTION CALLER YET, AND THAT IS DECIDED ────────────
+//
+// A sweep for exports nobody outside their own file calls finds this one:
+// eleven callers, all of them suites. That is the shape of an escape
+// hatch (`oneDoor.js` §4 — *"their internal mechanics shouldn't even be
+// reachable"*), so it is worth saying why it is not one.
+//
+// It is **ahead of its caller on purpose**. R13, in this same cycle,
+// gives a card a rotation — a new seal key, a counter one higher, signed
+// again — and
+// rotation is exactly the case that holds an identity in hand rather than
+// reading one off a home directory. `describe(rootDir)` is the sugar over
+// it, not the other way round.
+//
+// **Andy ruled it, 2026-09-23:** *"nodeCard.cardFrom we're building
+// towards right now. i see nothing wrong with this kind of foresight."*
+// Do not fold it back into `describe()` to satisfy a sweep; a later
+// session that does will be re-deriving it when that cycle's R13 lands.
+function cardFrom(id) {
+  if (!id || !id.privateKey) return '';
+  const fields = cardFields(id);
+  return JSON.stringify({
+    v: 1,
+    body: Object.assign({ ok: true }, fields, {
+      sig: auth.sign(id.privateKey, signable(fields)),
+    }),
+  });
+}
+
+// ── AND THE COUNTER MOVES HERE, OR IT NEVER MOVES AT ALL ─────────────
+//
+// THE DEFECT, found by wsl-claude reviewing cycle 10 and confirmed by a
+// sweep: `cardAt` was READ in one place (cardFields, above) and WRITTEN
+// in none. Only suites set it, by hand. So every card this node ever
+// published carried `at: 1`, and the consequences were both halves of
+// cycle 10's R13:
+//   - **rotation was impossible.** A new seal key needs a higher counter
+//     or the receiver refuses it as "not newer" — so a node could rotate
+//     and never be heard again.
+//   - **a changed description never propagated.** Retype it, hand the
+//     card over, and the peer keeps the old one for the same reason.
+// A monotonic field nothing increments is not a monotonic field; it is a
+// constant with a refusal attached.
+//
+// WHY HERE AND NOT IN THE SETTERS. `cardFrom(id)` stays pure — cycle 10's R5 split
+// it out on purpose, and rotation holds an identity rather than a home.
+// The counter is STATE, and state belongs with the home, which is exactly
+// what `describe(rootDir)` is. Put the bump in setName and setDescription
+// instead and there are two places to remember, then three when cycle 10's R13 adds
+// rotation, and the one that gets forgotten is silent again.
+//
+// IT ADVANCES ON CHANGE, NOT ON PUBLICATION. A card is handed over on
+// every stream open; bumping there would burn a counter per reconnect and
+// make a peer's stored card permanently stale. So the last published
+// contents are kept beside the counter and compared.
+function describe(rootDir) {
+  const id = auth.loadIdentity(rootDir);
+  const owner = ownerOf(rootDir, id);
+  // The owner rides on a copy: identity.json is saved by advance and never holds it.
+  return cardFrom(Object.assign({}, advance(rootDir, id, owner), { owner: owner }));
+}
+
+// The four fields a receiver acts on, WITHOUT the counter — comparing a
+// string that contains the counter would never match and would bump for
+// ever. Built explicitly rather than by trimming `signable`, because that
+// is a wire format and this is a local comparison; tying them together
+// would mean a wire change silently resetting every node's counter.
+function cardContents(fields) {
+  return [fields.name, fields.description, fields.publicKey, fields.sealKey, fields.owner].join('\n');
+}
+
+// A changed owner is a change (goal/G19.8): the counter moves, so a master holding the old card takes the new one.
+function advance(rootDir, id, owner) {
+  const said = cardContents(cardFields(Object.assign({}, id, { owner: String(owner || '') })));
+  if (Number(id.cardAt) > 0 && String(id.cardSaid || '') === said) return id;
+
+  id.cardAt = Number(id.cardAt || 0) + 1;
+  id.cardSaid = said;
+  // A FAILED WRITE STILL PUBLISHES, and fails safe. The counter on disc
+  // stays where it was, so the next change offers the same number again
+  // with different contents — which a receiver REFUSES as "not newer".
+  // The node goes quiet rather than rolling a peer back, and a node that
+  // cannot write its own identity.json has a louder problem than this.
+  try { auth.saveIdentity(rootDir, id); } catch (e) { /* published anyway */ }
+  return id;
+}
+
+// ── AND THE CHECK, WHICH IS THE WHOLE POINT ──────────────────────────
+//
+// Returns the card's fields when the signature holds over exactly those
+// bytes, and null otherwise. A caller that skips this has a card that
+// proves nothing — so nothing in the tree may read a field off a card
+// without coming through here.
+//
+// It does NOT decide whether this card supersedes one already held: that
+// is the shadow roll's, where both keys are protected (cycle 10, R13).
+// This answers one question only — are these fields the ones their owner
+// signed?
+function verify(text) {
+  // The one reader again (N1, goal/G16.5). A card is a packet with no app
+  // — `{v: 1, body: {...}}`, cardFrom above — so the envelope is where its
+  // fields come from, and the signature below is still checked over
+  // exactly those bytes.
+  const info = arrivals.envelopeOf(text);
+  const body = info && info.body;
+  if (!body || !body.publicKey || !body.sig) return null;
+  const fields = {
+    name: String(body.name || ''),
+    description: String(body.description || ''),
+    publicKey: String(body.publicKey || ''),
+    sealKey: String(body.sealKey || ''),
+    at: Number(body.at || 0),
+    owner: String(body.owner || ''),
+  };
+  // A card from before goal/G19.8 carries no owner and is refused, not defaulted (flag day).
+  if (typeof body.owner !== 'string') return null;
+  // A card with no counter is a card from before this cycle, and the flag
+  // day says those do not travel. Refused rather than defaulted, because
+  // a default would be a number the signer never chose.
+  if (!(fields.at > 0)) return null;
+  if (!auth.verify(fields.publicKey, signable(fields), body.sig)) return null;
+  return fields;
+}
+
+// ── THE SAME CARD, READ AT HOME ──────────────────────────────────────
+//
+//   Andy: "i want an intrinsic app info, in which, for now the user can
+//   maintain both fields in this file, more to come."
+//
+// The owner's own view of what strangers are told. It is deliberately the
+// SAME function the wire answer is built from — an editor that reads the
+// fields through a second path is an editor that can show you something
+// other than what is being sent, and this is a file whose whole purpose
+// is that somebody can see what their node says about them.
+//
+// `publicKey` rides along because it is the one field here nobody may
+// edit, and a screen about your identity that cannot show it is coy about
+// the only part that IS the identity.
+function read(rootDir) {
+  const id = auth.loadIdentity(rootDir);
+  return {
+    name: String(id.name || ''),
+    description: String(id.description || ''),
+    publicKey: String(id.publicKey || ''),
+    descriptionMax: fieldRules.DESCRIPTION_MAX_BYTES,
+  };
+}
+
+// A NODE THAT HAS NEVER BEEN DESCRIBED DESCRIBES ITSELF: ensureDescription STOOD HERE, moved to serveCommon
+// (ensureFirstRun, goal/G30.7) so a relay boots by the same rule.
+
+// ── AND WRITTEN ──────────────────────────────────────────────────────
+//
+// Both fields go through fieldRules, which is the rule the RELAY enforces
+// on a rename (relay.setRelayLabel) — so a node names itself under the
+// same law a mailbox does, rather than under whatever this file felt like.
+//
+// A NAME IS REQUIRED. (The device enrolment that once refused a node with
+// an empty `id.name` was removed by goal/G16.2; the rule stands.)
+function setName(rootDir, text) {
+  const id = auth.loadIdentity(rootDir);
+  const bad = fieldRules.problem(text);
+  if (bad) return { ok: false, status: 400, error: bad };
+
+  id.name = fieldRules.normalize(text);
+  try { auth.saveIdentity(rootDir, id); }
+  catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
+  // ONE NAME FOR A NODE (goal/G28.3). Andy, 2026-10-16: "there should be
+  // only 1 name/label for a node." Each seat carried its own label, written
+  // only when a relay said yes to a rename, so a name the relays never
+  // confirmed left the old one on every seat, and in the window title that
+  // read it, for good. The seats follow the name here; telling the relays
+  // is Info's push, retried until each agrees.
+  relayKeys.seatedUrls(rootDir).forEach(function (url) { relayKeys.seat(rootDir, url, id.name); });
+  return { ok: true, status: 200, name: id.name };
+}
+
+// Too long is refused, as is the invisible, which is the same
+// impersonation in a description as in a name, and in the same row
+// (fieldRules.describeProblem; goal/G4.16: "too-long refused").
+function setDescription(rootDir, text) {
+  const bad = fieldRules.describeProblem(text);
+  if (bad) return { ok: false, status: 400, error: bad };
+
+  const saved = auth.setDescription(rootDir, fieldRules.normalize(text));
+  // WHAT WAS ACTUALLY STORED goes back, not what was sent. A caller that
+  // echoes its own input is a caller that will draw 140 characters into a
+  // field holding 128.
+  return { ok: true, status: 200, description: String(saved.description || '') };
+}
+
+// ── ROTATION: A NEW CIPHER KEY, BECAUSE THE OLD ONE MAY BE KNOWN ─────
+//
+//   Andy, 2026-09-26: "so rotation is a crisis.measure and should not be
+//   used wastefully" — and, retitling this requirement in Desk: "Get the
+//   damn rotate-button into the info app".
+//
+// A new X25519 pair replaces the cipher key in identity.json, and the old
+// private key is DISCARDED. No grace period: the old key is presumed
+// stolen, and keeping it to open posts still in flight would keep the
+// thief's window open. The identity key is untouched, so this node is the
+// same node to everyone; only what they seal to changes.
+//
+// THE COUNTER MOVES BY ITSELF: `describe` compares the card's contents,
+// and the cipher key is one of them, so the card it returns is strictly
+// newer, which is what makes every peer take it and refuse the old one
+// (cycle-10/R13's ordering half, contacts.setCard).
+//
+// SAVED FIRST, OR NOT AT ALL. A card naming a key that is not on disc
+// would send every peer to seal to a key this node cannot open with after
+// a restart, so a failed save refuses before anything is published.
+function rotate(rootDir) {
+  const id = auth.loadIdentity(rootDir);
+  const pair = require('crypto').generateKeyPairSync('x25519');
+  id.sealPublicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+  id.sealPrivateKey = pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64');
+  // STRICTLY NEWER THAN ANYTHING ALREADY HANDED OUT. A node that never wrote
+  // its counter publishes its card as 1 (cardFields' default), and `advance`
+  // counted from 0, so the rotated card was ALSO 1 and every peer refused it
+  // as not newer. Found by wsl-claude's cardRotation.js burst case. Starting
+  // from at least 1 makes the rotated card at least 2.
+  id.cardAt = Math.max(Number(id.cardAt) || 0, 1);
+  try { auth.saveIdentity(rootDir, id); }
+  catch (e) { return { ok: false, status: 500, code: 'rotate-not-saved', error: 'the new cipher key could not be saved' }; }
+  const fields = verify(describe(rootDir));
+  return { ok: true, at: fields ? fields.at : 0 };
+}
+
+module.exports = {
+  asks: asks,
+  rotate: rotate,
+  describe: describe,
+  cardFrom: cardFrom,
+  verify: verify,
+  signable: signable,
+  read: read,
+  setName: setName,
+  setDescription: setDescription,
+};

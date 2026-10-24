@@ -70,7 +70,7 @@ function desk(verb, args) {
     if (!r || r.status !== 200 || !r.body || typeof r.body !== 'object') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'nothing'));
     if (r.body.ok === false) throw new Error('the desk answered ' + JSON.stringify(r.body));
     return r.body;
-  }, function (e) { clearTimeout(timer); end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });
+  }).catch(function (e) { clearTimeout(timer); end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });
 }
 
 // ── install ──────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ function checkItems(ids) {
 
 // ── the core grants (goal/G4.23) ───────────────────────────────────
 // Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
-// grant request in the item?". A staged core file (spirit/run/js/coreFiles.js) needs a granted G check on the item
+// grant request in the item?". A staged core file (spirit/run/spirit/coreFiles.js) needs a granted G check on the item
 // naming its path under spirit/run. Refused without it. SINCE goal/G32.2 THE REFUSAL RAISES NO GRANT OF ITS OWN: one G
 // check per file (64 on G32.2) outgrew the item's one answer and Desk refused his grants. It says to list the files
 // with item.files.add instead, whose one grant for all the core files (goal/G8.8: "all files that need a grant should
@@ -157,7 +157,7 @@ function coreGrants(id) {
   const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   const top = git(['rev-parse', '--show-toplevel']).stdout.trim();
   return Promise.resolve().then(function () {
-    const core = staged.filter(function (f) { return require('../../../js/coreFiles.js').isCore(f, top); });
+    const core = staged.filter(function (f) { return require('../../../spirit/coreFiles.js').isCore(f, top); });
     if (!core.length) return null;
     // ONE GRANT FOR THE LIST (goal/G40.3). Andy: "yes to the commit-check making sure each file exists in the granted
     // list." Each staged core file is looked up on the item's list by its exact path (item.files.search, never a whole
@@ -169,7 +169,11 @@ function coreGrants(id) {
         return (Array.isArray(got.items) ? got.items : []).some(function (p) { const r = rowOf(p.label); return !!r && r.path === f; });
       });
     };
-    return Promise.all(core.map(listed)).then(function (on) {
+    // ONE LOOKUP AT A TIME (goal/G40.2, found landing the move): all at once, 245 core files flooded the desk past
+    // deskClient's wait and the check crashed on a no-answer.
+    const on = [];
+    const each = core.reduce(function (p, f) { return p.then(function () { return listed(f).then(function (hit) { on.push(hit); }); }); }, Promise.resolve());
+    return each.then(function () {
       return desk('item.checks.search', { id: id, text: 'core grant' }).then(function (got) {
         const granted = (Array.isArray(got.items) ? got.items : []).some(function (p) {
           const c = rowOf(p.label);

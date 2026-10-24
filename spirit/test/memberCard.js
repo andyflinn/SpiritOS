@@ -39,11 +39,11 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const { sealFor, openBody } = require('./openReply');
-const auth = require('../run/js/relayAuth');
-const nodeCard = require('../run/js/nodeCard');
-const seal = require('../run/js/seal');
-const createRelay = require('../run/js/relay');
-const invites = require('../run/js/invites');
+const auth = require('../run/spirit/relayAuth');
+const nodeCard = require('../run/spirit/nodeCard');
+const seal = require('../run/spirit/seal');
+const createRelay = require('../run/spirit/relay');
+const invites = require('../run/spirit/invites');
 
 test.startTest('A member hands the relay its card, and the relay can answer again');
 
@@ -251,7 +251,7 @@ test.subHeading('THE POINT: the silence is cured');
 }
 
 try {
-  require('../run/js/relayStore').closeAll();
+  require('../run/spirit/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 } catch (e) { /* leave it for the sweeper */ }
 

@@ -37,7 +37,7 @@
 // failure.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { world, post, events, askMonitor } = require('./monitorWorld.js');
 
 test.startTest('The relay\'s hash differs from a hash of the words');

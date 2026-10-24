@@ -12,12 +12,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const peerPost = require('../run/js/peerPost');
-const trafficLog = require('../run/js/trafficLog');
-const routerTable = require('../run/js/router');
-const seal = require('../run/js/seal');
-const nodeCard = require('../run/js/nodeCard');
+const auth = require('../run/spirit/relayAuth');
+const peerPost = require('../run/spirit/peerPost');
+const trafficLog = require('../run/spirit/trafficLog');
+const routerTable = require('../run/spirit/router');
+const seal = require('../run/spirit/seal');
+const nodeCard = require('../run/spirit/nodeCard');
 
 // THE ANSWERER'S LOG IS ON ITS OWN TIMELINE.
 //

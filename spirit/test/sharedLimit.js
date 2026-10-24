@@ -20,10 +20,10 @@ const net = require('net');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const limits = require('../run/js/limits.js');
-const appServer = require('../run/js/appServer.js');
-const spirit = require('../run/js/kernel.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+const limits = require('../run/spirit/limits.js');
+const appServer = require('../run/spirit/appServer.js');
+const spirit = require('../run/spirit/kernel.js');
+const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by the shared-layer limit: ';
@@ -91,7 +91,7 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   // ── 2. a server's published object ───────────────────────────────────
   test.subHeading('2. spirit.core.jobs.publish refuses an object over MAX_PAYLOAD, and says so');
   const probe = [
-    "const spirit = require(" + JSON.stringify(path.join(__dirname, '..', 'run', 'js', 'kernel.js')) + ");",
+    "const spirit = require(" + JSON.stringify(path.join(__dirname, '..', 'run', 'spirit', 'kernel.js')) + ");",
     "const r = spirit.core.jobs.publish({ big: 'm'.repeat(" + (limits.PAYLOAD_MAX + 2048) + ") });",
     "process.stdout.write(JSON.stringify({ took: r }));",
   ].join('\n');
@@ -103,7 +103,7 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
 
   // ── 4. the job table ─────────────────────────────────────────────────
   test.subHeading('4. jobs.updateJob refuses an oversized app object, and emits nothing');
-  const jobs = require('../run/js/jobs.js')(spirit, 1);
+  const jobs = require('../run/spirit/jobs.js')(spirit, 1);
   const job = jobs.startServerJob(process.execPath, ['-e', 'setInterval(function(){},1000)'], { type: 'sharedlimit', operated: 'user' });
   jobs.updateJob(job.id, { app: { small: 1 } });
   let emitted = 0;
@@ -123,7 +123,7 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   const port = await freePort();
-  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const post = function (body) {
     return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
       let j = null; try { j = JSON.parse(r.text); } catch (e) { j = null; }

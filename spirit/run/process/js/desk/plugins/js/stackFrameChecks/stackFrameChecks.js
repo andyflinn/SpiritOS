@@ -118,9 +118,9 @@ const VIOLATORS_BYTES = 2000;
 // is violators.js's header.
 const { violators } = require('./violators.js');
 // THE DOOR SEARCH'S COMPONENTS (goal/G33.7): the desk's own, the probability match and the bucket that fills one answer.
-const createProbabilityBucket = require('../../../../../../js/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const DOORS_ROOM = require('../../../../../../js/appClient.js').ANSWER_MAX - 512;
+const createProbabilityBucket = require('../../../../../../spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const DOORS_ROOM = require('../../../../../../spirit/appClient.js').ANSWER_MAX - 512;
 
 // AN ITEM NAMED BEFORE THE IDS BECAME NUMBERS (goal/G33.4): plugin/stackFrameChecks.<n> in the list is read as this
 // plugin's goal's item, by the desk's own reading (desk.idOf, set at mount); the list keeps what it says until written.

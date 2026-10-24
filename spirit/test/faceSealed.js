@@ -41,15 +41,15 @@ const homes = [];
 
 test.startTest('goal/G30.11: the sealed link, and the face loading from its home node');
 
-const seal = require('../run/js/seal');
+const seal = require('../run/spirit/seal');
 let faceSeal = null;
 try { faceSeal = require('../run/face/seal.js'); } catch (e) { faceSeal = null; }
 const sealMade = !!(faceSeal && typeof faceSeal.seal === 'function' && typeof faceSeal.open === 'function');
 
 // The relay and bert, as in faceHome.js.
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
-const relayStore = require('../run/js/relayStore');
+const relayStore = require('../run/spirit/relayStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3011-'));
 homes.push(home);
 plant.ensureAt(home, 'relay');
@@ -63,7 +63,7 @@ fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
 fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
 const mails = [];
 let now = Date.now();
-const box = require('../run/js/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+const box = require('../run/spirit/relay').createRelay(home, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
 const relayKey = box.relayPublicKey();
 const URL_ = 'https://relay.example';
 const events = [];
@@ -108,11 +108,11 @@ jobs.listJobs = function () { return [fsJob, { id: 'j-pr', type: 'relay-presence
 jobs.fsTreeCommands = function () { return [{ createDirectory: 'shell' }]; };
 const big = Buffer.alloc(300 * 1024);
 for (let i = 0; i < big.length; i++) big[i] = i % 251;
-const node = require('../run/js/faceHome').createFaceHome({
+const node = require('../run/spirit/faceHome').createFaceHome({
   call: function (verb) { return Promise.resolve({ ok: true, status: 200, body: { verb: verb, publicKey: bert.publicKey, sealKey: bert.sealPublicKey } }); },
   serveFile: function (rel, res) {
     if (rel === 'big.bin') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); res.end(big); return; }
-    require('../run/js/serveCommon').sendFile(res, path.join(RUN, rel));
+    require('../run/spirit/serveCommon').sendFile(res, path.join(RUN, rel));
   },
   upload: upload,
   identity: function () { return bert; },
@@ -203,20 +203,20 @@ const done = (async function () {
       && stream.got.some(function (e) { return e.event === 'presence'; }))
     test.check('face-open carries the face\'s key, and every line of the stream is sealed to it');
   else test.fail(OWED + 'the stream was ' + short(stream));
-  const server = code('js/relayServer.js');
+  const server = code('spirit/relayServer.js');
   if (/searchParams\.get\('key'\)/.test(server) && /'\/face\/seal\.js'/.test(server))
     test.check('relayServer hands ?key= to faceOpen, and serves face/seal.js beside face.html');
   else test.fail(OWED + 'relayServer reads no key on /face/stream, or does not serve face/seal.js');
 
   test.subHeading('4. the face shell, by its code');
   const shell = code('face/shell.js');
-  const kernel = code('js/kernel.js');
+  const kernel = code('spirit/kernel.js');
   const html = raw('face.html');
   const login = raw('face/login/login.js') + raw('face/login/login.json');
   const checks = {
     kernelHook: /spirit\.transport/.test(kernel) && /spirit\.transport[\s\S]{0,200}ask/.test(kernel) && /spirit\.transport[\s\S]{0,300}events/.test(kernel),
     transport: /spirit\.transport\s*=/.test(shell),
-    homeVersion: /index\.html/.test(shell) && /js\/client\/shell\.js/.test(shell),
+    homeVersion: /index\.html/.test(shell) && /spirit\/client\/shell\.js/.test(shell),
     contacts: /shell\/contacts\/contacts\.js/.test(shell),
     sealed: /faceSeal\.(supported|newKey)/.test(shell) && /seal\.js/.test(html),
     unsealedWarning: /readable on the relay/.test(shell),

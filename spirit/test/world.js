@@ -20,15 +20,15 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 const { claimOwner, ownHome } = require('./ownerClaim');
-const invites = require('../run/js/invites');
-const nodeCard = require('../run/js/nodeCard');
+const invites = require('../run/spirit/invites');
+const nodeCard = require('../run/spirit/nodeCard');
 const { openBody, sealFor } = require('./openReply');
 const scenario = require('./scenario');
-const { createRelay } = require('../run/js/relay');
-const relayKeys = require('../run/js/relayKeys');
-const nodeStore = require('../run/js/nodeStore');
+const { createRelay } = require('../run/spirit/relay');
+const relayKeys = require('../run/spirit/relayKeys');
+const nodeStore = require('../run/spirit/nodeStore');
 
 function tmpHome(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-world-' + (tag || '') + '-'));

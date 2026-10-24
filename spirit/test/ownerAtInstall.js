@@ -50,10 +50,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
-const invites = require('../run/js/invites.js');
-const nodeCard = require('../run/js/nodeCard.js');
-const { createRelay } = require('../run/js/relay.js');
+const auth = require('../run/spirit/relayAuth.js');
+const invites = require('../run/spirit/invites.js');
+const nodeCard = require('../run/spirit/nodeCard.js');
+const { createRelay } = require('../run/spirit/relay.js');
 
 const OWED = 'OWED by goal/G16.8: ';
 const ROOT = path.join(__dirname, '..', '..');
@@ -155,7 +155,7 @@ test.subHeading('2. the owner kind of invite, and the relay\'s owner writer, are
     else test.fail(OWED + 'invites still offers ' + name + ', so the owner kind of invite is still mintable');
   });
 
-  const relayText = read(path.join(RUN, 'js', 'relay.js'));
+  const relayText = read(path.join(RUN, 'spirit', 'relay.js'));
   if (!/function becomeOwner\b/.test(relayText)) test.check('relay.js has no becomeOwner, so no claim can write an owner');
   else test.fail(OWED + 'relay.js still defines becomeOwner — the wire can still write relay-state/owner.json');
   if (!/firstOwner/.test(relayText)) test.check('and no firstOwner branch is left to take');

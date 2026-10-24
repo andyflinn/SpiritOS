@@ -9,14 +9,14 @@
 //   puppet a signed reply, allowing the appFaceApp to cache that route in RAM
 //   for future use", and "at restart, the dance starts anew....".
 //
-// Built by claude-windows at 67af809 (spirit/run/js/faceRoute.js), against
+// Built by claude-windows at 67af809 (spirit/run/spirit/faceRoute.js), against
 // the names declared at 2223a36. Real keys from relayAuth; a fake clock, so
 // "an hour" and "a minute" are tested without waiting for them.
 
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
+const auth = require('../run/spirit/relayAuth');
 // Beside the face since goal/G13.2: the cache is appFaceApp's own, not the node's.
-const fr = require('../run/js/faceRoute');
+const fr = require('../run/spirit/faceRoute');
 
 // THE OWNER'S SIGNER IS THE TEST'S OWN SINCE goal/G19.10. Andy, 2026-10-12:
 // "there shall be no test helpers inside node." answerRoute had no caller in

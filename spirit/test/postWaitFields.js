@@ -30,16 +30,16 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const peerPost = require('../run/js/peerPost');
-const trafficLog = require('../run/js/trafficLog');
+const auth = require('../run/spirit/relayAuth');
+const peerPost = require('../run/spirit/peerPost');
+const trafficLog = require('../run/spirit/trafficLog');
 
 const OWED = 'OWED by goal/G4.32: ';
 const RELAY = 'https://relay.test';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function removeHome(home) {
-  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* no store */ }
+  try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* no store */ }
   fs.rmSync(home, { recursive: true, force: true });
 }
 

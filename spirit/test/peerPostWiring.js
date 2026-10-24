@@ -42,7 +42,7 @@ const test = require('./testSupport.js');
 
 test.startTest('peerPost is instantiated in declared shapes only');
 
-const RUN_JS = path.join(__dirname, '..', 'run', 'js');
+const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 
 // ── THE DECLARED SHAPES ──────────────────────────────────────────────
 //

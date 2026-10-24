@@ -35,8 +35,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth.js');
-const { createRelay } = require('../run/js/relay.js');
+const auth = require('../run/spirit/relayAuth.js');
+const { createRelay } = require('../run/spirit/relay.js');
 
 const OWED = 'OWED by goal/G16.12: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -134,7 +134,7 @@ test.subHeading('2. a header signed for one relay is refused by another, and the
 // ── 4. THE NODE SIGNS FOR THE RELAY IT IS CALLING ───────────────────────
 test.subHeading('3. a node names the relay in the header it signs, or the rule cannot fire');
 {
-  const src = fs.readFileSync(path.join(RUN, 'js', 'presenceNode.js'), 'utf8')
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'presenceNode.js'), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
   const at = src.indexOf('streamMessage(');
   const call = at === -1 ? '' : src.slice(at, at + 160);

@@ -32,8 +32,8 @@ const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
-const kernel = require('../run/js/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G27.2: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -50,8 +50,8 @@ function withShared(doc, win) { SHARED.forEach(function (f) { if (fs.existsSync(
 // SINCE goal/G33.4 the plugin's goal is numbered like any goal; plugin/stackFrameChecks (its fixed key) still names it
 // at every verb, and the numbered id is read from the desk once it is up.
 let GOAL = 'plugin/stackFrameChecks';
-const GATE = 'spirit/run/js/peerPost.js::post';
-const END = 'spirit/run/js/presenceNode.js';
+const GATE = 'spirit/run/spirit/peerPost.js::post';
+const END = 'spirit/run/spirit/presenceNode.js';
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStacksDialogOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -120,8 +120,8 @@ async function serverHalf() {
   // goal/G19.14 on his tree. goal/G100.1 is made by the item.add below, after the first mount (goal/G33.7: session.set went;
   // its goal, goal/G100, is seeded empty before the desk starts): at that mount this desk does
   // not know it yet, as a suite's scratch desk does not know his items, and must leave the list alone.
-  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'goal/G100.1' },
-    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'goal/G100.1' }];
+  const OLD = [{ id: 'd1', gate: 'spirit/run/spirit/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'goal/G100.1' },
+    { id: 'd2', gate: 'spirit/run/spirit/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'goal/G100.1' }];
   fs.writeFileSync(listFile, JSON.stringify(OLD, null, 2) + '\n');
   gitIn(work, ['add', 'stackFrameList.json']);
   gitIn(work, ['commit', '-q', '--no-verify', '-m', 'two old doors']);
@@ -183,7 +183,7 @@ async function serverHalf() {
 
   test.subHeading('D4. removing the door deletes its item');
   // A second door, its item untouched by the presses above, so the delete is the remove's own.
-  const made2 = await call('stackFrameChecks.make', { gate: 'spirit/run/js/peerPost.js::postMessage', endpoint: END });
+  const made2 = await call('stackFrameChecks.make', { gate: 'spirit/run/spirit/peerPost.js::postMessage', endpoint: END });
   const door2 = (await doorsList()).filter(function (d) { return d.item === made2.id; })[0];
   const open2 = await factsOf(made2.id);
   if (!door2 || !open2 || open2.status === 'closed') { test.fail('the world: a second door was not made open: ' + short(made2)); return; }
@@ -286,7 +286,7 @@ async function paneHalf() {
   test.subHeading('D1. the pane opens a door with callDialog, and draws no inline detail');
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/js/fieldRules.js'), 'spirit.deskPlugins': {} }));
+  const win = withShared(doc, test.withSpirit({ 'spirit.fieldRules': require('../run/spirit/fieldRules.js'), 'spirit.deskPlugins': {} }));
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spirit.deskPlugins.stackFrameChecks;
   const dialogs = [];
@@ -324,7 +324,7 @@ async function dialogHalf() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const calls = [];
   let app = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, withShared(doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/js/fieldRules.js') })));
+  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, withShared(doc, test.withSpirit({ addEventListener: function () {}, 'spirit.fieldRules': require('../run/spirit/fieldRules.js') })));
   const box = fakeElement('dlg');
   app.mount(box, {
     escapeHtml: kernel.core.util.escapeHtml,

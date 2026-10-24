@@ -11,9 +11,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const appServer = require('../run/js/appServer.js');
-const appClient = require('../run/js/appClient.js');
-const relayRequest = require('../run/js/relayRequest.js');
+const appServer = require('../run/spirit/appServer.js');
+const appClient = require('../run/spirit/appClient.js');
+const relayRequest = require('../run/spirit/relayRequest.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 

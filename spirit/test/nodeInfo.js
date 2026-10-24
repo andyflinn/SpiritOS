@@ -23,10 +23,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const fieldRules = require('../run/js/fieldRules');
-const nodeCard = require('../run/js/nodeCard');
-const ownerBadge = require('../run/js/ownerBadge');
+const auth = require('../run/spirit/relayAuth');
+const fieldRules = require('../run/spirit/fieldRules');
+const nodeCard = require('../run/spirit/nodeCard');
+const ownerBadge = require('../run/spirit/ownerBadge');
 
 const APP_SCRIPT = path.join(__dirname, '..', 'run', 'shell', 'info', 'info.js');
 
@@ -648,7 +648,7 @@ function theFirstDescription() {
     test.fail('minted with: ' + JSON.stringify(nodeCard.read(home)));
   }
 
-  const first = (require('../run/js/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2026-09-17T14:23:07.891Z') }) || {}).description;
+  const first = (require('../run/spirit/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2026-09-17T14:23:07.891Z') }) || {}).description;
   if (/^this node described for the first time /.test(first)) {
     test.check('and boot fills one rather than leaving the gap');
   } else {
@@ -673,7 +673,7 @@ function theFirstDescription() {
 
   // ── THE POINT: TWO NODES, TWO STRINGS ───────────────────────────────
   const other = tmpHome('fresh');
-  const second = (require('../run/js/serveCommon').ensureFirstRun(other, { kind: 'node', now: new Date('2026-09-17T14:23:09.000Z') }) || {}).description;
+  const second = (require('../run/spirit/serveCommon').ensureFirstRun(other, { kind: 'node', now: new Date('2026-09-17T14:23:09.000Z') }) || {}).description;
   if (second !== first) {
     test.check('two nodes booting seconds apart do not read the same, which is the whole point');
   } else {
@@ -686,7 +686,7 @@ function theFirstDescription() {
   // restart, or this would be a feature that eats the thing it exists to
   // encourage.
   nodeCard.setDescription(home, 'jazz, and a synth in the corner');
-  (require('../run/js/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2027-01-01T00:00:00.000Z') }) || {}).description;
+  (require('../run/spirit/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2027-01-01T00:00:00.000Z') }) || {}).description;
   if (nodeCard.read(home).description === 'jazz, and a synth in the corner') {
     test.check('a description somebody wrote survives every later boot');
   } else {
@@ -697,7 +697,7 @@ function theFirstDescription() {
   // round: blank is the state this exists to end, and somebody who wants
   // to say nothing has said nothing either way.
   nodeCard.setDescription(home, '');
-  const again = (require('../run/js/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2027-01-01T00:00:00.000Z') }) || {}).description;
+  const again = (require('../run/spirit/serveCommon').ensureFirstRun(home, { kind: 'node', now: new Date('2027-01-01T00:00:00.000Z') }) || {}).description;
   if (/2027-01-01 00:00:00 UTC/.test(again)) {
     test.check('and a cleared one is filled again, because blank is what this ends');
   } else {
@@ -721,7 +721,7 @@ function theFirstDescription() {
   // makes (planted in the root, plantIdentity.js) is described at once.
   const late = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-late-'));
   require('./plantIdentity.js').ensureAt(late);
-  if (/^this node described for the first time /.test((require('../run/js/serveCommon').ensureFirstRun(late, { kind: 'node' }) || {}).description)) {
+  if (/^this node described for the first time /.test((require('../run/spirit/serveCommon').ensureFirstRun(late, { kind: 'node' }) || {}).description)) {
     test.check('the boot hook finds a key at boot and describes the node on its first boot');
   } else {
     test.fail('blank at first boot: ' + JSON.stringify(nodeCard.read(late)));
@@ -801,7 +801,7 @@ function theFirstRelay() {
   // goal/G16.3 made noderoutes.net unremovable and goal/G19.15 asserts it
   // by key at every boot, so a list can no longer be empty at all.
 
-  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* not open */ }
+  try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* not open */ }
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* busy */ }
 }
 

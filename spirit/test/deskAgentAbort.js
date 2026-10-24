@@ -40,8 +40,8 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/spirit/kernel.js');
+const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.7: ';
 const ROOT = path.join(__dirname, '..', '..');
@@ -218,7 +218,7 @@ async function serverHalf() {
   // The family folder is deskAgent.family since goal/G30.4, read through FS: no abort.json there, no description.
   const FAMILY_DIR = path.join(CODE, 'deskAgent.family');
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(FAMILY_DIR, { declared: ['abort', 'file.load', 'file.save', 'commit', 'push'] }); } catch (e) { family = null; }
+  try { family = require('../run/spirit/introSpector.js').family(FAMILY_DIR, { declared: ['abort', 'file.load', 'file.save', 'commit', 'push'] }); } catch (e) { family = null; }
   const abortFile = family && family.verbs['FS.loadJsonValue'] ? family.verbs['FS.loadJsonValue'].handler({ path: 'abort.json' }).value : 'no FS';
   const loadFile = family && family.verbs['FS.loadJsonValue'] ? family.verbs['FS.loadJsonValue'].handler({ path: 'file.load.json' }).value : null;
   if (family && abortFile === null && loadFile && !fs.existsSync(path.join(FAMILY_DIR, 'abort.json'))) test.check('abort has no verb file: the family never describes it, so it is no tool of Levant\'s');

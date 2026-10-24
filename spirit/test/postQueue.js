@@ -9,7 +9,7 @@
 // interesting failures are where two of them meet.
 
 const test = require('./testSupport.js');
-const pq = require('../run/js/postQueue');
+const pq = require('../run/spirit/postQueue');
 
 // A clock the suite moves by hand. Every rule in this file is about time,
 // and a test that sleeps is a test that will one day be flaky on a slower

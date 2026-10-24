@@ -20,14 +20,14 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/client/packet');
+const auth = require('../run/spirit/relayAuth');
+const packet = require('../run/spirit/client/packet');
 // A witness is handed the envelope arrivals.js read (goal/G16.5); these
 // helpers stand in for that one reading, as a real arrival carries it.
-const arrivals = require('../run/js/arrivals.js');
+const arrivals = require('../run/spirit/arrivals.js');
 function asArrival(row) { return Object.assign({}, row, { envelope: arrivals.envelopeOf(row.text) }); }
-const puppetMode = require('../run/js/puppetMode');
-const ownerPost = require('../run/js/ownerPost');
+const puppetMode = require('../run/spirit/puppetMode');
+const ownerPost = require('../run/spirit/ownerPost');
 
 test.startTest('The owner\'s signed command reaches his puppet, and only that puppet\'s answer comes back');
 
@@ -49,7 +49,7 @@ function puppetNode(id) {
     door: null,
   };
   // The one handler on a verb table, called through the table's call as server.js hands it the door (goal/G30.4).
-  const table = require('../run/js/verbTable').createVerbTable();
+  const table = require('../run/spirit/verbTable').createVerbTable();
   table.claim('contact', 'ownerPost.js', {
     'contact.list': function (req, res) {
       let t = ''; req.on('data', function (c) { t += c; });

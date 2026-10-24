@@ -13,16 +13,16 @@ cd SpiritOS
 npm start
 ```
 
-Then open `http://localhost:65432`. No `npm install` — the server uses Node built-ins only. A personal node binds loopback. `npm start` is `cd spirit/run && node js/server.js` (that `cd` is required).
+Then open `http://localhost:65432`. No `npm install` — the server uses Node built-ins only. A personal node binds loopback. `npm start` is `cd spirit/run && node spirit/server.js` (that `cd` is required).
 
 The easiest way onto the network, noderoutes.net, is to start the node with your email, once:
 ```
 cd spirit/run
-node js/server.js --email you@example.org
+node spirit/server.js --email you@example.org
 ```
 A mail arrives shortly with a link; open it on this computer within 10 minutes and the browser opens on a node already connected. The email is optional: without it, join from Natter, or claim a seat with an invite from a relay's owner.
 
-Public relay: from `spirit/run/`, `node js/server.js --relay`.
+Public relay: from `spirit/run/`, `node spirit/server.js --relay`.
 
 ## What one small server holds
 
