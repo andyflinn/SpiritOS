@@ -1,6 +1,6 @@
 # Capacity on `linux-6.18`
 
-**Measured 2026-10-04, against `3ce4152f`.**
+**Measured 2026-10-24, against `cb790a62`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 |
 | node | v24.21.0 |
 | cpus / ram | 32 / 64148 MB |
-| measured at | 2026-10-04T22:41:43.584Z |
-| tree | `3ce4152f` |
+| measured at | 2026-10-24T00:20:39.744Z |
+| tree | `cb790a62` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,50 +18,53 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-04, against `3ce4152f`
+measured 2026-10-24, against `cb790a62`
 on linux, Node v24.21.0
 
 | minimum to run | |
 |---|---|
 | Node.js | **22.13 or later** (`node:sqlite`, which both stores need) |
 | dependencies | **none** — built-ins only, no `npm install` |
-| RAM, personal node | **97 MB** at rest |
-| RAM, relay | **62 MB** at rest, before any connection |
-| disc, the install | **3516 KB** in 188 files |
+| RAM, personal node | **84 MB** at rest |
+| RAM, relay | **61 MB** at rest, before any connection |
+| disc, the install | **4474 KB** in 371 files |
 
 | fixed cost | RSS |
 |---|---|
 | bare `node`, nothing loaded | **42 MB** |
-| a personal node at rest | **97 MB** |
-| a relay at rest, 0 streams | **62 MB** |
-| — of which SpiritOS | ~20 MB |
+| a personal node at rest | **84 MB** |
+| a relay at rest, 0 streams | **61 MB** |
+| — of which SpiritOS | ~18 MB |
 
 | streams | RSS | over baseline | per stream |
 |---|---|---|---|
-| 0 | 62 MB | — | — |
-| 100 | 75 MB | 12 MB | 127 KB |
-| 200 | 80 MB | 18 MB | 90 KB |
-| 400 | 84 MB | 22 MB | 57 KB |
-| 800 | 101 MB | 39 MB | 50 KB |
+| 0 | 61 MB | — | — |
+| 100 | 61 MB | 0 MB | 0 KB |
+| 200 | 61 MB | 0 MB | 0 KB |
+| 400 | 61 MB | 0 MB | 0 KB |
+| 800 | 61 MB | 0 MB | 0 KB |
 
-**~42 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 53 KB, which is the spread to expect).
-`STREAMS_PER_MB = 16` implies 64 KB, so the guess is 34% pessimistic.
+**~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 0 KB, which is the spread to expect).
+
+**And ~-1 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
+
+So the figure a ceiling should be derived from is the **total**, ~-1 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
+`STREAMS_PER_MB = 16` implies 64 KB, so the guess is 100% pessimistic.
 
 | disc | bytes per row |
 |---|---|
 | relay: a member | **603** |
-| relay: a partner | **3293** |
-| node: a remembered peer, no route | **159** |
+| node: a remembered peer, no route | **165** |
 | node: one route for that peer | **420** |
-| **node: a peer you can reach** | **579** |
+| **node: a peer you can reach** | **585** |
 | node: one logged exchange | **295** synthetic — a real one averages **438**, see below |
-| an empty `relay.db` / `node.db` | 40 KB / 124 KB |
+| an empty `relay.db` / `node.db` | 32 KB / 136 KB |
 
 | the two boxes | |
 |---|---|
-| relay, 100 MB RAM | **~915 members connected at once** (38 MB headroom / 42 KB) |
-| relay, 1 GB disc | **~1.8M member rows**, or ~0.3M partner rows |
+| relay, 100 MB RAM | **~Infinity members connected at once** (39 MB headroom / 0 KB) |
+| relay, 1 GB disc | **~1.8M member rows** |
 | node, 1 MB RAM | **not possible** — bare Node.js is 42 MB |
-| node, 10 MB disc | **~18,110 remembered peers** |
+| node, 10 MB disc | **~17,924 remembered peers** |
 | node, 1 GB disc | **~2.5M logged exchanges** kept for ever — the cache cap (20 MB) is 2% of it |
 

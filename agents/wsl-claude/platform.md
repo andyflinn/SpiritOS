@@ -1,15 +1,15 @@
 # linux-6.18 (wsl-claude)
 
-**Measured 2026-10-04, against `3ce4152f`.**
+**Measured 2026-10-24, against `cb790a62`.**
 
 | | |
 |---|---|
 | platform | linux 6.18.33.2-microsoft-standard-WSL2 |
 | node | v24.21.0 |
-| harness | **21 red, 10 unhappy** — see `harness.txt` across 306 suites, 439s |
-| per stream, process | **42 KB** |
-| a reachable peer | **579 B** |
-| bare node / relay at rest | 42 MB / 62 MB |
+| harness | **81 red, 45 unhappy** — see `harness.txt` across 459 suites, 469s |
+| per stream, process | **0 KB** |
+| a reachable peer | **585 B** |
+| bare node / relay at rest | 42 MB / 61 MB |
 
 Both halves were taken in one run, so they describe the same tree.
 
