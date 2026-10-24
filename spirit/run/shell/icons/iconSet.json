@@ -44,7 +44,8 @@
     "refused"
   ],
   "⏳": [
-    "loading"
+    "loading",
+    "hourglass"
   ],
   "▶️": [
     "pointright",
@@ -112,10 +113,11 @@
     "thumbsdown"
   ],
   "🔥": [
-    "fire"
+    "fire. flame"
   ],
   "💧": [
-    "water"
+    "water",
+    "drop"
   ],
   "🌍": [
     "earth"
@@ -137,10 +139,12 @@
     "rain"
   ],
   "❄️": [
-    "snow"
+    "snow",
+    "flake"
   ],
   "⚡": [
-    "lightning"
+    "lightning",
+    "voltage"
   ],
   "🌳": [
     "tree"
@@ -155,13 +159,15 @@
     "person"
   ],
   "👥": [
-    "group"
+    "group",
+    "people"
   ],
   "📇": [
     "rolodex"
   ],
   "⌛": [
-    "waiting"
+    "waiting",
+    "hourglass"
   ],
   "🎵": [
     "music"
@@ -186,7 +192,9 @@
     "location"
   ],
   "⏰": [
-    "time"
+    "time",
+    "alarm",
+    "clock"
   ],
   "📅": [
     "calendar"
@@ -201,7 +209,8 @@
     "chat"
   ],
   "💻": [
-    "code"
+    "code",
+    "computer"
   ],
   "🐛": [
     "bug"
@@ -241,7 +250,8 @@
     "car"
   ],
   "🚲": [
-    "bike"
+    "bike",
+    "bicycle"
   ],
   "🚌": [
     "bus"
@@ -2076,5 +2086,279 @@
   "🚓": [
     "police",
     "car"
+  ],
+  "🚔": [
+    "oncoming",
+    "police",
+    "car"
+  ],
+  "🚕": [
+    "taxi"
+  ],
+  "🚖": [
+    "oncoming",
+    "taxi"
+  ],
+  "🚘": [
+    "oncoming",
+    "automobile",
+    "car"
+  ],
+  "🚙": [
+    "sport",
+    "utility",
+    "vehicle",
+    "SUV"
+  ],
+  "🛻": [
+    "pickup",
+    "truck"
+  ],
+  "🚚": [
+    "delivery",
+    "truck"
+  ],
+  "🚛": [
+    "articulated",
+    "lorry",
+    "truck"
+  ],
+  "🚜": [
+    "tractor"
+  ],
+  "🏎": [
+    "racing",
+    "car"
+  ],
+  "🏍": [
+    "motor",
+    "cycle",
+    "bike"
+  ],
+  "🛵": [
+    "motor",
+    "scooter"
+  ],
+  "🦽": [
+    "wheelchair"
+  ],
+  "🦼": [
+    "motorized",
+    "electric",
+    "wheelchair"
+  ],
+  "🛺": [
+    "auto rickshaw",
+    "golf",
+    "cart"
+  ],
+  "🛴": [
+    "kick",
+    "scooter"
+  ],
+  "🛹": [
+    "skateboard"
+  ],
+  "🛼": [
+    "roller",
+    "skate"
+  ],
+  "🚏": [
+    "bus",
+    "stop"
+  ],
+  "🛣": [
+    "motor",
+    "high",
+    "way"
+  ],
+  "🛤": [
+    "rail",
+    "way",
+    "road",
+    "track"
+  ],
+  "🛢": [
+    "oil",
+    "barrel",
+    "drum"
+  ],
+  "⛽": [
+    "fuel",
+    "pump"
+  ],
+  "🛞": [
+    "wheel"
+  ],
+  "🚨": [
+    "police",
+    "car",
+    "ambulance",
+    "siren",
+    "light"
+  ],
+  "🚥": [
+    "horizontal",
+    "traffic",
+    "light"
+  ],
+  "🚦": [
+    "vertical",
+    "traffic",
+    "light"
+  ],
+  "🛑": [
+    "stop",
+    "sign"
+  ],
+  "🚧": [
+    "construction",
+    "barrier"
+  ],
+  "⚓": [
+    "anchor"
+  ],
+  "🛟": [
+    "life",
+    "ring",
+    "buoy"
+  ],
+  "⛵": [
+    "sailboat"
+  ],
+  "🛶": [
+    "canoe"
+  ],
+  "🚤": [
+    "speedboat"
+  ],
+  "🛳": [
+    "passenger",
+    "cruise",
+    "ship"
+  ],
+  "⛴": [
+    "ferry"
+  ],
+  "🛥": [
+    "ferry"
+  ],
+  "🛩": [
+    "small",
+    "airplane"
+  ],
+  "🛫": [
+    "airplane",
+    "departure"
+  ],
+  "🛬": [
+    "airplane",
+    "arrival",
+    "landing"
+  ],
+  "🪂": [
+    "parachute"
+  ],
+  "💺": [
+    "seat"
+  ],
+  "🚁": [
+    "helicopter"
+  ],
+  "🚟": [
+    "suspension",
+    "railway"
+  ],
+  "🚠": [
+    "mountain",
+    "cableway"
+  ],
+  "🚡": [
+    "aerial",
+    "tramway"
+  ],
+  "🛸": [
+    "flying",
+    "saucer",
+    "UFO"
+  ],
+  "🛎": [
+    "bellhop",
+    "bell"
+  ],
+  "🧳": [
+    "luggage"
+  ],
+  "⌚": [
+    "watch"
+  ],
+  "⏱": [
+    "stop",
+    "watch"
+  ],
+  "⛈": [
+    "cloud",
+    "thunder",
+    "lightning",
+    "rain",
+    "storm"
+  ],
+  "🌈": [
+    "rainbow"
+  ],
+  "🌂": [
+    "umbrella",
+    "closed"
+  ],
+  "☂": [
+    "umbrella"
+  ],
+  "☔": [
+    "umbrella",
+    "rain",
+    "drops"
+  ],
+  "⛱": [
+    "umbrella",
+    "sun beach"
+  ],
+  "☃": [
+    "snow",
+    "man"
+  ],
+  "⛄": [
+    "snow",
+    "man"
+  ],
+  "☄": [
+    "comet"
+  ],
+  "🌊": [
+    "water",
+    "wave"
+  ],
+  "🎃": [
+    "pumpkin",
+    "Halloween"
+  ],
+  "🎄": [
+    "Christmas",
+    "tree"
+  ],
+  "🎆": [
+    "fireworks"
+  ],
+  "🎇": [
+    "sparkler"
+  ],
+  "🧨": [
+    "firecracker",
+    "dynamite"
+  ],
+  "✨": [
+    "sparkles"
+  ],
+  "🎈": [
+    "balloon"
   ]
 }
