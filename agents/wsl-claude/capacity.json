@@ -1,42 +1,42 @@
 {
-  "measuredAt": "2026-10-24T12:01:52.471Z",
-  "commit": "7df82fff",
+  "measuredAt": "2026-10-24T14:23:56.071Z",
+  "commit": "a6d9a372",
   "platform": "linux",
   "release": "6.18.33.2-microsoft-standard-WSL2",
   "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
   "node": "v24.21.0",
   "cpus": 32,
   "totalRamBytes": 67263688704,
-  "bareNodeRss": 44441600,
-  "relayAtRestRss": 63746048,
-  "nodeAtRestRss": 89448448,
+  "bareNodeRss": 44445696,
+  "relayAtRestRss": 63492096,
+  "nodeAtRestRss": 89157632,
   "perStreamProcessBytes": 0,
   "perStreamKernelBytes": null,
   "kernelCounter": "/proc/net/sockstat TCP mem",
   "streamSteps": [
     {
       "n": 0,
-      "rss": 63746048,
+      "rss": 63492096,
       "kernel": null
     },
     {
       "n": 100,
-      "rss": 63746048,
+      "rss": 63492096,
       "kernel": null
     },
     {
       "n": 200,
-      "rss": 63746048,
+      "rss": 63492096,
       "kernel": null
     },
     {
       "n": 400,
-      "rss": 63746048,
+      "rss": 63492096,
       "kernel": null
     },
     {
       "n": 800,
-      "rss": 63746048,
+      "rss": 63492096,
       "kernel": null
     }
   ],
@@ -47,8 +47,8 @@
   "perRouteRowBytes": 420,
   "perReachablePeerBytes": 585,
   "perLogEntryBytesSynthetic": 295,
-  "installBytes": 4371521,
-  "installFiles": 366,
+  "installBytes": 4413084,
+  "installFiles": 369,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
@@ -58,23 +58,23 @@
   "spread": {
     "relayAtRestRss": {
       "runs": 1,
-      "median": 63746048,
-      "low": 63746048,
-      "high": 63746048,
+      "median": 63492096,
+      "low": 63492096,
+      "high": 63492096,
       "spreadPct": 0
     },
     "nodeAtRestRss": {
       "runs": 1,
-      "median": 89448448,
-      "low": 89448448,
-      "high": 89448448,
+      "median": 89157632,
+      "low": 89157632,
+      "high": 89157632,
       "spreadPct": 0
     },
     "bareNodeRss": {
       "runs": 1,
-      "median": 44441600,
-      "low": 44441600,
-      "high": 44441600,
+      "median": 44445696,
+      "low": 44445696,
+      "high": 44445696,
       "spreadPct": 0
     },
     "perMemberRowBytes": {

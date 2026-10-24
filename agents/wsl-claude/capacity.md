@@ -1,6 +1,6 @@
 # Capacity on `linux-6.18`
 
-**Measured 2026-10-24, against `7df82fff`.**
+**Measured 2026-10-24, against `a6d9a372`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 |
 | node | v24.21.0 |
 | cpus / ram | 32 / 64148 MB |
-| measured at | 2026-10-24T12:01:52.471Z |
-| tree | `7df82fff` |
+| measured at | 2026-10-24T14:23:56.071Z |
+| tree | `a6d9a372` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,7 +18,7 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-24, against `7df82fff`
+measured 2026-10-24, against `a6d9a372`
 on linux, Node v24.21.0
 
 | minimum to run | |
@@ -27,7 +27,7 @@ on linux, Node v24.21.0
 | dependencies | **none** — built-ins only, no `npm install` |
 | RAM, personal node | **85 MB** at rest |
 | RAM, relay | **61 MB** at rest, before any connection |
-| disc, the install | **4269 KB** in 366 files |
+| disc, the install | **4310 KB** in 369 files |
 
 | fixed cost | RSS |
 |---|---|

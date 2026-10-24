@@ -1,12 +1,12 @@
 # linux-6.18 (wsl-claude)
 
-**Measured 2026-10-24, against `7df82fff`.**
+**Measured 2026-10-24, against `a6d9a372`.**
 
 | | |
 |---|---|
 | platform | linux 6.18.33.2-microsoft-standard-WSL2 |
 | node | v24.21.0 |
-| harness | **95 red, 50 unhappy** — see `harness.txt` across 463 suites, 402s |
+| harness | **82 red, 48 unhappy** — see `harness.txt` across 464 suites, 385s |
 | per stream, process | **0 KB** |
 | a reachable peer | **585 B** |
 | bare node / relay at rest | 42 MB / 61 MB |
