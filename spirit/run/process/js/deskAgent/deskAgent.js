@@ -242,8 +242,6 @@ function contextKnown() {
 //
 // KISS, his word: deskAgent speaks to the desk through the same deskClient server the claudes use, in a loop; it
 // opens no stream and holds no place of its own. One mouth, the kernel's.
-const PORT = spirit.core.node.const.SPIRIT_PORT;
-const NODE_URL = 'http://127.0.0.1:' + PORT;
 const WAIT_MS = 250;
 
 function say(text) { console.log('deskAgent: ' + text); }
@@ -257,7 +255,10 @@ function onNode(ask) {
   return answered(server + '.' + verb, ask[server][verb]).then(function (r) { return r.body || {}; });
 }
 function answered(name, args) {
-  return spirit.outcome(spirit.forNode(NODE_URL, name.slice(0, name.indexOf('.'))).then(function (s) { return s.call(name, args); })).then(function (r) {
+  // A server family on this node (deskClient, deskAgent), bound on the one spirit object (goal/G40.6).
+  const dot = name.indexOf('.');
+  const fam = name.slice(0, dot);
+  return spirit.outcome(spirit.require('process/js/' + fam + '/' + fam + '.family/api.js').then(function (s) { return s[name.slice(dot + 1)](args); })).then(function (r) {
     if (!r || !r.status) throw new Error('the node did not answer ' + name);
     return r;
   });

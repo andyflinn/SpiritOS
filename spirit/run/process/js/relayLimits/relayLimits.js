@@ -43,17 +43,18 @@
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../../../spirit.js');
-const NODE = process.env.SPIRIT_NODE || 'http://127.0.0.1:65432';
 const RELAY_APP = 'relay';
 // Long enough for a relay across the Atlantic to answer, short enough
 // that a box which is not there says so while somebody is still looking.
 const WAIT_MS = 20000;
 
-// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one verb by its name on the node's loopback door, its answer or its
-// refusal's body; a node that does not answer says so.
+// THE NODE THROUGH THE ONE SPIRIT OBJECT (goal/G32.3, goal/G40.6): one verb by its name on this checkout's own node, its
+// answer or its refusal's body; a node that does not answer says so.
 function door(verb, args) {
-  return spirit.outcome(spirit.forNode(NODE, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) {
-    if (!r || !r.status) throw new Error('no node at ' + NODE + ' — start it, or set SPIRIT_NODE');
+  // A node family's verb (relay.search, peer.post): the family bound on the one spirit object (goal/G40.6).
+  const dot = String(verb).indexOf('.');
+  return spirit.outcome(spirit.require('spirit/' + String(verb).slice(0, dot) + '/api.js').then(function (fam) { return fam[String(verb).slice(dot + 1)](args); })).then(function (r) {
+    if (!r || !r.status) throw new Error('the node of this checkout did not answer — start it');
     return r.body || {};
   });
 }

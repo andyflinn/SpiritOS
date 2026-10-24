@@ -386,7 +386,19 @@ function inlineSpirit(html, runDir) {
   return String(html).replace('<!-- spirit.js -->', function () { return '<script>\n' + safe + '\n</script>'; });
 }
 
+// THIS NODE'S PORT, FOR EVERY node.js PROCESS ON IT (goal/G40.6). Andy: "only a node.js servers listening on a loopback
+// port writes that port to environment.json", "it really belongs in serverCommon", and "anytime a node.js process
+// requires(spirit) spirit itself fetches the port from environment.json". Written before the node starts any server
+// process, so each finds it; the folder first, since a fresh tree has no relay-state (goal/G16.2).
+function writeEnvironment(rootDir, port) {
+  const fs = require('fs');
+  const file = path.join(rootDir, 'relay-state', 'environment.json');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ PORT: Number(port) }, null, 2), 'utf8');
+}
+
 module.exports = {
+  writeEnvironment: writeEnvironment,
   inlineSpirit: inlineSpirit,
   ensureFirstRun: ensureFirstRun,
   firstDescription: firstDescription,

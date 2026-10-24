@@ -65,10 +65,6 @@ db.exec(
   " highestReceived INTEGER NOT NULL DEFAULT 0, bornAt TEXT NOT NULL);"
 );
 
-// ── THE NODE THIS SERVER RUNS ON ─────────────────────────────────────
-// Its own node, as the node named it at start: the contact book and the grants are asked there, on the loopback.
-let NODE_URL = '';
-try { NODE_URL = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { NODE_URL = ''; }
 // This node's own key, as the node handed it over (--node): a re naming it names a line written here.
 let SELF_KEY = '';
 try { SELF_KEY = String(JSON.parse(arg('--node') || '{}').publicKey || ''); } catch (e) { SELF_KEY = ''; }
@@ -84,10 +80,10 @@ const READ_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
 function refused(code, why) { const e = new Error(code); e.refusal = code; if (why) e.extra = { why: String(why) }; return e; }
 // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
-// THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one call of a node family, {status, body}, or {status: 0} when the
-// node did not answer at all.
+// THE NODE THROUGH THE ONE SPIRIT OBJECT (goal/G32.3, goal/G40.6): the family bound on it, then one call of it,
+// {status, body}, or {status: 0} when the node did not answer at all. The node is this VM's own (spirit.js).
 function onNode(family, call) {
-  return spirit.outcome(spirit.forNode(NODE_URL, family).then(call));
+  return spirit.outcome(spirit.require('spirit/' + family + '/api.js').then(function () { return call(spirit); }));
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');

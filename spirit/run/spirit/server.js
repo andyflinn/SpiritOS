@@ -92,29 +92,9 @@ require('./shellMove').moveAppState(ROOT_DIR);
 const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
-{
-  const fs = require('fs');
-  let environment = null;
-  try {
-    let file = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
-      try {
-      let environment = JSON.parse(file);
-      spirit.core.node.const.SPIRIT_PORT = Number(env.PORT);
-      } catch (e) { environment = null; }
-  } catch (e) {
-    environment = null;
-  }
-  
-  if (environment === null) {
-    environment = { PORT:port }
-  }
-  
-  // THE FOLDER FIRST (goal/G16.2, with Andy's yes to wsl-claude's finding): a fresh tree has no relay-state, and a
-  // write into a missing folder threw before the node listened, so every test that starts a fresh node saw nothing
-  // answer.
-  fs.mkdirSync(path.dirname(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE), { recursive: true });
-  fs.writeFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, JSON.stringify(environment, null, 2), 'utf8');
-}
+// This node's port into relay-state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
+// it, nothing else).
+common.writeEnvironment(ROOT_DIR, port);
 
 // The desktop shell. (A relay's brochure, relay.html, is gone with the
 // relay's public door: Andy's decision, goal/G22.6.)

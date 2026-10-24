@@ -2338,18 +2338,13 @@ function writeGoalFile(s, verb, a, change) {
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
   shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
 }
-// The node runs goalShare.js as a job: asked at the node's door, SPIRIT_CALLBACK_URL (the one every spawned process
-// speaks through), through the kernel as the nudge is (goal/G3.5), with the verb the shell's Start Job uses.
+// The node runs goalShare.js as a job, asked through the one spirit object of this process (goal/G40.6) on its own
+// node, with the verb the shell's Start Job uses.
 function shareFile(repoPath, fromFile, message) {
-  const url = process.env.SPIRIT_CALLBACK_URL;
-  if (!url) { console.error('desk: no SPIRIT_CALLBACK_URL, so the goal file is not shared'); return; }
-  let base = '';
-  try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
   Promise.resolve().then(function () {
-    // Through the spirit object (goal/G32.3), as {status, body}.
-    return spirit.outcome(spirit.forNode(base, 'jobs').then(function (s) {
-      return s.jobs.create({ command: process.execPath,
-        // A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays, to be seen.
+    // As {status, body}. A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays.
+    return spirit.outcome(spirit.require('spirit/jobs/api.js').then(function (jobs) {
+      return jobs.create({ command: process.execPath,
         args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message] });
     }));
   }).then(function (r) {
@@ -2407,8 +2402,8 @@ function nodeNamedPort() {
 function lookForDeskVerify() {
   const port = nodeNamedPort();
   if (!port) return;
-  // The node's api tree, through the spirit object (goal/G32.3).
-  spirit.forNode('http://127.0.0.1:' + port).then(function (s) { return s.tree(); }).then(function (body) {
+  // The node's api tree, through the one spirit object (goal/G32.3, goal/G40.6).
+  spirit.tree().then(function (body) {
     const apps = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
     VERIFY_SEEN = { at: Date.now(), there: apps.indexOf('deskVerify') !== -1 };
   }, function () { /* asked again on the next turn of the clock */ });
@@ -2423,8 +2418,11 @@ if (verifyWatch && typeof verifyWatch.unref === 'function') verifyWatch.unref();
 function askDeskVerify(verb, args) {
   const port = nodeNamedPort();
   if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
-  // Through the spirit object (goal/G32.3), as {status, body}; made again when deskVerify came up after it.
-  return spirit.outcome(spirit.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
+  // Through the one spirit object (goal/G32.3, goal/G40.6), as {status, body}; bound when deskVerify first answers.
+  return spirit.outcome(spirit.require('process/js/deskVerify/deskVerify.family/api.js').then(function (v) {
+    if (typeof v[verb] !== 'function') throw Object.assign(new Error('deskVerify has no verb ' + verb), { code: 'no-such-verb' });
+    return v[verb](args || {});
+  })).then(function (r) {
     const b = r && r.body;
     if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
     const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));

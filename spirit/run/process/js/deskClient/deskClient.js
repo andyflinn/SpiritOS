@@ -86,11 +86,10 @@ const SAY_MS = 3000;
 const LEAVE_BY_MS = 11000;
 const BIG = Number.MAX_SAFE_INTEGER;
 
-// The node this server runs on, as the node itself named it; its port goes into every record, and its door answers
-// who is blocked there (goal/G3.9).
+// The port of the node this server runs on, as the node itself named it: it goes into every record. The node itself is
+// reached through the one spirit object (goal/G40.6).
 let PORT = 0;
-let NODE_URL = '';
-try { const u = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')); PORT = Number(u.port) || 0; NODE_URL = u.origin; } catch (e) { PORT = 0; NODE_URL = ''; }
+try { PORT = Number(new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).port) || 0; } catch (e) { PORT = 0; }
 
 const db = new DatabaseSync(path.join(STATE, 'deskClient.db'));
 // The backup copies this file while it is written, as it does desk.db: in WAL a reader never blocks the writer.
@@ -143,17 +142,20 @@ function begin(verb) {
 }
 
 // ONE ASK OF THE DESK, THROUGH ITS FAMILY INTERFACE (goal/G33.4, box v38). Andy: the family interface takes ANY
-// transport. The spirit object of the desk's node over peerPost (spirit.js forPeer, the one transport), so the
-// call is checked against the desk's own api.js and goes as the packet the far apiDoor takes; nothing here builds one.
-// Answers the desk's body as before, its refusal included, and the kernel's own outcomes (not-posted, no-answer).
-function deskPost(to) { return function (body) { return spirit.peerPost(to, 'api', body, { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }); }; }
+// transport. The desk node's desk family, bound by the one spirit object under the desk's key (spirit.require with a
+// key, goal/G40.6), over peerPost with this server's waiting; the call is checked against the desk's own api.js and goes
+// as the packet the far apiDoor takes; nothing here builds one. Answers the desk's body as before, its refusal included,
+// and the kernel's own outcomes (not-posted, no-answer).
+const DESK_HOW = { waitMs: WAIT_MS, patienceMs: PATIENCE_MS };
 function askDesk(to, verb, args) {
-  return spirit.forPeer(to, deskPost(to), 'desk').then(function (s) {
-    if (!s.desk) return { ok: false, code: 'no-answer', error: 'the desk family did not answer' };
-    return spirit.outcome(s.call('desk.' + verb, args)).then(function (r) {
+  return spirit.require('process/js/desk/desk.family/api.js', to, DESK_HOW).then(function (desk) {
+    return spirit.outcome(Promise.resolve().then(function () {
+      if (typeof desk[verb] !== 'function') { const e = new Error('the desk serves no verb ' + verb); e.code = 'no-such-verb'; throw e; }
+      return desk[verb](args);
+    })).then(function (r) {
       return r.body || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
     });
-  });
+  }, function () { return { ok: false, code: 'no-answer', error: 'the desk family did not answer' }; });
 }
 // The same ask, with its own record: opened as it leaves, ended by what came back.
 function countedAsk(to, verb, args) {
@@ -443,10 +445,10 @@ function publishOn(body) {
   let b = null;
   try { b = JSON.parse(body); } catch (e) { return; }
   // goal/G33.4: the group chat is goal 0.
-  if (!b || b.id !== 'goal/G0' || String(b.text || '').trim() !== 'publish' || !NODE_URL || !PORT) return;
-  // Through the spirit object (goal/G32.3).
-  spirit.forNode(NODE_URL, 'jobs').then(function (s) {
-    return s.jobs.create({ command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)], type: 'publishData' });
+  if (!b || b.id !== 'goal/G0' || String(b.text || '').trim() !== 'publish' || !PORT) return;
+  // Through the one spirit object (goal/G32.3, goal/G40.6).
+  spirit.require('spirit/jobs/api.js').then(function (jobs) {
+    return jobs.create({ command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)], type: 'publishData' });
   }).then(null, function (e) { console.error('deskClient: the node refused the publish job: ' + ((e && e.message) || e)); });
 }
 
@@ -523,9 +525,8 @@ function rememberOther(key, name) {
   putSetting.run('others', JSON.stringify(o));
 }
 function blockedHere(key) {
-  if (!NODE_URL) return Promise.resolve(false);
-  // Through the spirit object (goal/G32.3).
-  return spirit.forNode(NODE_URL, 'contact').then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+  // Through the one spirit object (goal/G32.3, goal/G40.6).
+  return spirit.require('spirit/contact/api.js').then(function (contact) { return contact.get({ key: key }); }).then(function (body) {
     const p = body && body.person;
     return !!(p && p.blocked === true);
   }, function () { return false; });

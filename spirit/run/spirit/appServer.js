@@ -390,9 +390,8 @@ function withDependencies(verbs, paths) {
 // server's spirit object"), and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror
 // of its own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
-// spirit object on the node's loopback door), so the sender's peerPost passes the node's gate; a grant the node holds
-// already is no fault. The sender reaches it through this server's family interface over peerPost (spirit.js
-// forPeer), as any call.
+// one spirit object), so the sender's peerPost passes the node's gate; a grant the node holds already is no fault. The
+// sender reaches it through this server's family interface over peerPost (spirit.require with a key), as any call.
 let streamData = null;
 function dataSet() {
   if (!streamData) streamData = require('../shell/js/spiritData.js');
@@ -419,10 +418,6 @@ function withStreamListener(verbs, stream, followed) {
   };
   return all;
 }
-// The node's loopback door, as the node handed it to this process (SPIRIT_CALLBACK_URL's origin).
-function nodeUrl() {
-  try { return new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { return ''; }
-}
 
 // ── streamPublisher: subscribe, unsubscribe, and the one publish (goal/G33.8, box v8) ──────
 //
@@ -439,7 +434,7 @@ function nodeUrl() {
 //   unsubscribe {}       the caller's key stops being sent anything
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
-// the same row to every subscriber through its family's streamListener over peerPost (spirit.js forPeer: no packet
+// the same row to every subscriber through its family's streamListener over peerPost (spirit.require with a key: no packet
 // built here); a row naming keys in to goes to those subscribers alone. One attempt per row, in order per subscriber,
 // no patience: one that does not answer within waitMs is away, its queued rows dropped, and it is sent nothing more until
 // it subscribes again. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
@@ -447,13 +442,13 @@ function nodeUrl() {
 // persists.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows, away }
+// A server family's interface, by the node's own naming of it (spirit.js: <name>/<name>.family/api.js).
+function familyPath(family) { return 'process/js/' + family + '/' + family + '.family/api.js'; }
 function deliverRow(key, q, row) {
-  const so = spirit;
-  const post = function (body) { return spirit.peerPost(key, 'api', body, { waitMs: publisher.waitMs }); };
-  return so.forPeer(key, post, q.family).then(function (s) {
-    const fam = s[q.family];
+  // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), over peerPost with no patience.
+  return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
     if (!fam || typeof fam.streamListener !== 'function') return 'away';
-    return so.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
+    return spirit.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
 }
 function pumpTo(key) {
@@ -517,10 +512,8 @@ function withPublisher(verbs, opts) {
 }
 // AFTER A RESTART THE SUBSCRIBERS ARE THE GRANTS (box v8): every key the node grants this server to, or its subscribe.
 function subscribersFromGrants(name) {
-  const base = nodeUrl();
-  if (!publisher || !base) return Promise.resolve(0);
-  const so = spirit;
-  return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.search({ text: name }); })).then(function (r) {
+  if (!publisher) return Promise.resolve(0);
+  return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
     const records = (r.body && Array.isArray(r.body.records)) ? r.body.records : [];
     let n = 0;
     records.forEach(function (g) {
@@ -610,12 +603,11 @@ function serve(verbs, opts) {
     const k = String(key || '');
     const fam = String(family || '');
     if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
-    const so = spirit;
-    const post = function (body) { return spirit.peerPost(k, 'api', body, { waitMs: 10000 }); };
     return s.follow(k).catch(function () { return false; }).then(function () {
-      return so.outcome(so.forPeer(k, post, fam).then(function (p) {
-        if (!p[fam] || typeof p[fam].subscribe !== 'function') return { ok: false };
-        return p[fam].subscribe({ family: name });
+      // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
+      return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {
+        if (!p || typeof p.subscribe !== 'function') return { ok: false };
+        return p.subscribe({ family: name });
       }));
     }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
   };
@@ -625,10 +617,7 @@ function serve(verbs, opts) {
     const k = String(key || '');
     if (!k || !verbs.streamListener) return Promise.resolve(false);
     followed.add(k);
-    const base = nodeUrl();
-    if (!base) return Promise.resolve(false);
-    const so = spirit;
-    return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.grant({ key: k, path: name + '.streamListener' }); })).then(function (r) {
+    return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.streamListener' }); })).then(function (r) {
       return r.status === 200 || (r.body && r.body.code === 'already-granted');
     });
   };

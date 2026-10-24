@@ -139,28 +139,43 @@
     return null;
   }
 
-  // ── THE TRANSPORTS ───────────────────────────────────────────────────────────────────────────────────────────────
+  // ── ONE POST AND ONE GET (goal/G40.6) ────────────────────────────────────────────────────────────────────────────
+  // Andy: "there's one post function and one get. that's it". Nothing else in spirit.js reaches the node: every member
+  // packages its arguments and calls one of the two.
+  //
+  // THIS VM'S NODE (Andy: "in the browser the node address is implicit from the first page get. for node.js processes,
+  // the host is always 127.0.0.1 and the port is fetched from \relay-state\environment.json"; "anytime a node.js process
+  // requires(spirit) spirit itself fetches the port from environment.json"). On a page the page's own origin, or the
+  // face's link to its home node when one is set; in node 127.0.0.1 and the PORT read below as this file is required.
+  // No port, no node: never a default.
+  var PORT = 0;
+  if (isNode()) {
+    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'relay-state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
+  }
   function parse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
-  // On the face: the sealed link; at home: the node's own door. A file, as text, the same two ways.
-  function pageTransport() {
-    var t = function () { return (root.spirit || {}).transport || null; };
-    return {
-      ask: function (verb, args) {
-        if (t() && typeof t().ask === 'function') return Promise.resolve(t().ask(verb, args));
-        var payload = { verb: verb };
-        Object.keys(args || {}).forEach(function (k) { payload[k] = args[k]; });
-        return fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          .then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
-      },
-      file: function (path) {
-        if (t() && typeof t().file === 'function') {
-          return Promise.resolve(t().file(path, function () {})).then(function (r) { return { status: r.status, type: r.type || '', bytes: r.bytes }; });
-        }
-        return fetch('/' + String(path).replace(/^\/+/, '')).then(function (r) {
-          return r.arrayBuffer().then(function (b) { return { status: r.status, type: r.headers.get('Content-Type') || '', bytes: new Uint8Array(b) }; });
-        });
-      },
-    };
+  function noNode() { return refusal('no-node', 'this VM has no node: relay-state/environment.json names no port'); }
+  function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
+  // The face's link to its home node (window.spirit.transport), on a page only.
+  function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
+  // post(verb, args) -> {status, text, body}: {verb, ...args} to the node's /api/spirit.
+  function post(verb, args) {
+    var l = link();
+    if (l && typeof l.ask === 'function') return Promise.resolve(l.ask(verb, args || {}));
+    if (isNode() && !PORT) return Promise.reject(noNode());
+    var payload = { verb: verb };
+    Object.keys(args || {}).forEach(function (k) { payload[k] = args[k]; });
+    return fetch(door() + '/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
+  }
+  // get(path) -> {status, type, bytes}: a file of the node's run root, by its path.
+  function get(path) {
+    var p = String(path || '').replace(/^\/+/, '');
+    var l = link();
+    if (l && typeof l.file === 'function') return Promise.resolve(l.file(p, function () {})).then(function (r) { return { status: r.status, type: r.type || '', bytes: r.bytes }; });
+    if (isNode() && !PORT) return Promise.reject(noNode());
+    return fetch(door() + '/' + p).then(function (r) {
+      return r.arrayBuffer().then(function (b) { return { status: r.status, type: (r.headers && r.headers.get('Content-Type')) || '', bytes: new Uint8Array(b) }; });
+    });
   }
   function text(bytes) {
     return new TextDecoder().decode(bytes);
@@ -170,23 +185,6 @@
     var m = { exports: {} };
     new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-interface/' + name + '/api.js')(m, m.exports);
     return m.exports;
-  }
-  // In node: the loopback door at the url the node hands its servers.
-  function nodeTransport(base) {
-    return {
-      ask: function (verb, args) {
-        var payload = { verb: verb };
-        Object.keys(args || {}).forEach(function (k) { payload[k] = args[k]; });
-        return fetch(String(base || '') + '/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          .then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
-      },
-      file: function (path) {
-        return this.ask('fs.load', { path: path }).then(function (r) {
-          var t = r && r.body && typeof r.body.text === 'string' ? r.body.text : null;
-          return { status: r ? r.status : 0, type: '', bytes: t === null ? new Uint8Array(0) : new Uint8Array(Buffer.from(t, 'utf8')) };
-        });
-      },
-    };
   }
 
   // The verbs introSpector gives every family for its own folder, the same everywhere.
@@ -210,7 +208,7 @@
   // ── THE ASSEMBLING ───────────────────────────────────────────────────────────────────────────────────────────────
   // One member per family, each verb a checked async call; then the family's own names (the kernel's, for fs).
   // The name is the one the node gives the family (its api answer), never one the family's api.js claims.
-  function member(transport, fam, def) {
+  function member(ask, getFile, fam, def) {
     var out = {};
     function call(verb, args) {
       var spec = def.verbs[verb];
@@ -218,7 +216,7 @@
       if (!spec) return Promise.reject(refusal('no-such-verb', 'the ' + fam + ' family has no verb ' + verb));
       var bad = check(name, spec, args);
       if (bad) return Promise.reject(bad);
-      return Promise.resolve(transport.ask(name, args || {})).then(function (r) {
+      return Promise.resolve(ask(name, args || {})).then(function (r) {
         var status = r && r.status;
         if (status >= 200 && status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
         var b = (r && r.body) || {};
@@ -238,7 +236,7 @@
         var name = fam + '.FS.' + v;
         var bad = check(name, FOLDER[v], args);
         if (bad) return Promise.reject(bad);
-        return Promise.resolve(transport.ask(name, args || {})).then(function (r) {
+        return Promise.resolve(ask(name, args || {})).then(function (r) {
           if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
           var b = (r && r.body) || {};
           throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
@@ -246,146 +244,77 @@
       };
     });
     if (typeof def.names === 'function') {
-      var extra = def.names(call, { file: function (p) { return transport.file(p); }, text: text, refusal: refusal, check: check });
+      var extra = def.names(call, { file: function (p) { return getFile(p); }, text: text, refusal: refusal, check: check });
       Object.keys(extra || {}).forEach(function (k) { if (!(k in out)) out[k] = extra[k]; });
     }
     return out;
   }
-  // spirit.call('family.verb', args) -> the member call of that name (goal/G32.3), for a caller that names its verb at run
-  // time; a family or verb the object does not hold is refused no-such-verb, as the node would.
-  function byName(spirit) {
-    return function (name, args) {
-      var n = String(name || '');
-      var dot = n.indexOf('.');
-      var fam = dot > 0 ? spirit[n.slice(0, dot)] : null;
-      var rest = n.slice(dot + 1);
-      var fn = fam && typeof fam === 'object' ? (fam[rest] || (rest.indexOf('FS.') === 0 && fam.FS ? fam.FS[rest.slice(3)] : null)) : null;
-      if (typeof fn !== 'function') return Promise.reject(refusal('no-such-verb', 'the node serves no verb ' + n));
-      return fn(args);
-    };
+  // ── THE ONE INSTANCE BINDS ITS FAMILIES ON ITSELF (goal/G40.6) ──────────────────────────────────────────────────────
+  // Andy: "every javascript VM has ONE, one and only spirit object"; "What is createSpirit, it is completely
+  // unnecessary"; "every loaded/required module then simply inserts its api functions into the one spirit object".
+  // Nothing here makes a second object. A node family's api.js, run here, inserts its verbs on the instance as
+  // spirit.<family>; a peer's family is held under that peer's key and answered by spirit.require.
+  //
+  // A family's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
+  function bindOn(ask, getFile, fam) {
+    return Promise.resolve(ask('api', { family: fam })).then(function (got) {
+      if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the family ' + fam);
+      var def = loadInterface(got.body.interface, fam);
+      if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
+      return member(ask, getFile, fam, def);
+    });
   }
-  // spirit.tree() -> the node's api answer as it stands: every family and verb this caller may call.
-  function tree(t) {
-    return function () {
-      return Promise.resolve(t.ask('api', {})).then(function (r) {
-        if (r && r.status >= 200 && r.status < 300) return r.body || {};
-        throw refusal('refused', 'the node answered ' + (r && r.status), { status: r && r.status });
+  // This VM's node's family, on the instance as spirit.<family>. Two callers at once ask once; a refusal is asked
+  // again next time.
+  var asking = {};
+  function bindOwn(fam) {
+    if (self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam])) return Promise.resolve(self[fam]);
+    if (asking[fam]) return asking[fam];
+    asking[fam] = bindOn(post, get, fam).then(function (m) { delete asking[fam]; self[fam] = m; return m; }, function (e) { delete asking[fam]; throw e; });
+    return asking[fam];
+  }
+  // A PEER'S FAMILY (goal/G33.4, box v38), held under its key. Its calls are packed as the far node's apiDoor takes them
+  // ('api', {api: {family}}, {family: {verb: args}}) and sent by spirit.peerPost; the apiDoor answers the body alone: ok
+  // false is a refusal, 409, or 0 when the post never reached the peer or nothing answered.
+  function peerAsk(key, how) {
+    return function (verb, args) {
+      var n = String(verb || '');
+      var body;
+      if (n === 'api') body = args && args.family ? { api: { family: String(args.family) } } : 'api';
+      else {
+        var dot = n.indexOf('.');
+        body = {};
+        body[n.slice(0, dot)] = {};
+        body[n.slice(0, dot)][n.slice(dot + 1)] = args || {};
+      }
+      return Promise.resolve(self.peerPost(key, 'api', body, how)).then(function (got) {
+        var refused = !!got && typeof got === 'object' && got.ok === false;
+        var unreached = refused && (got.code === 'not-posted' || got.code === 'no-answer');
+        return { status: unreached ? 0 : refused ? 409 : 200, body: got, text: '' };
       });
     };
   }
-  // createSpirit(transport) -> Promise<spirit>. transport: ask(verb, args), file(path). The names from api, each
-  // family's interface from api {family}, bound under the node's name.
-  function createSpirit(transport) {
-    var t = transport || (isBrowser() ? pageTransport() : nodeTransport(''));
-    var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(t) };
-    spirit.call = byName(spirit);
-    spirit.require = requirer(spirit, t);
-    return Promise.resolve(t.ask('api', {})).then(function (r) {
-      var names = r && r.status === 200 && isPlain(r.body) ? Object.keys(r.body) : [];
-      return Promise.all(names.map(function (name) {
-        return Promise.resolve(t.ask('api', { family: name })).then(function (got) {
-          if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') return;
-          var def = loadInterface(got.body.interface, name);
-          if (def && def.verbs) spirit[name] = member(t, name, def);
-        }).then(null, function () { /* a family without an interface is not on the object */ });
-      }));
-    }).then(function () { return spirit; });
-  }
-
-  // assemble(transport, { <family>: def }) -> the members at once, for a caller that holds the families already (a suite).
-  function assemble(transport, defs) {
-    var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(transport) };
-    spirit.call = byName(spirit);
-    spirit.require = requirer(spirit, transport);
-    Object.keys(defs || {}).forEach(function (name) { if (defs[name] && defs[name].verbs) spirit[name] = member(transport, name, defs[name]); });
-    return spirit;
-  }
-
-  // A SERVER'S SPIRIT OBJECT (goal/G32.3): forNode(url) -> Promise<spirit> on the node's loopback door at url, made once
-  // per url; one made while the node answered nothing (no family on it) is made again at the next call.
-  // forNode(url, family): the object on the node's loopback door at url, made once per url; a family it does not hold
-  // yet is asked for by name, api {family}, and bound under that name once it answers.
-  var made = {};
-  function forNode(url, family) {
-    var u = String(url || '');
-    if (!made[u]) {
-      // No family up front: a server binds only those it calls, each when it first calls it, so nothing is asked of the
-      // node before a server's first call.
-      var t = nodeTransport(u);
-      var bare = assemble(t, {});
-      bare.__transport = t;
-      made[u] = Promise.resolve(bare);
-    }
-    if (!family) return made[u];
-    return made[u].then(function (s) {
-      if (s[family]) return s;
-      return Promise.resolve(s.__transport.ask('api', { family: family })).then(function (got) {
-        if (got && got.status === 200 && got.body && typeof got.body.interface === 'string') {
-          var def = loadInterface(got.body.interface, family);
-          if (def && def.verbs) s[family] = member(s.__transport, family, def);
-        }
-        return s;
-      }, function () { return s; });
-    });
-  }
-  // A MEMBER'S SERVERS OVER peerPost (goal/G33.4, box v38). Andy: the family interface takes ANY transport; "the desk is
-  // the server and simply pushes a stream via peerPost to its deskClients". post(body) -> Promise<answer body> is the
-  // caller's peerPost to that member (kernel.peerPost(key, 'api', body, how) in node); ask names the call as the loopback
-  // door does ('family.verb', args; 'api', {family}), and goes as the packet the far node's apiDoor takes: {family:
-  // {verb: args}}, {api: {family}}, or 'api'. The apiDoor answers the body alone: a body with ok false is a refusal
-  // (status 0 when the post never reached the member or nothing answered, 409 when the member refused), any other 200.
-  function peerTransport(post) {
-    return {
-      ask: function (verb, args) {
-        var n = String(verb || '');
-        var body;
-        if (n === 'api') body = args && args.family ? { api: { family: String(args.family) } } : 'api';
-        else {
-          var dot = n.indexOf('.');
-          body = {};
-          body[n.slice(0, dot)] = {};
-          body[n.slice(0, dot)][n.slice(dot + 1)] = args || {};
-        }
-        return Promise.resolve(post(body)).then(function (got) {
-          var refused = !!got && typeof got === 'object' && got.ok === false;
-          var unreached = refused && (got.code === 'not-posted' || got.code === 'no-answer');
-          return { status: unreached ? 0 : refused ? 409 : 200, body: got, text: '' };
-        });
-      },
-      file: function () { return Promise.resolve({ status: 404, type: '', bytes: new Uint8Array(0) }); },
-    };
-  }
-  // forPeer(key, post, family): the spirit object of a member's servers over post, made once per key, a family bound
-  // the first time it is asked for, as forNode binds one; a family the member did not answer is asked again next time.
+  function noFile() { return Promise.resolve({ status: 404, type: '', bytes: new Uint8Array(0) }); }
   var peers = {};
-  function forPeer(key, post, family) {
-    var k = String(key || '');
-    if (!peers[k]) {
-      var t = peerTransport(post);
-      var bare = assemble(t, {});
-      bare.__transport = t;
-      peers[k] = Promise.resolve(bare);
-    }
-    if (!family) return peers[k];
-    return peers[k].then(function (s) {
-      if (s[family]) return s;
-      // One ask for a family at a time: callers that come while it is out wait for the same answer.
-      var asking = (s.__asking = s.__asking || {});
-      if (!asking[family]) {
-        asking[family] = Promise.resolve(s.__transport.ask('api', { family: family })).then(function (got) {
-          if (got && got.status === 200 && got.body && typeof got.body.interface === 'string') {
-            var def = loadInterface(got.body.interface, family);
-            if (def && def.verbs) s[family] = member(s.__transport, family, def);
-          }
-        }, function () { /* asked again next time */ }).then(function () { delete asking[family]; return s; });
-      }
-      return asking[family];
+  function bindPeer(key, fam, how) {
+    var k = String(key);
+    var held = (peers[k] = peers[k] || {});
+    if (held[fam]) return held[fam];
+    held[fam] = bindOn(peerAsk(k, how), noFile, fam).then(null, function (e) { delete held[fam]; throw e; });
+    return held[fam];
+  }
+
+  // spirit.tree() -> the node's api answer as it stands: every family and verb this caller may call.
+  function tree() {
+    return post('api', {}).then(function (r) {
+      if (r && r.status >= 200 && r.status < 300) return r.body || {};
+      throw refusal('refused', 'the node answered ' + (r && r.status), { status: r && r.status });
     });
   }
   // outcome(call) -> Promise<{status, body}>: a call's answer as the status it came with, for code that tells the
   // node's refusals apart by status; 0 when the node did not answer at all.
-  function outcome(call) {
-    return Promise.resolve(call).then(function (body) { return { status: 200, body: body }; },
+  function outcome(c) {
+    return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
       function (e) {
         // A call the check refused never left: the caller's fault, as the node would answer it.
         var local = e && !e.status && ['no-such-argument', 'bad-request', 'no-such-verb'].indexOf(e.code) !== -1;
@@ -393,13 +322,14 @@
       });
   }
 
-  // ── spirit.require(path, key) (goal/G40.1) ──────────────────────────────────────────────────────────────────────────
+  // ── spirit.require(path, key, how) (goal/G40.1, goal/G40.6) ─────────────────────────────────────────────────────────
   // Andy: "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later,
   // can load its needed components there."; "the loaders name should be spirit.require()"; the key "a second argument
-  // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". path is from the run root. A path
-  // in the node's own naming of an interface, <name>/<name>.family/api.js (a server's) or js/<name>/api.js (a node
-  // family's), binds that family as spirit.<name>, asked as api {family} so the node still names it; with a key it is
-  // asked of that peer, and the peer's spirit object answers. Any other path is a component, its module.exports.
+  // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
+  // page and in node. path is from the run root. A path in the node's own naming of an interface,
+  // <name>/<name>.family/api.js (a server's) or spirit/<name>/api.js (a node family's), binds that family: on the
+  // instance as spirit.<name> from this VM's node, or with a key as that peer's family (how, in node, is peerPost's
+  // waiting). Any other path is a component, its module.exports: in node required, on a page got and run.
   function interfaceName(p) {
     var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
@@ -409,37 +339,16 @@
     new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-component/' + p)(m, m.exports);
     return m.exports;
   }
-  function ofPeer(key, post, fam) {
-    return forPeer(key, function (body) { return post(key, body); }, fam).then(function (s) {
-      if (!s[fam]) throw refusal('no-interface', 'the peer answered no interface for the family ' + fam);
-      return s;
+  function requireOne(path, key, how) {
+    var p = String(path || '').replace(/^\/+/, '');
+    var fam = interfaceName(p);
+    if (fam && key) return bindPeer(key, fam, how);
+    if (fam) return bindOwn(fam);
+    if (isNode()) return new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); });
+    return get(p).then(function (r) {
+      if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
+      return runComponent(text(r.bytes), p);
     });
-  }
-  // On a page: a component through the transport's file, a family through its api {family}, a peer's through the home
-  // node's peer.post. THE PAGE HEARS NO ANSWER-POST: the node's own peerPost waits on the node's server stream for the
-  // peer's answer, which a page does not hold, so a peer's family is asked from a page as peer.post answers it.
-  function requirer(holder, t) {
-    var post = function (key, body) {
-      return Promise.resolve(t.ask('peer.post', { to: String(key), text: JSON.stringify({ app: 'api', body: body }) })).then(function (r) { return r && r.body; });
-    };
-    return function (path, key) {
-      var p = String(path || '').replace(/^\/+/, '');
-      var fam = interfaceName(p);
-      if (fam && key) return ofPeer(key, post, fam);
-      if (fam) {
-        return Promise.resolve(t.ask('api', { family: fam })).then(function (got) {
-          if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'the node answered no interface for the family ' + fam);
-          var def = loadInterface(got.body.interface, fam);
-          if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
-          holder[fam] = member(t, fam, def);
-          return holder[fam];
-        });
-      }
-      return Promise.resolve(t.file(p)).then(function (r) {
-        if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
-        return runComponent(text(r.bytes), p);
-      });
-    };
   }
 
   // THE MIME TYPES (goal/G40.1), the spirit object's own table. Andy: "MIME types can easily be added to spirit.js", and
@@ -463,73 +372,54 @@
     '.py': 'text/x-python'
   };
 
-  var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
-    loadInterface: loadInterface, forNode: forNode, peerTransport: peerTransport, forPeer: forPeer, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml,
-    isNode: isNode, isBrowser: isBrowser };
+  // ── THE ONE INSTANCE, IN NODE AND ON A PAGE ───────────────────────────────────────────────────────────────────────
+  // Andy: "all this module exports is the one and only instance of the spirit object", "on a browser the spirit object
+  // gets placed on the window object on nodes js the spirit object is the only export of this file."
+  self.isNode = isNode;
+  self.isBrowser = isBrowser;
+  self.error = error;
+  self.formatBytes = formatBytes;
+  self.escapeHtml = escapeHtml;
+  self.check = check;
+  self.rules = Object.keys(RULES);
+  self.outcome = outcome;
+  self.tree = tree;
+  self.require = requireOne;
 
-  // ── IN NODE: THE GLOBAL spirit (goal/G40.1) ──────────────────────────────────────────────────────────────────────
-  // A script that is not the node or a relay server requires this file first, and from then on uses the global spirit:
-  // the object's own members, and what such a script took from kernel.js until now, under the kernel's own names so no
-  // call changes (spirit.core.jobs, spirit.core.node, spirit.core.util, spirit.core.fs, spirit.core.const with its VERSION, peerPost). The kernel stays
-  // their implementation until it goes (Andy: "we leave kernel.js where it is and get rid of it when we are finished").
-  // spirit.require: a component is required from the run root; a family is bound from this process's own node, the one
-  // SPIRIT_CALLBACK_URL names (the node that started it), or with a key asked of that peer through the kernel's peerPost.
+  // IN NODE: what a script took from kernel.js until now, under the kernel's own names so no call changes
+  // (spirit.core.jobs, spirit.core.node, spirit.core.util, spirit.core.fs, spirit.core.const with its VERSION, peerPost).
+  // The kernel stays their implementation until it goes (Andy: "we leave kernel.js where it is and get rid of it when we
+  // are finished").
   if (isNode()) {
     var kernel = require('./spirit/kernel.js');
-    var g = self;
-    Object.keys(api).forEach(function (k) { if (!(k in g)) g[k] = api[k]; });
-    g.core = g.core || {};
-    g.core.jobs = kernel.core.jobs;
-    g.core.node = kernel.core.node;
-    g.core.util = kernel.core.util;
-    g.core.fs = kernel.core.fs;
-    g.core.const = Object.assign({}, kernel.core.const, { MIME_TYPES: MIME_TYPES });
-    g.peerPost = kernel.peerPost;
-    g.require = function (path, key) {
-      var p = String(path || '').replace(/^\/+/, '');
-      var fam = interfaceName(p);
-      // A peer's family through the spirit object's own peerPost, so the object stays the one door there too.
-      if (fam && key) return ofPeer(key, function (k, body) { return g.peerPost(k, 'api', body); }, fam);
-      if (fam) {
-        // This process's own node is the one that started it, named by SPIRIT_CALLBACK_URL as the kernel's peerPost
-        // reads it; never SPIRIT_PORT, which is the default 65432, the owner's live node on every box.
-        var own = '';
-        try { own = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { own = ''; }
-        if (!own) return Promise.reject(refusal('no-node', 'this process names no node of its own (SPIRIT_CALLBACK_URL is unset)'));
-        return forNode(own, fam).then(function (s) {
-          if (!s[fam]) throw refusal('no-interface', 'the node answered no interface for the family ' + fam);
-          g[fam] = s[fam];
-          return g[fam];
-        });
-      }
-      return new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); });
+    self.core = self.core || {};
+    self.core.jobs = kernel.core.jobs;
+    self.core.node = kernel.core.node;
+    self.core.util = kernel.core.util;
+    self.core.fs = kernel.core.fs;
+    self.core.const = Object.assign({}, kernel.core.const, { MIME_TYPES: MIME_TYPES });
+    // The kernel's peerPost, through this VM's own node unless the caller names one.
+    self.peerPost = function (peer, app, body, how) {
+      return kernel.peerPost(peer, app, body, Object.assign({ node: PORT ? door() : '' }, how || {}));
     };
-    module.exports = g;
+    module.exports = self;
     return;
   }
 
-  // ── IN A PAGE ────────────────────────────────────────────────────────────────────────────────────────────────────
-  // window.spirit gets the helpers at once and its families on spirit.start(), which the page calls once it can reach
-  // its node (the face shell after its link is up; index.html at load). spirit.ready answers when they are there.
-  var s = self;
-  s.isNode = isNode;
-  s.isBrowser = isBrowser;
-  s.error = s.error || error;
-  s.formatBytes = s.formatBytes || formatBytes;
-  s.escapeHtml = s.escapeHtml || escapeHtml;
-  s.spiritObject = api;
+  // ON A PAGE: spirit.peerPost is the home node's peer.post, answered as peer.post answers it (the page hears no
+  // answer-post: the node's own peerPost waits on the node's server stream, which a page does not hold).
+  // spirit.start() binds every family the node names on window.spirit, once, when the page can reach its node (the face
+  // shell after its link is up; index.html at load); spirit.ready answers when they are there.
+  self.peerPost = function (peer, app, body) {
+    return post('peer.post', { to: String(peer), text: JSON.stringify({ app: app, body: body }) }).then(function (r) { return r && r.body; });
+  };
   var started = null;
-  s.start = function () {
+  self.start = function () {
     if (started) return started;
-    var t = pageTransport();
-    started = createSpirit(t).then(function (made) {
-      // The families, and tree(); the helpers are on the page's spirit already.
-      Object.keys(made).forEach(function (k) { if (k === 'tree' || (made[k] && typeof made[k] === 'object' && !Array.isArray(made[k]))) root.spirit[k] = made[k]; });
-      // spirit.require binds what it loads on the page's own spirit (goal/G40.1).
-      root.spirit.require = requirer(root.spirit, t);
-      return root.spirit;
-    });
-    s.ready = started;
+    started = tree().then(function (names) {
+      return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
+    }).then(function () { return self; });
+    self.ready = started;
     return started;
   };
 }(globalThis));

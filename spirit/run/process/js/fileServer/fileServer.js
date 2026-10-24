@@ -394,15 +394,12 @@ const server = appServer.serve({
 } });
 
 // Every grant on fileServer.<from> becomes one on fileServer.<to>, through the node's own loopback auth verbs
-// (server.js auth.search, auth.grant, auth.revoke); no auth verb of its own. Run outside a node (no
-// SPIRIT_CALLBACK_URL), there are no grants to move.
+// (server.js auth.search, auth.grant, auth.revoke), through the one spirit object of this process (goal/G40.6) on its own
+// node; no auth verb of its own.
 function moveGrants(from, to) {
-  const url = process.env.SPIRIT_CALLBACK_URL;
-  if (!url) return Promise.resolve();
-  const base = new URL(url).origin;
-  // Through the spirit object (goal/G32.3): the node's answer, or its refusal's body.
-  const node = spirit;
-  const ask = function (verb, args) { return node.outcome(node.forNode(base, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) { if (!r || !r.status) throw new Error('the node did not answer ' + verb); return r.body || {}; }); };
+  // The node's answer, or its refusal's body.
+  // auth verbs only: the node's auth family, bound on the one spirit object.
+  const ask = function (verb, args) { return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth[String(verb).slice('auth.'.length)](args); })).then(function (r) { if (!r || !r.status) throw new Error('the node did not answer ' + verb); return r.body || {}; }); };
   const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
   return ask('auth.search', { text: from }).then(function (found) {
     // auth.search answers the new search's list (goal/G29.7): each grant's label is {name, key, path}.
