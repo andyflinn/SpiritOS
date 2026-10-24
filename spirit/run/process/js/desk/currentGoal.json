@@ -1,10 +1,10 @@
 {
- "change": 15,
- "goal": "goal/G101",
+ "change": 9,
+ "goal": "goal/G102",
  "items": [
   {
-   "id": "goal/G101",
-   "title": "Written",
+   "id": "goal/G102",
+   "title": "First",
    "goal": "",
    "status": "",
    "statusTone": "",
@@ -12,12 +12,11 @@
    "version": 0,
    "buttons": [
     "done",
-    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G101.2"
+    "goal/G102.1"
    ],
    "codeOffered": false,
    "go": false,
@@ -26,7 +25,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
+   "design": true,
    "fileCount": 0,
    "green": true,
    "code": false,
@@ -50,142 +49,29 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
-   "live": [
-    "claude-windows"
-   ],
+   "live": [],
    "working": [],
-   "agents": {
-    "claude-windows": "MCowBQYDK2VwAyEAdeskGoalFileTestPeerCWAAAAAAAAAAAAAAA="
-   },
+   "agents": {},
    "box": "",
    "checks": [],
    "chat": []
   },
   {
-   "id": "goal/G101.1",
-   "title": "First",
-   "goal": "goal/G101",
-   "status": "done",
-   "statusTone": "",
-   "with": "",
-   "version": 1,
-   "buttons": [
-    "close",
-    "reopen"
-   ],
-   "blocking": [
-    "goal/G101"
-   ],
-   "blocked": [],
-   "codeOffered": true,
-   "go": true,
-   "alone": false,
-   "alert": false,
-   "claims": 1,
-   "boxTaken": "",
-   "limbo": false,
-   "design": false,
-   "fileCount": 0,
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "creator": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "verified": "",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
-   "verifyAnswer": "",
-   "verifierBusy": false,
-   "verifyRunning": false,
-   "names": {},
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "THE-BOX-OF-FIRST",
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAdeskGoalFileTestDeskNodeAAAAAAAAAAAAA=",
-     "at": "2026-10-24T07:36:48.575Z",
-     "text": "a line after the Go"
-    }
-   ]
-  },
-  {
-   "id": "goal/G101.2",
-   "title": "Second",
-   "goal": "goal/G101",
+   "id": "goal/G102.1",
+   "title": "One",
+   "goal": "goal/G102",
    "status": "",
    "statusTone": "",
    "with": "",
    "version": 0,
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
-    "goal/G101"
-   ],
-   "blocked": [],
-   "codeOffered": true,
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "design": false,
-   "fileCount": 0,
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "creator": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "verified": "",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
-   "verifyAnswer": "",
-   "verifierBusy": false,
-   "verifyRunning": false,
-   "names": {},
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "",
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "goal/G101.3",
-   "title": "Closed early",
-   "goal": "goal/G101",
-   "status": "closed",
-   "statusTone": "",
-   "with": "",
-   "version": 0,
-   "buttons": [
-    "reopen"
-   ],
-   "blocking": [
-    "goal/G101"
+    "goal/G102"
    ],
    "blocked": [],
    "codeOffered": true,
