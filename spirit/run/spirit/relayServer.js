@@ -279,6 +279,7 @@ const relay = createRelay.createRelay(undefined, {
   // a suite simply has no hands and says so honestly instead of writing
   // into somebody's checkout.
   measure: function () { return relayLimits.measure(ROOT_DIR); },
+  setServiceCap: function (mb) { return setServiceCap(mb); },
 
   writeConfig: function (next) {
     try {
@@ -811,15 +812,21 @@ common.refuseListenError(server, port, 'spirit/relayServer.js');
 // Every failure answers null, and the caller reads null as "will not come
 // back" — the safe direction: a relay that refuses to restart itself is
 // an inconvenience, one that stops and stays stopped is an outage.
+function ownUnit() {
+  const cgroup = fs.readFileSync('/proc/self/cgroup', 'utf8');
+  // THE LEAF, not the first thing that looks like a unit. A user unit's
+  // path holds two — `user@1000.service` and the unit itself — and the
+  // one that owns this process is the last.
+  const units = String(cgroup).match(/[A-Za-z0-9@_.\\-]+\.service/g);
+  if (!units || !units.length) return null;
+  return { unit: units[units.length - 1], cgroup: cgroup };
+}
 function restartPolicy() {
   try {
-    const cgroup = fs.readFileSync('/proc/self/cgroup', 'utf8');
-    // THE LEAF, not the first thing that looks like a unit. A user unit's
-    // path holds two — `user@1000.service` and the unit itself — and the
-    // one that owns this process is the last.
-    const units = String(cgroup).match(/[A-Za-z0-9@_.\\-]+\.service/g);
-    if (!units || !units.length) return null;
-    const unit = units[units.length - 1];
+    const own = ownUnit();
+    if (!own) return null;
+    const unit = own.unit;
+    const cgroup = own.cgroup;
 
     // ── WHICH MANAGER, AND WHY IT IS NOT ALWAYS THE SYSTEM ONE ──────
     //
@@ -852,6 +859,26 @@ function restartPolicy() {
     return restart ? restart[1].trim() || null : null;
   } catch (e) {
     return null;
+  }
+}
+
+// THE RELAY MOVES ITS OWN SERVICE CAP (goal/G40.4). Andy, 2026-10-24: "the relay raises its own service cap to exactly
+// twice the amount of RAM it uses for itself." relay.js decides the figure; this is the hand that tells systemd, about
+// the unit ownUnit finds. `set-property` changes the running cap at once and keeps it across restarts, so
+// nothing is reinstalled. Started by anything but systemd, there is no cap to move, and it answers false.
+function setServiceCap(mb) {
+  try {
+    if (!process.env.INVOCATION_ID) return false;
+    const own = ownUnit();
+    if (!own) return false;
+    const user = /\/user@\d+\.service\//.test(own.cgroup);
+    const args = (user ? ['--user'] : []).concat(['set-property', own.unit, 'MemoryMax=' + Math.floor(mb) + 'M']);
+    require('child_process').execFileSync('systemctl', args, { encoding: 'utf8', timeout: 10000 });
+    console.log('    service cap of ' + own.unit + ' moved to ' + Math.floor(mb) + ' MB (twice the RAM limit)');
+    return true;
+  } catch (e) {
+    console.error('    could not move the service cap: ' + ((e && e.message) || e));
+    return false;
   }
 }
 

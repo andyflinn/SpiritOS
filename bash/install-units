@@ -58,11 +58,14 @@ ok "owner.json names ${OWNER_KEY:0:24}..."
 
 # ── THE MEMORY CAP FOLLOWS THE CONFIGURED FIGURE (cycle 9) ──────────
 #
-# MemoryMax is ramLimitMB plus headroom for the process itself — Node,
-# the SQLite page cache, the working set — because ramLimitMB sizes the
-# CONNECTION ALLOWANCE (16 streams per MB) and is not a measurement of
-# the relay's own footprint. Capping at the figure exactly would kill the
-# relay before it reached the connections it was told it may have.
+# MemoryMax is TWICE ramLimitMB (goal/G40.4). Andy, 2026-10-24: "the cap
+# must be twice the size of what we compute for relay-internal use, per
+# member, so for a 256MB not as computed today the cap must be 512MB,
+# simple, AND safe." ramLimitMB sizes the CONNECTION ALLOWANCE (16 streams
+# per MB, after what the relay holds at rest), the relay's own memory.
+# systemd counts more than that against the cap, the kernel's socket
+# buffers for each of those connections among it, so the cap is the limit
+# doubled, not the limit with a fixed headroom on top.
 #
 # Before the relay has ever started there is no config.json, so this
 # falls back to what the relay itself would compute, so a fresh install is
@@ -94,9 +97,11 @@ ok "owner.json names ${OWNER_KEY:0:24}..."
 # an installer that silently invents a cap is how the last one got here,
 # and a relay host has node by definition.
 #
-# THE CAP DOES NOT FOLLOW A LATER RECONFIGURE. The owner changes figures
-# from his own node now (a signed `config` verb), and systemd knows
-# nothing about it: re-run this script and restart when the figure moves.
+# THE CAP FOLLOWS A LATER RECONFIGURE (goal/G40.4): when the owner's
+# signed `config` verb changes the figure, the relay moves the cap itself,
+# to twice the new limit, with `systemctl set-property`
+# (relayServer.js setServiceCap). Andy: "the relay raises its own service
+# cap to exactly twice the amount of RAM it uses for itself."
 CONFIG_JSON="$STATE_DIR/config.json"
 RAM_MB=""
 RAM_SOURCE="config.json"
@@ -117,7 +122,7 @@ if [ -z "$RAM_MB" ]; then
   RAM_SOURCE="the relay's own default"
   say "no config.json yet — capping at ${RAM_MB} MB, which is what the relay will use"
 fi
-MEMORY_MAX=$(( RAM_MB + 128 ))M
+MEMORY_MAX=$(( RAM_MB * 2 ))M
 
 say "install $UNIT_NAME.service (from ${UNIT_TEMPLATE}.service)"
 tmp=$(mktemp)
@@ -152,6 +157,6 @@ ok "installed /etc/systemd/system/${UNIT_NAME}.service"
 echo "    runs as root (one-operator host — see bash/ONE-OPERATOR.md)"
 echo "    clone: $REPO_ROOT"
 echo "    state: $STATE_DIR"
-echo "    memory cap: $MEMORY_MAX (${RAM_MB} MB from $RAM_SOURCE, + 128 MB headroom)"
-echo "    re-run this after changing ramLimitMB, then ./bash/restart"
+echo "    memory cap: $MEMORY_MAX (twice the ${RAM_MB} MB from $RAM_SOURCE)"
+echo "    the relay moves this cap itself when its owner changes ramLimitMB"
 echo "    next: ./bash/start    then ./bash/boot-on"

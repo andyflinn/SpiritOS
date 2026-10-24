@@ -31,13 +31,14 @@ Environment=PORT=__PORT__
 # or was killed by the kernel with no explanation.
 #
 # MemoryMax is the promise made enforceable, and it is NOT the same
-# number. The relay's own footprint — Node, the SQLite page cache, the
-# working set — sits underneath the allowance rather than inside it, so
-# the cap is the configured figure PLUS headroom. Capping at ramLimitMB
-# exactly would kill a relay long before it reached the connections it
-# was told it may have.
+# number. systemd counts more against it than the relay's own memory:
+# the kernel's socket buffers for each connection the allowance admits
+# among it, so the cap is twice the configured figure (goal/G40.4; Andy:
+# "the twice is safe. decision. period.").
 #
-#   __MEMORY_MAX__ = ramLimitMB + 128 MB, written by bash/install-units.
+#   __MEMORY_MAX__ = 2 x ramLimitMB, written by bash/install-units, and
+#   moved by the relay itself (systemctl set-property) when its owner
+#   changes the figure.
 #
 # systemd kills the process when it is exceeded, and Restart=always brings
 # it back — a visible, logged event instead of a box that quietly swaps.

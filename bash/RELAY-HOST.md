@@ -50,6 +50,44 @@ labMaster lives on the coordinator laptop only.
 
 ---
 
+## Memory on a relay box (goal/G40.4)
+
+**Recommended: a 256 MB RAM limit (`ramLimitMB`) on a 1 GB VPS.** Andy,
+2026-10-24: *"we stick with our own memory calculation, and document what
+we know about the system overhead incurred, including the caddy's and we
+recommend the 256MB figure for a 1GB RAM VPS."*
+
+The limit is the relay's own calculation, not a measurement: what it holds
+at rest (about 54 MB) plus 64 KB for each connection it admits, three
+connections a member. At 256 MB that admits about 1,077 members.
+
+Beside the relay, the box spends memory the relay does not count:
+
+| Who | About, at a full 256 MB relay | Why |
+|---|---|---|
+| The system itself | 100 to 150 MB | the OS and its services on a small Linux VPS |
+| Caddy | 100 to 200 MB | its own memory per connection, 30 to 60 KB each: the TLS state and a copy buffer for every connection it proxies |
+| The kernel's socket buffers | tens of MB, more with slow clients | one buffer per socket, two per connection through Caddy (the internet side and the local hop); they grow when a client reads slowly |
+| The relay | up to its service cap | see below |
+
+These figures are typical values, not measured on our relays. Caddy's
+memory and the socket buffers of its connections are charged to Caddy,
+outside the relay's cap; only the box as a whole bounds them.
+
+**The service cap is twice the limit.** systemd's `MemoryMax` for the
+relay's unit is `2 × ramLimitMB` (512 MB at 256), because systemd counts
+the socket buffers of the relay's own connections against it as well as
+the relay's memory. Andy: *"the twice is safe. decision. period."*
+`install-units` writes it, and the relay moves it itself, with
+`systemctl set-property`, whenever its owner changes the limit.
+
+**A raise is checked by its difference.** Raising a running relay from
+256 to 512 MB passes when the 256 MB more fits in what the box has free,
+less a 25 MB margin; the relay's own cap does not count against it. A
+lowering always passes, and applies at the next start.
+
+---
+
 ## Traffic plan (the thing these scripts implement)
 
 ```

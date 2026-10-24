@@ -223,8 +223,9 @@ test.subHeading('A figure past what the box can give is refused here, not at the
 {
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 32, source: 'file' });
   const out = ask(R, { config: { ramLimitMB: 4096 } });
-  if (out && !out.ok && out.status === 400 && /more than this box can give/.test(out.error)) {
-    test.check('4096 MB against 900 available is refused, with the reason');
+  // A running relay's raise is judged by its difference (goal/G40.4): 4032 MB more against the box's 875 free.
+  if (out && !out.ok && out.status === 400 && /needs 4032 MB more/.test(out.error)) {
+    test.check('4096 MB against 900 available is refused, naming the 4032 MB more it would need');
   } else {
     test.fail('an impossible figure was accepted: ' + JSON.stringify(out));
   }

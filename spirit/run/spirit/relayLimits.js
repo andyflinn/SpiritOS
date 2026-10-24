@@ -241,6 +241,7 @@ function defaults(measured) {
 //   totalMB      what the machine has
 //   availableMB  what it can give now — the smaller of the host's answer
 //                and the cgroup's, when there is a cgroup
+//   hostAvailableMB  the host's answer alone, without the cgroup's
 //   discTotalMB  the partition holding `rootDir`
 //   discFreeMB   what is free on it
 //
@@ -264,6 +265,9 @@ function measure(rootDir, deps) {
   }
   if (hostAvailable == null) hostAvailable = mbOf(freemem());
   out.availableMB = hostAvailable;
+  // What the box itself has free, never cut by the relay's own service cap below: a raise is judged by it (goal/G40.4),
+  // since the relay moves that cap with its limit.
+  out.hostAvailableMB = hostAvailable;
 
   // WSL MOVES THE FLOOR (wsl-claude, 2026-09-22): "WSL2's memory is
   // elastic; a ceiling measured once at startup drifts as the VM grows or

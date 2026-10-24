@@ -780,7 +780,8 @@ function createRelay(rootDir, deps) {
     // discovered as a relay that will not come back up.
     var checked = relayConfig.parse(
       JSON.stringify({ ramLimitMB: wantRam, discLimitMB: wantDisc }),
-      measure ? measure() : null
+      measure ? measure() : null,
+      { runningRamMB: config.ramLimitMB }
     );
     if (!checked.ok) return { ok: false, status: 400, error: checked.error };
 
@@ -815,6 +816,14 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 500, error: 'could not write relay-state/config.json' };
     }
 
+    // THE RELAY MOVES ITS OWN SERVICE CAP (goal/G40.4), to twice the limit just written, on every change of it. Andy,
+    // 2026-10-24: "the relay raises its own service cap to exactly twice the amount of RAM it uses for itself." The call
+    // is injected (relayServer.js, systemd); a relay with no service cap has none.
+    var capMoved = null;
+    if (checked.config.ramLimitMB !== config.ramLimitMB && typeof deps.setServiceCap === 'function') {
+      try { capMoved = deps.setServiceCap(2 * checked.config.ramLimitMB); } catch (e) { capMoved = false; }
+    }
+
     // RAISING APPLIES AT ONCE, LOWERING AT THE NEXT START (goal/G30.15; Andy: "enlarging the memory limit would NOT
     // require a restart, only reducing the memory limit would do that"). More room cuts nobody off, so a raised figure
     // is taken now: the allowance and the seats for memory, the bound for disc. A lowered one waits for the restart.
@@ -838,6 +847,8 @@ function createRelay(rootDir, deps) {
       applies: applies,
       ram: ramNow ? 'now' : 'next start',
       disc: discNow ? 'now' : 'next start',
+      // The cap it moved to, false when the move failed; absent when the limit did not change or there is no cap.
+      serviceCapMB: capMoved === null ? undefined : (capMoved ? 2 * checked.config.ramLimitMB : false),
       now: {
         ramLimitMB: nowBefore.ramLimitMB,
         discLimitMB: nowBefore.discLimitMB,

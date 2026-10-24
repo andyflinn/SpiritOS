@@ -677,9 +677,9 @@ test.subHeading('THE MEMORY CAP IS THE RELAY’S OWN FIGURE — asked, never re-
 
   // AND NO SHELL ARITHMETIC ON MEMORY. `MemTotal` read in sh is the
   // specific shape the old defect had; any halving of a measured figure
-  // is the same mistake wearing different clothes. The `+ 128` headroom
-  // is arithmetic this script legitimately owns, so it is named as the
-  // one allowed sum rather than caught by a blanket rule.
+  // is the same mistake wearing different clothes. The cap at twice the
+  // limit (goal/G40.4) is arithmetic this script legitimately owns, so it
+  // is named as the one allowed sum rather than caught by a blanket rule.
   const lines = installer.split('\n').filter(function (line) {
     return !/^\s*#/.test(line);
   });
@@ -690,7 +690,7 @@ test.subHeading('THE MEMORY CAP IS THE RELAY’S OWN FIGURE — asked, never re-
 
   if (!rederives.length) {
     test.check('and it reads no MemTotal and halves nothing — the only sum left is the ' +
-      '128 MB headroom, which is the installer’s own to own');
+      'cap at twice the limit, which is the installer’s own to own');
   } else {
     test.fail('install-units computes a memory figure itself again: ' +
       rederives.map(function (l) { return l.trim(); }).join(' | '));

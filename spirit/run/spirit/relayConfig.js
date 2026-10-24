@@ -55,18 +55,21 @@ var relayLimits = require('./relayLimits');
 // discTotalMB, discFreeMB }. A bare number is accepted as the box's total
 // memory, which is what cycle 1's callers passed.
 // Returns { ok, config } or { ok: false, error } with a sentence an owner
-// can act on.
+// can act on. `opts.runningRamMB` is the limit a running relay holds now,
+// given by the owner's config verb: a change is then judged by its
+// difference (check, below).
 function parse(text, measured, opts) {
   var box = normalise(measured);
   var fallback = relayLimits.defaults(box);
   var atBoot = !!(opts && opts.atBoot);
+  var running = opts && typeof opts.runningRamMB === 'number' ? opts.runningRamMB : null;
 
   if (text == null) {
     return check({
       ramLimitMB: fallback.ramLimitMB,
       discLimitMB: fallback.discLimitMB,
       source: 'default',
-    }, box, atBoot);
+    }, box, atBoot, running);
   }
   var raw;
   try { raw = JSON.parse(String(text)); }
@@ -96,7 +99,7 @@ function parse(text, measured, opts) {
     ramLimitMB: raw.ramLimitMB === undefined ? fallback.ramLimitMB : raw.ramLimitMB,
     discLimitMB: raw.discLimitMB === undefined ? fallback.discLimitMB : raw.discLimitMB,
     source: 'file',
-  }, box, atBoot);
+  }, box, atBoot, running);
 }
 
 function normalise(measured) {
@@ -104,7 +107,7 @@ function normalise(measured) {
   return measured || {};
 }
 
-function check(config, box, atBoot) {
+function check(config, box, atBoot, running) {
   var caps = relayLimits.ceilings(box);
 
   var bad = positive('ramLimitMB', config.ramLimitMB);
@@ -162,7 +165,32 @@ function check(config, box, atBoot) {
   // It used to be the box's TOTAL memory, which let an owner configure
   // memory the machine had never had spare — a bound that passed its own
   // check and could not be kept. The margins live in relayLimits.js.
-  if (isFinite(caps.ramMaxMB) && config.ramLimitMB > caps.ramMaxMB) {
+  //
+  // ── A RUNNING RELAY'S CHANGE IS JUDGED BY ITS DIFFERENCE (goal/G40.4) ──
+  //
+  //   Andy, 2026-10-24: "the relay calculates if there's room for a 512MB
+  //   relay, when it is supposed to calculate if there's room for a relay
+  //   that is 256MB larger than is occupied with it running a 256MB relay
+  //   right now. It needs to asses the difference^...."
+  //
+  // What the relay holds is already gone from what the box has free, and
+  // its own service cap moves with the limit (relay.js, setServiceCap), so
+  // neither may count against the raise: the difference is held against
+  // what the box itself has free, less the margin. A lowering always
+  // passes. The cap at twice the limit is the safety, and nothing further
+  // is counted for it. Andy: "the twice is safe. decision. period."
+  if (running !== null) {
+    var more = config.ramLimitMB - running;
+    var hostMB = isFinite(Number(box.hostAvailableMB)) ? Number(box.hostAvailableMB) : Number(box.availableMB);
+    var room = Math.floor(hostMB - relayLimits.RAM_MARGIN_MB);
+    if (more > 0 && isFinite(room) && more > room) {
+      return {
+        ok: false,
+        error: 'raising ramLimitMB from ' + running + ' to ' + config.ramLimitMB + ' needs ' + more + ' MB more, and this box has ' +
+          room + ' MB free, after the ' + relayLimits.RAM_MARGIN_MB + ' MB safety margin. Raise it by less, or free memory.',
+      };
+    }
+  } else if (isFinite(caps.ramMaxMB) && config.ramLimitMB > caps.ramMaxMB) {
     return {
       ok: false,
       error: 'ramLimitMB ' + config.ramLimitMB + ' is more than this box can give (' +
