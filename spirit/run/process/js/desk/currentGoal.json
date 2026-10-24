@@ -1,5 +1,5 @@
 {
- "change": 100219,
+ "change": 100222,
  "goal": "goal/G40",
  "items": [
   {
@@ -37,7 +37,7 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -53,7 +53,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -2165,12 +2165,11 @@
    "id": "goal/G40.4",
    "title": "Relay RAM raise checks the difference",
    "goal": "goal/G40",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 8,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
