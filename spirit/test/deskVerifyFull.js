@@ -129,7 +129,7 @@ async function deskHalf() {
       await d.call('phase.take', { id: 'goal/G101.1', phase: 'build' }, WSLX); await d.call('phase.done', { id: 'goal/G101.1', phase: 'build' }, WSLX);
       await d.call('phase.take', { id: 'goal/G101.1', phase: 'verify' }, CW); await d.call('phase.done', { id: 'goal/G101.1', phase: 'verify', pass: true }, CW);
     };
-    await d.call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'goal/G101.1', phase: 'red' }, CW);
+    await d.call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW); await d.call('claim', { id: 'goal/G101.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskVerifyFull.js'] }, CW); await d.call('phase.done', { id: 'goal/G101.1', phase: 'red' }, CW);
     await round();
     const st = async function () { return String((parse((await d.call('item.get', { id: 'goal/G101.1' }, ANDY)).body.item) || {}).status); };
     const s1 = await st();

@@ -129,6 +129,8 @@ async function main() {
   await call('desk', 'press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await call('desk', 'press', { id: 'goal/G100.1', what: 'go' }, ANDY);
   const took = await call('desk', 'phase.take', { id: 'goal/G100.1', phase: 'red' }, SELF_AT_DESK);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('desk', 'claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskChatFollowsAddress.js'] }, SELF_AT_DESK);
   const done = await call('desk', 'phase.done', { id: 'goal/G100.1', phase: 'red', pass: true, why: 'red written' }, SELF_AT_DESK);
   const g11 = JSON.parse(((await call('desk', 'item.get', { id: 'goal/G100.1' }, ANDY)).body || {}).item || '{}');
   if (!ok(took) || !ok(done) || g11.red !== 'claude-windows' || g11.with) { test.fail('the world: the red of goal/G100.1 was not held and let go: ' + short({ took: took.body, done: done.body, red: g11.red, with: g11.with })); return; }

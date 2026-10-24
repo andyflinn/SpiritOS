@@ -122,6 +122,8 @@ function ok(r) { return r && r.status === 200; }
   test.subHeading('3. a failed verify sets the status, never a chat line');
   // Two agents of its own: claude-windows and wsl-claude each hold a red above, and one agent holds one task at a time.
   await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, UBI);
+  // Since 3b a red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskStatusActivity.js'] }, UBI);
   await call('phase.done', { id: 'goal/G100.3', phase: 'red' }, UBI);
   await call('phase.take', { id: 'goal/G100.3', phase: 'build' }, LEV);
   await call('phase.done', { id: 'goal/G100.3', phase: 'build' }, LEV);
@@ -140,7 +142,7 @@ function ok(r) { return r && r.status === 200; }
   await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, BOB);
   const bare = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1' }, BOB);
   const empty = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: [] }, BOB);
-  if (!ok(bare) && !ok(empty) && /suite/.test(JSON.stringify((bare.body || {}).error || ''))) test.check('a red claim naming no suite is refused, saying why: ' + short(bare.body && bare.body.error));
+  if (!ok(bare) && !ok(empty) && /suite/.test(JSON.stringify(((bare.body || {}).extra || {}).why || (bare.body || {}).error || ''))) test.check('a red claim naming no suite is refused, saying why: ' + short(bare.body && ((bare.body.extra || {}).why || bare.body.error)));
   else test.fail(OWED + 'a red claim with no suites answered ' + short(bare.status + ' ' + JSON.stringify(bare.body)) + ', with suites [] ' + short(empty.status));
   const early = await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, BOB);
   const f4 = await facts('goal/G100.4');

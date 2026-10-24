@@ -149,6 +149,8 @@ function answerFor(buttons) {
   // when one agent is alone.
   test.subHeading('2. one agent live: the desk waives when the red is done, and says so');
   await call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G101.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskWaive.js'] }, CW);
   const redDone = await call('phase.done', { id: 'goal/G101.1', phase: 'red' }, CW);
   const f1 = await factsOf('goal/G101.1');
   const live = (await factsOf('goal/G101')).live || [];
@@ -181,6 +183,8 @@ function answerFor(buttons) {
 
   test.subHeading('3. two agents live: the red done offers his waive, and nothing waives itself');
   await call('phase.take', { id: 'goal/G101.2', phase: 'red' }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G101.2', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskWaive.js'] }, CW);
   await call('phase.done', { id: 'goal/G101.2', phase: 'red' }, CW);
   const f2 = await factsOf('goal/G101.2');
   const live2 = (await factsOf('goal/G101')).live || [];
@@ -208,6 +212,8 @@ function answerFor(buttons) {
   // Since goal/G21.4 an agent holds one task at a time: claude-windows lets the build of goal/G101.2 go first.
   await call('item.release', { id: 'goal/G101.2' }, CW);
   await call('phase.take', { id: 'goal/G101.3', phase: 'red' }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G101.3', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskWaive.js'] }, CW);
   await call('phase.done', { id: 'goal/G101.3', phase: 'red' }, CW);
   const f3before = await factsOf('goal/G101.3');
   if (f3before.phase === 'build' && (f3before.buttons || []).indexOf('waive') !== -1) test.check('its red done and nobody holding the build, goal/G101.3 offers waive');

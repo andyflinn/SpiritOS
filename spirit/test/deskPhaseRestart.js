@@ -64,6 +64,8 @@ async function open(caller) {
 async function cycle(redTaken) {
   const steps = [];
   if (!redTaken) steps.push((await call('phase.take', { id: ID, phase: 'red' }, CW)).status);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: ID, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhaseRestart.js'] }, CW);
   steps.push((await call('phase.done', { id: ID, phase: 'red' }, CW)).status);
   steps.push((await call('phase.take', { id: ID, phase: 'build' }, UBI)).status);
   steps.push((await call('phase.done', { id: ID, phase: 'build' }, UBI)).status);
@@ -133,6 +135,8 @@ async function cycle(redTaken) {
   test.subHeading('5. a verify pass carries the item\'s claimed commit');
   const COMMIT = 'abcdef1234567890abcdef1234567890abcdef12';
   const s5 = [];
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: ID, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPhaseRestart.js'] }, CW);
   s5.push((await call('phase.done', { id: ID, phase: 'red' }, CW)).status);
   s5.push((await call('phase.take', { id: ID, phase: 'build' }, UBI)).status);
   s5.push((await call('claim', { id: ID, phase: 'build', commit: COMMIT }, UBI)).status);

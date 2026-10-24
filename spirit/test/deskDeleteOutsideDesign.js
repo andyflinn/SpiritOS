@@ -76,6 +76,8 @@ async function server() {
   for (const id of ['goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   // goal/G100.4: claude-ubuntu writes the red and finishes it, so the build is open and nobody holds a phase.
   await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, UBI);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskDeleteOutsideDesign.js'] }, UBI);
   await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, UBI);
   // goal/G100.2: claude-windows holds its red.
   await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);

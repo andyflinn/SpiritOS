@@ -3237,6 +3237,8 @@ appServer.serve(withPlugins({
       if (claimed) body.commit = claimed;
       const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
+        // A RED FINISHES ONLY ONCE ITS RED CLAIM, WITH ITS SUITES, IS ON RECORD (goal/G33.11).
+        if (a.phase === 'red' && !(it.redCommit && Array.isArray(it.suites) && it.suites.length)) throw refusedWhy('not-offered', 'the red of ' + it.id + ' finishes once a red claim with its suites is on record: claim {id, phase: red, commit, suites}');
       }).change;
       // AN ITEM THAT COMES TO WAIT IS AN EVENT (goal/G33.3): the states are read; nothing is handed over (his Verify does).
       const comesToWait = a.phase === 'verify' && a.pass === true;
@@ -3639,6 +3641,9 @@ appServer.serve(withPlugins({
         if (!it0.go) throw refusedWhy('not-offered', 'no Go is on record for ' + id + ', so its red is not claimable yet');
       }
       const suites = Array.isArray(a.suites) ? a.suites.map(String) : [];
+      // NO RED WITHOUT ITS SUITES (goal/G33.11; Andy: "red cannot be claimed without delivering the list of suites to the
+      // item."): they are what a Verify of the item runs.
+      if (phase === 'red' && !suites.length) throw refusedWhy('bad-request', 'a red claim delivers its suites: name the spirit/test/ paths a Verify of ' + id + ' runs');
       if (suites.length && phase !== 'red') throw refusedWhy('bad-request', 'suites come with the red claim, which supplies them; a build claim takes none');
       const notTest = suites.filter(function (p) { return !/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p) || p.split('/').indexOf('..') !== -1; });
       if (notTest.length) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(notTest[0]));

@@ -74,6 +74,8 @@ function ok(r) { return r && r.status === 200; }
 
   test.subHeading('2. the status says the phase being held');
   const statusRed = a1.status;
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskPlainTake.js'] }, UBI);
   await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, UBI);
   await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, WSL);
   const statusBuild = (await facts('goal/G100.1')).status;

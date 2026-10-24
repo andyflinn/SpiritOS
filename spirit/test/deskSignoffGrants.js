@@ -114,6 +114,8 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
   // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets the red of goal/G100.1 (section 2) go first.
   await call('item.release', { id: 'goal/G100.1' }, WSL);
   await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskSignoffGrants.js'] }, CW);
   await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW);
   await call('phase.take', { id: 'goal/G100.2', phase: 'build' }, WSL);
   await call('phase.done', { id: 'goal/G100.2', phase: 'build' }, WSL);

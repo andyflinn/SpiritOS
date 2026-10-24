@@ -134,7 +134,7 @@ async function deskHalf() {
     if (!untouched.claims && !untouched.claimCommit && !untouched.redCommit) test.check('and nothing refused changed the item');
     else test.fail(OWED + 'after the refusals goal/G100.1 reads ' + short({ claims: untouched.claims, claimCommit: untouched.claimCommit, redCommit: untouched.redCommit }));
 
-    const red = await d.call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
+    const red = await d.call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskClaimCommit.js'] }, CW);
     const afterRed = await get('goal/G100.1');
     if (took(red) && afterRed.redCommit === 'abcdef1' && !afterRed.claims) test.check('a red claim on a code item with his Go is taken, the item keeps its commit, and it is no Done claim');
     else test.fail(OWED + 'red claim answered ' + short(red.body) + '; item ' + short({ redCommit: afterRed.redCommit, claims: afterRed.claims }));

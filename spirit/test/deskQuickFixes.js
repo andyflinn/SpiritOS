@@ -105,6 +105,8 @@ async function open(caller) {
 
   test.subHeading('3. from his Go to his Done the item stays in code');
   const steps = [];
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.2', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskQuickFixes.js'] }, CW);
   steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'red' }, CW)).status);
   steps.push((await call('phase.take', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);
   steps.push((await call('phase.done', { id: 'goal/G100.2', phase: 'build' }, UBI)).status);

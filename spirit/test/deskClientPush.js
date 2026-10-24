@@ -267,6 +267,8 @@ async function main() {
   const heldLines = await heldWait;
   if (bTook.status === 200 && !('andy' in (bTook.body || {})) && heldLines && heldLines.some(function (l) { return String(l).indexOf('andy to the holder') !== -1; })) test.check('his line on ' + heldId + ', whose red B holds, ended B\'s wait; phase.take answered no lines of his');
   else test.fail(OWED + 'phase.take answered ' + short(bTook.body) + '; B\'s wait ended with ' + short(heldLines));
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('desk', 'claim', { id: heldId, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskClientPush.js'] }, B_AT_DESK);
   await call('desk', 'phase.done', { id: heldId, phase: 'red' }, B_AT_DESK);
 
   // goal/G33.8 (box v8, found live at G33.8's Go, "the second time running"): a Go on an item wakes the agent it
@@ -286,6 +288,8 @@ async function main() {
   if (bHolds.status === 200 && ownGo.status === 200 && ownLines && ownLines.some(function (l) { return String(l).indexOf('JOB ' + ownId) === 0; }) && ownMs < 8000) test.check('his Go on ' + ownId + ', which B held already, ended B\'s wait with its job, ' + ownMs + ' ms after');
   else test.fail('OWED by goal/G33.8: item.take answered ' + short(bHolds.body) + ', his Go ' + short(ownGo.body) + '; B\'s wait ended with ' + short(ownLines) + ' after ' + ownMs + ' ms');
   await call('desk', 'phase.take', { id: ownId, phase: 'red' }, B_AT_DESK);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('desk', 'claim', { id: ownId, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskClientPush.js'] }, B_AT_DESK);
   await call('desk', 'phase.done', { id: ownId, phase: 'red' }, B_AT_DESK);
   await call('desk', 'item.release', { id: ownId }, B_AT_DESK);
 
@@ -346,6 +350,8 @@ async function main() {
   const ownLines2 = await ownWait2;
   if (!(ownLines2 || []).some(function (l) { return /^DESK /.test(String(l)); })) test.check('B\'s own change on its item did not wake it');
   else test.fail('OWED by goal/G33.9 (held item wake): B\'s own check woke it: ' + short(ownLines2));
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('desk', 'claim', { id: grantId, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskClientPush.js'] }, B_AT_DESK);
   await call('desk', 'phase.done', { id: grantId, phase: 'red' }, B_AT_DESK);
 
   test.subHeading('5. no needless waking: chat between Andy and another agent on its item does not end the wait');

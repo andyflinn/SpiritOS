@@ -78,6 +78,8 @@ async function limboLines(id) {
 
   test.subHeading('2. nobody holding the phase is still limbo');
   await call('agent.state', { word: 'working' }, CW);
+  // A red finishes only after its red claim with suites (goal/G33.11).
+  await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskLimboHolder.js'] }, CW);
   const done = await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
   const f2 = await facts('goal/G100.1');
   if (took(done) && f2.phase === 'build' && !f2.with && f2.limbo === true) test.check('once the red is done and its build is free, goal/G100.1 is limbo, its taker working or not');
