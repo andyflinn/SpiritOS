@@ -269,6 +269,8 @@ function ddButtonsHtml() {
 var ddPanelSel = 'box';
 var DD_PANELS = [
   { key: 'box', icon: 'PAGE', title: 'the box' },
+  // goal/G33.11: the suites attached to the item, read only, informational for now.
+  { key: 'suites', icon: 'CHECKED', title: 'the suites attached to this item' },
   { key: 'qs', icon: 'NO', title: 'red Qs and checks' },
   { key: 'blocks', icon: 'PLUNGER', title: 'blocks' },
   { key: 'files', icon: 'OPENFOLDER', title: 'files and grants' },
@@ -320,6 +322,7 @@ function ddGrantsHtml(open) {
 function ddPanelHtml() {
   if (ddPanelSel === 'qs') return ddQsHtml();
   if (ddPanelSel === 'blocks') return ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>';
+  if (ddPanelSel === 'suites') return ddSuitesHtml();
   if (ddPanelSel === 'files') return ddGrantsHtml(true) + (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false);
   return ddBoxHtml();
 }
@@ -355,7 +358,7 @@ function ddBoxHtml() {
   // box input is released from the take. When a details dialog is opened, the text box is never taken."
   // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
   return '<div' + taken + ' style="' + cap + 'height:100%;box-sizing:border-box">' +
-    '<textarea id="dd-box-input" style="width:100%;height:calc(30vh - 12px);box-sizing:border-box;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
+    '<textarea id="dd-box-input" style="width:100%;height:calc(30vh - 12px);box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
 // WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
@@ -571,6 +574,25 @@ function ddTakeRow(obj) {
 }
 var ddFilesAt = -1;
 
+// THE SUITES PANEL (goal/G33.11; Andy, in the box: "An icon left of the box opens the list of suites attached to the
+// item, read only, informational for now."): item.suites.search, asked each time the icon is pressed.
+var ddSuites = null;
+var ddSuitesMore = false;
+function ddLoadSuites(id) {
+  return ddAsk('item.suites.search', { id: id, text: '' }).then(function (r) {
+    if (ddId !== id) return;
+    ddSuites = (r.items || []).map(function (p) { try { return JSON.parse(p.label).path; } catch (e) { return String(p.key); } });
+    ddSuitesMore = !!r.more;
+    ddPaint();
+  }, function () { ddSuites = []; ddSuitesMore = false; ddPaint(); });
+}
+function ddSuitesHtml() {
+  if (ddSuites === null) return '<div class="job-manifest-note">Reading the suites.</div>';
+  if (!ddSuites.length) return '<div class="job-manifest-note">No suite is attached to this item.</div>';
+  return ddSuites.map(function (p) { return '<div>' + ddEsc(p) + '</div>'; }).join('') +
+    (ddSuitesMore ? '<div class="job-manifest-note">More suites than shown.</div>' : '');
+}
+
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
 function ddLoadFiles(id) {
   return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
@@ -743,6 +765,7 @@ spirit.shell.activateApp({
         ddPanelSel = panel;
         ddPaint();
         if (panel === 'blocks') ddLoadTargets();
+        if (panel === 'suites') ddLoadSuites(ddId);
         return;
       }
       var qclear = attr('data-qclear');
@@ -864,6 +887,8 @@ spirit.shell.activateApp({
     ddId = String((params && params.id) || '');
     // Every item opens on its box (goal/G30.8).
     ddPanelSel = 'box';
+    ddSuites = null;
+    ddSuitesMore = false;
     ddFacts = null;
     ddBox = '';
     ddBoxLoaded = false;

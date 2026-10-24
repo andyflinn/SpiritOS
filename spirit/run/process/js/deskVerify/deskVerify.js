@@ -657,15 +657,18 @@ function runChore(cmd) {
     });
   });
 }
-async function idleOnce() {
-  if (busy || choring || !CHORES.length) return;
-  if (Date.now() - Date.parse(idleState.since) < IDLE_MS || choresFor === idleState.since) return;
+async function runChores() {
   choresFor = idleState.since;
   choring = true;
   const did = [];
   try { for (const c of CHORES) did.push(await runChore(c)); } finally { choring = false; }
   idleState.chores = did.join('; ') + ' (' + new Date().toISOString() + ')';
   if (!busy) sayIdle();
+}
+async function idleOnce() {
+  if (busy || choring || !CHORES.length) return;
+  if (Date.now() - Date.parse(idleState.since) < IDLE_MS || choresFor === idleState.since) return;
+  await runChores();
 }
 const idler = setInterval(function () { idleOnce().catch(function () { /* next tick */ }); }, IDLE_CHECK_MS);
 if (idler.unref) idler.unref();
@@ -715,6 +718,19 @@ appServer.serve({
   stop: {
     request: {}, reply: { stopped: false },
     handler: function () { return stopRun(); },
+  },
+  // CHORES NOW (goal/G33.11; Andy, 2026-10-24: "the deskVerifier get a new verb: chores.run"): the idle chores at once,
+  // as the idle hour runs them, and the hour's own run is then spent. Answered when they start, not when they end; the
+  // tab's idle line says what they did. Refused while a run or the chores are under way, or where none is named.
+  'chores.run': {
+    request: {}, reply: { started: true },
+    handler: function () {
+      if (!CHORES.length) throw refusedWhy('this verifier\'s manifest names no chore');
+      if (busy) throw refusedWhy('a run is under way; the chores wait for it to end');
+      if (choring) throw refusedWhy('the chores are running already');
+      runChores().catch(function () { /* the idle line says what they did */ });
+      return { started: true };
+    },
   },
   // A DOOR RUN BY THE PLUGIN ITSELF, RECORDED (goal/G27.2, D5). Andy, 2026-10-17: "i don't want verifier to block the
   // design-a-door process", and "i don't mind if our test sends the verifier a result". The plugin runs a door being

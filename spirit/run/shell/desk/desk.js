@@ -831,7 +831,10 @@ function deskStatusCell(row) {
   var run = els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(row, deskVerifyRun, deskEsc) : '';
   if (run) return run;
   var word = String(row.status || '');
-  var colour = /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b/i.test(word) ? '#c00' : '';
+  // A FILE THE AGENT'S CHECKOUT CHANGED (goal/G33.11), by its statusTone: red a test file, white a production file.
+  var tone = String(row.statusTone || '');
+  var colour = tone === 'test' ? '#c00' : tone === 'code' ? '#fff'
+    : /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b|failed/i.test(word) ? '#c00' : '';
   return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
 }
 // The toggles say how they stand; the server does the filtering.
@@ -1270,7 +1273,8 @@ var deskVerifier = null;
 var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
   return Promise.resolve(deskApi.verb('deskVerify.' + verb, args || {})).then(function (r) {
-    if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error('deskVerify did not answer');
+    // A refusal says why where deskVerify gave one (Chores now, goal/G33.11).
+    if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error((r && r.body && r.body.extra && r.body.extra.why) || 'deskVerify did not answer');
     return r.body;
   });
 }
@@ -1437,8 +1441,10 @@ function deskVerifyHtml() {
     (!live && !running ? '<div id="desk-verify-idle">Idle, nothing running</div>' : '') +
     (running && !live && run.suite ? '<div>Suite ' + deskEsc(run.suite) + (run.since ? ' · since ' + deskTime(run.since) : '') + '</div>' : '') +
     (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
-    // STOP, AND NOTHING ELSE (goal/G33.3): pressable whenever anything runs. A run is started from the item.
-    '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button></div>' +
+    // STOP (goal/G33.3): pressable whenever anything runs. A run is started from the item.
+    // CHORES NOW (goal/G33.11): the idle chores at once, chores.run; pressable while nothing runs, where chores are named.
+    '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button>' +
+    ' <button type="button" id="desk-verify-chores"' + (!running && (!live || live.hasChores === true) ? '' : ' disabled') + '>Chores now</button></div>' +
     // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
     deskVerifyConsoleHtml() +
     '</div>';
@@ -1713,10 +1719,21 @@ spirit.shell.activateApp({
       deskRuleFilter.text = String((el && el.value) || e.target.value || '');
       deskRulesSearch();
     });
-    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop.
+    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop, and Chores now (goal/G33.11).
     document.getElementById('desk-verifier').addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
+      if (t.id === 'desk-verify-chores') {
+        deskVerifyPressed('Chores now sent; waiting for deskVerify\'s answer.');
+        deskVerifyAsk('chores.run', {}).then(function () {
+          deskVerifyAnswered('deskVerify answered: the chores are running; the idle line says what they did.');
+          return deskVerifyRefresh();
+        }, function (e) {
+          deskVerifyAnswered('Chores now was not taken: ' + ((e && e.message) || e) + '.');
+          return deskVerifyRefresh();
+        });
+        return;
+      }
       if (t.id === 'desk-verify-stop') {
         deskVerifyPressed('Stop sent; waiting for deskVerify\'s answer.');
         deskVerifyAsk('stop', {}).then(function (b) {

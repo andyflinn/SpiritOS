@@ -270,14 +270,14 @@ function keepSinceWake(row) {
   if (row.table === 'chat') {
     if (!row.row || row.removed) return;
     const l = row.row;
-    if (!l.at || String(l.at) <= sinceNow || !inView(row.goal)) return;
+    if (!l.at || String(l.at) <= sinceNow || !(inView(row.goal) || row.special === true)) return;
     if (SELF_KEY ? l.key === SELF_KEY : l.by === SELF) return;
     if (Array.isArray(row.to) && row.to.length && row.to.indexOf(SELF_KEY) === -1) return;
     news(lineKeyOf(row.id, l), 'NEWS ' + l.by + ' chat.add ' + JSON.stringify({ id: String(row.id), text: String(l.text) }));
     return;
   }
   if (row.table === 'checks') {
-    if (!row.row || row.removed || !inView(row.goal)) return;
+    if (!row.row || row.removed || !(inView(row.goal) || row.special === true)) return;
     const c = row.row;
     const checkKey = 'check#' + row.id + '#' + c.number + '#' + c.state;
     const checkText = 'check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') });
@@ -287,7 +287,7 @@ function keepSinceWake(row) {
   const f = row.item && typeof row.item === 'object' ? row.item : null;
   if (!f || !f.id || STATE_QUIET.indexOf(String(row.verb || '')) !== -1) return;
   const k = /^goal\/G(\d+)/.exec(String(f.id));
-  if (!k || !inView(Number(k[1]))) return;
+  if (!k || !(inView(Number(k[1])) || row.special === true)) return;
   const state = {};
   STATE_FIELDS.forEach(function (n) { if (f[n] !== undefined && f[n] !== '' && f[n] !== false && f[n] !== 0) state[n] = f[n]; });
   // Only a change of its state is news: a write that leaves those fields as they were (a box taken, a rename) is not.
@@ -295,6 +295,8 @@ function keepSinceWake(row) {
   if (lastState[f.id] === undefined) { lastState[f.id] = print; return; }
   if (lastState[f.id] === print) return;
   lastState[f.id] = print;
+  // ITS OWN FILE REPORTS ARE NOT NEWS TO IT (goal/G33.11): the status its watch wrote is what its agent just did.
+  if (String(row.verb || '') === 'item.status' && (SELF_KEY ? row.byKey === SELF_KEY : row.by === SELF)) return;
   const stateKey = 'state#' + f.id + '#' + print;
   const stateText = String(row.verb || 'change') + ' ' + JSON.stringify(Object.assign({ id: String(f.id) }, state));
   news(stateKey, 'NEWS ' + stateText);
@@ -374,8 +376,10 @@ function meantForAgent(row) {
   // ONE GOAL IN VIEW (goal/G33.8): the desk publishes every goal's rows to its subscribers now, so what is meant for the
   // agent is of the current goal or the group chat, or his line addressed to it, or on the item it holds.
   const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  // WHAT HAPPENS IN A SPECIAL GOAL (goal/G33.11): a plugin's goal, such as Stacks, is in view too; the desk marks its
+  // rows special.
   const inView = row.goal === 0 || (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
-    heldByMe(dataSet.get('deskItems/' + String(row.id || '')));
+    row.special === true || heldByMe(dataSet.get('deskItems/' + String(row.id || '')));
   if (!inView) return null;
   if ((row.table === 'chat' || row.table === 'box') && isOld(row.row.at)) return null;
   // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
@@ -804,3 +808,47 @@ const server = appServer.serve({
 // named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
 function subscribeDesk(key) { return server.subscribe(key, 'desk').catch(function () { return false; }); }
 (function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());
+
+// THE CHECKOUT, WATCHED (goal/G33.11). Andy, in the box: "While its agent holds the red or the build of an item, the
+// agent's deskClient watches its checkout and reports each change to the item's status column only, never to the chat.
+// The status shows the changed file's name only, without its path; its colour says which kind: red a test file, white a
+// production file." Each change is one item.status, as the agent; the desk keeps the file name and counts the write as
+// activity, so a hold whose files move is never stale. A file git ignores (logs, node state, this server's own db) is
+// no change to the work. A path under spirit/test/ is tone test, any other code.
+function heldPhase() {
+  const items = dataSet.branch('deskItems') || {};
+  for (const id of Object.keys(items)) {
+    const f = dataSet.get('deskItems/' + id);
+    if (!f || f.done || f.status === 'closed' || !heldByMe(f)) continue;
+    if ((f.phase === 'red' && f.red === SELF) || (f.phase === 'build' && f.builder === SELF)) return String(f.id);
+  }
+  return '';
+}
+const ignoredPaths = new Map();
+function ignored(root, rel) {
+  if (ignoredPaths.has(rel)) return Promise.resolve(ignoredPaths.get(rel));
+  return gitIn(['check-ignore', '-q', '--', rel], root).then(function (r) {
+    const is = r.status === 0;
+    if (ignoredPaths.size > 1000) ignoredPaths.clear();
+    ignoredPaths.set(rel, is);
+    return is;
+  });
+}
+function watchCheckout(root) {
+  try {
+    fs.watch(root, { recursive: true }, function (event, name) {
+      if (!name) return;
+      const rel = String(name).split(path.sep).join('/');
+      if (rel === '.git' || rel.indexOf('.git/') === 0) return;
+      const id = heldPhase();
+      if (!id) return;
+      ignored(root, rel).then(function (skip) {
+        if (skip) return;
+        let to = '';
+        try { to = deskKey(); } catch (e) { return; }
+        countedAsk(to, 'item.status', { id: id, word: rel, tone: rel.indexOf('spirit/test/') === 0 ? 'test' : 'code' }).answer.catch(function () {});
+      });
+    }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
+  } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }
+}
+gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

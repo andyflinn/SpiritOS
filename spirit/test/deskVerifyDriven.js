@@ -37,8 +37,8 @@
 //                                     answer travels to every client: the publish carries it (verifier) and every row
 //                                     whose facts it changed. Done is offered as soon as an agent claims done (or its
 //                                     verifier passes a code item) and is never refused for verification; when it goes
-//                                     through on an item not verified green, the desk writes one line under the item
-//                                     saying it went over a red run (naming the failures) or a missing run.
+//                                     through on an item not verified green, the desk writes no line under the item
+//                                     (goal/G33.11: "no auto-chat-lines from deskVerify, only status updates.").
 //   desk press {id, what: 'verify'}   his Verify button, right after Done in the item's buttons, the one thing that
 //                                     starts a run: on an item, a run of its suites; on a goal, a run of its items'
 //                                     suites. It always tries, busy or not.
@@ -256,7 +256,7 @@ async function deskAndVerify() {
 
   const get = async function (id) { return parse(((await d.call('item.get', { id: id }, ANDY)).body || {}).item) || {}; };
   const chat = async function (id) { return (((await d.call('item.chat', { id: id }, ANDY)).body || {}).chat) || []; };
-  // THE LINE A DONE LEAVES when it went over a red or a missing run: by the desk, under the item.
+  // THE LINE A DONE LEFT when it went over a red or a missing run, by the desk, under the item: none since goal/G33.11.
   const overLines = async function (id) { return (await chat(id)).filter(function (l) { return l.by === 'desk' && /went over/i.test(String(l.text || '')); }); };
   const asCW = function (verb, a) { return d.call(verb, a, CW); };
   // A red claim with its suites (goal/G33.4, box v44-45).
@@ -393,11 +393,12 @@ async function deskAndVerify() {
 
     await v.call('stop', {});
     await free();
-    // A DONE OVER A MISSING RUN: goal/G100.5's suite never ran. It goes through, says so, and starts no run.
+    // A DONE OVER A MISSING RUN: goal/G100.5's suite never ran. It goes through, with no line (goal/G33.11), and starts
+    // no run.
     const at5 = Date.now();
     const d5 = await done('goal/G100.5');
     const l5 = await overLines('goal/G100.5');
-    if (took(d5) && (await get('goal/G100.5')).status === 'done' && l5.length === 1 && /missing|no run/i.test(l5[0].text)) test.check('his Done over a missing run went through, and one line says so: ' + short(l5[0].text));
+    if (took(d5) && (await get('goal/G100.5')).status === 'done' && !l5.length) test.check('his Done over a missing run went through, and no line was posted');
     else test.fail(OWED + 'Done on goal/G100.5 with no run answered ' + short(d5.status) + ' ' + short(d5.body) + '; lines ' + short(l5));
     await sleep(500);
     if (!runsSent(at5).length) test.check('and that Done started no run: goal/G100.3 and goal/G100.4 still wait for his Verify');
@@ -412,7 +413,7 @@ async function deskAndVerify() {
     const at2b = Date.now();
     const d2 = await done('goal/G100.2');
     const l2 = await overLines('goal/G100.2');
-    if (took(d2) && (await get('goal/G100.2')).status === 'done' && l2.length === 1 && /red|stopped/i.test(l2[0].text)) test.check('his Done over the stopped run went through, and one line says it went over a red run: ' + short(l2[0].text));
+    if (took(d2) && (await get('goal/G100.2')).status === 'done' && !l2.length) test.check('his Done over the stopped run went through, and no line was posted');
     else test.fail(OWED + 'Done on the stopped goal/G100.2 answered ' + short(d2.status) + ' ' + short(d2.body) + '; lines ' + short(l2));
     const f3 = await get('goal/G100.3');
     if (f3.verified === 'green') test.check('the Done read goal/G100.3\'s run through the search: verified green');
@@ -441,7 +442,7 @@ async function deskAndVerify() {
     else test.fail(OWED + 'Done on goal/G100.3 answered ' + short(d3.status) + ' ' + short(d3.body));
     const d4 = await done('goal/G100.4');
     const l4 = await overLines('goal/G100.4');
-    if (took(d4) && (await get('goal/G100.4')).status === 'done' && l4.length === 1 && /red probe/.test(l4[0].text)) test.check('his Done on the red goal/G100.4 went through, and its line names the failure: ' + short(l4[0].text));
+    if (took(d4) && (await get('goal/G100.4')).status === 'done' && !l4.length) test.check('his Done on the red goal/G100.4 went through, and no line was posted');
     else test.fail(OWED + 'Done on goal/G100.4 answered ' + short(d4.status) + ' ' + short(d4.body) + '; lines ' + short(l4));
     const d6 = await done('goal/G100.6');
     if (took(d6) && (await get('goal/G100.6')).status === 'done' && !(await overLines('goal/G100.6')).length) test.check('his Done on goal/G100.6, its run green, went through, no line');

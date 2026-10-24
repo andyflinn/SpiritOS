@@ -1,7 +1,8 @@
 {
-  "description": "Set the status word of an item you took: what you are doing now, in a few words (reading, writing the red, building, claimed done).",
+  "description": "Set the status word of an item you took: what you are doing now, in a few words (reading, writing the red, building, claimed done). tone, optional (goal/G33.11): 'test' or 'code' when the word is a file your checkout changed; a path is kept as its file name only.",
   "request": {
     "id": "",
-    "word": ""
+    "word": "",
+    "tone": ""
   }
 }
