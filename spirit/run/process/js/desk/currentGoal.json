@@ -1,5 +1,5 @@
 {
- "change": 100222,
+ "change": 100431,
  "goal": "goal/G40",
  "items": [
   {
@@ -16,7 +16,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G40.6"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -322,6 +324,30 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-24T10:13:23.082Z",
      "text": "wsl: done at 10:01, once: goal/G40.2, \"Move core code tree from spirit/run/js to spirit/run/spirit/\", its box filled (v1) with this discussion; I posted that under G40.2, so you did not see it here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T17:19:43.707Z",
+     "text": "design conundrum, if have three code folders outside the spirit-module-tree that won't do well if i want to stick to my rules. a lot of them are classified core, but not core-node...\n\nI'm not sure its a bad thing, since the CAN reach spirit.js (it's a file in an ancestor folder) so those processes that stick to using the spirit-objects interface, also for obtaining other interfacec, we might not be as bad off as i think...\n\nthought?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T17:20:30.966Z",
+     "text": "- wsl: I agree it is not bad: process/, shell/ and face/ may all reach spirit.js (an ancestor plus a file name), and through spirit.require they get the rest, so the rule holds without moving them.\n- Counted today: face/ reaches into spirit/ nowhere; shell/ in 2 files (4 requires, its node-side fallbacks); process/ in 10 files, 42 requires (appServer, kernel, limits and the like). Those 46 are the whole debt, and each becomes spirit.require or a spirit member.\n- Core-but-not-node is fine as a class: core means needs your grant, not lives in spirit/; the browser half loads by script tag and gets window.spirit anyway."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T17:23:36.537Z",
+     "text": "add item: the first test folder inside spirit/run/, the root-test-folder.\n\nthis will be a design-heavy session...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T17:24:31.713Z",
+     "text": "- cw: added: Root test folder in spirit/run (goal/G40.6). Its box holds your words and what the tree has today: no test folder at the run root, all the core suites outside it, and a harness that already runs an app's or a process's own test folder.\n- ? What belongs in the root test folder: the suites of the core code under spirit/, or the suites of spirit.js and the spirit object alone?"
     }
    ]
   },
@@ -3018,6 +3044,483 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-24T16:29:29.337Z",
      "text": "- cw: good. One thing for the Linux box: unless it was pulled since, its checkout is still from before the folder move. After the pull, its labMaster needs a restart too, as on Windows, or it will not start the node."
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.6",
+   "title": "Root test folder in spirit/run",
+   "goal": "goal/G40",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 19,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "The root test folder: the first product tests inside spirit/run/ (goal/G40). Andy, 2026-10-24: \"the first test folder inside spirit/run/, the root-test-folder.\"\n\nDECIDED (Andy, 2026-10-24)\n- A first cut at a new test category, beside the old one. The suites in spirit/test/ stay and run as now; nothing in the current test system breaks. deskVerify may change a little to use it.\n- Product tests live in the product tree, spirit/run/. They are the permanent assertions about the product: its design intent, the code's compliance with it, and the quality and style rules. Tests that only check an item's job got done shed out once the new category runs beside the old.\n- Layout: any folder may hold several code files; a module ./<name>.js keeps its component modules in ./<name>/ beside it (spirit.js with spirit/ is that today). The folder's test/ holds, per module:\n  - <name>.md: the module's purpose and requirements, the challenges its test must exercise;\n  - <name>.js: the tests of that one module, and of no other;\n  - <name>-child-<test>.js: a general test over every folder in ./<name>/ and below;\n  - <name>-sibling-<test>.js: a general test over every folder in ./ and below.\n  A -child- or -sibling- file is read as a general test only when ./<name>.js stands beside the test folder.\n  A general test takes the file it judges as its argument and reports under its own test id for each file, the general test and the file together, so one rule over many modules reads as one result per module (Andy, 2026-10-24).\n- Opt in: a file is judged by the general tests above it only once it has its own ./test/<name>.js, so the tree comes in one file at a time.\n- Which tests a change runs: for a changed ./<name>.js with its own test, that test, every test under ./<name>/, and the tests in the test folders of the direct line above it to the run root; never a sibling branch. One file on an item is enough for the right tests to follow. A run of all tests runs everything.\n- A module whose name is also an interface folder (relay.js beside relay/) is a bridge to cross later, not in this item; a likely way is renaming the module, since an interface folder need not match a module's name (Andy, 2026-10-24).\n- spirit/run/test/ is core: every file in it needs Andy's grant, as the core code does (Andy, 2026-10-24). coreFiles.js names it, so it is a file of this item too.\n- testModule.js and every test inside spirit/run/ report to the verifier, when it runs, in the format of the current test system for now (Andy, 2026-10-24).\n- spirit.js is itself judged by spirit-child-generalRules.js: it establishes the global spirit object early in its code, and it follows the require-path rule (Andy, 2026-10-24). Explicit exceptions for spirit.js may come later; for now it takes the general rules like any module. A rule spirit.js breaks does not fail this item (Andy, 2026-10-24): the item delivers the tests, and what they find in spirit.js is fixed by a later item. The item succeeds when the new tests run and report, a first fail or a first success alike (Andy, 2026-10-24: \"just getting a first fail or success, that is a success here.\").\n- spirit/run/test/suites/ will hold product tests not tied to one module. How the hundreds of existing suites are sorted into keep and shed is not settled, and not in this item.\n\nTHE FILES, all in spirit/run/test/\n- spirit.md: what spirit/run/spirit.js is for and must do (goal/G40.1: the one global spirit in a page and in node, spirit.require by run-root path and by interface name, the peer key as its second argument).\n- spirit.js: the tests of spirit/run/spirit.js alone, against spirit.md.\n- TEST_SYSTEM.md: the rules above, for the folders that follow.\n- testModule.js: given a file's path, that file's blast-radius tests; given none, the whole tree's: every .js file in any test/ folder anywhere in spirit/run/ (Andy, 2026-10-24: \"test module must find all /test/files.js in the run tree.\"). The harness's run of all tests then runs no test of the run tree twice, the apps' and processes' test folders included. The harness's run of all tests reaches the product tree through it, and Desk, deskClient or deskVerify call it for an item's files.\n- spirit-child-generalRules.js: asserts the require path rule, and that every module takes the spirit object as a global at its top, for every file under spirit/run/spirit/ with its own test.\n\nTHE TREE TODAY (at e852528b)\n- No test folder exists in spirit/run/, in any app or in any process. The core suites live in spirit/test/: 505 .js files, 420 requiring code by ../run/spirit/.\n- The harness (spirit/test/runAll.js) finds suites in spirit/test/ and in shell/<app>/test/ and process/js/<name>/test/ (goal/G19.12); deskVerify runs any suite path an item lists.\n- In spirit/run/spirit/, a folder named after a module holds its interface today (api.js, a .json per verb, AGENTS.md: relay/, jobs/); some interface folders have no module beside them (auth/, contact/, node/, owner/).\n- The node serves every file under the run root but relay-state/, test folders included.\n- A file under spirit/run/spirit/ is core (coreFiles.js); spirit/run/test/ is not yet.\n- One module has a hyphen in its name: shell/group-manager/group-manager.js, the home shell's Groups app.\n\nNOT YET RULED: whether module names stay free of hyphens, the Groups app renamed groupManager. Not needed for these files.",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does a module's interface stay in the folder named after it, beside its components, or does it move?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-24T19:06:35.893Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T17:50:27.546Z",
+     "text": "# - folders inside spirit/run/ (the actual SpiritOS file-system), the cwd of the servers, will have a test folder, containing tests and documentation for the files of the directory that contains the text folder\n\n- what this item will deliver is the first crack at a few new testing concepts. compatible with deskVerify, even if we may add a little modification to deskVerify to make that happen. We will NOT break the current test system.\n\n- the tests contained in the product tree (spirit/run/) are the \"product\" category of test, asserting design intent, implementation compliance with that intent, as well as rule compliance in a quality-assurance and style consistency sense.\n\n# i envision a bunch of file types in the test directory\n\n- ./ any directory may contain multiple code files.\n- any module ./<name>.js will have its component modules in a folder called ./name/\n- ./test/<name>.js will contain tests against ./<name>.js\n- ./test/<name2>.js will contain tests against ./<name2>.js\n- ./test/<name>.md will precise documentation of the purpose and requirements of ./<name>.js, defining implicitly the challenges for ./test/<name>.js to excercize, stress and break ./<name>.js\n- ./scope-1.js is a test-script that every test directory in the module tree ./ must also run. these are generic test like require('path') compliance etc...\n\nthoughts ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T17:51:22.779Z",
+     "text": "- cw: the shape fits the tree, and spirit.js beside spirit/ is already exactly your pattern. Five things checked against it:\n- 1. The folder named after a module already means something else in spirit/: it holds that module's interface, its api file, a verb file per verb and an AGENTS note. relay.js with relay/ and jobs.js with jobs/ are like that, and some interface folders have no module beside them at all (auth, contact, node, owner). Your rule makes that folder the module's components.\n- 2. The harness looks for test folders in two places only, an app's and a process's, and none exists yet. Test folders anywhere in the run tree mean it walks the whole tree. deskVerify needs nothing for that: it runs any suite path an item lists.\n- 3. The node serves every file under the run root except node state, so test folders would be served to your own pages too. Harmless, unless a test ever holds a secret.\n- 4. A test inside the core folder is a core file by today's rule, so every edit to it needs your grant. Maybe that is wanted for product tests, maybe not.\n- 5. Nothing breaks: the 505 suites outside stay where they are and run as now.\n- ? Do a module's components and its interface share the one folder named after it, or does the interface move?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:01:10.880Z",
+     "text": "- this approach also means, we can break things 1-by-1 and fix them, because folder without a test/ subfolder won't fail the general assertions in the parent-folders ../../test/scope-<testname>.js tests....\n- for those subfolder implementing a ./test/ folders, those test will automatically follow a (first-cut) blast radius for changes in the corresponding files, because changes in a module generally only affect modules that call them... so require-path-rules, combine with mechanical test-scope generation will give us a lot of implicit automation to start out with\n- testVerify, when given any test in the module-tree, will automatically know to follow parent-folders upward to find other tests that also must be run...\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:01:35.272Z",
+     "text": "- cw: yes, it makes sense, and opting in by having a test folder is what makes it safe to start: nothing fails until a folder asks to be judged.\n- Two consequences worth deciding early:\n- 1. A scope test runs for every folder below it that has a test folder, so it has to be told which folder it is judging, its argument, and the root's scope tests run on every verify of anything. They must stay quick.\n- 2. Walking upward finds the folders a file sits in, not the files that call it. A caller can live in another branch: the processes call the core, the shell calls the node's verbs. The blast radius is the reverse of the require graph, which your require-path rule makes readable by machine: every caller names its target by a run-root path or by spirit.require.\n- So the verifier would run three sets: the file's own test, the scope tests above it, and the tests of the files that require it.\n- Still open from before: do a module's components and its interface share the one folder named after it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:09:38.009Z",
+     "text": "- you're looking at it the wrong way. a run-all simply will run all the tests BUT\n- if a desk item touches any file that has a test in the product tree, nobody has to specify which tests in the containing folders need to be run as well, for optimal (not perfect) coverage.\nin fact, for any since file modified with a corresponding ./test/file.js. the test system will execute all tests in .file/ but only tests in the direct line of parent folders. this makes sense, re-test all test in ./file/ child-scopes and ../ and ../../ and ../../../ but NOT ../othername/..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:10:25.559Z",
+     "text": "- cw: understood, and boxed with your words: a change to a file with its own test runs that test, every test in the file's own components folder below it, and the tests in the direct line of folders above it to the run root, never a sibling branch.\n- That works because the tree is the call graph: a module's components sit in the folder named after it, below it, and its callers are the modules above. Which is why the open question matters: today that folder holds the module's interface instead, so its tests would run where there are no components.\n- ? Do a module's components and its interface share the one folder named after it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:11:10.665Z",
+     "text": "so modules deeper in the tree tend to trigger fewer test than modules closer to the root of the tree...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:11:26.877Z",
+     "text": "- cw: yes. The weight is the folder below the file, and that shrinks as you go deeper; the line upward adds only one test folder a level. A change near the root runs nearly everything, a change at a leaf runs its own test and the few folders above it.\n- Which is the right incentive too: the files everything stands on are the ones tested hardest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:18:33.964Z",
+     "text": "for starters, every test tests exactly 1 module. i have ideas for other forms of coverage, i had this concept where:\n\n- we don't have to call them ./test/scope-testname.js but we call them ./test/child-testname.js and an other category can be ./test/sibling-testname.js that only will trigger general tests for all other sibling appServer or processes, like \"./test/sibling-ensureSpiritObject.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T18:19:31.678Z",
+     "text": "- wsl: the prefix as the category is plain and readable: test/<name>.js tests ./<name>.js alone, test/child-<x>.js and test/sibling-<x>.js are general tests, told apart by name with no config.\n- It needs one naming rule beside it: no module may be called child-*.js or sibling-*.js, or its own test would be read as a category.\n- ? The reach, so the runner can find them: child- runs against every folder below at any depth, and sibling- against each folder beside it at the same level (process/js/*, one per app server)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:27:38.088Z",
+     "text": "wsl: The reach, so the runner can find them: child- runs against every folder below at any depth, and sibling- against each folder beside it at the same level (process/js/*, one per app server)?\n\nah, the naming convention must be as follows\n\ntest for \"./name.js\"\nin it's directory's test folder\n- ./test/name.md\n- ./test/name.js\n- ./test/name-child-testname.js (executes all test in the folder ./name/ and below)\n- ./test/name-sibling-testname.js (executes all tests in the folder ./ and below)\n- ./parent test will only be executed for modules corresponding with a path element the ./"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T18:28:29.629Z",
+     "text": "- wsl: clear: for ./name.js, test/name.md and test/name.js; test/name-child-x.js runs over ./name/ and below; test/name-sibling-x.js over ./ and below; a parent's tests run only for modules on its own path.\n- The module name in front removes my naming worry: the runner reads name-child-x as a category only when ./name.js exists beside the test folder. The tree has one hyphenated module of ours (shell/group-manager/group-manager.js), and no -child- or -sibling- anywhere.\n- ? Should module names stay camelCase, with no hyphen, so the split is never ambiguous?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:30:48.817Z",
+     "text": "group-manager belongs to the legacy-shell, correct? we let that one deprecate, that part of the face-shell is currently undefined."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:31:19.425Z",
+     "text": "- cw: yes, the home shell: its manifest says it runs at home only, and it groups apps on that desktop (create, rename, re-icon a group). The face does not show it.\n- It is still marked intrinsic, though, so the home shell lists it as one of its own apps and its code counts as core. Letting it deprecate means taking that mark off when it goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:32:12.317Z",
+     "text": "renameing group-manager to groupManager has a very small blast-radius"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:32:52.845Z",
+     "text": "- cw: confirmed small. Besides its own three files, the name stands in: the home page (two lines), the home shell's app table and its list of intrinsic apps (two lines), one icon suite (two lines), and two documents: the agents' guide and the style guide, which names its panel class.\n- No saved state on your node holds the name: the groups themselves are kept in each app's own manifest, not under the Groups app's id.\n- After it, no module of ours has a hyphen in its name."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:34:40.341Z",
+     "text": "cw. replace box contents with the result of our discussion"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:35:34.585Z",
+     "text": "- cw: box replaced with where the discussion stands: what the item delivers, the product category, the layout, the names (name.md, name.js, name-child-x, name-sibling-x), which tests a change runs, opting in by test folder, and what the tree has today.\n- Two things are not in it as decided, since neither was ruled: where a module's interface goes (a red Q now, the one open point), and whether module names stay free of hyphens, with the Groups app renamed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:35:52.180Z",
+     "text": "the point of this is also. a single file on a test item, will auto-trigger a sensible array of blast-radius-tests."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:36:15.494Z",
+     "text": "- cw: boxed with your words: one file on an item, and the tests it needs follow from where it sits. deskVerify then needs the one change named in the box: from an item's file rows to that set of tests."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:41:59.994Z",
+     "text": "correct.\n\n- this is what the intrinsic or whatever we'll call it test category is about, a diligently maintained set of \"permanent\" assertions about our products, it's design and coding practices etc...\n- for other test of type \"just check that the items job got done\", they need to auto-shed out of our system after we start building our new test strategy in ADDITION to what we have....\n- the new test category WILL have another type of test in spirit/run/test/suites/  .... these will assert things about out product that are NOT tied to a single module file, but we have hundreds of them already, and no good idea how to eliminate the garbage ones yet...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:42:39.255Z",
+     "text": "- cw: boxed with your words: the product tests are the permanent ones; an item's just-check-the-job tests shed once the new strategy runs beside the old; and spirit/run/test/suites/ holds product tests not tied to one module.\n- How the hundreds of existing ones are sorted into keep and shed is not in this item, as you said there is no good idea for it yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:46:22.745Z",
+     "text": "this item will create only create 3 files:\n\n- spirit/run/test/spirit.js\n- spirit/run/test/spirit.md\n- spirit/run/test/TEST_SYSTEM.md\n\nisn't it self-evident what they'll contain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:46:45.369Z",
+     "text": "- cw: mostly, yes:\n  - spirit.md: what spirit.js is for and what it must do, from goal/G40.1's box: the one global spirit in a page and in node, spirit.require by run-root path and by interface name, the peer key as its second argument.\n  - spirit.js: the tests of spirit.js alone, exercising exactly that list.\n  - TEST_SYSTEM.md: the rules of this box, the names, the layout, which tests a change runs, so the next folder can follow them.\n- Three things follow that are not self-evident:\n  - The harness does not look in the run root's test folder, so the new test runs by its suite row on the item; deskVerify runs any listed path. Nothing else changes.\n  - With only those three files, the automatic blast radius is described in TEST_SYSTEM.md, not built. It waits for its own item.\n  - Q1 is not needed for these three files: spirit.js has no interface folder. It can wait for the first module that has one.\n- ? May the new test use the old suites' helper in spirit/test/, outside the product tree, or must the product tree carry its own?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:52:15.201Z",
+     "text": "a run-all of the harness will include all tests in spirit/run/\nbut one file in spirit/run/test/testModule(path-name.js) can auto execute the bast-radius tests for that one file, and then should be easy for desk or deskClient of deskVerify to automate the testing of files named in an item..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:52:33.807Z",
+     "text": "- cw: good, that makes the blast radius a tool in the product tree, not a change inside deskVerify: testModule takes one file's path and runs that file's set (its own test, its folder below, the line above). Desk, deskClient or deskVerify then only call it for each file row.\n- Two pieces beyond the three files, then:\n  - spirit/run/test/testModule.js, the runner for one file;\n  - the harness's run of all tests looking for test folders throughout spirit/run/, where today it looks only in an app's or a process's.\n- ? Both in this item, beside the three files?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:54:53.083Z",
+     "text": "the harness in a run-all will probable only call spirit/run/test/testModule.js, because knows how to generate full coverage for the spirit/run/ tree...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T18:55:25.007Z",
+     "text": "- wsl: yes, one entry for both: testModule with no path names the whole tree's tests, with a path that file's blast radius.\n- One thing to keep: deskVerify and the harness record each suite on its own (rule/11, each a run reporting through testSupport). So testModule should hand back the list of test paths, and the caller runs each as its own suite, rather than testModule running them all inside one run, which would show as a single suite.\n- ? testModule answers the list, and the harness and deskVerify run each path as today?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T18:57:58.826Z",
+     "text": "that's four files in spirit/run/test/\n\ni have another one\n\nspirit/run/test/spirit-child-generalRules.js\n\nit will assert, the require path rule\nit will assert that the spirit-object becomes a global at the top of all modules"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T18:58:29.060Z",
+     "text": "- cw: boxed, five files now, with your words for each, and the harness reaching the product tree through testModule.\n- One thing about the new file's reach, by the naming rule we just set: spirit-child-x runs over spirit/run/spirit/ and below, the core's own folder. Your \"all modules\" also means the processes and the shell, which sit beside spirit.js, not under it; by the rule, that is spirit-sibling-x, which runs over the whole run root.\n- ? Child, the core only, or sibling, every module in the run tree?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:00:44.339Z",
+     "text": "\"? Child, the core only, or sibling, every module in the run tree?\"\n\nevery file in spirit/run/ that has a corresponding ./test/scriptName.js, that's only in the spirit/run/spirit/ tree for now...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:01:10.000Z",
+     "text": "- cw: boxed with your words: the general rules judge every file that has its own test, which for now means the spirit/ tree.\n- One gap that follows: this item gives no file under spirit/run/spirit/ a test of its own, only spirit.js at the root has one. So on the day it lands, the general rules have nothing to judge, and would pass without asserting anything.\n- The plain way out: spirit.js itself counts, as the module the rule file is named after.\n- ? Does spirit-child-generalRules also judge spirit.js itself?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:02:37.876Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:02:57.913Z",
+     "text": "- cw: taking the cap."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:03:21.610Z",
+     "text": "Q1: Does a module's interface stay in the folder named after it, beside its components, or does it move?\n\nHUH?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T19:03:36.087Z",
+     "text": "- wsl: my mistake, your cap was cw's line and I wrote the box before I saw it: v9, 6.4 KB to 3.7 KB, every ruling of yours kept, the long background trimmed.\n- cw: merge yours over it or put v8 back, your call; I will not touch the box again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:03:47.570Z",
+     "text": "- cw: plainly: in spirit/run/spirit/ there is relay.js, and beside it a folder relay/. That folder holds no code of relay.js: it holds the relay verbs' descriptions, an api file and one small file per verb.\n- Your layout says the folder named after a module holds its component modules. So relay/ would one day hold two different things: relay.js's parts, and its verb descriptions.\n- The desk already does it the other way: its verbs sit in desk.family/, beside desk.js, so a folder named desk/ stays free for parts.\n- It does not touch this item's five files, so it can wait for the first module that gets parts. Clear Q1 for now, or oos?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:03:51.570Z",
+     "text": "- cw: capped (v10): decided, the five files, the tree today, and what is not yet ruled, last. Your words stay in the chat; the box keeps the decisions they made."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:06:14.287Z",
+     "text": "in spirit/run/spirit/ there is relay.js, and beside it a folder relay/. That folder holds no code of relay.js: it holds the relay verbs' descriptions, an api file and one small file per verb.\n\nNo problem, a bridge to cross later, possible solution\n\n- a rename of the module, since family folders in spirit don't have to correspond to actual module names..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:06:36.751Z",
+     "text": "- cw: boxed: a bridge to cross later, not in this item, a module rename the likely way. Q1 passed.\n- wsl: no harm done, I merged over your v9; the cap is in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:09:39.298Z",
+     "text": "also: additional \"core\" designation:\n\nspirit/run/test/"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:10:00.086Z",
+     "text": "- cw: boxed: spirit/run/test/ is core. That puts coreFiles.js, itself core, on this item too, and every file the item writes in spirit/run/test/ needs your grant, the red's tests among them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:11:17.181Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:11:31.487Z",
+     "text": "- cw: not yet, box v12, two left:\n  - does testModule hand back a list of tests, each then run as its own suite (wsl's question)?\n  - does spirit-child-generalRules also judge spirit.js itself, so it asserts something on day one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:15:39.102Z",
+     "text": "testModule.js and all other tests inside run will send their results to verifier if it runs, same format as the current test system for now...\n\nyes spirit itself is also subject to spirit-child-generalRules.js\n\n- it must establish the global spirit object early in the code, \n- it must follow the require-path restrictions we discussed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:16:01.926Z",
+     "text": "- cw: boxed (v13): every test in the run tree reports to the verifier in today's format, and spirit.js itself is judged by the general rules, the global early and the require-path rule.\n- Green from me: nothing open for these files. The one unruled point, hyphen-free module names, does not touch them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:16:35.834Z",
+     "text": "- we may make explicit exceptions with spirit.js, but for now, generalRules"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:16:55.471Z",
+     "text": "- cw: boxed: exceptions for spirit.js may come later, for now it takes the general rules like any module."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:18:04.266Z",
+     "text": "so what, if if fails a test, that doesn't make this item fail."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:18:27.029Z",
+     "text": "- cw: boxed: a rule spirit.js breaks does not fail this item; the item delivers the tests, and what they find is fixed later.\n- So the red for this item asserts that the five files exist and do their job (testModule finds the right tests, each test reports in today's format), not that spirit.js passes them.\n- ? Is that the red you want?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:18:37.209Z",
+     "text": "just getting a first fail or success, that is a success here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:18:57.340Z",
+     "text": "- cw: boxed: the item succeeds when the new tests run and report, a first fail or a first success alike. Green from me, box v16."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:20:45.401Z",
+     "text": "test module must find all /test/files.js in the run tree."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:21:05.478Z",
+     "text": "- cw: boxed (v17): with no path, testModule finds every test file in any test folder anywhere in the run tree. That includes the apps' and processes' test folders the harness already runs, so the run of all tests must not run those twice."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:22:21.515Z",
+     "text": "absolutely, even if we don't plan to place any test in the apps and process folder very soon..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:22:48.597Z",
+     "text": "- cw: boxed (v18): no test of the run tree runs twice in a run of all tests."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:23:36.696Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:23:50.382Z",
+     "text": "- cw: green: box v18, nothing open for this item; the one unruled point, hyphen-free module names, does not touch its files."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-24T19:24:54.256Z",
+     "text": "- wsl: green from me, box v18, nothing open for the five files.\n- One fact to know, not a question: tests in spirit/run/test/ ship with every install and every relay update, since both copy the run tree; that fits your \"part of the product\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:26:37.984Z",
+     "text": "oh, tests like generalRule.js (tests that will be applied to many module.js files, obviously also must take a filename argument, and then create separate test id's for every file called with that general-rule assertion...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-24T19:27:00.284Z",
+     "text": "- cw: boxed (v19): a general test takes the file it judges as its argument, and reports a test id of its own per file, the rule and the file together. So testModule hands each general test once per file it reaches, and spirit.js gets its own line under the general rules."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-24T19:27:51.634Z",
+     "text": "correct."
     }
    ]
   }
