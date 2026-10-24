@@ -1,5 +1,5 @@
 {
- "change": 100186,
+ "change": 100187,
  "goal": "goal/G40",
  "items": [
   {
@@ -55,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -2747,12 +2747,11 @@
    "id": "goal/G40.5",
    "title": "Relay presence marks follow the node",
    "goal": "goal/G40",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
