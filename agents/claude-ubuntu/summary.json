@@ -1,0 +1,11 @@
+{
+  "agent": "claude-ubuntu",
+  "members": 2402,
+  "ramMB": 512,
+  "perMember": 3,
+  "streams": 7206,
+  "peers": 917728,
+  "diskMB": 512,
+  "measuredAt": "2026-10-24T00:43:17.903Z",
+  "commit": "97f47723"
+}

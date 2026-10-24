@@ -1,6 +1,6 @@
 # Capacity on `linux-7.0`
 
-**Measured 2026-10-24, against `cb790a62`.**
+**Measured 2026-10-24, against `97f47723`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026 |
 | node | v22.23.3 |
 | cpus / ram | 6 / 7274 MB |
-| measured at | 2026-10-24T00:10:17.201Z |
-| tree | `cb790a62` |
+| measured at | 2026-10-24T00:43:17.903Z |
+| tree | `97f47723` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,7 +18,7 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-24, against `cb790a62`
+measured 2026-10-24, against `97f47723`
 on linux, Node v22.23.3
 
 | minimum to run | |
@@ -27,7 +27,7 @@ on linux, Node v22.23.3
 | dependencies | **none** — built-ins only, no `npm install` |
 | RAM, personal node | **78 MB** at rest |
 | RAM, relay | **62 MB** at rest, before any connection |
-| disc, the install | **4474 KB** in 371 files |
+| disc, the install | **4503 KB** in 372 files |
 
 | fixed cost | RSS |
 |---|---|
@@ -45,10 +45,6 @@ on linux, Node v22.23.3
 | 800 | 59 MB | -2 MB | -3 KB |
 
 **~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads -24 KB, which is the spread to expect).
-
-**And ~0 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
-
-So the figure a ceiling should be derived from is the **total**, ~0 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
 `STREAMS_PER_MB = 16` implies 64 KB, so the guess is 100% pessimistic.
 
 | disc | bytes per row |

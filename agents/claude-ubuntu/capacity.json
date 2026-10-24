@@ -1,43 +1,43 @@
 {
-  "measuredAt": "2026-10-24T00:10:17.201Z",
-  "commit": "cb790a62",
+  "measuredAt": "2026-10-24T00:43:17.903Z",
+  "commit": "97f47723",
   "platform": "linux",
   "release": "7.0.0-38-generic",
   "version": "#38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026",
   "node": "v22.23.3",
   "cpus": 6,
   "totalRamBytes": 7626915840,
-  "bareNodeRss": 44392448,
+  "bareNodeRss": 44388352,
   "relayAtRestRss": 64499712,
-  "nodeAtRestRss": 82026496,
+  "nodeAtRestRss": 81805312,
   "perStreamProcessBytes": 0,
-  "perStreamKernelBytes": 0,
+  "perStreamKernelBytes": null,
   "kernelCounter": "/proc/net/sockstat TCP mem",
   "streamSteps": [
     {
       "n": 0,
       "rss": 64499712,
-      "kernel": 2613248
+      "kernel": null
     },
     {
       "n": 100,
       "rss": 64499712,
-      "kernel": 2613248
+      "kernel": null
     },
     {
       "n": 200,
-      "rss": 62038016,
-      "kernel": 2613248
+      "rss": 61992960,
+      "kernel": null
     },
     {
       "n": 400,
-      "rss": 62038016,
-      "kernel": 2613248
+      "rss": 61992960,
+      "kernel": null
     },
     {
       "n": 800,
-      "rss": 62038016,
-      "kernel": 2613248
+      "rss": 61992960,
+      "kernel": null
     }
   ],
   "perMemberRowBytes": 603,
@@ -47,8 +47,8 @@
   "perRouteRowBytes": 420,
   "perReachablePeerBytes": 585,
   "perLogEntryBytesSynthetic": 295,
-  "installBytes": 4581396,
-  "installFiles": 371,
+  "installBytes": 4611122,
+  "installFiles": 372,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
@@ -65,16 +65,16 @@
     },
     "nodeAtRestRss": {
       "runs": 1,
-      "median": 82026496,
-      "low": 82026496,
-      "high": 82026496,
+      "median": 81805312,
+      "low": 81805312,
+      "high": 81805312,
       "spreadPct": 0
     },
     "bareNodeRss": {
       "runs": 1,
-      "median": 44392448,
-      "low": 44392448,
-      "high": 44392448,
+      "median": 44388352,
+      "low": 44388352,
+      "high": 44388352,
       "spreadPct": 0
     },
     "perMemberRowBytes": {
