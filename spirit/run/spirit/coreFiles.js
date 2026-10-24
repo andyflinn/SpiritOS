@@ -38,6 +38,9 @@ function isCore(repoPath, repoRoot) {
   // A MANIFEST IS NEVER CORE (goal/G30.21; Andy: "manifests are no longer core"), an intrinsic app's included.
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/shell/js/') === 0) return true;
+  // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
+  // product's permanent tests need his grant like the code they judge.
+  if (p.indexOf('spirit/run/test/') === 0) return true;
   if (FRAME.indexOf(p) !== -1) return true;
   // THE FACE IS CORE (goal/G30.21; Andy: "the face folder is core", "face.html is core"): what the relay serves a face.
   if (p.indexOf('spirit/run/face/') === 0 || p === 'spirit/run/face.html') return true;

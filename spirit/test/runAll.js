@@ -126,26 +126,20 @@ function discover() {
     return false;
   }).sort();
 
-  // THE SUITES AN APP OR A PROCESS KEEPS BESIDE ITSELF (goal/G4.23, built under goal/G19.12). Andy, 2026-10-04: "the
-  // harness should check in / process/js/<process-name>/test/ / shell/<appname>/test/ / for valid suites and run them
-  // if they exist." By the same rule as here: a file that reports. Kept as paths relative to this folder, so they run
+  // THE PRODUCT TREE'S TESTS, THROUGH testModule (goal/G40.6). Andy: "the harness in a run-all will probable only call
+  // spirit/run/test/testModule.js, because knows how to generate full coverage for the spirit/run/ tree....". It names
+  // every test in any test/ folder of spirit/run/, an app's and a process's among them (goal/G19.12: "the harness should
+  // check in / process/js/<process-name>/test/ / shell/<appname>/test/ / for valid suites and run them if they exist."),
+  // each once, and a general test once per module it judges: that entry reads "<test> <module>", the module its
+  // argument (runOne). By the same rule as here: a file that reports. Kept as paths relative to this folder, so they run
   // exactly as the others do.
   const RUN = path.join(DIR, '..', 'run');
-  [path.join(RUN, 'shell'), path.join(RUN, 'process', 'js')].forEach(function (base) {
-    let owners = [];
-    try { owners = fs.readdirSync(base, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); } catch (e) { owners = []; }
-    owners.forEach(function (owner) {
-      const testDir = path.join(base, owner, 'test');
-      let names = [];
-      try { names = fs.readdirSync(testDir); } catch (e) { return; }
-      names.filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
-        if (filter && f.toLowerCase().indexOf(filter.toLowerCase()) === -1) return;
-        const full = path.join(testDir, f);
-        const rel = path.relative(DIR, full).split(path.sep).join('/');
-        if (/startTest\s*\(/.test(fs.readFileSync(full, 'utf8'))) found.push(rel);
-        else skipped.push(rel);
-      });
-    });
+  require(path.join(RUN, 'test', 'testModule.js')).testsFor().forEach(function (t) {
+    const rel = path.relative(DIR, path.join(RUN, t.test)).split(path.sep).join('/');
+    const entry = t.file ? rel + ' ' + t.file : rel;
+    if (filter && entry.toLowerCase().indexOf(filter.toLowerCase()) === -1) return;
+    if (/startTest\s*\(/.test(fs.readFileSync(path.join(RUN, t.test), 'utf8'))) found.push(entry);
+    else skipped.push(entry);
   });
   found.sort();
   if (!filter || LAST.toLowerCase().indexOf(filter.toLowerCase()) !== -1) found.push(LAST);
@@ -205,10 +199,13 @@ function killTree(child) {
   catch (e) { try { child.kill('SIGKILL'); } catch (x) { /* already gone */ } }
 }
 
+// An entry is a suite's path relative to this folder, and for a general test of the product tree the module it judges
+// after a space (discover): the file, then its argument.
+function fileOf(entry) { return String(entry).split(' ')[0]; }
 function runOne(file) {
   return new Promise(function (done) {
     const started = Date.now();
-    const child = spawn(process.execPath, [path.join(DIR, file)], {
+    const child = spawn(process.execPath, [path.join(DIR, fileOf(file))].concat(String(file).split(' ').slice(1)), {
       stdio: ['ignore', 'pipe', 'pipe'],
       // WHERE A CHILD REPORTS WHAT IT COULD NOT REMOVE (cycle R17). See
       // testSupport's reclaimTempHomes: a suite that started a real relay
@@ -550,7 +547,7 @@ async function main() {
     // node — two world-builders in parallel lanes destroy each other.
     // It was survivable while liveFrontDoor was effectively alone;
     // authWorld made the collision a coin-flip per run.
-    return /setupRelayFakes|createWorld\(/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+    return /setupRelayFakes|createWorld\(/.test(fs.readFileSync(path.join(DIR, fileOf(f)), 'utf8'));
   });
 
   // ONE labMaster FOR THE WHOLE RUN, owned by the runner. Suites that need
@@ -563,7 +560,7 @@ async function main() {
   // A labMaster somebody already had up is theirs: ensure() reports it and
   // stop() leaves it alone. Detected from the source, like `shared`.
   const needsLab = files.some(function (f) {
-    return /ensureMaster|labWorld|labPaths/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+    return /ensureMaster|labWorld|labPaths/.test(fs.readFileSync(path.join(DIR, fileOf(f)), 'utf8'));
   });
   const lab = require('./labMaster/ensureMaster.js');
   if (needsLab) {
