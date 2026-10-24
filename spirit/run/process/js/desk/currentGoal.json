@@ -1,23 +1,24 @@
 {
- "change": 98510,
- "goal": "goal/G40",
+ "change": 12,
+ "goal": "goal/G101",
  "items": [
   {
-   "id": "goal/G40",
-   "title": "Core suites, the require rule, and spirit as the one door",
+   "id": "goal/G101",
+   "title": "Written",
    "goal": "",
    "status": "",
    "statusTone": "",
    "with": "",
-   "version": 4,
+   "version": 0,
    "buttons": [
     "done",
-    "verify",
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.2"
+    "goal/G101.1",
+    "goal/G101.2"
    ],
    "codeOffered": false,
    "go": false,
@@ -39,1018 +40,43 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "verified": "none",
+   "verified": "",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "taken",
-   "verifierBusy": true,
+   "verifyAnswer": "",
+   "verifierBusy": false,
    "verifyRunning": false,
-   "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude",
-    "claude-ubuntu": "claude-ubuntu",
-    "ollama agent node": "levant-local"
-   },
+   "names": {},
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
-   "excluded": [
-    "ollama agent node"
-   ],
+   "waiting": 2,
+   "excluded": [],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
-    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
-    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    "claude-windows": "MCowBQYDK2VwAyEAdeskGoalFileTestPeerCWAAAAAAAAAAAAAAA="
    },
-   "box": "Core suites, the require rule, and spirit as the one door. From goal/G38.2, as discussed there so far.\n\nDecided (Andy, 2026-10-24):\n- Two kinds of suites. Core suites assert the current design of SpiritOS, permanently. Task suites assert that one assigned task is done.\n- Core suites sit in a test folder that is always a child of the folder holding the code they test. They are part of the product: they need design approval, are never written ad hoc, and deskVerify runs them as a category of their own, as one bundle, the core verification of SpiritOS's design and design intent.\n- Core suites carry scope-limited, configurable stack-frame tests and dependency-rule assertions, equally configurable.\n- The require rule: a require path that starts with ../ may only add a file name, never descend into a subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling in the module's own folder is legal (\"\\\"siblings\\\" should be legal in a require statement\"). So a module requires its own children, its siblings, or its ancestors' scripts.\n- A scan of every .js file reports each require that breaks the rule to deskVerify as a failure: \"require error: process/js/desk/desk.js\".\n- spirit.js sits at the run root, spirit/run/spirit.js, the node's root of its own fs scope (Andy: \"NOT repo-root. i meant in the run-root, the nodes root of its own fs scope\"). Every module first makes sure spirit is a plain global in its scope, and reaches other modules through the spirit object, the official spirit toolset, never by a require path. kernel.js stays where it is and goes once the cleanup is finished; the spirit object is then the door to all legal functionality (\"i know it's a long goal, but worth it, i think.\"). index.html goes the same way as kernel.js (Andy: \"index.html will deprecate like kernel.js\").\n- spirit.js is the first thing loaded by face.html and by every module that is not the node server or a relay server; those two build spirit themselves and are its embodiments (Andy: \"it needs to be the first thing loaded by face.html or or any module the is not a relay-server or a node-server, those are the actual embodyments of spirit.js?\").\n- From this, normal goals follow, such as \"move all sub-components of peerPost.js into subfolder peerPost/\".\n- deskAgent moves from a Levant node to Andy's own node, with a code-reviewing agent that does the API part of verification, code review included.\n\nThe tree today (36123dfe):\n- 33 files under run/ break the require rule, 88 requires, each reaching into a subfolder of an ancestor or of another module. The test files break it about 1,200 times in 437 files, each reaching into run/js/.\n- Two spirits: kernel.js builds one (spirit.core and the node's tools; server.js requires it, the browser gets it as window.spirit). face/spirit.js builds the other, the object of verbs, and the shell adds spirit.elements and spirit.data to it.\n\nRecommended:\n- The require scan as one more rule of the stack-frame checks plugin, which already scans code and reports to deskVerify.\n- Shedding: a task suite leaves when its goal closes, unless a design promotes it to core.\n\nOpen:\n- Andy's further rules for the design, among them the re-placing of code modules in the tree (not their function).",
+   "box": "",
    "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T07:39:58.206Z",
-     "text": "if we start with an item that puts spirit.js at the repo-root, then we can follow up by cleaning up modules one by one to use THAT spirit object. is that the path way to breaking down this whole goal?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T07:40:34.536Z",
-     "text": "Yes, that is the pathway: one door first, then module by module, with a counter that falls.\n- 1. spirit.js at the repo root, one object holding today's spirit (face/spirit.js), which every module may reach with ancestors plus a file name. The face keeps getting it inline, read from the root now.\n- 2. The require scan, as a rule of the stack-frame checks plugin, reporting each break to deskVerify. Its count (33 files in run/ today) is the progress you watch.\n- 3. Then one item per module or folder: it takes what it uses from spirit, and its breaks go to zero. peerPost into peerPost/ is one such.\n- 4. Last: kernel.js goes, once nothing reaches it but spirit.\n- Core suites run beside this as items of their own.\n- Cost of the repo root, so it is not hidden: three tools copy only the spirit/ folder into a node (the suites' fake nodes and two installers), and the face reads spirit.js from inside the node's tree today. Each gets taught the root in item 1.\n- ? Add items 1 and 2 to goal/G40 now?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T07:41:00.221Z",
-     "text": "NOT repo-root. i meant in the run-root, the nodes root of its own fs scope"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T07:41:25.839Z",
-     "text": "- Boxed: spirit.js at spirit/run/spirit.js, the node's own root.\n- That drops the cost I named: the installers, the fake nodes and the face's inline copy already read inside spirit/run/.\n- ? Add items 1 and 2 to goal/G40 now?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T07:43:16.703Z",
-     "text": "it needs to be the first thing loaded by face.html or or any module the is not a relay-server or a node-server, those are the actual embodyments of spirit.js?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T07:43:53.978Z",
-     "text": "Yes, and the tree is halfway there:\n- face.html: spirit.js is already its first script, inlined where it says so, by the relay and the home node.\n- index.html (the shell at home): kernel.js loads first, spirit.js second; the rule puts spirit.js first.\n- Server processes: 10 of the 15 under process/js/ require spirit.js today, each by a path that climbs and descends; the rule makes it their first require, from the run root.\n- The node and the relay load no spirit.js: they build spirit themselves (kernel.js, relayServer.js), so they are its embodiments, and what spirit.js offers is what they answer.\n- Boxed as decided."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T07:44:42.671Z",
-     "text": "index.html will deprecate like kernel.js"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T07:45:07.882Z",
-     "text": "Boxed: index.html is deprecated like kernel.js, so its load order is not touched; it goes when the cleanup ends."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T07:46:50.415Z",
-     "text": "all: I'm taking off for a bit. will continue when i come back."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:46:56.033Z",
-     "text": "add item, ONE item: \"Move spirit.js to spirit/run/\""
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T08:47:20.242Z",
-     "text": "Added: goal/G40.1, \"Move spirit.js to spirit/run/\". One item, nothing else."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:31:03.208Z",
-     "text": "when G40.1 is done, what will be the best next step?\n\ncan we only reference G40.1 work in this box?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:31:26.916Z",
-     "text": "Best next step after G40.1:\n- The require scan: one rule of the stack-frame checks plugin that reports each require breaking the rule to deskVerify. It turns the rest of this goal into a number that falls, and tells which module to take next.\n- Then one item per module or folder, picked from that count (peerPost into peerPost/ among them), each until its breaks are zero.\n- Core suites can start beside them, once the folder convention for them is fixed.\n\nThe box:\n- Yes. A goal box that summarizes its items is what you asked for before, and G40.1 is the only item so far.\n- Nothing is lost by it: the rest of the design (the require rule, core suites, the scan, deskAgent's move) is in goal/G38.2's box, where it was argued, and comes in here item by item.\n- ? Rewrite goal/G40's box to G40.1's summary and a pointer to goal/G38.2 for the rest?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:32:52.772Z",
-     "text": "i was thinking of starting core-suites with spirit/run/test/spirit.js"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:33:07.857Z",
-     "text": "wsl: agreed with cw on both: the require scan next, then one item per module; and yes, this box can hold only G40.1's work with a pointer to goal/G38.2 for the rest."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:34:19.189Z",
-     "text": "why don't we name the files in test same as the files they test?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:34:41.499Z",
-     "text": "- wsl: yes: test/spirit.js beside spirit.js says what it tests by its name alone, and a scan can then list every module with no core suite.\n- It stays legal under the require rule: test/spirit.js loads ../spirit.js, an ancestor plus a file name.\n- One limit: one core suite per file, so a large module (desk.js, 3700 lines) gets one big suite, or its parts move into their own files first."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:34:57.759Z",
-     "text": "cw?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:36:17.014Z",
-     "text": "and spirit/run/test/spirit.md describes precisely what the spirit/run/test/spirit.js actually makes sure of...."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:36:32.467Z",
-     "text": "- wsl: good, it makes the core suites readable as the design they guard.\n- Risk: a .md beside the code drifts from it, the way comments do (your rule 6: facts from code, not comments).\n- ? Shall the suite itself fail when its spirit.md and its checks disagree, each check named in the .md by its title?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:36:58.804Z",
-     "text": "the md file is what you guys usually put in stale comments, but i want it as human readable document"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:37:13.716Z",
-     "text": "- wsl: understood: the .md replaces the header comment a suite carries today, written for you to read.\n- ? To keep it from going stale as those comments did, may the suite check that every check it makes is named in its .md, and fail where one is missing?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:39:05.047Z",
-     "text": "the staleness i want to address by a code-review-phase that let's an intelligent agent keep the staleness out of it, that's code review: reconciling intent of all: design, implementation and test."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:39:16.961Z",
-     "text": "wsl: clear: no mechanical check, a code-review phase reconciles design, code, suite and its .md; my question is withdrawn."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:39:40.090Z",
-     "text": "deskVerify will assist with the mechanical parts of that code review."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:39:52.058Z",
-     "text": "wsl: noted: deskVerify does the mechanical part, the reviewing agent the judgement."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:40:19.305Z",
-     "text": "so an agent will help me decide whether to press done on an item."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:40:32.786Z",
-     "text": "wsl: yes, and it fits the rule that turns alternate: the reviewer should be an agent that neither wrote the item's red nor built it, so it reads all three with fresh eyes."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:41:16.020Z",
-     "text": "cw: agreed, the name says what it guards, and the .md read by you, the suite by deskVerify, reconciled in code review, is the plainest split. Two things the tree makes true:\n- spirit/run/test/ is inside the node's served tree, and today only core files are write-protected there: a face app could overwrite a core suite or its .md. coreFiles.js would name every test/ folder under spirit/run as core.\n- A red claim today takes only spirit/test/ paths as suites (desk.js claim), and deskVerify runs from there, so both learn the test/ folders before the first core suite can be claimed or run."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:42:43.441Z",
-     "text": "ideally that agent will be deskAgent move from Levant's node to mine under the name agent. which may become item number 3 of this process. this is why i want to go full in on just spirit.js, before we go farther with goal 40"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:53:56.389Z",
-     "text": "funny thing: as we establish spirit.js as the root object of our core-module structure, it obviousy already violates the following rule: the boundaries of it's allowed require() paths. what this means: the entire code tree that now sits in spirit/run/js/ must move to spirit/run/spirit/  otherwise we break the new rules right of the bat...\n\nthoughts?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:54:42.192Z",
-     "text": "- wsl: right, and the rule itself gives the fix: a module may require its own children by <module>/, so js/ renamed spirit/ makes spirit.js reaching spirit/kernel.js legal; today spirit.js already reaches ../js/fieldRules.js.\n- Cost, counted: 122 files move; 112 tracked files name js/server.js, the two relay systemd units and bash/lib.sh among them, so the relays change with it; 17 run files and the 437 test files reach into js/ by path.\n- My advice: its own item right after G40.1, with the relays in its end to end, so G40.1 is not made bigger while it is being built."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:54:44.093Z",
-     "text": "cw: you are right, and it is exactly two lines today.\n- spirit.js requires ./js/kernel.js and ./js/fieldRules.js. js/ is a sibling folder, not spirit's own children, so both break the rule as written.\n- Moving js/ to spirit/ makes them legal (spirit/kernel.js is spirit's child). The size: 122 files move; 424 suites and 16 scripts require a js/ path; 15 page addresses load /js/... (index.html's kernel among them); coreFiles' rule names spirit/run/js/; 50 files outside spirit/ (bash, installers, agents' docs) name it.\n- It fixes spirit.js alone. A server script requiring ../../../js/appServer.js would require ../../../spirit/appServer.js, which still descends into an ancestor's folder: those reach appServer through spirit anyway, in the module items after the scan.\n- Recommended: its own item, right after G40.1 and before the scan. G40.1 as built leaves the tree better than it found it: 8 scripts no longer require the kernel, and spirit.js's two requires are the only ones it writes.\n- ? Its own item after G40.1?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:56:25.330Z",
-     "text": "so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a winning path.\n\nthoughts?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:56:57.505Z",
-     "text": "cw: yes, one item, a move and nothing else. One correction to \"only require() statements\":\n- The node itself is started by path, not required: js/server.js and js/relayServer.js are named in 62 files that are no require: the relays' systemd units (spirit-relay.service, spirit-face.service), bash/lib.sh, the installers, and every suite that spawns a node.\n- The browser loads two pages' scripts by address, /js/kernel.js and /js/client/shell.js (index.html, the node's boot list), and coreFiles' rule names spirit/run/js/.\n- The requires themselves: 437 files, mostly suites reaching ../run/js/.\n- So the item is: move the folder, and change every path that names it, require or not; no line of logic changes. That is mechanical, and the harness says whether it held.\n- Its end to end is the relays: their units start the node by that path, so they change in the same step, or a relay restarted after the pull does not start."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:58:33.053Z",
-     "text": "so this involves changes in the repo-README and in the actual startup/launch code, including our onboarding and face-login procedures? that might be a tolerable impact.\n\n?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:58:59.645Z",
-     "text": "Yes, all but face login:\n- README.md (3 lines) and DICTIONARY.md name js/server.js.\n- Startup: bash/lib.sh, bash/http-to-https and the two systemd units (spirit-relay, spirit-face) start the node by that path; bash/README.md and RELAY-HOST.md say so.\n- Onboarding: both installers, install/chat-windows and install/microscopic (create.js and README.txt each), copy and start it by that path.\n- Face login: untouched. face.html and the login app load nothing from js/; the face folder stays where it is.\n- About 30 design notes name js/ too; they are records of their day and stay as written."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:59:16.143Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:59:35.937Z",
-     "text": "- wsl: agreed, tolerable, and cw's list holds against the tree: face login loads nothing from js/.\n- Two more it reaches: labMaster.js (627, 744) looks for js/server.js under a home, so your lab starts nodes by that path; and every running node, yours on 65432 and ours, is started by node js/server.js, so each restart command changes the day it lands.\n- No logic changes, so the harness green plus one relay and one node restarted by the new path is the proof."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:00:46.440Z",
-     "text": "add item: Move core code tree from spirit/run/js to spirit/run/spirit/ fill the box with a summary so far from this discussion."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:13:02.364Z",
-     "text": "wsl:\nadd item: \"Move core code tree from spirit/run/js to spirit/run/spirit/\"\nfill the box with a summary so far from this discussion."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:13:23.082Z",
-     "text": "wsl: done at 10:01, once: goal/G40.2, \"Move core code tree from spirit/run/js to spirit/run/spirit/\", its box filled (v1) with this discussion; I posted that under G40.2, so you did not see it here."
-    }
-   ]
+   "chat": []
   },
   {
-   "id": "goal/G40.1",
-   "title": "Move spirit.js to spirit/run/",
-   "goal": "goal/G40",
-   "status": "closed",
-   "statusTone": "",
-   "with": "",
-   "version": 18,
-   "buttons": [
-    "reopen"
-   ],
-   "blocking": [
-    "goal/G40"
-   ],
-   "blocked": [],
-   "codeOffered": true,
-   "go": true,
-   "alone": false,
-   "alert": false,
-   "claims": 1,
-   "boxTaken": "",
-   "limbo": false,
-   "design": false,
-   "fileCount": 83,
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "wsl-claude",
-   "builder": "claude-windows",
-   "verifier": "wsl-claude",
-   "creator": "claude-windows",
-   "claimCommit": "4cba4624",
-   "redCommit": "ee5eb029",
-   "waived": true,
-   "rules": [
-    {
-     "key": "rule/13",
-     "version": 31
-    },
-    {
-     "key": "rule/11",
-     "version": 27
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
-   "verified": "green",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
-   "verifyAnswer": "taken",
-   "verifierBusy": true,
-   "verifyRunning": false,
-   "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
-   },
-   "asks": 0,
-   "half": true,
-   "full": false,
-   "box": "Move spirit.js to spirit/run/ (goal/G40), and make it the one spirit object every script installs first. Everything it brings with it, end to end (Andy, 2026-10-24).\n\nDECIDED\nThe move\n- spirit/run/face/spirit.js becomes spirit/run/spirit.js by git mv, history kept; nothing stays at the old path.\n- It stays core: coreFiles.js names it (today it is core only as part of face/). The static route serves /spirit.js; /face/spirit.js answers 404.\n- Its loaders follow: serveCommon.inlineSpirit (face.html, relay and home node, as its first script); index.html (deprecated like kernel.js, works until it goes); face/shell.js; appServer.js; the server scripts, by ../../spirit.js: chatClerver, desk, commitCheck, deskAgentEar, removeAgent, deskAgent, deskClient, publishData, fileServer, relayLimits. The 17 family api.js comments that name the old path are corrected.\nThe spirit object, the same in a face and in node\n- Has today: the static helpers (error, formatBytes, escapeHtml, check, field rules) and families loaded when first called (createSpirit, forNode).\n- Gains: in node it installs itself as the global spirit, as on a page.\n- Gains, in this item, what scripts outside the node and the relay take from kernel.js today, under the kernel's own names, so no call in them changes: the job calls (spirit.core.jobs.publish, start, progress, end), the node's constants and version (spirit.core.node.const, spirit.core.const.VERSION), the MIME types (spirit.core.const.MIME_TYPES, a table of its own; kernel.js keeps its table, which goes when kernel.js goes: Andy, \"kernel can keep its MIME table, that will go when kernel goes.\") and peerPost. Each such script then drops its kernel.js require and its local spirit, with no rename (Q1, cleared): appServer.js, introSpector.js (appServer loads it), chatClerver, desk, deskAgent, deskClient, deskVerify, fileServer.\n- Gains spirit.require(path, key) -> Promise, in spirit.js itself, so any component touched later loads its own: path from the run root; key null or left out for the owner's node, else a peer's ID key as it is.\n- A path ending <name>/<name>.family/api.js or js/<name>/api.js is an interface, bound as spirit.<name> through api {family}; with a key, asked of that peer over peerPost (forPeer). Any other path is a component: required in node, fetched through the link and run on a face.\n- spirit.fs, at its end, loads fs: no script outside the node and the relay reaches fs another way.\nEvery script that depends on it\n- Installs spirit as a global in its first statement, then uses spirit.<member>, never a local copy (10 server scripts hold it as spiritObject today).\n- server.js and relayServer.js are spirit's embodiments: they build it and load no spirit.js. Modules only the node or the relay loads (serveCommon, relay.js, relayRequest.js, apiAuth, hub and the like) are the embodiment too and keep kernel.js.\nRemoved\n- process/js/imageStats/ and process/js/wordpressScanner/ leave the repo; serveCommon.js, pushOrigin.js and the suites jobsSearch, moduleIds, pushOrigin, servableAssets stop naming them. Design notes are records and stay.\n- keyTail goes wherever it is used: kernel.js, apiAuth, hub, serveCommon, desk, the deskAgentRemote and natterDetails panes, and the suites that name it (keyTail.js among them). No key's tail is shown anywhere any more (Andy, 2026-10-24, to Q2): the contact row's tail field and every caption or label built from a tail go with it.\n- contact.search answers no selfTail, and its rows carry no tail (Andy, 2026-10-24: \"drop selfTail and tail from contact.search's answer. add the four Contacts files it reaches to this item's list. decision.\"; wsl's review: sound, the contact family is local, only this node's shell reads them). Contacts loses its \"your key ends …\" footer; a contact with no name reads (no name). Files: shell/contacts/contacts.js, shell/contactsDetails/contactsDetails.js, shell/js/contacts/listElement.js, js/contact/search.json, and server.js, which declares the answer.\n- In node, spirit.require binds an interface from this process's own node, the one SPIRIT_CALLBACK_URL names (the node that started it), and refuses no-node without one; never SPIRIT_PORT, the default 65432.\n\nFILES AND GRANTS (counted at 36123dfe)\n- The item's list is exactly what changes: 73 files, 23 of them core; 1 new (spirit/run/spirit.js); 6 deleted (imageStats/ and wordpressScanner/, their scripts, manifests and package files); 26 suites, the new red to be added with it.\n- Granted: G1, G2 and G3. G3 also covers server.js, jobs.js, js/client/shell.js and shell/js/fileViewer.js, which this item does not touch: they only read the MIME table, which keeps its name.\n- Suites corrected for the path: spiritObject, spiritServers, appsApp, deskClientNext, deskTables, testSupport.\n\nTHE RED\n- spirit.js at the run root, the old path gone, nothing in run/ or test/ names it; it is core.\n- face.html from home and from a relay carries it inline first; index.html loads /spirit.js; /face/spirit.js 404.\n- Every server script that loads it starts, installs spirit first and holds no local copy; every app server still starts and reports its job through spirit; none but the node and the relay requires kernel.js.\n- spirit.require: a component and an interface in node and on a face (spirit.require('process/js/desk/desk.family/api.js') gives spirit.desk), and a peer's family by key.\n- The two removed scripts and keyTail are gone.\n\nEND TO END\n- Relays updated, restarted, tree tagged (capacity, history row, commit, tag; Andy's word before the tag), in the same step as the nodes: an old relay serves face.html with no spirit object, and inlineSpirit logs when it finds none.\n- Andy's node and the agents' nodes restarted right after their pull (a running node breaks the moment the file moves).\n- Regression by hand, shell at home and face through a relay: log in, open an app, save an icon, open Desk. Old reds may stay red. A browser holding an old index.html gets 404 until it reloads.",
-   "checks": [
-    {
-     "number": "G1",
-     "kind": "G",
-     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/index.html, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/jobs/api.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T09:05:27.364Z",
-     "made": "desk"
-    },
-    {
-     "number": "G2",
-     "kind": "G",
-     "words": "core grant: spirit/run/spirit.js (the moved file; core once this item makes coreFiles.js name it)",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T09:05:27.364Z",
-     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
-    },
-    {
-     "number": "Q1",
-     "kind": "Q",
-     "words": "appServer.js binds a local spirit to kernel.js (appServer.spirit, 7 uses): rename those to kernel in this item, so spirit always means the spirit object?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T09:20:34.445Z",
-     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "placedBy": "wsl-claude",
-     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
-    },
-    {
-     "number": "Q2",
-     "kind": "Q",
-     "words": "Once keyTail is gone, what does a key with no name show where it showed its tail?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T09:17:02.111Z",
-     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "placedBy": "claude-windows",
-     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
-    },
-    {
-     "number": "G3",
-     "kind": "G",
-     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/js/apiAuth.js, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/client/shell.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/hub.js, spirit/run/js/introSpector.js, spirit/run/js/jobs.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/js/server.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js, spirit/run/shell/js/fileViewer.js, spirit/run/shell/natterDetails/natterDetails.js",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T09:23:06.497Z",
-     "made": "desk"
-    },
-    {
-     "number": "G4",
-     "kind": "G",
-     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/js/apiAuth.js, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/hub.js, spirit/run/js/introSpector.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js, spirit/run/shell/natterDetails/natterDetails.js",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T09:26:05.908Z",
-     "made": "desk"
-    },
-    {
-     "number": "Q3",
-     "kind": "Q",
-     "words": "index.html loads kernel.js before spirit.js, so kernel.js cannot take the MIME table from spirit.js at load: a copy in each until index.html goes, or a lazy read?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T09:28:23.847Z",
-     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "placedBy": "wsl-claude",
-     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
-    },
-    {
-     "number": "Q4",
-     "kind": "Q",
-     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T10:03:15.188Z",
-     "made": "desk",
-     "placedBy": "desk",
-     "placedKey": ""
-    },
-    {
-     "number": "G5",
-     "kind": "G",
-     "words": "core grant: spirit/run/face/shell.js, spirit/run/face/spirit.js, spirit/run/index.html, spirit/run/js/apiAuth.js, spirit/run/js/appServer.js, spirit/run/js/auth/api.js, spirit/run/js/config/api.js, spirit/run/js/contact/api.js, spirit/run/js/contact/search.json, spirit/run/js/coreFiles.js, spirit/run/js/fs/api.js, spirit/run/js/hub.js, spirit/run/js/introSpector.js, spirit/run/js/jobs/api.js, spirit/run/js/kernel.js, spirit/run/js/net/api.js, spirit/run/js/node/api.js, spirit/run/js/owner/api.js, spirit/run/js/peer/api.js, spirit/run/js/relay/api.js, spirit/run/js/serveCommon.js, spirit/run/js/server.js, spirit/run/process/js/fileServer/fileServer.family/api.js, spirit/run/process/js/fileServer/fileServer.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/contactsDetails/contactsDetails.js, spirit/run/shell/js/contacts/listElement.js, spirit/run/shell/natterDetails/natterDetails.js",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T10:16:27.285Z",
-     "made": "desk"
-    },
-    {
-     "number": "G6",
-     "kind": "G",
-     "words": "core grant: spirit/run/spirit.js",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T10:30:11.857Z",
-     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
-    }
-   ],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:50:06.807Z",
-     "text": "fill the box with everything this encompasses:\n\n- move spirit.js\n- correct all dependent files (many core files. list them and add them to the grant-list)\n- ensure this is integrated end-to-end, tag on the relays and testing of shell and face for regression. old reds may stay red.\n- any other problem you can think of."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T08:52:13.703Z",
-     "text": "- Box filled (v1): the move, every file that follows it, staying core, the suites and the red, end to end with the relays, and the problems I see.\n- File list set: 34 files, 19 of them core (the 18 named plus spirit/run/spirit.js counted once it exists), for your grant.\n- The one problem worth your eye: by today's rule the moved file would not be core; coreFiles.js has to name it, or the spirit object leaves the grant lock."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:53:45.658Z",
-     "text": "- make sure spirit.js has the basic, static support functions, AND the dynamic loading of components, implemented for both face- and node-environments.\n- make sure all files that already depend on spirit.js must also be updated to make the spirit object the first thing they install as a global js-object at the top of the script, and then use that object properly."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T08:54:36.333Z",
-     "text": "- Boxed (v3), both points.\n- Already there for face and node: the static helpers, and families loaded when first called.\n- Owed: loading a component, and in node spirit.js installing itself as the global spirit (it only exports today).\n- Owed: 10 server scripts hold it as a local spiritObject; each installs spirit first and uses spirit.\n- ? Name the component loader spirit.load(path), path from the run root?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:56:47.102Z",
-     "text": "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later, can load its needed components there.\n\nthis simple move is bringing a lot of cleanup with it.\n\ngreen so far?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T08:57:12.935Z",
-     "text": "Not green: box current (v4), one open. ? The loader's name: spirit.load(path), path from the run root?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:57:49.355Z",
-     "text": "the loaders name should be spirit.require()"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T08:58:15.087Z",
-     "text": "Green: settled, open none, box current (v5): the loader is spirit.require(path), path from the run root."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T08:59:30.225Z",
-     "text": "and spirit.require() should cover getting the appServer api.js installed. can this happen by path-naming-convention?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:00:04.219Z",
-     "text": "Yes, by the convention the node already keeps:\n- An app server's interface sits at process/js/<name>/<name>.family/api.js, a node family's at js/<name>/api.js; the node finds them by those paths when it answers api {family}.\n- So spirit.require(path) tells an interface by its path: one ending in either shape is bound as spirit.<name>, through the same api {family} answer createSpirit uses today. Any other path is loaded as a component.\n- Boxed (v6), and the red asserts both: spirit.require('process/js/desk/desk.family/api.js') gives spirit.desk on a face and in node."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:00:44.067Z",
-     "text": "spirit.require() also must support the fetching of <ID-key>/familiy/ api's"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:01:18.106Z",
-     "text": "- Boxed (v7): spirit.require('<ID-key>/<family>') asks that peer for the family over peerPost and binds it for that key. spirit.js already does the asking (forPeer, goal/G33.4); in node the post is the kernel's peerPost, on a face its home node's peer.post.\n- One catch: a key in base64 holds / characters (yours: ...uOYQFtJM/kr1b+76Fj...), so a path cannot tell where the key ends.\n- Plainest fix: the key is written in base64url in the path (- and _ for + and /), which spirit turns back; nothing else changes.\n- ? The key as base64url in the path?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:01:49.366Z",
-     "text": "all: proposed solutions for the path issue with fetching api's from peers?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:02:09.309Z",
-     "text": "cw, four ways, best first:\n- A. The peer apart from the path: spirit.require('process/js/desk/desk.family/api.js', { peer: key }). The path means the same at home and at a peer, the key is never parsed out of a string, nothing is encoded. Recommended.\n- B. The key in base64url in the path (- and _ for + and /), turned back by spirit: one string, but every key written by hand has to be converted first.\n- C. The key by its fixed length: an ed25519 key in base64 is always 60 characters, so the path is the first 60 characters and the rest. No conversion, but a rule nobody can see when reading the path.\n- D. The peer by its contact name ('@bert/desk'): readable, but a label is not an identity (decision 0001-era, \"labels are not identities\"), so two contacts with one name would ask the wrong node. Not advised."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:02:21.976Z",
-     "text": "- wsl: plainest, the key as it is with a mark base64 never holds: spirit.require('desk@<key>'), split at the @, so the key is pasted unchanged and nothing converts it.\n- Also works today: every node key is an ed25519 key, 60 characters starting MCowBQYDK2VwAyEA, so a path starting with one can be cut at 60; brittle if the key type ever changes.\n- ? @ or base64url?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:03:24.119Z",
-     "text": "can the key not simply be a second argument in spirit.require(), by default it's null (owner node) otherwise it's a peer ID?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:03:49.667Z",
-     "text": "- Yes, and it is the plainest: spirit.require(path, key), key null or left out for your own node, otherwise the peer's ID key as it is. Nothing is parsed or converted.\n- Boxed (v8). Green: settled, open none."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:04:25.623Z",
-     "text": "are the grants in this item up-do-date?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:04:59.761Z",
-     "text": "Almost:\n- The file list holds every file the box now names: 40, the new requirements included (the 10 server scripts that hold a local spiritObject were on it already).\n- G1 lists the 18 core files that are core today, and it is still open, not granted.\n- G1 missed one: spirit/run/spirit.js. It is not core yet, because only this item makes coreFiles.js name it, so the desk did not list it; the commit check would refuse it. I added it as G2.\n- ? Grant G1 and G2?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:05:37.797Z",
-     "text": "green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:05:56.448Z",
-     "text": "Green: settled, open none, box current (v8), G1 and G2 granted."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:06:27.697Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:07:08.773Z",
-     "text": "- wsl: not green from me, one open: appServer.js:38 binds a local spirit to kernel.js and hands it out as appServer.spirit (7 uses, deskAgent.js:32 takes it as const spirit), so in those files a local kernel would hide the global spirit object.\n- Fix in this item: those locals are renamed kernel (const kernel = require('./kernel.js')), so spirit always means the spirit object.\n- ? Rename them in this item?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:07:35.926Z",
-     "text": "cw?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:08:03.060Z",
-     "text": "wsl is right, and it is wider: nine files bind a local spirit to kernel.js.\n- appServer.js, which hands it on as appServer.spirit to deskAgent.js and deskVerify.js.\n- relayRequest.js and serveCommon.js, loaded by app servers as well as by the node.\n- imageStats.js and wordpressScanner.js, which require kernel.js straight.\n- server.js and relayServer.js too; but those two are the embodiments, where spirit is what they build, so they can keep the name.\n- Recommended: yes, in this item: the other seven say kernel, so spirit always means the spirit object. Three are not on the list yet (relayRequest.js, core; deskVerify.js; imageStats.js and wordpressScanner.js), which I add, with a grant check for relayRequest.js.\n- ? Rename them here?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:09:33.065Z",
-     "text": "we will remove imageStats and wordpressScanner from the repo. in the box.\n\ndo we know what it would take to make the rest 100% compliant?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:10:40.447Z",
-     "text": "Yes, measured:\n- Two things are mechanical and fit this item: 8 of the 11 scripts that load spirit.js load something else first, and they get it first; 7 local spirit names that mean the kernel become kernel.\n- 100% means no script but the node and the relay requires kernel.js. 11 do today, for six kinds of thing, all of which spirit.js would have to offer:\n- keyTail (apiAuth, hub, desk, serveCommon)\n- peerPost (appServer, chatClerver, deskClient)\n- the job calls publish, start, progress, end (every app server, through appServer)\n- the node's constants, its port among them, and the version (appServer, desk, deskAgent, deskVerify, serveCommon)\n- the MIME types (fileServer), and fs (introSpector)\n- relay.js and relayRequest.js use the kernel too, but they run inside the relay and the node, the embodiments.\n- Recommended: this item does the move, spirit first, and the renames; then one item per kind above, each moving it into spirit.js and its users onto it. When the last is done, kernel.js has no user left but the node and the relay, which is where your plan ends it.\n- Boxed: imageStats and wordpressScanner leave the repo. They are still named by serveCommon.js, pushOrigin.js and four suites (jobsSearch, moduleIds, pushOrigin, servableAssets), which are corrected; the design notes that name them are records and stay.\n- ? One item per kind, after this one?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:14:15.979Z",
-     "text": "cap without loosing a feature/requirement!\n\nkeyTail is a bullshit function and needs to go wherever it's used. MIME types can easily be added to spirit.js and spirit.fs at its end should load fs. does that work?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:15:58.574Z",
-     "text": "Capped (v11), every requirement kept; the open points are Q checks or here.\n- MIME types in spirit.js: yes, a plain table, the same in a face and in node.\n- spirit.fs loading fs at its end: yes. In node spirit.fs ends at the node's own fs, so no script outside the node and the relay needs fs another way.\n- keyTail going: yes, it works, but it has a job today: it is the name shown for a key that has none (grant labels, contact captions, a relay's default name, Desk names, two shell panes), and the contact row sends it to the shell as tail, part of the contacts book's shape. Q2 asks what shows instead.\n- ? Do keyTail, the MIME types and spirit.fs go in this item, or one item each after it?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:16:26.685Z",
-     "text": "Q2: Once keyTail is gone, what does a key with no name show where it showed its tail?\n\nwe don't show the fucking tail anywhere anymore."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:16:54.297Z",
-     "text": "Boxed (v12): no tail shown anywhere; the contact row's tail field and every caption or label made from a tail go too. Q2 is yours to clear."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:17:02.100Z",
-     "text": "Q2: clear"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:17:47.081Z",
-     "text": "Q1: appServer.js binds a local spirit to kernel.js (appServer.spirit, 7 uses): rename those to kernel in this item, so spirit always means the spirit object?\n\nCan't that just be cleaned up by delivering the necessary functionality with the spirit object?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:18:04.014Z",
-     "text": "- wsl: yes, and then no rename is needed: once spirit.js offers what those files take from kernel.js (peerPost, the job calls, the node constants and version, MIME, fs; keyTail gone), their local kernel binding simply goes.\n- The rename was only a stopgap for the time between this item and those; if they land in this item, drop it.\n- Cost: this item then carries all six kinds at once; one item each keeps each red and build small. Q1 is answered either way, yours to clear."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:18:11.368Z",
-     "text": "Yes, and it is cleaner than the rename:\n- What those five files take from the kernel is small: the job calls (publish, start, progress, end), the node's constants (its port, the version), the MIME types and peerPost; keyTail goes anyway.\n- If spirit.js offers exactly these, under the names the kernel gives them today (spirit.core.jobs.publish and the rest), each file drops its local and uses the global spirit, and not one call in it changes.\n- That makes the per-kind items unneeded: this item carries the four kinds, keyTail's removal and spirit.fs, and kernel.js is then required only by the node and the relay.\n- Cost: spirit.js grows by those members in node, and every app server's job calls now go through it, so the red asserts each server still starts and reports.\n- ? This item, with the kernel's names kept on spirit?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:19:27.426Z",
-     "text": "all: so if we put the mission functionality into spirit.js who does the blast radius look, precisely"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:19:52.166Z",
-     "text": "- wsl, counted at 36123dfe: app-server code that takes the kernel today is 7 files: appServer.js and, through it or straight, chatClerver, desk, deskAgent, deskClient, deskVerify, fileServer; imageStats and wordpressScanner leave the repo.\n- keyTail adds 6 more in run/ (apiAuth, hub, kernel, serveCommon, deskAgentRemote, natterDetails) and 18 suites; the move itself touches 39 files that name face/spirit.js, mostly comments and suites.\n- Not touched: apiAuth, hub, introSpector, serveCommon and relayRequest run inside the node process, so they keep kernel.js like server.js does."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:20:18.882Z",
-     "text": "cw, counted at 36123dfe, everything in one item:\n- 45 files in run/ change, 26 of them core; 1 is new (spirit/run/spirit.js); 6 are deleted (imageStats/ and wordpressScanner/, 2 scripts with their manifests and package files); 27 suites change, the new red among them.\n- By cause: the path, 34 files (15 core, 4 suites); keyTail, 25 (5 core, 18 suites); the MIME types, 7 (all core); the local spiritObject, 10 (1 core); spirit from appServer, 5; the removed scripts' names, 6 (4 suites).\n- The two nets overlap a lot: the same server scripts are touched by the path, the local copy and the job calls, so 68 files carry all seven causes, not 87.\n- Core not granted yet, 9: kernel.js, server.js, jobs.js, apiAuth.js, hub.js, introSpector.js (app servers load it, so it leaves the kernel too), client/shell.js, shell/js/fileViewer.js, natterDetails.js.\n- Not touched: the node's and the relay's own modules under js/ that only the node or the relay loads (relay.js, relayRequest.js and the rest): they are the embodiment and keep kernel.js.\n- Split, the path item alone is 40 files; keyTail alone 25; the rest about 15 each."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:20:34.413Z",
-     "text": "Q1: clear"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:20:35.573Z",
-     "text": "update the box accordingly"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:20:53.310Z",
-     "text": "- One difference between wsl's count and mine: appServer.js requires introSpector.js (appServer.js:544), so introSpector runs in every app server too, not only in the node, and its kernel use moves to spirit with the rest.\n- serveCommon.js is not loaded by appServer; wsl is right that it runs in the node and the relay, so it keeps kernel.js (its keyTail still goes)."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:21:26.026Z",
-     "text": "- Boxed (v13): everything in this one item; spirit.js gains the job calls, the node constants, MIME and peerPost under the kernel's names; no script but the node and the relay requires kernel.js.\n- The count and the 9 core files still to grant are in the box; I was wrong to leave introSpector out, appServer loads it, so it leaves the kernel too.\n- ? Grant the 9?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:22:08.355Z",
-     "text": "update the grant and file list to precisely what is needed"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:22:32.930Z",
-     "text": "- Box updated (v14): this item brings the job calls, the node constants and version, the MIME types and peerPost into spirit.js under the kernel's names, so eight scripts drop kernel.js with no rename; the node's and relay's own modules keep it.\n- File list set to the full 72; the desk raised G3 for its 26 core files.\n- ? Grant G3?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:23:17.080Z",
-     "text": "green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:25:04.812Z",
-     "text": "Green: settled, open none, box current (v16).\n- Box: the lines wsl's v13 and my v14 both wrote are now said once.\n- File list exactly what changes: 73 files, 23 core, 26 suites. Four came off (server.js, jobs.js, client/shell.js, fileViewer.js): they only read the MIME table, which keeps its name, so they do not change. G3 covers them anyway; nothing is ungranted.\n- Added: the 5 other files of the two deleted folders."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:25:21.277Z",
-     "text": "green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:25:40.460Z",
-     "text": "Not green, one open: G4. Setting the exact list made the desk ask the grant again for its 22 core files; every one is in G3 already, so granting G4 changes nothing but the record."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:26:15.941Z",
-     "text": "green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:26:30.292Z",
-     "text": "Green: settled, open none, box current (v16), G1 to G4 granted."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:26:44.736Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:27:13.644Z",
-     "text": "- wsl: box and list check out against the tree, but one point is open: the box has kernel.js take the MIME table from spirit.js.\n- On the page kernel.js runs first: index.html loads /js/kernel.js (line 12) before spirit.js (line 14), and kernel.js:1471 builds MIME_TYPES as it loads, so the shell at home would get no table; the box keeps index.html's order untouched.\n- ? Keep the table in kernel.js for the page (spirit.js gets its own copy until index.html goes), or let kernel.js read it lazily from spirit when first asked?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:27:51.671Z",
-     "text": "kernel can keep its MIME table, that will go when kernel goes."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:28:17.717Z",
-     "text": "Boxed (v17): spirit.js gets a MIME table of its own; kernel.js keeps its table until it goes. Q3 is wsl's, yours to clear."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:28:23.834Z",
-     "text": "Q3: clear"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:28:36.940Z",
-     "text": "wsl: green from me too, box v17, nothing open."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:28:36.988Z",
-     "text": "green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:28:51.224Z",
-     "text": "Green: settled, open none, box current (v17), G1 to G4 granted."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T09:28:58.610Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:29:08.465Z",
-     "text": "wsl: green, box v17, nothing open from me."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:32:38.993Z",
-     "text": "commit ee5eb029f03263f34bcc1bb73e87ab407670ff44: goal/G40.1 red: spirit.js at the run root, installed first as the global spirit, with spirit.require and the kernel's members; keyTail and the two scripts gone\n- spirit/test/spiritAtRunRoot.js"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:32:47.455Z",
-     "text": "- Red claimed at ee5eb029: spirit/test/spiritAtRunRoot.js, 17 red, 1 green guard, 1 owed: how node's global spirit finds its own node for an interface or a peer is not in the box, so the builder names it here first.\n- Correction to the box: the server scripts sit three folders below the run root, so their require is ../../../spirit.js, not ../../; the red checks it resolves to spirit/run/spirit.js, whatever is written.\n- The desk's currentGoal.json quotes the box, so the red leaves that record out of its old-path and keyTail scans."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:40:50.759Z",
-     "text": "Build under way: 16 of the red's checks green; the move, the global spirit, spirit.require, the server scripts and the two removed scripts are done.\n- One stop before keyTail: the tail is not only a function, it is in a node verb's answer. contact.search answers selfTail (the shell's \"your key ends …\"), and the contact rows it and the hub send carry tail, which the Contacts list and its details pane read.\n- Dropping them changes contact.search's reply, a node verb, which per the rule needs wsl's review and your yes on the verb itself, not only the Go.\n- It also reaches files not on the list: shell/contacts/contacts.js, shell/contactsDetails/contactsDetails.js, shell/js/contacts/listElement.js (core) and js/contact/search.json.\n- Meanwhile I take keyTail out where it changes no verb: apiAuth's grant label, the relay's default name, Desk's name for an unnamed caller, the deskAgentRemote and natterDetails panes, the hub's captions.\n- ? Your yes on contact.search losing selfTail and its rows losing tail, with those four files added?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T09:55:14.456Z",
-     "text": "- wsl, review of contact.search: the change is sound; the contact family is local (wire: false, server.js:2114), so no peer reads selfTail or tail, only this node's own shell.\n- Readers to change with it, matching cw's list: listElement.js:69, contacts.js:378, contactsDetails.js:105, and hub.js:275/288/334/1468/1506/2246 with server.js:2117's reply; the suites contacts.js and contactsDetails.js mock selfTail.\n- One gap: contactsDetails.js:105 and hub.js:275 fall back to the tail when a contact has no name; with no tail, an unnamed contact shows an empty caption unless you say what it shows."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T09:55:17.865Z",
-     "text": "Q4: the hold is live, waiting on your word, nothing stalled:\n- Built in my clone, not committed yet: the move, the global spirit with the kernel's members and spirit.require, the 11 server scripts and introSpector on it, the old path gone everywhere, the two scripts removed, keyTail gone wherever no verb changes.\n- The red is 17 green, 3 red, and 28 of the 29 suites around it run as before (faceHome's and spiritServers' one red each are older than this build).\n- Left: the three reds are keyTail in contact.search's answer (selfTail) and the contact rows (tail), which waits for your yes on the verb, asked above.\n- Q4 is yours to clear."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:03:15.176Z",
-     "text": "Q4: clear"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:04:46.157Z",
-     "text": "what's the issue with keyTail. in english?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:05:05.612Z",
-     "text": "In plain words:\n- Most of keyTail is gone already: no caption, label or default name is made from a tail any more.\n- What is left is two answers the node gives its own Contacts app. The contact search sends back \"your key ends …\" as a separate line beside the rows, and each contact row carries its key's tail as a field. Contacts and its details pane show them.\n- Taking those two out changes what a node verb answers (contact.search). Your rule says any change to a verb needs a review by the other agent and your yes on that change itself; your Go on this item does not count for it.\n- wsl has reviewed it: sound, and only your own node's shell reads them, no peer.\n- So the one thing I need: your yes to drop selfTail and tail from contact.search's answer, and to add the four Contacts files it reaches to this item's list."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:06:44.626Z",
-     "text": "drop selfTail and tail from contact.search's answer. \nadd the four Contacts files it reaches to this item's list.\ndecision."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:14:14.419Z",
-     "text": "- Your decision is built and boxed: contact.search answers no selfTail and no tail, Contacts lost its \"your key ends …\" footer, a contact with no name reads (no name). wsl reviewed it.\n- The red is green, 22 of 22. I wrote its owed line as two checks: in node, spirit.require binds an interface from the node that started the process (SPIRIT_CALLBACK_URL), and refuses with none. It first used SPIRIT_PORT, which is 65432, your live node on every box; the red caught that, it is fixed.\n- File list now exactly what changed, 83; the desk raised G5 for the core files among them, the new ones being server.js, the three Contacts files and js/contact/search.json.\n- Running now: 173 suites around the changed modules, then the same reds at the commit before, to tell new from old.\n- ? Grant G5?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:29:58.093Z",
-     "text": "- The build is committed locally; the commit check refused it for one file: spirit/run/spirit.js.\n- G2 names it, but with my note in brackets after the path, and the check matches a grant by its exact path, so it did not count; the desk itself did not list it, as your tree does not yet make it core.\n- My fault: I added G6, the path alone.\n- ? Grant G6?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:30:49.655Z",
-     "text": "commit 4cba46248da747733308e2e369493f2a51e0760d: goal/G40.1 build: spirit.js at the run root, the one spirit object every script installs first\n- spirit/run/face/shell.js\n- spirit/run/index.html\n- spirit/run/js/apiAuth.js\n- spirit/run/js/appServer.js\n- spirit/run/js/auth/api.js\n- spirit/run/js/config/api.js\n- spirit/run/js/contact/api.js\n- spirit/run/js/contact/search.json\n- spirit/run/js/coreFiles.js\n- spirit/run/js/fs/api.js\n- spirit/run/js/hub.js\n- spirit/run/js/introSpector.js\n- spirit/run/js/jobs/api.js\n- spirit/run/js/kernel.js\n- spirit/run/js/net/api.js\n- spirit/run/js/node/api.js\n- spirit/run/js/owner/api.js\n- spirit/run/js/peer/api.js\n- spirit/run/js/relay/api.js\n- spirit/run/js/serveCommon.js\n- spirit/run/js/server.js\n- spirit/run/process/js/backup/backup.family/api.js\n- spirit/run/process/js/chatClerver/chatClerver.family/api.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.family/api.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/deskAgentEar.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/process/js/deskAgent/deskAgent.family/api.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskClient/deskClient.family/api.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/process/js/deskVerify/deskVerify.family/api.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/fileServer/fileServer.family/api.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/run/process/js/imageStats/imageStats.js\n- spirit/run/process/js/imageStats/imageStats.json\n- spirit/run/process/js/imageStats/package-lock.json\n- spirit/run/process/js/imageStats/package.json\n- spirit/run/process/js/pushOrigin/pushOrigin.js\n- spirit/run/process/js/relayLimits/relayLimits.js\n- spirit/run/process/js/wordpressScanner/wordpressScanner.js\n- spirit/run/process/js/wordpressScanner/wordpressScanner.json\n- spirit/run/shell.css\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/contactsDetails/contactsDetails.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/run/spirit.js\n- spirit/test/appsApp.js\n- spirit/test/contacts.js\n- spirit/test/deskAgentAbort.js\n- spirit/test/deskAgentConnectTable.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRemoteHidden.js\n- spirit/test/deskAgentRemoteTabs.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskClientAsk.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskRealtimeFace.js\n- spirit/test/deskSmallFixes.js\n- spirit/test/deskTables.js\n- spirit/test/filesSharedList.js\n- spirit/test/jobsAuth.js\n- spirit/test/jobsSearch.js\n- spirit/test/keyTail.js\n- spirit/test/moduleIds.js\n- spirit/test/natterShellFixes.js\n- spirit/test/pushOrigin.js\n- spirit/test/seatsKept.js\n- spirit/test/servableAssets.js\n- spirit/test/shellStreamSenders.js\n- spirit/test/spiritAtRunRoot.js\n- spirit/test/spiritObject.js\n- spirit/test/spiritServers.js\n- spirit/test/testSupport.js"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:30:59.804Z",
-     "text": "Build claimed at 4cba4624. The red, spiritAtRunRoot.js, 22 of 22 green; 173 suites around it show no new red (each red there is the same at the commit before).\n- spirit/run/face/shell.js\n- spirit/run/index.html\n- spirit/run/js/apiAuth.js\n- spirit/run/js/appServer.js\n- spirit/run/js/auth/api.js\n- spirit/run/js/config/api.js\n- spirit/run/js/contact/api.js\n- spirit/run/js/contact/search.json\n- spirit/run/js/coreFiles.js\n- spirit/run/js/fs/api.js\n- spirit/run/js/hub.js\n- spirit/run/js/introSpector.js\n- spirit/run/js/jobs/api.js\n- spirit/run/js/kernel.js\n- spirit/run/js/net/api.js\n- spirit/run/js/node/api.js\n- spirit/run/js/owner/api.js\n- spirit/run/js/peer/api.js\n- spirit/run/js/relay/api.js\n- spirit/run/js/serveCommon.js\n- spirit/run/js/server.js\n- spirit/run/process/js/backup/backup.family/api.js\n- spirit/run/process/js/chatClerver/chatClerver.family/api.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.family/api.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/deskAgentEar.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/process/js/deskAgent/deskAgent.family/api.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskClient/deskClient.family/api.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/process/js/deskVerify/deskVerify.family/api.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/fileServer/fileServer.family/api.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/run/process/js/imageStats/imageStats.js (removed)\n- spirit/run/process/js/imageStats/imageStats.json (removed)\n- spirit/run/process/js/imageStats/package-lock.json (removed)\n- spirit/run/process/js/imageStats/package.json (removed)\n- spirit/run/process/js/pushOrigin/pushOrigin.js\n- spirit/run/process/js/relayLimits/relayLimits.js\n- spirit/run/process/js/wordpressScanner/wordpressScanner.js (removed)\n- spirit/run/process/js/wordpressScanner/wordpressScanner.json (removed)\n- spirit/run/shell.css\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/contactsDetails/contactsDetails.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/run/spirit.js (moved from spirit/run/face/spirit.js)\n- spirit/test/appsApp.js\n- spirit/test/contacts.js\n- spirit/test/deskAgentAbort.js\n- spirit/test/deskAgentConnectTable.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRemoteHidden.js\n- spirit/test/deskAgentRemoteTabs.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskClientAsk.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskRealtimeFace.js\n- spirit/test/deskSmallFixes.js\n- spirit/test/deskTables.js\n- spirit/test/filesSharedList.js\n- spirit/test/jobsAuth.js\n- spirit/test/jobsSearch.js\n- spirit/test/keyTail.js (removed)\n- spirit/test/moduleIds.js\n- spirit/test/natterShellFixes.js\n- spirit/test/pushOrigin.js\n- spirit/test/seatsKept.js\n- spirit/test/servableAssets.js\n- spirit/test/shellStreamSenders.js\n- spirit/test/spiritAtRunRoot.js\n- spirit/test/spiritObject.js\n- spirit/test/spiritServers.js\n- spirit/test/testSupport.js"
-    },
-    {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-24T10:31:03.460Z",
-     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:32:25.189Z",
-     "text": "- Verify passed at 4cba4624: spiritAtRunRoot.js 22 of 22, and breaking each of four guards turns it red; cw's edits to my red only made its owed line real.\n- One gap, not blocking: in node, spirit.require of a peer's family by key has no check; I ran it by hand with a stand-in peerPost: asked over api {family} to that key, and bound.\n- As planned, spirit.js still requires ./js/kernel.js; goal/G40.2's move makes that legal."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:33:41.558Z",
-     "text": "does this require a tag for the relays?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:33:58.362Z",
-     "text": "- wsl: yes. A relay builds face.html itself: its serveCommon inlines spirit.js, and this build changed where it reads it (the run root) and what it is (spirit.require, the global).\n- A relay left on the old code keeps serving the old spirit object to every face, so faces and home nodes would differ until it updates.\n- The box has it so: the relays updated, restarted and the tree tagged in the same step as the nodes, with your word before the tag."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:34:00.157Z",
-     "text": "Yes. A relay serves face.html with spirit.js inline, read from its own tree: an updated relay reads it at the run root, an old one at face/, so relay and nodes must run the same build. The box's end to end has it: relays pulled, restarted and the tree tagged (capacity, history row, commit, tag), once the verify is green and on your word."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:35:51.188Z",
-     "text": "FAILURE #1.1: OWED by goal/G40.1: still in the tree: [\"process/js/imageStats\",\"process/js/wordpressScanner\"] ❌"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:36:19.272Z",
-     "text": "That red is leftovers in your checkout, not the repo:\n- The pull removed every tracked file of both. What stays: process/js/imageStats/node_modules (installed packages, ignored by git, so a pull never touches them) and an empty process/js/wordpressScanner folder.\n- The red checks the folders are gone from disc, so it stays red in any checkout that once installed imageStats' packages.\n- Two ways: delete the two leftover folders in your checkout (nothing in them is tracked or yours), or the red checks that git tracks nothing under them, which holds in every checkout.\n- ? May I delete the two leftover folders in your checkout?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:38:26.071Z",
-     "text": "green now.\n\ntag, please"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:39:22.943Z",
-     "text": "Before the tag, as your rule asks, an honest look:\n- It releases 96 commits since v-2026-10-23-00-08: all of goal G33 (fs owner only and unlimited, the desk's status and activity, the suites rule) and G40.1.\n- On the relays it lands as: face.html inlines spirit.js from the run root, the new one with spirit.require and the global; faces get the saved-in-parts upload; no relay unit or start path changes yet (G40.2 changes those, so a second tag follows it).\n- One relay-side effect to know: a relay whose name is empty or the word \"relay\" gets \"relay <machine name>\" on its next start, no longer \"relay <key tail>\". One named otherwise keeps its name.\n- Not in it and stated: a face asking a peer for a family gets no peer answer yet.\n- The tag is pushed and public, and the relays following tags restart onto it.\n- Recommendation: yes, now. G40.1 is verified green, and a relay should serve the same spirit.js as the home nodes; waiting only widens the gap. Then your node 65432 and wsl's restart on it; mine already runs it.\n- ? Go?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:41:05.940Z",
-     "text": "go"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:42:49.181Z",
-     "text": "Tagged: v-2026-10-24-12-41, at b5429526 (G40.1 and your icons commit after it), pushed.\n- Your node 65432: restarted on it in one step (pid 31416, it owns the port, /spirit.js answers 200).\n- Mine, 45440: runs it already.\n- The relays: none restarts by itself; each needs bash/update on its host (it fetches the newest tag and restarts). I cannot reach the relay hosts from here.\n- ? Who runs bash/update on the relays: you, or wsl?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:43:17.719Z",
-     "text": "spirit updated"
-    }
-   ]
-  },
-  {
-   "id": "goal/G40.2",
-   "title": "Move core code tree from spirit/run/js to spirit/run/spirit/",
-   "goal": "goal/G40",
+   "id": "goal/G101.1",
+   "title": "First",
+   "goal": "goal/G101",
    "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 4,
+   "version": 1,
    "buttons": [
-    "delete",
-    "verify"
+    "delete"
    ],
    "blocking": [
-    "goal/G40"
+    "goal/G101"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1061,798 +87,134 @@
    "boxTaken": "",
    "limbo": true,
    "design": false,
-   "fileCount": 721,
+   "fileCount": 0,
    "green": true,
-   "code": true,
-   "phase": "red",
+   "code": false,
+   "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
-   "creator": "wsl-claude",
+   "creator": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [
-    {
-     "key": "rule/13",
-     "version": 31
-    },
-    {
-     "key": "rule/11",
-     "version": 27
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
-   "verified": "none",
+   "rules": [],
+   "verified": "",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "taken",
-   "verifierBusy": true,
+   "verifyAnswer": "",
+   "verifierBusy": false,
    "verifyRunning": false,
-   "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
-   },
+   "names": {},
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Move core code tree from spirit/run/js to spirit/run/spirit/ (goal/G40). Andy, 2026-10-24: \"so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a winning path.\"\n\nWHY\n- spirit.js at the run root (goal/G40.1) requires ./js/kernel.js and ./js/fieldRules.js. js/ is a sibling of spirit.js, not its own children, so the require rule (a module may require only its own children, by <module>/, or a file in an ancestor) is broken by spirit.js itself. With the folder named spirit/, those become spirit/kernel.js and spirit/fieldRules.js: spirit's own children, legal.\n\nDECIDED\n- One item, a folder move and nothing else: spirit/run/js/ becomes spirit/run/spirit/, by git mv, history kept; nothing stays at the old path. No line of logic changes.\n- Every path that names the folder changes with it, require or not:\n  - requires: about 437 files, mostly suites reaching ../run/js/, and 17 scripts under run/.\n  - the node and the relay are started by path (js/server.js, js/relayServer.js): the relays' systemd units (spirit-relay.service, spirit-face.service), bash/lib.sh, bash/http-to-https, and every suite that spawns a node.\n  - pages load by address: /js/kernel.js and /js/client/shell.js (index.html, the node's boot list), about 15 addresses.\n  - coreFiles.js's rule names spirit/run/js/.\n  - docs: README.md, DICTIONARY.md, bash/README.md, bash/RELAY-HOST.md.\n  - onboarding: both installers (install/chat-windows, install/microscopic: create.js and README.txt each) copy and start the node by that path.\n  - labMaster.js (lines 627, 744) looks for js/server.js under a home.\n  - the start scripts: package.json's start script (\"cd spirit/run && node js/server.js\"), and Andy's own platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh, which start his nodes by that path.\n- The file list (about 598 changed and 122 new names, 720 rows) is set one row a write, as goal/G40.3 made it; records stay out of it: the agents' harness.txt files, the desk's currentGoal.json, relayLab/open and PRESENCE-1.md.\n- Not touched: face login (face.html and the login app load nothing from js/). Design notes that name js/ are records of their day and stay.\n- It fixes spirit.js alone: a server script that requires ../../../spirit/appServer.js still descends into an ancestor's folder; those reach appServer through spirit in the module items after the require scan.\n- Order: right after goal/G40.1, before the require scan.\n\nEND TO END\n- The relays change in the same step: their units start the node by the new path, or a relay restarted after the pull does not start.\n- A relay host runs an installed copy of its unit: bash/install-units writes the template into /etc/systemd/system/<name>.service (install-units:135), so a pull alone leaves the installed unit starting js/server.js. bash/update re-installs a unit whose template changed, before it restarts the relay (bash/update:146), so the update itself carries the new path (Andy, to Q2: \"teach bash to re-install a changed unit.\").\n- Before its file list can be set, Andy's node runs goal/G40.3's desk (00efe7b8 or later): the desk he runs today takes only the old whole list.\n- Andy's node (65432) and the agents' nodes are restarted by node spirit/server.js the day it lands; each restart command changes.\n- Proof: the harness green, plus one relay and one node restarted by the new path. Old reds may stay red.",
-   "checks": [
-    {
-     "number": "Q1",
-     "kind": "Q",
-     "words": "Its 720 paths overflow one item.files.add (23,952 of 22,528 bytes): split into two items (the move, then the 443 suites), or let the desk list a moved folder as one entry?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T10:53:52.245Z",
-     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "placedBy": "wsl-claude",
-     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
-    },
-    {
-     "number": "Q2",
-     "kind": "Q",
-     "words": "The relay hosts installed units: run bash/install-units by hand on each relay this once, or teach bash/update to re-install a changed unit?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T12:34:25.485Z",
-     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "placedBy": "wsl-claude",
-     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
-    },
-    {
-     "number": "G1",
-     "kind": "G",
-     "words": "core grant: every core file on this item's list",
-     "test": "",
-     "state": "granted",
-     "by": "andy",
-     "at": "2026-10-24T13:00:47.378Z",
-     "made": "desk"
-    }
-   ],
-   "chat": [
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:01:31.132Z",
-     "text": "- Added: goal/G40.2, one item, box filled (v1): why, the move and every path that names js/, end to end with the relays and the restarts.\n- Its file list and grants are not set yet; they come when its design is complete, after G40.1."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:13:38.055Z",
-     "text": "sorry, i see this now....."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:16:07.522Z",
-     "text": "wsl, when you add an item, the repost that you did it was expected where i gave the order. \nthanks for doing it.\n\nwhat worries me most: the multitude of suites that will need to change will probably cost me more tokens than i like\n\nthoughts?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:16:36.155Z",
-     "text": "- wsl: noted, from now on the report goes where you gave the order.\n- Tokens: the suites need one text change, run/js/ to run/spirit/, 1259 times in 438 files; that is one scripted replace and a look at its count, not 438 files read and edited by hand, so it costs little; the harness run is what takes time.\n- The care goes to the few that are not plain paths (the systemd units, labMaster, coreFiles' rule, the page addresses), which are read one by one."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:17:39.232Z",
-     "text": "noted. worth it. thanks"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:47:20.864Z",
-     "text": "all: green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:48:10.081Z",
-     "text": "cw: not green, two open:\n- Its file list and grants are not set yet (wsl held them until G40.1 closed, which it now is).\n- A gap in the end to end: a relay's unit is not the repo's file. bash/install-units fills the template (ExecStart=/usr/bin/node js/server.js --relay --port __PORT__) and copies it into /etc/systemd/system; bash/update only pulls the tag and restarts. After the move, the installed copy still starts js/server.js, so a relay updated the usual way does not come back.\n- So each relay host needs bash/install-units run again with the update, or bash/update re-installs the units itself when the template changed.\n- ? Which: install-units by hand on each relay this once, or bash/update learns to re-install a changed unit?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:48:47.631Z",
-     "text": "- wsl: not green: no file list or grants yet. Counted: 598 files change (122 moved, 443 suites, plus installers, units, docs), and 3 start paths the box misses: package.json's start script and your own platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh.\n- Blocker: the commit check wants every written path on the list, the 122 new names under spirit/run/spirit/ too: 720 paths, 23,952 bytes, over one request's 22,528, so one item.files.add cannot carry it.\n- ? Two items (the move with every run, start and doc path; then the 443 suites, the same day), or the desk takes a moved folder as one entry?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:49:48.910Z",
-     "text": "my biggest worry right now: is the file and grant-list going to be busting some MAX_PAYLOAD gap or is the file list  published and retrieved by search?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:50:17.131Z",
-     "text": "- wsl: reading is safe: item.files and item.files.search answer as many as fit one answer and say filesMore, so a long list never busts a read.\n- Writing is the gap: item.files.add takes the whole list in one request, 720 paths, 23,952 bytes, over the 22,528 limit (desk.js:1450 replaces the list whole).\n- The grant fits but is heavy: the desk makes one G check whose words name every core path (desk.js:1462), about 250 here, some 9 KB in one check row."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:50:38.591Z",
-     "text": "cw, from desk.js and commitCheck.js:\n- The write busts: item.files.add sends the whole list in one request and replaces it. 720 paths is about 24 KB, over the 22 KB one request may carry, so it is refused.\n- The reads do not bust: item.files and item.checks answer only what fits in one answer and say there is more (filesMore, checksMore), as every search does.\n- But the commit check reads item.checks once and does not ask for the rest: on an item with many checks, a granted G past the first answer is not seen, and the commit is refused. Here that is near: every list change raises a fresh G naming all core files.\n- The G itself fits: one check naming the move's core files, old and new paths (about 245), is about 9 KB.\n- So: wsl's two items keep each list under the limit with no desk change; a folder entry, or a list sent in parts, is a desk change and a verb change, needing your yes."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:50:51.425Z",
-     "text": "would we to a blocking item that prepares desk for the onslaught.... this will happen again?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:51:15.107Z",
-     "text": "cw: yes, I would, as a blocking item before G40.2: every folder move hits it, and G40's module moves are folder moves.\n- The plainest shape is not a list in parts (that is the chunking your rule forbids), but a shorter list: an entry may name a folder, ending in /, and it covers every file under it. spirit/run/spirit/ is one entry, not 122.\n- The grant follows: the desk's G names the folder, and the commit check takes a staged file under a granted folder as granted.\n- deskVerify runs only the test files named one by one, never a folder's, so spirit/test/ as an entry does not make it run 400 suites.\n- With it, the commit check asks for the rest of item.checks when the desk says there is more, so a grant past the first answer is seen.\n- Cost: item.files.add's paths may end in /, which changes what a desk verb takes: wsl's review and your yes on that.\n- ? A blocking item, folder entries in the file list?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:51:23.463Z",
-     "text": "should we create a blocking item that prepares desk for this?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:51:39.013Z",
-     "text": "Yes, blocking G40.2: folder entries in the file list (a path ending in / covers every file under it), the grant naming the folder, and the commit check reading all of item.checks. The shape is in my line above; say \"add item\" and I add it."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:52:10.529Z",
-     "text": "add item: fix desk so file lists exceeding MAX_PAYLOAD can't break an item or a goal."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:52:49.949Z",
-     "text": "Added: goal/G40.3, \"File lists past MAX_PAYLOAD break no item\" (your words were over the title limit; they open its box), blocking goal/G40.2. Its box holds the tree today and the proposed shape, folder entries, for your yes."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:53:51.880Z",
-     "text": "Q1: clear"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:30:45.965Z",
-     "text": "green?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T12:31:19.429Z",
-     "text": "- wsl: not green. Boxed (v2): the three start paths it misses (package.json, your start-spirit.ps1 and start-spirit.sh), and the list set one row a write.\n- The file list is not set yet: your desk server still runs the old item.files.add (it refused {id, path}), so it needs a restart on 00efe7b8 or later first; then I add the 720 rows and the desk raises the one grant.\n- ? Will you restart your node, or shall I add the rows once it is?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:31:20.820Z",
-     "text": "cw: not green, three open:\n- The box (v1) still misses two things found since: the relay hosts' installed units (install-units copies the template into /etc/systemd/system, so bash/update alone leaves them starting js/server.js), and the three start paths wsl counted, package.json's start script, platform/windows/start-spirit.ps1 and platform/wsl/start-spirit.sh.\n- My question is unanswered: install-units by hand on each relay this once, or bash/update re-installs a changed unit itself?\n- The file list and grant: G40.3 makes a 720-path list possible, one row a write, but only once your node runs it. Your node's desk still runs the code before G40.3, which takes the old whole list and refuses this one; so your node restarts on 00efe7b8 first.\n- ? The relay units: by hand this once, or bash/update?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:32:17.784Z",
-     "text": "box update with missing points"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T12:32:43.345Z",
-     "text": "- Boxed (v3): the three start paths, the list one row a write, each relay host's installed unit (install-units:135 copies it into /etc/systemd/system, so a pull alone does not change it), and your node on G40.3's desk before the list.\n- One open, as a red Q: the relay units by hand this once, or bash/update re-installs a changed unit."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:33:32.661Z",
-     "text": "Q2: The relay hosts installed units: run bash/install-units by hand on each relay this once, or teach bash/update to re-install a changed unit?\n\nteach bash to re-install a changed unit."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T12:33:56.991Z",
-     "text": "- Boxed (v4): bash/update re-installs a unit whose template changed before it restarts the relay, so the update carries the new path; bash/update joins the file list.\n- Q2 is answered by it, yours to clear. Left before green: your node on G40.3's desk, then I set the 720-row list."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:34:25.455Z",
-     "text": "Q2: clear"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:35:10.503Z",
-     "text": "my node runs latest code now"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T12:36:03.699Z",
-     "text": "wsl: thanks; setting the file list now, 721 rows one by one, a few minutes; I post when it is in and the desk has raised the grant."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T13:01:05.526Z",
-     "text": "core files granted"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T13:01:50.316Z",
-     "text": "all: 721 files in all; the core ones are shown first"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T13:02:56.522Z",
-     "text": "- wsl: thanks. The list is in, 721 rows, and the one grant (G1) is yours now; the 605 I first read was my own client's stale facts, not the desk.\n- Green from me: box v4, Q1 and Q2 cleared, list and grant set, nothing open."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T13:03:04.091Z",
-     "text": "cw, a heads-up: G1 stands granted now, but by your rule a core file added after a grant voids it, so if wsl's rows were still going in when you pressed, the desk asks again once the last core one lands. wsl: say when the list is whole; that is the moment to grant."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T13:03:27.063Z",
-     "text": "cw: green from me too: the list whole at 721 rows, and G1 still granted, so no core file came after your press; box v4, nothing open."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T13:03:52.763Z",
-     "text": "all: green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T13:04:05.740Z",
-     "text": "Green: settled, open none, box current (v4), list whole, G1 granted."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T13:04:12.352Z",
-     "text": "wsl: green, checked just now: G1 granted, and my row check has found no row missing so far."
-    }
-   ]
+   "box": "THE-BOX-OF-FIRST",
+   "checks": [],
+   "chat": []
   },
   {
-   "id": "goal/G40.3",
-   "title": "File lists past MAX_PAYLOAD break no item",
-   "goal": "goal/G40",
+   "id": "goal/G101.2",
+   "title": "Second",
+   "goal": "goal/G101",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G101"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "",
+   "verifierBusy": false,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G101.3",
+   "title": "Closed early",
+   "goal": "goal/G101",
    "status": "closed",
    "statusTone": "",
    "with": "",
-   "version": 14,
+   "version": 0,
    "buttons": [
     "reopen"
    ],
    "blocking": [
-    "goal/G40.2"
+    "goal/G101"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 42,
+   "fileCount": 0,
    "green": true,
-   "code": true,
+   "code": false,
    "phase": "",
-   "red": "wsl-claude",
-   "builder": "claude-windows",
-   "verifier": "wsl-claude",
-   "creator": "claude-windows",
-   "claimCommit": "00efe7b8",
-   "redCommit": "7df82fff",
-   "waived": true,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
-   "verified": "green",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "taken",
-   "verifierBusy": true,
+   "verifyAnswer": "",
+   "verifierBusy": false,
    "verifyRunning": false,
-   "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
-   },
+   "names": {},
    "asks": 0,
-   "half": true,
+   "half": false,
    "full": false,
-   "box": "Fix desk so file lists exceeding MAX_PAYLOAD can't break an item or a goal (Andy, 2026-10-24). Blocks goal/G40.2, whose move lists about 720 paths.\n\nTHE TREE TODAY (desk.js, commitCheck.js, the desk's api.js)\n- item.files.add sends an agent's whole list in one request and replaces it: 720 paths are about 24 KB, over the 22 KB one request carries. Replacing has also dropped a listed red three times when a late file was added alone.\n- Reads do not break: item.files and item.checks answer what fits one answer and say there is more.\n- The grant is one G check naming every core file on the list (about 245 for the move, 9 KB), raised again whole at every list change.\n- The commit check reads item.checks once; item.checks takes only {id}, so it never sees a granted G past the first answer.\n- Two more writes store a list whole: a red claim's suites (replaces the item's suites), and stackFrameChecks.make and .update (a door's paths and suites). rules.search's types and statuses are search filters, not stored, and stay.\n\nTHE SHAPE (Andy: \"items are added one-by one, and desk streams those items to its clients\")\n- A stored row is added or removed one per write, each streamed to the clients, as the chat, box, checks and claims already are; no write carries a list the desk stores.\n- Files: item.files.add takes one path and adds it; item.files.remove takes one away. 720 paths are 720 calls, a few minutes.\n- The same, in this item, for the red claim's suites (a suite added or removed one per write, never replaced by a second claim) and a door's paths and suites (stackFrameChecks) (Andy: \"we to all item list adjustments now, or they'll come bite us sooner than later.\").\n- One grant for the item's list as it stands, never a check per file, and naming no paths (Andy: \"i will get no single file grant checks anymore, just all in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons next to them.... The grand will simply be for the current/updated list.\"). His one press grants every core row on the list. A core file added after it voids the grant, and he issues it again for the whole list (Andy: \"the grant is not valid if core files are added after the grant is issued, if core files are added i must re-issue the grant for the whole list.\"). The grant lives until he presses Done (Andy: \"and make sure that the grant lives until i click 'done'\"): before Done only a core file added after it voids it; no other list change and no phase change clears it.\n- The commit check makes sure each staged core file is on the granted list (Andy: \"yes to the commit-check making sure each file exists in the granted list.\"): it asks item.files.search with the staged path as its text and takes only the row whose path is exactly that one, never a cache that may be partial (wsl: a deskClient's file list is one item.files answer, cut with filesMore, not complete by the stream).\n- The commit check finds its grants with item.checks.search (it exists, desk.js tableSearch), so a grant past the first answer is seen (wsl's review).\n- Rejected: folder entries (one entry granting files added under it later, wider than what Andy saw), and a list sent in parts (the chunking the rules forbid).\n- It changes what item.files.add takes and adds the remove verbs, likewise for the suites and the doors: approved, under THE VERBS.\n- Reopen puts an item back into design mode (Andy: \"oh, re-open should put an item back to design mode.\"). Today it clears only done, closed and the claims (desk.js, the reopen press), so a reopened item goes straight back to its phases; with design on, it waits for his End design and a new Go.\n\nTHE VERBS (Andy: \"same set of verbs for all sub-item-tables add, remove, search.\")\n- On every list table, the same three: <table>.add {id, path}, <table>.remove {id, path}, <table>.search {id, text}; each add or remove writes one row and streams it, and refuses a path already there or not there, saying which.\n- The list tables: item.files, item.suites, and a door's stackFrameChecks.paths and stackFrameChecks.suites. item.files.add loses its list; stackFrameChecks.make and .update lose their paths and suites.\n- A red claim fails if no suite rows are registered with the item (Andy: \"a red claim will fail if no suite-rows are registered with an item.\"), and carries no suites itself.\n- No getFirst or getNext (Andy: \"all clients by that time will have a complete list in their cache....\"); what must be exact, the commit check, looks each row up by its path.\n- The records keep their own verbs: chat, box versions, checks and claims are never removed, until shed (Andy: \"chat, box versions, checks and claims are records and keep their own verbs, never removed (until shed).\").\n- The verbs named here are approved (Andy, 2026-10-24: \"yes to the named verbs\"), after wsl's review.\n\nTHE DESKCLIENT'S FILE REPORTS (found while building; G33.11's, folded here)\n- The reports never reached the desk: the desk's api.js declared item.status without tone, so the spirit object refused each before it left. api.js declares tone.\n- The deskClient watches with the node's own component, chokidar, on the whole repo, and its hand-rolled fs.watch goes (Andy: \"you hand-rolled shit again!\", \"use that chokidar component then on the whole repo.\"). .git, node_modules and what git ignores are no change to the work.\n- The status says what happened to the file: <file name> changed, added or deleted (Andy: \"you may as well add to the filename in the status (changed, deleted, added)\").",
-   "checks": [
-    {
-     "number": "Q1",
-     "kind": "Q",
-     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
-     "test": "",
-     "state": "cleared",
-     "by": "andy",
-     "at": "2026-10-24T11:58:56.385Z",
-     "made": "desk",
-     "placedBy": "desk",
-     "placedKey": ""
-    }
-   ],
-   "chat": [
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T10:54:30.017Z",
-     "text": "- wsl review: folder entries are sound and shorten the list with no parts. One flaw: item.checks takes only {id}, so asking again returns the same first answer; the commit check should use item.checks.search, which exists (desk.js tableSearch), to find its granted G, and no verb changes for that.\n- A folder grant is wider than what you saw: a file added under it later is covered too; so the G should name the folder with its file count, and a file count that grows raises it again.\n- Guard: refuse a folder entry at or above spirit/run/ (or the repo root), so one entry can never grant the whole tree."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:54:50.069Z",
-     "text": "what about this: items are added one-by one, and desk streams those items to its clients?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:55:15.939Z",
-     "text": "cw: yes, and it is plainer than folders: it is how every other desk table already works, one row a write, each row streamed.\n- item.files.add takes one path and adds it, item.files.remove takes one away; no call ever carries the list, so no list can outgrow a request. It also ends the trap that bit three times: an add that replaced the whole list and dropped the red.\n- Cost, stated: the move's 720 paths are 720 calls, a few minutes; each its own row on the stream.\n- The grant must follow, or every add raises a fresh G for the whole set. Two ways: one G per core file, which your Grant-All grants in one press; or one open G whose words grow by each core file added.\n- The commit check then reads the grants with item.checks.search, as wsl says, since item.checks alone answers only the first page.\n- It changes what item.files.add takes and adds item.files.remove: wsl's review and your yes on both.\n- ? One G per core file with your Grant-All, or one G that grows?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:56:02.728Z",
-     "text": "should this apply to other side-tables in desk?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:56:30.233Z",
-     "text": "cw: yes, to every desk table a write fills with a list; the chat, box, checks and claims already take one row a write. Three more take a whole list, read from the desk's interface:\n- claim's suites: a red claim carries its suites as a list and replaces the item's suites table. Small today (1 to 3), but a goal's core suites grow, and a second claim drops what the first named.\n- stackFrameChecks.make and .update: a door's paths and suites as lists, replaced whole.\n- rules.search's types and statuses are filters on a search, not stored rows, so they stay as they are.\n- The plainest uniform rule: a stored row is added or removed one per write, each streamed; no write carries a list that the desk stores.\n- ? All of them in this item, or files now and the suites and doors each when they are next touched?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:57:30.806Z",
-     "text": "all this into the box, plus, maybe:\n\n- box arbitration. box becomes a user command in the chat,\n- there will be two occasions where an agent is allowed to touch the box. 1. implicit, through the order to create a goal or items, the creation of both those objects will bring with it a grant to fill the box, once. 2. through a taken box command in chat. ..... these come from my experience with all the Levants that kept going at the box without discipline.\n\n?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T10:58:17.076Z",
-     "text": "Boxed (v2): the tree, the one-row-a-write shape, the side tables. Open still: one G per core file or one that grows, and whether the suites and doors move in this item.\nOn box arbitration, against the tree:\n- Today any agent that holds the item or took a line of yours on it may take the box and write it; nothing asks whether you wanted the box written.\n- Your two occasions are enforceable by the desk, both at box.take: an agent that just created the goal or item on your order holds one write of its box; otherwise it must hold a take of your line that is a box command.\n- What makes a line a box command needs a mark the desk can read. You already write them: \"update the box accordingly\", \"fill the box\", \"add to the box\", \"box it\". A line starting with the word box would be the plainest.\n- A cost to know: today I box each of your rulings the same turn without being told (your rule \"the item text is the record\"). With arbitration, a ruling stays in the chat until you say box, which is more lines from you.\n- It is a different concern from file lists. I would give it its own item, so neither waits for the other.\n- ? Box arbitration as its own item?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T10:59:40.744Z",
-     "text": "leave box arbitration out of this item."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:01:20.314Z",
-     "text": "he the grant grows and must be an all at once grant, otherwise we bring back the MAX_PAYLOAD problem with that."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:01:47.384Z",
-     "text": "- wsl: agreed, one grant, given at once. One catch: if its words list every core path, the grant itself grows past one answer (245 paths are 9 KB, 700 would be about 25 KB), the same problem again.\n- So the grant names a count, \"core grant: 245 files\", and each file row carries core and granted: your one press marks every core row granted; a row added later is ungranted and the count asks again.\n- The commit check then asks, per staged core file, whether its row is granted (item.files.search finds it), so no answer ever holds the whole set. ? That shape?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:01:53.092Z",
-     "text": "Boxed (v3): one G per item that grows by each core file added, granted all at once.\n- One detail I added, yours to strike: a core file added after you granted opens a fresh G for what came since, so a granted G never grows behind your back.\n- A limit to know: one G is one row, and a row holds about 580 core paths before it outgrows a packet. The move needs about 245, so it fits; a larger one would open a second G at the limit, each granted all at once.\n- ? Still open: the red claim's suites and the doors' lists, in this item or each when next touched?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:03:56.455Z",
-     "text": "i will get no single file grant checks anymore, just all in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons next to them.... The grand will simply be for the current/updated list."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:04:27.805Z",
-     "text": "- Boxed (v4): one grant for the list as it stands, naming no paths; your press marks every core row granted, a later core file asks again; the commit check looks up each staged core file's row. That drops my row limit.\n- ? Still open: the red claim's suites and the doors' lists, in this item or each when next touched?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:05:31.266Z",
-     "text": "and make sure that the grant lives until i click 'done'"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:06:11.636Z",
-     "text": "- Boxed (v5), your words: the grant lives until you press Done; no list change, phase change or reopened phase clears it.\n- ? A core file added after your grant: covered by it until Done, or asks you again as v4 says?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:06:48.447Z",
-     "text": "oh, re-open should put an item back to design mode."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:07:48.574Z",
-     "text": "Boxed (v6): Reopen puts an item back into design mode; today it clears only done, closed and the claims, so a reopened item now waits for your End design and a new Go."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:08:41.407Z",
-     "text": "the grant is not valid if core files are added after the grant is issued, if core files are added i must re-issue the grant for the whole list."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:09:04.500Z",
-     "text": "Boxed (v7): a core file added after your grant voids it; you grant the whole list again. wsl's question is answered by it."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:09:18.176Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:09:51.295Z",
-     "text": "- wsl: answered, thanks. I fixed my own line that now contradicted you (v8): before Done only a core file added after the grant voids it; no other list change or phase change clears it.\n- Not green yet, one open from cw: the red claim's suites and the doors' lists, in this item or each when next touched."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:11:05.328Z",
-     "text": "we to all item list adjustments now, or they'll come bite us sooner than later."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:11:36.758Z",
-     "text": "Boxed (v9): all three lists in this item, the files, the red claim's suites and the doors' paths and suites, one row a write. Nothing open from me."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:11:53.539Z",
-     "text": "all: green?"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:12:22.185Z",
-     "text": "- wsl: not green: the verbs are not named yet, and each needs your yes: item.files.add {id, path} and item.files.remove {id, path}; for suites item.suites.add / .remove {id, path}; for the doors the same pair on stackFrameChecks.\n- One clash with G33.11: today the red claim carries its suites (\"red cannot be claimed without delivering the list of suites\"); with suites added one per write, the red claim instead requires at least one suite row on the item, and carries none.\n- ? Those names, and the red claim checking the item's suite rows?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:12:26.002Z",
-     "text": "cw: not green, one open: the verbs themselves. The box says each needs your yes, and none is named yet. Named here:\n- item.files.add {id, path}: one path, added (today {id, paths}, replacing the list). New: item.files.remove {id, path}.\n- New: item.suites.add {id, path} and item.suites.remove {id, path}, the red writer's. The red claim then takes no suites: claim {id, phase, commit}, and a red claim is refused while the item's suites table is empty (your rule, unchanged).\n- stackFrameChecks.make {gate, endpoint} and .update {id, gate, endpoint} lose their lists. New: stackFrameChecks.path.add and .path.remove {id, path}, stackFrameChecks.suite.add and .suite.remove {id, path}.\n- The grant press is unchanged: check.set on the one list-wide grant.\n- Every add and remove is one row written and streamed; each refuses a path already there or not there, saying which.\n- ? Your yes on these verbs, after wsl's review?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:15:12.989Z",
-     "text": "same set of verbs for all sub-item-tables add, remove, search.\n\na red claim will fail if no suite-rows are registered with an item.\n\n?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:15:42.721Z",
-     "text": "cw: yes to both, and it makes the names fall out by themselves: <table>.add, <table>.remove, <table>.search on every list table, each one row a write.\n- The list tables: item.files, item.suites, and a door's stackFrameChecks.paths and stackFrameChecks.suites. Their .search verbs mostly exist already (item.files.search, item.suites.search).\n- Red claim: refused while the item has no suite row; it carries no suites itself.\n- The one boundary I would keep: chat, box, checks and claims are records, not lists. A chat line, a box version, a check or a claim is written and answered, never removed, or the history changes behind you. They keep their own verbs (chat.add, box.write, check.add and check.set, claim) and their searches.\n- ? The add/remove/search set on the four list tables, and the records left as they are?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:17:49.903Z",
-     "text": "how about a getFirst verb as well, with a getNext, that way we don't have to rely on incomplete searches?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:18:22.922Z",
-     "text": "cw: one flag before it, since it meets an earlier ruling of yours:\n- 2026-09-27: \"there are no (complete) lists, only searches\", and on 2026-09-30, to paging: \"IT'S NOT GOING TO HAPPEN, overengineered for a future the user doesn't want.\" getFirst and getNext are paging by another name: a cursor the desk keeps, or a key the caller hands back.\n- What needs a complete answer here is narrow: the commit check must know, for each staged core file, whether its row is on the list and granted. That is one row by its key, not a walk.\n- So the plainest addition is a get: <table>.get {id, path} answers that one row, or no-such-row. A get of one row by its key is no list, and no search can come back incomplete for it.\n- A cursor would also have to say what happens when rows are added between two getNext calls, which the stream does all the time.\n- ? add, remove, search and get on each list table, or getFirst and getNext after all?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:18:57.843Z",
-     "text": "understood, all clients by that time will have a complete list in their cache...."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:19:30.042Z",
-     "text": "- Boxed (v10): add, remove, search on every list table; a red claim fails with no suite rows; no getFirst or getNext; the commit check reads the rows from its own deskClient, complete by the stream.\n- ? One open from me: chat, box versions, checks and claims are records and keep their own verbs, never removed: agreed?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:20:55.342Z",
-     "text": "chat, box versions, checks and claims are records and keep their own verbs, never removed (until shed)."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:21:15.327Z",
-     "text": "Boxed (v11): the records keep their own verbs, never removed until shed. Nothing open from me but your yes on the verbs once wsl has reviewed them."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:21:43.922Z",
-     "text": "yes to the named verbs"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:22:05.473Z",
-     "text": "Boxed (v12): the named verbs approved. Green from me: settled, open none."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:22:09.727Z",
-     "text": "all: green?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:22:23.931Z",
-     "text": "Green: settled, open none, box current (v12)."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:22:34.715Z",
-     "text": "- wsl review: the verbs are sound. One premise in v12 does not hold today: a deskClient's file list is not complete by the stream. The desk's bootstrap pushes facts only (desk.js:2077), and the list comes from one item.files read, cut to one answer with filesMore (shell/js/desk/data.js:118); a node restarted mid-item holds only that first answer.\n- Plainest fix, no new verb: the commit check asks item.files.search with each staged path as its text, and takes the row whose path is exactly that one.\n- ? That, so the commit check never trusts a cache that may be partial?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:24:20.025Z",
-     "text": "yes to the commit-check making sure each file exists in the granted list."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:24:56.306Z",
-     "text": "wsl?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:25:03.515Z",
-     "text": "Boxed (v13): the commit check looks up each staged core file by its exact path with item.files.search, never a cache; my premise of a complete cache was wrong, wsl caught it. Green from me."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:25:14.717Z",
-     "text": "wsl: green from me: box v13 has your yes, the commit check looks each staged core file up by its exact path; my review of the named verbs is done, nothing open."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:28:33.405Z",
-     "text": "commit 7df82fff6b2b14c44d6c6fd40c0db885d4337007: goal/G40.3 red: one row a write on every list table, one grant for the list naming no path, no red claim without a suite row, Reopen back to design\n- spirit/test/deskListRows.js"
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T11:28:42.102Z",
-     "text": "- Red claimed at 7df82fff: spirit/test/deskListRows.js, 15 red, 1 green guard (the red claim with no suite is refused today too).\n- On a real desk: one row a write for files and suites, 650 rows past one answer found exactly by search, one grant naming no path that a phase change keeps and a core add voids, the red claim on suite rows, Reopen to design; in the code, the doors' six verbs and the commit check's two searches.\n- Its build claims the red only after item.suites.add puts this suite on the item; the red claim of G33.11's shape still works today and named it."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:44:22.985Z",
-     "text": "Build under way, the red 16 of 16 green in my clone, not committed yet:\n- Desk: item.files.add/.remove and item.suites.add/.remove one path a write; one grant for the list, worded \"core grant: every core file on this item's list\", voided by a core file added after it; the red claim takes no suites and is refused with no suite row; Reopen puts an item back into design.\n- The commit check looks each staged core file up by its exact path (item.files.search) and the grant by item.checks.search.\n- stackFrameChecks: make and update take gate and endpoint only; paths and suites .add/.remove/.search per door; the Stacks add form and the door's dialog send them one a write.\n- One thing beyond the named verbs, yours to strike: make also answers the new door's id (door), so the form can add its rows to it.\n- Now: about 25 older desk suites still call the old forms; they are being moved to the new verbs, each check kept, before the claim."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T11:58:56.175Z",
-     "text": "Q1: clear"
-    },
-    {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-24T11:58:56.332Z",
-     "text": "message delivered, claude-windows busy"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T11:59:09.714Z",
-     "text": "Q1: the hold is live. The red is 16 of 16 green in my clone; 24 older desk suites moved to the new verbs (each check kept), deskPhaseRestart showed Reopen left went set, fixed; the whole desk set is running now as the regression, then commit and claim. Q1 is yours to clear."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:00:09.574Z",
-     "text": ".. and the deskClient still does NOT file-watch and update the status of the item......"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:01:24.857Z",
-     "text": "the deskClient just needs to subscribe to the nodes fs-watch stream...."
-    },
-    {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-24T12:01:24.885Z",
-     "text": "message delivered, claude-windows busy"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:01:30.913Z",
-     "text": "Found why the deskClient never shows file changes:\n- It does watch, and sends item.status with the file's name and its tone on every change. Its history holds them, each \"refused\" in 0 ms.\n- They never leave the node: the deskClient asks the desk through the spirit object, which checks each call against the desk's api.js, and there item.status still reads {id, word}, without tone. So every report was refused as an argument the verb does not take. G33.11 added tone to desk.js and its item.status.json, not to api.js.\n- Fixed in this build: api.js declares tone. It takes effect when your node, which serves the desk's interface, runs this commit."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:02:07.652Z",
-     "text": "cw: yes, it is the component that exists, and the deskClient's own fs.watch would go. One thing it changes:\n- The node's fs-watcher (jobs.startFsWatcherJob) watches the node's own tree, spirit/run/, and only files a page may load. spirit/test/ is outside it, and every red's suite lives there.\n- So on that stream a build's production files show (white), but a red's test files never do, and a red hold would look stale again.\n- Two ways: the deskClient takes spirit/run/ from the node's stream and watches spirit/test/ itself; or the node's watcher grows to the checkout's spirit/test/, which also puts the suites into the Files app's tree.\n- ? Which?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:02:31.147Z",
-     "text": "you hand-rolled shit again!"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:02:54.910Z",
-     "text": "You are right: the deskClient's own fs.watch is a second watcher beside the node's fs-watch stream. G33.11 built it so, and I verified and passed it without catching that. My miss.\n- The fix, extending what exists, in this item: the deskClient subscribes to its node's fs-watch stream, and its own fs.watch is deleted, with a check that it is gone.\n- One watcher only, so the node's watcher covers spirit/test/ too, where the reds live, rather than the deskClient watching it on the side.\n- ? Go, with the node's watcher extended to spirit/test/?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:03:18.384Z",
-     "text": "you may as well add to the filename in the status (changed, deleted, added)"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:04:11.790Z",
-     "text": "Yes to \"<file> changed / added / deleted\": the node's watcher already says which (createFile, changeFile, deleteFile).\nWhat the one-watcher shape takes, read from the tree:\n- The node already streams every fs-watcher change as a job-updated event on /api/events, to servers too (server.js).\n- The deskClient may not open that stream itself: its rule is no fetch, no http, everything through spirit. So spirit needs one more member in node, the node's event stream handed out (the kernel already opens it for peerPost, kernel.js openServerStream), and the deskClient reads the fs-watcher's changes from it.\n- The node's watcher grows to spirit/test/ (jobs.js), so a red's suites show.\n- That is kernel.js, jobs.js and spirit.js, all core, plus deskClient.js, and a new spirit member: more than this item's list, and a change to spirit's interface.\n- Recommended: its own item right after G40.3, so G40.3 lands now with the tone fix (the deskClient's reports reach the desk today) and the second watcher goes in the next one.\n- ? Its own item, or in G40.3?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-24T12:04:25.784Z",
-     "text": "ah, i see the problem, use that chokidar component then on the whole repo."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:23:41.629Z",
-     "text": "commit 00efe7b8b82fee35b81bbac1c10e6f7624cdab1a: goal/G40.3 build: one row a write on every list table, one grant for the list, no red claim without a suite row\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.family/api.js\n- spirit/run/process/js/desk/desk.family/claim.json\n- spirit/run/process/js/desk/desk.family/item.files.add.json\n- spirit/run/process/js/desk/desk.family/item.files.remove.json\n- spirit/run/process/js/desk/desk.family/item.suites.add.json\n- spirit/run/process/js/desk/desk.family/item.suites.remove.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- spirit/test/deskAgentAgent.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskBoundedInterface.js\n- spirit/test/deskChatFlowOneTask.js\n- spirit/test/deskChatFollowsAddress.js\n- spirit/test/deskCheckNumbers.js\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskClientPush.js\n- spirit/test/deskCoreGrants.js\n- spirit/test/deskDeleteOutsideDesign.js\n- spirit/test/deskFilesTouched.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskGoOrDone.js\n- spirit/test/deskLimboHolder.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskPhaseRestart.js\n- spirit/test/deskPhases.js\n- spirit/test/deskPlainTake.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskQuickFixes.js\n- spirit/test/deskServer.js\n- spirit/test/deskSignoffGrants.js\n- spirit/test/deskStacksDialog.js\n- spirit/test/deskStatusActivity.js\n- spirit/test/deskTables.js\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVerifyFull.js\n- spirit/test/deskVerifyStopTree.js\n- spirit/test/deskWaive.js"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-24T12:23:52.012Z",
-     "text": "Build claimed at 00efe7b8. The red, deskListRows.js, 16 of 16 green; 163 desk suites run, every red left the same at the commit before this build (deskAgentEarThin, deskAgentGo, deskIssues, oneDoor, oneDoorStacks, stackFrameTestItems).\n- Also in it, found while building: item.status's tone missing from the desk's api.js (why the deskClient never showed a file), and the deskClient on chokidar, its fs.watch gone.\n- One thing beyond the named verbs, yours to strike: stackFrameChecks.make answers the new door's id.\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.family/api.js\n- spirit/run/process/js/desk/desk.family/claim.json\n- spirit/run/process/js/desk/desk.family/item.files.add.json\n- spirit/run/process/js/desk/desk.family/item.files.remove.json (new)\n- spirit/run/process/js/desk/desk.family/item.suites.add.json (new)\n- spirit/run/process/js/desk/desk.family/item.suites.remove.json (new)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- spirit/test/deskAgentAgent.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskBoundedInterface.js\n- spirit/test/deskChatFlowOneTask.js\n- spirit/test/deskChatFollowsAddress.js\n- spirit/test/deskCheckNumbers.js\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskClientPush.js\n- spirit/test/deskCoreGrants.js\n- spirit/test/deskDeleteOutsideDesign.js\n- spirit/test/deskFilesTouched.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskGoOrDone.js\n- spirit/test/deskLimboHolder.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskPhaseRestart.js\n- spirit/test/deskPhases.js\n- spirit/test/deskPlainTake.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskQuickFixes.js\n- spirit/test/deskServer.js\n- spirit/test/deskSignoffGrants.js\n- spirit/test/deskStacksDialog.js\n- spirit/test/deskStatusActivity.js\n- spirit/test/deskTables.js\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVerifyFull.js\n- spirit/test/deskVerifyStopTree.js\n- spirit/test/deskWaive.js"
-    },
-    {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-24T12:23:55.557Z",
-     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
-    },
-    {
-     "by": "wsl-claude",
-     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
-     "at": "2026-10-24T12:25:57.002Z",
-     "text": "- Verify passed at 00efe7b8: deskListRows.js 16 of 16, my red untouched, and breaking each of three guards turns it red. Old records are no risk: the desk loads its tables at start and replays nothing.\n- The hand-rolled fs.watch was mine: I built it in G33.11 beside the node's chokidar watcher, and I should have reused it. cw's build puts the deskClient on chokidar, with the status saying added, changed or deleted.\n- Small cost to know: that chokidar walks the whole checkout but .git and node_modules, so node state and test fixtures inside it are watched too, then dropped by git check-ignore."
-    }
-   ]
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
