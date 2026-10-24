@@ -38,6 +38,7 @@ const SERVER = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestCWAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const UBI = { key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestUbiAAAAAAAAAAAAAAA=', label: 'claude-ubuntu' };
 const LEV = { key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestLevAAAAAAAAAAAAAAA=', label: 'levant-local' };
+const BOB = { key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestBobAAAAAAAAAAAAAAA=', label: 'bob-agent' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestWslAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStatusActivityTestOwnerAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -71,11 +72,12 @@ function ok(r) { return r && r.status === 200; }
     { id: 'goal/G100.1', title: 'Reported by its files', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'Nothing moves', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.3', title: 'A verify that fails', blocks: ['goal/G100'], code: true },
+    { id: 'goal/G100.4', title: 'A red without its suites', blocks: ['goal/G100'], code: true },
   ] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
   const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
-  for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
+  for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
   test.subHeading('1. a file change reaches the status: its name only, and its kind as a tone');
@@ -132,6 +134,23 @@ function ok(r) { return r && r.status === 200; }
   else test.fail(OWED + 'the failed verify answered ' + short(failed.status) + ' and the desk said ' + short(lines3.map(function (l) { return l.text; })));
   if (/verify failed/.test(String(f3.status))) test.check('the status says it: ' + f3.status);
   else test.fail(OWED + 'after the failed verify the status reads ' + short(f3.status));
+
+  // Andy, 2026-10-24, extending the item: "red cannot be claimed without delivering the list of suites to the item."
+  test.subHeading('3b. no red without its suites');
+  await call('phase.take', { id: 'goal/G100.4', phase: 'red' }, BOB);
+  const bare = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1' }, BOB);
+  const empty = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: [] }, BOB);
+  if (!ok(bare) && !ok(empty) && /suite/.test(JSON.stringify((bare.body || {}).error || ''))) test.check('a red claim naming no suite is refused, saying why: ' + short(bare.body && bare.body.error));
+  else test.fail(OWED + 'a red claim with no suites answered ' + short(bare.status + ' ' + JSON.stringify(bare.body)) + ', with suites [] ' + short(empty.status));
+  const early = await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, BOB);
+  const f4 = await facts('goal/G100.4');
+  if (!ok(early) && f4.phase === 'red') test.check('the red cannot be finished before a red claim with suites is on record');
+  else test.fail(OWED + 'the red was finished with no suites delivered: ' + short(early.status) + ', phase now ' + short(f4.phase));
+  const full = await call('claim', { id: 'goal/G100.4', phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskStatusActivity.js'] }, BOB);
+  const done4 = await call('phase.done', { id: 'goal/G100.4', phase: 'red' }, BOB);
+  const suites4 = ((((await call('item.suites.search', { id: 'goal/G100.4', text: '' }, ANDY)).body) || {}).items) || [];
+  if (ok(full) && ok(done4) && suites4.length === 1) test.check('with its suite delivered, the red claim lands, the suite is on the item, and the red finishes');
+  else test.fail(OWED + 'with its suite: the red claim ' + short(full.status) + ', its finish ' + short(done4.status) + ', suites ' + suites4.length);
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
 
@@ -155,7 +174,8 @@ function ok(r) { return r && r.status === 200; }
   else test.fail(OWED + 'the deskClient tells no test file from a production file');
 
   test.subHeading('7. what happens in a special goal reaches the deskClients as news');
-  const meant = (/function meantForAgent[\s\S]*?\n}\n/.exec(dc) || [''])[0];
+  // The checkout's line ends may be CRLF.
+  const meant = (/function meantForAgent[\s\S]*?\r?\n}\r?\n/.exec(dc) || [''])[0];
   if (/special|plugin/.test(meant)) test.check('meantForAgent lets the special goals\' rows through');
   else test.fail(OWED + 'meantForAgent drops every row of a special goal (it passes the current goal, the group chat, lines to the agent and its held item only)');
 
