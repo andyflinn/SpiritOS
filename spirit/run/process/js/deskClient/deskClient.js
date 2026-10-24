@@ -42,6 +42,8 @@
 // NEVER A LIST (Andy: every list is a search). history.search answers what matches best, newest first among equals,
 // cut to fit one answer by the probability bucket, and says so with more.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
@@ -49,8 +51,6 @@ const appServer = require('../../../js/appServer.js');
 const appClient = require('../../../js/appClient.js');
 const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const kernel = require('../../../js/kernel.js');
-const spiritObject = require('../../../face/spirit.js');
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -143,14 +143,14 @@ function begin(verb) {
 }
 
 // ONE ASK OF THE DESK, THROUGH ITS FAMILY INTERFACE (goal/G33.4, box v38). Andy: the family interface takes ANY
-// transport. The spirit object of the desk's node over peerPost (face/spirit.js forPeer, the one transport), so the
+// transport. The spirit object of the desk's node over peerPost (spirit.js forPeer, the one transport), so the
 // call is checked against the desk's own api.js and goes as the packet the far apiDoor takes; nothing here builds one.
 // Answers the desk's body as before, its refusal included, and the kernel's own outcomes (not-posted, no-answer).
-function deskPost(to) { return function (body) { return kernel.peerPost(to, 'api', body, { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }); }; }
+function deskPost(to) { return function (body) { return spirit.peerPost(to, 'api', body, { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }); }; }
 function askDesk(to, verb, args) {
-  return spiritObject.forPeer(to, deskPost(to), 'desk').then(function (s) {
+  return spirit.forPeer(to, deskPost(to), 'desk').then(function (s) {
     if (!s.desk) return { ok: false, code: 'no-answer', error: 'the desk family did not answer' };
-    return spiritObject.outcome(s.call('desk.' + verb, args)).then(function (r) {
+    return spirit.outcome(s.call('desk.' + verb, args)).then(function (r) {
       return r.body || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
     });
   });
@@ -445,7 +445,7 @@ function publishOn(body) {
   // goal/G33.4: the group chat is goal 0.
   if (!b || b.id !== 'goal/G0' || String(b.text || '').trim() !== 'publish' || !NODE_URL || !PORT) return;
   // Through the spirit object (goal/G32.3).
-  spiritObject.forNode(NODE_URL, 'jobs').then(function (s) {
+  spirit.forNode(NODE_URL, 'jobs').then(function (s) {
     return s.jobs.create({ command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)], type: 'publishData' });
   }).then(null, function (e) { console.error('deskClient: the node refused the publish job: ' + ((e && e.message) || e)); });
 }
@@ -525,7 +525,7 @@ function rememberOther(key, name) {
 function blockedHere(key) {
   if (!NODE_URL) return Promise.resolve(false);
   // Through the spirit object (goal/G32.3).
-  return spiritObject.forNode(NODE_URL, 'contact').then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+  return spirit.forNode(NODE_URL, 'contact').then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
     const p = body && body.person;
     return !!(p && p.blocked === true);
   }, function () { return false; });

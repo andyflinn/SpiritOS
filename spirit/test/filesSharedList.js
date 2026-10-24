@@ -196,7 +196,6 @@ function bootShell() {
   const subscribers = [];
   const answer = function (body) { return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body }); };
   const sp = {
-    keyTail: kernel.keyTail,
     core: {
       ask: function (verb) { if (verb === 'node.card') return answer({ ok: true, name: 'me', description: '', publicKey: 'OWN', descriptionMax: 0 }); return answer({ ok: true, items: [], more: false }); },
       relays: { status: function () { return answer({ name: 'me', rows: [] }); } },

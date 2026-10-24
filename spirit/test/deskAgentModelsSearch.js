@@ -189,7 +189,7 @@ async function faceHalf() {
   const calls = [];
   let behavior = null;
   let failing = '';
-  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   (ctx.window.spirit = ctx.window.spirit || {}).fieldRules = fieldRules;
   vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP });

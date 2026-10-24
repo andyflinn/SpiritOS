@@ -187,7 +187,7 @@ async function remoteHalf() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   let behavior = null;
   const handlers = [];
-  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   (ctx.window.spirit = ctx.window.spirit || {}).fieldRules = fieldRules;
   const loaded = loadElement(ctx);

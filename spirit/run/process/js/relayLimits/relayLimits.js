@@ -40,8 +40,9 @@
 // point: a shrink that would strand members is refused whole, and the
 // answer names the gap (design/principles/LIMITED-RESOURCES.md).
 
-const spiritObject = require('../../../face/spirit.js');
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const NODE = process.env.SPIRIT_NODE || 'http://127.0.0.1:65432';
 const RELAY_APP = 'relay';
 // Long enough for a relay across the Atlantic to answer, short enough
@@ -51,7 +52,7 @@ const WAIT_MS = 20000;
 // THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one verb by its name on the node's loopback door, its answer or its
 // refusal's body; a node that does not answer says so.
 function door(verb, args) {
-  return spiritObject.outcome(spiritObject.forNode(NODE, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) {
+  return spirit.outcome(spirit.forNode(NODE, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) {
     if (!r || !r.status) throw new Error('no node at ' + NODE + ' — start it, or set SPIRIT_NODE');
     return r.body || {};
   });

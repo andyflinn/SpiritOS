@@ -96,7 +96,6 @@ function bootShell() {
   }
   const subscribers = [];
   const shellSpirit = {
-    keyTail: kernel.keyTail,
     core: {
       ask: function (verb, args) {
         asked.push(verb);
@@ -291,7 +290,7 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     const fromStranger = got.filter(function (g) { return g.from === STRANGER || g.from === MEMBER_RELAY; });
     if (!fromStranger.length) test.check('(e) a stranger\'s objects, and a relay this node only sits on, reach no app: not desk (a change:1e12), chatter, deskDetails, ruleDetails, deskVerify or deskAgentRemote');
     else test.fail(OWED + 'a stranger reached ' + JSON.stringify(fromStranger.map(function (g) { return g.who + ' ' + JSON.stringify(g.obj); })));
-    const strangerLines = warned.filter(function (w) { return w.indexOf(STRANGER) !== -1 || w.indexOf(kernel.keyTail(STRANGER)) !== -1; });
+    const strangerLines = warned.filter(function (w) { return w.indexOf(STRANGER) !== -1; });
     if (strangerLines.length === 1) test.check('one console line for the dropped sender, not one per object');
     else test.fail(OWED + 'console lines for the stranger: ' + strangerLines.length + ' ' + JSON.stringify(warned));
 

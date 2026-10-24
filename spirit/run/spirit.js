@@ -1,6 +1,9 @@
-// spirit/run/face/spirit.js
+// spirit/run/spirit.js
 // THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. The relay serves it as the very first script,
 // inline in face.html (serveCommon.inlineSpirit); the home node's index.html loads it; a server process requires it.
+// AT THE RUN ROOT, THE ONE DOOR (goal/G40.1). Andy: spirit.js sits in "the run-root, the nodes root of its own fs
+// scope", and every script that is not the node or a relay server installs it first, as the global spirit, "and then
+// use[s] that object properly". The node and the relay build spirit themselves (kernel.js): they are its embodiments.
 // Andy: "a spirit face-app needs a damn spirit object, that packages all neccessary loopback calls on the home node into
 // something easy to use", and "the whole node api (not appServer API's) must be provided in JavaScript form, as an
 // asyncFunction set."
@@ -56,7 +59,7 @@
   // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
   function fieldRules() {
     if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
-    if (typeof require === 'function') { try { return require('../js/fieldRules.js'); } catch (e) { return null; } }
+    if (typeof require === 'function') { try { return require('./js/fieldRules.js'); } catch (e) { return null; } }
     return null;
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -266,6 +269,7 @@
     var t = transport || (typeof window === 'undefined' ? nodeTransport('') : pageTransport());
     var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(t) };
     spirit.call = byName(spirit);
+    spirit.require = requirer(spirit, t);
     return Promise.resolve(t.ask('api', {})).then(function (r) {
       var names = r && r.status === 200 && isPlain(r.body) ? Object.keys(r.body) : [];
       return Promise.all(names.map(function (name) {
@@ -282,6 +286,7 @@
   function assemble(transport, defs) {
     var spirit = { error: error, formatBytes: formatBytes, escapeHtml: escapeHtml, check: check, rules: Object.keys(RULES), tree: tree(transport) };
     spirit.call = byName(spirit);
+    spirit.require = requirer(spirit, transport);
     Object.keys(defs || {}).forEach(function (name) { if (defs[name] && defs[name].verbs) spirit[name] = member(transport, name, defs[name]); });
     return spirit;
   }
@@ -378,9 +383,119 @@
       });
   }
 
+  // ── spirit.require(path, key) (goal/G40.1) ──────────────────────────────────────────────────────────────────────────
+  // Andy: "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later,
+  // can load its needed components there."; "the loaders name should be spirit.require()"; the key "a second argument
+  // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". path is from the run root. A path
+  // in the node's own naming of an interface, <name>/<name>.family/api.js (a server's) or js/<name>/api.js (a node
+  // family's), binds that family as spirit.<name>, asked as api {family} so the node still names it; with a key it is
+  // asked of that peer, and the peer's spirit object answers. Any other path is a component, its module.exports.
+  function interfaceName(p) {
+    var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^js\/([^/]+)\/api\.js$/.exec(p);
+    return m ? m[1] : '';
+  }
+  function runComponent(source, p) {
+    var m = { exports: {} };
+    new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-component/' + p)(m, m.exports);
+    return m.exports;
+  }
+  function ofPeer(key, post, fam) {
+    return forPeer(key, function (body) { return post(key, body); }, fam).then(function (s) {
+      if (!s[fam]) throw refusal('no-interface', 'the peer answered no interface for the family ' + fam);
+      return s;
+    });
+  }
+  // On a page: a component through the transport's file, a family through its api {family}, a peer's through the home
+  // node's peer.post. THE PAGE HEARS NO ANSWER-POST: the node's own peerPost waits on the node's server stream for the
+  // peer's answer, which a page does not hold, so a peer's family is asked from a page as peer.post answers it.
+  function requirer(holder, t) {
+    var post = function (key, body) {
+      return Promise.resolve(t.ask('peer.post', { to: String(key), text: JSON.stringify({ app: 'api', body: body }) })).then(function (r) { return r && r.body; });
+    };
+    return function (path, key) {
+      var p = String(path || '').replace(/^\/+/, '');
+      var fam = interfaceName(p);
+      if (fam && key) return ofPeer(key, post, fam);
+      if (fam) {
+        return Promise.resolve(t.ask('api', { family: fam })).then(function (got) {
+          if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'the node answered no interface for the family ' + fam);
+          var def = loadInterface(got.body.interface, fam);
+          if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
+          holder[fam] = member(t, fam, def);
+          return holder[fam];
+        });
+      }
+      return Promise.resolve(t.file(p)).then(function (r) {
+        if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
+        return runComponent(text(r.bytes), p);
+      });
+    };
+  }
+
+  // THE MIME TYPES (goal/G40.1), the spirit object's own table. Andy: "MIME types can easily be added to spirit.js", and
+  // "kernel can keep its MIME table, that will go when kernel goes."
+  var MIME_TYPES = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.txt': 'text/plain; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.ico': 'image/x-icon',
+    '.webp': 'image/webp',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.mp4': 'video/mp4',
+    '.py': 'text/x-python'
+  };
+
   var api = { createSpirit: createSpirit, assemble: assemble, check: check, rules: RULES, pageTransport: pageTransport, nodeTransport: nodeTransport,
     loadInterface: loadInterface, forNode: forNode, peerTransport: peerTransport, forPeer: forPeer, outcome: outcome, error: error, formatBytes: formatBytes, escapeHtml: escapeHtml };
-  if (typeof module === 'object' && module.exports) { module.exports = api; return; }
+
+  // ── IN NODE: THE GLOBAL spirit (goal/G40.1) ──────────────────────────────────────────────────────────────────────
+  // A script that is not the node or a relay server requires this file first, and from then on uses the global spirit:
+  // the object's own members, and what such a script took from kernel.js until now, under the kernel's own names so no
+  // call changes (spirit.core.jobs, spirit.core.node, spirit.core.util, spirit.core.fs, spirit.core.const with its VERSION, peerPost). The kernel stays
+  // their implementation until it goes (Andy: "we leave kernel.js where it is and get rid of it when we are finished").
+  // spirit.require: a component is required from the run root; a family is bound from this process's own node, the one
+  // SPIRIT_CALLBACK_URL names (the node that started it), or with a key asked of that peer through the kernel's peerPost.
+  if (typeof module === 'object' && module.exports) {
+    var kernel = require('./js/kernel.js');
+    var g = root.spirit && typeof root.spirit === 'object' ? root.spirit : {};
+    Object.keys(api).forEach(function (k) { if (!(k in g)) g[k] = api[k]; });
+    g.core = g.core || {};
+    g.core.jobs = kernel.core.jobs;
+    g.core.node = kernel.core.node;
+    g.core.util = kernel.core.util;
+    g.core.fs = kernel.core.fs;
+    g.core.const = Object.assign({}, kernel.core.const, { MIME_TYPES: MIME_TYPES });
+    g.peerPost = kernel.peerPost;
+    g.require = function (path, key) {
+      var p = String(path || '').replace(/^\/+/, '');
+      var fam = interfaceName(p);
+      if (fam && key) return ofPeer(key, function (k, body) { return kernel.peerPost(k, 'api', body); }, fam);
+      if (fam) {
+        // This process's own node is the one that started it, named by SPIRIT_CALLBACK_URL as the kernel's peerPost
+        // reads it; never SPIRIT_PORT, which is the default 65432, the owner's live node on every box.
+        var own = '';
+        try { own = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { own = ''; }
+        if (!own) return Promise.reject(refusal('no-node', 'this process names no node of its own (SPIRIT_CALLBACK_URL is unset)'));
+        return forNode(own, fam).then(function (s) {
+          if (!s[fam]) throw refusal('no-interface', 'the node answered no interface for the family ' + fam);
+          g[fam] = s[fam];
+          return g[fam];
+        });
+      }
+      return new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); });
+    };
+    root.spirit = g;
+    module.exports = g;
+    return;
+  }
 
   // ── IN A PAGE ────────────────────────────────────────────────────────────────────────────────────────────────────
   // window.spirit gets the helpers at once and its families on spirit.start(), which the page calls once it can reach
@@ -393,9 +508,12 @@
   var started = null;
   s.start = function () {
     if (started) return started;
-    started = createSpirit(pageTransport()).then(function (made) {
+    var t = pageTransport();
+    started = createSpirit(t).then(function (made) {
       // The families, and tree(); the helpers are on the page's spirit already.
       Object.keys(made).forEach(function (k) { if (k === 'tree' || (made[k] && typeof made[k] === 'object' && !Array.isArray(made[k]))) root.spirit[k] = made[k]; });
+      // spirit.require binds what it loads on the page's own spirit (goal/G40.1).
+      root.spirit.require = requirer(root.spirit, t);
       return root.spirit;
     });
     s.ready = started;

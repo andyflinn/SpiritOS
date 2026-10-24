@@ -47,7 +47,7 @@ const HISTORY_MAX = 8;
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 // The agent this deskClient serves (the owner of its node), the other agent, a member of the agent's node, and
-// Andy at his own desk. Keys of a real key's length: the spirit object checks them (face/spirit.js).
+// Andy at his own desk. Keys of a real key's length: the spirit object checks them (spirit.js).
 const SELF_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestSelfAAAAAAAAAAAAAAAAAAAAA=';
 const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestOtherAAAAAAAAAAAAAAAAAAAA=';
 const DESK_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestDeskNodeAAAAAAAAAAAAAAAAA=';

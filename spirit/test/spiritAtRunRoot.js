@@ -21,8 +21,7 @@
 //   5. Every script on the box's list installs spirit in its first statement, from the run root, and holds no local
 //      spiritObject; none of the app-server scripts the box names requires kernel.js or takes appServer.spirit.
 //   6. Removed: imageStats/ and wordpressScanner/, and every keyTail in run/ and test/; hub's contact rows carry no tail.
-//   Owed with its reason (AWAITING): how node's global spirit finds its own node for an interface or a peer, which the
-//   box does not name.
+//   The builder named how node's global spirit finds its own node: SPIRIT_CALLBACK_URL (section 2).
 
 const fs = require('fs');
 const os = require('os');
@@ -140,6 +139,21 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
     const old = await get(port, '/' + OLD_REL);
     if (at === 200 && old === 404) test.check('the node serves /spirit.js (200), and the old path answers 404');
     else test.fail(OWED + '/spirit.js answered ' + at + ', the old path ' + old);
+    // NAMED BY THE BUILDER (goal/G40.1): node's global spirit binds an interface from this process's own node, the one
+    // SPIRIT_CALLBACK_URL names (the node that started it, as the kernel's peerPost reads it), never the default port.
+    const bind = function (env) {
+      const r = spawnSync(process.execPath, ['-e', "require('./spirit.js'); global.spirit.require('js/fs/api.js').then(function (f) {" +
+        " console.log(JSON.stringify({ bound: global.spirit.fs === f && typeof f.load === 'function' })); }," +
+        " function (e) { console.log(JSON.stringify({ refused: String(e && e.code || e) })); });"],
+        { cwd: RUN, encoding: 'utf8', timeout: 20000, env: Object.assign({}, process.env, env) });
+      try { return JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { return { failed: String(r.stderr || '').slice(-200) }; }
+    };
+    const own = bind({ SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + port + '/api/jobs/x' });
+    if (own.bound === true) test.check('in node, spirit.require(\'js/fs/api.js\') binds spirit.fs from the node SPIRIT_CALLBACK_URL names');
+    else test.fail(OWED + 'spirit.require of an interface in node, its own node at ' + port + ': ' + short(own));
+    const none = bind({ SPIRIT_CALLBACK_URL: '' });
+    if (none.refused === 'no-node') test.check('with no node of its own named, it refuses no-node, and asks no default port');
+    else test.fail(OWED + 'spirit.require of an interface with no SPIRIT_CALLBACK_URL: ' + short(none));
   } catch (e) {
     test.fail(e.message + ': ' + said.trim().split('\n').slice(-6).join(' | '));
   } finally { child.kill(); }
@@ -246,8 +260,5 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   if (!/\btail:\s/.test(src('js/hub.js') || '')) test.check('hub\'s contact rows carry no tail field');
   else test.fail(OWED + 'js/hub.js still sends a tail field');
 
-  // ── OWED, WITH ITS REASON ────────────────────────────────────────────
-  test.awaiting('goal/G40.1', 'node\'s global spirit binds an interface and a peer\'s family', false,
-    'the box asks spirit.require of an interface and of a peer by key in node too, but does not say how node\'s global spirit finds its own node (forNode with a url, or the port its node hands it); the builder names it under the item, and the assertion is written then');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });

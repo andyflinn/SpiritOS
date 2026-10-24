@@ -16,6 +16,8 @@
 // WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is not the server's manifest, and that
 // parses to an object with a string description. A verb file naming a verb nobody declared is said at boot.
 
+// The spirit object first, as the global spirit (goal/G40.1): app servers load this file too, so it takes from spirit what it took from kernel.js.
+require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 // The probability modules (goal/G29.19): FS.search ranks with them.
@@ -90,7 +92,7 @@ function fsVerbs(dir, prefix) {
     return full;
   }
   function underRun(full) {
-    const k = require('./kernel.js');
+    const k = spirit;
     const rel = path.relative(k.core.node.const.ROOT_DIR, full);
     if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'annotations live under spirit/run' });
     return { k: k, rel: rel.split(path.sep).join('/') };

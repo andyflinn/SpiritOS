@@ -130,8 +130,8 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const JOBS = new Map();
   [job('job_1', 'server', 'desk', 'running', 5, { module: 'process/js/desk' }),
     job('job_2', 'server', 'deskVerify', 'running', 9, { module: 'process/js/deskVerify' }),
-    job('job_3', 'process', 'imageStats', 'failed', 2, { module: 'process/js/imageStats' }),
-    job('job_4', 'process', 'wordpressScanner', 'running', 7, { module: 'process/js/wordpressScanner' }),
+    job('job_3', 'process', 'pushOrigin', 'failed', 2, { module: 'process/js/pushOrigin' }),
+    job('job_4', 'process', 'relayLimits', 'running', 7, { module: 'process/js/relayLimits' }),
     job('job_10', 'permanent', 'server-stats', 'running', 11)].forEach(function (j) { JOBS.set(j.id, j); });
   const sp = { core: { util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: kernel.core.const.ICON }, jobs: {} },
     shell: { activateApp: function (x) { sp.app = x; }, factRow: function (rows) { return rows.map(function (r) { return '<div>' + r[0] + ': ' + r[1] + '</div>'; }).join(''); } } };
@@ -194,9 +194,9 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   if (all) jobsBox.fire('click', { target: target(all) });
 
   const text = p.byId[jpre + 'text'];
-  if (text) { text.value = 'wordpress'; jobsBox.fire('input', { target: { id: jpre + 'text' } }); }
-  if (order()[0] === 'job_4' && /list-rank/.test(jlist()) && /<mark>/i.test(jlist())) test.check('words rank the rows: wordpress puts the wordpressScanner on top, its rank bar drawn, the word marked');
-  else test.fail(OWED + 'wordpress gave ' + short(order()));
+  if (text) { text.value = 'limits'; jobsBox.fire('input', { target: { id: jpre + 'text' } }); }
+  if (order()[0] === 'job_4' && /list-rank/.test(jlist()) && /<mark>/i.test(jlist())) test.check('words rank the rows: limits puts the relayLimits job on top, its rank bar drawn, the word marked');
+  else test.fail(OWED + 'limits gave ' + short(order()));
   if (text) { text.value = 'job_3'; jobsBox.fire('input', { target: { id: jpre + 'text' } }); }
   if (order()[0] === 'job_3') test.check('the id is matched too');
   else test.fail(OWED + 'job_3 gave ' + short(order()));

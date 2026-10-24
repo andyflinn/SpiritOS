@@ -1006,11 +1006,6 @@ details.stat-tile > summary {
    level you are looking at. */
 .nd-group-body { margin-top: 0.5rem; padding-left: 0.75rem; border-left: 2px solid rgba(128,128,128,0.25); }
 .nd-group-body .stat-tile { margin-bottom: 0.5rem; }
-/* The last eight characters of a key, for telling two peers with
-   one label apart — spirit-3 carries two `jazz` and two `rock`
-   right now. Tabular so the columns line up and the eye can
-   compare them without counting. */
-.nd-peer-tail { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.7; }
 
 /* What a mint answered. Reading size, because it is read aloud down
    a phone — and it takes the space above it like any block, which

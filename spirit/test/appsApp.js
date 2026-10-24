@@ -150,7 +150,7 @@ const done = (async function () {
   // on its way to the face kept only a code, and the relay's refusals ({ok: false, error}) and plain-text answers carry
   // none, so the words that said why were lost. A refusal now keeps its words, and the Icons app shows them.
   test.subHeading('7. a refusal says why, as far as the Icons app (goal/G33.1)');
-  const S = require('../run/face/spirit.js');
+  const S = require('../run/spirit.js');
   const answers = {
     relayJson: { status: 400, body: { ok: false, error: 'the body is not json' }, text: '{"ok":false,"error":"the body is not json"}' },
     plainText: { status: 504, body: null, text: 'the home node did not answer' },

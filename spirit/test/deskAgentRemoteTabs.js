@@ -187,7 +187,7 @@ async function serverHalf() {
 
 // ── THE APP ────────────────────────────────────────────────────────────
 function loadApp() {
-  const ctx = { app: null, spirit: { shell: { activateApp: function (a) { ctx.app = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: {}, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { app: null, spirit: { shell: { activateApp: function (a) { ctx.app = a; } }, core: kernel.core }, document: {}, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   try { vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP }); } catch (e) { return { error: String(e && e.message) }; }
   return ctx;
@@ -216,7 +216,7 @@ async function mount(opts) {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const calls = [];
   let behavior = null;
-  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP });
   const answerOf = function (who, verb, args) {

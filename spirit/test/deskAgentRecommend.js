@@ -269,7 +269,7 @@ async function faceHalf() {
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   let behavior = null;
-  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (x) { return String(x).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP });
   const STATE = { connected: true, persona: 'Levant', model: REPO, server: { url: 'u', answers: true, error: '' } };

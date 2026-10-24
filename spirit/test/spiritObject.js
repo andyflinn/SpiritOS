@@ -3,7 +3,7 @@
 // spirit/test/spiritObject.js
 // goal/G32.1: the spirit object, the node api for face apps. Red on today's tree; claude-windows writes it and builds it
 // (one agent). The box (v6), in short:
-//   - One hand-coded file, face/spirit.js: the relay serves it as the very first script, inline in face.html; the home
+//   - One hand-coded file, spirit.js: the relay serves it as the very first script, inline in face.html; the home
 //     node's index.html loads it; it runs in node too, for server processes.
 //   - Every family folder holds its api.js, written to the node's standard (one shape, the same checks); the object is
 //     assembled from them, one member per family: spirit.fs., spirit.jobs., spirit.contact. ... each verb asynchronous.
@@ -11,11 +11,11 @@
 //     error(), formatBytes(), escapeHtml() are the object's own.
 //   - The check is complete: every argument of every call checked before it goes out (shape and field rules, by
 //     js/fieldRules.js); a malformed call never leaves; a reply not 2xx refuses.
-// NAMED HERE: face/spirit.js exports createSpirit({ ask(verb, args) -> Promise<{status, body}> }) -> Promise<spirit>;
+// NAMED HERE: spirit.js exports createSpirit({ ask(verb, args) -> Promise<{status, body}> }) -> Promise<spirit>;
 // since goal/G32.3 the families are api's names and each interface is api {family}; a family's api.js is module.exports =
 // { verbs: { <verb>: { <arg>: '<rule>[?]' } },
 // names(call) }; a refusal is an Error with .code ('no-such-argument', 'bad-request') and .status for a reply;
-// serveCommon.inlineSpirit(html, runDir) puts face/spirit.js inline where face.html says <!-- spirit.js -->.
+// serveCommon.inlineSpirit(html, runDir) puts spirit.js inline where face.html says <!-- spirit.js -->.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');
@@ -33,8 +33,8 @@ test.startTest('goal/G32.1: the spirit object, the node api for face apps');
 
 const done = (async function () {
   test.subHeading('1. one core file, one api.js per family');
-  const missing = ['face/spirit.js'].concat(FAMILIES.map(function (f) { return 'js/' + f + '/api.js'; })).filter(function (f) { return !exists(f); });
-  if (!missing.length) test.check('face/spirit.js and every node family\'s api.js exist');
+  const missing = ['spirit.js'].concat(FAMILIES.map(function (f) { return 'js/' + f + '/api.js'; })).filter(function (f) { return !exists(f); });
+  if (!missing.length) test.check('spirit.js and every node family\'s api.js exist');
   else test.fail(OWED + 'missing: ' + missing.join(', '));
 
   // Every verb the node mounts has its function in its family's api.js.
@@ -63,7 +63,7 @@ const done = (async function () {
     },
   };
   let spirit = null;
-  try { spirit = await require(path.join(RUN, 'face', 'spirit.js')).createSpirit(transport); } catch (e) { spirit = { threw: e.message }; }
+  try { spirit = await require(path.join(RUN, 'spirit.js')).createSpirit(transport); } catch (e) { spirit = { threw: e.message }; }
   const ok = spirit && spirit.fs && typeof spirit.fs.load === 'function';
   let good = null;
   try {
@@ -108,12 +108,12 @@ const done = (async function () {
   try { inlined = require(path.join(RUN, 'js', 'serveCommon.js')).inlineSpirit(faceHtml, RUN) || ''; } catch (e) { inlined = ''; }
   const firstScript = (/<script[^>]*>([\s\S]*?)<\/script>/.exec(inlined) || [])[1] || '';
   if (/<!-- spirit\.js -->/.test(faceHtml) && firstScript.indexOf('createSpirit') !== -1 && /inlineSpirit\(/.test(raw('js/relayServer.js')))
-    test.check('face.html\'s first script is face/spirit.js, inline, as the relay serves it');
-  else test.fail(OWED + 'face.html is not served with face/spirit.js inline as its first script');
+    test.check('face.html\'s first script is spirit.js, inline, as the relay serves it');
+  else test.fail(OWED + 'face.html is not served with spirit.js inline as its first script');
   const idx = raw('index.html');
-  if (idx.indexOf('/face/spirit.js') !== -1 && /window\.spirit/.test(raw('js/kernel.js')) && /Object\.keys\(window\.spirit\)/.test(raw('js/kernel.js')))
-    test.check('index.html loads face/spirit.js, and the kernel keeps the object\'s members when it sets window.spirit');
-  else test.fail(OWED + 'index.html does not load face/spirit.js, or the kernel overwrites the object');
+  if (idx.indexOf('/spirit.js') !== -1 && /window\.spirit/.test(raw('js/kernel.js')) && /Object\.keys\(window\.spirit\)/.test(raw('js/kernel.js')))
+    test.check('index.html loads spirit.js, and the kernel keeps the object\'s members when it sets window.spirit');
+  else test.fail(OWED + 'index.html does not load spirit.js, or the kernel overwrites the object');
 }());
 
 done.then(function () { test.reportSuccessFailureCount(); process.exit(0); },

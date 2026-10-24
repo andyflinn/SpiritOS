@@ -33,10 +33,11 @@
 // pull --rebase passes. With the node not answering at the push, the push is refused and nothing is taken off.
 // Exits: 0 taken; 1 refused or no node (the reason printed); 2 usage.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
-const spiritObject = require('../../../face/spirit.js');
 
 const USAGE = 'usage: node commitCheck.js install <port> | check <port> <message file> | record <port> | push <port> <remote>';
 const NODE_WAIT_MS = 20000;
@@ -62,7 +63,7 @@ function desk(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): deskClient.desk on the node's loopback door, as {status, body}.
-  const ask = spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.deskClient.desk({ name: verb, json: JSON.stringify(args) }); }));
+  const ask = spirit.outcome(spirit.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.deskClient.desk({ name: verb, json: JSON.stringify(args) }); }));
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
     // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.

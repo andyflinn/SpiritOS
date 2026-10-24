@@ -85,7 +85,8 @@ var CONTACTS_UNKNOWN_LABELS = {
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
-var contactsSelfTail = '';
+// The "your key ends …" footer went with contact.search's selfTail: no key's tail is shown anywhere (Andy, 2026-10-24,
+// goal/G40.1).
 
 
 // THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.2): contactsPost and contactsAsk, the two wrappers over
@@ -159,14 +160,6 @@ function contactsStatus(text) {
 // CONTACTS' OWN PRESENCE TABLE AND ITS PAINTING STOOD HERE (contactsPresence, contactsPresenceMark,
 // contactsPaintPresence and their helpers). A row's dot is its contactElement's now (goal/G30.18, G30.19): it listens to
 // the relay-presence job itself, green, red or white with the same meaning.
-
-function contactsPaintSelf() {
-  var el = document.getElementById('contacts-self');
-  if (!el) return;
-  el.textContent = contactsSelfTail
-    ? 'Being added yourself? Your key ends …' + contactsSelfTail + ' — that is what to tell them.'
-    : '';
-}
 
 // The list asked again with what is typed: after an add, or a decision on a contact's own screen.
 function contactsRefresh() {
@@ -329,8 +322,7 @@ spirit.shell.activateApp({
         '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
         '<div id="contacts-unknown-choices"></div>' +
       '</details>' +
-      '<div class="job-manifest-note" id="contacts-status"></div>' +
-      '<div class="job-manifest-note" id="contacts-self"></div>';
+      '<div class="job-manifest-note" id="contacts-status"></div>';
 
     // Painted when the node answers, not before. The read is a round trip
     // now rather than a file, so painting on the next line would draw
@@ -375,7 +367,6 @@ spirit.shell.activateApp({
     contactsList = window.spirit.elements.contactList.create(document.getElementById('contacts-book'), {
       api: contactsApi,
       say: contactsStatus,
-      selfTail: function (tail) { contactsSelfTail = tail; contactsPaintSelf(); },
       empty: 'Nobody matches: the network is searched as you type.',
     });
   },

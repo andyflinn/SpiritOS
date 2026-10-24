@@ -532,7 +532,6 @@ function mountDetails(row, rows) {
       ask: test.browserAsk(fakeFetch), relays: test.browserRelays(test.browserAsk(fakeFetch)),
       util: { escapeHtml: spirit.core.util.escapeHtml }, const: { ICON: spirit.core.const.ICON },
     },
-    keyTail: function (k) { return String(k).slice(-8); },
   };
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', 'navigator',
     fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'))(

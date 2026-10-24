@@ -475,7 +475,7 @@ function listsTheBook() {
       // Bert has been renamed, so his name and his own handle differ and
       // the cell cannot pass by showing either.
       { publicKey: BERT, publicLabel: 'bert', caption: 'Bertie', myLabel: 'Bertie', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'hold', held: true, blocked: false },
       { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', tail: 'edave=', acquiredVia: 'message', held: true, blocked: true },
     ],
   });
@@ -523,9 +523,10 @@ function listsTheBook() {
       test.fail('name cells: bert ' + cell(app, BERT, 'label') + ', carol ' + cell(app, CAROL, 'label'));
     }
 
-    // And no key endings on ordinary rows; the footer still says YOURS.
-    if (allCells(app).indexOf('…') === -1 && el(app, 'contacts-self').textContent.indexOf('XD+0c=') !== -1) {
-      test.check('and no row wears a key ending, though the footer still tells you yours');
+    // And no key endings anywhere, the footer's "your key ends …" included (Andy, 2026-10-24, goal/G40.1: "we don't
+    // show the fucking tail anywhere anymore.").
+    if (allCells(app).indexOf('…') === -1 && !String(el(app, 'contacts-self').textContent || '')) {
+      test.check('and no row wears a key ending, and no footer tells you yours');
     } else {
       test.fail('endings in rows: ' + allCells(app) + ' | self: ' + el(app, 'contacts-self').textContent);
     }
@@ -548,7 +549,7 @@ function aRowOpensThePerson() {
   const app = mountApp({
     people: [
       { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: 'Bertie', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'hold', held: true, blocked: false },
     ],
   });
 
@@ -584,7 +585,7 @@ function refreshesWhenTheDialogChangedSomething() {
   test.subHeading('What the dialog decided reaches the list');
 
   const people = [
-    { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
+    { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'hold', held: true, blocked: false },
   ];
   const app = mountApp({ people: people });
 
@@ -614,7 +615,7 @@ function refreshesWhenTheDialogChangedSomething() {
 // A dialog that decided nothing must not make the list re-fetch.
 function saysNothingWhenNothingHappened() {
   const app = mountApp({
-    people: [{ publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'message', held: false, blocked: false }],
+    people: [{ publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'message', held: false, blocked: false }],
     dialogResult: null,
   });
   return settle().then(function () {
@@ -773,7 +774,7 @@ function foundOnTheNetwork() {
     app.found(items);
     return settle();
   }).then(function () {
-    if (rowOf(app, here) && rowOf(app, faraway) && rowOf(app, BERT) && cell(app, here, 'label') === 'here …' + spirit.keyTail(here)) {
+    if (rowOf(app, here) && rowOf(app, faraway) && rowOf(app, BERT) && cell(app, here, 'label') === 'here') {
       test.check('the rows the network search streams join the book’s in one list');
     } else {
       test.fail('rows: ' + JSON.stringify(rowKeys(app)) + ' from ' + JSON.stringify(items));
@@ -946,17 +947,15 @@ function addsByHandle() {
       test.fail('matches: ' + allCells(app));
     }
 
-    // THE ENDING RIDES THE NAME of every row the book does not hold (hub.contactSearch strangerLabel): a found row is
-    // somebody you are deciding whether to add, and the key is the decision. Rows stream one at a time, so no answer
-    // could mark only the ones that read alike.
+    // A FOUND ROW IS ITS NAME ALONE (goal/G40.1): no key's tail rides it, so two found under one word read alike.
     const labels = cell(app, one, 'label') + ' | ' + cell(app, two, 'label');
-    if (cell(app, one, 'label') === 'bert …' + spirit.keyTail(one) && cell(app, two, 'label') === 'bert …' + spirit.keyTail(two)) {
-      test.check('two found rows behind one word are told apart by the end of the key');
+    if (cell(app, one, 'label') === 'bert' && cell(app, two, 'label') === 'bert') {
+      test.check('two found rows behind one word both read bert: no key ending tells them apart');
     } else {
       test.fail('two found rows behind one word: ' + labels);
     }
-    if (cell(app, carl, 'label') === 'carl …' + spirit.keyTail(carl)) {
-      test.check('and every found row reads "<name> …<ending>", a name nobody else carries too');
+    if (cell(app, carl, 'label') === 'carl') {
+      test.check('and every found row reads its name alone');
     } else {
       test.fail('carl: ' + cell(app, carl, 'label'));
     }
@@ -988,21 +987,21 @@ function theHandleColumnStillIdentifies() {
 
   const app = mountApp({
     people: [
-      { publicKey: JOHN_A, publicLabel: 'john', caption: 'john', myLabel: '', tail: 'aaajoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
-      { publicKey: JOHN_B, publicLabel: 'john', caption: 'john', myLabel: '', tail: 'bbbjoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: '', caption: CAROL, myLabel: '', tail: 'lcaro=', acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: JOHN_A, publicLabel: 'john', caption: 'john', myLabel: '', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: JOHN_B, publicLabel: 'john', caption: 'john', myLabel: '', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: CAROL, publicLabel: '', caption: CAROL, myLabel: '', acquiredVia: 'message', held: false, blocked: false },
     ],
   });
 
   return settle().then(function () {
-    if (cell(app, JOHN_A, 'label') === 'john …aaajoh=' && cell(app, JOHN_B, 'label') === 'john …bbbjoh=') {
-      test.check('two people behind one word are told apart by the end of the key');
+    if (cell(app, JOHN_A, 'label') === 'john' && cell(app, JOHN_B, 'label') === 'john') {
+      test.check('two people behind one word both read john: no key ending is shown (goal/G40.1)');
     } else {
       test.fail('ambiguous rows: ' + cell(app, JOHN_A, 'label') + ' | ' + cell(app, JOHN_B, 'label'));
     }
 
     const nameless = cell(app, CAROL, 'label');
-    if (nameless === '…lcaro=' || nameless === '(no name)') {
+    if (nameless === '(no name)') {
       test.check('and a contact who never claimed a handle is not a blank cell');
     } else {
       test.fail('nameless row: ' + nameless);
@@ -1107,7 +1106,7 @@ function theDotColumn() {
   const app = mountApp({
     people: [
       { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'handle', held: false, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'handle', held: false, blocked: false },
       { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', tail: 'edave=', acquiredVia: 'handle', held: false, blocked: false },
     ],
   });

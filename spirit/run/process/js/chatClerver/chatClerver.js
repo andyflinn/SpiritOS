@@ -21,12 +21,12 @@
 // Its verbs come with goal/G4.2 (line.receive, chat.read, the publish), G4.6 and G4.7 (line.write), G4.3
 // (peers.search, chats.search since goal/G29.18) and goal/G29.18 (chat.search).
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
-const kernel = require('../../../js/kernel.js');
-const spiritObject = require('../../../face/spirit.js');
 const packet = require('../../../js/client/packet.js');
 const limits = require('../../../js/limits.js');
 const appClient = require('../../../js/appClient.js');
@@ -87,7 +87,7 @@ function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused
 // THE NODE THROUGH THE SPIRIT OBJECT (goal/G32.3): one call of a node family, {status, body}, or {status: 0} when the
 // node did not answer at all.
 function onNode(family, call) {
-  return spiritObject.outcome(spiritObject.forNode(NODE_URL, family).then(call));
+  return spirit.outcome(spirit.forNode(NODE_URL, family).then(call));
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
@@ -113,7 +113,7 @@ function lineOf(r) {
 }
 function publishLine(peer, sent, seq, extra) {
   const r = oneLine.get(peer, sent, seq);
-  if (r) appServer.spirit.core.jobs.publish(Object.assign({ line: lineOf(r) }, extra || {}));
+  if (r) spirit.core.jobs.publish(Object.assign({ line: lineOf(r) }, extra || {}));
 }
 // The line a re names, in this record: the writer's key says which side wrote it (G4.2: "the chatClerver is the one
 // who knows what an incoming message may miss, in terms of what it refers to").
@@ -130,7 +130,7 @@ function bodyOf(l) {
 // One post of one line, and what came back: kept, or the peer's refusal (its door's, sealed) kept as proof that
 // contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
 function post(to, l) {
-  return kernel.peerPost(to, 'api', bodyOf(l), { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }).then(function (got) {
+  return spirit.peerPost(to, 'api', bodyOf(l), { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }).then(function (got) {
     if (got && got.kept === true) markRefused.run('', '', to, l.seq);
     else markRefused.run(String((got && (got.code || got.error)) || 'no-answer'), new Date().toISOString(), to, l.seq);
     publishLine(to, 1, l.seq);

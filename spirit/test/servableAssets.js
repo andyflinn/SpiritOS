@@ -150,13 +150,13 @@ expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json'
 // rather than the check — a rule whose only witness gets deleted is a
 // rule that silently stops being tested.
 //
-// imageStats is the deliberate choice: it talks to no external service
-// and depends on no lab, so it is the process script least likely to be
-// the next one deleted.
+// pushOrigin is the witness since goal/G40.1 removed imageStats, the
+// first choice: a plain process script with no intrinsic mark, so its
+// code is not core.
 test.subHeading('Process scripts are read-only, not hidden');
-expectLoads('process/js/imageStats/imageStats.js', 'process/js/imageStats/imageStats.js');
-expectWritable('process/js/imageStats/imageStats.js (only core is protected, goal/G30.21)', 'process/js/imageStats/imageStats.js');
-expectLoads('process/js/imageStats/imageStats.json', 'process/js/imageStats/imageStats.json');
+expectLoads('process/js/pushOrigin/pushOrigin.js', 'process/js/pushOrigin/pushOrigin.js');
+expectWritable('process/js/pushOrigin/pushOrigin.js (only core is protected, goal/G30.21)', 'process/js/pushOrigin/pushOrigin.js');
+expectLoads('process/js/pushOrigin/pushOrigin.json', 'process/js/pushOrigin/pushOrigin.json');
 
 // ---- sidecars and relay state are invisible to every generic consumer ----
 test.subHeading('Sidecars and relay-state are invisible');

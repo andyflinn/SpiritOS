@@ -19,7 +19,7 @@ const limits = require('./limits.js');
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 // Job spawning (jobs.js's startProcessJob) passes relative script paths
-// like "process/js/imageStats/imageStats.js" straight to
+// like "process/js/pushOrigin/pushOrigin.js" straight to
 // child_process.spawn without ever setting an explicit cwd, so it
 // inherits whatever directory THIS process was started from. Every other
 // path in the app is resolved off ROOT_DIR (__dirname-relative, always
@@ -348,7 +348,8 @@ function refuseListenError(server, port, entry) {
 // are a collision worth having.
 //
 // A RELAY GETS A FIRST PUBLIC LABEL TOO: its identity's name, when it is empty or the installer's word 'relay' (a type,
-// not a caption), becomes 'relay' and its key tail (kernel keyTail), so no two relays read alike by default.
+// not a caption), becomes 'relay' and its machine's name, so no two relays read alike by default and no key's tail is
+// shown (goal/G40.1; rule/13: "the machine name as its default name").
 function firstDescription(kind, now) {
   const at = (now instanceof Date ? now : new Date()).toISOString();
   // 2026-09-17T14:23:07.123Z -> 2026-09-17 14:23:07 UTC
@@ -364,18 +365,22 @@ function ensureFirstRun(rootDir, opts) {
   if (kind === 'relay') {
     const now = auth.loadIdentity(rootDir);
     const name = String(now.name || '').trim();
-    if (!name || name === 'relay') auth.saveIdentity(rootDir, Object.assign({}, now, { name: 'relay ' + spirit.keyTail(now.publicKey) }));
+    if (!name || name === 'relay') auth.saveIdentity(rootDir, Object.assign({}, now, { name: 'relay ' + require('os').hostname() }));
   }
   return auth.loadIdentity(rootDir);
 }
 
 // THE SPIRIT OBJECT, INLINE AND FIRST (goal/G32.1; Andy: "the very first script it serves should be right in a script
 // tab in the very only html file it servers"): face.html marks the place with <!-- spirit.js -->, and whoever serves the
-// page, the relay or the home node, puts face/spirit.js there inline. One source, so the page and a server process run
-// the same file.
+// page, the relay or the home node, puts the run root's spirit.js there inline (goal/G40.1). One source, so the page and
+// a server process run the same file. A tree with no spirit.js serves the page without it, and says so: the face would
+// otherwise fail without a word (a relay not yet updated, goal/G40.1).
 function inlineSpirit(html, runDir) {
   let src = '';
-  try { src = require('fs').readFileSync(require('path').join(runDir, 'face', 'spirit.js'), 'utf8'); } catch (e) { return html; }
+  try { src = require('fs').readFileSync(require('path').join(runDir, 'spirit.js'), 'utf8'); } catch (e) {
+    console.error('inlineSpirit: no spirit.js at ' + require('path').join(runDir, 'spirit.js') + '; face.html is served without the spirit object');
+    return html;
+  }
   // A '</script' inside the source would end the tag early.
   const safe = src.replace(/<\/script/gi, '<\\/script');
   return String(html).replace('<!-- spirit.js -->', function () { return '<script>\n' + safe + '\n</script>'; });

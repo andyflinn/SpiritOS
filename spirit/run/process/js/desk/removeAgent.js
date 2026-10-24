@@ -16,8 +16,9 @@
 //   scope until goal/G10.8 removed agent scopes, every agent being /.)
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
-const spiritObject = require('../../../face/spirit.js');
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const USAGE = 'usage: node removeAgent.js <port of Andy\'s node> <agent key>';
 const NODE_WAIT_MS = 20000;
 
@@ -32,7 +33,7 @@ function ask(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): the verb by its name, as {status, body}.
-  const asked = spiritObject.outcome(spiritObject.forNode(node, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); }));
+  const asked = spirit.outcome(spirit.forNode(node, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); }));
   return Promise.race([asked, late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'removeAgent: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }

@@ -19,7 +19,7 @@
 //     boot as a relay peer. Membership stays in the relays table.
 // NAMED HERE where the box names none:
 //   - serveCommon.ensureFirstRun(rootDir, {kind: 'node' | 'relay', now}). The first description reads "this <kind>
-//     described for the first time <date> UTC"; a relay's first label is "relay " and its key tail (kernel keyTail),
+//     described for the first time <date> UTC"; a relay's first label is "relay " and its machine's name (goal/G40.1: no key tail),
 //     written as its identity's name when the name is empty or the installer's 'relay'.
 //   - seenPeers.note(key, {kind}) keeps kind on the row, get(key).kind answers it ('node' when never said).
 //   - peer.search rows carry kind in their label JSON; peerPost keeps the card label as labelOf(url).
@@ -88,8 +88,8 @@ const relayId = auth.loadIdentity(relayHome);
 if (ran === true && nodeId.description === 'this node described for the first time 2026-10-20 08:00:00 UTC' && nodeId.name === 'andy')
   test.check('a node with no description gets the first one; its name is left alone');
 else test.fail(OWED + 'ensureFirstRun for a node: ' + short(ran) + ', ' + short({ name: nodeId.name, description: nodeId.description }));
-if (ran === true && relayId.description === 'this relay described for the first time 2026-10-20 08:00:00 UTC' && relayId.name === 'relay ' + require('../run/js/kernel').keyTail(relayId.publicKey))
-  test.check('a relay gets the first description and a first public label, relay and its key\'s tail');
+if (ran === true && relayId.description === 'this relay described for the first time 2026-10-20 08:00:00 UTC' && relayId.name === 'relay ' + require('os').hostname())
+  test.check('a relay gets the first description and a first public label, relay and its machine\'s name');
 else test.fail(OWED + 'ensureFirstRun for a relay: ' + short({ name: relayId.name, description: relayId.description }));
 const nodeCard = code('js/nodeCard.js');
 const server = code('js/server.js');

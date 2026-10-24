@@ -94,9 +94,9 @@ test.startTest('slim/G1.5: the node owns every module id, by path; a job is an i
     // goal/G29.14: the row is painted by jobsPaint(job, mark) on the shared list; mark highlights the name.
     const jobsPaint = new Function('spirit', 'document', 'window', src + '\nreturn jobsPaint;')(
       { shell: { activateApp: function () {} }, core: kernel.core }, { getElementById: function () { return null; } }, {});
-    row = jobsPaint({ id: 'job_9', kind: 'process', type: 'imageStats', module: 'process/js/imageStats', status: 'running', data: {}, log: [] }, function (t) { return t; });
+    row = jobsPaint({ id: 'job_9', kind: 'process', type: 'pushOrigin', module: 'process/js/pushOrigin', status: 'running', data: {}, log: [] }, function (t) { return t; });
   } catch (e) { row = 'threw ' + e.message; }
-  if (/process\/js\/imageStats/.test(row)) test.check('a row for an imageStats job names process/js/imageStats');
+  if (/process\/js\/pushOrigin/.test(row)) test.check('a row for a pushOrigin job names process/js/pushOrigin');
   else test.fail(OWED + 'the row reads ' + JSON.stringify(String(row).replace(/\s+/g, ' ').slice(0, 200)));
 
   test.subHeading('T5: a job that is no module\'s carries none');

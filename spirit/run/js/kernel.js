@@ -44,14 +44,8 @@ const spirit = {
 };
 
 
-// ONE FUNCTION LABELS A KEY, EVERYWHERE (apiAuth/G1.11). Andy: "that ugly
-// default label must be procured by one and the same function across out
-// entire system", and kernel.js because "it carries common functions to
-// shell and node modules." The practice is hub.keyTail's: the last 6
-// characters, '' for no key. Only this file may cut a key (keyTail.js).
-spirit.keyTail = function (publicKey) {
-  return String(publicKey || '').slice(-6);
-};
+// THE KEY'S TAIL WENT (goal/G40.1). Andy: "we don't show the fucking tail anywhere anymore." No label, caption or name
+// is cut from a key; a key with no name has none.
 
 // ── THE ONE MOUTH ONTO THE NODE, BOTH ENVIRONMENTS ─────────────────────
 //
@@ -1250,7 +1244,7 @@ if (isNode()) {
     onDelete: function(id) { print('[jobs] deleted: ' + id); },
   });
 
-  // THE SPIRIT OBJECT KEEPS ITS MEMBERS (goal/G32.1): on the face face/spirit.js runs first, inline, and its members
+  // THE SPIRIT OBJECT KEEPS ITS MEMBERS (goal/G32.1): on the face spirit.js runs first, inline, and its members
   // (the families, start, ready) stay on the one object this file now names window.spirit.
   if (window.spirit && typeof window.spirit === 'object' && window.spirit !== spirit) {
     Object.keys(window.spirit).forEach(function (k) { if (!(k in spirit)) spirit[k] = window.spirit[k]; });

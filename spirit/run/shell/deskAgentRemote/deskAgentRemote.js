@@ -179,8 +179,8 @@ function deskAgentRemoteReadTargets() {
   var list = parsed && Array.isArray(parsed.puppets) ? parsed.puppets : [];
   list.forEach(function (p) {
     if (!p || typeof p.key !== 'string' || !p.key) return;
-    // The label of a key is the kernel's alone (apiAuth/G1.11: "one and the same function across our entire system").
-    targets.push({ kind: 'puppet', name: String(p.name || spirit.keyTail(p.key)), key: p.key });
+    // A puppet with no name goes by its key whole: no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1).
+    targets.push({ kind: 'puppet', name: String(p.name || p.key), key: p.key });
   });
   return targets;
 }

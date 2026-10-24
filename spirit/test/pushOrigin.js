@@ -11,14 +11,14 @@
 //
 // THE SHAPES (the box's; where it names none, wsl-claude's picks, the builder may argue them in Desk first):
 //   1  pushOrigin.js loads as shared code without running anything, and exports pushOrigin({ repo }) -> (a promise
-//      of) { ok, reason }. pushOrigin.json beside it lists its arguments as wordpressScanner.json does, one of them
+//      of) { ok, reason }. pushOrigin.json beside it lists its arguments as a process manifest does, one of them
 //      named repo. (The export's name and the argument's name are wsl-claude's picks.)
 //   2  BEHIND ORIGIN: it fetches, re-stacks the clone's own commits on origin's newest, and pushes; ok true.
 //   3  UNSAVED EDITS are put aside and back: a modified tracked file is still modified, with the same text, after.
 //   4  A CLASH (both sides changed the same line) stops it: ok false with a reason; the clone is left as it was (same
 //      HEAD, no rebase in progress, the unsaved edit still there) and origin is unchanged.
 //   5  FROM JOBS: started as a job on a node that lists process/js/pushOrigin, with its arguments as ONE JSON string
-//      after the script (index.html 1559; wordpressScanner.js 85 reads them the same way), it pushes.
+//      after the script (index.html 1559), it pushes.
 //   6  publishData loads it in place of its own pull-and-push loop (publishData.js 183-192 today).
 //   4b A RACE: someone pushes after the rebase and before the push lands; pushOrigin itself tries again and its
 //      commit lands on top. Andy, to Q7 (move the retry into pushOrigin itself, as the box says): "yes". Staged with a

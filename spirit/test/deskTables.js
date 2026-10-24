@@ -597,7 +597,7 @@ async function shedding() {
 }
 
 // ── 9. NO HAND-ROLLED MECHANISM (Andy: "if there's new hand-rolled shit in this new code, i'll be extremely MAD") ────
-// A client reaches the desk through the family interface over peerPost (face/spirit.js forPeer), the translator keeps
+// A client reaches the desk through the family interface over peerPost (spirit.js forPeer), the translator keeps
 // what it learns in spirit.data alone, and the desk publishes through appServer.publish alone, which reaches its pages
 // and its clients both (box v43): the desk itself calls no client.
 function noHandRolled() {

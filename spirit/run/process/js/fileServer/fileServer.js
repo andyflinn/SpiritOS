@@ -1,4 +1,6 @@
 'use strict';
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 
 // spirit/run/process/js/fileServer/fileServer.js
 // THE FILESERVER: files kept by their hash, one folder each (fileTransfer goal/G1).
@@ -32,7 +34,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const appServer = require('../../../js/appServer.js');
-const MIME_TYPES = require('../../../js/kernel.js').core.const.MIME_TYPES;
+const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -168,7 +170,7 @@ function progress(id) {
   const t = transfers[id];
   const s = readStatus(id);
   if (!t || !s) return;
-  appServer.spirit.core.jobs.publish({ transfer: {
+  spirit.core.jobs.publish({ transfer: {
     id: id, name: nameOf(s),
     held: t.state === 'complete' ? (s ? s.bytes : 0) : heldBytes(id), bytes: s ? s.bytes : 0, state: t.state,
   } });
@@ -192,7 +194,7 @@ function finish(id) {
 
 function ask(id, command, data) {
   const one = {}; one[id] = { command: command, data: data };
-  return require('../../../js/kernel.js').peerPost(transfers[id].from, 'api', { fileServer: one }, { kind: 'background' });
+  return spirit.peerPost(transfers[id].from, 'api', { fileServer: one }, { kind: 'background' });
 }
 
 // The wheel: the next live download after the last one asked for, one ask, then the next turn.
@@ -399,7 +401,7 @@ function moveGrants(from, to) {
   if (!url) return Promise.resolve();
   const base = new URL(url).origin;
   // Through the spirit object (goal/G32.3): the node's answer, or its refusal's body.
-  const node = require('../../../face/spirit.js');
+  const node = spirit;
   const ask = function (verb, args) { return node.outcome(node.forNode(base, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); })).then(function (r) { if (!r || !r.status) throw new Error('the node did not answer ' + verb); return r.body || {}; }); };
   const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
   return ask('auth.search', { text: from }).then(function (found) {

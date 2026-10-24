@@ -514,7 +514,7 @@ const test = {
     // THE SPIRIT OBJECT IN A SUITE (goal/G32.2): the node's families from their api.js, every call through ask(verb,
     // args) -> {status, body} (the stub a suite already has for spirit.core.ask), put onto `onto` with ready resolved.
     spiritFor: function (ask, onto) {
-        const S = require('../run/face/spirit.js');
+        const S = require('../run/spirit.js');
         const defs = {};
         ['auth', 'config', 'contact', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'].forEach(function (f) { defs[f] = require('../run/js/' + f + '/api.js'); });
         const made = S.assemble({ ask: function (v, a) { return Promise.resolve(ask(v, a)); }, file: function () { return Promise.resolve({ status: 404, bytes: new Uint8Array(0) }); } }, defs);
@@ -529,7 +529,7 @@ const test = {
     // calls. body is what the pretend node read off /api/spirit ({verb, ...args}). Answers {status, body}, or null when
     // body asks anything else, the plain api tree included: what a pretend node answers to that stays its own.
     // A PRETEND PEER'S api {family} (goal/G33.4): what a far node's apiDoor answers the packet {api: {family}} that the
-    // spirit object over peerPost sends (face/spirit.js forPeer): the family's interface, as nodeApi gives it. null for
+    // spirit object over peerPost sends (spirit.js forPeer): the family's interface, as nodeApi gives it. null for
     // any other body.
     // A DESK'S WORLD WITHOUT session.set (goal/G33.7: the verb went; "its callers use goal.add and item.add").
     // seedDesk(stateDir, sessions): before a desk starts on stateDir, its desk.db holds the old record of each session

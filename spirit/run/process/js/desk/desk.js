@@ -25,11 +25,12 @@
 // matches, ranked, newest first among equals, cut to fit one answer by the
 // probability bucket, and says so with more.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
-const spiritObject = require('../../../face/spirit.js');
 const appClient = require('../../../js/appClient.js');
 
 const argv = process.argv;
@@ -2293,7 +2294,7 @@ function shareFile(repoPath, fromFile, message) {
   try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
   Promise.resolve().then(function () {
     // Through the spirit object (goal/G32.3), as {status, body}.
-    return spiritObject.outcome(spiritObject.forNode(base, 'jobs').then(function (s) {
+    return spirit.outcome(spirit.forNode(base, 'jobs').then(function (s) {
       return s.jobs.create({ command: process.execPath,
         // A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays, to be seen.
         args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message] });
@@ -2345,7 +2346,7 @@ function hasDeskVerify() { return VERIFY_SEEN.there === true; }
 // Done and two suites went red there while passing here. So the probe happens only when this node named a port.
 function nodeNamedPort() {
   try {
-    const env = JSON.parse(fs.readFileSync(appServer.spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, "utf8"));
+    const env = JSON.parse(fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, "utf8"));
     const p = Number(env && env.PORT);
     return Number.isInteger(p) && p > 0 ? p : 0;
   } catch (e) { return 0; }
@@ -2354,7 +2355,7 @@ function lookForDeskVerify() {
   const port = nodeNamedPort();
   if (!port) return;
   // The node's api tree, through the spirit object (goal/G32.3).
-  spiritObject.forNode('http://127.0.0.1:' + port).then(function (s) { return s.tree(); }).then(function (body) {
+  spirit.forNode('http://127.0.0.1:' + port).then(function (s) { return s.tree(); }).then(function (body) {
     const apps = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
     VERIFY_SEEN = { at: Date.now(), there: apps.indexOf('deskVerify') !== -1 };
   }, function () { /* asked again on the next turn of the clock */ });
@@ -2370,7 +2371,7 @@ function askDeskVerify(verb, args) {
   const port = nodeNamedPort();
   if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
   // Through the spirit object (goal/G32.3), as {status, body}; made again when deskVerify came up after it.
-  return spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
+  return spirit.outcome(spirit.forNode('http://127.0.0.1:' + port, 'deskVerify').then(function (s) { return s.call('deskVerify.' + verb, args || {}); })).then(function (r) {
     const b = r && r.body;
     if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
     const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));
@@ -2575,8 +2576,8 @@ function writerOf(caller) {
   if (caller.owner === true) return { by: 'andy', key: String(caller.key || '') };
   if (typeof caller.key !== 'string' || !caller.key) throw refusedWhy('bad-request', 'the caller carries no key, so it has no writer');
   const label = String(caller.label || '').trim();
-  // The one cut of a key, everywhere (G1.11): kernel.keyTail.
-  return { by: label || require('../../../js/kernel.js').keyTail(caller.key), key: caller.key };
+  // A caller with no name is written by its key whole: no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1).
+  return { by: label || caller.key, key: caller.key };
 }
 
 // ── MOUNTING THE PLUGINS (goal/G22.3) ────────────────────────────────

@@ -102,7 +102,8 @@ function cdTitle() {
   var name = cdPerson.publicLabel || '';
   var mine = cdPerson.myLabel || '';
   if (mine && name && mine !== name) return mark + name + ' (' + mine + ')';
-  return mark + (mine || name || ('…' + (cdPerson.tail || '')));
+  // No key's tail stands in for a name (Andy, 2026-10-24, goal/G40.1).
+  return mark + (mine || name || '(no name)');
 }
 
 // No focus guard, and that is the shell's doing rather than an oversight.

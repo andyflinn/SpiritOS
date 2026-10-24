@@ -140,7 +140,7 @@ const done = (async function () {
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
   test.subHeading('5. the spirit object takes every interface through api {family}, under the node\'s name');
-  const S = require('../run/face/spirit.js');
+  const S = require('../run/spirit.js');
   const asked = [];
   const transport = {
     ask: function (verb, args) {

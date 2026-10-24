@@ -1,5 +1,5 @@
 // spirit/run/process/js/desk/desk.family/api.js
-// THE desk SERVER'S INTERFACE (goal/G32.3): every verb it serves, each argument with its rule (face/spirit.js's
+// THE desk SERVER'S INTERFACE (goal/G32.3): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it
 // to its name: it names no family of its own. WRITTEN BY HAND FROM THE HANDLERS (Andy, 2026-10-22, on the generated
 // first cut: "request validation worth a damn?"): an argument is required wherever the door's exact request shape or

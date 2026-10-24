@@ -24,11 +24,12 @@
 // <clone>/spirit/run/relay-state/node.db, read only: the node holds the file open, and no verb reads that log.
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const spiritObject = require('../../../face/spirit.js');
 
 const USAGE = 'usage: node publishData.js <port of the agent\'s own node> [--asks N] [--only packets] [--out <dir>]';
 const NODE_WAIT_MS = 20000;
@@ -51,7 +52,7 @@ function ask(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): the verb by its name, as {status, body}.
-  const asked = spiritObject.outcome(spiritObject.forNode(node, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); }));
+  const asked = spirit.outcome(spirit.forNode(node, String(verb).split('.')[0]).then(function (s) { return s.call(verb, args); }));
   return Promise.race([asked, late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }

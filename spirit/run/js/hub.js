@@ -272,9 +272,9 @@ function bytesHeldByPeer(rootDir) {
 // star in the one column, that says it all."); owned is goal/G19.8's: a node whose signed card names this one its owner.
 function contactLabel(p) {
   var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim();
-  var tail = p.tail ? '…' + p.tail : '';
+  // No key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1): a row with no name says so.
   return JSON.stringify({
-    name: name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)'),
+    name: name || '(no name)',
     owned: p.owned === true, blocked: p.blocked === true, held: p.held === true,
     // In the book, beside the shadow's and the network's rows in the one Contacts list (goal/G30.19); their own name
     // beside mine, for a caller matching what they call themselves (the desk onboarding).
@@ -285,7 +285,7 @@ function contactLabel(p) {
 // every person scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
 // (or '*') is everybody, in the book's order. owned, blocked and held are yes-filters beside q (Andy: "why would owned
 // not be a binary filter, owned or not?"). The answer is a probabilityBucket, cut in bytes to one plaintext.
-var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false, selfTail: '' }), 'utf8');
+var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 function searchPeople(people, q, filters) {
   var words = String(q == null ? '' : q).trim();
   if (/^\*+$/.test(words)) words = '';
@@ -326,12 +326,6 @@ function buildPeople(rootDir) {
       var stats = peerStats.readSummary(rootDir, row.publicKey);
       return {
         publicKey: row.publicKey,
-        // The end of the key, from the one rule that decides what a tail
-        // is (keyTail below) — the same field /api/hub/handle already
-        // sends with a match. An app that needs to tell two rows apart
-        // must not carve its own out of the key: a fourth copy of "six
-        // from the end" is a fourth thing to get wrong.
-        tail: keyTail(row.publicKey),
         publicLabel: row.publicLabel || '',
         caption: contactBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         // The raw one, beside the resolved caption: an editor has to
@@ -374,14 +368,12 @@ function buildPeople(rootDir) {
     });
 
   // When two rows would read the same — two johns, neither renamed yet —
-  // the caption carries a piece of the key. The TAIL: every Ed25519 SPKI
-  // key opens with the same ASN.1 header, so a fragment from the front
-  // would distinguish nothing.
+  // they are marked ambiguous. The caption carries no piece of the key:
+  // no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1).
   var seenCaption = Object.create(null);
   rows.forEach(function (r) { seenCaption[r.caption] = (seenCaption[r.caption] || 0) + 1; });
   rows.forEach(function (r) {
     if (seenCaption[r.caption] > 1) {
-      r.caption = r.caption + ' (' + keyTail(r.publicKey) + ')';
       r.ambiguous = true;
     }
   });
@@ -390,40 +382,8 @@ function buildPeople(rootDir) {
   return rows;
 }
 
-// The end of a key, for a human to read down a telephone. From the END
-// on purpose: every Ed25519 SPKI key opens with the same ASN.1 header,
-// so a fragment from the front names every peer on every mailbox
-// equally. Six characters is what buildPeople already uses to tell two
-// johns apart. It said "and relayConsole uses the same rule from its own
-// copy" until 2026-09-17; that app is gone and so is the copy, so this
-// is the only definition of the rule now.
-//
-// ── IT IS NOT SPOKEN-SAFE, AND IT IS MEANT TO BE SPOKEN ──────────────
-//
-//   Andy, reading Contacts' own footer: "Being added yourself? Your key
-//   ends …XD+0c= — that is what to tell them."
-//
-// Six characters of SPKI base64, and the last is ALWAYS `=`: 44 bytes
-// does not divide by three, so every Ed25519 key in existence ends in
-// padding. Five characters of information wearing six. The rest carries
-// `+` and `/` at random, is case-sensitive, and keeps 0/O and 1/l/I as
-// distinct symbols — over a telephone, which is the stated use.
-//
-// This repo already has the bar it misses: `spokenOk`, the invite-label
-// rule, is exactly "a string a person will say out loud".
-//
-// The fix is to take the last 30 bits of the KEY'S BYTES (not of its
-// base64, which makes the tail a property of the encoding) and render
-// them in Crockford base32 — same collision resistance, no `+` or `/`,
-// no case, and I/L/O/U excluded so nothing is mistakable. Not done here:
-// it changes every tail anybody has already written down, which is a
-// one-time cost worth taking deliberately rather than inside a commit
-// about something else.
 // The peer search's one ranker, on the probability modules, shared with every relay (goal/G29.17).
 var peerRank = require('./peerRank');
-
-// The one key cut is the kernel's (apiAuth/G1.11); hub.js had the original.
-const keyTail = require('./kernel.js').keyTail;
 
 // handleMatches STOOD HERE: every roll row whose public label was a handle
 // somebody heard, exactly. Its one caller, peer.find, went on 2026-09-17,
@@ -1462,20 +1422,18 @@ function createHub(rootDir) {
         .map(function (row) { return { key: row.publicKey, label: strangerLabel(row) }; }));
     }
     if (!networkOut && d.jobs) networkSearch(q, d);
-    return { ok: true, status: 200, items: items, more: more,
-      // One fact beside the pairs, never a row: what to tell somebody
-      // adding you (the page's "your key ends …").
-      selfTail: keyTail(self.publicKey) };
+    // No selfTail beside the rows: no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1: "drop selfTail and
+    // tail from contact.search's answer.").
+    return { ok: true, status: 200, items: items, more: more };
   }
 
   // A row the book does not hold, from the shadow or a relay: what the list shows and what Add needs (its relay).
-  // ITS NAME CARRIES ITS KEY'S ENDING: a row found on the network is somebody you are deciding whether to add, where
-  // picking the right key is the decision, and two found under one name must not read alike (Contacts kept the tail
-  // for exactly the candidates). Rows stream in one at a time, so no answer sees them all to mark only the alike.
+  // Its name is what it calls itself, and no key's tail (Andy, 2026-10-24, goal/G40.1: "we don't show the fucking tail
+  // anywhere anymore.").
   function strangerLabel(row) {
     var said = String(row.publicLabel || '').trim();
     return JSON.stringify({
-      name: (said ? said + ' ' : '') + '…' + keyTail(row.publicKey),
+      name: said || '(no name)',
       owned: false, blocked: false, held: false, book: false,
       publicLabel: String(row.publicLabel || ''), present: row.present === true ? true : row.present === false ? false : undefined,
       relay: row.relay || '', kind: row.kind || 'node',
@@ -1503,7 +1461,7 @@ function createHub(rootDir) {
       });
       var b = contactBook.byPublicKey(rootDir, row.publicKey);
       var label = b
-        ? JSON.stringify(Object.assign(JSON.parse(contactLabel({ publicKey: b.publicKey, tail: keyTail(b.publicKey), publicLabel: b.publicLabel || '',
+        ? JSON.stringify(Object.assign(JSON.parse(contactLabel({ publicKey: b.publicKey, publicLabel: b.publicLabel || '',
           myLabel: b.myLabel || '', held: !contactBook.listens(b), blocked: contactBook.isBlocked(b), owned: b.owned === true })), { present: true }))
         : strangerLabel(row);
       d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: label } } });
@@ -2243,7 +2201,6 @@ function createHub(rootDir) {
         publicLabel: c.publicLabel,
         // A node or a relay (goal/G30.7, relays are peers): the Contacts list filters on it.
         kind: best.kind || 'node',
-        tail: keyTail(c.publicKey),
         atKey: best.at || '',
         relay: best.url || '',
         relayLabel: (best.url && labels[best.url]) || '',

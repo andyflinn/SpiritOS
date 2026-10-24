@@ -23,14 +23,14 @@
 // changed at the desk is in the next call as changed; a line the desk no longer holds is gone from it. There is no
 // cache here on purpose — the desk is the record (rule/5: the plainest mechanism that does the job).
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
 const https = require('https');
 const appServer = require('../../../js/appServer');
-const spirit = appServer.spirit;
-const spiritObject = require('../../../face/spirit.js');
 
 // ── THE TWO FILES, ITS OWN STATE FOLDER'S (goal/G10.3 point 4) ────────
 //
@@ -257,7 +257,7 @@ function onNode(ask) {
   return answered(server + '.' + verb, ask[server][verb]).then(function (r) { return r.body || {}; });
 }
 function answered(name, args) {
-  return spiritObject.outcome(spiritObject.forNode(NODE_URL, name.slice(0, name.indexOf('.'))).then(function (s) { return s.call(name, args); })).then(function (r) {
+  return spirit.outcome(spirit.forNode(NODE_URL, name.slice(0, name.indexOf('.'))).then(function (s) { return s.call(name, args); })).then(function (r) {
     if (!r || !r.status) throw new Error('the node did not answer ' + name);
     return r;
   });
@@ -1090,7 +1090,7 @@ function modelsSearch(text, marks) {
   });
 }
 function publishState() {
-  appServer.spirit.core.jobs.publish(stateObject());
+  spirit.core.jobs.publish(stateObject());
 }
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:

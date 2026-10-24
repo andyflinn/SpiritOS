@@ -30,7 +30,8 @@ function isIntrinsic(root, dir, name) {
   return !!(side && side.face && side.face.intrinsic === true);
 }
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
-const FRAME = ['spirit/run/index.html', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css'];
+// spirit.js at the run root is the one spirit object (goal/G40.1): core, as it was inside face/.
+const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css'];
 
 function isCore(repoPath, repoRoot) {
   const p = String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, '');

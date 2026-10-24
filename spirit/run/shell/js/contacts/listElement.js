@@ -19,7 +19,6 @@
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's; a pane opens a pressed row
 //     opts.say(text)  where it says what an Add or a card did
 //     opts.onAdded(row), opts.onChanged()   after an Add, and after a dialog changed something
-//     opts.selfTail(tail)                    contact.search's selfTail, for "your key ends …"
 //     opts.empty                              the words when nothing matches
 (function () {
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
@@ -66,7 +65,6 @@
       var book = spirit.ready.then(function (s) { return s.contact.search({ q: q }); });
       var relays = spirit.ready.then(function (s) { return s.relay.search({ q: q || '*' }); }).then(null, function () { return { items: [] }; });
       return Promise.all([book, relays]).then(function (got) {
-        if (got[0].selfTail && typeof o.selfTail === 'function') o.selfTail(got[0].selfTail);
         var rows = (got[1].items || []).map(function (i) {
           var r = null;
           try { r = JSON.parse(i.label); } catch (e) { r = null; }

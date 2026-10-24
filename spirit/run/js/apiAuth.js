@@ -22,7 +22,6 @@ const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').p
 const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
 // What one search answer may hold: the plaintext room, less its own frame.
 const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
-const keyTail = require('./kernel.js').keyTail;
 
 const PATH = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
 const refuse = function (code) { return { refusal: code }; };
@@ -43,11 +42,12 @@ function createApiAuth(opts) {
     if (!branch || typeof branch !== 'object' || branch.ok === false) return false;
     return dot === -1 || Object.prototype.hasOwnProperty.call(branch, p.slice(dot + 1));
   }
-  // The label at grant time: his contacts' name for the key, else the kernel's one cut (G1.11).
+  // The label at grant time: his contacts' name for the key, else none. No key's tail stands in for a name (Andy,
+  // 2026-10-24, goal/G40.1: "we don't show the fucking tail anywhere anymore.").
   function labelFor(key) {
     let row = null;
     try { row = contacts.byPublicKey(rootDir, key); } catch (e) { row = null; }
-    return row && row.myLabel ? String(row.myLabel) : keyTail(key);
+    return row && row.myLabel ? String(row.myLabel) : '';
   }
 
   return {

@@ -145,46 +145,6 @@ var ndOwnerGroupOpen = false;
 // `id` is what the fold is remembered under, so it must not change with
 // the panel's state — "device" stays "device" whether it is armed,
 // loaded or refused.
-// ── A KEY ENDING IS SHOWN WHERE IT DECIDES SOMETHING, AND NOWHERE ELSE ──
-//
-//   Andy: "get rid of the keys column (that stuff has to go everywhere)."
-//
-// Three tables on this screen carried eight characters of somebody's key
-// in a column of its own, on every row, forever. That is machine detail
-// wearing a person's clothes (UI_DESIGN_STYLE §6) — and it was there for
-// a reason that expired: the row's buttons could not reach the whole key,
-// so a person had to read it off the screen. Every button carries the
-// full key now, in `data-*`, and a press acts on that.
-//
-// WHAT IS NOT DELETED is the case the ending exists for. A label is not
-// an identity (R1) and duplicates are legal by design, so two rows can
-// read exactly alike while Remove and Break are irreversible. There the
-// ending is not decoration, it is the whole of how you tell which.
-//
-// So: count the captions, and show an ending on the rows that collide.
-// A table of distinct names carries none at all. This is the rule
-// Contacts already landed on (contactsHandleCell, `person.ambiguous`) —
-// said here in one function rather than a third and fourth time, because
-// a rule written once per table is a rule that will be changed in one of
-// them.
-//
-// EIGHT CHARACTERS, unchanged. What moved is WHERE this appears, not how
-// much of a key it is: a shorter one would be a second change hiding
-// inside a deletion.
-function ndCountLabels(rows, labelOf) {
-  var seen = Object.create(null);
-  (rows || []).forEach(function (row) {
-    var l = String(labelOf(row) || '');
-    seen[l] = (seen[l] || 0) + 1;
-  });
-  return seen;
-}
-
-function ndTellApart(counts, label, key) {
-  if ((counts[String(label || '')] || 0) < 2) return '';
-  return ' <span class="nd-peer-tail" title="more than one row here wears this name">…' +
-    ndEscapeHtml(spirit.keyTail(key)) + '</span>';
-}
 
 function ndPanel(id, mark, title, inner, extraClass) {
   var shut = ndOpenPanel !== id;

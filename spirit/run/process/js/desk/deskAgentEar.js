@@ -24,8 +24,9 @@
 // The port is the agent's OWN node's and has no default: Andy's door is never an agent's.
 // Exits: 0 lines printed, or the answer printed; 1 refused or not answered (the reason is printed); 2 usage.
 
-const spiritObject = require('../../../face/spirit.js');
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const USAGE = 'usage: node deskAgentEar.js <port of your own node> [<desk verb> | deskClient.<verb>] [json]';
 const NODE_WAIT_MS = 20000;
 const PAUSE_MS = 250;
@@ -44,7 +45,7 @@ function ask(what, a) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer from the node in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): the deskClient verb by its name, as {status, body}.
-  const asked = spiritObject.outcome(spiritObject.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.call('deskClient.' + what, a); }));
+  const asked = spirit.outcome(spirit.forNode('http://127.0.0.1:' + port, 'deskClient').then(function (s) { return s.call('deskClient.' + what, a); }));
   return Promise.race([asked, late])
     .then(function (r) { clearTimeout(timer); return r; }, function (e) { end(1, 'deskAgentEar: the node on port ' + port + ' did not answer: ' + ((e && e.message) || e), true); });
 }

@@ -110,7 +110,7 @@ function pushOrigin(opts) {
 module.exports = { pushOrigin: pushOrigin };
 
 // RUN FROM JOBS. The manifest (pushOrigin.json) names the arguments; the launcher hands them in as one JSON
-// string after the script path (index.html 1559), the same way wordpressScanner.js reads them.
+// string after the script path (index.html 1559), the way process scripts read them.
 if (require.main === module) {
   const args = (function () { try { return JSON.parse(process.argv[2] || '{}'); } catch (e) { return {}; } })();
   pushOrigin(args).then(function (r) {

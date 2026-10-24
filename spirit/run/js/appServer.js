@@ -1,4 +1,6 @@
 'use strict';
+// The spirit object first, as the global spirit (goal/G40.1): what this file took from kernel.js it now takes from spirit.
+require('../spirit.js');
 
 // spirit/run/js/appServer.js
 // THE SERVER-SIDE REQUEST ROUTER — appPair/G1.2.
@@ -35,7 +37,6 @@
 //   The app never names its pipe. The node names it (appClient.pipePathFor)
 //   and hands it over as --pipe; serve() reads it (D15).
 
-const spirit = require('./kernel.js');
 
 const fs = require('fs');
 const path = require('path');
@@ -337,7 +338,7 @@ function withDebug(verbs) {
   all.DEBUG = {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
-    handler: function (a) { return { debug: require('./kernel.js').core.util.debug(a.on) }; },
+    handler: function (a) { return { debug: spirit.core.util.debug(a.on) }; },
   };
   return all;
 }
@@ -390,7 +391,7 @@ function withDependencies(verbs, paths) {
 // of its own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
 // spirit object on the node's loopback door), so the sender's peerPost passes the node's gate; a grant the node holds
-// already is no fault. The sender reaches it through this server's family interface over peerPost (face/spirit.js
+// already is no fault. The sender reaches it through this server's family interface over peerPost (spirit.js
 // forPeer), as any call.
 let streamData = null;
 function dataSet() {
@@ -438,7 +439,7 @@ function nodeUrl() {
 //   unsubscribe {}       the caller's key stops being sent anything
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
-// the same row to every subscriber through its family's streamListener over peerPost (face/spirit.js forPeer: no packet
+// the same row to every subscriber through its family's streamListener over peerPost (spirit.js forPeer: no packet
 // built here); a row naming keys in to goes to those subscribers alone. One attempt per row, in order per subscriber,
 // no patience: one that does not answer within waitMs is away, its queued rows dropped, and it is sent nothing more until
 // it subscribes again. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
@@ -447,7 +448,7 @@ function nodeUrl() {
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows, away }
 function deliverRow(key, q, row) {
-  const so = require('../face/spirit.js');
+  const so = spirit;
   const post = function (body) { return spirit.peerPost(key, 'api', body, { waitMs: publisher.waitMs }); };
   return so.forPeer(key, post, q.family).then(function (s) {
     const fam = s[q.family];
@@ -518,7 +519,7 @@ function withPublisher(verbs, opts) {
 function subscribersFromGrants(name) {
   const base = nodeUrl();
   if (!publisher || !base) return Promise.resolve(0);
-  const so = require('../face/spirit.js');
+  const so = spirit;
   return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.search({ text: name }); })).then(function (r) {
     const records = (r.body && Array.isArray(r.body.records)) ? r.body.records : [];
     let n = 0;
@@ -609,7 +610,7 @@ function serve(verbs, opts) {
     const k = String(key || '');
     const fam = String(family || '');
     if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
-    const so = require('../face/spirit.js');
+    const so = spirit;
     const post = function (body) { return spirit.peerPost(k, 'api', body, { waitMs: 10000 }); };
     return s.follow(k).catch(function () { return false; }).then(function () {
       return so.outcome(so.forPeer(k, post, fam).then(function (p) {
@@ -626,7 +627,7 @@ function serve(verbs, opts) {
     followed.add(k);
     const base = nodeUrl();
     if (!base) return Promise.resolve(false);
-    const so = require('../face/spirit.js');
+    const so = spirit;
     return so.outcome(so.forNode(base, 'auth').then(function (o) { return o.auth.grant({ key: k, path: name + '.streamListener' }); })).then(function (r) {
       return r.status === 200 || (r.body && r.body.code === 'already-granted');
     });
@@ -675,7 +676,6 @@ try {
 }());
 
 module.exports = {
-  spirit:spirit,
   // goal/G33.4: the data set a following server keeps (shell/js/spiritData.js), filled by its stream's translator.
   get data() { return dataSet(); },
   // goal/G33.8: the one publish, to the pages and to the subscribers.

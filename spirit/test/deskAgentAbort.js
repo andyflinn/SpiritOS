@@ -442,7 +442,7 @@ async function mount(delays) {
   const calls = [];
   let behavior = null;
   let onPub = null;
-  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
+  const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP });
   const answers = { state: READY, models: MODELS, 'model.load': { model: MODEL_B.id, loaded: false }, connect: { connected: false }, abort: { aborted: 1 }, 'chat.send': { id: 'chat-1' } };

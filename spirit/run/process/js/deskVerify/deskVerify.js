@@ -30,6 +30,8 @@
 // as the desk node's, private to that agent's work and never shared through git. An agent hands runs to its own
 // verifier itself (goal/G33.3), to see its work green there before it claims.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
@@ -161,7 +163,6 @@ function holds(commit) {
 }
 
 // The node, through the spirit object (goal/G32.3), for the job marks and the published run objects.
-const spirit = appServer.spirit;
 
 // ONE SUITE, RUN WITHOUT STOPPING THE SERVER (goal/G8.6): spawned and awaited, so the records a suite posts to this very
 // server through the node's door are taken while it runs.
@@ -326,7 +327,7 @@ function say(o) {
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
-  appServer.spirit.core.jobs.publish(one);
+  spirit.core.jobs.publish(one);
   // THE SUITE COUNT AS THE JOB'S PROGRESS (goal/G29.15): the one bar every page draws, beside the tab's own object.
   if (one.doing !== 'idle' && one.of > 0) {
     spirit.core.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });

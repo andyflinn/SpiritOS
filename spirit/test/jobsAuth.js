@@ -11,7 +11,7 @@
 //                                                            never the key; each label {name, key, path})
 //   auth.peer    { key }         -> { records }         (at most apps + verbs)
 //   auth.grant   { key, path }   -> the record          (label from his contacts, contacts.byPublicKey(...).myLabel;
-//                                                             kernel.keyTail when they know no name — G1.11)
+//                                                             no name when they know none — goal/G40.1, no key tail)
 //   auth.revoke  { key, path }   -> { revoked: true }
 //   auth.relabel { key, label }  -> { key, label }      (a row is born only by grant, never by relabel)
 // Refusals, { ok: false, code, error }: bad-request, not-a-path, already-granted, not-granted,
@@ -33,7 +33,7 @@ const { relayRequest } = require('../run/js/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by apiAuth/G1.4: ';
-const keyTail = require('../run/js/kernel.js').keyTail;
+
 
 const KEYA = 'MCowBQYDK2VwAyEAjobsAuthTestPeerAAAAAAAAAAAAkeyAaa=';
 const KEYB = 'MCowBQYDK2VwAyEAjobsAuthTestPeerBBBBBBBBBBBBkeyBzz=';
@@ -95,15 +95,15 @@ function down() {
 (async function () {
   if (!(await boot())) { test.fail('the node did not boot with the desk server included — every later check would blame the wrong thing'); throw new Error('no world'); }
 
-  test.subHeading('grant: a record, labelled from his contacts, or by kernel.keyTail');
+  test.subHeading('grant: a record, labelled from his contacts, or unlabelled');
   const g1 = (await ask('auth.grant', { key: KEYA, path: 'desk' }));
   const r1 = g1.body;
   if (r1.key === KEYA && r1.label === 'alice' && r1.path === 'desk') {
     test.check('grant { key, path } on a served app answers the record, label copied from contacts');
   } else test.fail(OWED + 'grant answered ' + JSON.stringify({ status: g1.status, body: r1 }).slice(0, 220));
   const r2 = (await ask('auth.grant', { key: KEYB, path: 'desk.chat.add' })).body;
-  if (r2.key === KEYB && r2.label === keyTail(KEYB) && r2.path === 'desk.chat.add') {
-    test.check('a key his contacts never met is labelled by kernel.keyTail (G1.11: one cut, everywhere)');
+  if (r2.key === KEYB && r2.label === '' && r2.path === 'desk.chat.add') {
+    test.check('a key his contacts never met has no label, and no key tail stands in for one (goal/G40.1)');
   } else test.fail(OWED + 'the stranger\'s grant answered ' + JSON.stringify(r2).slice(0, 220));
   const dup = (await ask('auth.grant', { key: KEYA, path: 'desk' })).body;
   if (dup.ok === false && dup.code === 'already-granted') test.check('the same row twice is already-granted');

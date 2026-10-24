@@ -2114,7 +2114,7 @@ contactBook.syncMarks(ROOT_DIR);
   loopbackVerbs.mount('contact', path.join(__dirname, 'contact'), {
     // The book, searched: peer.list is gone (puppets/G2). Never asks a
     // relay; that is peer.search's job.
-    'search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
+    'search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },

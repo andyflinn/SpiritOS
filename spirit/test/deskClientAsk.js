@@ -234,11 +234,12 @@ async function main() {
   if (before > 0 && after.length === before && again.status === 200 && askedAgain.length === 1 && askedAgain[0].to === DESK_KEY) test.check('after a restart: the same ' + before + ' record(s), and an ask goes to the desk\'s key without setting it again');
   else test.fail(OWED + 'after a restart: ' + after.length + ' record(s) where there were ' + before + ', an ask answered ' + again.status + ' ' + JSON.stringify(again.body).slice(0, 120));
 
-  test.subHeading('8. it asks through the kernel alone');
+  // Since goal/G40.1 the kernel's peerPost reaches deskClient as spirit.peerPost, the global spirit it installs first.
+  test.subHeading('8. it asks through the spirit object\'s peerPost alone');
   const code = fs.readFileSync(CLIENT, 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   const reaches = [/\bfetch\s*\(/, /require\(\s*['"](node:)?https?['"]\s*\)/, /AGENTS_[A-Z]+/].filter(function (re) { return re.test(code); });
-  if (/kernel\.js/.test(code) && /peerPost/.test(code) && !reaches.length) test.check('deskClient.js requires the kernel and calls peerPost; no fetch, no http, no AGENTS_ variable');
-  else test.fail(OWED + 'deskClient.js ' + (/peerPost/.test(code) ? 'calls peerPost' : 'does not call peerPost') + ' and still holds ' + reaches.map(String).join(', '));
+  if (/require\(\s*['"][./]*spirit\.js['"]\s*\)/.test(code) && /\bspirit\.peerPost\b/.test(code) && !reaches.length) test.check('deskClient.js installs spirit and calls spirit.peerPost; no fetch, no http, no AGENTS_ variable');
+  else test.fail(OWED + 'deskClient.js ' + (/\bspirit\.peerPost\b/.test(code) ? 'calls spirit.peerPost' : 'does not call spirit.peerPost') + ' and still holds ' + reaches.map(String).join(', '));
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
