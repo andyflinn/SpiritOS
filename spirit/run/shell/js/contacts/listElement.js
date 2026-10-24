@@ -70,7 +70,7 @@
           try { r = JSON.parse(i.label); } catch (e) { r = null; }
           if (r && r.relayKey) relayKeys[r.relayKey] = true;
           // owned is the star, as on a puppet: this node owns that relay.
-          return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, kind: 'relay', relay: true, url: i.key, owned: !!(r && r.owned) }) };
+          return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, kind: 'relay', relay: true, url: i.key, owned: !!(r && r.owned), relayKey: (r && r.relayKey) || '' }) };
         });
         var people = (got[0].items || []).filter(function (i) { return !relayKeys[i.key]; });
         return { status: 200, body: { ok: true, items: people.concat(rows), more: !!got[0].more } };

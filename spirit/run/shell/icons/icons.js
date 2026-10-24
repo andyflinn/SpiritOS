@@ -88,7 +88,12 @@ spirit.shell.activateApp({
       // icon already in the set, under any spelling, is changed from its own row, never added again.
       iconsChange(api, function (set) {
         var known = Object.keys(set).filter(function (g) { return iconsSame(g, glyph); })[0];
-        if (known) return known + ' is in the set already: open its row to change its keywords';
+        // AND IT OPENS THAT ICON (goal/G40.5; Andy: "if add icon cannot add because the icon already exists, the open
+        // the edit dialog for the existing icon."): its edit view, with the keywords it has; nothing is written.
+        if (known) {
+          iconsPanel(iconHost, listHost, api, { keywords: set[known] || [] }, known);
+          return known + ' is in the set already: opened it';
+        }
         set[glyph] = words;
       }, said);
     });

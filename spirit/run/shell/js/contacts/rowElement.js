@@ -30,6 +30,10 @@
   }
 
   function known(key) { var D = window.spirit.data; return (D && D.get('contacts/' + key)) || null; }
+  // A RELAY'S ROW FOLLOWS ITS OWN KEY (goal/G40.5). Its row is keyed by its url, the presence table by public keys, and
+  // the node marks a relay's own key present while it holds the stream to it. So a relay row reads that key: present
+  // while the stream is held, absent otherwise (a relay the node holds no stream to is not connected).
+  var relayRows = Object.create(null);   // relay key -> the url its row is keyed by
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
   function dispatch(idx) {
     if (subscribed || !window.spirit.data) return;
@@ -40,6 +44,7 @@
       var changes = {};
       ['present', 'name', 'owned', 'blocked', 'held', 'book'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
       idx.forKey(key).forEach(function (el) { el.apply(changes); });
+      if (relayRows[key] && 'present' in v) idx.forKey(relayRows[key]).forEach(function (el) { el.apply({ present: v.present === true }); });
     });
   }
   function index() {
@@ -53,6 +58,8 @@
     var relay = r.kind === 'relay' || r.relay === true;
     var inBook = r.book !== false;
     var was = known(key) || {};
+    var relayKey = relay ? String(r.relayKey || '') : '';
+    if (relayKey) relayRows[relayKey] = key;
     var actions = relay ? [
       { name: 'open', label: 'Open', run: function (el, ctx) {
         return typeof ctx.callDialog === 'function' ? ctx.callDialog('shell/natterDetails', { url: String(el.row.url || el.key) }) : null;
@@ -78,7 +85,7 @@
       key: key,
       index: index(),
       row: { key: key, name: r.name || '', owned: r.owned === true, blocked: r.blocked === true, held: r.held === true,
-        present: was.present !== undefined ? was.present : r.present, book: inBook, kind: relay ? 'relay' : (r.kind || 'node'),
+        present: relayKey ? (known(relayKey) || {}).present === true : was.present !== undefined ? was.present : r.present, book: inBook, kind: relay ? 'relay' : (r.kind || 'node'),
         relay: typeof r.relay === 'string' ? r.relay : '', url: r.url || '', publicLabel: r.publicLabel || '' },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
