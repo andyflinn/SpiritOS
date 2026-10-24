@@ -1,259 +1,113 @@
 'use strict';
 
 // spirit/test/publishCapacity.js
-// THE FRONT PAGE'S CAPACITY CLAIM, WRITTEN BY THE MEASUREMENT.
+// THE FRONT PAGE'S ONE FIGURE, WRITTEN FROM THE MEASUREMENT.
 //
-//   Andy, 2026-09-23: "the front page README.md should have a marked block
-//   that will be auto-updated with the ubuntu-relay capacity only, the rest
-//   of the auto-generated capacity branch of the README/ tree can be pushed
-//   as is" — and, on why any of this exists: "core improvements WILL move
-//   the numbers we document in the README tree of the repo."
+//   Andy, 2026-09-23: "the front page README.md should have a marked block that will be auto-updated with the
+//   ubuntu-relay capacity only" — and, on why any of this exists: "core improvements WILL move the numbers we document
+//   in the README tree of the repo."
 //
-//   node spirit/test/publishCapacity.js          rewrite the block
-//   node spirit/test/publishCapacity.js --check   exit 1 if it is out of date
+//   node spirit/test/publishCapacity.js          rewrite the section
+//   node spirit/test/publishCapacity.js --check   exit 1 if it is out of date (spirit/test/guarantees.js runs this)
 //
-// ── UBUNTU ONLY, AND THAT IS THE WHOLE POINT ─────────────────────────
+// ── WHAT ONE SMALL SERVER HOLDS (goal/G33.5, box v11) ─────────────────
 //
-// Andy, the same day: *"swl harness is the target for relay, windows may
-// be the prime target for node."* The front page makes ONE claim, about
-// the box a relay actually runs on. A Windows run must never touch it —
-// not because the Windows figures are worse, but because a front page
-// that silently shows whichever platform measured last is a front page
-// nobody can cite.
+// The box: the repo README starts with "How to get started", immediately followed by this section. It summarizes one
+// measurement only: how many members a relay serves with live streams when given 512 MB of RAM, taken from the
+// reference agent's Summary (its first bullet). The reference agent is claude-ubuntu, and the section names it and the
+// date of its set. No other figure: not the streams, and the disk figure never appears here. No paragraph, only a link
+// to the agents tree. Until a set measured the new way exists, the section carries no figure, only its title and the
+// link.
 //
-// The per-platform detail is not summarised here and is not meant to be.
-// It is generated whole by `measurePlatform.js --save` and committed as
-// it stands; this block links to it.
+// So the section is generated whole from agents/claude-ubuntu/summary.json (written beside that agent's README by
+// process/js/deskClient/agentReadme.js). place(readme, summary, agent) puts "How to get started" right after the title,
+// this section right after it, and takes the old capacity section away; the rest of the page stays as Andy wrote it.
 //
-// ── IT PUBLISHES THE MEASUREMENT'S AGE, NOT JUST ITS NUMBERS ─────────
+// ── UBUNTU ONLY ───────────────────────────────────────────────────────
 //
-// Every figure carries the commit and date it was taken at. A generated
-// block can be stale exactly as a typed one can — `capacityFresh.js`
-// caught the 197 that sat on this page for two days — and the difference
-// between the two is that this one says how old it is without being
-// asked. A reader who can see "measured at 27374ee, 2026-09-21" can
-// weigh the number; a reader looking at a bare "197 bytes" cannot.
+// Andy, 2026-09-23: "swl harness is the target for relay, windows may be the prime target for node." The front page
+// makes its one claim about the box a relay runs on; another agent's set never touches it.
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = path.join(ROOT, 'README.md');
-// ── WHICH UBUNTU, AND WHY IT IS NOT NAMED HERE ───────────────────────
-//
-//   Andy, 2026-09-23: "the index to platforms may have to be updated when
-//   i have my pure-ubuntu box live again."
-//
-// So the slug is CHOSEN, not written down. A bare-metal Ubuntu measurement
-// wins over a WSL one the moment it exists, with no edit here and no
-// release note — because the day that box comes up is the day this page
-// should stop quoting a virtual machine, and nobody will remember to come
-// and change a constant.
-//
-// WSL IS A PROXY AND THE BLOCK SAYS SO. Same distribution, same libc, same
-// Node — but a VM on a 64 GB workstation, not a 1 GB VPS under memory
-// pressure. It is the best Ubuntu figure available until it is not, and a
-// reader deserves to know which one they are looking at.
-// FROM THE AGENTS' FOLDERS (goal/G4.33): agents/<agent>/capacity.json, each folder named by the agent, so the
-// platform is read from the file itself: linux, and WSL when its release says so ("...-microsoft-standard-WSL2").
-const AGENTS = path.join(ROOT, 'agents');
-function capOf(nm) { try { return JSON.parse(fs.readFileSync(path.join(AGENTS, nm, 'capacity.json'), 'utf8')); } catch (e) { return null; } }
-function isWsl(nm) { const c = capOf(nm); return !!(c && /microsoft|wsl/i.test(String(c.release || ''))); }
-function pickUbuntu() {
-  let names = [];
-  try {
-    names = fs.readdirSync(AGENTS).filter(function (nm) {
-      const c = capOf(nm);
-      return c && c.platform === 'linux';
-    }).sort();
-  } catch (e) { names = []; }
-  const bare = names.filter(function (nm) { return !isWsl(nm); });
-  return (bare.length ? bare : names)[0] || '';
-}
-
-const PLATFORM = pickUbuntu();
-const SOURCE = PLATFORM
-  ? path.join(AGENTS, PLATFORM, 'capacity.json')
-  : '';
-
-const OPEN = '<!-- capacity:ubuntu-relay:start — generated by spirit/test/publishCapacity.js; do not edit by hand -->';
-const SHUT = '<!-- capacity:ubuntu-relay:end -->';
+const REFERENCE = 'claude-ubuntu';
+const TITLE = '## What one small server holds';
+const OPEN = '<!-- capacity:start — generated by spirit/test/publishCapacity.js from agents/' + REFERENCE + '/summary.json; do not edit by hand -->';
+const SHUT = '<!-- capacity:end -->';
+const NL = '\n';
+const CR = '\r';
 
 function n(x) { return Number(x || 0).toLocaleString('en-US'); }
+function lf(x) { return String(x).split(CR + NL).join(NL); }
 
-// `mb()` and `connected()` STOOD HERE and went with the tables. The block
-// prints one figure now, so a helper that formats a column has nothing to
-// format — and a dead helper is the next reader's wrong turn.
-
-// ── THE CLAIM IS ONE SENTENCE, AND THE DETAIL LIVES ELSEWHERE ───────
-//
-//   Andy, 2026-09-23: "the top README.md has a capacity claim for a ubuntu
-//   relay, in a simple statment: A 1 GB RAM VPS server with 10 GB disc
-//   space can hold live connections for <number> members. Details
-//   measurements can be found here <link to top of capacity docs per
-//   platform>. lot's of boring data on the front page won't help."
-//
-// So this emits ONE figure a stranger can act on, and a link. The tables
-// it replaced were true and unreadable: eleven rows of resident bytes and
-// per-connection costs on the page somebody reads to decide whether to
-// keep reading.
-//
-// THE NUMBER IS LIVE CONNECTIONS, NOT ROWS, because after 2026-09-23
-// those are the same thing — a relay admits only what it can serve, and
-// the seat is held whether the member is online or not. Andy: "RAM cap
-// and member cap go lock-step." Publishing a disc-derived roll is what
-// put "5.5 million members" on this page, four thousand times the truth.
-//
-// THE BOX IS THE ONE PEOPLE ACTUALLY RENT: 1 GB of RAM, 10 GB of disc.
-// Not the smallest that works — the smallest that is worth quoting.
-const VPS_RAM_MB = 1024;
-const VPS_DISC_GB = 10;
-
-// What the operating system, Caddy and journald take before the relay
-// starts, plus the agreed 25 MB safety margin. THE ONE ASSUMED FIGURE ON
-// THE PAGE, and it is stated as one: everything else here is measured. It
-// is worth thousands of members either way, so it is deliberately
-// generous rather than flattering.
-const BOX_OVERHEAD_MB = 150;
-
-// How the figure was arrived at, in the reader's own terms. Silent about
-// nothing: a single run is stated as a single run.
-function runsNote(c) {
-  const runs = Number(c.runs) || 1;
-  const sp = c.spread && c.spread.perStreamProcessBytes;
-  if (runs < 2) {
-    return ' **This is one run**, so the connection figure carries the ' +
-      'noise of a single measurement — repeated runs of this tool on one ' +
-      'box have differed by over a tenth.';
+function section(summary, agent) {
+  const lines = [TITLE, '', OPEN, ''];
+  if (summary && Number(summary.members) > 0) {
+    lines.push('**' + n(summary.members) + ' members** served at once, with live streams, by a relay given **' + summary.ramMB + ' MB** of RAM.');
+    lines.push('');
+    lines.push('Measured on `' + agent + '`, ' + String(summary.measuredAt || '').slice(0, 10) + '.');
+    lines.push('');
   }
-  return ' The connection figure is the **median of ' + runs + ' runs**' +
-    (sp ? ', which spanned ' + n(sp.low) + '–' + n(sp.high) + ' bytes (' +
-      sp.spreadPct + '%)' : '') + '.';
-}
-
-function render(c) {
-  const per = Number(c.perStreamProcessBytes || 0);
-  const rest = Number(c.relayAtRestRss || 0) / 1048576;
-  const carded = Number(c.perMemberRowBytes || 0);
-
-  const forStreams = VPS_RAM_MB - rest - BOX_OVERHEAD_MB;
-  const members = per > 0 ? Math.floor((forStreams * 1048576) / per) : 0;
-
-  // Rounded DOWN to two significant figures. A generated number with four
-  // digits invites a precision the assumption above cannot support.
-  const rounded = members >= 1000
-    ? Math.floor(members / 1000) * 1000
-    : Math.floor(members / 100) * 100;
-
-  const rows = carded > 0
-    ? Math.floor((VPS_DISC_GB * 1073741824) / carded)
-    : 0;
-
-  const lines = [];
-  lines.push(OPEN);
-  lines.push('');
-  lines.push('**A ' + (VPS_RAM_MB / 1024) + ' GB VPS with ' + VPS_DISC_GB +
-    ' GB of disc holds live connections for about ' + n(rounded) + ' members.**');
-  lines.push('');
-  lines.push('Every one of them keeps their seat whether they are online or not — ' +
-    'a relay admits only as many members as it can serve at once, so the number ' +
-    'above is the membership, not a peak.');
-  lines.push('');
-  lines.push('Measured on `' + PLATFORM + '` at `' + String(c.commit || '?').slice(0, 7) +
-    '`, ' + String(c.measuredAt || '?').slice(0, 10) + ': ' + rest.toFixed(0) +
-    ' MB resident at rest, ' + n(per) + ' bytes a held connection' +
-    (carded ? ', ' + n(carded) + ' bytes a member on disc' : '') +
-    '. Allowing ' + BOX_OVERHEAD_MB + ' MB for the operating system and web server, ' +
-    'which is the one estimated figure here.' +
-    // ── HOW MANY RUNS, AND HOW MUCH THEY DISAGREED ────────────────
-    //
-    //   Andy: "publish the median and how many runs it's over AND the
-    //   spread.... that's honest."
-    //
-    // A figure from ONE run says so, rather than looking like a settled
-    // number. The page that carried 42,691 bytes a connection was
-    // publishing the lowest of three samples that ranged 14% — the most
-    // flattering one — on the same page where the overhead allowance is
-    // deliberately generous. Two standards, one page.
-    runsNote(c) +
-    (rows ? ' Disc is nowhere near binding: ' + VPS_DISC_GB + ' GB would store ' +
-      (rows / 1000000).toFixed(1) + ' million rows.' : '') +
-    (isWsl(PLATFORM)
-      ? ' **Taken under WSL**, which is the same distribution and runtime but a ' +
-        'workstation rather than a VPS; bare-metal figures replace these ' +
-        'automatically once such a box publishes.'
-      : ''));
-  lines.push('');
-  lines.push('**[All the measurements, every agent and its box, and the command to re-run them →](agents/)**');
+  lines.push('[Every agent\'s measurements](agents/)');
   lines.push('');
   lines.push(SHUT);
-  return lines.join('\n');
+  return lines.join(NL);
+}
+
+// The page cut at its "## " headings: [{ head, text }], the part before the first heading having head ''.
+function split(page) {
+  const parts = [];
+  const re = /^## [^\n]*$/gm;
+  let last = 0;
+  let head = '';
+  let m;
+  while ((m = re.exec(page))) {
+    parts.push({ head: head, text: page.slice(last, m.index) });
+    head = m[0];
+    last = m.index;
+  }
+  parts.push({ head: head, text: page.slice(last) });
+  return parts;
+}
+
+function place(readme, summary, agent) {
+  const parts = split(lf(readme)).filter(function (p) {
+    return p.head !== TITLE && !/^## The capacity of a relay/i.test(p.head);
+  });
+  const top = parts[0];
+  const start = parts.filter(function (p) { return /^## how to get started/i.test(p.head); })[0];
+  const rest = parts.slice(1).filter(function (p) { return p !== start; });
+  const title = (/^# [^\n]*\n?/.exec(top.text) || [''])[0];
+  const intro = top.text.slice(title.length).trim();
+  const blocks = [title.trim()];
+  if (intro) blocks.push(intro);
+  if (start) blocks.push(start.text.trim());
+  blocks.push(section(summary, agent || REFERENCE));
+  rest.forEach(function (p) { blocks.push(p.text.trim()); });
+  return blocks.join(NL + NL) + NL;
 }
 
 function main() {
-  let c = null;
-  try { c = JSON.parse(fs.readFileSync(SOURCE, 'utf8')); }
-  catch (e) {
-    console.log('no Ubuntu measurement to publish under agents/' +
-      (PLATFORM ? PLATFORM + '/' : '') + ' — run measurePlatform.js --agent <name> on an Ubuntu box first.');
-    process.exit(1);
-  }
-
+  let summary = null;
+  try { summary = JSON.parse(fs.readFileSync(path.join(ROOT, 'agents', REFERENCE, 'summary.json'), 'utf8')); } catch (e) { summary = null; }
   const page = fs.readFileSync(PAGE, 'utf8');
-  const a = page.indexOf(OPEN);
-  const b = page.indexOf(SHUT);
-  if (a === -1 || b === -1 || b < a) {
-    console.log('README.md has no capacity:ubuntu-relay block — add the markers first:');
-    console.log('  ' + OPEN);
-    console.log('  ' + SHUT);
-    process.exit(1);
-  }
-
-  const built = render(c);
-  const next = page.slice(0, a) + built + page.slice(b + SHUT.length);
-
-  // ── COMPARED WITHOUT LINE ENDINGS, AND WRITTEN WITH THE FILE'S ────
-  //
-  // This generator writes LF. Git checks README.md out with CRLF on
-  // Windows, so on a FRESH CLONE the comparison below found a difference
-  // on every one of 66 lines and `--check` reported the published block
-  // as out of date when it was identical.
-  //
-  // Measured 2026-09-23 in a worktree at d1dd409: `guarantees.js` went
-  // red on "the published block and the measurement disagree" for a
-  // reason that had nothing to do with either. The guarantee that this
-  // repo's published capacity IS its measured capacity was failing for a
-  // stranger cloning it — which is the one reader it exists for.
-  //
-  // Found because wsl-claude asked for the existing suite to be run
-  // against the tree before cycle 11 started, and Andy backed the ask. A
-  // baseline nobody took is a baseline that hides this.
-  const CR = String.fromCharCode(13);
-  const NL = String.fromCharCode(10);
-  const LF = function (t) { return String(t).split(CR + NL).join(NL); };
-  const same = function (x, y) { return LF(x) === LF(y); };
-
-  if (same(next, page)) {
-    console.log('README.md capacity block is current (' +
-      String(c.commit || '?').slice(0, 7) + ').');
-    return;
-  }
-
+  const next = place(page, summary, REFERENCE);
+  const from = summary ? REFERENCE + ', ' + String(summary.measuredAt).slice(0, 10) : 'no new-format set from ' + REFERENCE + ' yet';
+  if (lf(next) === lf(page)) { console.log('README.md: What one small server holds is current (' + from + ').'); return; }
   if (process.argv.indexOf('--check') !== -1) {
-    console.log('README.md capacity block is OUT OF DATE against ' + PLATFORM +
-      ' (' + String(c.commit || '?').slice(0, 7) + '). Run:');
+    console.log('README.md: What one small server holds is OUT OF DATE against agents/' + REFERENCE + '/summary.json. Run:');
     console.log('  node spirit/test/publishCapacity.js');
     process.exit(1);
   }
-
-  // Written back in the convention the file already uses, so a generator
-  // run does not turn a whole page into a diff.
-  const crlf = (page.split(CR + NL).length - 1) > (page.split(NL).length / 2);
-  fs.writeFileSync(PAGE, crlf ? LF(next).split(NL).join(CR + NL) : LF(next));
-  console.log('README.md capacity block rewritten from ' + PLATFORM +
-    ' (' + String(c.commit || '?').slice(0, 7) + ', ' +
-    String(c.measuredAt || '?').slice(0, 10) + ').');
+  // Written back in the line endings the file already uses, so a run does not turn the whole page into a diff.
+  const crlf = page.indexOf(CR + NL) !== -1;
+  fs.writeFileSync(PAGE, crlf ? next.split(NL).join(CR + NL) : next);
+  console.log('README.md: What one small server holds rewritten (' + from + ').');
   console.log('Stage it by name. Never `git add -A` in this repo.');
 }
 
-main();
+module.exports = { place: place, section: section };
+if (require.main === module) main();

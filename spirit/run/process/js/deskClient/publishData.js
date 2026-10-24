@@ -126,29 +126,9 @@ function writeTestState(out, agent, commit) {
   return report;
 }
 
-// agents/<agent>/README.md: the folder's front page, rewritten on every run from the files themselves, so it never
-// goes stale. Each file with the date and commit it was measured at, and the studies by their dated folders.
-function writeIndex(out, agent) {
-  const read = function (f) { try { return JSON.parse(fs.readFileSync(path.join(out, f), 'utf8')); } catch (e) { return null; } };
-  const when = function (j) { return j ? String(j.measuredAt || j.at || '').slice(0, 10) + ', `' + String(j.commit || '?').slice(0, 8) + '`' : 'not measured yet'; };
-  const row = function (label, file, j) { return '| [' + label + '](' + file + ') | ' + (fs.existsSync(path.join(out, file)) ? when(j) : 'not measured yet') + ' |'; };
-  const studiesDir = path.join(out, 'studies');
-  let studies = [];
-  try { studies = fs.readdirSync(studiesDir).filter(function (d) { return fs.statSync(path.join(studiesDir, d)).isDirectory(); }).sort(); } catch (e) { studies = []; }
-  const lines = [
-    '# ' + agent, '',
-    'Everything this agent\'s box has measured, one folder per agent (goal/G4.33). Rewritten by `publishData.js` on every run.', '',
-    '| | measured |', '|---|---|',
-    row('the box', 'platform.md', read('capacity.json') || read('packets.json')),
-    row('harness', 'harness.txt', read('harness.json')),
-    row('capacity', 'capacity.md', read('capacity.json')),
-    row('packets', 'packets.md', read('packets.json')),
-    // THE TEST STATE (goal/G21.3): written by this script (writeTestState) from this node's verify.db.
-    row('test state', 'testState.md', read('testState.json')), '',
-    '## Studies', '',
-  ].concat(studies.length ? studies.map(function (d) { return '- [' + d + '](studies/' + d + '/)'; }) : ['none yet']).concat(['']);
-  fs.writeFileSync(path.join(out, 'README.md'), lines.join('\n'));
-}
+// agents/<agent>/README.md: since goal/G33.5 written by agentReadme.js (Machine Description, Summary, Measurements),
+// with summary.json beside it, from the files themselves, so it never goes stale.
+function writeIndex(out, agent) { return require('./agentReadme.js').write(out, agent); }
 
 async function main() {
   const top = git(['rev-parse', '--show-toplevel'], process.cwd());

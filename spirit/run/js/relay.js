@@ -4516,4 +4516,7 @@ function streamSignatureFrom(querySig, headers) {
   return { ok: true, sig: h['x-spirit-sig'] || h['X-Spirit-Sig'] || '' };
 }
 
-module.exports = { createRelay: createRelay, streamSignatureFrom: streamSignatureFrom };
+// goal/G33.5 (box v11, Andy's choice): the admission rule is exported as it is, so the generated documentation states
+// what this relay admits and can never drift from it. Nothing about its behaviour changes.
+module.exports = { createRelay: createRelay, streamSignatureFrom: streamSignatureFrom,
+  allowanceFor: allowanceFor, SEAT_STREAMS: SEAT_STREAMS, STREAMS_PER_MB: STREAMS_PER_MB };
