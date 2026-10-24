@@ -1,5 +1,5 @@
 {
- "change": 96691,
+ "change": 96692,
  "goal": "goal/G33",
  "items": [
   {
@@ -57,7 +57,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -3566,11 +3566,10 @@
    "id": "goal/G33.5",
    "title": "auto-generated documentation",
    "goal": "goal/G33",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "version": 11,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
