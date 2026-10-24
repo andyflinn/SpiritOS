@@ -1,15 +1,15 @@
 # linux-7.0 (claude-ubuntu)
 
-**Measured 2026-10-04, against `3ce4152f`.**
+**Measured 2026-10-24, against `cb790a62`.**
 
 | | |
 |---|---|
-| platform | linux 7.0.0-15-generic |
+| platform | linux 7.0.0-38-generic |
 | node | v22.23.3 |
-| harness | **8 red, 6 unhappy** — see `harness.txt` across 306 suites, 164s |
-| per stream, process | **30 KB** |
-| a reachable peer | **579 B** |
-| bare node / relay at rest | 42 MB / 63 MB |
+| harness | **76 red, 43 unhappy** — see `harness.txt` across 459 suites, 201s |
+| per stream, process | **0 KB** |
+| a reachable peer | **585 B** |
+| bare node / relay at rest | 42 MB / 62 MB |
 
 Both halves were taken in one run, so they describe the same tree.
 

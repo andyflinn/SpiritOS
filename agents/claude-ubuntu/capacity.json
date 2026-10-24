@@ -1,55 +1,54 @@
 {
-  "measuredAt": "2026-10-04T22:27:46.829Z",
-  "commit": "3ce4152f",
+  "measuredAt": "2026-10-24T00:10:17.201Z",
+  "commit": "cb790a62",
   "platform": "linux",
-  "release": "7.0.0-15-generic",
-  "version": "#15-Ubuntu SMP PREEMPT_DYNAMIC Wed Apr 22 16:06:43 UTC 2026",
+  "release": "7.0.0-38-generic",
+  "version": "#38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026",
   "node": "v22.23.3",
   "cpus": 6,
-  "totalRamBytes": 7627001856,
-  "bareNodeRss": 44539904,
-  "relayAtRestRss": 65990656,
-  "nodeAtRestRss": 0,
-  "perStreamProcessBytes": 30638,
-  "perStreamKernelBytes": -2621,
+  "totalRamBytes": 7626915840,
+  "bareNodeRss": 44392448,
+  "relayAtRestRss": 64499712,
+  "nodeAtRestRss": 82026496,
+  "perStreamProcessBytes": 0,
+  "perStreamKernelBytes": 0,
   "kernelCounter": "/proc/net/sockstat TCP mem",
   "streamSteps": [
     {
       "n": 0,
-      "rss": 65990656,
-      "kernel": 2289664
+      "rss": 64499712,
+      "kernel": 2613248
     },
     {
       "n": 100,
-      "rss": 75624448,
-      "kernel": 1241088
+      "rss": 64499712,
+      "kernel": 2613248
     },
     {
       "n": 200,
-      "rss": 73060352,
-      "kernel": 2289664
+      "rss": 62038016,
+      "kernel": 2613248
     },
     {
       "n": 400,
-      "rss": 78905344,
-      "kernel": null
+      "rss": 62038016,
+      "kernel": 2613248
     },
     {
       "n": 800,
-      "rss": 91160576,
-      "kernel": 192512
+      "rss": 62038016,
+      "kernel": 2613248
     }
   ],
   "perMemberRowBytes": 603,
-  "perMemberRowBytesUncarded": 199,
-  "cardBytes": 376,
-  "perPartnerRowBytes": 3293,
-  "perShadowRowBytes": 159,
+  "perMemberRowBytesUncarded": 206,
+  "cardBytes": 387,
+  "perShadowRowBytes": 165,
   "perRouteRowBytes": 420,
-  "perReachablePeerBytes": 579,
+  "perReachablePeerBytes": 585,
   "perLogEntryBytesSynthetic": 295,
-  "installBytes": 3600676,
-  "installFiles": 188,
+  "installBytes": 4581396,
+  "installFiles": 371,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
@@ -57,25 +56,25 @@
   ],
   "runs": 1,
   "spread": {
-    "perStreamProcessBytes": {
-      "runs": 1,
-      "median": 30638,
-      "low": 30638,
-      "high": 30638,
-      "spreadPct": 0
-    },
     "relayAtRestRss": {
       "runs": 1,
-      "median": 65990656,
-      "low": 65990656,
-      "high": 65990656,
+      "median": 64499712,
+      "low": 64499712,
+      "high": 64499712,
+      "spreadPct": 0
+    },
+    "nodeAtRestRss": {
+      "runs": 1,
+      "median": 82026496,
+      "low": 82026496,
+      "high": 82026496,
       "spreadPct": 0
     },
     "bareNodeRss": {
       "runs": 1,
-      "median": 44539904,
-      "low": 44539904,
-      "high": 44539904,
+      "median": 44392448,
+      "low": 44392448,
+      "high": 44392448,
       "spreadPct": 0
     },
     "perMemberRowBytes": {
