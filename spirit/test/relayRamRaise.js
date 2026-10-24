@@ -44,8 +44,9 @@ const MARGIN = relayLimits.RAM_MARGIN_MB;
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
 function read(rel) { try { return fs.readFileSync(path.join(REPO, rel), 'utf8'); } catch (e) { return ''; } }
 
-// A 1 GB box running a 256 MB relay under a cap of twice that: the cap leaves 300 MB, the box has 600 MB free.
-const BOX = { totalMB: 1024, availableMB: 300, hostAvailableMB: 600, discTotalMB: 20480, discFreeMB: 10240 };
+// A 1 GB box running a 256 MB relay under a cap of twice that: the cap leaves 200 MB, the box has 600 MB free. The
+// raise 256 to 512 fits the box (256 against 575) but not the cap's room (256 against 175), so the two figures disagree.
+const BOX = { totalMB: 1024, availableMB: 200, hostAvailableMB: 600, discTotalMB: 20480, discFreeMB: 10240 };
 
 function sinkFor(bag) {
   return {
@@ -121,7 +122,7 @@ test.subHeading('2. the owner\'s raise is checked by the difference against what
 {
   const R = relayWith({ ramLimitMB: 256, discLimitMB: 32, source: 'file' });
   const up = ask(R, { config: { ramLimitMB: 512 } });
-  if (up && up.ok) test.check('256 to 512 passes: the difference, 256, fits in the box\'s 600 less the ' + MARGIN + ' MB margin, though the cap leaves only 300');
+  if (up && up.ok) test.check('256 to 512 passes: the difference, 256, fits in the box\'s 600 less the ' + MARGIN + ' MB margin, though the cap leaves only 200');
   else test.fail(OWED + 'the raise 256 to 512 answered ' + short(up));
   const R2 = relayWith({ ramLimitMB: 256, discLimitMB: 32, source: 'file' });
   const tooFar = ask(R2, { config: { ramLimitMB: 900 } });
