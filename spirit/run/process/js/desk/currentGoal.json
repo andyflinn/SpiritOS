@@ -1,5 +1,5 @@
 {
- "change": 101361,
+ "change": 101478,
  "goal": "goal/G40",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.6",
-    "goal/G40.7"
+    "goal/G40.6"
    ],
    "codeOffered": false,
    "go": false,
@@ -56,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -5502,13 +5501,13 @@
    "id": "goal/G40.7",
    "title": "face-fixes",
    "goal": "goal/G40",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -5518,21 +5517,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 14,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "f25ff1cd8577eb2ba3be30e0d4a6dcc589e583fa",
+   "redCommit": "6ef475bedbc0ef7fe4e3ff82a778ae25b6b6938f",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5563,7 +5562,7 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -5601,6 +5600,28 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-25T08:19:55.753Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-25T08:21:00.746Z",
+     "made": "desk",
+     "placedBy": "desk",
+     "placedKey": ""
     }
    ],
    "chat": [
@@ -5627,6 +5648,72 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-25T04:21:50.177Z",
      "text": "cw: kernel.js out of the face. What still takes from it on a face, and what replaces it:\n- face shell (4): escapeHtml twice, a face app's verb call, its peer post. Becomes spirit.escapeHtml, the spirit families, spirit.peerPost.\n- the helpers it loads (9 files: the icon, contact, server and api-branch selectors, the two row elements, Contacts, the file and text viewers): escapeHtml, formatBytes, the MIME table, one job start. Becomes spirit.escapeHtml, spirit.formatBytes, spirit.MIME_TYPES, spirit.jobs.create.\n- the icon table (3 places): hardcoded glyphs, as you said. The icon picker needs the whole table to offer, so it lives in the icon module the face already loads (iconIndex.js), not in spirit.js.\n- seal.js onto spirit.seal and the shell onto spirit.shell; window.faceSeal and window.faceShell gone (the login app uses spirit.shell).\n- after login: wait for spirit.start, then fetch a hard-coded list of the 39 scripts from home; index.html is not read, kernel.js not on the list.\n- These helpers run on the home page too, where spirit.js has the same members, so the home page keeps working.\n- ? Go?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T04:27:33.087Z",
+     "text": "commit 6ef475bedbc0ef7fe4e3ff82a778ae25b6b6938f: goal/G40.7 red: the face loads no kernel.js, reads no index.html, and puts nothing on window but spirit\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-25T04:27:54.211Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T04:33:22.498Z",
+     "text": "cw: the build is done in my clone, waiting on G1.\n- The face loads no kernel.js and reads no index.html: once logged in it waits for the home apis (spirit.start), then fetches its own fixed list of 40 parts (39 scripts and the shell sheet), kernel.js not among them.\n- The face shell and the 9 helpers use spirit.escapeHtml, spirit.formatBytes, spirit.MIME_TYPES, spirit.jobs.create, and the face's own link for an app's calls.\n- The icon table left kernel.js for the icon module (iconIndex.js), not spirit.js; the selectors hardcode their glyphs, and the kernel's name reads that one table for the home page.\n- seal.js sits on spirit.seal, the login hands itself to spirit.shell; window.faceSeal and window.faceShell are gone.\n- The red (the throw-away, 1b) is green, 21 in all; spirit.js's 48 still green.\n- Not tested here: a real face through a relay in a browser.\n- 14 core files are on the list.\n- ? Grant G1?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T08:18:13.684Z",
+     "text": "tag?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T08:19:27.225Z",
+     "text": "cw: my honest read before a tag. Recommendation: not yet, one step first.\n\nWhat it would release since v-2026-10-24-18-41: all of G40.6 (spirit.js the one client interface; no kernel.js in the servers, the node or the relay; fileSystem.js; the events family, with /api/events and jobs.update gone) and the G40.7 red.\n\nOn the relays: the relay server, the relay and its shared code now run without kernel.js (a relay booted on master just now, here); and the face it serves changed: face.html holds spirit.js alone, spirit.js loads the face shell.\n\nKnown risks:\n- The face through a relay has not run in a browser since that change; nobody has tried it.\n- The face's kernel-free build (G40.7) is not pushed yet; it waits on G1.\n- Your node and the relays must move together: a relay's new face shell talking to an old home node, or the reverse, can break the face.\n- About a dozen old suites in spirit/test are red now (jobs.update, /api/events, installJobs), untouched by your rule for this item.\n\nThe one step: grant G1, I push the build; then tag, and restart your node right after, so the face comes from one tree end to end.\n- ? Grant G1 and tag after, or tag now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T08:19:40.595Z",
+     "text": "cw: correction: \"about a dozen\" was a guess. 129 suites in spirit/test name what changed (jobs.update, /api/events, the old installJobs, spirit.core.jobs, faceSeal, faceShell, the kernel's icons). I have not run them, by your rule, so how many are truly red is unknown; expect many."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T08:20:29.005Z",
+     "text": "commit f25ff1cd8577eb2ba3be30e0d4a6dcc589e583fa: goal/G40.7: the face loads no kernel.js and reads no index.html; seal and shell on spirit, nothing on window\n- spirit/run/face/login/login.js\n- spirit/run/face/seal.js\n- spirit/run/face/shell.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/js/apiBranchSelector.js\n- spirit/run/shell/js/appServerSelector.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/js/contacts/rowElement.js\n- spirit/run/shell/js/fileViewer.js\n- spirit/run/shell/js/files/rowElement.js\n- spirit/run/shell/js/iconSelector.js\n- spirit/run/shell/js/textViewer.js\n- spirit/run/spirit/client/iconIndex.js\n- spirit/run/spirit/kernel.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T08:21:00.643Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T08:21:08.700Z",
+     "text": "cw: pushed as f25ff1cd under G1, my node restarted on it. The face now loads no kernel.js and reads no index.html.\n- ? Tag now, and restart your node (65432) on it right after?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T08:21:21.527Z",
+     "text": "yes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T08:23:09.929Z",
+     "text": "cw: tagged v-2026-10-25-09-22 on f25ff1cd and pushed; the relays take it within about 10 minutes. Your checkout is at the tag, and your node (65432) restarted on it through labMaster.\n- Once spirit-3 has restarted, the face through it is worth one try in a browser: it has not run that way yet."
     }
    ]
   }
