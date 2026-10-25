@@ -18,7 +18,7 @@
 var joinApi = null;
 var joinHanded = null;    // what the shell last handed: { facts, open, done }
 var joinFacts = null;
-var joinRelayRow = null;
+var joinRelays = [];       // the relays this node lists, as spirit.relay.status rows them
 var joinShown = '';       // what the list was last drawn from
 var joinWaiting = false;  // handed something new while he was typing
 
@@ -73,16 +73,20 @@ function joinDraw() {
   });
 }
 
+// THE RELAYS THE FORMS OFFER: read when a step is drawn, which is when the job changed. Through the spirit object
+// (goal/G40.8): spirit.relay.status rows every relay this node lists, its seat, email and face.
+function joinRelaysThen(draw) {
+  spirit.relay.status('').then(function (r) { joinRelays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : []; }, function () { joinRelays = []; }).then(draw);
+}
+
 // The form each step draws, from the shell elements.
 function joinForm(step, box) {
   var el = joinEl();
   // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
   // without a verified email (by invite), Change once verified. So a node seated by invite completes it here.
   if (step.until === 'email' && el.joinForm) {
-    var w = window.spirit.elements.joinForm.words(joinFacts);
-    box.innerHTML = '<span class="job-manifest-note">' + joinEsc(w.title) + ' on ' + joinEsc((joinFacts.relayUrl || 'no relay').replace(/^https?:\/\//, '')) + '</span>' +
-      el.joinForm.html(w);
-    el.joinForm.bind(box, { url: function () { return joinFacts.relayUrl; } });
+    // THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10, box v19): its dropdown over every relay this node lists.
+    joinRelaysThen(function () { el.joinForm.mount(box, { relays: joinRelays, escape: joinApi.escapeHtml }); });
     return;
   }
   // FIND SOMEONE: the same one list Contacts draws (goal/G30.19), the book, the shadow and the network.
@@ -97,22 +101,9 @@ function joinForm(step, box) {
     return;
   }
   if (step.until === 'face' && el.faceForm) {
-    // The form needs the relay's row (its kept face and verified email): read once, when this step is drawn, which is
-    // when the job changed. The node republishes join-steps once a face is accepted.
-    var mount = function () {
-      el.faceForm.mount(box, {
-        seats: joinRelayRow ? [joinRelayRow] : [],
-        reload: function () { return Promise.resolve(); },
-        idPrefix: 'join-face-',
-        escape: joinApi.escapeHtml,
-      });
-    };
-    // Through the spirit object (goal/G32.2): spirit.relay.get answers the reply's body.
-    spirit.ready.then(function (s) { return s.relay.get({ key: String(joinFacts.relayUrl || '') }); }).then(function (g) {
-      var row = (g && g.relay) || null;
-      joinRelayRow = row ? Object.assign({ label: row.label || joinFacts.relayUrl.replace(/^https?:\/\//, '') }, row) : null;
-      mount();
-    }, mount);
+    // THE FACE FORM, THE SAME EVERYWHERE (goal/G40.10, box v19): it offers the relays with a verified email itself. The
+    // node republishes join-steps once a face is accepted.
+    joinRelaysThen(function () { el.faceForm.mount(box, { relays: joinRelays, reload: function () { return Promise.resolve(); }, escape: joinApi.escapeHtml }); });
     return;
   }
   if (step.until === 'opened') {

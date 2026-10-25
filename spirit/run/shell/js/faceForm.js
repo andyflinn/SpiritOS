@@ -1,85 +1,79 @@
 // spirit/run/shell/js/faceForm.js
-// THE FACE FORM, ONE SHELL ELEMENT (goal/G30.1, box v39): moved whole out of Info, which draws it as before; the Join
-// app draws it as its step Configure your node's remote control. Info keeps no copy.
+// THE FACE FORM, ONE SHELL ELEMENT (goal/G30.1, box v39). One row: the relay dropdown, the face name and Ask, then what
+// this node holds on the relay picked and the relay's answer. relay.face is {url, name} (box v30): the relay pairs the
+// name with the verified email it holds for this node. THE SAME FORM EVERYWHERE (goal/G40.10, box v19; Andy: "same with
+// the face form"): Join, Info and the relay details draw it by mount; the relay details fix the dropdown to their relay.
+// ITS OWN RELAYS (Andy: "doesn't show up if the user has zero verified emails anywhere; only shows relay in the dropdown,
+// where the user has a confirmed email address. THAT's WHY THE FORMS HAVE SEPARATE RELAY DROPDOWNS."): the dropdown
+// offers only relays with a verified email, and with none the form draws nothing.
 //
-// One relay chosen from the seats this node holds, a face name, and the relay's answer. relay.face is {url, name}
-// (box v30): the relay pairs the name with the verified email it holds for this node, so a relay with no verified
-// email gets no form, only the way to natterDetails, where the email is verified (box v31).
-//
-//   mount(box, opts)
-//     opts.seats              relay rows this node holds a seat on (url, label, face, email, emailVerified)
-//     opts.ask(verb, args)    the node's door, answering { status, text, body }
-//     (the chosen relay's details open as a page: spirit.elements.natterDetails)
-//     opts.reload()           read the rows again (Promise); the form is drawn again by its caller
-//     opts.idPrefix           the ids' prefix, 'info-face-' unless said
-//     opts.escape             the shell's escapeHtml
+//   row(relays, opts)  -> the form's markup, or '' with no relay to offer: relays are relay rows (url, label, face,
+//                         email, emailVerified); opts.fixed, a url, fixes the dropdown to that relay; opts.picked.
+//   mount(box, opts)   -> draws the row and asks: opts.relays, opts.fixed, opts.reload() (Promise, after a face is
+//                         confirmed), opts.escape.
 
 (function () {
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
+  function offered(relays, o) {
+    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && r.emailVerified; });
+    return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
+  }
+
+  // What this node holds on a relay: its face and the verified email it is paired with (relay.get's row).
+  function holds(r) {
+    var face = (r && r.face) || {};
+    return (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
+      (r && r.email ? ' Verified email: ' + r.email + '.' : '');
+  }
+
+  function row(relays, opts) {
+    var o = opts || {};
+    var escape = o.escape || esc;
+    var list = offered(relays, o);
+    if (!list.length) return '';
+    var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0];
+    return '<div class="label">A face name on one relay</div>' +
+      '<div class="start-job-form card">' +
+      '<label class="field-label">Relay<select class="sp-face-relay"' + (o.fixed ? ' disabled' : '') + '>' +
+        list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
+      '</select></label>' +
+      '<label class="field-label grow">Face name<input type="text" class="sp-face-name" placeholder="one word, letters and digits" value="' +
+        escape(o.name != null ? o.name : ((picked.face && picked.face.name) || '')) + '"></label>' +
+      '<button type="button" class="sp-face-go">Ask</button>' +
+      '</div>' +
+      '<div class="job-manifest-note sp-face-now">' + escape(holds(picked)) + '</div>' +
+      '<div class="job-start-error sp-face-out"></div>';
+  }
+
   function mount(box, opts) {
     if (!box) return;
     var o = opts || {};
-    var p = o.idPrefix || 'info-face-';
-    var escape = o.escape || esc;
-    var seats = Array.isArray(o.seats) ? o.seats : [];
-    if (!seats.length) { box.innerHTML = ''; return; }
-    function el(id) { return document.getElementById(p + id); }
+    var was = box.querySelector && box.querySelector('.sp-face-relay');
+    var typed = box.querySelector && box.querySelector('.sp-face-name');
+    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, escape: o.escape, reload: o.reload };
+    function draw(picked, name) {
+      var now = box._spFace;
+      box.innerHTML = row(now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape });
+      if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
+    }
     function say(text, bad) {
-      var out = el('error');
+      var out = box.querySelector('.sp-face-out');
       if (!out) return;
-      out.className = bad ? 'job-start-error' : 'job-manifest-note';
+      out.className = (bad ? 'job-start-error' : 'job-manifest-note') + ' sp-face-out';
       out.textContent = text || '';
     }
-    // What the user has typed or chosen survives a redraw.
-    var keep = { relay: '', name: '' };
-    ['relay', 'name'].forEach(function (k) { var x = el(k); if (x) keep[k] = x.value; });
-    box.innerHTML =
-      '<div class="label">A face name on one relay</div>' +
-      '<div class="job-manifest-note">Ask one relay for a name under its domain. It is paired with the verified email ' +
-        'that relay holds for you. The relay answers yes or no; asking again changes the name.</div>' +
-      '<div class="start-job-form card">' +
-        '<label class="field-label">Relay<select id="' + p + 'relay">' +
-          seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
-        '</select></label>' +
-        // ONE LINE (box v41; Andy: "WHAT is the ASK button doing BELOW the face-name input? this should be one smooth
-        // line"): relay, face name and Ask are the form row's own children, side by side, never wrapped together.
-        '<label class="field-label grow">Face name<input type="text" id="' + p + 'name" placeholder="one word, letters and digits"></label>' +
-        '<button type="button" id="' + p + 'save">Ask</button>' +
-      '</div>' +
-      // No face form without a verified email: the relay would refuse the ask (box v31).
-      '<div id="' + p + 'verify" class="job-manifest-note">Verify your email in Contacts, relays, before asking for a face name on this relay. ' +
-        '<button type="button" id="' + p + 'open">Open this relay</button></div>' +
-      '<div id="' + p + 'now" class="job-manifest-note"></div>' +
-      '<div id="' + p + 'error" class="job-start-error"></div>';
-    ['relay', 'name'].forEach(function (k) { var x = el(k); if (x && keep[k]) x.value = keep[k]; });
-
-    // What this node holds on the selected relay: its face and the verified email it pairs with (relay.get's row).
-    function show(fill) {
-      var pick = el('relay');
-      var row = seats.filter(function (r) { return pick && r.url === pick.value; })[0] || {};
-      var face = row.face || {};
-      var mail = row.emailVerified ? String(row.email || '') : '';
-      var now = el('now');
-      if (now) now.textContent = (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
-        (mail ? ' Verified email: ' + mail + '.' : '');
-      // The field's label and the button, each hidden on its own, so the row keeps its one line when shown.
-      var field = el('name');
-      var save = el('save');
-      var verify = el('verify');
-      if (field && field.parentNode) field.parentNode.hidden = !row.emailVerified;
-      if (save) save.hidden = !row.emailVerified;
-      if (verify) verify.hidden = !!row.emailVerified;
-      if (!fill) return;
-      var n = el('name');
-      if (n) n.value = face.name || '';
-    }
+    // What the user has picked or typed survives a redraw.
+    draw(was ? was.value : '', typed && typed.value ? typed.value : null);
+    if (box._spFaceBound) return;
+    box._spFaceBound = true;
 
     var busy = false;
     function save() {
-      var relay = el('relay');
-      var name = el('name');
+      var relay = box.querySelector('.sp-face-relay');
+      var name = box.querySelector('.sp-face-name');
       if (!relay || !name || busy) return Promise.resolve();
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
@@ -91,24 +85,23 @@
           : { text: said.error || 'the relay did not answer', bad: true };
         say(box._faceSaid.text, box._faceSaid.bad);
         // The node now holds the new pair: read the rows again so the line under the form says so.
-        if (said.ok && typeof o.reload === 'function') return o.reload();
+        var reload = box._spFace && box._spFace.reload;
+        if (said.ok && typeof reload === 'function') return reload();
       }).then(function () { busy = false; }, function () { busy = false; });
     }
-
-    show(!keep.name);
-    el('relay').addEventListener('change', function () { box._faceSaid = null; say('', false); show(true); });
-    el('save').addEventListener('click', save);
-    // The same page Contacts opens for a relay row (goal/G40.8: an element on the navigation); a verified email comes
-    // back on the stream, so nothing is read again when it closes.
-    el('open').addEventListener('click', function () {
-      var pick = el('relay');
-      if (!pick) return;
-      window.spirit.elements.natterDetails.open({ url: pick.value });
+    box.addEventListener('change', function (e) {
+      if (!e.target || !e.target.classList || !e.target.classList.contains('sp-face-relay')) return;
+      box._faceSaid = null;
+      draw(e.target.value, null);
     });
-    el('name').addEventListener('keydown', function (e) { if (e && e.key === 'Enter') { if (e.preventDefault) e.preventDefault(); save(); } });
-    if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
+    box.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.sp-face-go')) save();
+    });
+    box.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('sp-face-name')) { e.preventDefault(); save(); }
+    });
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.faceForm = { mount: mount };
+  window.spirit.elements.faceForm = { row: row, mount: mount };
 }());

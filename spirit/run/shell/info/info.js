@@ -238,20 +238,12 @@ function infoDrawRelays() {
 // The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
 function infoDrawFace() {
-  // THE EMAIL FORM ABOVE IT (goal/G40.10, box v15; Andy: "it should also be placed in info, above the face-pick-interface"):
-  // joinForm's general form, with its own relay picker, as Join and the relay details draw the same form.
-  var joinForm = window.spirit && window.spirit.elements && window.spirit.elements.joinForm;
-  if (joinForm) joinForm.mount(document.getElementById('info-email'), { seats: infoSeats(), escape: infoApi && infoApi.escapeHtml });
-  var form = window.spirit && window.spirit.elements && window.spirit.elements.faceForm;
-  var box = document.getElementById('info-face');
-  if (!box || !form) return;
-  form.mount(box, {
-    seats: infoSeats(),
-    ask: function (verb, args) { return infoApi.verb(verb, args); },
-    callDialog: function (id, params) { return infoApi.callDialog(id, params); },
-    reload: function () { return infoLoadRelays(); },
-    escape: infoApi && infoApi.escapeHtml,
-  });
+  // THE TWO FORMS, EACH THE SAME EVERYWHERE (goal/G40.10, box v19): the email form above the face form, each with its own
+  // relay dropdown over the relays this node holds a seat on; the face form offers only those with a verified email.
+  var el = (window.spirit && window.spirit.elements) || {};
+  var escape = infoApi && infoApi.escapeHtml;
+  if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), escape: escape });
+  if (el.faceForm) el.faceForm.mount(document.getElementById('info-face'), { relays: infoSeats(), reload: function () { return infoLoadRelays(); }, escape: escape });
 }
 
 function infoLoad() {

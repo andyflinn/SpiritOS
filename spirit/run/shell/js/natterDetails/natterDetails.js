@@ -635,7 +635,7 @@ function ndClaimHtml() {
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
     // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
     // The form is the shell element joinForm (goal/G30.1, box v33), bound once on nd-body at mount.
-    (joinByMail && ndJoinForm() ? ndJoinForm().html(ndJoinForm().words({ seated: false })) : '') +
+    (joinByMail && ndJoinForm() ? '<div class="nd-join-form"></div>' : '') +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
@@ -668,7 +668,14 @@ function ndEmailHtml() {
   if (!ndJoinForm()) return '';
   // The words are the control's own (joinForm.words, box v41), the same the Join app's step 1 shows.
   var w = ndJoinForm().words({ seated: true, email: ndBadge.email, emailVerified: !!ndBadge.emailVerified });
-  return ndPanel('email', '✉️', w.title, ndJoinForm().html(w), 'natter-email');
+  return ndPanel('email', '✉️', w.title, '<div class="nd-join-form"></div>', 'natter-email');
+}
+
+// THE FACE FORM ON ITS RELAY (goal/G40.10, box v19): the same face form as Join and Info, its dropdown fixed to this relay;
+// it offers a relay only with a verified email, so without one it draws nothing.
+function ndFaceHtml() {
+  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed) || !ndBadge.emailVerified) return '';
+  return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): shell/js/joinForm.js, loaded by index.html.
@@ -1317,6 +1324,7 @@ function ndRender() {
     // pair. See ndClaimHtml.
     ndClaimHtml() +
     ndEmailHtml() +
+    ndFaceHtml() +
     // ── THE OWNER'S HALF, INSIDE ONE FOLD ────────────────────────────
     //
     // Minting and what has been minted are ONE panel now (ndInvitePanel).
@@ -1333,6 +1341,17 @@ function ndRender() {
     ) +
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.
+  ndMountForms(body);
+}
+
+// THE TWO FORMS, THE SAME EVERYWHERE (goal/G40.10, box v19; Andy: "on the relays detail page the picker CAN be shown as
+// a reminder, but unchangeable, with only one option"): drawn by their own mount into the panels, fixed to this relay.
+function ndMountForms(body) {
+  var el = (window.spirit && window.spirit.elements) || {};
+  var here = Object.assign({ url: ndUrl, label: (ndBadge && ndBadge.label) || ndUrl }, ndBadge || {});
+  Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (el.joinForm) el.joinForm.mount(box, { relays: [here], fixed: ndUrl }); });
+  var face = body.querySelector('.nd-face-form');
+  if (face && el.faceForm) el.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return ndLoad(); } });
 }
 
 // NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
@@ -1641,10 +1660,6 @@ var ndPage = ({
         ndLoad();
       });
     }
-
-    // The join form's button and Enter (goal/G30.1, box v33): the shell element binds once on nd-body, aimed at
-    // this screen's relay.
-    if (ndJoinForm()) ndJoinForm().bind(ndBody(), { url: function () { return ndUrl; }, ask: ndPost });
 
     // Delegated, because the panels are repainted and a handler bound to
     // a button would go with them.
