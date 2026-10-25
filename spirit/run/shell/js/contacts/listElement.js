@@ -15,10 +15,10 @@
 // This node's relays stand beside the book (goal/G30.7): relay.search, a relay row keyed by its url.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
-//     opts.api        the app's shell api: verb, peerPost, callDialog
+//     opts.api        the app's shell api: verb, peerPost
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's; a pane opens a pressed row
 //     opts.say(text)  where it says what an Add or a card did
-//     opts.onAdded(row), opts.onChanged()   after an Add, and after a dialog changed something
+//     opts.onAdded(row)   after an Add
 //     opts.empty                              the words when nothing matches
 (function () {
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
@@ -109,9 +109,9 @@
       details: function (row, key, el) {
         if (row.book === false && row.kind !== 'relay') { askCard(row, key); return; }
         if (!el) return;
-        Promise.resolve(el.act('open', { callDialog: function (id, params) { return api.callDialog(id, params); } })).then(function (result) {
-          if (result && result.changed) { if (typeof o.onChanged === 'function') o.onChanged(); list.refresh(); }
-        });
+        // Its page opens on the navigation; what it changes comes back on the stream, so nothing is read when it closes
+        // (goal/G40.8: "the stack doesn't need to handle results").
+        el.act('open', {});
       },
       empty: o.empty || 'Nobody matches.',
     });

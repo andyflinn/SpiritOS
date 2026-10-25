@@ -61,12 +61,13 @@
     var relayKey = relay ? String(r.relayKey || '') : '';
     if (relayKey) relayRows[relayKey] = key;
     var actions = relay ? [
-      { name: 'open', label: 'Open', run: function (el, ctx) {
-        return typeof ctx.callDialog === 'function' ? ctx.callDialog('shell/natterDetails', { url: String(el.row.url || el.key) }) : null;
+      // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
+      { name: 'open', label: 'Open', run: function (el) {
+        return window.spirit.elements.natterDetails.open({ url: String(el.row.url || el.key) });
       } },
     ] : inBook ? [
-      { name: 'open', label: 'Open', run: function (el, ctx) {
-        return typeof ctx.callDialog === 'function' ? ctx.callDialog('shell/contactsDetails', { key: el.key }) : null;
+      { name: 'open', label: 'Open', run: function (el) {
+        return window.spirit.elements.contactDetails.open({ key: el.key });
       } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
       { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },

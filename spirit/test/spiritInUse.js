@@ -169,6 +169,26 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const navCode = fs.existsSync(path.join(RUN, NAV)) ? code(NAV) : '';
   if (navCode && /navigation/.test(navCode) && /push/.test(navCode) && (parts || []).indexOf(NAV) !== -1) test.check('shell/js/navigationWrapper.js pushes a page: its title and back in the title bar, the whole app area its box; the face loads it');
   else test.fail('no navigationWrapper: ' + (navCode ? 'not on the face\'s parts' : NAV + ' is not there'));
+  // The wrapper driven on a minimal page: the title bar follows the top page, back pops it (thrown away, its unmount
+  // called, the one under it shown), a page can close itself, home pops them all and the frame is told it is empty.
+  const navRun = spawnSync(process.execPath, ['-e', [
+    "function el() { var e = { className: '', hidden: false, children: [], parentNode: null, textContent: '', appendChild: function (c) { e.children.push(c); c.parentNode = e; return c; }, removeChild: function (c) { e.children.splice(e.children.indexOf(c), 1); c.parentNode = null; } }; return e; }",
+    "global.document = { createElement: el }; global.window = {};",
+    "require(process.argv[1]);",
+    "var N = window.spirit.elements.navigation; var title = el(); var content = el(); var said = [];",
+    "N.attach({ title: title, content: content, shown: function () { said.push('shown'); }, empty: function () { said.push('empty'); }, apiFor: function (nav) { return { nav: nav }; } });",
+    "var boxes = []; var a = N.push({ title: 'App', mount: function (box, nav) { boxes.push(box); }, unmount: function () { said.push('unmount App'); } });",
+    "var d = N.push({ title: 'Detail', mount: function (box) { boxes.push(box); } });",
+    "var out = { titles: [title.textContent], depth: N.depth(), fill: boxes[0].className, appHidden: boxes[0].hidden, api: !!(a.api && a.api.nav === a) };",
+    "N.back(); out.titles.push(title.textContent); out.appShown = !boxes[0].hidden; out.detailGone = boxes[1].parentNode === null;",
+    "var d2 = N.push({ title: 'Other', mount: function () {} }); d2.close(); out.titles.push(title.textContent);",
+    "a.setTitle('App 2'); out.titles.push(title.textContent);",
+    "N.home(); out.depth2 = N.depth(); out.said = said; process.stdout.write(JSON.stringify(out));"].join('\n'), path.join(RUN, NAV)], { encoding: 'utf8' });
+  let nav = null;
+  try { nav = JSON.parse(navRun.stdout); } catch (e) { nav = { said: navRun.stdout + navRun.stderr }; }
+  if (nav && JSON.stringify(nav.titles) === '["Detail","App","App","App 2"]' && nav.depth === 2 && nav.fill === 'fill' && nav.appHidden === true && nav.api && nav.appShown && nav.detailGone && nav.depth2 === 0 && nav.said.indexOf('unmount App') !== -1 && nav.said[nav.said.length - 1] === 'empty')
+    test.check('the wrapper, driven: the title bar follows the top page, back throws the top page away and shows the one under it, a page closes itself, home pops all and the frame is told');
+  else test.fail('the wrapper, driven: ' + short(nav));
   if (/navigation\.push\(/.test(faceShell) && !/stack\.push\(/.test(faceShell)) test.check('the face shell opens every app by pushing its page through the wrapper, and keeps no app stack of its own');
   else test.fail('the face shell still keeps its own app stack' + (/navigation\.push\(/.test(faceShell) ? '' : ' and pushes nothing through the wrapper'));
   const DETAILS = ['shell/js/contactDetails/contactDetails.js', 'shell/js/natterDetails/natterDetails.js'];

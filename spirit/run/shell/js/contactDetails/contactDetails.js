@@ -342,12 +342,11 @@ function cdPeerAction(action, extra) {
     // this screen existed, so it has to be told. Said NOW rather than on
     // the way out, because the way out is Back and Back is the shell's.
     cdChanged = true;
-    if (cdApi) cdApi.setDialogResult({ changed: true, key: cdKey });
     return cdLoad().then(function () { return true; });
   });
 }
 
-spirit.shell.activateApp({
+var cdPage = ({
   // Once per pane, ever. Everything about WHO this screen is showing
   // belongs in open(), which runs on every call — see below.
   mount: function (container, api) {
@@ -383,7 +382,7 @@ spirit.shell.activateApp({
         cdReleaseSeats().then(function (released) {
           if (!released) { cdRender(); return; }
           return cdPeerAction('forget').then(function (ok) {
-            if (ok) { cdChanged = true; cdApi.closeDialog({ changed: true }); }
+            if (ok) { cdChanged = true; cdApi.closeDialog(); }
           });
         });
         return;
@@ -437,3 +436,14 @@ spirit.shell.activateApp({
   },
 
 });
+// A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
+// shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { key }; its
+// title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
+(window.spirit.elements = window.spirit.elements || {}).contactDetails = {
+  open: function (params) {
+    return window.spirit.elements.navigation.push({ title: 'Contact', mount: function (box, page) {
+      cdPage.mount(box, page.api);
+      cdPage.open(params || {});
+    } });
+  },
+};

@@ -26,14 +26,17 @@ function appsIsApp(path) {
   return !!m && !!D && !!D.get('files/' + path.replace(/\.js$/, '.json'));
 }
 
-function appsPanel(host, listHost, api, path) {
+// AN APP'S PANEL IS A PAGE (goal/G40.8: back is the same for everything, the frame's): pushed on the navigation, the
+// app's folder the title; no back row of its own.
+function appsPanel(api, path) {
+  var m = APP_SCRIPT.exec(path);
+  window.spirit.elements.navigation.push({ title: m[2], mount: function (host) { appsPanelDraw(host, api, path); } });
+}
+function appsPanelDraw(host, api, path) {
   var m = APP_SCRIPT.exec(path);
   var id = m[1] + '/' + m[2];
-  listHost.hidden = true;
-  host.hidden = false;
-  host.innerHTML = '<button type="button" class="cancel-btn" data-apps="back">← Apps</button><div data-apps="panel" class="stat-tile wide">reading…</div>';
+  host.innerHTML = '<div data-apps="panel" class="stat-tile wide">reading…</div>';
   var panel = host.querySelector('[data-apps="panel"]');
-  host.querySelector('[data-apps="back"]').addEventListener('click', function () { host.hidden = true; host.innerHTML = ''; listHost.hidden = false; });
   // Through the spirit object (goal/G32.2): the face part and the manifest's text.
   spirit.ready.then(function (s) {
     return Promise.all([s.fs.getAnnotations(path), s.fs.loadFile(id + '/' + m[2] + '.json')]);
@@ -96,9 +99,8 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     var E = window.spirit.elements;
     // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
-    container.innerHTML = '<div data-apps="list" class="fill"></div><div data-apps="detail" hidden></div>';
+    container.innerHTML = '<div data-apps="list" class="fill"></div>';
     var listHost = container.querySelector('[data-apps="list"]');
-    var appHost = container.querySelector('[data-apps="detail"]');
     appsList = E.probabilitySearch.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
       data: 'files',
@@ -118,7 +120,7 @@ spirit.shell.activateApp({
             return (v === 'shell') === (String(row.path).indexOf('shell/') === 0) ? 1 : 0;
           } },
       ],
-      details: function (row, key) { appsPanel(appHost, listHost, api, key); },
+      details: function (row, key) { appsPanel(api, key); },
       empty: 'No app matches.',
     });
     appsList.sort('name', 'asc');

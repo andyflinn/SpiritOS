@@ -9,7 +9,7 @@
 //   mount(box, opts)
 //     opts.seats              relay rows this node holds a seat on (url, label, face, email, emailVerified)
 //     opts.ask(verb, args)    the node's door, answering { status, text, body }
-//     opts.callDialog(id, p)  opens natterDetails for the chosen relay
+//     (the chosen relay's details open as a page: spirit.elements.natterDetails)
 //     opts.reload()           read the rows again (Promise); the form is drawn again by its caller
 //     opts.idPrefix           the ids' prefix, 'info-face-' unless said
 //     opts.escape             the shell's escapeHtml
@@ -98,12 +98,12 @@
     show(!keep.name);
     el('relay').addEventListener('change', function () { box._faceSaid = null; say('', false); show(true); });
     el('save').addEventListener('click', save);
-    // The same dialog Contacts opens for a relay row; the rows are read again when it closes, so a verified email shows.
+    // The same page Contacts opens for a relay row (goal/G40.8: an element on the navigation); a verified email comes
+    // back on the stream, so nothing is read again when it closes.
     el('open').addEventListener('click', function () {
       var pick = el('relay');
-      if (!pick || typeof o.callDialog !== 'function') return;
-      var again = function () { return typeof o.reload === 'function' ? o.reload() : null; };
-      Promise.resolve(o.callDialog('shell/natterDetails', { url: pick.value })).then(again, again);
+      if (!pick) return;
+      window.spirit.elements.natterDetails.open({ url: pick.value });
     });
     el('name').addEventListener('keydown', function (e) { if (e && e.key === 'Enter') { if (e.preventDefault) e.preventDefault(); save(); } });
     if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);

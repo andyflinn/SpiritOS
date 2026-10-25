@@ -40,17 +40,20 @@ function iconsChange(api, fn, said) {
   }, function (e) { if (said) said.textContent = 'not saved: ' + ((e && e.message) || e); return false; });
 }
 
-function iconsPanel(host, listHost, api, row, glyph) {
-  listHost.hidden = true;
-  host.hidden = false;
-  host.innerHTML = '<button type="button" class="cancel-btn" data-icons="back">← Icons</button>' +
+// THE ICON DETAIL IS A PAGE (goal/G40.8; Andy: "the icons app simple uses the navigationWrapper for it's details pane"):
+// pushed on the navigation, its glyph the title, back the frame's; no back row of its own. It knows its row and saves to
+// the server; the file's change comes back through the file tree, and the list fetches the set again.
+function iconsPanel(api, row, glyph) {
+  window.spirit.elements.navigation.push({ title: glyph, mount: function (host, page) { iconsPanelDraw(host, page, api, row, glyph); } });
+}
+function iconsPanelDraw(host, page, api, row, glyph) {
+  host.innerHTML =
     '<div class="stat-tile wide"><div class="panel-heading" style="font-size:2em">' + iconsEsc(glyph) + '</div>' +
     '<label class="field-label">Keywords <input type="text" data-icons="keywords" value="' + iconsEsc((row.keywords || []).join(', ')) + '"></label>' +
     '<button type="button" data-icons="remove">Remove this icon</button>' +
     '<div data-icons="said" class="job-manifest-note"></div></div>';
   var said = host.querySelector('[data-icons="said"]');
-  function back() { host.hidden = true; host.innerHTML = ''; listHost.hidden = false; }
-  host.querySelector('[data-icons="back"]').addEventListener('click', back);
+  function back() { page.close(); }
   // Saved as the field changes, no Save button (as the Apps panel).
   // The keywords stop at their limit as they are typed (shell/js/fieldInput.js).
   window.spirit.elements.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'paragraph');
@@ -75,14 +78,12 @@ spirit.shell.activateApp({
           '<button type="button" data-icons="add">Add</button><span data-icons="added" class="job-manifest-note"></span>' +
         '</div>' +
         '<div data-icons="pane" class="fill"></div>' +
-      '</div><div data-icons="icon" hidden></div>';
-    var listHost = container.querySelector('[data-icons="list"]');
-    var iconHost = container.querySelector('[data-icons="icon"]');
+      '</div>';
     window.spirit.elements.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
     iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
       api: api,
       face: 'pane',
-      details: function (row, glyph) { iconsPanel(iconHost, listHost, api, row, glyph); },
+      details: function (row, glyph) { iconsPanel(api, row, glyph); },
     });
     container.querySelector('[data-icons="add"]').addEventListener('click', function () {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
@@ -97,7 +98,7 @@ spirit.shell.activateApp({
         // AND IT OPENS THAT ICON (goal/G40.5; Andy: "if add icon cannot add because the icon already exists, the open
         // the edit dialog for the existing icon."): its edit view, with the keywords it has; nothing is written.
         if (known) {
-          iconsPanel(iconHost, listHost, api, { keywords: set[known] || [] }, known);
+          iconsPanel(api, { keywords: set[known] || [] }, known);
           return known + ' is in the set already: opened it';
         }
         set[glyph] = words;

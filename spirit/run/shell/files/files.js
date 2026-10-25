@@ -8,36 +8,33 @@
 var filesList = null;
 var filesShown = null;                 // the media viewer open, dropped when another file or the list is shown
 
-function filesShow(host, listHost, path, words, line) {
+// A FILE OPENED IS A PAGE (goal/G40.8: back is the same for everything, the frame's): pushed on the navigation, the
+// file's name the title, its viewer the whole page; no back row of its own. Popped, its media viewer is let go.
+function filesShow(path, words, line) {
+  var name = String(path).split('/').pop();
+  window.spirit.elements.navigation.push({ title: name, mount: function (viewer) { filesView(viewer, path, words, line); },
+    unmount: function () { if (filesShown) { filesShown.destroy(); filesShown = null; } } });
+}
+function filesView(viewer, path, words, line) {
   var E = window.spirit.elements;
   if (filesShown) { filesShown.destroy(); filesShown = null; }
-  listHost.hidden = true;
-  host.hidden = false;
-  host.innerHTML = '<button type="button" class="cancel-btn" data-files="back">← Files</button><div data-files="viewer"></div>';
-  var viewer = host.querySelector('[data-files="viewer"]');
   var kind = E.fileViewer.kindOf(E.fileViewer.mimeOf(path));
   if (kind === 'code') E.textViewer.create(viewer, { path: path, words: words, line: line, launcherId: 'text-file-launcher' });
   else if (kind) filesShown = E.mediaViewer.create(viewer, { path: path, launcherId: 'media-launcher' });
   else E.fileViewer.create(viewer, { path: path });
-  host.querySelector('[data-files="back"]').addEventListener('click', function () {
-    if (filesShown) { filesShown.destroy(); filesShown = null; }
-    host.hidden = true;
-    host.innerHTML = '';
-    listHost.hidden = false;
-  });
+
 }
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
-    container.innerHTML = '<div data-files="list" class="fill"></div><div data-files="file" hidden></div>';
+    container.innerHTML = '<div data-files="list" class="fill"></div>';
     var listHost = container.querySelector('[data-files="list"]');
-    var fileHost = container.querySelector('[data-files="file"]');
     filesList = window.spirit.elements.fileList.create(listHost, {
       api: api,
       face: 'pane',
       // A file found by its contents opens at that line with the words marked (goal/G29.11).
-      pick: function (row, key) { filesShow(fileHost, listHost, key, row.line > 0 ? filesList.words() : '', row.line || 0); },
+      pick: function (row, key) { filesShow(key, row.line > 0 ? filesList.words() : '', row.line || 0); },
     });
   },
 

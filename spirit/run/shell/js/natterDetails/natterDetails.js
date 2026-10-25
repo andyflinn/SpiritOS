@@ -397,7 +397,7 @@ function ndRemove(button) {
   if (!ndApi) return;
   ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
-    if (said.ok) { ndApi.closeDialog({ changed: true, url: ndUrl, removed: true }); return; }
+    if (said.ok) { ndApi.closeDialog(); return; }
     var out = document.querySelector('.nd-remove-out');
     if (out) out.textContent = 'not removed: ' + (said.error || 'no answer');
   });
@@ -1455,10 +1455,9 @@ function ndClaim(button) {
     // to do on this relay. Taking a seat is the end of the errand, and
     // the thing that comes next is the shell you could not use yet.
     if (ndApi && ndApi.closeDialog) {
-      ndApi.closeDialog({ changed: true, url: ndUrl, claimed: wanted });
+      ndApi.closeDialog();
       return;
     }
-    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, claimed: wanted });
     ndLoad();
   });
 }
@@ -1537,9 +1536,6 @@ function ndRevoke(button) {
     // The hash rides back because this was a post. Returned with the
     // result so the list — and a log reader one day — can name the
     // transaction this press was (decision 0011).
-    if (ndApi) {
-      ndApi.setDialogResult({ changed: true, url: ndUrl, revoked: label, hash: r.hash });
-    }
     ndLoad();
   });
 }
@@ -1574,9 +1570,6 @@ function ndMint(button) {
     if (token) {
       ndMinted = label;
       ndChanged = true;
-      if (ndApi) {
-        ndApi.setDialogResult({ changed: true, url: ndUrl, minted: label, hash: r.hash });
-      }
     }
     // Printed, not copied: it is read off this screen onto a phone. What
     // is shown is what the relay stored — the typed token when it took
@@ -1593,7 +1586,7 @@ function ndMint(button) {
   });
 }
 
-spirit.shell.activateApp({
+var ndPage = ({
 
   // Structure only. Everything about WHICH mailbox belongs in open(),
   // which runs on every call — see below.
@@ -1790,3 +1783,14 @@ spirit.shell.activateApp({
   },
 
 });
+// A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
+// shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
+// title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
+(window.spirit.elements = window.spirit.elements || {}).natterDetails = {
+  open: function (params) {
+    return window.spirit.elements.navigation.push({ title: 'Relay', mount: function (box, page) {
+      ndPage.mount(box, page.api);
+      ndPage.open(params || {});
+    } });
+  },
+};

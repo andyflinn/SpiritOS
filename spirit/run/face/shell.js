@@ -387,6 +387,10 @@
     'shell/js/icons/rowElement.js',
     'shell/js/icons/listElement.js',
     'shell/js/fieldInput.js',
+    // The navigation and the two detail pages on it (goal/G40.8).
+    'shell/js/navigationWrapper.js',
+    'shell/js/contactDetails/contactDetails.js',
+    'shell/js/natterDetails/natterDetails.js',
   ];
   function loadParts() {
     return FACE_PARTS.reduce(function (chain, p) {
@@ -404,18 +408,19 @@
   // file tree already in the page (shell/js/spiritData.js); each one's face part is asked once (fs.annotations), and each
   // icon is drawn as its answer arrives. An app's script loads when it is opened. The home shell's .json manifests are
   // not read here. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
-  var apps = {};          // id -> { id, manifest, behavior, pane, api, result }
+  var apps = {};          // id -> { id, manifest, behavior }
   var loadingId = '';
-  var stack = [];         // ids on screen, newest last
-  var active = '';
-  var pendingDialog = null;
   var armed = null;
+  // THE SHELL'S ONE STACK IS THE NAVIGATION (goal/G40.8; Andy: "the stack only holds ONLY navigation", "so the shell does
+  // ALL the wrapping? agreed."): shell/js/navigationWrapper.js, one of the parts from home, attached once they are in.
+  // Every app opened is a page pushed on it, a detail an app opens is one too; the title bar and back are its.
+  function navigation() { return (window.spirit.elements && window.spirit.elements.navigation) || null; }
 
   function manifestOf(id) {
     if (apps[id] && apps[id].manifest) return Promise.resolve(apps[id]);
     var name = id.split('/').pop();
     return fileText(id + '/' + name + '.json').then(function (m) {
-      if (!apps[id]) apps[id] = { id: id, manifest: JSON.parse(m), behavior: null, pane: null, api: null, result: null };
+      if (!apps[id]) apps[id] = { id: id, manifest: JSON.parse(m), behavior: null };
       return apps[id];
     });
   }
@@ -429,8 +434,8 @@
       if (face && face.app === true) {
         var m = { name: String(face.name || name), icon: String(face.icon || ''), description: String(face.description || '') };
         if (apps[id]) apps[id].manifest = m;
-        else apps[id] = { id: id, manifest: m, behavior: null, pane: null, api: null, result: null };
-      } else if (apps[id] && stack.indexOf(id) === -1) delete apps[id];
+        else apps[id] = { id: id, manifest: m, behavior: null };
+      } else if (apps[id]) delete apps[id];
       hand();
     }, function () { /* no answer: the app is not shown */ });
   }
@@ -462,7 +467,8 @@
     });
   }
 
-  function apiFor(app) {
+  // THE API A PAGE IS HANDED, by its page on the navigation (nav): close, title and visibility are its page's.
+  function apiFor(page) {
     var api = {
       escapeHtml: spirit.escapeHtml,
       // A face app's call to its home node, over this link (goal/G40.7: no kernel on a face).
@@ -490,20 +496,19 @@
         });
       },
       launchApp: function (id, params) { openApp(id, params || null); },
-      callDialog: function (id, params) {
-        return new Promise(function (resolve) { pendingDialog = { id: id, resolve: resolve }; openApp(id, params || null); });
-      },
-      setDialogResult: function (result) { app.result = result === undefined ? null : result; },
-      closeDialog: function (result) { if (result !== undefined) app.result = result; if (active === app.id) back(); },
-      setScreenTitle: function (text) { if (active === app.id) title.textContent = String(text == null ? '' : text); },
+      // An app opened as another page. Nothing is handed back (goal/G40.8: "the stack doesn't need to handle results"):
+      // what the page changes reaches every view on the stream. Answers once the page is up.
+      callDialog: function (id, params) { return openApp(id, params || null); },
+      closeDialog: function () { page.close(); },
+      setScreenTitle: function (text) { page.setTitle(text); },
       setScreenMark: function () {},
       addTitlebarLink: function () {},
       armUntilElsewhere: function (disarm) { if (typeof disarm === 'function') armed = { disarm: disarm, at: currentClick }; },
-      isVisible: function () { return active === app.id; },
+      isVisible: function () { return page.isTop(); },
       onJobs: function (fn) {
         return events({
-          onSnapshot: function () { fn(jobsById, null, { visible: active === app.id }); },
-          onUpdate: function (job) { fn(jobsById, job, { visible: active === app.id }); },
+          onSnapshot: function () { fn(jobsById, null, { visible: page.isTop() }); },
+          onUpdate: function (job) { fn(jobsById, job, { visible: page.isTop() }); },
         });
       },
       onFiles: function () { return function () {}; },
@@ -522,42 +527,34 @@
     if (armed && armed.at !== e) { var a = armed; armed = null; try { a.disarm(); } catch (x) { /* harmless twice */ } }
   }, false);
 
-  function show(id) {
-    active = id;
-    var app = apps[id];
-    Object.keys(apps).forEach(function (k) { if (apps[k].pane) apps[k].pane.hidden = k !== id; });
-    if (loginPane) loginPane.hidden = id !== 'login';
-    title.textContent = id === 'login' ? (manifest.name || 'Log in') : ((app && app.manifest && app.manifest.name) || id);
-    desktop.hidden = true;
-    container.hidden = false;
+  // THE FRAME THE NAVIGATION DRAWS IN: the title bar, the app area, the desktop when no page is up.
+  function shownFrame() { if (loginPane) loginPane.hidden = true; desktop.hidden = true; container.hidden = false; }
+  function showDesktop() { if (loginPane) loginPane.hidden = true; container.hidden = true; desktop.hidden = false; drawDesktop(); }
+  function attachNavigation() {
+    var n = navigation();
+    if (n) n.attach({ title: title, content: content, shown: shownFrame, empty: showDesktop, apiFor: apiFor });
   }
+  // AN APP IS A PAGE THE SHELL PUSHES (goal/G40.8): its name in the title bar, its mount drawing into the page's box. A
+  // popped page is thrown away, so an app opened again mounts afresh.
   function openApp(id, params) {
     return loadApp(id).then(function (app) {
       if (!app.behavior) throw new Error(id + ' did not activate');
-      if (!app.pane) {
-        app.pane = document.createElement('div');
-        content.appendChild(app.pane);
-        app.api = apiFor(app);
-        app.behavior.mount(app.pane, app.api);
-      }
-      app.result = null;
-      if (stack[stack.length - 1] !== id) stack.push(id);
-      show(id);
-      if (typeof app.behavior.open === 'function') app.behavior.open(params);
-      if (typeof app.behavior.render === 'function') app.behavior.render();
+      if (!navigation()) throw new Error('the face has not loaded its navigation yet');
+      var m = app.manifest || {};
+      window.spirit.elements.navigation.push({ title: m.name || id, mount: function (box, page) {
+        app.behavior.mount(box, page.api);
+        if (typeof app.behavior.open === 'function') app.behavior.open(params);
+        if (typeof app.behavior.render === 'function') app.behavior.render();
+      } });
     }).catch(function (e) { say(String(e.message || e)); });
   }
-  function back() {
-    var leaving = stack.pop();
-    var app = apps[leaving];
-    if (pendingDialog && pendingDialog.id === leaving) { var p = pendingDialog; pendingDialog = null; p.resolve(app ? app.result : null); }
-    var under = stack[stack.length - 1];
-    if (under) show(under); else showDesktop();
-  }
-  function showDesktop() { stack = []; active = ''; container.hidden = true; desktop.hidden = false; drawDesktop(); }
-  document.getElementById('app-close').addEventListener('click', back);
+  function loginOpen() { return !!(loginPane && !loginPane.hidden); }
+  document.getElementById('app-close').addEventListener('click', function () {
+    if (loginOpen()) { showDesktop(); return; }
+    if (navigation()) navigation().back();
+  });
   document.getElementById('app-home').addEventListener('click', function () {
-    while (stack.length) { var id = stack[stack.length - 1]; if (pendingDialog && pendingDialog.id === id) back(); else stack.pop(); }
+    if (navigation()) navigation().home();
     showDesktop();
   });
 
@@ -605,10 +602,15 @@
       .then(function () { hand(); if (state && state.loggedIn) start(); });
   }
 
+  // THE LOGIN IS NO PAGE: it comes before the link to home, so before the navigation the face loads from home. It is the
+  // one screen outside the stack, shown over an empty app area; back leaves it for the desktop.
   function openLogin() {
-    if (!loginPane) { loginPane = document.createElement('div'); content.appendChild(loginPane); }
-    if (stack[stack.length - 1] !== 'login') stack.push('login');
-    show('login');
+    if (!loginPane) { loginPane = document.createElement('div'); loginPane.className = 'fill'; content.appendChild(loginPane); }
+    if (navigation()) navigation().home();
+    loginPane.hidden = false;
+    title.textContent = manifest.name || 'Log in';
+    desktop.hidden = true;
+    container.hidden = false;
     if (login) { if (!loginMounted) mountLogin(); return; }
     var s = document.createElement('script');
     s.src = '/face/login/login.js';
@@ -652,6 +654,7 @@
       return Promise.resolve(window.spirit.start()).then(parts, parts);
     }).then(function () {
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { activateApp: activateApp, factRow: factRow, faceApp: readFace });
+      attachNavigation();
       link.loaded = true;
       openStream(false);
       listApps();
