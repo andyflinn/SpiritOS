@@ -251,6 +251,20 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/relay-state\/shell\/join\//.test(joinApp) && !/setAppOverride/.test(joinApp)) test.check('Join keeps its own fact (face opened) in relay-state/shell/join/, not the old shell\'s preferences');
   else test.fail('Join still keeps its fact through the old shell\'s setAppOverride');
 
+  // INFO ON THE FACE (goal/G40.10, box v5; Andy: "port the info app to face.").
+  test.subHeading('1g. Info on the face: a face app, everything it calls the face gives it');
+  let infoMark = null;
+  try { infoMark = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'info', 'info.js.sidecar.json'), 'utf8')).face; } catch (e) { infoMark = null; }
+  if (infoMark && infoMark.app === true && infoMark.name === 'Info' && infoMark.icon && infoMark.description) test.check('Info is marked a face app in its sidecar, with its name, icon and description, as Files is');
+  else test.fail('Info is no face app: its face mark is ' + short(infoMark));
+  const infoCode = code('shell/info/info.js');
+  const faceApi = (faceShell.match(/function apiFor\(page\) \{[\s\S]*?\n  \}/) || [''])[0];
+  const infoCalls = (infoCode.match(/infoApi\.(\w+)/g) || []).map(function (s) { return s.slice(8); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+  const missingApi = infoCalls.filter(function (n) { return !new RegExp('\\b' + n + ':').test(faceApi); });
+  if (infoCalls.length && !missingApi.length && /spirit\.relay\.status\(/.test(infoCode) && (parts || []).indexOf('shell/js/faceForm.js') !== -1 && (parts || []).indexOf('spirit/fieldRules.js') !== -1)
+    test.check('everything Info calls the face gives it: ' + infoCalls.join(', ') + ', spirit.relay.status, the face form and the field rules');
+  else test.fail('Info calls what the face does not give it: ' + short(missingApi));
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
