@@ -68,7 +68,7 @@ function ndRelayKey() {
 // thing from a relay that refused.
 function ndNoKey(out, cls) {
   out.className = 'job-manifest-note ' + cls + ' is-error';
-  out.textContent = 'this relay has not said what its key is yet';
+  out.textContent = 'this relay has not answered yet';
 }
 
 function ndLabelProblem(name) {
@@ -1504,7 +1504,7 @@ function ndRevoke(button) {
   var relayKey = (ndBadge && ndBadge.report && ndBadge.report.key) || '';
   if (!relayKey) {
     out.className = 'job-manifest-note nd-inv-revoke-out is-error';
-    out.textContent = 'this relay has not said what its key is yet';
+    out.textContent = 'this relay has not answered yet';
     button.removeAttribute('data-armed');
     button.textContent = 'Revoke';
     return;

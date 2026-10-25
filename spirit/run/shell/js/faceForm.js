@@ -38,7 +38,7 @@
     box.innerHTML =
       '<div class="label">A face name on one relay</div>' +
       '<div class="job-manifest-note">Ask one relay for a name under its domain. It is paired with the verified email ' +
-        'that relay holds for you (add or change it in Natter). The relay answers yes or no; asking again changes the name.</div>' +
+        'that relay holds for you. The relay answers yes or no; asking again changes the name.</div>' +
       '<div class="start-job-form card">' +
         '<label class="field-label">Relay<select id="' + p + 'relay">' +
           seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +

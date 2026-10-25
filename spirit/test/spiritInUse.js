@@ -312,6 +312,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   // relay reports to its owner, so Info shows the name and a rename's answer is written.
   test.subHeading('1h. the owner\'s seat on his node: an owned relay\'s report notes the seat under the relay\'s name for him');
   const ownerHome = setupRelayFakes('spiritInUseOwner').andy;
+  // A fresh home each run: the scratch copy keeps its relay-state between runs.
+  fs.rmSync(path.join(ownerHome, 'relay-state'), { recursive: true, force: true });
   const seatRun = spawnSync(process.execPath, ['-e', [
     "const k = require('./spirit/relayKeys'); const b = require('./spirit/ownerBadge'); const url = 'https://owned.example';",
     "b.addRelay(process.cwd(), url, 'owned', ''); k.accept(process.cwd(), url, 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=');",

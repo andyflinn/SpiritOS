@@ -49,10 +49,9 @@
 //
 // ── WHAT THIS SCREEN IS NOT ──────────────────────────────────────────
 //
-// NOT the node's key. The key is the identity and cannot be edited, so it
-// is at the foot in fine print (UI_DESIGN_STYLE §2) rather than in a
-// field: there is nothing to do to it, and §1 says do not build a control
-// whose every value would be refused.
+// NOT the node's key, which is not shown at all (goal/G40.10, box v15; Andy:
+// "remove ANY indication of keys from all user interfaces, like that footer
+// on the info app").
 //
 // ── NO TICK ──────────────────────────────────────────────────────────
 //
@@ -164,9 +163,6 @@ function infoDraw() {
   var description = document.getElementById('info-description');
   if (name) name.value = infoCard.name;
   if (description) description.value = infoCard.description;
-
-  var key = document.getElementById('info-key');
-  if (key) key.textContent = infoCard.publicKey;
   infoCount();
   infoDrawRelays();
 }
@@ -223,7 +219,7 @@ function infoDrawRelays() {
       var note = '';
       if (pushed && !pushed.ok) note = pushed.why;
       else if (!seat) note = 'no seat here';
-      else if (!row.roll || !row.roll.relayKey) note = 'has not said what its key is';
+      else if (!row.roll || !row.roll.relayKey) note = 'has not answered yet';
       else if (wanted && calls && calls !== wanted) note = 'out of step';
       else if (!calls) note = 'enrolled, but unnamed';
 
@@ -242,6 +238,10 @@ function infoDrawRelays() {
 // The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
 function infoDrawFace() {
+  // THE EMAIL FORM ABOVE IT (goal/G40.10, box v15; Andy: "it should also be placed in info, above the face-pick-interface"):
+  // joinForm's general form, with its own relay picker, as Join and the relay details draw the same form.
+  var joinForm = window.spirit && window.spirit.elements && window.spirit.elements.joinForm;
+  if (joinForm) joinForm.mount(document.getElementById('info-email'), { seats: infoSeats(), escape: infoApi && infoApi.escapeHtml });
   var form = window.spirit && window.spirit.elements && window.spirit.elements.faceForm;
   var box = document.getElementById('info-face');
   if (!box || !form) return;
@@ -454,14 +454,12 @@ spirit.shell.activateApp({
       //   will have to address ONE relay specifically."
       //
       // Drawn from the same relay rows as the table above, so it appears only when there is a seat to apply on.
+      // The email form stands above it (goal/G40.10, box v15).
+      '<div class="stat-tile wide" id="info-email"></div>' +
       '<div class="stat-tile wide" id="info-face"></div>' +
 
-      // ── THE FOOT, WHICH IS THE PART NOBODY EDITS ────────────────────
-      //
-      // Fine print at the bottom of the page (§2), which is where the
-      // Relay Chat footer puts this node's own key ending for the same
-      // reason: it is there to be read out when somebody needs it, not
-      // to be looked at.
+      // NO FOOT (goal/G40.10, box v15; Andy: "fine-print at the bottom. nobody read that shit, and it doesn't help
+      // anybody."): no key is shown in any face app.
       // ── ROTATE THE CIPHER KEY (cycle-10/R13) ──────────────────────
       //
       //   Andy: "the place would be the info app", "and from the info-app
@@ -472,12 +470,6 @@ spirit.shell.activateApp({
       // rotate a key by itself.
       '<div class="start-job-form card">' +
         '<button type="button" id="info-rotate">Rotate this node\x27s cipher key</button>' +
-      '</div>' +
-
-      '<div class="job-manifest-note" id="info-foot">' +
-        '<div>This node\'s key. It is the identity — the name above is a caption ' +
-          'it wears, and a caption can be changed while this cannot.</div>' +
-        '<div id="info-key"></div>' +
       '</div>';
 
     document.getElementById('info-name-save')

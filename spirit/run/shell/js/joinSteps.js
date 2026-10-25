@@ -9,9 +9,9 @@
 //   done(step, facts)      -> whether that step's fact holds.
 //   current(steps, facts)  -> the first step not done and not optional, or null when every one that counts is done.
 //       Find someone is optional (box: "it never blocks the steps after it"): open in the list, never the open step.
-//   linkJoin(code, data)   -> { url, email, code }: relay.join's arguments for the mailed link's code, to the relay the job
-//                             names; null while it names none. The link carries no relay, and spirit.js lets no empty
-//                             address through (goal/G40.10).
+//   linkRelay(key, items)  -> the url of the relay the mailed link names by its key (&relay=), out of relay.search's
+//                             items; '' when this node lists no relay under that key. The code goes to that relay, never
+//                             to the first one listed (goal/G40.10, box v15).
 
 (function () {
   function fromJob(data, opened) {
@@ -41,11 +41,17 @@
     return null;
   }
 
-  function linkJoin(code, data) {
-    var url = fromJob(data).relayUrl;
-    return url ? { url: url, email: '', code: String(code || '') } : null;
+  function linkRelay(key, items) {
+    var k = String(key || '');
+    if (!k) return '';
+    var hit = (Array.isArray(items) ? items : []).filter(function (i) {
+      var row = null;
+      try { row = JSON.parse(i.label); } catch (e) { row = null; }
+      return !!(row && row.relayKey === k);
+    })[0];
+    return hit ? String(hit.key || '') : '';
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.joinSteps = { fromJob: fromJob, done: done, current: current, linkJoin: linkJoin };
+  window.spirit.elements.joinSteps = { fromJob: fromJob, done: done, current: current, linkRelay: linkRelay };
 }());

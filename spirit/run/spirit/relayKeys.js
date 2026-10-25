@@ -252,6 +252,19 @@ function seat(rootDir, url, label, atMs) {
   return true;
 }
 
+// THE OWNER'S SEAT, NOTED ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner
+// has a seat"). The relay seats its owner at boot (goal/G30.7), so an owner who never claimed holds a seat this node
+// never wrote down, and Info said "unnamed" while every rename landed. A relay's report to its owner says what it calls
+// him (`owner`); that is the seat, written under the relay's own word. True when written, false when there was nothing
+// to write or it already said so, so a report every few seconds writes nothing.
+function ownerSeat(rootDir, url, label) {
+  var name = String(label == null ? '' : label);
+  if (!name) return false;
+  var row = byUrl(rootDir, url);
+  if (!row || (row.seatClaimedAt && row.seatLabel === name)) return false;
+  return seat(rootDir, url, name);
+}
+
 // THE FACE NAME THIS NODE APPLIED FOR ON A RELAY, with the relay's signed answer kept whole (goal/G30.1). Andy,
 // 2026-10-19: "the information belongs into relay-state somewhere, it's part of the node identity"; it goes on the
 // same row as the seat, one relay, one record. `reply` is the answer exactly as the relay sent it, never rebuilt,
@@ -560,6 +573,7 @@ module.exports = {
   acceptedKeys: acceptedKeys,
   forget: forget,
   seat: seat,
+  ownerSeat: ownerSeat,
   seatedUrls: seatedUrls,
   seatLabel: seatLabel,
   unseat: unseat,

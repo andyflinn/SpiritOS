@@ -294,7 +294,7 @@ function cdReleaseSeats() {
         if (!carryOn) return false;
         var relayKey = keyFor[url];
         if (!relayKey) {
-          cdStatus(url + ' has not said what its key is, so the seat cannot be removed');
+          cdStatus(url + ' has not answered yet, so the seat cannot be removed');
           return false;
         }
         return cdApi.peerPost('relay', relayKey, { removePeer: { key: cdKey } })

@@ -513,7 +513,7 @@
   function startJoin() {
     fileText(JOIN + '/join.json').then(function (m) { joinStepList = (JSON.parse(m) || {}).steps || []; joinChanged(); }, function () { joinStepList = []; });
     joinReadFact().then(joinChanged);
-    var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); if (linkWaiting) joinFromLink(); } };
+    var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); } };
     events({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
     // Join's fact changed (it writes its state file): the file tree says so, and it is read again.
     if (window.spirit.data) window.spirit.data.watch('files/' + JOIN_STATE, function () { joinReadFact().then(joinChanged); });
@@ -774,31 +774,30 @@
   // THE MAILED JOIN LINK (goal/G40.10; Andy: "break the join feature in the old shell and have that only work in the
   // face-shell"): the relay mails /face.html?join=<code>&app=join. Read here, before the address is cleared; at home, once
   // the face is up, the code goes to relay.join and the app named beside it opens, whatever the join said.
+  // THE LINK NAMES ITS RELAY (goal/G40.10, box v15): &relay=<its key>; the code goes to the relay this node lists under
+  // that key (joinSteps.linkRelay), never to the first relay it lists.
   var joinCode = '';
+  var joinRelayKey = '';
   var appFromAddress = '';
-  try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; appFromAddress = q.get('app') || ''; } catch (e) { joinCode = ''; }
-  // The link carries no relay: the code waits for the join-steps job, and goes to the relay it names (linkJoin).
-  var linkWaiting = false;
+  try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; joinRelayKey = q.get('relay') || ''; appFromAddress = q.get('app') || ''; } catch (e) { joinCode = ''; }
   function joinFromLink() {
     var openNamed = function () { if (/^[A-Za-z0-9_-]+$/.test(appFromAddress)) openApp('shell/' + appFromAddress, null); };
     if (!joinCode) { openNamed(); return; }
-    var S = window.spirit.elements && window.spirit.elements.joinSteps;
-    var args = S && joinJob ? S.linkJoin(joinCode, joinJob) : null;
-    if (!args) {
-      if (joinJob) { joinCode = ''; say('The join did not finish: this node knows no relay to join. Ask again with your email.'); openNamed(); }
-      else linkWaiting = true;
-      return;
-    }
-    linkWaiting = false;
+    var code = joinCode;
     joinCode = '';
-    ask('relay.join', args).then(function (r) {
+    var S = window.spirit.elements && window.spirit.elements.joinSteps;
+    Promise.resolve(spirit.relay.search({ q: '*' })).then(function (s) {
+      var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
+      if (!url) throw new Error('this node lists no relay that sent this link');
+      return ask('relay.join', { url: url, email: '', code: code });
+    }).then(function (r) {
       var b = (r && r.body) || {};
       // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31).
       say(b.ok && r.status === 200 ? 'Email address verified on ' + (b.url || 'the relay') + '.'
         : b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
         : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
       openNamed();
-    }, function () { say('The join did not finish: this node did not answer.'); openNamed(); });
+    }, function (e) { say('The join did not finish: ' + ((e && e.message) || 'this node did not answer') + '.'); openNamed(); });
   }
   var fromLink = (window.location.search || '').length > 1;
   if (fromLink) { try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the token is spent */ } }

@@ -9,6 +9,7 @@
 //   bind(root, opts)  -> the button and Enter inside root send it; opts.url() or opts.url is the relay, opts.ask the
 //                        node's door (api.verb or spirit.core.ask).
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
+//   mount(box, opts)  -> the general form: its own relay picker over the form, for a page that is no relay's own.
 
 (function () {
   function esc(s) {
@@ -75,6 +76,39 @@
     });
   }
 
+  // THE GENERAL FORM, WITH ITS OWN RELAY PICKER (goal/G40.10, box v15; Andy: "in info, it needs a replay picker with it,
+  // (the general form of that element)", and "one each. those forms are atomic"). Every relay thing names its relay, so
+  // where no relay's own page stands around the form, the form picks one; its words follow the relay picked. Info draws
+  // it above the face form.
+  //   mount(box, opts)   opts.seats: the relay rows this node holds a seat on (url, label, email, emailVerified);
+  //                      opts.escape: the shell's escapeHtml. Drawn again by its caller with fresh rows.
+  function mount(box, opts) {
+    if (!box) return;
+    var o = opts || {};
+    var escape = o.escape || esc;
+    var seats = Array.isArray(o.seats) ? o.seats : [];
+    if (!seats.length) { box.innerHTML = ''; return; }
+    var was = box.querySelector('.sp-join-relay');
+    var picked = was ? was.value : '';
+    function row() { var p = box.querySelector('.sp-join-relay'); return seats.filter(function (r) { return p && r.url === p.value; })[0] || seats[0]; }
+    function draw() {
+      var r = row();
+      var w = words({ seated: true, email: r.email, emailVerified: !!r.emailVerified });
+      var form = box.querySelector('.sp-join-body');
+      if (form) form.innerHTML = '<div class="label">' + escape(w.title) + '</div>' + html(w);
+    }
+    box.innerHTML =
+      '<div class="start-job-form card"><label class="field-label">Relay<select class="sp-join-relay">' +
+        seats.map(function (r) { return '<option value="' + escape(r.url) + '">' + escape(r.label || r.url) + '</option>'; }).join('') +
+      '</select></label></div>' +
+      '<div class="sp-join-body"></div>';
+    var pick = box.querySelector('.sp-join-relay');
+    if (picked && seats.some(function (r) { return r.url === picked; })) pick.value = picked;
+    pick.addEventListener('change', draw);
+    draw();
+    bind(box, { url: function () { return row().url; } });
+  }
+
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.joinForm = { words: words, html: html, bind: bind, send: send };
+  window.spirit.elements.joinForm = { words: words, html: html, bind: bind, send: send, mount: mount };
 }());

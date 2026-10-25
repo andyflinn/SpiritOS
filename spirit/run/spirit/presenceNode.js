@@ -491,6 +491,8 @@ function createPresence(opts) {
         // holds exactly one object per relay it owns.
         else if (msg.event === 'relay-status') {
           statusByRelay[url] = msg.data;
+          // The report says what the relay calls its owner: his seat there, noted on this node (relayKeys.ownerSeat).
+          try { relayKeys.ownerSeat(rootDir, url, msg.data && msg.data.owner); } catch (e) { /* the next report notes it */ }
           // KEPT AS WELL AS HELD (cycle 11's R2). The line above is the
           // latest report, overwritten — what a monitor draws. This is
           // the series 0015 asked for and nothing kept: "every move, its

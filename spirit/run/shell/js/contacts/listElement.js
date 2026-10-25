@@ -46,6 +46,11 @@
     // At its very end. Off, the book and this node's relays; on, the network's peers (book: false) as well.
     { name: 'network', word: 'network', toggle: true,
       test: function (row, on) { return row.book === false && row.kind !== 'relay' && row.relay !== true ? (on ? 1 : 0) : 1; } },
+    // NO NAMELESS ROWS (goal/G40.10, box v15): the presence data marks every key a relay reports present, the relay's own
+    // and this node's among them; a key with nothing but its presence is no row until a search or the book names it.
+    // No button: it always holds.
+    { name: 'named', when: function () { return false; },
+      test: function (row) { return row && (row.name || row.kind === 'relay' || row.relay === true) ? 1 : 0; } },
   ];
 
   function create(host, opts) {
