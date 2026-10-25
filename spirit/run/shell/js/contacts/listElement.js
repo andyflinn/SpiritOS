@@ -140,6 +140,22 @@
     });
 
     list.refresh();
+    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): a relay joined or left anywhere changes its row here (member,
+    // not joined), so relay-rows, when it changed, makes the list search again; it lets go once the list left the page.
+    var rowsHeard = null;
+    var rowsStop = null;
+    function rowsTake(job) {
+      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!host.isConnected) { if (rowsStop) rowsStop(); return; }
+      var asJson = JSON.stringify(job.data.rows || []);
+      if (rowsHeard === null) { rowsHeard = asJson; return; }
+      if (asJson === rowsHeard) return;
+      rowsHeard = asJson;
+      list.refresh();
+    }
+    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
+      rowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(rowsTake); }, onUpdate: rowsTake });
+    }
     return {
       list: list,
       refresh: function () { list.refresh(); },

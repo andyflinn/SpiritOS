@@ -2740,6 +2740,38 @@ function createHub(rootDir) {
     });
   }
 
+  // ── relay.leave: THIS NODE GIVES UP ITS SEAT ON ONE RELAY (goal/G40.10) ─
+  //
+  //   Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", and "go".
+  //
+  // The removal of this node's own key, posted to that relay (removePeer, which a member may ask for itself); on the
+  // relay's yes the seat, the email and the face on that relay's row are cleared (relayKeys.leaveSeat) and the relay
+  // stays on the list, so a join can follow. A relay verb, so server.js refreshes relay-rows after it: every screen hears
+  // the leaving. Refused for a relay this node owns: its owner's seat is made at every boot (goal/G30.7).
+  function relayLeave(body, deps) {
+    var url = ownerBadge.normalizeUrl(String((body && body.key) || ''));
+    if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its key, its url' });
+    if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    var row = relayKeys.byUrl(rootDir, url);
+    if (!row || !row.seatClaimedAt) return Promise.resolve({ ok: false, status: 404, error: 'this node holds no seat on that relay' });
+    var reports = typeof deps.router.relayStatus === 'function' ? (deps.router.relayStatus() || {}) : {};
+    if (reports[url]) return Promise.resolve({ ok: false, status: 409, error: 'you own this relay: its owner keeps his seat' });
+    var me = auth.loadIdentity(rootDir);
+    var made = packet.encode('relay', { removePeer: { key: me.publicKey } });
+    if (!made || !made.ok) return Promise.resolve({ ok: false, status: 500, error: 'the leave could not be encoded' });
+    return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
+      if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
+      var said = null;
+      try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; }
+      if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
+      if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
+      relayKeys.leaveSeat(rootDir, row.url);
+      return { ok: true, status: 200, key: row.url };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
   function relayGet(body, deps) {
     var key = String((body && body.key) || '');
     if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
@@ -2824,6 +2856,7 @@ function createHub(rootDir) {
     handleStatus: handleStatus,
     relaySearch: relaySearch,
     relayRemove: relayRemove,
+    relayLeave: relayLeave,
     relayAdd: relayAdd,
     relayFace: relayFace,
     relayJoin: relayJoin,

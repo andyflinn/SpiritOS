@@ -340,6 +340,24 @@ function unseat(rootDir, url) {
   return true;
 }
 
+// THE SEAT GIVEN UP (goal/G40.10; Andy: "add the leave verb to node"): once the relay said yes to this node's own
+// removal, the seat, the verified email and the face on that relay's row are cleared. The row stays, pin and all, so a
+// later join there still knows who that relay is. True when there was a row to clear.
+function leaveSeat(rootDir, url) {
+  var rel = table(rootDir);
+  var row = rel.byUrl(normalizeUrl(url));
+  if (!row) return false;
+  row.seatLabel = '';
+  row.seatClaimedAt = '';
+  row.email = '';
+  row.emailVerified = false;
+  row.faceName = '';
+  row.faceEmail = '';
+  row.faceReply = '';
+  rel.put(row);
+  return true;
+}
+
 // ── THE RELAY'S REFUSAL OF THIS NODE, ON ITS ROW (goal/G19.1) ────────
 //
 //   Andy, 2026-10-12: "when a rejection-reply arrives and peerPost stashes
@@ -577,6 +595,7 @@ module.exports = {
   seatedUrls: seatedUrls,
   seatLabel: seatLabel,
   unseat: unseat,
+  leaveSeat: leaveSeat,
   refusal: refusal,
   refuse: refuse,
   clearRefusal: clearRefusal,

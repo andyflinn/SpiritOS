@@ -1939,6 +1939,9 @@ contactBook.syncMarks(ROOT_DIR);
     //   list relays and remove relay, with a successful claim adding its
     //   relay? yes."
     'remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b, { router: peerRouter }); }) },
+    // relay.leave {key} (goal/G40.10; Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", "go"):
+    // this node gives up its seat on one relay; relay-rows publishes it, as after every relay verb.
+    'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayLeave(b, { router: peerRouter }); }) },
     // relay.add {url, label} (goal/G28.1, Andy 2026-10-16): a relay goes on the node's list when its card answers.
     'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
     // relay.face {url, name, email} (goal/G30.1, Andy 2026-10-19: "i agree to the node side verb as well."): this node

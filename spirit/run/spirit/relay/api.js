@@ -13,6 +13,8 @@ module.exports = {
     add: { url: 'url', label: 'name?' },
     face: { url: 'url', name: 'name' },
     join: { url: 'url', email: 'text', code: 'text?' },
+    // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
+    leave: { key: 'text' },
     record: { relay: 'text', from: 'number?', to: 'number?' },
   },
   // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from kernel.js (goal/G40.8: no kernel on a face).

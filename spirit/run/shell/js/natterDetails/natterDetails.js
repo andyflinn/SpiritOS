@@ -385,6 +385,34 @@ function ndRemoveHtml() {
   return ndPanel('remove', '⚠️', 'Remove this relay from your list', ndRemoveBody());
 }
 
+// LEAVE THIS RELAY (goal/G40.10; Andy: "add the leave verb to node. and publish the \"leaving\""): only where this node
+// holds a seat and does not own the relay. Two presses, then relay.leave; the relay stays on the list for a later join,
+// and relay-rows tells every screen, this one among them.
+function ndLeaveHtml() {
+  if (!ndBadge || !ndBadge.claimed || ndBadge.owned) return '';
+  return ndPanel('leave', '🚪', 'Leave this relay',
+    '<div class="start-job-form"><button type="button" class="cancel-btn nd-leave">Leave this relay</button></div>' +
+    '<div class="job-manifest-note nd-leave-out">Leave gives up your seat, your email and your face name on this relay. It stays on your list, so you can join again.</div>');
+}
+function ndLeave(button) {
+  if (button.getAttribute('data-armed') !== 'yes') {
+    button.setAttribute('data-armed', 'yes');
+    button.textContent = 'Press again to leave';
+    return;
+  }
+  button.removeAttribute('data-armed');
+  button.disabled = true;
+  if (!ndApi) return;
+  ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
+    var said = (r && r.body) || {};
+    var out = document.querySelector('.nd-leave-out');
+    if (said.ok) { if (out) out.textContent = 'You left this relay.'; ndLoad(); return; }
+    button.disabled = false;
+    button.textContent = 'Leave this relay';
+    if (out) out.textContent = 'not left: ' + (said.error || 'no answer');
+  });
+}
+
 // Two presses, then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node asks the same rule.
 function ndRemove(button) {
   if (ndRemoveRefusal()) return;
@@ -1339,6 +1367,7 @@ function ndRender() {
       ndAllocationHtml() +
       ndInvitePanel()
     ) +
+    ndLeaveHtml() +
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.
   ndMountForms(body);
@@ -1741,6 +1770,9 @@ var ndPage = ({
 
       var removeBtn = target.closest('.nd-remove');
       if (removeBtn) { ndRemove(removeBtn); return; }
+
+      var leaveBtn = target.closest('.nd-leave');
+      if (leaveBtn) { ndLeave(leaveBtn); return; }
 
     });
 
