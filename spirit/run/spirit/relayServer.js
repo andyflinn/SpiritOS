@@ -26,6 +26,8 @@ const path = require('path');
 const relayConfig = require('./relayConfig');
 const relayLimits = require('./relayLimits');
 const spirit = require('./kernel');
+// The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
+const fileSystem = require('./fileSystem');
 const createRelay = require('./relay');
 // The build stamp for GET /api/version stood here; that route is closed
 // (goal/G22.6), and a relay's version reaches its owner in relay-status
@@ -73,7 +75,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 common.verifyStartupCwd('spirit/relayServer.js');
 
-const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
+const ROOT_DIR = fileSystem.ROOT_DIR;
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
 
 // ── ONE EXIT CODE FOR EVERY REFUSAL TO START (cycle 3, Part B) ───────
@@ -108,7 +110,7 @@ if (!relayStore.available()) {
 // Opened here, not on the first request, so a store that cannot be opened
 // — a pre-cycle-3 file that cannot be imported — stops the start instead
 // of the first member who knocks.
-try { relayStore.open(spirit.core.node.const.ROOT_DIR); }
+try { relayStore.open(fileSystem.ROOT_DIR); }
 catch (e) {
   refuseToStart(e.message);
 }

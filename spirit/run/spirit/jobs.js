@@ -3,6 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+// The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
+const fileSystem = require('./fileSystem');
 const { EventEmitter } = require('events');
 const { monitorEventLoopDelay } = require('perf_hooks');
 
@@ -22,7 +24,7 @@ function formatDuration(ms) {
 }
 
 module.exports = function installJobs(spirit, port) {
-  const scanFolder = spirit.core.node.util.scanFolder;
+  const scanFolder = fileSystem.scanFolder;
 
   spirit.core.server = spirit.core.server || { stats: {} };
 
@@ -217,7 +219,7 @@ module.exports = function installJobs(spirit, port) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
       if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
-      return !spirit.core.fs.fileServable(rel);
+      return !fileSystem.fileServable(rel);
     };
     const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
     watcher.on('all', function (event, full) {

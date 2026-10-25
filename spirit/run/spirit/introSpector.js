@@ -20,6 +20,8 @@
 require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
+// The node's file system, for the annotations of a folder under spirit/run (goal/G40.6).
+const fileSystem = require('./fileSystem');
 // The probability modules (goal/G29.19): FS.search ranks with them.
 const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
 const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
@@ -79,8 +81,8 @@ function readFolder(dir, declared, manifest) {
 //
 // One owner verb, multiplexed as AGENTS is: FS.<name>, with the kernel's own names. A path is inside the folder or
 // refused; nothing above it is ever reached. A family folder holds no code (an app's is <module>.family beside its
-// <module>.js), so the folder needs no fence of its own. Annotations are the kernel's sidecars, so those two go
-// through the kernel, for a folder under spirit/run.
+// <module>.js), so the folder needs no fence of its own. Annotations are the node's sidecars, so those two go
+// through fileSystem.js, for a folder under spirit/run.
 function fsVerbs(dir, prefix) {
   const root = path.resolve(String(dir || ''));
   function inside(p) {
@@ -91,10 +93,9 @@ function fsVerbs(dir, prefix) {
     return full;
   }
   function underRun(full) {
-    const k = spirit;
-    const rel = path.relative(k.core.node.const.ROOT_DIR, full);
+    const rel = path.relative(fileSystem.ROOT_DIR, full);
     if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'annotations live under spirit/run' });
-    return { k: k, rel: rel.split(path.sep).join('/') };
+    return { rel: rel.split(path.sep).join('/') };
   }
   function read(full) { try { return fs.readFileSync(full, 'utf8'); } catch (e) { return null; } }
   function write(full, text) {
@@ -118,8 +119,8 @@ function fsVerbs(dir, prefix) {
     try { return { value: text == null ? null : JSON.parse(text) }; } catch (e) { return { value: null }; }
   } };
   v[prefix + 'FS.saveJsonValue'] = { request: { path: '', value: {} }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), JSON.stringify(a.value, null, 2)); } };
-  v[prefix + 'FS.getAnnotations'] = { request: { path: '' }, reply: {}, handler: function (a) { const u = underRun(inside(a.path)); return u.k.core.fs.getAnnotations(u.rel); } };
-  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = u.k.core.fs.annotateFile(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
+  v[prefix + 'FS.getAnnotations'] = { request: { path: '' }, reply: {}, handler: function (a) { const u = underRun(inside(a.path)); return fileSystem.getAnnotations(u.rel); } };
+  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = fileSystem.annotateFile(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
   // NO LIST, A SEARCH (Andy's rule: "no lists, only searches"): the folder's file names ranked against the words,
   // every file in name order with none, cut in bytes to one answer with `more`.
   v[prefix + 'FS.search'] = { request: { q: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: function (a) {

@@ -28,6 +28,8 @@ const https = require('https');
 const path = require('path');
 
 const spirit = require('./kernel');
+// The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
+const fileSystem = require('./fileSystem');
 // The helpers this node shares with the relay's startup module — body
 // reading, file sending, the 413 and malformed-path guards, /api/version.
 const common = require('./serveCommon');
@@ -49,7 +51,7 @@ const ownerBadge = require('./ownerBadge');
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
 const buildStamp = require('./buildStamp');
-const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
+const BUILD = buildStamp.resolve(fileSystem.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 
 //console.log(JSON.stringify(spirit,null,2));
@@ -81,7 +83,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 // it alone demands them (goal/G16.9: the relay's check asks for neither).
 common.verifyStartupCwd('spirit/server.js', ['shell', 'spirit', 'process']);
 
-const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
+const ROOT_DIR = fileSystem.ROOT_DIR;
 
 // app/ BECAME shell/ (slim/G1.1): what this node kept in app/, git did not
 // move; it moves here, once, before anything reads shell/.
@@ -109,7 +111,7 @@ const HOME_PAGE = 'index.html';
 // all (cycle 0), which turns trafficLog's own relay gate from a runtime
 // promise into an absence.
 const trafficLog = require('./trafficLog').createTrafficLog({
-  rootDir: spirit.core.node.const.ROOT_DIR,
+  rootDir: fileSystem.ROOT_DIR,
   relayMode: false,
 });
 
@@ -199,7 +201,7 @@ jobs.startStatsJob({ requestCounters: requestCounters });
 const sendFile = common.sendFile;
 const readJsonBody = common.readJsonBody;
 
-const fsPath = spirit.core.node.util.fsPath;
+const fsPath = fileSystem.fsPath;
 
 // Which verb this is, for the one door that has to know before it can
 // choose. A body that will not parse is not a verb — the handler that
@@ -250,7 +252,7 @@ function serveGet(pathname, res) {
   // synchronous loadFile XHR hits directly. Boot assets bypass the
   // generic gate unconditionally; everything else goes through the same
   // fileServable check loadFile/scanFolder use.
-  if (BOOT_ASSETS.indexOf(relativePath) === -1 && !spirit.core.fs.fileServable(relativePath)) {
+  if (BOOT_ASSETS.indexOf(relativePath) === -1 && !fileSystem.fileServable(relativePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
     return;
@@ -473,13 +475,13 @@ function deleteJobById(res, id) {
 // one door they read it from the body like everything else.
 //
 // THE GATE IS UNTOUCHED, which is what stage 3 exists to show. Both still
-// go through spirit.core.fs, which still asks fileServable — the fold
+// go through fileSystem.js, which still asks fileServable — the fold
 // moved where the path comes FROM and changed nothing about what may be
 // reached with it. serverSurface's encoded-traversal checks are the proof
 // and they are not edited.
 function handleFsStat(req, res) {
   return readJsonBody(req).then((body) => {
-    const stats = spirit.core.fs.statFile(String((body && body.path) || ''));
+    const stats = fileSystem.statFile(String((body && body.path) || ''));
     if (!stats) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Not found');
@@ -493,7 +495,7 @@ function handleFsStat(req, res) {
 function handleFsAnnotations(req, res) {
   return readJsonBody(req).then((body) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(spirit.core.fs.getAnnotations(String((body && body.path) || ''))));
+    res.end(JSON.stringify(fileSystem.getAnnotations(String((body && body.path) || ''))));
   }).catch((e) => bodyRefused(req, res, e));
 }
 
@@ -540,7 +542,7 @@ function bodyRefused(req, res, e, json) {
 const FS_UNBOUNDED = { max: Infinity };
 function handleFsSave(req, res) {
   readJsonBody(req, FS_UNBOUNDED).then((body) => {
-    writeFsResult(res, spirit.core.fs.saveFile(body.path, body.content));
+    writeFsResult(res, fileSystem.saveFile(body.path, body.content));
   }).catch((e) => bodyRefused(req, res, e));
 }
 
@@ -552,7 +554,7 @@ function handleFsSave(req, res) {
 function handleFsLoad(req, res) {
   return readJsonBody(req, FS_UNBOUNDED).then((body) => {
     const filePath = String((body && body.path) || '');
-    const text = spirit.core.fs.loadFile(filePath);
+    const text = fileSystem.loadFile(filePath);
     if (text === null) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Not found');
@@ -570,16 +572,16 @@ function handleFsLoad(req, res) {
 
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
-    writeFsResult(res, spirit.core.fs.deleteFile(body.path));
+    writeFsResult(res, fileSystem.deleteFile(body.path));
   }).catch((e) => bodyRefused(req, res, e));
 }
 
 // Writes into the target file's sidecar 'client' bucket only — see
-// spirit.core.fs.annotateFile (kernel.js) for why no bucket argument is
+// fileSystem.annotateFile for why no bucket argument is
 // accepted here even in principle.
 function handleFsAnnotate(req, res) {
   readJsonBody(req).then((body) => {
-    writeFsResult(res, spirit.core.fs.annotateFile(body.path, body.payload));
+    writeFsResult(res, fileSystem.annotateFile(body.path, body.payload));
   }).catch((e) => bodyRefused(req, res, e));
 }
 
@@ -1483,10 +1485,10 @@ contactBook.syncMarks(ROOT_DIR);
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
       // The face's fs.annotate writes the face part of a sidecar (goal/G30.21).
-      annotateFace: function (rel, payload) { return spirit.core.fs.annotateFace(rel, payload); },
+      annotateFace: function (rel, payload) { return fileSystem.annotateFace(rel, payload); },
       // A face's save in parts lands here (goal/G33.10): the work file copied to the target through the save gate.
       saveFrom: function (work, rel) {
-        if (!spirit.core.fs.fileWritable(rel)) return { ok: false, reason: 'forbidden' };
+        if (!fileSystem.fileWritable(rel)) return { ok: false, reason: 'forbidden' };
         const to = fsPath(ROOT_DIR, rel);
         if (!to) return { ok: false, reason: 'forbidden' };
         const disc = require('fs');
@@ -1886,7 +1888,7 @@ contactBook.syncMarks(ROOT_DIR);
   loopbackVerbs.mount('config', path.join(__dirname, 'config'), {}, { wire: false, by: 'server.js' });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
-  // Every one of these goes through spirit.core.fs, which asks
+  // Every one of these goes through fileSystem.js, which asks
   // fileWritable or fileServable about the path — so folding the route
   // moved where a path COMES FROM and changed nothing about what may be
   // reached with it. serverSurface's traversal checks are untouched and

@@ -62,14 +62,18 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!making.length) test.check('no file of the run tree calls forNode, forPeer, createSpirit, assemble or spirit.call (' + all.length + ' files read)');
   else test.fail('still making an object of its own: ' + short(making));
   const servers = all.filter(function (f) { return /^process\//.test(f) || f === 'spirit/appServer.js' || f === 'spirit/introSpector.js'; });
-  const onKernel = servers.filter(function (f) { return /\bspirit\.core\./.test(code(f)); });
-  if (!onKernel.length) test.check('no server process, and nothing of appServer, touches spirit.core (' + servers.length + ' files read)');
+  const onKernel = servers.filter(function (f) { return /\.core\./.test(code(f)); });
+  if (!onKernel.length) test.check('no server process, and nothing of appServer or introSpector, touches a .core. under any name (' + servers.length + ' files read)');
   else test.fail('still on spirit.core: ' + short(onKernel));
   const loads = spawnSync(process.execPath, ['-e', "require('./spirit.js'); require('./spirit/appServer.js'); require('./spirit/introSpector.js');" +
     " process.stdout.write(JSON.stringify(Object.keys(require.cache).filter(function (k) { return /(kernel|appClient|relayRequest)\\.js$/.test(k); })))"], { cwd: RUN, encoding: 'utf8' });
   const byRequire = servers.filter(function (f) { return /require\([^)]*(kernel|appClient|relayRequest)/.test(code(f)); });
   if (loads.stdout === '[]' && !byRequire.length) test.check('no server process loads kernel.js: spirit.js, appServer and introSpector load neither it nor appClient nor relayRequest, and no server requires them');
   else test.fail('a server still loads the kernel: ' + short(loads.stdout + loads.stderr) + ' ' + short(byRequire));
+  const NODE_SIDE = ['spirit/server.js', 'spirit/relayServer.js', 'spirit/jobs.js', 'spirit/introSpector.js'];
+  const kernelFs = NODE_SIDE.filter(function (f) { return /core\.fs\.|core\.node\.util\.|core\.node\.const\.ROOT_DIR/.test(code(f)) || !/require\('\.\/fileSystem'\)/.test(code(f)); });
+  if (!kernelFs.length) test.check('the node server, the relay server, jobs and introSpector take the files and their rules from fileSystem.js, none from the kernel');
+  else test.fail('still on the kernel\'s fs: ' + short(kernelFs));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));
@@ -100,6 +104,30 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     try { got = JSON.parse(asked.stdout); } catch (e) { got = { said: asked.stdout + asked.stderr }; }
     if (up && got && got.families > 0 && got.jobs && got.bound) test.check('a process in that home requires spirit.js and reaches its node: ' + got.families + ' families in its tree, spirit.jobs bound and called');
     else test.fail('reaching the scratch node: listening ' + up + ', ' + short(got));
+    // The fs family through the node, on fileSystem.js: a page file read, fileSystem.js itself never served, a file
+    // saved, annotated and its annotations read back; and introSpector's FS annotations of a folder.
+    fs.mkdirSync(path.join(home, 'probeFolder'), { recursive: true });
+    fs.writeFileSync(path.join(home, 'probeFolder', 'a.txt'), 'a', 'utf8');
+    const FS_PROBE = [
+      "const s = require(process.argv[1] + '/spirit.js');",
+      "const intro = require(process.argv[1] + '/spirit/introSpector.js').family(process.argv[1] + '/probeFolder').verbs;",
+      "s.require('spirit/fs/api.js').then(async function (f) {",
+      "  const out = { face: typeof (await f.loadFile('face.html')), self: await f.loadFile('spirit/fileSystem.js'), kernel: await f.loadFile('spirit/kernel.js') };",
+      "  out.saved = await f.saveFile('probeFolder/b.txt', 'bee'); out.back = await f.loadFile('probeFolder/b.txt');",
+      "  out.annotated = await f.annotate({ path: 'probeFolder/b.txt', payload: { n: 2 } }); out.notes = await f.getAnnotations('probeFolder/b.txt');",
+      "  out.introSaved = intro['FS.annotateFile'].handler({ path: 'a.txt', payload: { n: 1 } }); out.introNotes = intro['FS.getAnnotations'].handler({ path: 'a.txt' });",
+      "  process.stdout.write(JSON.stringify(out));",
+      "}).catch(function (e) { process.stdout.write(JSON.stringify({ refused: e && (e.code || e.message) })); });",
+    ].join('\n');
+    const fsAsked = spawnSync(process.execPath, ['-e', FS_PROBE, home], { cwd: home, encoding: 'utf8', timeout: 20000 });
+    let fsGot = null;
+    try { fsGot = JSON.parse(fsAsked.stdout); } catch (e) { fsGot = { said: fsAsked.stdout + fsAsked.stderr }; }
+    const fsOk = fsGot && fsGot.face === 'string' && fsGot.self === null && fsGot.kernel === null && fsGot.saved && fsGot.saved.ok === true && fsGot.back === 'bee' &&
+      fsGot.notes && fsGot.notes.client && fsGot.notes.client.n === 2;
+    if (fsOk) test.check('the fs family on the node runs on fileSystem.js: face.html read, fileSystem.js and kernel.js never served, a file saved, read back, annotated and its notes read');
+    else test.fail('the fs family on the scratch node: ' + short(fsGot));
+    if (fsGot && fsGot.introSaved && fsGot.introSaved.saved === true && fsGot.introNotes && fsGot.introNotes.client && fsGot.introNotes.client.n === 1) test.check('introSpector annotates a file of a folder and reads its notes back, through fileSystem.js');
+    else test.fail('introSpector\'s FS annotations: ' + short(fsGot && { introSaved: fsGot.introSaved, introNotes: fsGot.introNotes, said: fsGot.said }));
     const labels = (got && got.labels) || [];
     const servers2 = labels.filter(function (l) { return /server|Verifier|deskClient/i.test(l); });
     const down = labels.filter(function (l) { return /failed|exited|stopped/i.test(l); });
