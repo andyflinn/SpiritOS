@@ -39,22 +39,40 @@ function answer(b) {
   if (b.verb === 'demo.FS.loadFile') return [200, { text: 'x' }];
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + b.verb }];
 }
+// It also serves the node's event stream (/api/events): a peer.post is answered with its hash, and the peer's answer
+// arrives on the stream as a packet carrying re, as a real node hands it.
+const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
 function fakeNode() {
   const asked = [];
+  const streams = [];
   const server = http.createServer(function (req, res) {
+    if (req.method === 'GET' && req.url === '/api/events') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write(': open\n\n');
+      streams.push({ res: res, reader: req.headers['x-spirit-reader'] || '' });
+      return;
+    }
     let body = '';
     req.on('data', function (c) { body += c; });
     req.on('end', function () {
       let b = {};
       try { b = JSON.parse(body || '{}'); } catch (e) { b = {}; }
       asked.push(b);
+      if (b.verb === 'peer.post') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, hash: 'h1' }));
+        const reply = packet.encode('api', { said: 'answered by ' + b.to }, { re: 'h1' });
+        setTimeout(function () { streams.forEach(function (st) { st.res.write('event: packet\ndata: ' + JSON.stringify({ from: b.to, text: reply.text }) + '\n\n'); }); }, 30);
+        return;
+      }
+      if (b.verb === 'jobs.update') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
       const [status, out] = answer(b);
       res.writeHead(status, { 'Content-Type': typeof out === 'string' ? 'text/plain' : 'application/json' });
       res.end(typeof out === 'string' ? out : JSON.stringify(out));
     });
   });
   return new Promise(function (resolve) {
-    server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, asked: asked, close: function () { server.close(); } }); });
+    server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, asked: asked, streams: streams, close: function () { streams.forEach(function (st) { try { st.res.end(); } catch (e) { /* gone */ } }); server.close(); } }); });
   });
 }
 // A scratch run root: spirit.js and its spirit/ folder, and an environment.json naming port (or none).
@@ -69,8 +87,9 @@ function scratchRoot(port) {
 // What a node process sees through the instance of that root: run in a process of its own, its observations as JSON.
 const OBSERVE = `
 const s = require(process.argv[2] + '/spirit.js');
-const kernel = require(process.argv[2] + '/spirit/kernel.js');
 const out = {};
+out.kernelLoaded = Object.keys(require.cache).some(function (k) { return /kernel\\.js$/.test(k); });
+out.facts = s.node;
 async function code(p) { try { await p; return 'answered'; } catch (e) { return e && e.code; } }
 (async function () {
   out.keys = Object.keys(s).sort();
@@ -96,12 +115,16 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     out.viaRequire = (await s.require('process/js/demo/demo.family/api.js')) === s.demo;
     out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error('gone')))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
-    const posted = [];
-    const real = kernel.peerPost;
-    kernel.peerPost = function (peer, app, body, how) { posted.push({ peer: peer, app: app, node: how && how.node, waitMs: how && how.waitMs }); return Promise.resolve({ ok: true }); };
-    await s.peerPost('k0', 'api', {}, {});
-    out.peerPostNode = posted[0] && posted[0].node;
-    kernel.peerPost = real;
+    // This process's job, reported by jobs.update with its own id.
+    out.publish = s.jobs.publish({ x: 1 });
+    out.tooBig = s.jobs.publish({ big: 'y'.repeat(30000) });
+    await s.jobs.start('j1');
+    out.startAgain = await code(s.jobs.start('j2'));
+    await s.jobs.progress(1, 2, 'half');
+    await s.jobs.end({ done: true });
+    await new Promise(function (r) { setTimeout(r, 100); });
+    // The peer's answer, through the node's event stream.
+    out.peerAnswer = await s.peerPost('peerKey9', 'api', { demo: { hello: { name: 'p' } } }, { waitMs: 3000 });
     let asks = 0;
     s.peerPost = function (peer, app, body, how) {
       if (body && body.api) asks++;
@@ -118,11 +141,13 @@ function observe(root, mode, port) {
   const file = path.join(root, 'observe.js');
   fs.writeFileSync(file, OBSERVE);
   return new Promise(function (resolve) {
-    const kid = spawn(process.execPath, [file, root, mode || '', String(port || '')], { cwd: root });
+    const kid = spawn(process.execPath, [file, root, mode || '', String(port || ''), '--node', JSON.stringify({ name: 'nodey', publicKey: 'K1', ownerKey: 'O1' })],
+      { cwd: root, env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'job_7' }) });
     let said = '';
+    let errs = '';
     kid.stdout.on('data', function (c) { said += c; });
-    kid.stderr.on('data', function (c) { said += c; });
-    kid.on('close', function () { try { resolve(JSON.parse(said)); } catch (e) { resolve({ threw: said.slice(-400) }); } });
+    kid.stderr.on('data', function (c) { errs += c; });
+    kid.on('close', function () { try { resolve(JSON.parse(said)); } catch (e) { resolve({ threw: (said + errs).slice(-400) }); } });
   });
 }
 
@@ -179,8 +204,8 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')))
     test.check('nothing in spirit.js but isNode() and isBrowser() asks where it runs');
   else test.fail('spirit.js asks where it runs outside isNode() and isBrowser()');
-  const MEMBERS = ['check', 'core', 'error', 'escapeHtml', 'formatBytes', 'isBrowser', 'isNode', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
-  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['core'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
+  const MEMBERS = ['MIME_TYPES', 'check', 'error', 'escapeHtml', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
     test.check('in node the instance holds exactly its members: ' + MEMBERS.join(', ') + ' (and the families it binds)');
   else test.fail('in node the instance holds ' + short(Object.keys(s).sort()));
   const factories = ['createSpirit', 'assemble', 'forNode', 'forPeer', 'nodeTransport', 'pageTransport', 'peerTransport', 'loadInterface', 'spiritObject', 'call', 'port'];
@@ -189,18 +214,16 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('still handed out: ' + left.join(', '));
 
   const fetches = (code.match(/\bfetch\(/g) || []).length;
-  if (fetches === 2 && /function post\(verb, args\)/.test(code) && /function get\(path\)/.test(code))
+  if (fetches === 2 && /function post\(verb, args\)/.test(code) && /function get\(path(, how)?\)/.test(code))
     test.check('one post and one get: spirit.js reaches the node in exactly two places, post(verb, args) and get(path)');
   else test.fail('spirit.js reaches the network in ' + fetches + ' places, or has no post(verb, args) and get(path)');
 
-  // ── 2. IN NODE: THE KERNEL'S NAMES ───────────────────────────────────
-  test.subHeading('2. in node: the kernel\'s names, on the one instance');
-  const kernel = require(path.join(RUN, 'spirit', 'kernel.js'));
-  const notKernel = ['jobs', 'node', 'util', 'fs'].filter(function (k) { return s.core[k] !== kernel.core[k]; });
-  const mime = s.core.const.MIME_TYPES;
-  if (!notKernel.length && typeof s.peerPost === 'function' && mime && /javascript/.test(mime['.js']) && /json/.test(mime['.json']) && s.core.const.VERSION === kernel.core.const.VERSION)
-    test.check('spirit.core.jobs, node, util and fs are the kernel\'s; spirit.core.const holds its constants and spirit.js\'s own MIME_TYPES; spirit.peerPost is there');
-  else test.fail('not the kernel\'s: ' + notKernel.join(', ') + '; MIME ' + short(mime && mime['.js']));
+  // ── 2. IN NODE: NO KERNEL, spirit.js's OWN ───────────────────────────
+  test.subHeading('2. in node: no kernel; the node\'s facts, the job and the tables are spirit.js\'s own');
+  const mime = s.MIME_TYPES;
+  if (!('core' in s) && !/require\('\.\/spirit\/kernel\.js'\)/.test(code) && mime && /javascript/.test(mime['.js']) && /json/.test(mime['.json']))
+    test.check('spirit.js requires no kernel and hands out no spirit.core; spirit.MIME_TYPES is its own table');
+  else test.fail('spirit.js still holds or loads the kernel: ' + short(Object.keys(s)));
 
   // ── 3. THE HELPERS ───────────────────────────────────────────────────
   test.subHeading('3. the helpers, in node and on a page alike');
@@ -264,8 +287,22 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (oc[0] && oc[0][0] === 200 && oc[0][1] === 'hello eve' && oc[1][0] === 400 && oc[1][1] === 'no-such-argument' && oc[2][0] === 409 && oc[3][0] === 0)
         test.check('spirit.outcome: 200 and the body; 400 for a call the check refused; the node\'s own status; 0 when nothing answered');
       else test.fail('spirit.outcome: ' + short(oc));
-      if (o.peerPostNode === 'http://127.0.0.1:' + node.port) test.check('spirit.peerPost goes through its own node, 127.0.0.1:<its port>');
-      else test.fail('spirit.peerPost went through ' + short(o.peerPostNode));
+      if (o.kernelLoaded === false) test.check('a process that requires spirit.js loads no kernel.js');
+      else test.fail('requiring spirit.js loaded kernel.js');
+      const f = o.facts || {};
+      if (f.port === node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') test.check('spirit.node: its port from environment.json, and the name, key and owner the node handed it as --node');
+      else test.fail('spirit.node: ' + short(f));
+      const updates = node.asked.filter(function (b) { return b.verb === 'jobs.update'; });
+      const states = updates.map(function (u) { return u.app && u.app.job && u.app.job.state; }).filter(Boolean);
+      const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
+      if (o.publish === true && o.tooBig === false && updates.length && updates.every(function (u) { return u.id === 'job_7'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
+          && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open')
+        test.check('spirit.jobs: publish, start, progress and end report by jobs.update with the job\'s own id; one over the payload cap is said as dropped; a second start while one is open refuses job-open');
+      else test.fail('spirit.jobs: ' + short([o.publish, o.tooBig, updates.length, states, dropped.length, o.startAgain]));
+      const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
+      if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.verb === 'peer.post' && b.to === 'peerKey9'; }))
+        test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s event stream as a server, as it always worked');
+      else test.fail('spirit.peerPost: ' + short([o.peerAnswer, viaStream]));
       if (o.peer && o.peer[0] === true && o.peer[1] === 1 && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777)
         test.check('spirit.require(path, key, how): the peer\'s family through spirit.peerPost with how, two callers at once ask once, and it is not its own node\'s spirit.demo');
       else test.fail('a peer\'s family: ' + short([o.peer, o.peerHow]));
@@ -300,6 +337,51 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   delete wq.spirit.transport;
   if (wq.spirit === wq.window.spirit && !('call' in wq.spirit)) test.check('on a page the one instance is window.spirit, and nothing else is made');
   else test.fail('on a page: ' + short(Object.keys(wq.spirit)));
+
+  // ── 6a. LOOPBACK OR NOT ──────────────────────────────────────────────
+  test.subHeading('6a. in a browser, loopback or not: its home node, or a face through a relay');
+  const at = function (host) {
+    const w2 = { location: { hostname: host }, TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL };
+    w2.window = w2;
+    vm.runInContext(SOURCE, vm.createContext(w2), { filename: 'spirit.js' });
+    return w2.spirit.isLoopback();
+  };
+  const hosts = { '127.0.0.1': true, 'localhost': true, '[::1]': true, 'bert.spirit.example': false, '10.0.0.5': false };
+  const wrongHosts = Object.keys(hosts).filter(function (h) { return at(h) !== hosts[h]; });
+  if (!wrongHosts.length && s.isLoopback() === false) test.check('isLoopback(): true on 127.0.0.1, localhost and [::1], false on any other host, and false in node');
+  else test.fail('isLoopback judged wrong: ' + short(wrongHosts));
+
+  // ── 6b. ON A FACE, spirit.js LOADS THE FACE ──────────────────────────
+  test.subHeading('6b. on a face: face.html holds spirit.js alone, and spirit.js loads the face shell');
+  const faceHtml = fs.readFileSync(path.join(RUN, 'face.html'), 'utf8');
+  if (/<html[^>]*data-spirit="face"/.test(faceHtml) && /<!-- spirit\.js -->/.test(faceHtml) && !/<script\b/.test(faceHtml.replace(/<!--[\s\S]*?-->/g, '')))
+    test.check('face.html says it is a face (data-spirit="face"), marks the place for spirit.js, and loads no script of its own');
+  else test.fail('face.html still loads scripts of its own, or does not say it is a face');
+  const injected = [];
+  const faceWindow = {
+    fetch: function (url) {
+      const file = path.join(RUN, String(url).replace(/^\/+/, ''));
+      const there = fs.existsSync(file);
+      return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
+    },
+    TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL, setTimeout: setTimeout,
+    document: {
+      readyState: 'complete',
+      documentElement: { getAttribute: function (n) { return n === 'data-spirit' ? 'face' : null; } },
+      createElement: function () { return { textContent: '' }; },
+      body: { appendChild: function (el) { injected.push(el.textContent); } },
+      addEventListener: function () {},
+    },
+  };
+  faceWindow.window = faceWindow;
+  vm.runInContext(SOURCE, vm.createContext(faceWindow), { filename: 'spirit.js' });
+  let booted = null;
+  try { await faceWindow.spirit.booted; booted = true; } catch (e) { booted = e && e.code; }
+  const seal = fs.readFileSync(path.join(RUN, 'face', 'seal.js'), 'utf8');
+  const shellSrc = fs.readFileSync(path.join(RUN, 'face', 'shell.js'), 'utf8');
+  if (booted === true && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && shellSrc.indexOf("spirit.require('face/seal.js')") !== -1)
+    test.check('on a face page spirit.js gets face/shell.js alone and runs it, spirit.booted answering; the seal waits for the link, which requires it');
+  else test.fail('the face boot: ' + short([booted, injected.length]));
 
   // ── 7. THE ONE LOADER, THE SAME IN NODE AND ON A PAGE ────────────────
   test.subHeading('7. spirit.require(path, key): the one loader, the same in node and on a page');

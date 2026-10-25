@@ -5,8 +5,10 @@
      the app screen) on the shell's one sheet, /shell.css, with the face's green after it. Logged out, the desktop is
      empty but for the login app, which opens at once. Logged in, everything else comes from the home node over the
      sealed link (goal/G30.11; face/seal.js is the node's seal in WebCrypto, face/shell.js says the rest); the not
-     connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device). -->
-<html lang="en">
+     connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device).
+     IT HOLDS spirit.js ALONE (goal/G40.6): data-spirit="face" says what this page is, and spirit.js, inline and first,
+     loads the face shell itself; the seal comes once the face links to its home node. -->
+<html lang="en" data-spirit="face">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,8 +31,5 @@
     </div>
     <div id="app-content"></div>
   </div>
-
-  <script src="/face/seal.js"></script>
-  <script src="/face/shell.js"></script>
 </body>
 </html>

@@ -332,13 +332,15 @@ function shape(v) {
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
 // process's kernel DEBUG. A member never reaches it (apiDoor refuses it by name).
+// This server's debug switch, its own (goal/G40.6: no kernel in a server).
+let DEBUG = false;
 function withDebug(verbs) {
   if (Object.prototype.hasOwnProperty.call(verbs, 'DEBUG')) return verbs;
   const all = Object.assign({}, verbs);
   all.DEBUG = {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
-    handler: function (a) { return { debug: spirit.core.util.debug(a.on) }; },
+    handler: function (a) { if (typeof a.on === 'boolean') DEBUG = a.on; return { debug: DEBUG }; },
   };
   return all;
 }
@@ -470,7 +472,7 @@ function sendTo(key, row) {
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
 // that it publishes its changes to the deskClients").
 function publish(row) {
-  const out = spirit.core.jobs.publish(row);
+  const out = spirit.jobs.publish(row);
   const to = row && Array.isArray(row.to) ? row.to.map(String) : null;
   subscribers.forEach(function (q, key) { if (!to || to.indexOf(key) !== -1) sendTo(key, row); });
   return out;
@@ -586,7 +588,7 @@ function serve(verbs, opts) {
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
   const srv = s.listen(pipe, function () {
-    spirit.core.jobs.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
+    spirit.jobs.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);
@@ -625,44 +627,8 @@ function serve(verbs, opts) {
   return s;
 }
 
-let file = null;
-
-try {
-  file = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
-  try {
-    let env = JSON.parse(file);
-    spirit.core.node.const.SPIRIT_PORT = Number(env.PORT);
-  } catch (e) {}
-} catch (e) {}
-
-// ── THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10) ──────────────────
-//
-//   Andy, 2026-10-12: "The appServer have a definite need/use for all 3: the
-//   node/puppets key, the owners public key, and the nodes port: if they are
-//   not allowed to read the files, they should have that stuff passted with
-//   the spirit object that comes with the appServers passed interface."
-//
-// The port is SPIRIT_PORT above. The other two, and the node's name, are what
-// the node hands every server it starts as --node {name, publicKey, ownerKey}
-// (jobs.startNodeServers), read here once, at the start, like --pipe:
-//
-//   spirit.core.node.const.NODE_NAME   the node's name ('' while it has none)
-//   spirit.core.node.const.NODE_KEY    the node's public key
-//   spirit.core.node.const.OWNER_KEY   its owner's public key; '' when the node
-//                                      owns itself or nobody owns it
-//
-// All public. A server never opens identity.json or owner.json for them; no
-// --node, or a malformed one, leaves all three ''.
-(function nodeFacts() {
-  const at = process.argv.indexOf('--node');
-  let node = null;
-  try { node = at !== -1 ? JSON.parse(String(process.argv[at + 1] || '')) : null; } catch (e) { node = null; }
-  const o = node && typeof node === 'object' ? node : {};
-  function str(v) { return typeof v === 'string' ? v : ''; }
-  spirit.core.node.const.NODE_NAME = str(o.name);
-  spirit.core.node.const.NODE_KEY = str(o.publicKey);
-  spirit.core.node.const.OWNER_KEY = str(o.ownerKey);
-}());
+// THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10, goal/G40.6): its port, name, key and owner are spirit.node, which
+// spirit.js reads itself as it is required: the port from relay-state/environment.json, the rest from --node.
 
 module.exports = {
   // goal/G33.4: the data set a following server keeps (shell/js/spiritData.js), filled by its stream's translator.

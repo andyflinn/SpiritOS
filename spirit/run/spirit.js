@@ -44,6 +44,10 @@
   // asks these two, and no other file asks at all.
   function isNode() { return typeof module === 'object' && !!module && !!module.exports && typeof process === 'object' && !!(process && process.versions && process.versions.node); }
   function isBrowser() { return !isNode() && typeof window === 'object' && root === window; }
+  // THEN, IN A BROWSER, LOOPBACK OR NOT (Andy, 2026-10-25: "spirit.js is loaded, it then check node/browser, then if
+  // browser it check loopback/not-loopback, then decides what more to fetch"): a loopback page is on its home node; any
+  // other is a face reached through a relay.
+  function isLoopback() { var h = isBrowser() && root.location ? String(root.location.hostname || '') : ''; return h === '127.0.0.1' || h === 'localhost' || h === '::1' || h === '[::1]'; }
 
   // ── THE GLOBAL, FIRST (goal/G40.6) ───────────────────────────────────────────────────────────────────────────────
   // Rule one: every module and page loads spirit.js first, and spirit is a plain global before anything else is loaded;
@@ -167,13 +171,16 @@
     return fetch(door() + '/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       .then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
   }
-  // get(path) -> {status, type, bytes}: a file of the node's run root, by its path.
-  function get(path) {
+  // get(path) -> {status, type, bytes}: a file of the node's run root, by its path. get(path, {stream: true, headers})
+  // answers the response itself, read as it comes: the node's event stream, in node (peerPost below).
+  function get(path, how) {
     var p = String(path || '').replace(/^\/+/, '');
     var l = link();
     if (l && typeof l.file === 'function') return Promise.resolve(l.file(p, function () {})).then(function (r) { return { status: r.status, type: r.type || '', bytes: r.bytes }; });
     if (isNode() && !PORT) return Promise.reject(noNode());
-    return fetch(door() + '/' + p).then(function (r) {
+    var asked = fetch(door() + '/' + p, { headers: (how && how.headers) || {} });
+    if (how && how.stream) return asked;
+    return asked.then(function (r) {
       return r.arrayBuffer().then(function (b) { return { status: r.status, type: (r.headers && r.headers.get('Content-Type')) || '', bytes: new Uint8Array(b) }; });
     });
   }
@@ -266,11 +273,20 @@
   }
   // This VM's node's family, on the instance as spirit.<family>. Two callers at once ask once; a refusal is asked
   // again next time.
+  // A family whose name is already on the instance (spirit.jobs, holding this process's job in node) is extended, not
+  // replaced.
   var asking = {};
+  var bound = {};
   function bindOwn(fam) {
-    if (self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam])) return Promise.resolve(self[fam]);
+    if (bound[fam]) return Promise.resolve(self[fam]);
     if (asking[fam]) return asking[fam];
-    asking[fam] = bindOn(post, get, fam).then(function (m) { delete asking[fam]; self[fam] = m; return m; }, function (e) { delete asking[fam]; throw e; });
+    asking[fam] = bindOn(post, get, fam).then(function (m) {
+      delete asking[fam];
+      var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : null;
+      self[fam] = held ? Object.assign(held, m) : m;
+      bound[fam] = true;
+      return self[fam];
+    }, function (e) { delete asking[fam]; throw e; });
     return asking[fam];
   }
   // A PEER'S FAMILY (goal/G33.4, box v38), held under its key. Its calls are packed as the far node's apiDoor takes them
@@ -377,6 +393,7 @@
   // gets placed on the window object on nodes js the spirit object is the only export of this file."
   self.isNode = isNode;
   self.isBrowser = isBrowser;
+  self.isLoopback = isLoopback;
   self.error = error;
   self.formatBytes = formatBytes;
   self.escapeHtml = escapeHtml;
@@ -386,21 +403,139 @@
   self.tree = tree;
   self.require = requireOne;
 
-  // IN NODE: what a script took from kernel.js until now, under the kernel's own names so no call changes
-  // (spirit.core.jobs, spirit.core.node, spirit.core.util, spirit.core.fs, spirit.core.const with its VERSION, peerPost).
-  // The kernel stays their implementation until it goes (Andy: "we leave kernel.js where it is and get rid of it when we
-  // are finished").
+  self.MIME_TYPES = MIME_TYPES;
+
+  // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
+  // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from kernel.js
+  // through spirit.core is spirit.js's own now, on its one post: the node's facts, this process's job, peerPost.
   if (isNode()) {
-    var kernel = require('./spirit/kernel.js');
-    self.core = self.core || {};
-    self.core.jobs = kernel.core.jobs;
-    self.core.node = kernel.core.node;
-    self.core.util = kernel.core.util;
-    self.core.fs = kernel.core.fs;
-    self.core.const = Object.assign({}, kernel.core.const, { MIME_TYPES: MIME_TYPES });
-    // The kernel's peerPost, through this VM's own node unless the caller names one.
+    // THE NODE'S FACTS (goal/G19.10; Andy: "they should have that stuff passed with the spirit object"): its port, and what
+    // the node hands every server it starts as --node {name, publicKey, ownerKey}, all public; '' when not given.
+    var facts = {};
+    try { var at = process.argv.indexOf('--node'); facts = at !== -1 ? (JSON.parse(String(process.argv[at + 1] || '')) || {}) : {}; } catch (e) { facts = {}; }
+    var str = function (v) { return typeof v === 'string' ? v : ''; };
+    self.node = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
+
+    // THIS PROCESS'S JOB (goal/G29.15): a process the node started as a job reports to it by jobs.update with its own id
+    // (SPIRIT_JOB_ID), one post. These sit on spirit.jobs beside the jobs family's verbs, which bind there too.
+    //   publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent, and the pages
+    //                  hear that one was dropped, with its size (fileTransfer goal/G1.4)
+    //   start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open refuses
+    //                  job-open; each resolves once the node has it, so awaited calls arrive in order
+    //   report(patch), log(text), complete(data), fail(error)   the update itself, and its three common forms
+    var JOB = String(process.env.SPIRIT_JOB_ID || '');
+    var PAYLOAD_MAX = require('./spirit/limits.js').PAYLOAD_MAX;
+    var openJob = null;
+    var jobs = self.jobs = self.jobs && typeof self.jobs === 'object' ? self.jobs : {};
+    var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
+    jobs.report = function (patch) {
+      if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
+      return post('jobs.update', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
+    };
+    jobs.log = function (message) { return jobs.report({ logMessage: message }); };
+    jobs.complete = function (data) { return jobs.report({ status: 'completed', data: data }); };
+    jobs.fail = function (e) { return jobs.report({ status: 'failed', data: { error: String(e) } }); };
+    jobs.publish = function (obj) {
+      if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
+      var size = bytesOf(obj);
+      if (size < 0) return false;
+      var send = function (o) { Promise.resolve(jobs.report({ app: o })).catch(function () { /* not started by a node */ }); };
+      if (size > PAYLOAD_MAX) {
+        process.stderr.write('publish-too-large: ' + size + ' bytes, the limit is ' + PAYLOAD_MAX + '\n');
+        send({ dropped: { bytes: size, max: PAYLOAD_MAX } });
+        return false;
+      }
+      send(obj);
+      return true;
+    };
+    jobs.cycle = function (job) {
+      var one = { job: job };
+      var size = bytesOf(one);
+      if (size < 0) return Promise.resolve(false);
+      if (size > PAYLOAD_MAX) return Promise.resolve(jobs.publish(one));
+      return jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
+    };
+    jobs.start = function (name) {
+      if (openJob !== null) return Promise.reject(refusal('job-open', 'a job is open: ' + openJob + '; end it before starting ' + String(name || '')));
+      openJob = String(name || '');
+      return jobs.cycle({ state: 'start', name: openJob });
+    };
+    jobs.progress = function (done, total, text) {
+      return jobs.cycle({ state: 'progress', name: openJob === null ? '' : openJob, done: Number(done) || 0, total: Number(total) || 0, text: String(text || '') });
+    };
+    jobs.end = function (result) {
+      var one = { state: 'end', name: openJob === null ? '' : openJob };
+      openJob = null;
+      if (result instanceof Error) one.error = String(result.message || result);
+      else if (result !== undefined) one.result = result;
+      return jobs.cycle(one);
+    };
+
+    // ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3), as it has always worked (Andy: "peer post will work the way
+    // they ALWAY WORKED"), moved here from kernel.js unchanged in what it does: the node's event stream opened as a server
+    // (it is handed no backlog and marks nothing taken), then one post of peer.post, then the answer-post whose re
+    // matches that post's hash. The stream opens BEFORE the post, so an answer quicker than the post's own reply is kept.
+    // how: waitMs (30 s by default), patienceMs, kind. Resolves the answer's body; {ok: false, code: 'not-posted'} for a
+    // post the node refused, {ok: false, code: 'no-answer'} after waitMs of silence. It never rejects.
+    var packet = require('./spirit/client/packet.js');
     self.peerPost = function (peer, app, body, how) {
-      return kernel.peerPost(peer, app, body, Object.assign({ node: PORT ? door() : '' }, how || {}));
+      var o = how && typeof how === 'object' ? how : {};
+      var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
+      if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: relay-state/environment.json names no port' });
+      var made = packet.encode(app, body);
+      if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
+      return get('api/events', { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
+        var reader = r.body.getReader();
+        var dec = new TextDecoder();
+        var buf = '';
+        var want = '';
+        var early = [];
+        return new Promise(function (resolve) {
+          var timer = setTimeout(function () { finish({ ok: false, code: 'no-answer', error: 'no answer within ' + waitMs + ' ms' }); }, waitMs);
+          function finish(v) {
+            clearTimeout(timer);
+            reader.cancel().catch(function () { /* stream gone */ });
+            resolve(v);
+          }
+          function take(msg) {
+            if (msg.from !== peer) return;
+            var got = null;
+            try { got = packet.decode(msg.text); } catch (e) { return; }
+            if (!got || !got.re) return;
+            if (!want) { early.push(got); return; }
+            if (got.re === want) finish(got.body);
+          }
+          function pump() {
+            reader.read().then(function (chunk) {
+              if (chunk.done) { finish({ ok: false, code: 'no-answer', error: 'the node closed its stream before the answer came' }); return; }
+              buf += dec.decode(chunk.value, { stream: true });
+              var i;
+              while ((i = buf.indexOf('\n\n')) !== -1) {
+                var block = buf.slice(0, i); buf = buf.slice(i + 2);
+                var ev = /event: (.*)/.exec(block); var da = /data: (.*)/.exec(block);
+                if (!ev || ev[1] !== 'packet' || !da) continue;
+                var msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
+                take(msg);
+              }
+              pump();
+            }, function (e) { finish({ ok: false, code: 'no-answer', error: 'the node stream: ' + ((e && e.message) || e) }); });
+          }
+          pump();
+          var args = { to: peer, text: made.text };
+          if (o.kind) args.kind = o.kind;
+          // PATIENCE RIDES TOO (goal/G2.6): the node holds a busy post and retries it with backoff for this long.
+          if (Number(o.patienceMs) > 0) args.patienceMs = Number(o.patienceMs);
+          post('peer.post', args).then(function (res) {
+            var b = res.body;
+            if (res.status !== 200 || !b || b.ok !== true || !b.hash) { finish({ ok: false, code: 'not-posted', error: (b && b.error) || ('the node answered ' + res.status) }); return; }
+            want = b.hash;
+            var hit = early.filter(function (g) { return g.re === want; })[0];
+            if (hit) finish(hit.body);
+          }, function (e) { finish({ ok: false, code: 'not-posted', error: (e && e.message) || String(e) }); });
+        });
+      }, function (e) {
+        return { ok: false, code: 'not-posted', error: 'the node stream could not open: ' + ((e && e.message) || e) };
+      });
     };
     module.exports = self;
     return;
@@ -422,4 +557,29 @@
     self.ready = started;
     return started;
   };
+
+  // ON A FACE, spirit.js LOADS THE FACE (goal/G40.6). Andy: "face.html loads spirit.js FIRST, in it's spirit.js that
+  // fetches that fetches all other scripts". face.html says what it is (data-spirit="face" on its html element) and
+  // holds spirit.js alone; spirit.js gets the face shell once the page's body is there, and spirit.booted answers when it
+  // runs. The seal is not loaded here: a face needs it only once it is logged in and links to its home node, and the
+  // home node itself never does.
+  var FACE = ['face/shell.js'];
+  function inject(p, src) {
+    var el = root.document.createElement('script');
+    el.textContent = src + '\n//# sourceURL=' + p;
+    root.document.body.appendChild(el);
+  }
+  function boot(list) {
+    return list.reduce(function (chain, p) {
+      return chain.then(function () { return get(p); }).then(function (r) {
+        if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
+        inject(p, text(r.bytes));
+      });
+    }, Promise.resolve());
+  }
+  var doc = root.document;
+  if (doc && doc.documentElement && doc.documentElement.getAttribute('data-spirit') === 'face') {
+    var go = function () { self.booted = boot(FACE); };
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', go); else go();
+  }
 }(globalThis));

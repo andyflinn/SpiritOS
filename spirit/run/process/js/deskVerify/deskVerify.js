@@ -298,7 +298,7 @@ function runSuite(file, port, onTests, env) {
 // WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
 // events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
-// (spirit.core.jobs.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the
+// (spirit.jobs.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the
 // newest and replaces it. The page asks nothing, as his no-pulling rule requires.
 //   doing     'run' a run of suites, 'idle' nothing running
 //   index/of  which suite of how many; tests/expected: assertions printed so far, and how many that suite reported
@@ -327,10 +327,10 @@ function say(o) {
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
-  spirit.core.jobs.publish(one);
+  spirit.jobs.publish(one);
   // THE SUITE COUNT AS THE JOB'S PROGRESS (goal/G29.15): the one bar every page draws, beside the tab's own object.
   if (one.doing !== 'idle' && one.of > 0) {
-    spirit.core.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
+    spirit.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
   }
 }
 function sayIdle(line) {
@@ -363,7 +363,7 @@ function stopRun() {
 // suite is, else stopped, red or not run, in that order. All of it goes into the run's row, which `search` answers.
 const FAILURES_KEPT = 20;
 async function runSuites(suites, commit, row) {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const port = Number(spirit.node.port);
   const out = suites.map(function (p) { return { path: p, outcome: 'not run', failures: [] }; });
   const since = new Date().toISOString();
   say({ doing: 'run', line: 'pulling before the run of ' + suites.length + (suites.length === 1 ? ' suite' : ' suites'), since: since });
@@ -417,7 +417,7 @@ function startRun(suites, commit) {
   running = { suite: '', since: idleState.since };
   (async function () {
     let outcome = 'broke';
-    await spirit.core.jobs.start('run of ' + suites.length + (suites.length === 1 ? ' suite' : ' suites')).catch(function () { /* not started by a node */ });
+    await spirit.jobs.start('run of ' + suites.length + (suites.length === 1 ? ' suite' : ' suites')).catch(function () { /* not started by a node */ });
     try { outcome = await runSuites(suites, commit, row); } catch (e) {
       runEnded.run('broke', new Date().toISOString(), '', 0, '[]', 'the run broke: ' + String((e && e.message) || e).slice(0, 300), row);
     } finally {
@@ -426,7 +426,7 @@ function startRun(suites, commit) {
       running = { suite: '', since: '' };
       consoleDone();
       sayIdle();
-      await spirit.core.jobs.end({ outcome: outcome }).catch(function () { /* not started by a node */ });
+      await spirit.jobs.end({ outcome: outcome }).catch(function () { /* not started by a node */ });
     }
   }());
   return { taken: true };
@@ -641,7 +641,7 @@ const CHORE_MS = 30 * 60 * 1000;
 let choring = false;
 let choresFor = '';
 function runChore(cmd) {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const port = Number(spirit.node.port);
   return new Promise(function (resolve) {
     let kid = null;
     const out = [];

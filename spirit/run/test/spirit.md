@@ -12,7 +12,8 @@ first and does everything through it. A module whose first require is not spirit
 
 The one door. It is the only place that tells a page from node, it reaches the node by one post and one get, it puts
 the node's families on itself, and it loads every other component. The node server and the relay server build their
-own spirit (`spirit/kernel.js`); everything else is a client of the core and gets in through this file.
+own spirit (`spirit/kernel.js`); everything else is a client of the core and gets in through this file, and spirit.js
+itself loads no kernel.
 
 ## One instance
 
@@ -29,8 +30,11 @@ by spirit.js, becomes `spirit.<family>`.
 |---|---|
 | `isNode()` | true when loaded by node |
 | `isBrowser()` | true on a page: not node, and the global is `window` |
+| `isLoopback()` | in a browser: true when the page's host is `127.0.0.1`, `localhost` or `[::1]`, its home node; false on any other host, a face reached through a relay, and in node |
 
-No other line of spirit.js asks where it runs, and no other file is to ask.
+Always in this order: spirit.js is loaded, it tells node from browser, in a browser it tells loopback from not, and
+from that it decides what more to fetch. Through a relay, the face shell comes from the relay, and the seal from the
+home node once the face is linked. No other line of spirit.js asks where it runs, and no other file is to ask.
 
 ## Its node
 
@@ -98,11 +102,12 @@ Asks another node and waits for its answer.
 - **body**: what is asked, a plain object. For `'api'`: `{ <family>: { <verb>: args } }`, or `{ api: { family } }`
   for a family's interface.
 - **how**, all optional: `waitMs`, how long to wait for the answer (30 s by default); `patienceMs`, how long the node
-  keeps retrying a busy relay; `kind: 'background'`, a post that may wait behind others; `node`, the node that posts
-  it (this VM's own by default).
+  keeps retrying a busy relay; `kind: 'background'`, a post that may wait behind others. It always posts through this
+  VM's own node.
 - **Answers** the peer's answer body; `{ ok: false, code: 'not-posted' }` at once for a post the node refused;
   `{ ok: false, code: 'no-answer' }` after `waitMs` of silence. It resolves, never rejects.
-- In node it is the kernel's peerPost, through this VM's own node; on a page, the home node's `peer.post`.
+- In node: one post of `peer.post`, and the answer read off the node's event stream (got as a stream through `get`),
+  as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
 
 ### `check(name, spec, args)`
 
@@ -157,21 +162,26 @@ No arguments; true or false. The only place anything asks where it runs.
 `start()` binds every family the node names on `window.spirit`, once, and answers the instance; `ready` is that
 promise. The face shell calls it once its link is up, the home page at load.
 
-### In node only: the kernel's names
+### In node only: `node`, `jobs`, and no kernel
 
-What a script took from `kernel.js`, under the kernel's names, until kernel.js goes:
+spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server took from the kernel is spirit.js's own.
 
-| | holds |
-|---|---|
-| `spirit.core.jobs` | report, log, complete, fail, publish, start, progress, end, cycle |
-| `spirit.core.node` | the node's constants (`const`) and helpers (`util`) |
-| `spirit.core.util` | print, debug, error, formatBytes, escapeHtml |
-| `spirit.core.fs` | loadFile, statFile, fileWritable, fileServable, saveFile, loadJsonValue, saveJsonValue, deleteFile, annotateFile, annotateFace, getAnnotations, fileExists |
-| `spirit.core.const` | AUTHOR, COPYRIGHT, VERSION, ICON, IS_NODE, IS_BROWSER, and spirit.js's own MIME_TYPES |
+- **`spirit.node`**: `{ port, name, key, ownerKey }`. The port is the one read from `environment.json`; the name, key and
+  owner key are what the node hands every server it starts as `--node`, all public, `''` when not given.
+- **`spirit.jobs`**, this process's own job, reported to the node by `jobs.update` with its own id (`SPIRIT_JOB_ID`), one
+  post each:
 
-`IS_NODE` and `IS_BROWSER` are the kernel's own telling of where it runs, which rule one gives to `isNode()` and
-`isBrowser()` alone; they go with kernel.js.
+| | takes | does |
+|---|---|---|
+| `publish(obj)` | a plain object | the object as the job's app, every page hears it; answers true. Over the payload cap it is not sent: the pages hear `{ dropped: { bytes, max } }`, and it answers false |
+| `start(name)` | the job's name | opens it; a start while one is open refuses `job-open` |
+| `progress(done, total, text)` | counts and a line | the bar; total 0 means unknown |
+| `end(result)` | a result, or an Error | closes the job |
+| `report(patch)`, `log(text)`, `complete(data)`, `fail(error)` | | the update itself and its three common forms; `no-job` outside a job |
 
+  start, progress and end resolve once the node has them, so awaited calls arrive in order. When the jobs family is
+  bound (`spirit.require('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
+- **`spirit.MIME_TYPES`**: the content type of a file by its extension.
 ## What the red must try to break
 
 - A second spirit: requiring it again, or after something else set a global spirit; a factory or a `call` on it.

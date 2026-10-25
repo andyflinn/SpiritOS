@@ -34,7 +34,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const appServer = require('../../../spirit/appServer.js');
-const MIME_TYPES = spirit.core.const.MIME_TYPES;
+const MIME_TYPES = spirit.MIME_TYPES;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -170,7 +170,7 @@ function progress(id) {
   const t = transfers[id];
   const s = readStatus(id);
   if (!t || !s) return;
-  spirit.core.jobs.publish({ transfer: {
+  spirit.jobs.publish({ transfer: {
     id: id, name: nameOf(s),
     held: t.state === 'complete' ? (s ? s.bytes : 0) : heldBytes(id), bytes: s ? s.bytes : 0, state: t.state,
   } });

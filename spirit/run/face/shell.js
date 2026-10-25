@@ -593,8 +593,9 @@
     if (state && state.face) document.title = String(state.face);
     var ready = home
       ? Promise.resolve()
-      // The home node's keys, from faceHome itself (goal/G30.10): node.card carries no seal key.
-      : call({ keys: 1 }).then(function (r) {
+      // The home node's keys, from faceHome itself (goal/G30.10): node.card carries no seal key. The seal is loaded now,
+      // logged in and linking (goal/G40.6), by the one loader.
+      : spirit.require('face/seal.js').then(function () { return call({ keys: 1 }); }).then(function (r) {
           var keys = null;
           try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
           if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
