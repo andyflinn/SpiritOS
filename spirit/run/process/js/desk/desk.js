@@ -31,7 +31,7 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
-const appClient = require('../../../spirit/appClient.js');
+const limits = require('../../../spirit/limits.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -76,9 +76,9 @@ db.exec('PRAGMA journal_mode=WAL');
 // state had no reader, and seen is one value per item (seen.set), so nothing grows as one document.
 db.exec('DROP TABLE IF EXISTS docs;');
 
-// One answer must travel back as one packet (appClient.ANSWER_MAX); the
+// One answer must travel back as one packet (limits.ANSWER_MAX); the
 // wrapper around the lines is small, and this leaves it room.
-const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
+const ANSWER_ROOM = limits.ANSWER_MAX - 512;
 
 // ── ONE MEASURE OF "FITS" (slim/G1.2) ───────────────────────────────
 //
@@ -1976,11 +1976,11 @@ function facts(s, it) {
   if (it.with && it.withKey) f.withKey = String(it.withKey);
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
-  // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
+  // red at 75%". The box measured as its one answer against limits.ANSWER_MAX: half from 50%, full from 75%;
   // nothing is refused below the answer limit, and the split is negotiated, never automated.
   const boxBytes = Buffer.byteLength(JSON.stringify({ box: it.box, version: it.version }), 'utf8');
-  f.half = boxBytes >= appClient.ANSWER_MAX * 0.5;
-  f.full = boxBytes >= appClient.ANSWER_MAX * 0.75;
+  f.half = boxBytes >= limits.ANSWER_MAX * 0.5;
+  f.full = boxBytes >= limits.ANSWER_MAX * 0.75;
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();

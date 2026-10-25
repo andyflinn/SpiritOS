@@ -1050,9 +1050,9 @@ function loadedEntryOf(have) {
 //   it, with the loaded model always being part of the result." The box: a bounded bucket with a partial flag (more);
 //   the loaded model always in it; the marks present in the whole list named, so the Remote offers only the filters
 //   that apply; and the answer fits one tunnelled reply. The cost, stated (rule/5): one ask per keystroke.
-// What one answer of this door may carry (appClient ANSWER_MAX), less room for its envelope: tighter than a tunnelled
+// What one answer of this door may carry (limits.ANSWER_MAX), less room for its envelope: tighter than a tunnelled
 // reply, so it fits both.
-const SEARCH_ROOM = require('../../../spirit/appClient').ANSWER_MAX - 1024;
+const SEARCH_ROOM = require('../../../spirit/limits.js').ANSWER_MAX - 1024;
 const MARKS = {
   'desk-tested': function (m) { return m.recommended === true; },
   vision: function (m) { return m.vision === true; },
@@ -1331,7 +1331,7 @@ function fenced(rel) {
     return fence[rel];
   });
 }
-const LOAD_MAX = require('../../../spirit/appClient').ANSWER_MAX - 1024;
+const LOAD_MAX = require('../../../spirit/limits.js').ANSWER_MAX - 1024;
 // A FILE OF ANY SIZE, PART BY PART (goal/G23.3): Levant could not read a file bigger than one answer. Andy: "so let
 // him read files with a tool that matches yours." With no range the file comes whole, as before, when it fits; with
 // offset (the first line, from 1) and/or limit (how many lines) the answer is {path, text, lines, next}: the lines as
@@ -1667,7 +1667,7 @@ function chatAnswer(id) {
 // hand back in one answer. A paragraph is never cut in two: whole in one line, in order, as many to a line as fit.
 // The first line carries the persona's name, so the desk shows who spoke; no "[loop.js]" anywhere — that prefix was
 // the hack's.
-const LINE_ROOM = require('../../../spirit/appClient').ANSWER_MAX - 1024;
+const LINE_ROOM = require('../../../spirit/limits.js').ANSWER_MAX - 1024;
 
 function linesOf(answer) {
   const paragraphs = String(answer).split(/\n{2,}/).map(function (p) { return p.trim(); }).filter(Boolean);

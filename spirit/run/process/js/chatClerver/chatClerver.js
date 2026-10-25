@@ -29,7 +29,6 @@ const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
 const packet = require('../../../spirit/client/packet.js');
 const limits = require('../../../spirit/limits.js');
-const appClient = require('../../../spirit/appClient.js');
 // The probability modules (goal/G29.18).
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
@@ -75,7 +74,7 @@ const WAIT_MS = PATIENCE_MS + 30000;
 // write answers by 10 s at the latest; a peer still silent then leaves the line pending, and the post goes on.
 const ANSWER_BY_MS = 10000;
 // A chat read fills half an answer, as chat.search does: an agent's deskClient-like wrapper may pack it once more.
-const READ_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
+const READ_ROOM = Math.floor((limits.ANSWER_MAX - 512) / 2);
 
 function refused(code, why) { const e = new Error(code); e.refusal = code; if (why) e.extra = { why: String(why) }; return e; }
 // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
@@ -190,7 +189,7 @@ function linePair(r) {
 
 // ── THE CHATS' ROWS (goal/G4.3) ──────────────────────────────────────
 // One answer's room, as every search; nothing pages.
-const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
+const ANSWER_ROOM = limits.ANSWER_MAX - 512;
 const allPeers = db.prepare('SELECT peer FROM peers');
 const newestOf = db.prepare('SELECT sent, seq, at FROM lines WHERE peer = ? ORDER BY at DESC, sent ASC LIMIT 1');
 const lastSentOf = db.prepare('SELECT MAX(at) AS at FROM lines WHERE peer = ? AND sent = 1');

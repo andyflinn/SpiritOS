@@ -255,6 +255,11 @@ var SEAL_ENVELOPE = 185;
 // before the arithmetic was checked against real output.
 var SEALED_MAX = 3 * Math.floor((PAYLOAD_MAX - SEAL_ENVELOPE) / 4);
 
+// One server's answer: it may ride back inside one sealed packet, as JSON,
+// so it must leave room for escaping: half the sealed ceiling. An answer
+// larger than this is refused by name, not cut (appServer, appClient).
+var ANSWER_MAX = Math.floor(SEALED_MAX / 2);
+
 // ── AND THE FORK HAS A STATED SIZE ───────────────────────────────────
 //
 //   Andy, 2026-09-26: "that is the requester's problem, if ou want to
@@ -322,6 +327,7 @@ var limitsApi = {
   PLAINTEXT_MAX: PLAINTEXT_MAX,
   SEAL_ENVELOPE: SEAL_ENVELOPE,
   SEALED_MAX: SEALED_MAX,
+  ANSWER_MAX: ANSWER_MAX,
   fitsSealed: fitsSealed,
   WIRE_OVERHEAD: WIRE_OVERHEAD,
   WIRE_HEADROOM: WIRE_HEADROOM,

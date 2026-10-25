@@ -65,6 +65,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const onKernel = servers.filter(function (f) { return /\bspirit\.core\./.test(code(f)); });
   if (!onKernel.length) test.check('no server process, and nothing of appServer, touches spirit.core (' + servers.length + ' files read)');
   else test.fail('still on spirit.core: ' + short(onKernel));
+  const loads = spawnSync(process.execPath, ['-e', "require('./spirit.js'); require('./spirit/appServer.js'); require('./spirit/introSpector.js');" +
+    " process.stdout.write(JSON.stringify(Object.keys(require.cache).filter(function (k) { return /(kernel|appClient|relayRequest)\\.js$/.test(k); })))"], { cwd: RUN, encoding: 'utf8' });
+  const byRequire = servers.filter(function (f) { return /require\([^)]*(kernel|appClient|relayRequest)/.test(code(f)); });
+  if (loads.stdout === '[]' && !byRequire.length) test.check('no server process loads kernel.js: spirit.js, appServer and introSpector load neither it nor appClient nor relayRequest, and no server requires them');
+  else test.fail('a server still loads the kernel: ' + short(loads.stdout + loads.stderr) + ' ' + short(byRequire));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));

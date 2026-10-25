@@ -49,10 +49,8 @@ const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
 // own 30 s), so each wait gives its own named answer.
 const DOOR_WAIT_MS = 12000;
 
-// The answer may ride back inside one sealed packet, as JSON, so
-// it must leave room for escaping: half the sealed ceiling. An answer
-// larger than this is refused by name, not cut.
-const ANSWER_MAX = Math.floor(limits.SEALED_MAX / 2);
+// One answer's cap is limits.ANSWER_MAX; refused by name here, not cut.
+const ANSWER_MAX = limits.ANSWER_MAX;
 
 const STATUS = {
   'app-not-served': 404,

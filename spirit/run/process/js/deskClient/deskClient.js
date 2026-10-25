@@ -48,7 +48,7 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
-const appClient = require('../../../spirit/appClient.js');
+const limits = require('../../../spirit/limits.js');
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
@@ -80,7 +80,7 @@ const RESUBSCRIBE_MS = Number(values.resubscribeMs) > 0 ? Number(values.resubscr
 let heardAt = Date.now();
 const PATIENCE_MS = 60000;
 const WAIT_MS = PATIENCE_MS + 30000;
-const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
+const ANSWER_ROOM = limits.ANSWER_MAX - 512;
 // A hand-over waits this long for "working" to reach the desk, never past the node's 12 s.
 const SAY_MS = 3000;
 const LEAVE_BY_MS = 11000;

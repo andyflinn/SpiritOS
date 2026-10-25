@@ -106,7 +106,7 @@ const NODE_KINDS = ['http', 'https', 'fetch'];
 const FORM_MAX = 256;
 const PATHS_MAX = 16;
 const SUITES_MAX = 32;
-// What one answer may carry (appClient.ANSWER_MAX is 8377 bytes): its violator lines and its raw paths around the gate,
+// What one answer may carry (limits.ANSWER_MAX is 8377 bytes): its violator lines and its raw paths around the gate,
 // each cut to fit by BYTES (Andy's rule, 2026-10-10: every size check in bytes); what is left out is counted in
 // violatorsLeft and pathsLeft, the paths the run kept but did not send among them. Since the violator lines
 // (goal/G22.3) the raw paths give them 2000 of their 5000.
@@ -120,7 +120,7 @@ const { violators } = require('./violators.js');
 // THE DOOR SEARCH'S COMPONENTS (goal/G33.7): the desk's own, the probability match and the bucket that fills one answer.
 const createProbabilityBucket = require('../../../../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const DOORS_ROOM = require('../../../../../../spirit/appClient.js').ANSWER_MAX - 512;
+const DOORS_ROOM = require('../../../../../../spirit/limits.js').ANSWER_MAX - 512;
 
 // AN ITEM NAMED BEFORE THE IDS BECAME NUMBERS (goal/G33.4): plugin/stackFrameChecks.<n> in the list is read as this
 // plugin's goal's item, by the desk's own reading (desk.idOf, set at mount); the list keeps what it says until written.

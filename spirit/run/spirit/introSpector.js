@@ -37,9 +37,8 @@ function refusal(code, extra) {
   return e;
 }
 
-// The room one answer has: appClient's, read at the ask, since appClient
-// requires this file's neighbours.
-function room() { return require('./appClient').ANSWER_MAX; }
+// The room one answer has.
+function room() { return require('./limits').ANSWER_MAX; }
 
 // The verb files of a folder: {stem: fileName}, and the files that name no
 // declared verb. `declared` is the list of verb names the module answers,

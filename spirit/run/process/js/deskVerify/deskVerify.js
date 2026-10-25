@@ -37,7 +37,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
-const appClient = require('../../../spirit/appClient.js');
+const limits = require('../../../spirit/limits.js');
 const probabilityStringMatch = require('../../../spirit/probabilityStringMatch.js').probabilityStringMatch;
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 
@@ -260,7 +260,7 @@ function consoleRead(from) {
     if (j < all.length) while (j > i && (all[j] & 0xC0) === 0x80) j--;
     const out = answer(j);
     // Escaped control characters grow in JSON: what goes back must fit one answer.
-    if (j === i || Buffer.byteLength(JSON.stringify(out), 'utf8') <= appClient.ANSWER_MAX - 512) return out;
+    if (j === i || Buffer.byteLength(JSON.stringify(out), 'utf8') <= limits.ANSWER_MAX - 512) return out;
     room = Math.floor(room / 2);
   }
 }
@@ -479,7 +479,7 @@ async function keep(suite, title, outcome, failure) {
 // grading the title (a title they do not touch is left out), the other filters exact. Past SEARCH_SCANNED matching
 // rows, or past one answer's room, `more` says the answer is partial. It reads verify.db; it writes nothing. A filter
 // that does not belong to `over` is ignored, as the verb file says.
-const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
+const SEARCH_ROOM = limits.ANSWER_MAX - 512;
 const SEARCH_SCANNED = 1000;
 const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'since', 'current', 'heading', 'history', 'slim'];
 function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
