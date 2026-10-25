@@ -1,5 +1,5 @@
 {
- "change": 101587,
+ "change": 101866,
  "goal": "goal/G40",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.6",
-    "goal/G40.8"
+    "goal/G40.6"
    ],
    "codeOffered": false,
    "go": false,
@@ -56,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -5721,13 +5720,13 @@
    "id": "goal/G40.8",
    "title": "face bugs",
    "goal": "goal/G40",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 11,
+   "version": 17,
    "buttons": [
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -5737,21 +5736,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 29,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "54c4274ff3fbd297bb22a88f7cb03fdf7ebf1d21",
+   "redCommit": "e1c2f3202a324c6c038218d426ae78055d7bbc9a",
+   "waived": true,
    "rules": [
     {
      "key": "rule/12",
@@ -5798,7 +5797,7 @@
      "version": 6
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -5809,10 +5808,63 @@
     "claude-windows": "claude-windows"
    },
    "asks": 0,
-   "half": true,
+   "half": false,
    "full": false,
-   "box": "- the basic probability search UI has one problem i see: the up/down/home/end/pageUp/pageDown keys only work when the search input string is active, the should always work, on the whole search list, if the search input string is activated or not\n- another problem in the probability searches, all up/down keys (up/down/home/end/pageUp/pageDown) must ensure that the currently selected line travels in to the visible portion of the list.\n- THE CONTAINED-APP RULE (Andy: \"the contained-app rule: it IS the rule.\"): 1. the window is the screen, the page never scrolls; 2. below the shell's title bar the app area takes exactly the rest of the window; 3. it is divided among the apps on screen, each a bounded share; 4. an app's header and tools never scroll, its body takes the rest; 5. only a list or a viewer scrolls, inside itself, keeping its current row in view and taking the keys on the whole list; 6. no app sets its own height: the frame gives the space, the one list search fills it.\n- THE RULE THE LIST ISSUES FOLLOW (Andy: \"the general idea is that we make the layout of an app within the page and list-elements are bounded to their allotted space ... it makes more of a contained app feel instead of a web-page feel\"): the page never scrolls; an app fills the space its pane is given, its header tools stay put, and each list fills what is left and scrolls inside itself.\n- listSearch IS DEPRECATED, AND FORBIDDEN IN THE FACE (Andy: \"list search is deprecated, and forbidden in face. rule. decision.\"): probabilitySearch is the one list on the face. On the face that means: the text view (the text viewer Files opens) moves onto probabilitySearch, and listSearch.js and the contact selector, which is built on it, come off the face's list of parts. The Desk's fallout plugin and the contact selector keep it at home until they are ported.\n- THE HEADER ELEMENT IS DEPRECATED (Andy: \"the face doesn't use the header element, and we can consider it deprecated\"): under the contained-app rule a button bar is the app's first row, and only the body below it scrolls. shell/js/appHeader is still used by the old shell, the Desk, Desk details and Rule details, and is on the face's list of parts (FACE_PARTS) though nothing on the face calls it. Moving the Desk to the face will meet it (Andy: \"it will then mean i can run the desk from anywhere in the world\").\n- a list view sits in its own scroll box, in a pane of set height, so the header tools above it never scroll out of view at the bottom of the list (Andy: \"i generally like when my list views are contained in the scroll box that occupies a height-defined/limited pane\"). Today only a dropdown's list has its own height and scroll (probabilitySearch.js and listSearch.js alike); a list in a pane makes the whole pane scroll.\n- the face opens any app a face app reaches (Contacts opens the Natter details), and 14 app scripts still read the kernel's object, which the face no longer loads (natterDetails.js:34: Cannot read properties of undefined (reading 'util')):\n  - escapeHtml or formatBytes, which spirit.js has: jobsDetails, contactsDetails, stats, natterDetails, jobs, group-manager\n  - the icon table: jobsDetails, contactsDetails, natterDetails, chatter, join, jobs, group-manager, deskAgentRemote, desk, deskDetails; the glyphs hardcoded, the table where needed from the icon module\n  - the relays' status (a relay search, then a get of each): contactsDetails, natterDetails, relayMonitor, info; a name of the relay family's api.js\n  - a node call: chatter; job cancel and delete: jobsDetails; through the spirit families\n  - a file read or save, synchronous in the kernel: textEditor, join; made to wait for its answer\n- the icons app keeps its state in the tree (shell/icons/iconSet.json), so every icon edit goes into github. Andy: all shell-app state goes into spirit/run/relay-state/shell/<appname>/, as a process's own state goes into relay-state/process/<name>/. Today the node refuses any write or read under relay-state but a process's own folder (fileSystem.js), so relay-state/shell/<app>/ needs that gate opened for the app's own folder.\n- the icon set for the selector is spirit/run/shell/json/iconSet.json (in the repo since 91d7c2eb, a copy of shell/icons/iconSet.json: each glyph and its keywords), shell/json/ a core folder (Andy: \"this way i can update that system file manually once in a while, when i actually want it to go into github\"). It replaces where G40.7 put the table (spirit/client/iconIndex.js); the core rule (spirit/coreFiles.js) gains shell/json/. Andy's own set is relay-state/shell/icons/iconSet.json, on his node only.",
-   "checks": [],
+   "box": "FACE BUGS, and the rules the face is built to.\n\nTHE RULES (Andy, 2026-10-25):\n- The contained app: the window is the screen and the page never scrolls; below the title bar the app area takes the rest; an app's tools never scroll; only a list or a viewer scrolls, inside itself.\n- Space is granted top-down: whoever mounts an element hands it a box of set size, and it lays out only inside it. No element sizes itself.\n- probabilitySearch is the one list. In list mode: filters, then the search row, fixed; the list the rest, scrolling, its current row kept in view; up, down, home, end, page up and page down on the whole list. listSearch is deprecated and forbidden in the face.\n- The header element is deprecated: a tool bar is an app's first row.\n- Shell-app state lives in relay-state/shell/<app>/, out of git; system sets in shell/json/ (core), updated by hand.\n- A change goes to the server and every view hears it on the stream; nothing hands a result back.\n\nBUILT (d5a41760 .. b41d0459):\n- No app script reads the kernel, so the face can open any of them; spirit.relay.status is the relay family's.\n- listSearch, the contact selector and the header element are off the face; the marking rule is in probabilitySearch.\n- The list keys and scroll as above; face.css makes the face a contained app; shell.css .fill is the box a mounter hands down (Files, Icons, Apps, Contacts).\n- Icons: the owner's set in relay-state/shell/icons/iconSet.json, else shell/json/iconSet.json; the picker offers the system set; the node opens relay-state/shell/<app>/ and the folders to it, nothing else under relay-state; shell/json/ is core.\n\nTO BUILD, NAVIGATION:\n- The face shell's stack holds pages only: a page is a title and something that draws into a box. An app is a desktop icon whose click pushes its page; a detail is a page its app pushes.\n- The frame owns the title bar: the top page's title, and back, which pops it; home pops them all. Every page gets the whole app area.\n- A popped page is thrown away; the one under it stays as it was. A page may close itself.\n- No results on the stack: the 13 hand-backs and the two callers reading them go. The icon detail saves to the server; the file watcher's notice comes back, and the Icons list fetches the file again.\n- A navigationWrapper shell element in shell/js/: it pushes a page, puts its title and back in the title bar, and hands the page the whole app area.\n- The shell does all the wrapping: opening an app pushes its page through the navigationWrapper with the app's name and mount, and the app only draws into the box it is handed; a detail goes through the same wrapper. No app wraps itself.\n- natterDetails and contactsDetails go as apps; they become intrinsic shell elements in shell/js/, built on the navigationWrapper, no manifests, no callDialog. Icons pushes its icon detail through it. The old shell is not touched.\n- In this item, no new items (Andy: \"this is hopefully the last round for this one\").",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-25T11:52:17.418Z",
+     "made": "desk"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-25T12:04:18.907Z",
+     "made": "desk"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-25T13:00:58.521Z",
+     "made": "desk"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the shell wrap every app in the navigationWrapper when its icon is opened, or does each app wrap itself?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-25T12:52:35.515Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-25T13:01:29.160Z",
+     "made": "desk"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -5999,6 +6051,342 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-25T11:01:57.430Z",
      "text": "now that explains some inconsistencies i struggled to diagnose in face.\n\nyes.\n\nI'll end design (which i should be able to bring back for items in desk)\n\nand press go..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:04:45.550Z",
+     "text": "commit d5a417604c9356ba080631ecdde5c31c7192ad70: goal/G40.8 red: face bugs: no kernel in any app, one list, the contained app, the icons' state\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-25T11:04:46.978Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:12:37.033Z",
+     "text": "cw: the build is done in my clone, waiting on G1. The red (1c) is green, 30 in all; spirit.js's 48 still green.\n- No app script reads the kernel any more (the 14): spirit.escapeHtml and formatBytes, glyphs hardcoded, the table from the icon module where an app looks icons up by name, spirit.relay.status (now a name of the relay family), the job and contact calls through the families, join's and the text editor's file reads waiting for their answer.\n- On the face: listSearch, the contact selector and the header element are off its list; the one marking rule moved into probabilitySearch, so the text view no longer needs listSearch.\n- The one list: up, down, home, end, page up, page down, heard on the page whenever the list is on screen and nothing else takes typing; every list scrolls in its own box, a pane's list filling its pane.\n- The face is a contained app (face.css): the window is the screen, the title bar fixed, the app area the rest; a pane not yet built to the rule scrolls inside itself.\n- Icons: the app and its list keep your set in relay-state/shell/icons/, the system set until you have one; the picker offers shell/json/iconSet.json. The node's gate opens relay-state/shell/<app>/ (and the folders on the way, for the file tree), nothing else under relay-state. shell/json/ is core.\n- Not tested: any of it in a browser. Please try the face after the push.\n- 20 core files are on the list.\n- ? Grant G1?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:13:30.167Z",
+     "text": "commit 3342d2f6a3eeb17bc6a4c07265c72fde0bb6fae5: goal/G40.8: face bugs: no kernel in any app, one list, the contained app, the icons' state\n- spirit/run/face/face.css\n- spirit/run/face/shell.js\n- spirit/run/shell/chatter/chatter.js\n- spirit/run/shell/contactsDetails/contactsDetails.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/group-manager/group-manager.js\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/info/info.js\n- spirit/run/shell/jobs/jobs.js\n- spirit/run/shell/jobsDetails/jobsDetails.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/js/iconSelector.js\n- spirit/run/shell/js/icons/listElement.js\n- spirit/run/shell/js/icons/rowElement.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/run/shell/js/textView.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/run/shell/relayMonitor/relayMonitor.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/run/shell/stats/stats.js\n- spirit/run/shell/textEditor/textEditor.js\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/fileSystem.js\n- spirit/run/spirit/relay/api.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:13:40.688Z",
+     "text": "cw: pushed as 3342d2f6 under G1, build claimed.\n- For you to try it on the face: the face shell and its sheet are served by the relay, so the relay needs a tag; and your node must run the same tree.\n- Risk as before: not run in a browser yet; the old suites not run.\n- ? Tag now and restart your node on it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:18:44.943Z",
+     "text": "tag now"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:19:53.490Z",
+     "text": "cw: tagged v-2026-10-25-12-18 on 3342d2f6 and pushed; the relays take it within about 10 minutes. Your checkout is at the tag and your node (65432) restarted on it through labMaster.\n- Once spirit-3 has restarted: the face, its lists (keys, page up/down, their own scroll), the Natter details, and Icons are worth one try."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:20:19.372Z",
+     "text": "both relays updated already"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:22:04.044Z",
+     "text": "page.forEach is not a function"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:23:50.949Z",
+     "text": "commit b5f54fbf1ad9224e6b27048cf5afaad50e995884: goal/G40.8: page up and down's row count no longer takes the place of the page's own rows\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:23:59.324Z",
+     "text": "cw: my bug, fixed: the list search already had a function named pageRows (the rows an app hands it), and the page up/down count I added took the same name and replaced it. Renamed; pushed as b5f54fbf, with a check that no function name is declared twice.\n- The face loads that file from your node, so no tag is needed: your checkout is at b5f54fbf now. Reload the face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:36:25.676Z",
+     "text": "- contacts looks perfect\n- icons and files, not so much\n- only the list pane must be scrollable, the filters and the search input must be fixed row, the list is the only scrollable  part and may use 100% of remaining vertical space\n- same problem in icons. if you're including the toolbars and form in the scrolled part, we're exactly where we started: a web-page look-and-feel.\nhome and end key should go top and bottom of list. page up and page down should move by one page....\n\nlook at it this way in the list mode of probabilitySearch, that's where you must put filters and search input rows at the top, then the list, which is the only scollable part, almost like the dropdown, but the dropdown is permanently dropped and occupies the remaining space allotted to the list search.\n\ndoes this make sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:37:55.607Z",
+     "text": "cw: yes, it makes sense, and it is what the list mode should be: a dropdown permanently dropped, filling what is left below its fixed rows.\n\nWhy Contacts works and Files and Icons do not:\n- Contacts mounts the list search straight into its box.\n- Files wraps it twice (its list box, then the file list's own box), and Icons puts it in a box under its toolbar. Those boxes have no height of their own, so the list cannot fill anything, and the pane falls back to scrolling the whole app, toolbar and fields with it.\n- The page keys come from the same cause: a page is what the list shows at once, and an unbounded list shows everything, so page up and down jumped like Home and End.\n\nThe fix, in the one list search, no app touched (rule 6):\n- In list mode it makes each box between itself and the app's pane a column that gives its remaining height down the line.\n- The rows above it on the way (Icons' toolbar, the fields, the filters, the search row) stay fixed rows.\n- Only its list scrolls, filling the rest.\n- With the list bounded, Home and End go to the top and bottom, and page up and down move by what it shows.\n- ? Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:43:13.288Z",
+     "text": "no go. you're running away again with assumptions, NO CODE until we're absolutely clear.\n\nthe propabilitySearch in list mode must behave the same, ALWAYS, it MUST be mounted with a height and with controlled by it's container, that pre-existing witdth and height, is what the probabilitySearch must use for it's internal layout. \n\n- top row: filters\n- second row: search input and search button\n- the rest of the vertical space: list with auto-scroll.\n\nagreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:43:41.946Z",
+     "text": "cw: agreed. Sorry for running ahead.\n\nWhat that means against the code:\n- probabilitySearch already draws in that order: filters, then the search field and button, then the list. What changes: it takes the box it is given as fixed, sets no size on it (it does now: height 100%, which I take out), and lays out inside it only: the two rows fixed, the list the rest, scrolling.\n- So the size comes from whoever mounts it. Contacts already hands it a sized box; Files and Icons hand it boxes without a height, so their own layout has to give the list box its size: the app's pane is its share of the window, the app's own fixed rows (Icons' toolbar, Files' back row) on top, and the list box the rest.\n- ? Is giving that box its size the mounting app's job (Files, Icons), under the contained-app rule?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:47:20.285Z",
+     "text": "probabilitySearch already draws in that order: filters, then the search field and button, then the list. What changes: it takes the box it is given as fixed, sets no size on it (it does now: height 100%, which I take out), and lays out inside it only: the two rows fixed, the list the rest, scrolling.\n- yes. correct.\n\nSo the size comes from whoever mounts it. Contacts already hands it a sized box; Files and Icons hand it boxes without a height, so their own layout has to give the list box its size: the app's pane is its share of the window, the app's own fixed rows (Icons' toolbar, Files' back row) on top, and the list box the rest.\n- yes. think of my general rule: an desktop-application feel, where everything has its allotted space, that's only possible if the space is granted top-down in an element-tree. agree?\n\n? Is giving that box its size the mounting app's job (Files, Icons), under the contained-app rule?\n- yes, i think i explained that in my second answer.\n\nagreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:47:48.313Z",
+     "text": "cw: agreed on all three, and boxed (v12): space is granted top-down; whoever mounts an element sizes its box; probabilitySearch lays out inside its box only (filters, search row, the list scrolling) and sets no size; Files and Icons size their list boxes as Contacts does.\n- ? Build it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:50:30.542Z",
+     "text": "ultimately, container elements, when space gets to small, will automatically switch from containing an pane to providing a button to pop up that pane to take over the whole display.... (oos)\n\n\nbuild it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:52:21.043Z",
+     "text": "cw: built in my clone, waiting on G2.\n- probabilitySearch sets no size on its box (its height 100% is gone); inside it, its own column: filters and the search row fixed, the list the rest, scrolling.\n- shell.css gains one rule, fill: a box that takes what its parent leaves it. Files hands its file list one and the file list hands the search one; Icons gives its list column and the list's box one, its add row fixed on top. Contacts was already right.\n- The red is green, 32.\n- Files and its file list joined the list (2 core files).\n- ? Grant G2?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:55:25.507Z",
+     "text": "commit, so i can pull"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:55:56.236Z",
+     "text": "commit 7d6149941bde5a4fd302e51c35dc70853b46d3ec: goal/G40.8: space granted top-down: the list search lays out inside the box it is given; Files and Icons size theirs\n- spirit/run/shell.css\n- spirit/run/shell/files/files.js\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/js/files/listElement.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:56:03.716Z",
+     "text": "cw: committed and pushed as 7d614994; pull when you like. All of it is served by your node (shell.css, the list search, Files, Icons), so no tag is needed: pull, then reload the face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:59:10.649Z",
+     "text": "Ahhhh, very pretty, now we have the effect that the dumb, deprecated header-element tried to achieve, in both Files and Icons all the tools stick perfectly visible at all times at the top and only the list box scrools. Gorgous!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:02:55.669Z",
+     "text": "- also, now the page-up/page-down works perfectly....\n- i also confirm that the Files-dropdown mode still work perfectly (in Media Viewer app)\n\nFace Apps is still not doing it right."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:04:21.112Z",
+     "text": "cw: same cause in Apps: its list box had no size. Given one (fill), as Files and Icons; the red checks Apps too (32 green). Done in my clone, waiting on G3 (apps.js joined the list).\n- ? Grant G3?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:07:37.352Z",
+     "text": "please commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:08:12.443Z",
+     "text": "cw: pushed; pull and reload the face (served by your node, no tag)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:08:14.063Z",
+     "text": "commit b41d0459e04faf0aeab1cf75cc46a6750fd360b5: goal/G40.8: the Apps app hands its list a sized box too\n- spirit/run/shell/apps/apps.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:22:06.042Z",
+     "text": "one inconsistency left to explain.\n\ni like how the contactDetails and natterDetails display (not the panel content, but the back-button is in the title-bar\n\nthe icon-\"detail\" wastes a whole row at the top for one dumb \"back-button\", when i'd like the navigation (back) to be exactly the same for everything...\n\nthe right strategy would be-\n\ndetail type panels, like relay-detail or contact-detail and icon-detail should behave the same.\n\n- could there be an element navigationWrapper, that presents it's contents like contact details, that puts itself on the nav-stack with the back-button and new title in the title bar? the natterDetail and contactDetail will become standard intrinsic shell elements, what \"enherit\" from navigation wrapper? And icon detail would also you that navigationWrapper?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:23:01.772Z",
+     "text": "cw: yes, and most of it already exists; it only has the wrong granularity.\n\nWhat the code does today:\n- The face shell keeps a stack, and the title bar's back pops it. Its entries are whole apps: contactsDetails and natterDetails look right because each is an app of its own, opened with callDialog, with its name in the title bar.\n- Icon detail is not on the stack: Icons hides its list and draws its own back row in its pane. Hence the wasted row and the different feel.\n\nThe shape I would propose:\n- The stack holds pages, not only apps. One shell call, spirit.shell.navigate({title, mount(box)}): it pushes a page, gives it a sized box (the whole app area, space granted top-down), puts its title and the back in the title bar, and answers its result when the page is popped.\n- navigationWrapper is that call made an element: a detail panel is handed a box and a title and draws only its content; the back and title belong to the frame.\n- contactsDetails and natterDetails stop being apps and become intrinsic shell elements on it (no manifests, no callDialog); icon detail and relay detail use the same.\n- Then every detail on the face navigates the same way, by construction.\n- One fact: the old home shell has its own stack, so this would be built in the face shell first; at home the details would keep working as apps until the old shell goes.\n- ? Its own item, or in this one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:31:30.740Z",
+     "text": "The stack holds pages, not only apps. One shell call, spirit.shell.navigate({title, mount(box)}): it pushes a page, gives it a sized box (the whole app area, space granted top-down), puts its title and the back in the title bar, and answers its result when the page is popped.\n- the stack only holds ONLY navigation. ie: an app is only a mountable icon in shell, conceptually, and it simply uses the navigation wrapper as it's top container. All our new intrinsic shell apps are only wrappers for elements anyway.\n\nnavigationWrapper is that call made an element: a detail panel is handed a box and a title and draws only its content; the back and title belong to the frame.\n- gobbledeegook.\n\ncontactsDetails and natterDetails stop being apps and become intrinsic shell elements on it (no manifests, no callDialog); icon detail and relay detail use the same.\n- correct.\n- and the icons app simple uses the navigationWrapper for it's details pane.\n\nOne fact: the old home shell has its own stack, so this would be built in the face shell first; at home the details would keep working as apps until the old shell goes.\n- the legacy shell is doomed to die. I'm racing to replace it. i don't give a damn about the old shell. may it rot in hell.\n\nthoughs?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:32:01.227Z",
+     "text": "cw: agreed; plainer this time:\n- The stack holds navigation only: pages. A page is a title and something that draws into a box.\n- An app is a desktop icon whose click pushes its page. A detail is a page its app pushes. Same mechanism, nothing else on the stack.\n- The frame owns the title bar: the top page's title, and back, which pops the top page. Home pops them all.\n- Every page gets the same box: the whole app area under the title bar.\n- contactsDetails and natterDetails become elements that draw a page; Icons pushes its icon detail as a page; its own back row goes.\n- The old shell is not touched.\n\nTwo things to settle before a red:\n- When a page is popped, is it thrown away? Recommended: yes, a popped page is gone; the page under it stays as it was (an app's list keeps its scroll and its search while a detail is on top).\n- A page can hand a result back to the one that pushed it, as callDialog does today (a contact picked, say). Recommended: keep that.\n- ? Both as recommended?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:37:25.000Z",
+     "text": "Two things to settle before a red:\nWhen a page is popped, is it thrown away? Recommended: yes, a popped page is gone; the page under it stays as it was (an app's list keeps its scroll and its search while a detail is on top).\n- yes, it gets thrown away but with a bit more detail.\n- the stack doesn't need to handle results, because when contact/relay modifies a value, it's done via the server, and is updated by the callers listening-subscription automatically. no need for the stack to do complicated work, the dataSet in the shell is one pools, updated by a stream from the server\n\nagree?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:37:59.963Z",
+     "text": "cw: agreed: no results on the stack; a change goes to the server and comes back to every view through the one stream and the data set.\n\nWhat that removes on the face, so nothing is lost:\n- the Contacts list reads a detail's result (changed: true) to refresh itself, and the face form reloads after the relay details close. Both go: their views are fed by the stream already, or must be.\n- the details hand results back in 9 places (closeDialog and setDialogResult); those go too.\n- One thing stays: a page can close itself (back, from inside), as natterDetails does after a relay is removed, or deskDetails after a delete.\n\n\"thrown away but with a bit more detail\": I did not get that part.\n- ? What is the more detail on a popped page?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:38:08.657Z",
+     "text": "cw: count corrected: 13 places hand a result back (contactsDetails 2, deskDetails 4, jobsDetails 1, natterDetails 5, stackFrameCheckDetail 1), not 9; several of them are a page closing itself, which stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:39:45.357Z",
+     "text": "... and the icon detail knows its row, and also sends it's changes to the server, triggering a re-broadcast of that file that the icons app can hear...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:40:35.402Z",
+     "text": "cw: agreed, and it works on your node already: the file tree lists relay-state/shell/icons/iconSet.json (and nothing else under relay-state), so a save there comes back to the Icons list through the watcher.\n- Boxed (v13): the navigation design, all you decided.\n- The box is at 6.6 of its 7.9 KB.\n- ? Build navigation in this item, or as its own?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:41:18.531Z",
+     "text": "that flow is the only thing to make icons robust....\nsomebody at home may change the icon file, and then it DOES need re-distribution to all subscribers.."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:41:45.584Z",
+     "text": "cw: yes, and that is the path it takes, whoever changes the file:\n- a change to relay-state/shell/icons/iconSet.json, from the face, from home, or by hand, is seen by the node's file watcher (the folder is in its tree now);\n- the watcher's update goes out on the events stream to every subscriber: the home pages directly, the face through faceHome, which forwards every file-tree update and never drops one;\n- each page's data set takes it, and every Icons list watching that file reads it again.\n- ? Still open: navigation in this item, or its own?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:43:54.757Z",
+     "text": "the fs-watcher only sends a change-notice, the icons app must listen to it, and re-fetch the icons.json again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:44:20.806Z",
+     "text": "cw: correct, and that is how it is built: the Icons list watches its file's entry in the data set (files/relay-state/shell/icons/iconSet.json); the watcher's notice changes that entry, and the list then fetches the file again and redraws. The notice carries no content."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:44:55.204Z",
+     "text": "cap\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:45:25.678Z",
+     "text": "cw: taking the cap."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:46:09.641Z",
+     "text": "cw: capped (v15, 2.4 KB): the rules, what is built (d5a41760 .. b41d0459), and navigation, still to build.\n- Not green: navigation is not built. Everything else in the box is built, and you saw it on the face.\n- ? Navigation here, or as its own item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:49:13.603Z",
+     "text": "so the pending changes will\n- get rid of natterDetails and contactDetails, replace them with intrinsic shell-elements in shell/js/\n- create a navigationWrapper shell-element in shell/js that the above elements will use\n\n\nOPEN: does the shell wrap apps with navigation wrapper, or do the apps have to wrap themselves?\n\n- NO NEW ITEMS, this is hopefully the last round for this one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:49:50.464Z",
+     "text": "cw: boxed (v16): the navigationWrapper in shell/js, natterDetails and contactsDetails as elements on it, in this item. Your open point is Q1.\n\nRecommended: the shell wraps.\n- Opening an app is pushing its page: the shell calls the wrapper with the app's name and the app's mount, and the app only draws into the box it is handed.\n- So no app can forget the wrapper, or wrap differently. The title bar stays the frame's alone (the frame owns it, rule 6).\n- A detail an app opens goes through the same wrapper, so app pages and detail pages are one thing.\n- ? Shell wraps?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:51:28.915Z",
+     "text": "so the shell does ALL the wrapping?\n\nagreed.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:51:57.187Z",
+     "text": "cw: yes, all of it, and boxed (v17): the shell wraps every app and every detail; no app wraps itself.\n- Green on the design: the box is whole, Q1 is answered (clear it when you like); open none.\n- Not built yet: navigation. Next is its red, then the build, on your go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:52:15.354Z",
+     "text": "go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T12:52:35.312Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T12:54:35.438Z",
+     "text": "commit e1c2f3202a324c6c038218d426ae78055d7bbc9a: goal/G40.8 red: navigation: one wrapper, the shell wraps every app and every detail, no results handed back\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:01:19.119Z",
+     "text": "cw: navigation is built in my clone, waiting on G4. The red (1d) is green, 38 in all; spirit.js's 48 green.\n- shell/js/navigationWrapper.js: the one stack of pages; the frame (title bar, back, home, the app area) attached by the face shell once the parts are in. Driven in the test: the title follows the top page, back throws the top page away, a page can close itself, home pops all.\n- The face shell keeps no stack of its own: every app it opens is a page pushed on it. The login is the one screen outside it, as it comes before the link to home, which the navigation is loaded over.\n- contactsDetails and natterDetails are elements now (shell/js/contactDetails, shell/js/natterDetails), opened as pages; their app folders, manifests and sidecars are deleted; no result is handed back, and the Contacts list and the face form no longer read one.\n- Icons, and in the same stroke Files and Apps (you asked for the back to be the same everywhere), push their detail as a page: their own back rows are gone.\n- Not touched: the old shell; at home a click on a contact or relay row now needs these elements, which index.html does not load.\n- Not tested: any of it in a browser.\n- 6 core files joined the list.\n- ? Grant G4?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:02:08.232Z",
+     "text": "commit 54c4274ff3fbd297bb22a88f7cb03fdf7ebf1d21: goal/G40.8: navigation: one stack of pages, the shell wraps every app and every detail, nothing handed back\n- spirit/run/face/shell.js\n- spirit/run/shell/apps/apps.js\n- spirit/run/shell/contactsDetails/contactsDetails.js.sidecar.json\n- spirit/run/shell/contactsDetails/contactsDetails.json\n- spirit/run/shell/files/files.js\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/js/contactDetails/contactDetails.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/js/contacts/rowElement.js\n- spirit/run/shell/js/faceForm.js\n- spirit/run/shell/js/natterDetails/natterDetails.js\n- spirit/run/shell/js/navigationWrapper.js\n- spirit/run/shell/natterDetails/natterDetails.js.sidecar.json\n- spirit/run/shell/natterDetails/natterDetails.json\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:02:11.645Z",
+     "text": "cw: pushed as 54c4274f. The face shell changed, and a relay serves it, so the face needs a tag to show it; the rest your node serves.\n- ? Tag now and restart your node on it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:11:18.079Z",
+     "text": "tab please."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:12:29.429Z",
+     "text": "cw: tagged v-2026-10-25-14-11 on 54c4274f and pushed; the relays take it within about 10 minutes. Your checkout is at the tag and your node (65432) restarted on it through labMaster.\n- Worth trying on the face: open Contacts, a contact, a relay, an icon, a file, an app's panel; back and home in the title bar."
     }
    ]
   }
