@@ -1,5 +1,5 @@
 {
- "change": 101478,
+ "change": 101479,
  "goal": "goal/G40",
  "items": [
   {
@@ -55,7 +55,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -5501,12 +5501,11 @@
    "id": "goal/G40.7",
    "title": "face-fixes",
    "goal": "goal/G40",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
