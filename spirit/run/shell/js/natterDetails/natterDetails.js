@@ -1649,6 +1649,24 @@ var ndPage = ({
     // status has effectively always landed by then. It is not a formal
     // guarantee, and it is the thing to suspect if an invite ever shows
     // up exactly one beat late.
+    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): this relay's row in relay-rows, its seat, email or face, changed
+    // anywhere: the page reads it again. The two forms in it hear relay-rows themselves.
+    var ndRowHeard = null;
+    var ndRowsStop = null;
+    var ndRowsTake = function (job) {
+      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      var body = ndBody();
+      if (!body || !body.isConnected) { if (ndRowsStop) ndRowsStop(); return; }
+      var mine = JSON.stringify((job.data.rows || []).filter(function (r) { return r && r.url === ndUrl; })[0] || null);
+      if (ndRowHeard === null) { ndRowHeard = mine; return; }
+      if (mine === ndRowHeard) return;
+      ndRowHeard = mine;
+      if (ndUrl) ndLoad();
+    };
+    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
+      ndRowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(ndRowsTake); }, onUpdate: ndRowsTake });
+    }
+
     if (api.onRelayEvent) {
       api.onRelayEvent(function (event) {
         var about = (event && event.relay) || '';

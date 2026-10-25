@@ -155,6 +155,9 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // peer verb has answered (below), the moment the node knows.
 let joinStepsJob = null;
 try { joinStepsJob = require('./joinStepsJob').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
+// THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, refreshed as join-steps is, and on a relay's report.
+let relayRowsJob = null;
+try { relayRowsJob = require('./relayRowsJob').create(ROOT_DIR, jobs); } catch (e) { relayRowsJob = null; }
 
 // `let presence` STOOD HERE. The node's held streams live inside peerRouter
 // since goal/G19.14 (peerPost.holdStreams): one door, and this file asks it.
@@ -907,7 +910,10 @@ const server = http.createServer((req, res) => {
         // A relay, contact or peer verb may have taken a seat, added a contact or kept a face: once its answer has gone
         // out, the join-steps job is refreshed, and published only if that changed it (goal/G30.1, box v40).
         if (joinStepsJob && /^(relay|contact|peer)\./.test(String(verb))) {
-          res.on('finish', function () { try { joinStepsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ } });
+          res.on('finish', function () {
+            try { joinStepsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ }
+            try { if (relayRowsJob) relayRowsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ }
+          });
         }
         let ran = null;
         try { ran = run(req, res); }
@@ -1495,6 +1501,8 @@ contactBook.syncMarks(ROOT_DIR);
     // on top of the sweep, never the only way a member is noticed.
     onRelayEvent: function (ev) {
       relayEvents.note(ev);
+      // A relay's report may have noted the owner's seat (relayKeys.ownerSeat): relay-rows says so if it changed.
+      if (ev && ev.kind === 'status' && relayRowsJob) { try { relayRowsJob.refresh('relay status'); } catch (e) { /* the next report refreshes it */ } }
       // A `kind: 'claim'` branch stood here and never fired: claims arrive
       // as `owner-event` (onOwnerEvent, below), not `relay-event`, since
       // R2 split the two. Adoption lives there now.

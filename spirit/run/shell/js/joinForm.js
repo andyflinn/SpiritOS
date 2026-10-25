@@ -9,7 +9,9 @@
 //   words(state)      -> { title, label, button, email } for where the node stands on a relay (seated, emailVerified).
 //   row(relays, opts) -> the form's markup: relays are relay rows (url, label, claimed or owned, email, emailVerified);
 //                        opts.fixed, a url, gives the dropdown that one relay and fixes it; opts.picked the url picked.
-//   mount(box, opts)  -> draws the row into box and sends it: opts.relays, opts.fixed, opts.escape.
+//   mount(box, opts)  -> draws the row into box and sends it: opts.relays, opts.pick ('seated': only relays with a seat;
+//                        else every relay listed), opts.fixed, opts.escape. It hears relay-rows itself and redraws when
+//                        its relays changed (goal/G40.10, box v21), keeping what is typed.
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
 
 (function () {
@@ -42,6 +44,7 @@
     if (!list.length) return '';
     var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0];
     var w = wordsFor(picked);
+    if (o.email != null) w.email = o.email;
     return '<div class="label sp-join-title">' + escape(w.title) + '</div>' +
       '<div class="start-job-form card">' +
       '<label class="field-label">Relay<select class="sp-join-relay"' + (o.fixed ? ' disabled' : '') + '>' +
@@ -58,7 +61,9 @@
     var o = opts || {};
     var url = String((typeof o.url === 'function' ? o.url() : o.url) || '');
     var email = String(o.email || '').trim();
-    if (!/^[^\s@]+@[^\s@]+$/.test(email)) return Promise.resolve({ ok: false, text: 'type your email address' });
+    // The one email rule (fieldRules.emailProblem, goal/G40.10, box v20): a malformed address is told what is wrong.
+    var bad = rules() ? rules().emailProblem(email) : (email ? '' : 'an email address is needed');
+    if (bad) return Promise.resolve({ ok: false, text: bad });
     if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
     // Through the spirit object (goal/G32.2): spirit.relay.join answers the reply's body, or refuses with the node's words.
     return spirit.ready.then(function (s) { return s.relay.join({ url: url, email: email, code: '' }); }).then(function (said) {
@@ -69,20 +74,54 @@
     }, function (e) { return { ok: false, text: String((e && e.message) || e) }; });
   }
 
-  // Drawn into box; the picked relay survives a redraw, and a change of relay redraws the words. Delegated on box, so a
-  // redraw keeps the button and Enter working.
+  function rules() { return (window.spirit && window.spirit.fieldRules) || null; }
+  // The relays a place offers, out of relay-rows' rows: 'seated' only those with a seat, else every one listed.
+  function picking(rows, pick) {
+    var list = Array.isArray(rows) ? rows : [];
+    return pick === 'seated' ? list.filter(function (r) { return r && (r.claimed || r.owned); }) : list;
+  }
+
+  // Drawn into box; the picked relay and what is typed survive a redraw, and a change of relay redraws the words.
+  // Delegated on box, so a redraw keeps the button and Enter working.
+  function draw(box) {
+    var now = box._spJoin || {};
+    var was = box.querySelector('.sp-join-relay');
+    var field = box.querySelector('.sp-join-email');
+    var typed = field && field.value !== field.defaultValue ? field.value : null;
+    box.innerHTML = row(now.relays, { fixed: now.fixed, picked: now.picked || (was ? was.value : ''), email: typed, escape: now.escape });
+  }
   function mount(box, opts) {
     if (!box) return;
     var o = opts || {};
-    var relays = Array.isArray(o.relays) ? o.relays : [];
-    var was = box.querySelector && box.querySelector('.sp-join-relay');
-    var picked = was ? was.value : '';
-    function draw() { box.innerHTML = row(relays, { fixed: o.fixed, picked: picked, escape: o.escape }); }
-    function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
-    draw();
-    box._spJoin = { relays: relays, fixed: o.fixed, escape: o.escape };
+    box._spJoin = { relays: Array.isArray(o.relays) ? o.relays : [], pick: o.pick, fixed: o.fixed, escape: o.escape, picked: '' };
+    draw(box);
     if (box._spJoinBound) return;
     box._spJoinBound = true;
+    function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
+    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, heard here; the form redraws only when its own
+    // relays changed, and lets go once its box has left the page.
+    var heard = JSON.stringify(box._spJoin.relays);
+    var stop = null;
+    function take(job) {
+      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!box.isConnected) { if (stop) stop(); return; }
+      var next = picking(job.data.rows, box._spJoin.pick);
+      var asJson = JSON.stringify(next);
+      if (asJson === heard) return;
+      heard = asJson;
+      box._spJoin.relays = next;
+      draw(box);
+    }
+    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
+      stop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
+    }
+    // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.
+    box.addEventListener('input', function (e) {
+      var f = e.target;
+      if (!f || !f.classList || !f.classList.contains('sp-join-email') || !rules()) return;
+      var held = rules().clip(f.value, rules().EMAIL_MAX_BYTES);
+      if (held !== f.value) f.value = held;
+    });
     function go(button) {
       var field = box.querySelector('.sp-join-email');
       var out = box.querySelector('.sp-join-out');
@@ -94,9 +133,10 @@
     }
     box.addEventListener('change', function (e) {
       if (!e.target || !e.target.classList || !e.target.classList.contains('sp-join-relay')) return;
-      var now = box._spJoin || {};
-      picked = e.target.value;
-      box.innerHTML = row(now.relays, { fixed: now.fixed, picked: picked, escape: now.escape });
+      box._spJoin.picked = e.target.value;
+      var field = box.querySelector('.sp-join-email');
+      if (field) field.value = field.defaultValue;
+      draw(box);
     });
     box.addEventListener('click', function (e) {
       var button = e.target && e.target.closest && e.target.closest('.sp-join-go');

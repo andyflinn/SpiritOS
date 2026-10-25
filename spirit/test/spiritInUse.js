@@ -353,7 +353,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const rowsRun = spawnSync(process.execPath, ['-e', [
     "var J = null; try { J = require('./spirit/relayRowsJob'); } catch (e) { process.stdout.write('missing'); process.exit(0); }",
     "var k = require('./spirit/relayKeys'); var b = require('./spirit/ownerBadge'); var url = 'https://rows.example';",
-    "b.addRelay(process.cwd(), url, 'rows', ''); k.accept(process.cwd(), url, 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=');",
+    "var key = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls='; k.accept(process.cwd(), url, key); b.addRelay(process.cwd(), url, 'rows', key);",
     "var sent = []; var jobs = { createJob: function (kind, type, data) { return { id: 'j1', type: type, data: data }; }, updateJob: function (id, p) { sent.push(p.data); } };",
     "var r = J.create(process.cwd(), jobs);",
     "var same = r.refresh('nothing');",

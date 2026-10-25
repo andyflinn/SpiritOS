@@ -145,16 +145,18 @@ function infoCount() {
   if (!el || !box) return;
   var left = infoRemaining(box.value);
   if (left === null) { el.textContent = ''; return; }
-  if (left >= 0) {
-    el.textContent = left + ' left';
-    el.className = 'job-manifest-note';
-  } else {
-    // Red, because past here the node refuses it (goal/G4.16: "too-long
-    // refused"; js/fieldRules.js).
-    el.textContent = Math.abs(left) + ' too many — the most is ' +
-      ((infoCard && infoCard.descriptionMax) || 128);
-    el.className = 'job-start-error';
-  }
+  // Only what is left: the field stops at its limit (infoHold), so it never goes past.
+  el.textContent = Math.max(0, left) + ' left';
+  el.className = 'job-manifest-note';
+}
+
+// A FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20; Andy: "keep counting the number of characters typed beyond the
+// limit, instead of just blocking input past the limit"): cut at fieldRules' byte limit as it is typed.
+function infoHold(field, maxBytes) {
+  var rule = infoRule();
+  if (!field || !rule) return;
+  var held = rule.clip(field.value, maxBytes);
+  if (held !== field.value) field.value = held;
 }
 
 function infoDraw() {
@@ -242,7 +244,7 @@ function infoDrawFace() {
   // relay dropdown over the relays this node holds a seat on; the face form offers only those with a verified email.
   var el = (window.spirit && window.spirit.elements) || {};
   var escape = infoApi && infoApi.escapeHtml;
-  if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), escape: escape });
+  if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), pick: 'seated', escape: escape });
   if (el.faceForm) el.faceForm.mount(document.getElementById('info-face'), { relays: infoSeats(), reload: function () { return infoLoadRelays(); }, escape: escape });
 }
 
@@ -469,14 +471,35 @@ spirit.shell.activateApp({
     document.getElementById('info-description-save')
       .addEventListener('click', infoSaveDescription);
 
-    document.getElementById('info-name')
-      .addEventListener('keydown', function (e) { infoOnKey(e, infoSaveName); });
+    var name = document.getElementById('info-name');
+    name.addEventListener('keydown', function (e) { infoOnKey(e, infoSaveName); });
+    name.addEventListener('input', function () { infoHold(name, (infoRule() || {}).MAX_BYTES || 64); });
 
     var description = document.getElementById('info-description');
     description.addEventListener('keydown', function (e) { infoOnKey(e, infoSaveDescription); });
     // While the cursor is in the box, not after it leaves: the number is
     // only useful to somebody deciding what to cut.
-    description.addEventListener('input', infoCount);
+    description.addEventListener('input', function () {
+      infoHold(description, (infoRule() || {}).DESCRIPTION_MAX_BYTES || 128);
+      infoCount();
+    });
+
+    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): the table reads the relays again when relay-rows says one
+    // changed; the two forms hear it themselves.
+    var rowsHeard = '';
+    var rowsStop = null;
+    var rowsTake = function (job) {
+      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!container.isConnected) { if (rowsStop) rowsStop(); return; }
+      var asJson = JSON.stringify(job.data.rows || []);
+      if (asJson === rowsHeard) return;
+      var first = !rowsHeard;
+      rowsHeard = asJson;
+      if (!first) infoLoadRelays();
+    };
+    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
+      rowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(rowsTake); }, onUpdate: rowsTake });
+    }
 
     // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this
     // disk and lands at once; the relay table is a probe of every

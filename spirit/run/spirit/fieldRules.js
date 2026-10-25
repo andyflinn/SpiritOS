@@ -251,6 +251,42 @@ function paragraphProblem(text) {
   return '';
 }
 
+// THE EMAIL RULE (goal/G40.10, box v20; Andy: "no fieldRules.js for emails?", and "254"). One address: no spaces,
+// one @, something on each side, at most 254 bytes, the mail standard's own maximum. Returns WHY, so a malformed
+// address is told what is wrong with it; the forms and the relay's join use this one rule.
+var EMAIL_MAX_BYTES = 254;
+
+function emailProblem(text) {
+  var s = typeof text === 'string' ? text.trim() : '';
+  if (!s) return 'an email address is needed';
+  if (/\s/.test(s)) return 'an email address has no spaces';
+  var at = s.split('@').length - 1;
+  if (at === 0) return 'an email address has an @';
+  if (at > 1) return 'an email address has one @, not ' + at;
+  if (s.charAt(0) === '@') return 'nothing before the @';
+  if (s.charAt(s.length - 1) === '@') return 'nothing after the @';
+  if (byteLength(s) > EMAIL_MAX_BYTES) return 'an email address is at most ' + EMAIL_MAX_BYTES + ' bytes';
+  return '';
+}
+
+// A FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20; Andy: "keep counting the number of characters typed beyond the
+// limit, instead of just blocking input past the limit"). The text cut at maxBytes, never through a character: what a
+// field holds once its limit is reached, so typing past it adds nothing.
+function clip(text, maxBytes) {
+  var s = typeof text === 'string' ? text : '';
+  if (byteLength(s) <= maxBytes) return s;
+  var out = '';
+  var n = 0;
+  var chars = Array.from(s);
+  for (var i = 0; i < chars.length; i += 1) {
+    var b = byteLength(chars[i]);
+    if (n + b > maxBytes) break;
+    out += chars[i];
+    n += b;
+  }
+  return out;
+}
+
 // Node gets everything; the browser gets the rules and nothing that would
 // need a filesystem. Same split, and the same reason, as ownerBadge.js.
 var RULE = {
@@ -266,6 +302,9 @@ var RULE = {
   spokenOk: spokenOk,
   leverOk: leverOk,
   byteLength: byteLength,
+  EMAIL_MAX_BYTES: EMAIL_MAX_BYTES,
+  emailProblem: emailProblem,
+  clip: clip,
 };
 
 if (typeof process !== 'undefined' && !!process.versions && !!process.versions.node) {

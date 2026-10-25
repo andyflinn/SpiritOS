@@ -4119,7 +4119,9 @@ function createRelay(rootDir, deps) {
     var mail = String(email == null ? '' : email).trim().toLowerCase();
     var p = Number(port);
     if (!key) return { ok: false, status: 400, error: 'a join needs the key that asks' };
-    if (Buffer.byteLength(mail, 'utf8') > 254 || !/^[^\s@]+@[^\s@]+$/.test(mail)) return { ok: false, status: 400, error: 'an email is one address with an @' };
+    // The one email rule (fieldRules.emailProblem, goal/G40.10), the forms' as well.
+    var badMail = fieldRules.emailProblem(mail);
+    if (badMail) return { ok: false, status: 400, error: badMail };
     if (!(p >= 1 && p <= 65535 && Math.floor(p) === p)) return { ok: false, status: 400, error: 'a join needs the port of the node' };
     // A SEATED KEY JOINING AGAIN CHANGES ITS EMAIL (goal/G30.1, box v28): the same mail, link and code, 10 minutes
     // and caps; it takes no seat, so a full relay does not refuse it.

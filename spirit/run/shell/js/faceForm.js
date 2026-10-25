@@ -10,7 +10,8 @@
 //   row(relays, opts)  -> the form's markup, or '' with no relay to offer: relays are relay rows (url, label, face,
 //                         email, emailVerified); opts.fixed, a url, fixes the dropdown to that relay; opts.picked.
 //   mount(box, opts)   -> draws the row and asks: opts.relays, opts.fixed, opts.reload() (Promise, after a face is
-//                         confirmed), opts.escape.
+//                         confirmed), opts.escape. It hears relay-rows itself and redraws when the relays it offers
+//                         changed (goal/G40.10, box v21).
 
 (function () {
   function esc(s) {
@@ -69,6 +70,26 @@
     draw(was ? was.value : '', typed && typed.value ? typed.value : null);
     if (box._spFaceBound) return;
     box._spFaceBound = true;
+    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, heard here; the form redraws only when the relays it
+    // offers changed (a verified email or a face anywhere), keeps what is picked and typed, and lets go once its box has
+    // left the page.
+    var heard = JSON.stringify(offered(box._spFace.relays, { fixed: box._spFace.fixed }));
+    var stop = null;
+    function take(job) {
+      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!box.isConnected) { if (stop) stop(); return; }
+      var rows = Array.isArray(job.data.rows) ? job.data.rows : [];
+      var asJson = JSON.stringify(offered(rows, { fixed: box._spFace.fixed }));
+      if (asJson === heard) return;
+      heard = asJson;
+      box._spFace.relays = rows;
+      var pick = box.querySelector('.sp-face-relay');
+      var name = box.querySelector('.sp-face-name');
+      draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
+    }
+    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
+      stop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
+    }
 
     var busy = false;
     function save() {
