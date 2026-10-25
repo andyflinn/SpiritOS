@@ -13,7 +13,7 @@
 // field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped.
 //
 // It goes exactly this far: the last step is a link to his face URL, ticked once he has opened it, kept as this app's
-// own override (faceOpened); the face answers once the face switch is built, which is not in this item.
+// own state (faceOpened, relay-state/shell/join/state.json); the face answers once the face switch is built.
 
 var joinApi = null;
 var joinHanded = null;    // what the shell last handed: { facts, open, done }
@@ -102,7 +102,6 @@ function joinForm(step, box) {
     var mount = function () {
       el.faceForm.mount(box, {
         seats: joinRelayRow ? [joinRelayRow] : [],
-        callDialog: function (id, params) { return joinApi.callDialog(id, params); },
         reload: function () { return Promise.resolve(); },
         idPrefix: 'join-face-',
         escape: joinApi.escapeHtml,
@@ -123,9 +122,10 @@ function joinForm(step, box) {
         '<div class="job-manifest-note">Your face does not answer yet: the relay\'s face switch is still being built.</div>'
       : '<div class="job-manifest-note">No face name yet.</div>';
     var link = document.getElementById('join-face-link');
-    // Kept as this app's own override; the shell hands the steps again with it (box v42).
+    // Kept as this app's own state, relay-state/shell/join/ (goal/G40.10: shell-app state out of git); the shell reads it
+    // again when the file tree says it changed, and hands the steps again.
     if (link) link.addEventListener('click', function () {
-      joinApi.setAppOverride('shell/join', { faceOpened: true });
+      spirit.fs.saveFile('relay-state/shell/join/state.json', JSON.stringify({ faceOpened: true }) + '\n');
     });
   }
 }

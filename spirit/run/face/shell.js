@@ -475,6 +475,50 @@
     look();
   }
 
+  // ── JOIN, DECIDED HERE (goal/G40.10; Andy: "it doesn't take the screen in the old shell, it just places the icon next
+  // to the other icons ... screen is only taken over when the emails join-link navigates directly into the join app") ──
+  // At home only: the face shell hears the node's join-steps job, works out the open step with joinSteps.js, and hands
+  // Join its steps (onSteps) on mount and on every change; Join decides nothing. While a step is open Join is an icon on
+  // the home screen beside the apps, named and marked by the open step. Its one fact, face opened, is its own state.
+  var JOIN = 'shell/join';
+  var JOIN_STATE = 'relay-state/shell/join/state.json';
+  var joinJob = null;          // the join-steps job's data
+  var joinStepList = null;     // Join's manifest's steps
+  var joinFaceOpened = false;
+  function joinNow() {
+    var S = window.spirit.elements && window.spirit.elements.joinSteps;
+    if (!S || !joinJob || !joinStepList) return null;
+    var facts = S.fromJob(joinJob, joinFaceOpened);
+    var open = S.current(joinStepList, facts);
+    return { facts: facts, open: open ? open.until : null, done: joinStepList.map(function (st) { return S.done(st, facts); }) };
+  }
+  function joinOpenStep() {
+    var now = joinNow();
+    if (!now || !now.open) return null;
+    return joinStepList.filter(function (st) { return st.until === now.open; })[0] || null;
+  }
+  function handJoin() {
+    var app = apps[JOIN];
+    var now = joinNow();
+    if (now && app && app.behavior && typeof app.behavior.onSteps === 'function') { try { app.behavior.onSteps(now); } catch (e) { /* Join's own fault */ } }
+  }
+  function joinChanged() { if (!desktop.hidden) drawDesktop(); handJoin(); }
+  function joinReadFact() {
+    return Promise.resolve(spirit.fs.loadFile(JOIN_STATE)).then(function (text) {
+      var st = {};
+      try { st = JSON.parse(text || '{}') || {}; } catch (e) { st = {}; }
+      joinFaceOpened = st.faceOpened === true;
+    }, function () { joinFaceOpened = false; });
+  }
+  function startJoin() {
+    fileText(JOIN + '/join.json').then(function (m) { joinStepList = (JSON.parse(m) || {}).steps || []; joinChanged(); }, function () { joinStepList = []; });
+    joinReadFact().then(joinChanged);
+    var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); } };
+    events({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
+    // Join's fact changed (it writes its state file): the file tree says so, and it is read again.
+    if (window.spirit.data) window.spirit.data.watch('files/' + JOIN_STATE, function () { joinReadFact().then(joinChanged); });
+  }
+
   function loadApp(id) {
     if (apps[id] && apps[id].behavior) return Promise.resolve(apps[id]);
     var name = id.split('/').pop();
@@ -566,6 +610,7 @@
         app.behavior.mount(box, page.api);
         if (typeof app.behavior.open === 'function') app.behavior.open(params);
         if (typeof app.behavior.render === 'function') app.behavior.render();
+        if (id === JOIN) handJoin();
       } });
     }).catch(function (e) { say(String(e.message || e)); });
   }
@@ -606,6 +651,9 @@
     // At home there is nothing to log in to (goal/G40.10; Andy: "on loopback, home is not required, period"): the face's
     // apps alone.
     if (step && !(state && state.home)) icon(step.icon, step.name, openLogin);
+    // At home, Join beside the apps while a step is open, as its open step (goal/G40.10).
+    var js = state && state.home ? joinOpenStep() : null;
+    if (js) icon(((window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {})[js.icon] || '', js.name, function () { openApp(JOIN, null); });
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
       if (m.hidden || m.type === 'dialog') return;
@@ -695,6 +743,7 @@
       link.loaded = true;
       openStream(false);
       listApps();
+      if (home) { startJoin(); joinFromLink(); }
     }).then(function () { hand(); }, function (e) {
       link.starting = false;
       setConnected(false);
@@ -722,6 +771,24 @@
   // THE LOGIN APP HANDS ITSELF OVER on the one spirit object, nothing on window (goal/G40.7).
   (window.spirit.shell = window.spirit.shell || {}).activateLogin = function (behavior) { login = behavior; mountLogin(); };
 
+  // THE MAILED JOIN LINK (goal/G40.10; Andy: "break the join feature in the old shell and have that only work in the
+  // face-shell"): the relay mails /face.html?join=<code>&app=join. Read here, before the address is cleared; at home, once
+  // the face is up, the code goes to relay.join and the app named beside it opens, whatever the join said.
+  var joinCode = '';
+  var appFromAddress = '';
+  try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; appFromAddress = q.get('app') || ''; } catch (e) { joinCode = ''; }
+  function joinFromLink() {
+    var openNamed = function () { if (/^[A-Za-z0-9_-]+$/.test(appFromAddress)) openApp('shell/' + appFromAddress, null); };
+    if (!joinCode) { openNamed(); return; }
+    ask('relay.join', { url: '', email: '', code: joinCode }).then(function (r) {
+      var b = (r && r.body) || {};
+      // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31).
+      say(b.ok && r.status === 200 ? 'Email address verified on ' + (b.url || 'the relay') + '.'
+        : b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
+        : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
+      openNamed();
+    }, function () { say('The join did not finish: this node did not answer.'); openNamed(); });
+  }
   var fromLink = (window.location.search || '').length > 1;
   if (fromLink) { try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the token is spent */ } }
   fetch('/face/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (m) {
@@ -730,6 +797,6 @@
     return refresh();
   }).then(function () {
     // Logged out, the login app takes the screen at once, as Join does on a new node; the mailed link opens it too.
-    if (fromLink || !state.loggedIn) openLogin();
+    if (!(state && state.home) && (fromLink || !state.loggedIn)) openLogin();
   });
 }());

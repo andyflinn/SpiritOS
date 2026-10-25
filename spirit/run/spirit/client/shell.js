@@ -2872,36 +2872,16 @@
   // on top of a node that has one.
   askNodeName();
 
-  // ── OPENED FROM THE JOIN MAIL (goal/G30.2) ───────────────────────────
-  //
-  // The relay mailed the user a link to this node, http://127.0.0.1:<port>?join=<code>. Opened here, the node sends
-  // the code back to the relay it asked (relay.join with the code); a right code takes the seat at once. The code
-  // leaves the address bar first, so a reload or a shared screenshot does not carry it.
-  // AN APP NAMED IN THE ADDRESS OPENS ON LOAD (goal/G30.1, box v39): ?app=<folder>, so the mail's link
-  // (?join=<code>&app=join) leads straight back into the Join app. Read before the address is cleared below, and opened
-  // once the join has answered, so the app shows the seat it just took.
+  // THE JOIN FROM THE MAILED LINK STOOD HERE: the link leads to the face only now (goal/G40.10; Andy: "break the join
+  // feature in the old shell and have that only work in the face-shell"). AN APP NAMED IN THE ADDRESS still opens on load
+  // (goal/G30.1, box v39): ?app=<folder>.
   var appFromAddress = '';
   try { appFromAddress = new URLSearchParams(window.location.search).get('app') || ''; } catch (e) { appFromAddress = ''; }
   function openAppFromAddress() {
     if (!/^[A-Za-z0-9_-]+$/.test(appFromAddress) || !apps['shell/' + appFromAddress]) return;
     launchApp('shell/' + appFromAddress);
   }
-  (function joinFromLink() {
-    var code = '';
-    try { code = new URLSearchParams(window.location.search).get('join') || ''; } catch (e) { code = ''; }
-    if (!code) { openAppFromAddress(); return; }
-    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the code is spent anyway */ }
-    Promise.resolve(spirit.core.ask('relay.join', { url: '', email: '', code: code })).then(function (r) {
-      // The app named beside the code opens once the join has answered, whatever it said.
-      setTimeout(openAppFromAddress, 0);
-      var b = (r && r.body) || {};
-      // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31); the node's status is the
-      // HTTP one.
-      if (b.ok && r.status === 200) { window.alert('Email address verified on ' + (b.url || 'the relay') + '.'); return; }
-      window.alert(b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
-        : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
-    }, function () { window.alert('The join did not finish: this node did not answer.'); openAppFromAddress(); });
-  }());
+  openAppFromAddress();
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime): the page's one stream, the events family's
   // subscribe on spirit.js (goal/G40.6) ----

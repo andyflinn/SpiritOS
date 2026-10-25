@@ -221,7 +221,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
 
   // JOIN ON THE LOOPBACK FACE (goal/G40.10, box v4).
   test.subHeading('1f. Join on the loopback face: the face shell decides, the mailed link leads to the face only');
-  if (/\/face\.html\?join=/.test(code('spirit/relay.js')) && !/:'\s*\+\s*p\s*\+\s*'\?join='/.test(code('spirit/relay.js'))) test.check('the relay mails the face\'s address, /face.html?join=<code>&app=join');
+  // Read raw: the link holds http://, which the comment stripper would cut.
+  const relayRaw = fs.readFileSync(path.join(RUN, 'spirit', 'relay.js'), 'utf8');
+  if (/\/face\.html\?join='/.test(relayRaw) && !/\+ p \+ '\?join='/.test(relayRaw)) test.check('the relay mails the face\'s address, /face.html?join=<code>&app=join');
   else test.fail('the relay still mails the node\'s / for a join');
   if (!/get\('join'\)/.test(code('spirit/client/shell.js'))) test.check('the old shell\'s join from the link is gone');
   else test.fail('the old shell still takes the join code from its address');
