@@ -299,6 +299,9 @@ function createFaceHome(opts) {
     if (job.type === 'server-stats') return FACE_PRIORITY.stats;
     // The network search's rows (goal/G30.19), each one update, beside presence: Contacts on the face fills as at home.
     if (job.type === 'peer-search') return FACE_PRIORITY.presence;
+    // The relays this node lists (goal/G40.10, box v21; Andy: "onBoards face https://master.noderoutes.net/ did not
+    // update its relay dropdowns"): relay-rows, so the forms and Info on the face redraw as at home.
+    if (job.type === 'relay-rows') return FACE_PRIORITY.presence;
     if (/^process\/js\/[^/]+$/.test(String(job.module || '')) && job.app && typeof job.app === 'object') return FACE_PRIORITY.app;
     return 0;
   }
@@ -371,6 +374,8 @@ function createFaceHome(opts) {
       face.queue.push(FACE_PRIORITY.presence, { event: 'presence', data: { key: key, present: now[key].present === true, at: now[key].at } });
     });
     all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
+    // The relays as they stand now (relay-rows, goal/G40.10), so a face opened after a change starts from it.
+    all.forEach(function (j) { if (j.type === 'relay-rows') face.queue.push(FACE_PRIORITY.presence, { event: 'job-updated', data: j }); });
   }
 
   function close(url) {
