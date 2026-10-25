@@ -119,6 +119,36 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!onWindow.length && /\.seal\s*=/.test(code('face/seal.js')) && /spirit\.shell\b/.test(code('face/login/login.js'))) test.check('no window.faceSeal and no window.faceShell: the seal is spirit.seal, and the login app hands itself to spirit.shell');
   else test.fail('the face\'s globals: ' + short(onWindow));
 
+  // FACE BUGS (goal/G40.8): the box's requirements, each as it can be read off the code.
+  test.subHeading('1c. face bugs: no kernel in any app, one list, the contained app, the icons\' state');
+  const appScripts = fs.readdirSync(path.join(RUN, 'shell')).map(function (d) { return 'shell/' + d + '/' + d + '.js'; }).filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
+  const appsOnCore = appScripts.filter(function (f) { return /spirit\.core\b|\bcore\(\)\./.test(code(f)); });
+  if (!appsOnCore.length) test.check('no app script touches the kernel\'s object, so the face can open any of them (' + appScripts.length + ' read)');
+  else test.fail('app scripts still on the kernel: ' + short(appsOnCore));
+  const banned = (parts || []).filter(function (p) { return /listSearch\.js$|contactSelector\.js$|appHeader\.js$/.test(p); });
+  if (parts && !banned.length && !/shellCreateListSearch|listSearch/.test(code('shell/js/textView.js'))) test.check('listSearch, the contact selector and the header element are off the face\'s list of parts, and the text view builds on probabilitySearch, not listSearch');
+  else test.fail('listSearch on the face: parts ' + short(banned) + (/shellCreateListSearch|listSearch/.test(code('shell/js/textView.js')) ? ', the text view still on listSearch' : ''));
+  const ps = code('shell/js/probabilitySearch.js');
+  if (/['"]PageUp['"]/.test(ps) && /['"]PageDown['"]/.test(ps) && /ownerDocument\.addEventListener\(\s*['"]keydown['"]|document\.addEventListener\(\s*['"]keydown['"]/.test(ps)) test.check('the one list search takes up, down, home, end, page up and page down on the whole list, heard on the page, whether its field has focus or not');
+  else test.fail('the list keys: page up/down ' + (/['"]PageDown['"]/.test(ps) ? 'handled' : 'missing') + ', heard on the page ' + (/document\.addEventListener\(\s*['"]keydown['"]/.test(ps) ? 'yes' : 'no, only on the search\'s own container'));
+  if (/id="'\s*\+\s*pre\s*\+\s*'list"[^>]*overflow:\s*auto/.test(ps) && !/dropdown \? ';max-height:20em;overflow:auto' : ''/.test(ps)) test.check('every list scrolls inside its own box, not only a dropdown\'s');
+  else test.fail('a list in a pane has no scroll box of its own: only a dropdown\'s list gets overflow');
+  const faceCss = fs.readFileSync(path.join(RUN, 'face', 'face.css'), 'utf8');
+  if (/THE CONTAINED APP/.test(faceCss) && /overflow:\s*hidden/.test(faceCss) && /100vh|100dvh|height:\s*100%/.test(faceCss)) test.check('the face is a contained app: the window is the screen, nothing but a list or a viewer scrolls (face.css)');
+  else test.fail('the face sets no contained layout in face.css');
+  const relayApi = fs.readFileSync(path.join(RUN, 'spirit', 'relay', 'api.js'), 'utf8');
+  if (/names\s*:/.test(relayApi) && /status\s*:/.test(relayApi)) test.check('the relays\' status is a name of the relay family\'s api.js (spirit.relay.status)');
+  else test.fail('the relay family has no status name');
+  const iconsApp = code('shell/icons/icons.js');
+  if (/relay-state\/shell\/icons\/iconSet\.json/.test(iconsApp) && /shell\/json\/iconSet\.json/.test(code('shell/js/iconSelector.js')) && !/iconIndex\.ICON/.test(code('shell/js/iconSelector.js'))) test.check('the icons app keeps its set in relay-state/shell/icons/, and the icon picker offers shell/json/iconSet.json');
+  else test.fail('the icons: the app on ' + short((iconsApp.match(/['"][^'"]*iconSet\.json['"]/) || [''])[0]) + ', the picker ' + (/shell\/json\/iconSet\.json/.test(code('shell/js/iconSelector.js')) ? 'on shell/json' : 'not on shell/json/iconSet.json'));
+  const gate = spawnSync(process.execPath, ['-e', "const f = require('./spirit/fileSystem.js'); process.stdout.write(JSON.stringify([f.fileWritable('relay-state/shell/icons/iconSet.json'), f.fileServable('relay-state/shell/icons/iconSet.json'), f.fileWritable('relay-state/identity.json'), f.fileServable('relay-state/identity.json'), f.fileWritable('relay-state/shell/../identity.json'), f.fileServable('relay-state/shell/x/relay-state/identity.json')]))"], { cwd: RUN, encoding: 'utf8' });
+  if (gate.stdout === '[true,true,false,false,false,false]') test.check('the node\'s file gate opens relay-state/shell/<app>/ to its app, and nothing else under relay-state');
+  else test.fail('the file gate for relay-state/shell/: ' + short(gate.stdout + gate.stderr));
+  const isCore = spawnSync(process.execPath, ['-e', "process.stdout.write(String(require('./spirit/coreFiles.js').isCore('spirit/run/shell/json/iconSet.json', require('path').resolve('..', '..'))))"], { cwd: RUN, encoding: 'utf8' });
+  if (isCore.stdout === 'true') test.check('shell/json/ is core: shell/json/iconSet.json is a core file');
+  else test.fail('shell/json/iconSet.json is not core: ' + short(isCore.stdout + isCore.stderr));
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
