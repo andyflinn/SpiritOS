@@ -97,6 +97,26 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));
 
+  // THE FACE WITHOUT kernel.js (goal/G40.7; Andy: "i just want to get rid of kernel.js in all of the face right now").
+  test.subHeading('1b. the face loads no kernel.js, reads no index.html, and puts nothing on window but spirit');
+  const faceShell = code('face/shell.js');
+  const listAt = /var FACE_PARTS = (\[[^\]]*\])/.exec(faceShell);
+  let parts = null;
+  try { parts = listAt ? JSON.parse(listAt[1].replace(/'/g, '"').replace(/,\s*\]/, ']')) : null; } catch (e) { parts = null; }
+  if (parts && parts.length && parts.indexOf('spirit/kernel.js') === -1 && !/index\.html/.test(faceShell)) test.check('the face shell fetches its own list of ' + parts.length + ' parts from home (FACE_PARTS), kernel.js not among them, and reads no index.html');
+  else test.fail('the face\'s parts: ' + (parts ? 'kernel.js on the list or index.html read' : 'no FACE_PARTS list in face/shell.js') + (/index\.html/.test(faceShell) ? ', still reads index.html' : ''));
+  const missing = (parts || []).filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
+  if (parts && !missing.length) test.check('every part on the face\'s list is there');
+  else test.fail('parts not there: ' + short(missing));
+  const FACE_APPS = ['shell/contacts/contacts.js', 'shell/files/files.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/mediaViewer/mediaViewer.js'];
+  const faceLoads = ['face/shell.js', 'face/seal.js', 'face/login/login.js'].concat(FACE_APPS, (parts || []).filter(function (p) { return /\.js$/.test(p); }));
+  const onCore = faceLoads.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /\.core\b/.test(code(f)); });
+  if (parts && !onCore.length) test.check('nothing the face loads touches the kernel\'s object: its shell, seal, login, apps and ' + parts.length + ' parts (' + faceLoads.length + ' files read)');
+  else test.fail('still on the kernel, on a face: ' + short(onCore));
+  const onWindow = all.filter(function (f) { return /\bfaceSeal\b|\bfaceShell\b/.test(code(f)); });
+  if (!onWindow.length && /\.seal\s*=/.test(code('face/seal.js')) && /spirit\.shell\b/.test(code('face/login/login.js'))) test.check('no window.faceSeal and no window.faceShell: the seal is spirit.seal, and the login app hands itself to spirit.shell');
+  else test.fail('the face\'s globals: ' + short(onWindow));
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
