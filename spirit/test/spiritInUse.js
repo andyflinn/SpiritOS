@@ -229,22 +229,26 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else test.fail('the old shell still takes the join code from its address');
   if (/get\('join'\)/.test(faceShell) && /relay\.join/.test(faceShell)) test.check('the face shell reads the mailed link: the code to relay.join, then Join opens');
   else test.fail('the face shell does not read a join link');
-  // The link's join, driven (Andy on his new node: the link did not join): its arguments pass spirit.js's own check for
-  // relay.join, so the call leaves the page; the relay is the one the join-steps job names, the code the link's.
+  // THE MAILED LINK NAMES ITS RELAY (goal/G40.10, box v15; Andy: "this email does not specify the router-ID to which my
+  // email confirmation is supposed to go"). The relay knows its own key, not its web address: the link carries the key,
+  // and the face sends the code to the relay this node lists under that key, never to the first relay it lists.
+  if (/'&relay=' \+ encodeURIComponent\(relayPublicKey\(\)/.test(relayRaw)) test.check('the relay\'s join mail names the relay: &relay=<its key> in the link');
+  else test.fail('the relay\'s join mail does not name the relay that sent it');
+  // Driven: two relays listed, the link's key picks the second; a key this node does not list picks none.
   const linkRun = spawnSync(process.execPath, ['-e', [
     "global.window = {}; require(process.argv[1]); var S = window.spirit.elements.joinSteps;",
     "var spec = require(process.argv[2]).verbs.join;",
-    "var a = typeof S.linkJoin === 'function' ? S.linkJoin('abc', { relayUrl: 'https://noderoutes.net' }) : null;",
-    "var none = typeof S.linkJoin === 'function' ? S.linkJoin('abc', {}) : 'missing';",
-    "var keys = a ? Object.keys(a).filter(function (k) { return !Object.prototype.hasOwnProperty.call(spec, k); }) : [];",
-    "process.stdout.write(JSON.stringify({ a: a, extra: keys, none: none }));"].join('\n'), path.join(RUN, 'shell', 'js', 'joinSteps.js'), path.join(RUN, 'spirit', 'relay', 'api.js')], { encoding: 'utf8' });
-  let linkJoin = null;
-  try { linkJoin = JSON.parse(linkRun.stdout); } catch (e) { linkJoin = { said: linkRun.stdout + linkRun.stderr }; }
-  if (linkJoin && linkJoin.a && /^https?:\/\/[^\s]+$/.test(linkJoin.a.url) && linkJoin.a.url === 'https://noderoutes.net' && linkJoin.a.code === 'abc' && typeof linkJoin.a.email === 'string' && !linkJoin.extra.length && linkJoin.none === null)
-    test.check('the link\'s join, driven: it goes to the relay the join-steps job names, with an http address spirit.js lets through, and waits while the job names none');
-  else test.fail('the link\'s join, driven: ' + short(linkJoin));
-  if (/linkJoin\(/.test(faceShell) && !/url: ''/.test(faceShell)) test.check('the face shell sends the link\'s join through linkJoin, never with an empty relay address');
-  else test.fail('the face shell still sends the link\'s join with an empty relay address');
+    "var items = [{ key: 'https://spirit.example', label: JSON.stringify({ relayKey: 'KEY-A' }) }, { key: 'https://noderoutes.example', label: JSON.stringify({ relayKey: 'KEY-B' }) }];",
+    "var url = typeof S.linkRelay === 'function' ? S.linkRelay('KEY-B', items) : 'missing';",
+    "var none = typeof S.linkRelay === 'function' ? S.linkRelay('KEY-C', items) : 'missing';",
+    "process.stdout.write(JSON.stringify({ url: url, none: none, urlRule: String(spec.url), gone: typeof S.linkJoin }));"].join('\n'), path.join(RUN, 'shell', 'js', 'joinSteps.js'), path.join(RUN, 'spirit', 'relay', 'api.js')], { encoding: 'utf8' });
+  let linkRelay = null;
+  try { linkRelay = JSON.parse(linkRun.stdout); } catch (e) { linkRelay = { said: linkRun.stdout + linkRun.stderr }; }
+  if (linkRelay && linkRelay.url === 'https://noderoutes.example' && linkRelay.none === '' && linkRelay.gone === 'undefined')
+    test.check('the link\'s relay, driven: of two relays listed, the one under the link\'s key; none for a key not listed; linkJoin gone');
+  else test.fail('the link\'s relay, driven: ' + short(linkRelay));
+  if (/get\('relay'\)/.test(faceShell) && /linkRelay\(/.test(faceShell) && !/linkJoin|linkWaiting|url: ''/.test(faceShell)) test.check('the face shell reads the link\'s relay and sends the code to it, never to the first relay listed');
+  else test.fail('the face shell does not send the link\'s code to the relay the link names');
   if (/'join-steps'/.test(faceShell) && /joinSteps/.test(faceShell) && /onSteps/.test(faceShell)) test.check('the face shell decides Join\'s open step from the node\'s join-steps job (joinSteps.js) and hands Join its steps');
   else test.fail('the face shell does not decide Join\'s steps');
   const joinApp = code('shell/join/join.js');
@@ -264,6 +268,44 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (infoCalls.length && !missingApi.length && /spirit\.relay\.status\(/.test(infoCode) && (parts || []).indexOf('shell/js/faceForm.js') !== -1 && (parts || []).indexOf('spirit/fieldRules.js') !== -1)
     test.check('everything Info calls the face gives it: ' + infoCalls.join(', ') + ', spirit.relay.status, the face form and the field rules');
   else test.fail('Info calls what the face does not give it: ' + short(missingApi));
+  // INFO'S FIXES (box v15): the foot gone, key and sentence; the email form in Info, above the face form, with its own
+  // relay picker (joinForm's general form); no words sending anyone to Natter.
+  if (!/info-foot|info-key|infoCard\.publicKey|caption it wears/.test(infoCode)) test.check('Info\'s foot is gone: no key and no sentence about it');
+  else test.fail('Info still draws its foot with the key');
+  const joinFormCode = code('shell/js/joinForm.js');
+  const emailAt = infoCode.indexOf('info-email');
+  const faceAt = infoCode.indexOf('info-face"');
+  if (/function mount\(box, opts\)/.test(joinFormCode) && /<select/.test(joinFormCode) && /joinForm\.mount\(/.test(infoCode) && emailAt !== -1 && faceAt !== -1 && emailAt < faceAt)
+    test.check('Info shows the email form above the face form: joinForm\'s general form, mount, with its own relay picker');
+  else test.fail('Info has no email form above the face form' + (/function mount\(box, opts\)/.test(joinFormCode) ? '' : ', and joinForm has no general form with a picker'));
+  if (!/Natter/.test(fs.readFileSync(path.join(RUN, 'shell', 'js', 'faceForm.js'), 'utf8').replace(/^\s*\/\/.*$/mg, ''))) test.check('the face form sends nobody to Natter');
+  else test.fail('the face form still says to change the email in Natter');
+
+  // NO KEYS IN ANY FACE APP (box v15; Andy: "remove ANY indication of keys from all user interfaces"): no app the face
+  // shows, and no element it loads, puts a key or a sentence about one on the screen.
+  const faceApps = fs.readdirSync(path.join(RUN, 'shell')).filter(function (d) {
+    try { return JSON.parse(fs.readFileSync(path.join(RUN, 'shell', d, d + '.js.sidecar.json'), 'utf8')).face.app === true; } catch (e) { return false; }
+  }).map(function (d) { return 'shell/' + d + '/' + d + '.js'; });
+  const onScreen = faceApps.concat((parts || []).filter(function (p) { return /^shell\/js\//.test(p); }));
+  const keyWords = onScreen.filter(function (f) {
+    if (!fs.existsSync(path.join(RUN, f))) return false;
+    const strings = (code(f).match(/'[^'\n]*'/g) || []).join(' ');
+    return /\bits key\b|what its key is|this node's key|\bkey ending\b|publicKey\s*\+|textContent = [a-zA-Z.]*publicKey/i.test(strings + ' ' + code(f).match(/textContent = [^;]*/g));
+  });
+  if (faceApps.length >= 6 && !keyWords.length) test.check('no key on any face screen: ' + faceApps.length + ' face apps and the elements the face loads draw none');
+  else test.fail('keys on face screens: ' + short(keyWords));
+
+  // NO NAMELESS ROWS IN CONTACTS (box v15): a key the relay reports present is no row until it has a name.
+  const listRun = spawnSync(process.execPath, ['-e', [
+    "global.window = { spirit: { elements: {} } }; global.document = { createElement: function () { return {}; } };",
+    "require(process.argv[1]); var F = window.spirit.elements.contactList && window.spirit.elements.contactList.filters;",
+    "if (!F) { process.stdout.write('no filters'); process.exit(0); }",
+    "function shows(row) { return F.every(function (f) { return typeof f.test !== 'function' || Number(f.test(row, f.toggle ? false : 'all')) > 0; }); }",
+    "process.stdout.write(JSON.stringify({ bare: shows({ present: true }), person: shows({ name: 'Bert', present: true }), relay: shows({ name: 'NodeRoutes', kind: 'relay', relay: true }) }));"].join('\n'), path.join(RUN, 'shell', 'js', 'contacts', 'listElement.js')], { encoding: 'utf8' });
+  let named = null;
+  try { named = JSON.parse(listRun.stdout); } catch (e) { named = { said: listRun.stdout + listRun.stderr }; }
+  if (named && named.bare === false && named.person === true && named.relay === true) test.check('Contacts, driven: a key with only its presence is no row; a person and a relay are');
+  else test.fail('Contacts shows nameless rows: ' + short(named));
 
   // THE OWNER'S SEAT, ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner has a
   // seat"). The relay seats him at boot (goal/G30.7); his node notes that seat, under what the relay calls him, when the
@@ -272,7 +314,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const ownerHome = setupRelayFakes('spiritInUseOwner').andy;
   const seatRun = spawnSync(process.execPath, ['-e', [
     "const k = require('./spirit/relayKeys'); const b = require('./spirit/ownerBadge'); const url = 'https://owned.example';",
-    "b.addRelay(process.cwd(), url, 'owned', '');",
+    "b.addRelay(process.cwd(), url, 'owned', ''); k.accept(process.cwd(), url, 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=');",
     "const before = k.seatLabel(process.cwd(), url);",
     "const noted = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
     "const again = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
