@@ -209,6 +209,17 @@
   }
 
   function ask(verb, args) {
+    // AT HOME THE FACE IS A LOCAL CLIENT (goal/G40.10; Andy: "why would there be ANY door on the home node for the relay
+    // face"): it asks its node through spirit.js, the family's verb by its name, as every local client does; the relay's
+    // /face/call and the seal are a relay's only. Answered as a call is answered here, { status, text, body }.
+    if (state && state.home) {
+      var name = String(verb);
+      var dot = name.indexOf('.');
+      var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;
+      var fn = fam && typeof fam[name.slice(dot + 1)] === 'function' ? fam[name.slice(dot + 1)] : null;
+      if (!fn) return Promise.resolve({ status: 400, text: '', body: { ok: false, code: 'no-such-verb', error: 'no verb ' + name } });
+      return spirit.outcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? '' : JSON.stringify(o.body), body: o.body }; });
+    }
     if (String(verb) === 'fs.save' && args && typeof args.content === 'string' && new TextEncoder().encode(args.content).length > UPLOAD_PART) {
       return uploadSave(args).then(function (r) {
         var text = bytesText(r.bytes);
@@ -261,6 +272,16 @@
   // The kernel's jobs.subscribe on a face (window.spirit.transport.events): what is known now, then every update.
   function events(handlers) {
     var h = handlers || {};
+    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.events (goal/G40.10): there is no face stream on loopback.
+    // The jobs as they come are kept here too, so the apps read them as on a relay.
+    if (state && state.home) {
+      return spirit.events.subscribe({
+        onSnapshot: function (jobs) { (jobs || []).forEach(function (j) { if (j && j.id) jobsById[j.id] = j; }); if (h.onSnapshot) h.onSnapshot(jobsList()); },
+        onUpdate: function (job) { if (job && job.id) jobsById[job.id] = job; if (h.onUpdate) h.onUpdate(job); },
+        onDelete: function (id) { delete jobsById[id]; if (h.onDelete) h.onDelete(id); },
+        onConnection: h.onConnection, onRelayEvent: h.onRelayEvent, onContactRename: h.onContactRename, onPacket: h.onPacket,
+      });
+    }
     subscribers.push(h);
     if (h.onSnapshot) { try { h.onSnapshot(jobsList()); } catch (e) { /* one app's fault */ } }
     if (h.onConnection) { try { h.onConnection(link.up); } catch (e) { /* one app's fault */ } }
@@ -582,7 +603,9 @@
     var h = handed();
     var step = steps.filter(function (s) { return s.until === h.open; })[0] || steps[steps.length - 1];
     desktop.innerHTML = '';
-    if (step) icon(step.icon, step.name, openLogin);
+    // At home there is nothing to log in to (goal/G40.10; Andy: "on loopback, home is not required, period"): the face's
+    // apps alone.
+    if (step && !(state && state.home)) icon(step.icon, step.name, openLogin);
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
       if (m.hidden || m.type === 'dialog') return;
