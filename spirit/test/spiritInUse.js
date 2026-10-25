@@ -229,6 +229,22 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else test.fail('the old shell still takes the join code from its address');
   if (/get\('join'\)/.test(faceShell) && /relay\.join/.test(faceShell)) test.check('the face shell reads the mailed link: the code to relay.join, then Join opens');
   else test.fail('the face shell does not read a join link');
+  // The link's join, driven (Andy on his new node: the link did not join): its arguments pass spirit.js's own check for
+  // relay.join, so the call leaves the page; the relay is the one the join-steps job names, the code the link's.
+  const linkRun = spawnSync(process.execPath, ['-e', [
+    "global.window = {}; require(process.argv[1]); var S = window.spirit.elements.joinSteps;",
+    "var spec = require(process.argv[2]).verbs.join;",
+    "var a = typeof S.linkJoin === 'function' ? S.linkJoin('abc', { relayUrl: 'https://noderoutes.net' }) : null;",
+    "var none = typeof S.linkJoin === 'function' ? S.linkJoin('abc', {}) : 'missing';",
+    "var keys = a ? Object.keys(a).filter(function (k) { return !Object.prototype.hasOwnProperty.call(spec, k); }) : [];",
+    "process.stdout.write(JSON.stringify({ a: a, extra: keys, none: none }));"].join('\n'), path.join(RUN, 'shell', 'js', 'joinSteps.js'), path.join(RUN, 'spirit', 'relay', 'api.js')], { encoding: 'utf8' });
+  let linkJoin = null;
+  try { linkJoin = JSON.parse(linkRun.stdout); } catch (e) { linkJoin = { said: linkRun.stdout + linkRun.stderr }; }
+  if (linkJoin && linkJoin.a && /^https?:\/\/[^\s]+$/.test(linkJoin.a.url) && linkJoin.a.url === 'https://noderoutes.net' && linkJoin.a.code === 'abc' && typeof linkJoin.a.email === 'string' && !linkJoin.extra.length && linkJoin.none === null)
+    test.check('the link\'s join, driven: it goes to the relay the join-steps job names, with an http address spirit.js lets through, and waits while the job names none');
+  else test.fail('the link\'s join, driven: ' + short(linkJoin));
+  if (/linkJoin\(/.test(faceShell) && !/url: ''/.test(faceShell)) test.check('the face shell sends the link\'s join through linkJoin, never with an empty relay address');
+  else test.fail('the face shell still sends the link\'s join with an empty relay address');
   if (/'join-steps'/.test(faceShell) && /joinSteps/.test(faceShell) && /onSteps/.test(faceShell)) test.check('the face shell decides Join\'s open step from the node\'s join-steps job (joinSteps.js) and hands Join its steps');
   else test.fail('the face shell does not decide Join\'s steps');
   const joinApp = code('shell/join/join.js');
