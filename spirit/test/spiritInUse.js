@@ -219,6 +219,20 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/state && state\.home/.test(drawFn)) test.check('at home the desktop draws no login and no home step, only the face\'s apps');
   else test.fail('at home the desktop still draws the login step\'s icon');
 
+  // JOIN ON THE LOOPBACK FACE (goal/G40.10, box v4).
+  test.subHeading('1f. Join on the loopback face: the face shell decides, the mailed link leads to the face only');
+  if (/\/face\.html\?join=/.test(code('spirit/relay.js')) && !/:'\s*\+\s*p\s*\+\s*'\?join='/.test(code('spirit/relay.js'))) test.check('the relay mails the face\'s address, /face.html?join=<code>&app=join');
+  else test.fail('the relay still mails the node\'s / for a join');
+  if (!/get\('join'\)/.test(code('spirit/client/shell.js'))) test.check('the old shell\'s join from the link is gone');
+  else test.fail('the old shell still takes the join code from its address');
+  if (/get\('join'\)/.test(faceShell) && /relay\.join/.test(faceShell)) test.check('the face shell reads the mailed link: the code to relay.join, then Join opens');
+  else test.fail('the face shell does not read a join link');
+  if (/'join-steps'/.test(faceShell) && /joinSteps/.test(faceShell) && /onSteps/.test(faceShell)) test.check('the face shell decides Join\'s open step from the node\'s join-steps job (joinSteps.js) and hands Join its steps');
+  else test.fail('the face shell does not decide Join\'s steps');
+  const joinApp = code('shell/join/join.js');
+  if (/relay-state\/shell\/join\//.test(joinApp) && !/setAppOverride/.test(joinApp)) test.check('Join keeps its own fact (face opened) in relay-state/shell/join/, not the old shell\'s preferences');
+  else test.fail('Join still keeps its fact through the old shell\'s setAppOverride');
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
