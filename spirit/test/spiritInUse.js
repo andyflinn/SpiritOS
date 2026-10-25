@@ -163,6 +163,28 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (isCore.stdout === 'true') test.check('shell/json/ is core: shell/json/iconSet.json is a core file');
   else test.fail('shell/json/iconSet.json is not core: ' + short(isCore.stdout + isCore.stderr));
 
+  // NAVIGATION (goal/G40.8, box v17): the stack holds pages only; the shell does all the wrapping.
+  test.subHeading('1d. navigation: one wrapper, the shell wraps every app and every detail, no results handed back');
+  const NAV = 'shell/js/navigationWrapper.js';
+  const navCode = fs.existsSync(path.join(RUN, NAV)) ? code(NAV) : '';
+  if (navCode && /navigation/.test(navCode) && /push/.test(navCode) && (parts || []).indexOf(NAV) !== -1) test.check('shell/js/navigationWrapper.js pushes a page: its title and back in the title bar, the whole app area its box; the face loads it');
+  else test.fail('no navigationWrapper: ' + (navCode ? 'not on the face\'s parts' : NAV + ' is not there'));
+  if (/navigation\.push\(/.test(faceShell) && !/stack\.push\(/.test(faceShell)) test.check('the face shell opens every app by pushing its page through the wrapper, and keeps no app stack of its own');
+  else test.fail('the face shell still keeps its own app stack' + (/navigation\.push\(/.test(faceShell) ? '' : ' and pushes nothing through the wrapper'));
+  const DETAILS = ['shell/js/contactDetails/contactDetails.js', 'shell/js/natterDetails/natterDetails.js'];
+  const detailsThere = DETAILS.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /navigation\.push\(/.test(code(f)); });
+  const appsGone = !fs.existsSync(path.join(RUN, 'shell', 'contactsDetails')) && !fs.existsSync(path.join(RUN, 'shell', 'natterDetails'));
+  if (detailsThere.length === 2 && appsGone && DETAILS.every(function (f) { return (parts || []).indexOf(f) !== -1; })) test.check('contactsDetails and natterDetails are no apps any more: two shell elements in shell/js/, each pushing its page through the wrapper, on the face\'s parts');
+  else test.fail('the details: elements ' + short(detailsThere) + ', the old app folders ' + (appsGone ? 'gone' : 'still there'));
+  // The face's detail pages and their face callers: no result handed back or read, nothing opening them as apps. The
+  // Desk's own details run in the old shell only, which is not touched.
+  const FACE_NAV = DETAILS.concat(['shell/js/contacts/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/faceForm.js']);
+  const handBacks = FACE_NAV.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /setDialogResult\(|closeDialog\(\s*\{\s*\w|callDialog\(/.test(code(f)); });
+  if (!handBacks.length) test.check('the face\'s detail pages hand no result back, and their callers open them as pages, not by callDialog');
+  else test.fail('results handed back, or the details opened as apps: ' + short(handBacks));
+  if (!/data-icons="back"/.test(iconsApp) && /navigation\.push\(/.test(iconsApp)) test.check('Icons pushes its icon detail as a page; its own back row is gone');
+  else test.fail('Icons: ' + (/data-icons="back"/.test(iconsApp) ? 'still draws its own back row' : 'pushes nothing through the wrapper'));
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
