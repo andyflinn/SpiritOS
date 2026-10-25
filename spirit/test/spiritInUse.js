@@ -401,6 +401,24 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const ndNow = code('shell/js/natterDetails/natterDetails.js');
   if (/relay\.leave/.test(ndNow) && /Press again to leave/.test(ndNow)) test.check('the relay details offer Leave this relay, in two presses');
   else test.fail('the relay details offer no Leave');
+  // THE JOIN CARRIES THE CALLER'S LINK (box v25; Andy, line by line, then "WOW. proceed."): the first call is
+  // {email, URL, card}, URL the link the shell wants opened; the relay adds join=<code> and, last, relay=<key>, and
+  // mails it; it knows no loopback, no port, no page and no app name. The second call stays {code, card}.
+  const relayJoinFn = (code('spirit/relay.js').match(/function join\(publicKey, [^)]*\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/function join\(publicKey, email, url, card\)/.test(relayJoinFn) && /join=' \+ code \+ '&relay=' \+/.test(relayJoinFn) && !/127\.0\.0\.1|face\.html|app=join/.test(relayJoinFn))
+    test.check('the relay\'s join takes {email, URL, card} and mails <URL>&join=<code>&relay=<key>, knowing no loopback, port, page or app');
+  else test.fail('the relay still builds the join link itself');
+  const ppCode = code('spirit/peerPost.js');
+  if (/join: \{ email: [^}]*url: /.test(ppCode) && !/join: \{ email: [^}]*port: /.test(ppCode) && /joinConfirm: \{ code: String\(code\), card: card \}/.test(ppCode)) test.check('the node\'s first call is {email, url, card}; the second stays {code, card}');
+  else test.fail('the node\'s join calls are not {email, url, card} and {code, card}');
+  if (/join\s*:\s*\{[^}]*link\s*:\s*'url\?'/.test(code('spirit/relay/api.js')) && /body && body\.link|body\.link/.test((code('spirit/hub.js').match(/function relayJoin\(body, deps\) \{[\s\S]*?\n  \}/) || [''])[0])) test.check('relay.join carries the caller\'s link, and the node passes it to the relay');
+  else test.fail('relay.join does not carry the caller\'s link');
+  const joinFormNow2 = code('shell/js/joinForm.js');
+  if (/joinLink/.test(joinFormNow2) && /link:/.test(joinFormNow2) && /joinLink\s*[:=]/.test(faceShell)) test.check('the email form sends the link the shell gives it (spirit.shell.joinLink)');
+  else test.fail('the email form sends no link of the shell\'s');
+  const startFn = (faceShell.match(/function start\(\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/joinFromLink\(\)/.test(startFn) && !/if \(home\) \{ startJoin\(\); joinFromLink\(\); \}/.test(startFn)) test.check('the face shell reads the join link on a relay face too, after its login');
+  else test.fail('the face shell reads the join link at home only');
   const hearers = ['shell/js/contacts/listElement.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
   if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
   else test.fail('not hearing relay-rows: ' + short(hearers));
