@@ -2903,8 +2903,9 @@
     }, function () { window.alert('The join did not finish: this node did not answer.'); openAppFromAddress(); });
   }());
 
-  // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
-  spirit.core.jobs.subscribe({
+  // ---- Shared data subscription (page-lifetime, not app-lifetime): the page's one stream, the events family's
+  // subscribe on spirit.js (goal/G40.6) ----
+  spirit.events.subscribe({
     onSnapshot: function (jobs) {
       jobsById.clear();
       jobs.forEach(function (job) { jobsById.set(job.id, job); takeStepsJob(job); });

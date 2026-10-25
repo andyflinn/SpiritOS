@@ -161,26 +161,27 @@
   function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
   // The face's link to its home node (window.spirit.transport), on a page only.
   function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
-  // post(verb, args) -> {status, text, body}: {verb, ...args} to the node's /api/spirit.
-  function post(verb, args) {
+  // post(verb, args) -> {status, text, body}: {verb, ...args} to the node's /api/spirit. post(verb, args, {stream: true,
+  // headers}) answers the response itself, read as it comes: the events family's subscribe (below).
+  function post(verb, args, how) {
     var l = link();
     if (l && typeof l.ask === 'function') return Promise.resolve(l.ask(verb, args || {}));
     if (isNode() && !PORT) return Promise.reject(noNode());
     var payload = { verb: verb };
     Object.keys(args || {}).forEach(function (k) { payload[k] = args[k]; });
-    return fetch(door() + '/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      .then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
+    var headers = { 'Content-Type': 'application/json' };
+    Object.keys((how && how.headers) || {}).forEach(function (k) { headers[k] = how.headers[k]; });
+    var asked = fetch(door() + '/api/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload) });
+    if (how && how.stream) return asked;
+    return asked.then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
   }
-  // get(path) -> {status, type, bytes}: a file of the node's run root, by its path. get(path, {stream: true, headers})
-  // answers the response itself, read as it comes: the node's event stream, in node (peerPost below).
-  function get(path, how) {
+  // get(path) -> {status, type, bytes}: a file of the node's run root, by its path.
+  function get(path) {
     var p = String(path || '').replace(/^\/+/, '');
     var l = link();
     if (l && typeof l.file === 'function') return Promise.resolve(l.file(p, function () {})).then(function (r) { return { status: r.status, type: r.type || '', bytes: r.bytes }; });
     if (isNode() && !PORT) return Promise.reject(noNode());
-    var asked = fetch(door() + '/' + p, { headers: (how && how.headers) || {} });
-    if (how && how.stream) return asked;
-    return asked.then(function (r) {
+    return fetch(door() + '/' + p).then(function (r) {
       return r.arrayBuffer().then(function (b) { return { status: r.status, type: (r.headers && r.headers.get('Content-Type')) || '', bytes: new Uint8Array(b) }; });
     });
   }
@@ -273,8 +274,8 @@
   }
   // This VM's node's family, on the instance as spirit.<family>. Two callers at once ask once; a refusal is asked
   // again next time.
-  // A family whose name is already on the instance (spirit.jobs, holding this process's job in node) is extended, not
-  // replaced.
+  // A family whose name is already on the instance (spirit.jobs, holding this process's job in node; spirit.events, the
+  // one stream) is extended, not replaced, and what it holds stays: a verb of the same name does not overwrite it.
   var asking = {};
   var bound = {};
   function bindOwn(fam) {
@@ -283,7 +284,8 @@
     asking[fam] = bindOn(post, get, fam).then(function (m) {
       delete asking[fam];
       var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : null;
-      self[fam] = held ? Object.assign(held, m) : m;
+      if (held) Object.keys(m).forEach(function (k) { if (!(k in held)) held[k] = m[k]; });
+      self[fam] = held || m;
       bound[fam] = true;
       return self[fam];
     }, function (e) { delete asking[fam]; throw e; });
@@ -417,6 +419,111 @@
   self.DEFAULT_SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
   self.debug = debug;
 
+  // ── THE ONE STREAM OF THIS VM: spirit.events.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
+  // Andy: "two verbs on events - publish - subscribe". The node's events family is its one dispatcher; this is its
+  // subscribe, moved here from kernel.js's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
+  // need one stream only."): every subscriber shares it, and one that comes later is handed the jobs as they stand and
+  // told the stream is up. It comes back by itself (Andy, 2026-09-30: "this should work without a hickup."): an end or an
+  // error is said (onConnection false), it opens again, and the first open after being down is said (onReconnect).
+  // handlers: onSnapshot(jobs), onUpdate(job), onDelete(id), onPacket(message), onRelayEvent(row), onContactRename(row),
+  // onConnection(up), onReconnect(). On a face the events come down the face's own link (window.spirit.transport.events).
+  // Answers the unsubscribe; the stream closes when nobody is left.
+  var streamSubs = [];
+  var streamReader = null;
+  var streamOpening = false;
+  var streamUp = false;
+  var streamDown = false;
+  var streamWaiting = false;
+  var streamJobs = new Map();
+  function tellStream(name, arg) {
+    streamSubs.slice().forEach(function (h) {
+      if (typeof h[name] === 'function') { try { h[name](arg); } catch (e) { /* one subscriber's fault */ } }
+    });
+  }
+  // The events one response carries, kind and data, to each(kind, data); answers when the stream ends.
+  function readEvents(reader, each) {
+    var dec = new TextDecoder();
+    var buf = '';
+    return new Promise(function (resolve, reject) {
+      function pump() {
+        reader.read().then(function (chunk) {
+          if (chunk.done) { resolve(); return; }
+          buf += dec.decode(chunk.value, { stream: true });
+          var i;
+          while ((i = buf.indexOf('\n\n')) !== -1) {
+            var block = buf.slice(0, i); buf = buf.slice(i + 2);
+            var ev = /(?:^|\n)event: (.*)/.exec(block); var da = /(?:^|\n)data: (.*)/.exec(block);
+            if (!ev || !da) continue;
+            var data; try { data = JSON.parse(da[1]); } catch (e) { continue; }
+            each(ev[1], data);
+          }
+          pump();
+        }, reject);
+      }
+      pump();
+    });
+  }
+  function onStreamEvent(kind, data) {
+    if (kind === 'snapshot') {
+      var jobs = (data && data.jobs) || [];
+      streamJobs.clear();
+      jobs.forEach(function (j) { if (j && j.id) streamJobs.set(j.id, j); });
+      tellStream('onSnapshot', jobs);
+    } else if (kind === 'job-updated') {
+      if (data && data.id) streamJobs.set(data.id, data);
+      tellStream('onUpdate', data);
+    } else if (kind === 'job-deleted') {
+      streamJobs.delete(data);
+      tellStream('onDelete', data);
+    } else if (kind === 'packet') tellStream('onPacket', data);
+    else if (kind === 'relay-event') tellStream('onRelayEvent', data);
+    else if (kind === 'contact.rename') tellStream('onContactRename', data);
+  }
+  function openStream() {
+    streamOpening = true;
+    var lost = function () {
+      streamReader = null;
+      streamOpening = false;
+      if (!streamDown) tellStream('onConnection', false);
+      streamUp = false;
+      streamDown = true;
+      if (streamSubs.length) setTimeout(function () { if (!streamReader && !streamOpening && streamSubs.length) openStream(); }, 2000);
+    };
+    post('events.subscribe', {}, { stream: true }).then(function (r) {
+      if (!r || !r.ok || !r.body) throw refusal('no-stream', 'the node answered ' + (r && r.status));
+      streamReader = r.body.getReader();
+      streamOpening = false;
+      streamUp = true;
+      tellStream('onConnection', true);
+      if (streamDown) tellStream('onReconnect');
+      streamDown = false;
+      return readEvents(streamReader, onStreamEvent);
+    }).then(lost, lost);
+  }
+  function subscribeEvents(handlers) {
+    var h = handlers || {};
+    var l = link();
+    if (l && typeof l.events === 'function') return l.events(h);
+    streamSubs.push(h);
+    // OPENED ONCE THE PAGE HAS PARSED: every subscriber its scripts make (the shell, the page's mirror) is then in
+    // place before the first event, so none of them misses the file tree a connecting page is handed.
+    var doc = root.document;
+    if (!streamReader && !streamOpening && !streamWaiting) {
+      if (doc && doc.readyState === 'loading') {
+        streamWaiting = true;
+        doc.addEventListener('DOMContentLoaded', function () { streamWaiting = false; if (streamSubs.length && !streamReader && !streamOpening) openStream(); });
+      } else openStream();
+    } else if (streamReader) {
+      if (h.onSnapshot) { try { h.onSnapshot(Array.from(streamJobs.values())); } catch (e) { /* one subscriber's fault */ } }
+      if (streamUp && h.onConnection) { try { h.onConnection(true); } catch (e) { /* one subscriber's fault */ } }
+    }
+    return function unsubscribe() {
+      streamSubs = streamSubs.filter(function (x) { return x !== h; });
+      if (!streamSubs.length && streamReader) { var r = streamReader; streamReader = null; r.cancel().catch(function () { /* gone */ }); }
+    };
+  }
+  self.events = { subscribe: subscribeEvents };
+
   // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
   // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from kernel.js
   // through spirit.core is spirit.js's own now, on its one post: the node's facts, this process's job, peerPost.
@@ -428,13 +535,14 @@
     var str = function (v) { return typeof v === 'string' ? v : ''; };
     self.node = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
 
-    // THIS PROCESS'S JOB (goal/G29.15): a process the node started as a job reports to it by jobs.update with its own id
-    // (SPIRIT_JOB_ID), one post. These sit on spirit.jobs beside the jobs family's verbs, which bind there too.
-    //   publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent, and the pages
-    //                  hear that one was dropped, with its size (fileTransfer goal/G1.4)
-    //   start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open refuses
-    //                  job-open; each resolves once the node has it, so awaited calls arrive in order
-    //   report(patch), log(text), complete(data), fail(error)   the update itself, and its three common forms
+    // THIS PROCESS'S JOB (goal/G29.15), REPORTED BY THE ONE PATH TO PUBLISH (goal/G40.6; Andy, 2026-10-25: "ONE path for
+    // everybody to publish events"): a process the node started as a job publishes on it by events.publish with its own id
+    // (SPIRIT_JOB_ID), one post; the node changes the job and every subscriber hears it.
+    //   spirit.events.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
+    //                  and the pages hear that one was dropped, with its size (fileTransfer goal/G1.4)
+    //   spirit.jobs.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
+    //                  refuses job-open; each resolves once the node has it, so awaited calls arrive in order
+    //   spirit.jobs.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
     var JOB = String(process.env.SPIRIT_JOB_ID || '');
     var PAYLOAD_MAX = require('./spirit/limits.js').PAYLOAD_MAX;
     var openJob = null;
@@ -442,12 +550,12 @@
     var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
     jobs.report = function (patch) {
       if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
-      return post('jobs.update', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
+      return post('events.publish', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
     };
     jobs.log = function (message) { return jobs.report({ logMessage: message }); };
     jobs.complete = function (data) { return jobs.report({ status: 'completed', data: data }); };
     jobs.fail = function (e) { return jobs.report({ status: 'failed', data: { error: String(e) } }); };
-    jobs.publish = function (obj) {
+    self.events.publish = function (obj) {
       if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
       var size = bytesOf(obj);
       if (size < 0) return false;
@@ -464,7 +572,7 @@
       var one = { job: job };
       var size = bytesOf(one);
       if (size < 0) return Promise.resolve(false);
-      if (size > PAYLOAD_MAX) return Promise.resolve(jobs.publish(one));
+      if (size > PAYLOAD_MAX) return Promise.resolve(self.events.publish(one));
       return jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
     };
     jobs.start = function (name) {
@@ -484,7 +592,7 @@
     };
 
     // ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3), as it has always worked (Andy: "peer post will work the way
-    // they ALWAY WORKED"), moved here from kernel.js unchanged in what it does: the node's event stream opened as a server
+    // they ALWAY WORKED"), moved here from kernel.js unchanged in what it does: the node's events subscribed as a server
     // (it is handed no backlog and marks nothing taken), then one post of peer.post, then the answer-post whose re
     // matches that post's hash. The stream opens BEFORE the post, so an answer quicker than the post's own reply is kept.
     // how: waitMs (30 s by default), patienceMs, kind. Resolves the answer's body; {ok: false, code: 'not-posted'} for a
@@ -496,7 +604,7 @@
       if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: relay-state/environment.json names no port' });
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
-      return get('api/events', { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
+      return post('events.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
         var reader = r.body.getReader();
         var dec = new TextDecoder();
         var buf = '';

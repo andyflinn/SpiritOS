@@ -8,7 +8,6 @@ module.exports = {
     search: { q: 'text?' },
     get: { key: 'id' },
     create: { command: 'id', args: 'list?', type: 'text?' },
-    update: { id: 'id', status: 'text?', data: 'object?', logMessage: 'text?', app: 'object?' },
     cancel: { id: 'id' },
     delete: { id: 'id' },
   },

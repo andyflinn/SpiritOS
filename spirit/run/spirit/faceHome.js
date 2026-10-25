@@ -329,11 +329,14 @@ function createFaceHome(opts) {
     const p = priorityOf(job);
     if (p) toFaces(p, { event: 'job-updated', data: job });
   }
-  if (jobs && jobs.events) jobs.events.on('job-updated', onJob);
-  // A CONTACT RENAMED (goal/G30.19), as the loopback shell gets it on its 'contact.rename' line (hub.contactRenames), so
-  // a contactElement on the face repaints its label like one at home.
-  if (o.renames && typeof o.renames.subscribe === 'function') {
-    o.renames.subscribe(function (row) { if (row && row.key) toFaces(FACE_PRIORITY.presence, { event: 'contact.rename', data: row }); });
+  // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
+  // shell does, and no packets (a face asks its home node, it is posted nothing). A job as it changes; a contact renamed
+  // (goal/G30.19), so a contactElement on the face repaints its label like one at home.
+  if (o.events && typeof o.events.subscribe === 'function') {
+    o.events.subscribe(function (kind, data) {
+      if (kind === 'job-updated') onJob(data);
+      else if (kind === 'contact.rename' && data && data.key) toFaces(FACE_PRIORITY.presence, { event: 'contact.rename', data: data });
+    }, { packets: 'none' });
   }
 
   // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (server.js

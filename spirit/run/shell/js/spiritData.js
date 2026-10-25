@@ -153,9 +153,11 @@
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 
-  var core = root.spirit && root.spirit.core;
-  if (core && core.jobs && typeof core.jobs.subscribe === 'function') {
-    core.jobs.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(onJob); }, onUpdate: onJob, onContactRename: onRename });
+  // FED BY THE PAGE'S ONE STREAM, spirit.events.subscribe (goal/G40.6), on a page only: a server process that loads this
+  // file is fed by its own streamListener (appServer) and opens no stream of its own.
+  var sp = root.spirit;
+  if (sp && typeof sp.isBrowser === 'function' && sp.isBrowser() && sp.events && typeof sp.events.subscribe === 'function') {
+    sp.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(onJob); }, onUpdate: onJob, onContactRename: onRename });
   }
   (root.spirit = root.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

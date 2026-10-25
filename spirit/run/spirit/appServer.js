@@ -470,7 +470,7 @@ function sendTo(key, row) {
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
 // that it publishes its changes to the deskClients").
 function publish(row) {
-  const out = spirit.jobs.publish(row);
+  const out = spirit.events.publish(row);
   const to = row && Array.isArray(row.to) ? row.to.map(String) : null;
   subscribers.forEach(function (q, key) { if (!to || to.indexOf(key) !== -1) sendTo(key, row); });
   return out;
@@ -586,7 +586,7 @@ function serve(verbs, opts) {
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
   const srv = s.listen(pipe, function () {
-    spirit.jobs.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
+    spirit.events.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);

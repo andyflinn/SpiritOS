@@ -88,6 +88,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const kernelRequired = ['spirit/server.js', 'spirit/relayServer.js', 'spirit/jobs.js'].filter(function (f) { return /require\('\.\/kernel(\.js)?'\)|\.core\./.test(code(f)); });
   if (nodeLoads.stdout === '[]' && !kernelRequired.length) test.check('the node and the relay load no kernel.js: server.js, relayServer.js and jobs.js neither require it nor touch a .core., and jobs.js keeps its own state');
   else test.fail('the node or the relay still loads the kernel: ' + short(nodeLoads.stdout + nodeLoads.stderr) + ' ' + short(kernelRequired));
+  const oldWire = all.filter(function (f) { return /['"]jobs\.update['"]|api\/events|jobs\.publish\(/.test(code(f)); });
+  const PUBLISHERS = ['spirit/appServer.js', 'process/js/chatClerver/chatClerver.js', 'process/js/deskAgent/deskAgent.js', 'process/js/deskVerify/deskVerify.js', 'process/js/fileServer/fileServer.js'];
+  const onePath = PUBLISHERS.filter(function (f) { return !/spirit\.events\.publish\(/.test(code(f)); });
+  if (!oldWire.length && !onePath.length) test.check('the one path to publish: no jobs.update, no /api/events and no jobs.publish left in the run tree\'s code; appServer and the four servers publish through spirit.events.publish');
+  else test.fail('the old wire: ' + short(oldWire) + ' not on spirit.events.publish: ' + short(onePath));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));
@@ -142,6 +147,38 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     else test.fail('the fs family on the scratch node: ' + short(fsGot));
     if (fsGot && fsGot.introSaved && fsGot.introSaved.saved === true && fsGot.introNotes && fsGot.introNotes.client && fsGot.introNotes.client.n === 1) test.check('introSpector annotates a file of a folder and reads its notes back, through fileSystem.js');
     else test.fail('introSpector\'s FS annotations: ' + short(fsGot && { introSaved: fsGot.introSaved, introNotes: fsGot.introNotes, said: fsGot.said }));
+    // THE EVENTS FAMILY (goal/G40.6): the old door is gone; the family is in the tree and jobs has no update; one process
+    // subscribes, another publishes on a running server's job through spirit.events.publish, and the subscriber hears it.
+    const oldDoor = await fetch('http://127.0.0.1:' + port + '/api/events').then(function (r) { const s = r.status; r.body && r.body.cancel && r.body.cancel(); return s; }, function () { return 0; });
+    const EV_PROBE = [
+      "const s = require(process.argv[1] + '/spirit.js');",
+      "Promise.all([s.tree(), s.require('spirit/jobs/api.js')]).then(function (r) {",
+      "  const out = { events: !!(r[0] && r[0].events && r[0].events.subscribe && r[0].events.publish), jobsUpdate: !!(r[0] && r[0].jobs && r[0].jobs.update) };",
+      "  const off = s.events.subscribe({",
+      "    onSnapshot: function (jobs) { if (out.snapshot) return; out.snapshot = jobs.length; const t = jobs.filter(function (j) { return j.module && j.status === 'running'; })[0]; out.target = t && t.id; process.stdout.write(JSON.stringify({ target: out.target }) + '\\n'); },",
+      "    onUpdate: function (job) { if (job && job.app && job.app.probe === 7) { out.heard = job.id; off(); process.stdout.write(JSON.stringify(out) + '\\n'); process.exit(0); } },",
+      "  });",
+      "  setTimeout(function () { process.stdout.write(JSON.stringify(out) + '\\n'); process.exit(0); }, 12000);",
+      "});",
+    ].join('\n');
+    const listener = spawn(process.execPath, ['-e', EV_PROBE, home], { cwd: home, stdio: ['ignore', 'pipe', 'pipe'] });
+    let heardText = '';
+    listener.stdout.on('data', function (c) { heardText += c; });
+    let target = '';
+    for (let i = 0; i < 60 && !target; i++) { await sleep(100); try { target = JSON.parse(heardText.split('\n')[0]).target || ''; } catch (e) { target = ''; } }
+    let published = null;
+    if (target) {
+      const pub = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1] + '/spirit.js'); process.stdout.write(JSON.stringify(s.events.publish({ probe: 7 })));", home],
+        { cwd: home, encoding: 'utf8', timeout: 10000, env: Object.assign({}, process.env, { SPIRIT_JOB_ID: target }) });
+      published = pub.stdout;
+    }
+    await new Promise(function (r) { listener.on('exit', r); setTimeout(r, 13000); });
+    let ev = null;
+    try { ev = JSON.parse(heardText.trim().split('\n').pop()); } catch (e) { ev = { said: heardText }; }
+    if (oldDoor !== 200 && ev && ev.events === true && ev.jobsUpdate === false) test.check('the old /api/events door answers ' + oldDoor + '; the events family is in the node\'s tree with subscribe and publish, and jobs has no update');
+    else test.fail('the events family on the scratch node: door ' + oldDoor + ', ' + short(ev));
+    if (ev && ev.snapshot > 0 && target && published === 'true' && ev.heard === target) test.check('one process subscribed (spirit.events.subscribe, ' + ev.snapshot + ' jobs in its snapshot); another published on the running job ' + target + ' through spirit.events.publish, and the subscriber heard it');
+    else test.fail('subscribe and publish on the scratch node: target ' + target + ', published ' + short(published) + ', ' + short(ev));
     const labels = (got && got.labels) || [];
     const servers2 = labels.filter(function (l) { return /server|Verifier|deskClient/i.test(l); });
     const down = labels.filter(function (l) { return /failed|exited|stopped/i.test(l); });

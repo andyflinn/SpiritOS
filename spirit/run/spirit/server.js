@@ -117,7 +117,7 @@ const trafficLog = require('./trafficLog').createTrafficLog({
 });
 
 // THE ROUTER'S ARRIVAL SEAM. Declared up here because the two halves sit
-// far apart and both need it: handleSseConnection subscribes (a browser
+// far apart and both need it: the events family subscribes (a browser
 // opening a page), and the peerRouter built at the foot of this file
 // notes into it (a packet landing off the stream). Neither knows about
 // the other, which is the point of putting a seam between them.
@@ -233,6 +233,14 @@ function peekVerb(req) {
 // reads it, and a stream removes itself in teardown below.
 const pageStreams = new Set();
 
+// THE NODE'S ONE DISPATCHER OF EVENTS (goal/G40.6; Andy: "two verbs on events - publish - subscribe"): the jobs, the
+// relay events, the packets and the contact renames feed it; the pages, the processes and the face subscribe. Mounted
+// below as the events family; /api/events, a door outside any api, is gone.
+const events = require('./events/events.js').createEvents({
+  jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: hub.contactRenames, pageStreams: pageStreams,
+  readJsonBody: function (req) { return readJsonBody(req); }, bodyRefused: bodyRefused,
+});
+
 // A FILE, AS THE BROWSER'S GET IS SERVED IT. One function, so the face asking its home node for a file (faceHome,
 // goal/G30.13) passes the same gate as the browser on loopback.
 function serveGet(pathname, res) {
@@ -262,109 +270,7 @@ function serveGet(pathname, res) {
   sendFile(res, filePath);
 }
 
-function handleSseConnection(req, res) {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-  });
-
-  res.write('event: snapshot\ndata: ' + JSON.stringify({ jobs: jobs.listJobs() }) + '\n\n');
-  // THE TREE ARRIVES AS COMMANDS (goal/G4.25; Andy: "the beginning can be a stream of changes that build the tree
-  // (MAX_PAYLOAD)", "forget about batching"; his grant G2 on this file). The snapshot's fs-watcher job carries no file
-  // list; right after it, one fs-watcher job-updated per entry, a createDirectory before what is inside it, then one
-  // carrying data.treeComplete, so the shell knows the tree is whole before it discovers apps from it.
-  const fsJob = jobs.listJobs().filter(function (j) { return j.type === 'fs-watcher'; })[0];
-  if (fsJob) {
-    jobs.fsTreeCommands().forEach(function (command) {
-      res.write('event: job-updated\ndata: ' + JSON.stringify(Object.assign({}, fsJob, { data: { command: command } })) + '\n\n');
-    });
-    res.write('event: job-updated\ndata: ' + JSON.stringify(Object.assign({}, fsJob, { data: { treeComplete: true } })) + '\n\n');
-  }
-
-  const onJobUpdated = (job) => {
-    res.write('event: job-updated\ndata: ' + JSON.stringify(job) + '\n\n');
-  };
-  jobs.events.on('job-updated', onJobUpdated);
-
-  const onJobDeleted = (id) => {
-    res.write('event: job-deleted\ndata: ' + JSON.stringify(id) + '\n\n');
-  };
-  jobs.events.on('job-deleted', onJobDeleted);
-
-  // A PACKET FROM A PEER, arriving over the router. This connection is
-  // already open, already per-page and already torn down properly, so
-  // the alternative — a second EventSource for packets — would have
-  // bought nothing but another socket per tab.
-  //
-  // The route is named `/api/events` and not `/api/jobs/events` for
-  // exactly this reason: it is the node's event stream, and jobs were
-  // only its first customer.
-  //
-  // Nothing is filtered here. peerPost's front door decided who may be
-  // heard before this was ever called, and the shell decides which app
-  // wants it; a third opinion in the middle would be a third thing to
-  // get wrong.
-  // WHAT A WATCHED RELAY IS DOING. Rides the one stream the page already
-  // holds, like `packet` does — a second EventSource per tab to watch a
-  // relay would be a second socket for a panel somebody has open for a
-  // minute.
-  const offRelayEvent = relayEvents.subscribe((row) => {
-    res.write('event: relay-event\ndata: ' + JSON.stringify(row) + '\n\n');
-  });
-
-  // A SERVER IS NOT A PAGE (goal/G16.9). A page subscribes: it is handed
-  // the backlog and marks what it takes, so the owner sees each line once.
-  // A loopback server awaiting one reply (kernel's spirit.peerPost says so
-  // with X-Spirit-Reader: server) witnesses instead: it sees each new
-  // packet, gets no backlog and marks nothing taken, or every post it
-  // made would eat the owner's waiting lines. It is written the page's
-  // shape, without the envelope a witness is handed, so both readers parse
-  // one wire.
-  const asServer = req.headers['x-spirit-reader'] === 'server';
-  const writePacket = (message) => {
-    const plain = Object.assign({}, message);
-    delete plain.envelope;
-    res.write('event: packet\ndata: ' + JSON.stringify(plain) + '\n\n');
-  };
-  const offArrival = asServer ? arrivals.witness(writePacket) : arrivals.subscribe(writePacket);
-
-  // A CONTACT RENAMED, so every label showing that key redraws (goal/G4.13).
-  // The node's own event, its name its own: Andy, 2026-10-03, "leave node
-  // alone. give appServers their namespace." / "so node owns contact.rename".
-  const offContactRename = hub.contactRenames.subscribe((row) => {
-    res.write('event: contact.rename\ndata: ' + JSON.stringify(row) + '\n\n');
-  });
-
-  pageStreams.add(res);
-
-  const heartbeat = setInterval(() => {
-    res.write(':\n\n');
-  }, 20000);
-
-  // Bound to 'error' as well as 'close': a socket that dies without a
-  // clean close (a killed browser, a dropped network) never fired 'close',
-  // leaving the 20-second heartbeat writing to a dead response forever and
-  // both listeners attached. Guarded so it runs once whichever fires first.
-  let torndown = false;
-  function teardown() {
-    if (torndown) return;
-    torndown = true;
-    pageStreams.delete(res);
-    clearInterval(heartbeat);
-    jobs.events.off('job-updated', onJobUpdated);
-    jobs.events.off('job-deleted', onJobDeleted);
-    // Same reason the heartbeat is cleared, and the same failure if it
-    // is not: a subscriber that outlives its socket writes packets into
-    // a dead response for ever, and holds the message in memory to do it.
-    offArrival();
-    offRelayEvent();
-    offContactRename();
-  }
-  req.on('close', teardown);
-  req.on('error', teardown);
-  res.on('error', teardown);
-}
+// THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/events/events.js, the events family's subscribe.
 
 function handleCreateJob(req, res) {
   readJsonBody(req).then((body) => {
@@ -388,46 +294,10 @@ function handleCreateJob(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-// ── THE ID CAME OUT OF THE PATH ──────────────────────────────────────
-//
-// `POST /api/jobs/<id>` carried it as a path segment, matched by a
-// regexp. Under one door it is a field: `{verb:'jobs.update', id, ...}`.
-//
-// This is the case stage 2 exists to prove, because fs and hub both have
-// parameters too — and a parameter in a path is a parameter a type
-// system cannot see, matched by a regexp that has to agree with a route
-// by hand.
-//
-// `id` is read from the body and the REST of the body is still the
-// patch, which is why it is deleted from the copy rather than passed
-// alongside: jobs.updateJob takes a patch, and a patch carrying the id
-// of the thing it patches would be a field that means nothing to it.
-function handleJobUpdate(req, res) {
-  readJsonBody(req).then((whole) => {
-    const id = String((whole && whole.id) || '');
-    const body = Object.assign({}, whole);
-    delete body.id;
-    delete body.verb;
-    // An app object over MAX_PAYLOAD is refused here by name, with its size and the limit, never kept or streamed.
-    const appBytes = body.app && typeof body.app === 'object' ? Buffer.byteLength(JSON.stringify(body.app), 'utf8') : 0;
-    const appMax = require('./limits').PAYLOAD_MAX;
-    if (appBytes > appMax) {
-      res.writeHead(413, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: false, code: 'app-request-too-large', error: 'the published object is too large', extra: { bytes: appBytes, max: appMax } }));
-      return;
-    }
-    const job = jobs.updateJob(id, body);
-    if (!job) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(job));
-  }).catch((e) => bodyRefused(req, res, e));
-}
+// jobs.update's handler (handleJobUpdate) STOOD HERE: it is events.publish now (spirit/events/events.js), the one path
+// to publish (Andy, 2026-10-25: "ONE path for everybody to publish events").
 
-// Same move as handleJobUpdate: the id is a field now. This one took no
+// The id is a field, beside the verb. This one took no
 // body at all before, so it gains a read it did not have — and readJsonBody
 // is memoised on the request, so the door's own peek already paid for it.
 function handleCancelJob(req, res) {
@@ -875,10 +745,6 @@ const server = http.createServer((req, res) => {
   // string — the last route on this box that did — and handed back the
   // owner's report. Deleted with the verb (R3).
 
-  if (req.method === 'GET' && pathname === '/api/events') {
-    handleSseConnection(req, res);
-    return;
-  }
 
   // `GET /api/jobs` STOOD HERE and is `jobs.list` under the one door.
   // A read folding into a POST costs nothing on loopback — there is no
@@ -971,12 +837,12 @@ const server = http.createServer((req, res) => {
     // JSON body and dispatches on nothing but its own path. A path IS a
     // verb, spelled in a place a type system cannot see.
     //
-    // WHAT FOLDS: everything request/response. WHAT DOES NOT, and both
-    // are technical rather than taste —
+    // WHAT FOLDS: everything request/response, and since goal/G40.6 the
+    // event stream too, as the events family's subscribe (its handler keeps
+    // the response open; Andy: "it's a severe violation, that there is some
+    // stupid api/events door, that is not part of the an actual api"). WHAT
+    // DOES NOT, and it is technical rather than taste —
     //
-    //   GET /api/events   a long-lived server-push connection. A
-    //                     different transport shape, not a different
-    //                     verb, and no body can express it.
     //   GET /api/version  must answer a client that knows nothing,
     //                     including one running older code, which is the
     //                     case it exists for.
@@ -1056,7 +922,8 @@ const server = http.createServer((req, res) => {
     // `POST /api/proxy` is `net.fetch`. `POST /api/jobs`,
     // `POST /api/jobs/<id>` and `POST /api/jobs/<id>/cancel` are
     // `jobs.create`, `jobs.update` and `jobs.cancel`, claimed by the
-    // jobs module at the foot of this file.
+    // jobs module at the foot of this file (jobs.update is events.publish
+    // since goal/G40.6).
     //
     // The last two were matched by REGEXPS that had to agree with two
     // routes by hand, and their id was a path segment — which is a
@@ -1498,7 +1365,7 @@ contactBook.syncMarks(ROOT_DIR);
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       jobs: jobs,
-      renames: hub.contactRenames,
+      events: events,
       log: function (line) { console.log(line); },
     });
 
@@ -1872,7 +1739,6 @@ contactBook.syncMarks(ROOT_DIR);
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
     'create': { request: { command: '', args: [''], type: '' }, reply: JOB, handler: handleCreateJob },
-    'update': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: handleJobUpdate },
     'cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
     // 204, no body.
     'delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },
@@ -1880,6 +1746,13 @@ contactBook.syncMarks(ROOT_DIR);
     // for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be
     // some kind of api-hub." A server process is called on /api/spirit by its verb, through the flat apiDoor.
     // LOCAL: a job is this machine's, whether or not anything is reachable.
+  }, { wire: false, by: 'server.js' });
+
+  // THE EVENTS FAMILY (goal/G40.6): the node's one dispatcher, owner only like fs. subscribe is a stream (its handler
+  // keeps the response open); publish is a process's state or object on its own job, where jobs.update stood.
+  loopbackVerbs.mount('events', path.join(__dirname, 'events'), {
+    'subscribe': { request: {}, reply: {}, handler: events.handleSubscribe },
+    'publish': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: events.handlePublish },
   }, { wire: false, by: 'server.js' });
 
   // ── THE CONFIG FAMILY, EMPTY (goal/G30.20) ─────────────────────────────
@@ -2172,7 +2045,7 @@ contactBook.syncMarks(ROOT_DIR);
 //
 // A first draft registered this for a relay only, on the reasoning that a
 // node has no members to tell. Wrong twice over: a node serves
-// /api/events to its own browser and can pace THAT reconnect the same way,
+// its event stream to its own browser and can pace THAT reconnect the same way,
 // and once a relay holds outbound streams to partners it is a listener as
 // well as a speaker.
 //

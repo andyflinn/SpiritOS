@@ -1091,7 +1091,7 @@ function modelsSearch(text, marks) {
   });
 }
 function publishState() {
-  spirit.jobs.publish(stateObject());
+  spirit.events.publish(stateObject());
 }
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:

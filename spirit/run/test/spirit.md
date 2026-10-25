@@ -49,7 +49,7 @@ Nothing else in spirit.js reaches the node.
 
 | | |
 |---|---|
-| `post(verb, args)` | sends `{verb, ...args}` to the node's `/api/spirit`; answers `{status, text, body}` |
+| `post(verb, args, how)` | sends `{verb, ...args}` to the node's `/api/spirit`; answers `{status, text, body}`. With `how.stream` it answers the response itself, read as it comes (the events family's subscribe); `how.headers` are sent along |
 | `get(path)` | fetches a file of the node's run root by its path; answers `{status, type, bytes}` |
 
 Every member function checks its arguments and then calls one of the two.
@@ -106,8 +106,8 @@ Asks another node and waits for its answer.
   VM's own node.
 - **Answers** the peer's answer body; `{ ok: false, code: 'not-posted' }` at once for a post the node refused;
   `{ ok: false, code: 'no-answer' }` after `waitMs` of silence. It resolves, never rejects.
-- In node: one post of `peer.post`, and the answer read off the node's event stream (got as a stream through `get`),
-  as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
+- In node: one post of `peer.post`, and the answer read off the node's events (`events.subscribe`, a stream through
+  `post`), as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
 
 ### `check(name, spec, args)`
 
@@ -169,27 +169,41 @@ The node's and the relay's too, in node and on a page alike:
   else only reads it; it answers the state that resulted. The node's, the relay's and every server's `DEBUG` verb set
   this one.
 
+### `events`: `subscribe(handlers)`, `publish(obj)`
+
+The node's events family, its one dispatcher (Andy, 2026-10-25: "two verbs on events - publish - subscribe", and
+"ONE path for everybody to publish events"). spirit.js holds both members itself; binding the family adds nothing
+over them.
+
+- **`subscribe(handlers)`**: the VM's one stream of the node's events, shared by every subscriber. handlers, all
+  optional: `onConnection(up)`, `onSnapshot(jobs)` (the jobs as they stand), `onUpdate(job)`, `onDelete(id)`,
+  `onPacket(message)`, `onRelayEvent(row)`, `onContactRename(row)`, `onReconnect()`. One that subscribes later is
+  handed the jobs as they stand and told the stream is up. It opens once the page has parsed, comes back by itself
+  2 s after it ends, and closes when nobody is left. On a face it hands the handlers to the face's link
+  (`window.spirit.transport.events`). **Answers** the unsubscribe.
+- **`publish(obj)`**, in node: below, with the job.
+
 ### On a page only: `start()`, `ready`
 
 `start()` binds every family the node names on `window.spirit`, once, and answers the instance; `ready` is that
 promise. The face shell calls it once its link is up, the home page at load.
 
-### In node only: `node`, `jobs`, and no kernel
+### In node only: `node`, `jobs`, `events.publish`, and no kernel
 
 spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server took from the kernel is spirit.js's own.
 
 - **`spirit.node`**: `{ port, name, key, ownerKey }`. The port is the one read from `environment.json`; the name, key and
   owner key are what the node hands every server it starts as `--node`, all public, `''` when not given.
-- **`spirit.jobs`**, this process's own job, reported to the node by `jobs.update` with its own id (`SPIRIT_JOB_ID`), one
-  post each:
+- **This process's own job**, published to the node by `events.publish` with its own id (`SPIRIT_JOB_ID`), one post each,
+  the one path; the node changes the job and every subscriber hears it:
 
 | | takes | does |
 |---|---|---|
-| `publish(obj)` | a plain object | the object as the job's app, every page hears it; answers true. Over the payload cap it is not sent: the pages hear `{ dropped: { bytes, max } }`, and it answers false |
-| `start(name)` | the job's name | opens it; a start while one is open refuses `job-open` |
-| `progress(done, total, text)` | counts and a line | the bar; total 0 means unknown |
-| `end(result)` | a result, or an Error | closes the job |
-| `report(patch)`, `log(text)`, `complete(data)`, `fail(error)` | | the update itself and its three common forms; `no-job` outside a job |
+| `spirit.events.publish(obj)` | a plain object | the object as the job's app, every page hears it; answers true. Over the payload cap it is not sent: the pages hear `{ dropped: { bytes, max } }`, and it answers false |
+| `spirit.jobs.start(name)` | the job's name | opens it; a start while one is open refuses `job-open` |
+| `spirit.jobs.progress(done, total, text)` | counts and a line | the bar; total 0 means unknown |
+| `spirit.jobs.end(result)` | a result, or an Error | closes the job |
+| `spirit.jobs.report(patch)`, `log(text)`, `complete(data)`, `fail(error)` | | the job's own state and its three common forms; `no-job` outside a job |
 
   start, progress and end resolve once the node has them, so awaited calls arrive in order. When the jobs family is
   bound (`spirit.require('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.

@@ -170,7 +170,7 @@ function progress(id) {
   const t = transfers[id];
   const s = readStatus(id);
   if (!t || !s) return;
-  spirit.jobs.publish({ transfer: {
+  spirit.events.publish({ transfer: {
     id: id, name: nameOf(s),
     held: t.state === 'complete' ? (s ? s.bytes : 0) : heldBytes(id), bytes: s ? s.bytes : 0, state: t.state,
   } });

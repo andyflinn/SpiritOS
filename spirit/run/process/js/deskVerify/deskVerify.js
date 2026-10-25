@@ -298,7 +298,7 @@ function runSuite(file, port, onTests, env) {
 // WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
 // events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
-// (spirit.jobs.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the
+// (spirit.events.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the
 // newest and replaces it. The page asks nothing, as his no-pulling rule requires.
 //   doing     'run' a run of suites, 'idle' nothing running
 //   index/of  which suite of how many; tests/expected: assertions printed so far, and how many that suite reported
@@ -327,7 +327,7 @@ function say(o) {
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
-  spirit.jobs.publish(one);
+  spirit.events.publish(one);
   // THE SUITE COUNT AS THE JOB'S PROGRESS (goal/G29.15): the one bar every page draws, beside the tab's own object.
   if (one.doing !== 'idle' && one.of > 0) {
     spirit.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
