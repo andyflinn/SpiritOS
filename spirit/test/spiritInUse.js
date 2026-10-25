@@ -376,7 +376,32 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const openFn = (faceHomeCode.match(/function open\(url, k\) \{[\s\S]*?\n  \}/) || [''])[0];
   if (/relay-rows/.test(priorityFn) && /relay-rows/.test(openFn)) test.check('a relay face hears relay-rows: on the face stream as it changes, and once when the face opens');
   else test.fail('a relay face never hears relay-rows' + (/relay-rows/.test(priorityFn) ? ' when it opens' : ''));
-  const hearers = ['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
+  // LEAVING A RELAY (Andy: "add the leave verb to node. and publish the \"leaving\"", go): relay.leave {key} posts the
+  // removal of this node's own key to that relay and, on its yes, clears the seat, email and face on that relay's row;
+  // the row stays for a later join. A relay verb, so relay-rows publishes it. Never for a relay this node owns.
+  const relayApiNow = code('spirit/relay/api.js');
+  if (/leave\s*:\s*\{\s*key\s*:/.test(relayApiNow)) test.check('the relay family declares leave {key}');
+  else test.fail('the relay family has no leave verb');
+  const leaveRun = spawnSync(process.execPath, ['-e', [
+    "var k = require('./spirit/relayKeys'); var b = require('./spirit/ownerBadge'); var url = 'https://leave.example';",
+    "var key = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls='; k.accept(process.cwd(), url, key); b.addRelay(process.cwd(), url, 'leave', key);",
+    "k.seat(process.cwd(), url, 'me'); k.keepEmail(process.cwd(), url, 'me@example.org', true); k.keepFace(process.cwd(), url, 'me', 'me@example.org', 'reply');",
+    "var did = typeof k.leaveSeat === 'function' ? k.leaveSeat(process.cwd(), url) : 'missing';",
+    "process.stdout.write(JSON.stringify({ did: did, seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1, mail: k.emailOf(process.cwd(), url), face: k.faceOf(process.cwd(), url), listed: b.loadRelays(process.cwd()).some(function (r) { return r.url === url; }) }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
+  let left = null;
+  try { left = JSON.parse(leaveRun.stdout); } catch (e) { left = { said: leaveRun.stdout + leaveRun.stderr }; }
+  if (left && left.did === true && left.seated === false && left.mail && left.mail.email === '' && !left.mail.verified && left.face === null && left.listed === true)
+    test.check('leaving, driven: the seat, the email and the face on that relay\'s row are cleared; the relay stays listed');
+  else test.fail('leaving, driven: ' + short(left));
+  const hubCode = code('spirit/hub.js');
+  const leaveFn = (hubCode.match(/function relayLeave\(body, deps\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/removePeer/.test(leaveFn) && /leaveSeat\(/.test(leaveFn) && /owned|reports\[/.test(leaveFn) && /'leave'\s*:/.test(code('spirit/server.js')))
+    test.check('relay.leave on the node: the removal of its own key posted to the relay, the seat cleared on its yes, refused for a relay it owns');
+  else test.fail('relay.leave is not on the node');
+  const ndNow = code('shell/js/natterDetails/natterDetails.js');
+  if (/relay\.leave/.test(ndNow) && /Press again to leave/.test(ndNow)) test.check('the relay details offer Leave this relay, in two presses');
+  else test.fail('the relay details offer no Leave');
+  const hearers = ['shell/js/contacts/listElement.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
   if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
   else test.fail('not hearing relay-rows: ' + short(hearers));
 
