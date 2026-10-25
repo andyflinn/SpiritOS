@@ -251,6 +251,12 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else test.fail('the face shell does not send the link\'s code to the relay the link names');
   if (/'join-steps'/.test(faceShell) && /joinSteps/.test(faceShell) && /onSteps/.test(faceShell)) test.check('the face shell decides Join\'s open step from the node\'s join-steps job (joinSteps.js) and hands Join its steps');
   else test.fail('the face shell does not decide Join\'s steps');
+  // NO JOIN ICON IN THE OLD SHELL (Andy: "who said i wanted a super-ugly icon saying EMAIL join????? on the shell, an
+  // ICON THAT DOESN't DO SHIT? ... Get RID of it"): Join's manifest is hidden there; the face draws Join by its open step.
+  let joinManifest = null;
+  try { joinManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'join', 'join.json'), 'utf8')); } catch (e) { joinManifest = null; }
+  if (joinManifest && joinManifest.hidden === true && /joinOpenStep\(\)/.test(faceShell)) test.check('Join draws no icon in the old shell; the face shows it by its open step');
+  else test.fail('Join still has an icon in the old shell');
   const joinApp = code('shell/join/join.js');
   if (/relay-state\/shell\/join\//.test(joinApp) && !/setAppOverride/.test(joinApp)) test.check('Join keeps its own fact (face opened) in relay-state/shell/join/, not the old shell\'s preferences');
   else test.fail('Join still keeps its fact through the old shell\'s setAppOverride');
