@@ -11,7 +11,7 @@
 // .value and fires one bubbling `change` when the value is set.
 
 (function () {
-  var escapeHtml = spirit.core.util.escapeHtml;
+  var escapeHtml = spirit.escapeHtml;
 
   // ── THE APPSERVER SELECTOR (apiAuth/G1.8) ──────────────────────────
   //

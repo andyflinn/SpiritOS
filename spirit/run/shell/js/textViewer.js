@@ -11,9 +11,9 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var codeMirror = null;
 
-  function core() { return (window.spirit && window.spirit.core) || {}; }
+  function sp() { return window.spirit || {}; }
   function esc(s) {
-    var f = core().util && core().util.escapeHtml;
+    var f = sp().escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function text(r) { return new TextDecoder().decode(r.bytes); }
@@ -68,7 +68,7 @@
         Array.prototype.forEach.call(host.querySelectorAll('[data-arg-name]'), function (input) {
           values[input.getAttribute('data-arg-name')] = input.type === 'number' ? Number(input.value) : input.value;
         });
-        core().jobs.start({ command: lang === 'js' ? 'node' : lang, args: [path, JSON.stringify(values)], type: manifest.label || match[2] });
+        sp().jobs.create({ command: lang === 'js' ? 'node' : lang, args: [path, JSON.stringify(values)], type: manifest.label || match[2] });
         var shell = window.spirit && window.spirit.shell;
         if (shell && typeof shell.launchApp === 'function') shell.launchApp('shell/jobs', null, { replace: true });
       });

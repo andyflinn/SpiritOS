@@ -110,7 +110,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else test.fail('parts not there: ' + short(missing));
   const FACE_APPS = ['shell/contacts/contacts.js', 'shell/files/files.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/mediaViewer/mediaViewer.js'];
   const faceLoads = ['face/shell.js', 'face/seal.js', 'face/login/login.js'].concat(FACE_APPS, (parts || []).filter(function (p) { return /\.js$/.test(p); }));
-  const onCore = faceLoads.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /\.core\b/.test(code(f)); });
+  // The kernel's object, by any name: spirit.core, window.spirit.core, a core() helper over it (a file's own core flag,
+  // v.core or cmd.core, is a field of the row, not the kernel).
+  const onCore = faceLoads.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /spirit\.core\b|\bcore\(\)|spirit\s*&&\s*spirit\.core/.test(code(f)); });
   if (parts && !onCore.length) test.check('nothing the face loads touches the kernel\'s object: its shell, seal, login, apps and ' + parts.length + ' parts (' + faceLoads.length + ' files read)');
   else test.fail('still on the kernel, on a face: ' + short(onCore));
   const onWindow = all.filter(function (f) { return /\bfaceSeal\b|\bfaceShell\b/.test(code(f)); });

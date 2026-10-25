@@ -24,7 +24,7 @@
 // question: a card that arrives from somebody else is their six
 // characters, not yours.
 
-var contactsEscapeHtml = spirit.core.util.escapeHtml;
+var contactsEscapeHtml = spirit.escapeHtml;
 var contactsApi = null;
 
 // What this node does with mail from somebody it has not added. It moved

@@ -14,7 +14,7 @@
 // index.html loads appServerSelector.js before this file.
 
 (function () {
-  var escapeHtml = spirit.core.util.escapeHtml;
+  var escapeHtml = spirit.escapeHtml;
 
   // ── THE API-BRANCH SELECTOR (apiAuth/G1.9) ─────────────────────────
   //

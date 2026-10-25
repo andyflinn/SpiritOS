@@ -90,7 +90,7 @@
     }
   }
 
-  window.faceShell.activateApp({
+  spirit.shell.activateLogin({
     mount: function (container, shellApi) {
       pane = container;
       api = shellApi;

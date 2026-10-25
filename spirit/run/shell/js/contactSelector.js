@@ -29,7 +29,7 @@
 // options.status(row), when given, names a row's status from the row itself (Contacts: blocked, held).
 
 (function () {
-  var escapeHtml = spirit.core.util.escapeHtml;
+  var escapeHtml = spirit.escapeHtml;
 
   function parseRow(item) {
     var key = String((item && item.key) || '');
@@ -45,7 +45,6 @@
   function createContactSelector(options) {
     options = options || {};
     var isPane = options.face === 'pane';
-    var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
     var statuses = (Array.isArray(options.statuses) && options.statuses.length) ? options.statuses : [{ status: 'none' }];
     var statusOf = {};
     var presentOf = {};
@@ -68,14 +67,16 @@
       var want = Object.prototype.hasOwnProperty.call(statusOf, row.key) ? statusOf[row.key]
         : (typeof options.status === 'function' ? options.status(row) : undefined);
       var pair = statuses.filter(function (s) { return s && s.status === want; })[0] || statuses[0];
+      // A status names its glyph by key: the one icon table, the icon module's (goal/G40.7).
+      var ICON = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
       return (pair && pair.iconKey && ICON[pair.iconKey]) || '';
     }
-    function presenceGlyph(key) { return presentOf[key] === true ? (ICON.GREEN_CIRCLE || '●') : (ICON.WHITE_CIRCLE || '○'); }
+    function presenceGlyph(key) { return presentOf[key] === true ? ('🟢') : ('⚪'); }
 
     // The current row (goal/G4.14: "the pane usually has a \"current\"") is the shared list's, drawn the same in every list
     // since goal/G29.9; the name is marked where the words match.
     function paint(row, mark) {
-      var star = row.owned ? '<span title="Your puppet: its card names this node as its owner.">' + (ICON.STAR || '★') + '</span>' : '';
+      var star = row.owned ? '<span title="Your puppet: its card names this node as its owner.">' + ('⭐') + '</span>' : '';
       var pt = presentTitle[row.key];
       var m = typeof mark === 'function' ? mark : escapeHtml;
       return '<td class="icon-cell">' + star + '</td>' +
@@ -140,9 +141,9 @@
         name: 'show',
         choices: function (all) {
           var out = [{ value: 'all', word: 'all' }];
-          if (any('owned')(all)) out.push({ value: 'owned', icon: ICON.STAR || '★', word: 'my puppets' });
-          if (any('blocked')(all)) out.push({ value: 'blocked', icon: ICON.NO || '', word: 'blocked' });
-          if (any('held')(all)) out.push({ value: 'held', icon: ICON.WAITING || '', word: 'held' });
+          if (any('owned')(all)) out.push({ value: 'owned', icon: '⭐', word: 'my puppets' });
+          if (any('blocked')(all)) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
+          if (any('held')(all)) out.push({ value: 'held', icon: '⌛', word: 'held' });
           if (any('relay')(all)) out.push({ value: 'relay', word: 'relays' });
           return out;
         },

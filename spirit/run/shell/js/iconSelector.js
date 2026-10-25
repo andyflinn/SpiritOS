@@ -11,7 +11,7 @@
 // .value and fires one bubbling `change` when the value is set.
 
 (function () {
-  var escapeHtml = spirit.core.util.escapeHtml;
+  var escapeHtml = spirit.escapeHtml;
 
   // A dropdown for choosing one icon out of the ICON pool, offered to
   // apps as api.ui.elements.createIconSelector.
@@ -44,7 +44,7 @@
   function createIconSelector(excludeGlyphs, options) {
     options = options || {};
     var iconIndex = window.spirit.iconIndex;
-    var choices = iconIndex.choices(spirit.core.const.ICON, excludeGlyphs);
+    var choices = iconIndex.choices(iconIndex.ICON, excludeGlyphs);
 
     var root = document.createElement('div');
     root.className = 'icon-selector';
@@ -66,7 +66,7 @@
       field.innerHTML =
         '<span class="icon-selector-glyph">' + escapeHtml(value) + '</span>' +
         '<span class="icon-selector-name">' + escapeHtml(labelFor(value)) + '</span>' +
-        '<span class="icon-selector-caret">' + escapeHtml(spirit.core.const.ICON.POINTDOWN) + '</span>';
+        '<span class="icon-selector-caret">' + escapeHtml('🔽') + '</span>';
     }
 
     function paintRows() {

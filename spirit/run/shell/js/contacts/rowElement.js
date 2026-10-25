@@ -20,7 +20,7 @@
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
-    var f = window.spirit && spirit.core && spirit.core.util && spirit.core.util.escapeHtml;
+    var f = window.spirit && spirit.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   // The label's rule, from the one definition (goal/G4.16).

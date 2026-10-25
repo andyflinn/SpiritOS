@@ -16,9 +16,9 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
 
-  function core() { return (window.spirit && window.spirit.core) || {}; }
+  function sp() { return window.spirit || {}; }
   function esc(s) {
-    var f = core().util && core().util.escapeHtml;
+    var f = sp().escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   // Through the spirit object (goal/G32.2): fs.stat and fs.annotations, null where the node refuses.
@@ -32,7 +32,7 @@
     var name = String(path || '');
     var dot = name.lastIndexOf('.');
     var ext = dot >= 0 ? name.substring(dot).toLowerCase() : '';
-    var types = (core().const && core().const.MIME_TYPES) || {};
+    var types = sp().MIME_TYPES || {};
     return types[ext] || 'application/octet-stream';
   }
   function kindOf(mime) {
@@ -94,7 +94,7 @@
     draw();
     return ask('fs.stat', { path: path }).then(function (s) {
       if (!s || typeof s.size !== 'number') return;
-      var bytes = core().util && core().util.formatBytes ? core().util.formatBytes(s.size) : s.size + ' B';
+      var bytes = sp().formatBytes ? sp().formatBytes(s.size) : s.size + ' B';
       facts.push(['Size', bytes], ['Changed', new Date(s.mtimeMs).toLocaleString()], ['Created', new Date(s.birthtimeMs).toLocaleString()]);
       draw();
     });

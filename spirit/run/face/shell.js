@@ -16,15 +16,16 @@
 //     request is sealed to the home node and every answer opened with it; without X25519 the face runs unsealed and
 //     says its traffic is readable on the relay.
 //   - EVERY CALL ASYNCHRONOUS (the box: "the face shell makes every call asynchronously"): no synchronous request here.
-//   - THE PAGE'S PARTS are the home node's own: its index.html is read and its sheets and scripts loaded in order, all
-//     but the old shell (js/client/shell.js) and CodeMirror, which loads when an app needs it. kernel.js is told to ask
-//     through this link (window.spirit.transport) and to take its events from the face's own stream.
+//   - THE PAGE'S PARTS are the home node's own, in its own version: a list of its sheets and scripts written here
+//     (FACE_PARTS), fetched over the link once the families are bound, never the old home page read for them and
+//     never kernel.js (goal/G40.7). spirit.js asks through this link (window.spirit.transport) and takes its events from
+//     the face's own stream.
 //   - THE STREAM is /face/stream (sealed to this page's key when it can seal): the jobs as the loopback shell gets them,
 //     presence peer by peer, rebuilt here into the relay-presence job the apps read. Another device holding it is said,
 //     with Connect here; a face replaced by another device is told it was taken.
 //   - CONTACTS is the one app in this item, loaded from the start (Files comes later; every other app one by one).
 //   - The home node offline: the shell stays, and the small red not connected mark shows, as the local shell's does.
-// On the home node itself the link is the node's own door: no transport is set and kernel.js asks as it always has.
+// On the home node itself the link is the node's own door: no transport is set and spirit.js asks the node itself.
 
 (function () {
   var desktop = document.getElementById('desktop');
@@ -86,7 +87,7 @@
     var BODY_MAX = (window.spirit && window.spirit.limits && window.spirit.limits.BODY_MAX) || 23552;
     var bytes = new TextEncoder().encode(text);
     if (bytes.length <= BODY_MAX - 1024) return once(text);
-    var b64 = window.faceSeal.toB64(bytes);
+    var b64 = spirit.seal.toB64(bytes);
     var size = BODY_MAX - 1024;
     var of = Math.ceil(b64.length / size);
     var idBytes = new Uint8Array(12);
@@ -104,7 +105,7 @@
   // One request to the home node through the relay: { status, type, bytes }. Sealed when this page can seal.
   function call(request) {
     var sending = link.sealed
-      ? window.faceSeal.seal(link.node.sealKey, link.key.publicKey, link.node.publicKey, JSON.stringify(request))
+      ? spirit.seal.seal(link.node.sealKey, link.key.publicKey, link.node.publicKey, JSON.stringify(request))
           .then(function (s) { s.k = link.key.publicKey; return s; })
       : Promise.resolve(request);
     return sending.then(function (body) {
@@ -119,11 +120,11 @@
         var parts = [];
         return lines(text).reduce(function (chain, l) {
           return chain.then(function () {
-            return window.faceSeal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, l);
+            return spirit.seal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, l);
           }).then(function (got) {
             if (!got) throw new Error('an answer did not open');
             if (!head) head = JSON.parse(got.text);
-            else parts.push(window.faceSeal.fromB64(got.text));
+            else parts.push(spirit.seal.fromB64(got.text));
           });
         }, Promise.resolve()).then(function () {
           var size = parts.reduce(function (n, p) { return n + p.length; }, 0);
@@ -142,7 +143,7 @@
     var each = typeof onPiece === 'function' ? onPiece : function () {};
     var request = { get: String(path || '').replace(/^\/+/, '') };
     if (!link.sealed) return call(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
-    return window.faceSeal.seal(link.node.sealKey, link.key.publicKey, link.node.publicKey, JSON.stringify(request)).then(function (s) {
+    return spirit.seal.seal(link.node.sealKey, link.key.publicKey, link.node.publicKey, JSON.stringify(request)).then(function (s) {
       s.k = link.key.publicKey;
       return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
     }).then(function (r) {
@@ -157,11 +158,11 @@
       var chain = Promise.resolve();
       function open(l) {
         chain = chain.then(function () {
-          return window.faceSeal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, l);
+          return spirit.seal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, l);
         }).then(function (got) {
           if (!got) throw new Error('an answer did not open');
           if (!head) { head = JSON.parse(got.text); return; }
-          var piece = window.faceSeal.fromB64(got.text);
+          var piece = spirit.seal.fromB64(got.text);
           parts.push(piece);
           if ((head.status || 0) === 200) each(piece);
         });
@@ -198,7 +199,7 @@
     crypto.getRandomValues(idBytes);
     var id = Array.prototype.map.call(idBytes, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
     function next(n) {
-      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: window.faceSeal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
+      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: spirit.seal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
       return call({ upload: part }).then(function (r) {
         if (n === of - 1 || r.status !== 202) return r;
         return next(n + 1);
@@ -309,7 +310,7 @@
       }
       setConnected(true);
       if (!link.sealed) { deliver(got); return Promise.resolve(); }
-      return window.faceSeal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, got)
+      return spirit.seal.open(link.key.privateKey, link.key.publicKey, link.node.publicKey, link.key.publicKey, got)
         .then(function (o) { if (o) deliver(JSON.parse(o.text)); });
     }
     fetch('/face/stream' + (q.length ? '?' + q.join('&') : ''), { credentials: 'same-origin' }).then(function (r) {
@@ -343,23 +344,59 @@
     s.textContent = text + '\n//# sourceURL=' + path;
     document.body.appendChild(s);
   }
+  // WHAT THE FACE LOADS FROM HOME (goal/G40.7; Andy: "execute a hard-Coded download/fetch of all those scripts rather
+  // than stealing them from index.html ... but do not download kernel.js"): in order, the home page's sheets and
+  // scripts but the old shell, spirit.js (inline in this page, first), kernel.js and CodeMirror (loaded when an app
+  // needs it). A part added to the face is added here.
+  var FACE_PARTS = [
+    'spirit/ownerBadge.js',
+    'spirit/fieldRules.js',
+    'spirit/probabilityStringMatch.js',
+    'spirit/probabilityStringObjectMatch.js',
+    'spirit/probabilityBucket.js',
+    'spirit/lever.js',
+    'spirit/peerFile.js',
+    'spirit/client/chatLog.js',
+    'spirit/limits.js',
+    'spirit/client/packet.js',
+    'spirit/client/iconIndex.js',
+    'spirit/client/apiTreeIndex.js',
+    'shell.css',
+    'shell/js/textView.js',
+    'shell/js/iconSelector.js',
+    'shell/js/appHeader/appHeader.js',
+    'shell/js/contactLabel.js',
+    'shell/js/joinForm.js',
+    'shell/js/faceForm.js',
+    'shell/js/joinSteps.js',
+    'shell/shared/js/listSearch.js',
+    'shell/shared/js/progressBar.js',
+    'shell/js/contactSelector.js',
+    'shell/js/appServerSelector.js',
+    'shell/js/apiBranchSelector.js',
+    'shell/js/spiritData.js',
+    'shell/js/rowElement.js',
+    'shell/js/probabilitySearch.js',
+    'shell/js/fileViewer.js',
+    'shell/js/textViewer.js',
+    'shell/js/mediaViewer.js',
+    'shell/js/files/data.js',
+    'shell/js/files/rowElement.js',
+    'shell/js/files/listElement.js',
+    'shell/js/contacts/data.js',
+    'shell/js/contacts/rowElement.js',
+    'shell/js/contacts/listElement.js',
+    'shell/js/icons/rowElement.js',
+    'shell/js/icons/listElement.js',
+    'shell/js/fieldInput.js',
+  ];
   function loadParts() {
-    return fileText('index.html').then(function (html) {
-      var doc = new DOMParser().parseFromString(html, 'text/html');
-      var parts = Array.prototype.map.call(doc.querySelectorAll('link[rel="stylesheet"][href], script[src]'), function (el) {
-        return String(el.getAttribute('href') || el.getAttribute('src') || '').replace(/^\/+/, '');
-      }).filter(function (p) {
-        // The old shell stays on loopback; CodeMirror loads when an app needs it.
-        // spirit.js is in this page already, inline and first (goal/G32.1, goal/G40.1).
-        return p && p !== 'spirit/client/shell.js' && p !== 'spirit.js' && p.indexOf('shell/node_modules/') !== 0;
-      });
-      return parts.reduce(function (chain, p) {
-        return chain.then(function () { return fileText(p); }).then(function (text) { inject(p, text); }, function () { /* one part missing is said by the app that needs it */ });
-      }, Promise.resolve()).then(function () {
-        // The face's green stays last, over the home node's sheets.
-        var green = document.querySelector('link[href="/face/face.css"]');
-        if (green) document.head.appendChild(green);
-      });
+    return FACE_PARTS.reduce(function (chain, p) {
+      return chain.then(function () { return fileText(p); }).then(function (text) { inject(p, text); }, function () { /* one part missing is said by the app that needs it */ });
+    }, Promise.resolve()).then(function () {
+      // The face's green stays last, over the home node's sheets.
+      var green = document.querySelector('link[href="/face/face.css"]');
+      if (green) document.head.appendChild(green);
     });
   }
 
@@ -429,8 +466,9 @@
 
   function apiFor(app) {
     var api = {
-      escapeHtml: spirit.core.util.escapeHtml,
-      verb: function (name, args) { return spirit.core.ask(name, args); },
+      escapeHtml: spirit.escapeHtml,
+      // A face app's call to its home node, over this link (goal/G40.7: no kernel on a face).
+      verb: function (name, args) { return ask(name, args); },
       sendMessagePacket: function (packetApp, toId, body, opts) {
         var envelope = window.spirit.packet || null;
         if (!envelope) return Promise.resolve({ status: 0, text: '{"error":"spirit/client/packet.js is not loaded"}' });
@@ -438,7 +476,7 @@
         if (!made.ok) return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
         var args = { to: toId, text: made.text };
         if (opts && Number(opts.patienceMs) > 0) args.patienceMs = Number(opts.patienceMs);
-        return spirit.core.ask('peer.post', args);
+        return ask('peer.post', args);
       },
       peerPost: function (packetApp, toId, body, opts) {
         return api.sendMessagePacket(packetApp, toId, body, opts).then(function (r) {
@@ -602,19 +640,20 @@
           link.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
           // The tab says whose face this is: the ID's label after the 🤓 (goal/G30.15).
           if (keys.name) document.title = String(keys.name);
-          return window.faceSeal && link.node.sealKey ? window.faceSeal.supported() : false;
+          return spirit.seal && link.node.sealKey ? spirit.seal.supported() : false;
         }).then(function (can) {
           if (!can) { say('This browser cannot seal: your traffic is readable on the relay.'); return null; }
-          return window.faceSeal.newKey().then(function (key) { link.key = key; link.sealed = true; });
+          return spirit.seal.newKey().then(function (key) { link.key = key; link.sealed = true; });
         });
     ready.then(function () {
       if (!home) window.spirit.transport = { ask: ask, events: events, file: file };
       if (home) setConnected(true);
-      // The spirit object (goal/G32.1), inline in this page, gets its families once the node can be reached.
-      if (window.spirit && typeof window.spirit.start === 'function') window.spirit.start();
-      return loadParts();
+      // The spirit object (goal/G32.1), inline in this page, gets its families once the node can be reached, and the
+      // parts load once they are there (goal/G40.7: "fetch the damn api's from home" first).
+      var parts = function () { return loadParts(); };
+      return Promise.resolve(window.spirit.start()).then(parts, parts);
     }).then(function () {
-      window.spirit.shell = { activateApp: activateApp, factRow: factRow, faceApp: readFace };
+      Object.assign(window.spirit.shell = window.spirit.shell || {}, { activateApp: activateApp, factRow: factRow, faceApp: readFace });
       link.loaded = true;
       openStream(false);
       listApps();
@@ -629,7 +668,7 @@
   // The old shell's fact row (js/client/shell.js factRow), the same markup, for the dialogs that draw with it
   // (Relay Details, Contact): pairs of [label, value], escaped.
   function factRow(pairs) {
-    var esc = spirit.core.util.escapeHtml;
+    var esc = spirit.escapeHtml;
     return '<div class="fact-row">' + (pairs || []).map(function (pair) {
       return '<div class="fact">' +
         '<span class="fact-label">' + esc(String(pair[0])) + '</span>' +
@@ -642,9 +681,8 @@
     if (loadingId && apps[loadingId]) apps[loadingId].behavior = behavior;
   }
 
-  window.faceShell = {
-    activateApp: function (behavior) { login = behavior; mountLogin(); },
-  };
+  // THE LOGIN APP HANDS ITSELF OVER on the one spirit object, nothing on window (goal/G40.7).
+  (window.spirit.shell = window.spirit.shell || {}).activateLogin = function (behavior) { login = behavior; mountLogin(); };
 
   var fromLink = (window.location.search || '').length > 1;
   if (fromLink) { try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the token is spent */ } }
