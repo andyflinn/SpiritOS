@@ -95,7 +95,8 @@ function appsPanel(host, listHost, api, path) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     var E = window.spirit.elements;
-    container.innerHTML = '<div data-apps="list"></div><div data-apps="detail" hidden></div>';
+    // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
+    container.innerHTML = '<div data-apps="list" class="fill"></div><div data-apps="detail" hidden></div>';
     var listHost = container.querySelector('[data-apps="list"]');
     var appHost = container.querySelector('[data-apps="detail"]');
     appsList = E.probabilitySearch.create(listHost, {

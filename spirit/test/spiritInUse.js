@@ -143,7 +143,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   // lists a box that takes what their pane leaves (shell.css .fill), as Contacts does.
   const shellCss = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8');
   const filled = /\.fill\s*\{[^}]*flex:\s*1/.test(shellCss) && /data-files="list" class="fill"/.test(code('shell/files/files.js')) &&
-    /files-tree fill/.test(code('shell/js/files/listElement.js')) && /data-icons="pane" class="fill"/.test(code('shell/icons/icons.js'));
+    /files-tree fill/.test(code('shell/js/files/listElement.js')) && /data-icons="pane" class="fill"/.test(code('shell/icons/icons.js')) &&
+    /data-apps="list" class="fill"/.test(code('shell/apps/apps.js'));
   if (!/container\.style\./.test(ps) && filled) test.check('space is granted top-down: the list search sets no size on its box; Files and Icons size the boxes they hand it (shell.css .fill)');
   else test.fail('top-down space: the list search ' + (/container\.style\./.test(ps) ? 'still sizes its box' : 'sizes nothing') + ', Files and Icons ' + (filled ? 'size their boxes' : 'hand it unsized boxes'));
   const faceCss = fs.readFileSync(path.join(RUN, 'face', 'face.css'), 'utf8');
