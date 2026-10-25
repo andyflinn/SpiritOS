@@ -318,6 +318,61 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!misplaced.length) test.check('Join, Info and the relay details draw both forms through mount, the relay details fixed to their relay');
   else test.fail('the forms are not drawn everywhere the same: ' + short(misplaced));
 
+  // FIELDS THAT KEEP THEIR LIMIT (box v20): fieldRules has the email rule, at most 254 bytes, with its reason; a field
+  // with a limit is clipped at it as it is typed, and counts only what is left.
+  test.subHeading('1k. fields keep their limit, and the email rule');
+  const rulesRun = spawnSync(process.execPath, ['-e', [
+    "var R = require(process.argv[1]);",
+    "var bad = ['ab', 'a b@c', '@b', 'a@', 'a@b@c', 'a'.repeat(250) + '@b.cd'];",
+    "var said = typeof R.emailProblem === 'function' ? bad.map(R.emailProblem) : null;",
+    "var ok = typeof R.emailProblem === 'function' ? R.emailProblem('andy@example.org') : 'missing';",
+    "var clip = typeof R.clip === 'function' ? R.clip('ab\\u{1F600}cd', 5) : null;",
+    "process.stdout.write(JSON.stringify({ said: said, ok: ok, max: R.EMAIL_MAX_BYTES, clip: clip, clipBytes: clip == null ? -1 : R.byteLength(clip) }));"].join('\n'), path.join(RUN, 'spirit', 'fieldRules.js')], { encoding: 'utf8' });
+  let rules = null;
+  try { rules = JSON.parse(rulesRun.stdout); } catch (e) { rules = { said: rulesRun.stdout + rulesRun.stderr }; }
+  if (rules && rules.ok === '' && Array.isArray(rules.said) && rules.said.every(function (w) { return w && !/type your email/.test(w); }) && new Set(rules.said.slice(0, 5)).size >= 4 && rules.max === 254)
+    test.check('fieldRules\' email rule, driven: a good address passes; each bad one is told what is wrong; at most 254 bytes');
+  else test.fail('fieldRules\' email rule, driven: ' + short(rules));
+  if (rules && rules.clip === 'ab' && rules.clipBytes <= 5) test.check('fieldRules.clip, driven: a text cut at its byte limit, never through a character');
+  else test.fail('fieldRules.clip, driven: ' + short(rules && { clip: rules.clip, bytes: rules.clipBytes }));
+  const relayCode = code('spirit/relay.js');
+  if (/emailProblem\(/.test(relayCode)) test.check('the relay\'s join checks the email by the same rule');
+  else test.fail('the relay checks the email by a rule of its own');
+  const joinFormNow = code('shell/js/joinForm.js');
+  if (/emailProblem\(/.test(joinFormNow) && /clip\(/.test(joinFormNow) && !/type your email address/.test(joinFormNow)) test.check('the email form clips at the limit and says what is wrong with an address');
+  else test.fail('the email form neither clips nor says what is wrong');
+  const infoNow = code('shell/info/info.js');
+  if (/clip\(/.test(infoNow) && !/too many/.test(infoNow)) test.check('Info\'s name and description stop at their limit, and count only what is left');
+  else test.fail('Info still counts past the limit');
+
+  // THE RELAYS ON THE STREAM (box v21): one permanent job, relay-rows, the relays this node lists with seat, email and
+  // face, published only when they change; the forms, Info and the relay details redraw from it.
+  test.subHeading('1l. the relays on the stream: relay-rows, published when they change, heard by every screen');
+  const rowsHome = setupRelayFakes('spiritInUseRows').andy;
+  fs.rmSync(path.join(rowsHome, 'relay-state'), { recursive: true, force: true });
+  const rowsRun = spawnSync(process.execPath, ['-e', [
+    "var J = null; try { J = require('./spirit/relayRowsJob'); } catch (e) { process.stdout.write('missing'); process.exit(0); }",
+    "var k = require('./spirit/relayKeys'); var b = require('./spirit/ownerBadge'); var url = 'https://rows.example';",
+    "b.addRelay(process.cwd(), url, 'rows', ''); k.accept(process.cwd(), url, 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=');",
+    "var sent = []; var jobs = { createJob: function (kind, type, data) { return { id: 'j1', type: type, data: data }; }, updateJob: function (id, p) { sent.push(p.data); } };",
+    "var r = J.create(process.cwd(), jobs);",
+    "var same = r.refresh('nothing');",
+    "k.seat(process.cwd(), url, 'me'); k.keepEmail(process.cwd(), url, 'me@example.org', true);",
+    "var changed = r.refresh('seated');",
+    "var row = (sent[0] && sent[0].rows || []).filter(function (x) { return x.url === url; })[0] || null;",
+    "process.stdout.write(JSON.stringify({ type: r.job.type, same: same, changed: changed, row: row }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
+  let rows = null;
+  try { rows = JSON.parse(rowsRun.stdout); } catch (e) { rows = { said: rowsRun.stdout + rowsRun.stderr }; }
+  if (rows && rows.type === 'relay-rows' && rows.same === false && rows.changed === true && rows.row && rows.row.claimed === true && rows.row.emailVerified === true && rows.row.email === 'me@example.org')
+    test.check('relay-rows, driven: published only when a row changed; a seat and a verified email show on the row');
+  else test.fail('relay-rows, driven: ' + short(rows));
+  const serverCode = code('spirit/server.js');
+  if (/relayRowsJob/.test(serverCode) && /relayRowsJob\.refresh\(/.test(serverCode) && /kind === 'status'[\s\S]{0,200}relayRowsJob\.refresh|relayRowsJob\.refresh[\s\S]{0,200}kind === 'status'/.test(serverCode)) test.check('the node refreshes relay-rows after a relay verb and on a relay\'s report');
+  else test.fail('the node does not refresh relay-rows after relay verbs and reports');
+  const hearers = ['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
+  if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
+  else test.fail('not hearing relay-rows: ' + short(hearers));
+
   // NO KEYS IN ANY FACE APP (box v15; Andy: "remove ANY indication of keys from all user interfaces"): no app the face
   // shows, and no element it loads, puts a key or a sentence about one on the screen.
   const faceApps = fs.readdirSync(path.join(RUN, 'shell')).filter(function (d) {
