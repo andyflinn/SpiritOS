@@ -23,10 +23,11 @@ function formatDuration(ms) {
   return seconds + 's';
 }
 
-module.exports = function installJobs(spirit, port) {
+// ITS OWN STATE, ON NO KERNEL (goal/G40.6). Andy, 2026-10-25: "let jobs.js take care of its own shit." The server's
+// statistics and the job functions are this module's; the node server gets the functions back from this call.
+module.exports = function installJobs(port) {
   const scanFolder = fileSystem.scanFolder;
-
-  spirit.core.server = spirit.core.server || { stats: {} };
+  const serverStats = {};
 
   const jobsMap = new Map();
   const events = new EventEmitter();
@@ -552,8 +553,8 @@ module.exports = function installJobs(spirit, port) {
     const intervalMs = options.intervalMs || DEFAULT_STATS_INTERVAL_MS;
     const requestCounters = options.requestCounters || { total: 0, byMethod: {}, byStatusClass: {} };
 
-    const job = createJob('permanent', 'server-stats', spirit.core.server.stats);
-    // job.data === spirit.core.server.stats from here on (createJob assigns the reference as-is)
+    const job = createJob('permanent', 'server-stats', serverStats);
+    // job.data === serverStats from here on (createJob assigns the reference as-is)
 
     const histogram = monitorEventLoopDelay({ resolution: 10 });
     histogram.enable();
@@ -620,7 +621,7 @@ module.exports = function installJobs(spirit, port) {
     return job;
   }
 
-  spirit.core.node.jobs = {
+  return {
     events: events,
     createJob: createJob,
     updateJob: updateJob,
@@ -637,6 +638,4 @@ module.exports = function installJobs(spirit, port) {
     startNodeServers: startNodeServers,
     startStatsJob: startStatsJob,
   };
-
-  return spirit.core.node.jobs;
 };

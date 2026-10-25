@@ -83,6 +83,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const onKernelBody = ['spirit/serveCommon.js', 'spirit/relayRequest.js'].filter(function (f) { return /require\('\.\/kernel(\.js)?'\)/.test(code(f)); });
   if (!readers.length && !onKernelBody.length && /function readBody\(stream, opts\)/.test(code('spirit/serveCommon.js'))) test.check('the body reader is serveCommon.readBody; nothing but the kernel\'s own name calls the kernel\'s, and serveCommon and relayRequest require no kernel');
   else test.fail('the body reader: ' + short({ readers: readers, onKernel: onKernelBody }));
+  const nodeLoads = spawnSync(process.execPath, ['-e', "require('./spirit/fileSystem.js'); require('./spirit/serveCommon.js'); require('./spirit/relayRequest.js'); require('./spirit/jobs.js')(1);" +
+    " process.stdout.write(JSON.stringify(Object.keys(require.cache).filter(function (k) { return /kernel\\.js$/.test(k); })))"], { cwd: RUN, encoding: 'utf8' });
+  const kernelRequired = ['spirit/server.js', 'spirit/relayServer.js', 'spirit/jobs.js'].filter(function (f) { return /require\('\.\/kernel(\.js)?'\)|\.core\./.test(code(f)); });
+  if (nodeLoads.stdout === '[]' && !kernelRequired.length) test.check('the node and the relay load no kernel.js: server.js, relayServer.js and jobs.js neither require it nor touch a .core., and jobs.js keeps its own state');
+  else test.fail('the node or the relay still loads the kernel: ' + short(nodeLoads.stdout + nodeLoads.stderr) + ' ' + short(kernelRequired));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));

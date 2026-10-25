@@ -29,7 +29,6 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 
-const kernel = require('./kernel');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
 const fileSystem = require('./fileSystem');
 // The helpers this node shares with the relay's startup module — body
@@ -149,7 +148,7 @@ const arrivals = require('./arrivals').createArrivals({
 // killed with the relay's public door (goal/G22.6).
 const BOOT_ASSETS = ['index.html', 'spirit/kernel.js', 'spirit/client/shell.js', 'favicon.svg'];
 
-const jobs = require('./jobs')(kernel, port);
+const jobs = require('./jobs')(port);
 jobs.startFsWatcherJob(ROOT_DIR);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
