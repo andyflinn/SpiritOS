@@ -331,16 +331,14 @@ function shape(v) {
 // AGENTS.md file of the verb.json files?")
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
-// process's kernel DEBUG. A member never reaches it (apiDoor refuses it by name).
-// This server's debug switch, its own (goal/G40.6: no kernel in a server).
-let DEBUG = false;
+// process's DEBUG, spirit.debug (goal/G40.6). A member never reaches it (apiDoor refuses it by name).
 function withDebug(verbs) {
   if (Object.prototype.hasOwnProperty.call(verbs, 'DEBUG')) return verbs;
   const all = Object.assign({}, verbs);
   all.DEBUG = {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
-    handler: function (a) { if (typeof a.on === 'boolean') DEBUG = a.on; return { debug: DEBUG }; },
+    handler: function (a) { return { debug: spirit.debug(typeof a.on === 'boolean' ? a.on : undefined) }; },
   };
   return all;
 }

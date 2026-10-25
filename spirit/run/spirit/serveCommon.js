@@ -11,12 +11,14 @@
 // hand it.
 'use strict';
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const spirit = require('./kernel');
+const kernel = require('./kernel');
 const limits = require('./limits.js');
 
-const MIME_TYPES = spirit.core.const.MIME_TYPES;
+const MIME_TYPES = spirit.MIME_TYPES;
 
 // Job spawning (jobs.js's startProcessJob) passes relative script paths
 // like "process/js/pushOrigin/pushOrigin.js" straight to
@@ -181,7 +183,7 @@ function readJsonBody(req, opts) {
     // past `max`, the socket destroyed, 413 — and the running total is
     // still kept on the request, because the node's door answers how much
     // it read even when it refused (`bodyBytes`).
-    spirit.core.readBody(req, {
+    kernel.core.readBody(req, {
       max: max,
       onBytes: seen => { req[BODY_BYTES] = seen; },
     }).then(body => {
@@ -302,7 +304,7 @@ function parseRequestPath(req, res) {
 function sendVersion(res, build, startedAt, isRelay) {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify({
-    version: spirit.core.const.VERSION,
+    version: spirit.VERSION,
     commit: build.commit,
     dirty: build.dirty,
     committedAt: build.at,

@@ -10,6 +10,8 @@
 // `node spirit/server.js --relay`. Changing that is a deploy decision (Andy's),
 // not part of the split. (The Procfile and install-public-relay.js did too,
 // until both went in cycle 3.)
+// The spirit object first, as the global spirit (goal/G40.1): the relay loads it too, so it comes before the branch.
+require('../spirit.js');
 if (process.argv.slice(2).includes('--relay')) {
   require('./relayServer');
   return;
@@ -27,7 +29,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 
-const spirit = require('./kernel');
+const kernel = require('./kernel');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
 const fileSystem = require('./fileSystem');
 // The helpers this node shares with the relay's startup module — body
@@ -64,7 +66,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     'Usage: node spirit/server.js [--port <number>] [--email <address>]\n\n' +
     '  Runs a personal node: loopback HTTP only. A public relay is\n' +
     '  spirit/relayServer.js (`node spirit/server.js --relay` still starts one).\n\n' +
-    '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
+    '  --port <number>   Listen on this port instead of the default (' + spirit.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
     '  --email <address> Join the kept relay by your email while this node holds no seat: a mail\n' +
     '                    arrives with a link that connects the node. Optional; ignored once seated.\n' +
@@ -93,7 +95,7 @@ require('./shellMove').moveAppState(ROOT_DIR);
 
 const hub =require('./hub').createHub(ROOT_DIR);
 
-const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
+const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.DEFAULT_SPIRIT_PORT;
 // This node's port into relay-state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
 // it, nothing else).
 common.writeEnvironment(ROOT_DIR, port);
@@ -147,7 +149,7 @@ const arrivals = require('./arrivals').createArrivals({
 // killed with the relay's public door (goal/G22.6).
 const BOOT_ASSETS = ['index.html', 'spirit/kernel.js', 'spirit/client/shell.js', 'favicon.svg'];
 
-const jobs = require('./jobs')(spirit, port);
+const jobs = require('./jobs')(kernel, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
@@ -1826,7 +1828,7 @@ contactBook.syncMarks(ROOT_DIR);
   const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
-  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.core.const.MIME_TYPES });
+  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.MIME_TYPES });
   // auth (apiAuth/G1.4, its own family since goal/G30.6): the owner's allow-table, loopback only. An answer is the verb's object as is; a refusal is the catalogue's, by name.
   const apiAuth = require('./apiAuth').createApiAuth({
     rootDir: ROOT_DIR,
@@ -1935,7 +1937,7 @@ contactBook.syncMarks(ROOT_DIR);
     // RAM only, off at every start (kernel.js).
     'debug': { request: { debug: { on: false } }, reply: { ok: true, debug: false }, handler: proxyVerb(function (b) {
       const d = b && b.debug;
-      return { ok: true, debug: spirit.core.util.debug(d && typeof d.on === 'boolean' ? d.on : undefined) };
+      return { ok: true, debug: spirit.debug(d && typeof d.on === 'boolean' ? d.on : undefined) };
     }) },
     'setName': { request: { name: '' }, reply: { ok: true, status: 0, name: '' }, handler: function (rq, rs) { hub.handleNodeName(rq, rs, readJsonBody); } },
     'setDescription': { request: { description: '' }, reply: { ok: true, status: 0, description: '' }, handler: function (rq, rs) {
@@ -2064,7 +2066,7 @@ contactBook.syncMarks(ROOT_DIR);
     'face': { request: { url: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
-    'join': { request: { url: '', email: '', code: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.core.node.const.SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
+    'join': { request: { url: '', email: '', code: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
     // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
     // cycle 11's R6. `relay.status` probes; this reads what was already
     // written as the reports arrived, so it reaches no network at all —
@@ -2219,7 +2221,7 @@ function markRecord(kind) {
 // what came of it is printed first, then the listening line (the box: "and then the line it listens on").
 const startEmail = common.emailFromArgs(process.argv.slice(2));
 server.listen(port, BIND_HOST, () => {
-  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.core.node.const.SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) })
+  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) })
     .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Natter instead.'] }; })
     .then(function (r) {
       (r.lines || []).forEach(function (line) { console.log(line); });

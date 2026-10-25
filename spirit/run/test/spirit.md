@@ -11,9 +11,9 @@ first and does everything through it. A module whose first require is not spirit
 ## Its role
 
 The one door. It is the only place that tells a page from node, it reaches the node by one post and one get, it puts
-the node's families on itself, and it loads every other component. The node server and the relay server build their
-own spirit (`spirit/kernel.js`); everything else is a client of the core and gets in through this file, and spirit.js
-itself loads no kernel.
+the node's families on itself, and it loads every other component. Everything is a client of the core and gets in
+through this file, the node server and the relay server too, for the version, the MIME table, the debug switch and the
+default port; they still take the body reader from `spirit/kernel.js` until it goes. spirit.js itself loads no kernel.
 
 ## One instance
 
@@ -153,9 +153,21 @@ caller may call.
   up to TB.
 - `escapeHtml(text)`: the text with `& < > " '` escaped for HTML.
 
-### `isNode()`, `isBrowser()`
+### `isNode()`, `isBrowser()`, `isLoopback()`
 
 No arguments; true or false. The only place anything asks where it runs.
+
+### `VERSION`, `DEFAULT_SPIRIT_PORT`, `MIME_TYPES`, `debug(on)`
+
+The node's and the relay's too, in node and on a page alike:
+
+- `VERSION`: the SpiritOS version, `'0.0.1'`; the relay and `/api/version` report it.
+- `DEFAULT_SPIRIT_PORT`: 65432, the port a node listens on when it is started without one. spirit.js never guesses its
+  own node's port from it (above).
+- `MIME_TYPES`: the content type of a file by its extension, `'.js'` to `'application/javascript; charset=utf-8'`.
+- `debug(on)`: the process's one debug switch, off at start, in RAM only, never persisted. A boolean sets it; anything
+  else only reads it; it answers the state that resulted. The node's, the relay's and every server's `DEBUG` verb set
+  this one.
 
 ### On a page only: `start()`, `ready`
 
@@ -181,7 +193,7 @@ spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server
 
   start, progress and end resolve once the node has them, so awaited calls arrive in order. When the jobs family is
   bound (`spirit.require('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
-- **`spirit.MIME_TYPES`**: the content type of a file by its extension.
+
 ## What the red must try to break
 
 - A second spirit: requiring it again, or after something else set a global spirit; a factory or a `call` on it.
@@ -194,6 +206,6 @@ spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server
 
 ## Not yet
 
-The face's link to its home node (the login, the seal, the sealed calls, the stream, the files) is still built by
-`face/shell.js`, which hands it to spirit.js as `window.spirit.transport`. It moves into spirit.js, and `face.html`
-then holds spirit.js alone.
+`face.html` holds spirit.js alone, and spirit.js loads the face shell. The face's link to its home node (the login,
+the sealed calls, the stream, the files) is still built by `face/shell.js`, which hands it to spirit.js as
+`window.spirit.transport`; it moves into spirit.js.

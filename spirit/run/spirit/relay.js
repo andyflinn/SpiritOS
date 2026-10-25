@@ -2625,7 +2625,7 @@ function createRelay(rootDir, deps) {
   // refuse"). Off, a member asking an owner verb gets the plain refusal a verb nobody declared gets; on, the owner
   // diagnosing his relay sees the reason. The verbs themselves are public (the repository), so this hides nothing.
   function notGranted() {
-    return require('./kernel').core.util.debug()
+    return require('../spirit.js').debug()
       ? { ok: false, status: 403, code: 'not-granted', error: 'that verb is not open to you on this relay' }
       : { ok: false, status: 404, error: 'no such peer' };
   }
@@ -2912,9 +2912,9 @@ function createRelay(rootDir, deps) {
       // signed by the owner over bytes that bind sender, recipient and this
       // text — so a captured `on` cannot be replayed as an `off`.
       if (Object.prototype.hasOwnProperty.call(body.debug, 'on')) {
-        require('./kernel').core.util.debug(!!body.debug.on);
+        require('../spirit.js').debug(!!body.debug.on);
       }
-      out = { ok: true, debug: require('./kernel').core.util.debug() };
+      out = { ok: true, debug: require('../spirit.js').debug() };
     }
 
     // FORGETTING SOMEBODY, by key — and the one verb that is BOTH kinds.
@@ -3838,7 +3838,7 @@ function createRelay(rootDir, deps) {
     //
     // Found by wsl-claude, whose relayCannotRead.js caught it as its CONTROL
     // rather than as an assertion — C3, "DEBUG off means no payload".
-    row.held = require('./kernel').core.util.debug() && extra && typeof extra.held === 'string' ? extra.held : '';
+    row.held = require('../spirit.js').debug() && extra && typeof extra.held === 'string' ? extra.held : '';
     // THE FULL REPORT, EVERY TIME SOMETHING HAPPENS (cycle 8). Andy: the
     // owner "receives also the full stat package whenever events occur" —
     // and no coalescing: "if the relay can handle 500 near-simultaneous
@@ -3923,7 +3923,7 @@ function createRelay(rootDir, deps) {
         invites.sweepExpired(rootDir);
         return invites.load(rootDir);
       }()),
-      version: require('./kernel').core.const.VERSION + ' ' + RUNNING.commit +
+      version: require('../spirit.js').VERSION + ' ' + RUNNING.commit +
         (RUNNING.dirty ? '+dirty' : ''),
       proc: {
         rss: mem.rss,

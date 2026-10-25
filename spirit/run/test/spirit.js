@@ -204,7 +204,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')))
     test.check('nothing in spirit.js but isNode() and isBrowser() asks where it runs');
   else test.fail('spirit.js asks where it runs outside isNode() and isBrowser()');
-  const MEMBERS = ['MIME_TYPES', 'check', 'error', 'escapeHtml', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'debug', 'error', 'escapeHtml', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
   if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
     test.check('in node the instance holds exactly its members: ' + MEMBERS.join(', ') + ' (and the families it binds)');
   else test.fail('in node the instance holds ' + short(Object.keys(s).sort()));
@@ -224,6 +224,11 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!('core' in s) && !/require\('\.\/spirit\/kernel\.js'\)/.test(code) && mime && /javascript/.test(mime['.js']) && /json/.test(mime['.json']))
     test.check('spirit.js requires no kernel and hands out no spirit.core; spirit.MIME_TYPES is its own table');
   else test.fail('spirit.js still holds or loads the kernel: ' + short(Object.keys(s)));
+  if (s.VERSION === '0.0.1' && s.DEFAULT_SPIRIT_PORT === 65432) test.check('spirit.VERSION is ' + s.VERSION + ' and spirit.DEFAULT_SPIRIT_PORT ' + s.DEFAULT_SPIRIT_PORT);
+  else test.fail('the version and the default port: ' + short([s.VERSION, s.DEFAULT_SPIRIT_PORT]));
+  const dbg = [s.debug(), s.debug(true), s.debug(), s.debug('yes'), s.debug(false), s.debug()];
+  if (JSON.stringify(dbg) === JSON.stringify([false, true, true, true, false, false])) test.check('spirit.debug: off at start, set by a boolean and answering the state, anything else only reads it');
+  else test.fail('spirit.debug answered ' + short(dbg));
 
   // ── 3. THE HELPERS ───────────────────────────────────────────────────
   test.subHeading('3. the helpers, in node and on a page alike');

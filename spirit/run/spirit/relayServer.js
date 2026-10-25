@@ -19,13 +19,14 @@
 // of it: the one door and the members' stream, the bind, and the goodbye.
 'use strict';
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../spirit.js');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const relayConfig = require('./relayConfig');
 const relayLimits = require('./relayLimits');
-const spirit = require('./kernel');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
 const fileSystem = require('./fileSystem');
 const createRelay = require('./relay');

@@ -583,7 +583,7 @@ module.exports = function installJobs(spirit, port) {
           } else {
             filesystem.files++;
             const ext = path.extname(entry.name).toLowerCase();
-            const mimeType = spirit.core.const.MIME_TYPES[ext] || 'application/octet-stream';
+            const mimeType = require('../spirit.js').MIME_TYPES[ext] || 'application/octet-stream';
             filesystem.byMimeType[mimeType] = (filesystem.byMimeType[mimeType] || 0) + 1;
           }
         });

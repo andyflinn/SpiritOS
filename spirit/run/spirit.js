@@ -388,6 +388,15 @@
     '.py': 'text/x-python'
   };
 
+  // THE VERSION, THE NODE'S DEFAULT PORT AND THE DEBUG SWITCH (goal/G40.6). Andy: "the version string goes into
+  // spirit.js, same for the MIME table, same for the DEBUG switch, same for the nodes default port, all go to spirit.js."
+  var VERSION = '0.0.1';
+  var DEFAULT_SPIRIT_PORT = 65432;
+  // DEBUG (desk/G2.5): one switch per process, off at start, never persisted. Andy: "DEBUG is Off by default, returned
+  // and set by owner-only api", "DEBUG is not persisted. it lives in RAM only".
+  var DEBUG = false;
+  function debug(on) { if (typeof on === 'boolean') DEBUG = on; return DEBUG; }
+
   // ── THE ONE INSTANCE, IN NODE AND ON A PAGE ───────────────────────────────────────────────────────────────────────
   // Andy: "all this module exports is the one and only instance of the spirit object", "on a browser the spirit object
   // gets placed on the window object on nodes js the spirit object is the only export of this file."
@@ -404,6 +413,9 @@
   self.require = requireOne;
 
   self.MIME_TYPES = MIME_TYPES;
+  self.VERSION = VERSION;
+  self.DEFAULT_SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
+  self.debug = debug;
 
   // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
   // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from kernel.js

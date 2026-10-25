@@ -85,11 +85,11 @@ spirit.core.ask = function (verb, args, base) {
 };
 
 // use this for old fashioned console.log debugging, which can be turned on and off with DEBUG
-let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str); }
+let print = spirit.core.util.print = function(str){ if (spirit.core.util.debug()) { console.log(str); }
 }
 // Reads DEBUG, or sets it when given a boolean; answers the state that resulted.
 spirit.core.util.debug = function (on) { if (typeof on === 'boolean') DEBUG = on; return DEBUG; };
-Object.defineProperty(spirit.core.info, 'debug', { get: function () { return DEBUG; }, enumerable: true });
+Object.defineProperty(spirit.core.info, 'debug', { get: function () { return spirit.core.util.debug(); }, enumerable: true });
 
 // use this for error messages, which will always be printed to the console
 let error = spirit.core.util.error = function(str){
@@ -246,6 +246,9 @@ if (isNode()) {
   // function from kernel.js and put them in spirit/fileSystem.js, then have both the node and relay use those." The
   // kernel's names point there, one copy of the rules of what may be served or written, until kernel.js is deleted.
   const fileSystem = require('./fileSystem');
+  // ONE DEBUG SWITCH PER PROCESS: in node, spirit.js's (goal/G40.6), so the kernel's print obeys what the node's and
+  // the relay's debug verbs set.
+  spirit.core.util.debug = require('../spirit.js').debug;
   spirit.core.node.util.fsPath = fileSystem.fsPath;
   spirit.core.node.util.scanFolder = fileSystem.scanFolder;
   ['loadFile', 'statFile', 'fileWritable', 'fileServable', 'saveFile', 'loadJsonValue', 'saveJsonValue', 'deleteFile',

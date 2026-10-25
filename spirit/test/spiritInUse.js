@@ -74,6 +74,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const kernelFs = NODE_SIDE.filter(function (f) { return /core\.fs\.|core\.node\.util\.|core\.node\.const\.ROOT_DIR/.test(code(f)) || !/require\('\.\/fileSystem'\)/.test(code(f)); });
   if (!kernelFs.length) test.check('the node server, the relay server, jobs and introSpector take the files and their rules from fileSystem.js, none from the kernel');
   else test.fail('still on the kernel\'s fs: ' + short(kernelFs));
+  const FOUR = ['spirit/server.js', 'spirit/serveCommon.js', 'spirit/relayServer.js', 'spirit/relay.js', 'spirit/jobs.js', 'spirit/appServer.js'];
+  const onKernelFour = FOUR.filter(function (f) { const c = code(f); return /core\.const\.(VERSION|MIME_TYPES)|core\.util\.debug|(DEFAULT_)?SPIRIT_PORT\b(?<!spirit\.DEFAULT_SPIRIT_PORT)|\blet DEBUG\b/.test(c.replace(/spirit\.DEFAULT_SPIRIT_PORT/g, '')); });
+  const relayKernel = /require\('\.\/kernel'\)/.test(code('spirit/relayServer.js')) || /require\('\.\/kernel'\)/.test(code('spirit/relay.js'));
+  if (!onKernelFour.length && !relayKernel) test.check('the node, the relay, the shared code, jobs and appServer take the version, the MIME table, the debug switch and the default port from spirit.js; the relay requires no kernel');
+  else test.fail('still on the kernel\'s four: ' + short(onKernelFour) + (relayKernel ? ' and the relay requires the kernel' : ''));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));
