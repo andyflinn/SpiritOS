@@ -265,6 +265,27 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     test.check('everything Info calls the face gives it: ' + infoCalls.join(', ') + ', spirit.relay.status, the face form and the field rules');
   else test.fail('Info calls what the face does not give it: ' + short(missingApi));
 
+  // THE OWNER'S SEAT, ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner has a
+  // seat"). The relay seats him at boot (goal/G30.7); his node notes that seat, under what the relay calls him, when the
+  // relay reports to its owner, so Info shows the name and a rename's answer is written.
+  test.subHeading('1h. the owner\'s seat on his node: an owned relay\'s report notes the seat under the relay\'s name for him');
+  const ownerHome = setupRelayFakes('spiritInUseOwner').andy;
+  const seatRun = spawnSync(process.execPath, ['-e', [
+    "const k = require('./spirit/relayKeys'); const b = require('./spirit/ownerBadge'); const url = 'https://owned.example';",
+    "b.addRelay(process.cwd(), url, 'owned', '');",
+    "const before = k.seatLabel(process.cwd(), url);",
+    "const noted = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
+    "const again = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
+    "process.stdout.write(JSON.stringify({ before: before, noted: noted, again: again, label: k.seatLabel(process.cwd(), url), seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1 }));"].join('\n')], { cwd: ownerHome, encoding: 'utf8' });
+  let seat = null;
+  try { seat = JSON.parse(seatRun.stdout); } catch (e) { seat = { said: seatRun.stdout + seatRun.stderr }; }
+  if (seat && seat.before === '' && seat.noted === true && seat.again === false && seat.label === 'Andy Flinn Music' && seat.seated)
+    test.check('an owned relay\'s seat, driven: noted once under the relay\'s name for its owner, seated, and not written again while unchanged');
+  else test.fail('the owner\'s seat, driven: ' + short(seat));
+  const presenceCode = code('spirit/presenceNode.js');
+  if (/relay-status[\s\S]{0,600}ownerSeat\(/.test(presenceCode)) test.check('the node notes the owner\'s seat when a relay it owns reports to it');
+  else test.fail('the node does not note the owner\'s seat on a relay\'s report');
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
