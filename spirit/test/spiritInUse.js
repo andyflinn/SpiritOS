@@ -369,6 +369,13 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const serverCode = code('spirit/server.js');
   if (/relayRowsJob/.test(serverCode) && /relayRowsJob\.refresh\(/.test(serverCode) && /kind === 'status'[\s\S]{0,200}relayRowsJob\.refresh|relayRowsJob\.refresh[\s\S]{0,200}kind === 'status'/.test(serverCode)) test.check('the node refreshes relay-rows after a relay verb and on a relay\'s report');
   else test.fail('the node does not refresh relay-rows after relay verbs and reports');
+  // On a relay face too (Andy: "onBoards face https://master.noderoutes.net/ did not update its relay dropdowns in the
+  // info page"): the face stream carries relay-rows, as it changes and once as a face opens.
+  const faceHomeCode = code('spirit/faceHome.js');
+  const priorityFn = (faceHomeCode.match(/function priorityOf\(job\) \{[\s\S]*?\n  \}/) || [''])[0];
+  const openFn = (faceHomeCode.match(/function open\(url, k\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/relay-rows/.test(priorityFn) && /relay-rows/.test(openFn)) test.check('a relay face hears relay-rows: on the face stream as it changes, and once when the face opens');
+  else test.fail('a relay face never hears relay-rows' + (/relay-rows/.test(priorityFn) ? ' when it opens' : ''));
   const hearers = ['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
   if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
   else test.fail('not hearing relay-rows: ' + short(hearers));
