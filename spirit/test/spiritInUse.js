@@ -131,6 +131,12 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const ps = code('shell/js/probabilitySearch.js');
   if (/['"]PageUp['"]/.test(ps) && /['"]PageDown['"]/.test(ps) && /ownerDocument\.addEventListener\(\s*['"]keydown['"]|document\.addEventListener\(\s*['"]keydown['"]/.test(ps)) test.check('the one list search takes up, down, home, end, page up and page down on the whole list, heard on the page, whether its field has focus or not');
   else test.fail('the list keys: page up/down ' + (/['"]PageDown['"]/.test(ps) ? 'handled' : 'missing') + ', heard on the page ' + (/document\.addEventListener\(\s*['"]keydown['"]/.test(ps) ? 'yes' : 'no, only on the search\'s own container'));
+  // ONE NAME, ONE FUNCTION: a second declaration silently replaces the first in the same scope (page up and down's
+  // pageRows took the place of the page's own rows, and the face said "page.forEach is not a function").
+  const declared = (ps.match(/function\s+([A-Za-z_$][\w$]*)\s*\(/g) || []).map(function (d) { return d.replace(/function\s+|\s*\($/g, ''); });
+  const twice = declared.filter(function (n, i) { return declared.indexOf(n) !== i; });
+  if (!twice.length) test.check('the list search declares no function name twice (' + declared.length + ' read)');
+  else test.fail('declared twice in probabilitySearch.js: ' + short(twice));
   if (/id="'\s*\+\s*pre\s*\+\s*'list"[^>]*overflow:\s*auto/.test(ps) && !/dropdown \? ';max-height:20em;overflow:auto' : ''/.test(ps)) test.check('every list scrolls inside its own box, not only a dropdown\'s');
   else test.fail('a list in a pane has no scroll box of its own: only a dropdown\'s list gets overflow');
   const faceCss = fs.readFileSync(path.join(RUN, 'face', 'face.css'), 'utf8');

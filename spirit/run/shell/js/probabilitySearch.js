@@ -369,7 +369,7 @@
       choose(w.el ? w.el.row : w.row, w.key);
     }
     // A PAGE OF ROWS (goal/G40.8: page up and page down): as many as the list shows at once, at least one.
-    function pageRows() {
+    function rowsPerPage() {
       var l = el('list');
       var row = l && typeof l.querySelector === 'function' ? l.querySelector('tr') : null;
       var h = row && row.offsetHeight ? row.offsetHeight : 0;
@@ -378,8 +378,8 @@
     function move(to) {
       if (!shown.length) return;
       snap = false;
-      if (to === 'pagedown') to = pageRows();
-      else if (to === 'pageup') to = -pageRows();
+      if (to === 'pagedown') to = rowsPerPage();
+      else if (to === 'pageup') to = -rowsPerPage();
       var at = shown.map(function (w) { return w.key; }).indexOf(currentKey);
       var next = to === 'top' ? 0 : to === 'bottom' ? shown.length - 1
         : Math.max(0, Math.min(shown.length - 1, (at === -1 ? (to > 0 ? -1 : shown.length) : at) + to));
