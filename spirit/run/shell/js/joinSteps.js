@@ -9,6 +9,9 @@
 //   done(step, facts)      -> whether that step's fact holds.
 //   current(steps, facts)  -> the first step not done and not optional, or null when every one that counts is done.
 //       Find someone is optional (box: "it never blocks the steps after it"): open in the list, never the open step.
+//   linkJoin(code, data)   -> { url, email, code }: relay.join's arguments for the mailed link's code, to the relay the job
+//                             names; null while it names none. The link carries no relay, and spirit.js lets no empty
+//                             address through (goal/G40.10).
 
 (function () {
   function fromJob(data, opened) {
@@ -38,6 +41,11 @@
     return null;
   }
 
+  function linkJoin(code, data) {
+    var url = fromJob(data).relayUrl;
+    return url ? { url: url, email: '', code: String(code || '') } : null;
+  }
+
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.joinSteps = { fromJob: fromJob, done: done, current: current };
+  window.spirit.elements.joinSteps = { fromJob: fromJob, done: done, current: current, linkJoin: linkJoin };
 }());

@@ -513,7 +513,7 @@
   function startJoin() {
     fileText(JOIN + '/join.json').then(function (m) { joinStepList = (JSON.parse(m) || {}).steps || []; joinChanged(); }, function () { joinStepList = []; });
     joinReadFact().then(joinChanged);
-    var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); } };
+    var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); if (linkWaiting) joinFromLink(); } };
     events({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
     // Join's fact changed (it writes its state file): the file tree says so, and it is read again.
     if (window.spirit.data) window.spirit.data.watch('files/' + JOIN_STATE, function () { joinReadFact().then(joinChanged); });
@@ -777,10 +777,21 @@
   var joinCode = '';
   var appFromAddress = '';
   try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; appFromAddress = q.get('app') || ''; } catch (e) { joinCode = ''; }
+  // The link carries no relay: the code waits for the join-steps job, and goes to the relay it names (linkJoin).
+  var linkWaiting = false;
   function joinFromLink() {
     var openNamed = function () { if (/^[A-Za-z0-9_-]+$/.test(appFromAddress)) openApp('shell/' + appFromAddress, null); };
     if (!joinCode) { openNamed(); return; }
-    ask('relay.join', { url: '', email: '', code: joinCode }).then(function (r) {
+    var S = window.spirit.elements && window.spirit.elements.joinSteps;
+    var args = S && joinJob ? S.linkJoin(joinCode, joinJob) : null;
+    if (!args) {
+      if (joinJob) { joinCode = ''; say('The join did not finish: this node knows no relay to join. Ask again with your email.'); openNamed(); }
+      else linkWaiting = true;
+      return;
+    }
+    linkWaiting = false;
+    joinCode = '';
+    ask('relay.join', args).then(function (r) {
       var b = (r && r.body) || {};
       // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31).
       say(b.ok && r.status === 200 ? 'Email address verified on ' + (b.url || 'the relay') + '.'
