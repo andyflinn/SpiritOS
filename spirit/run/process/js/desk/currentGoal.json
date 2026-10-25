@@ -1,5 +1,5 @@
 {
- "change": 101479,
+ "change": 101587,
  "goal": "goal/G40",
  "items": [
   {
@@ -17,7 +17,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.6"
+    "goal/G40.6",
+    "goal/G40.8"
    ],
    "codeOffered": false,
    "go": false,
@@ -5713,6 +5714,291 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-25T08:23:09.929Z",
      "text": "cw: tagged v-2026-10-25-09-22 on f25ff1cd and pushed; the relays take it within about 10 minutes. Your checkout is at the tag, and your node (65432) restarted on it through labMaster.\n- Once spirit-3 has restarted, the face through it is worth one try in a browser: it has not run that way yet."
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.8",
+   "title": "face bugs",
+   "goal": "goal/G40",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 11,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "- the basic probability search UI has one problem i see: the up/down/home/end/pageUp/pageDown keys only work when the search input string is active, the should always work, on the whole search list, if the search input string is activated or not\n- another problem in the probability searches, all up/down keys (up/down/home/end/pageUp/pageDown) must ensure that the currently selected line travels in to the visible portion of the list.\n- THE CONTAINED-APP RULE (Andy: \"the contained-app rule: it IS the rule.\"): 1. the window is the screen, the page never scrolls; 2. below the shell's title bar the app area takes exactly the rest of the window; 3. it is divided among the apps on screen, each a bounded share; 4. an app's header and tools never scroll, its body takes the rest; 5. only a list or a viewer scrolls, inside itself, keeping its current row in view and taking the keys on the whole list; 6. no app sets its own height: the frame gives the space, the one list search fills it.\n- THE RULE THE LIST ISSUES FOLLOW (Andy: \"the general idea is that we make the layout of an app within the page and list-elements are bounded to their allotted space ... it makes more of a contained app feel instead of a web-page feel\"): the page never scrolls; an app fills the space its pane is given, its header tools stay put, and each list fills what is left and scrolls inside itself.\n- listSearch IS DEPRECATED, AND FORBIDDEN IN THE FACE (Andy: \"list search is deprecated, and forbidden in face. rule. decision.\"): probabilitySearch is the one list on the face. On the face that means: the text view (the text viewer Files opens) moves onto probabilitySearch, and listSearch.js and the contact selector, which is built on it, come off the face's list of parts. The Desk's fallout plugin and the contact selector keep it at home until they are ported.\n- THE HEADER ELEMENT IS DEPRECATED (Andy: \"the face doesn't use the header element, and we can consider it deprecated\"): under the contained-app rule a button bar is the app's first row, and only the body below it scrolls. shell/js/appHeader is still used by the old shell, the Desk, Desk details and Rule details, and is on the face's list of parts (FACE_PARTS) though nothing on the face calls it. Moving the Desk to the face will meet it (Andy: \"it will then mean i can run the desk from anywhere in the world\").\n- a list view sits in its own scroll box, in a pane of set height, so the header tools above it never scroll out of view at the bottom of the list (Andy: \"i generally like when my list views are contained in the scroll box that occupies a height-defined/limited pane\"). Today only a dropdown's list has its own height and scroll (probabilitySearch.js and listSearch.js alike); a list in a pane makes the whole pane scroll.\n- the face opens any app a face app reaches (Contacts opens the Natter details), and 14 app scripts still read the kernel's object, which the face no longer loads (natterDetails.js:34: Cannot read properties of undefined (reading 'util')):\n  - escapeHtml or formatBytes, which spirit.js has: jobsDetails, contactsDetails, stats, natterDetails, jobs, group-manager\n  - the icon table: jobsDetails, contactsDetails, natterDetails, chatter, join, jobs, group-manager, deskAgentRemote, desk, deskDetails; the glyphs hardcoded, the table where needed from the icon module\n  - the relays' status (a relay search, then a get of each): contactsDetails, natterDetails, relayMonitor, info; a name of the relay family's api.js\n  - a node call: chatter; job cancel and delete: jobsDetails; through the spirit families\n  - a file read or save, synchronous in the kernel: textEditor, join; made to wait for its answer\n- the icons app keeps its state in the tree (shell/icons/iconSet.json), so every icon edit goes into github. Andy: all shell-app state goes into spirit/run/relay-state/shell/<appname>/, as a process's own state goes into relay-state/process/<name>/. Today the node refuses any write or read under relay-state but a process's own folder (fileSystem.js), so relay-state/shell/<app>/ needs that gate opened for the app's own folder.\n- the icon set for the selector is spirit/run/shell/json/iconSet.json (in the repo since 91d7c2eb, a copy of shell/icons/iconSet.json: each glyph and its keywords), shell/json/ a core folder (Andy: \"this way i can update that system file manually once in a while, when i actually want it to go into github\"). It replaces where G40.7 put the table (spirit/client/iconIndex.js); the core rule (spirit/coreFiles.js) gains shell/json/. Andy's own set is relay-state/shell/icons/iconSet.json, on his node only.",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:07:42.208Z",
+     "text": "natterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7\nnatterDetails.js:34 Uncaught TypeError: Cannot read properties of undefined (reading 'util')\n    at natterDetails.js:34:32\n    at inject (shell.js:345:19)\n    at shell.js:461:7"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:09:31.479Z",
+     "text": "cw: the cause: the face no longer loads kernel.js, but it still opens any app a face app reaches (Contacts opens the Natter details, for one), and 14 app scripts still read the kernel's object. My red checked only the five face apps; it missed these.\n\nThe 14 and what they take:\n- escapeHtml or formatBytes (spirit.js has both): jobsDetails, contactsDetails, stats, natterDetails, jobs, group-manager\n- the icon table: jobsDetails, contactsDetails, natterDetails, chatter, join, jobs, group-manager, deskAgentRemote, desk, deskDetails\n- the relays' status (a kernel helper, a relay search plus a get of each): contactsDetails, natterDetails, relayMonitor, info\n- a node call (ask): chatter; job cancel and delete: jobsDetails\n- a file read or save, which the kernel did synchronously: textEditor, join\n\nThe fix: spirit.escapeHtml and formatBytes; the glyphs hardcoded, the table where needed from the icon module; the relays' status as a name of the relay family's api.js; the calls through the spirit families; the two file calls made to wait for their answer.\n- The home page keeps the kernel until it goes, so it is unaffected.\n- ? Go on G40.8?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:12:36.503Z",
+     "text": "add these issues to the box, there is one already there"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:13:11.279Z",
+     "text": "cw: added (box v3), beside your search-keys issue: the 14 app scripts still on the kernel, what each takes and its fix."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:20:53.105Z",
+     "text": "- the icons app has another issue, i think its icon.json should be stashed in the state tree somewhere, i think that all shell-app state data should go into spirit/run/relay-state/shell/<appname>/ analogous to the process user-data. this way my icon editing doesn't constantly push into github.\n\n- if you want a table for the icon-selector, it should go into spirit/run/shell/json/icons.json, where the folder spirit/run/shell/json/ is a core folder as well. this way i can update that system file manually once in a while, when i actually want it to go into github..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:21:39.892Z",
+     "text": "cw: both added (box v4).\n- The icons app's state is shell/icons/iconSet.json today. To move it to relay-state/shell/icons/, the node's file gate has to let an app read and write its own folder there; today only a process's own folder under relay-state is open.\n- The icon table to shell/json/icons.json replaces where I put it in G40.7, iconIndex.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:25:05.435Z",
+     "text": "i'll just put a copy of icons.json into shell/json/ so this item can rely on it being there, and commit that, i can also seed the user copy in spirit/run/relay-state/shell/icons/\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:25:36.301Z",
+     "text": "cw: yes, with one name to watch:\n- shell/icons/icons.json is the Icons app's manifest, not the set. The set is shell/icons/iconSet.json: 642 glyphs, each with its keywords. That is the file to copy into shell/json/icons.json, and the one to seed as your own in relay-state/shell/icons/.\n- shell/json/ is not core yet: the core rule (spirit/coreFiles.js) names spirit/run/spirit/ and spirit/run/shell/js/ only, so this item adds shell/json/ there.\n- The icon picker then offers that set (glyph and keywords) instead of the kernel's old table of names; the places that use one glyph by name get it hardcoded."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:31:23.639Z",
+     "text": "spirit\\run\\shell\\json\\iconSet.json in the repo now\nspirit\\run\\relay-state\\shell\\icons\\iconSet.json in my node only"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:31:55.822Z",
+     "text": "cw: seen: shell/json/iconSet.json is in the repo (91d7c2eb), and your own relay-state/shell/icons/iconSet.json is on your node. Box v5 names both."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:36:32.817Z",
+     "text": "i added another probabilitySearch issue in the box. i believe most of them should be in the general UI wrapper, to make the behavior consistent.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:37:13.432Z",
+     "text": "cw: agreed, and the code says why it matters: the list behaviour exists twice. shell/js/probabilitySearch.js and shell/shared/js/listSearch.js are near copies (453 and 454 lines), each with its own key handling; Contacts, Files and the face lists use the first, the contact selector, the text view and the fallout plugin the second. A fix in one leaves the other broken.\n\nWhat I see in them for your two issues:\n- The keys are heard only on the search's own container, so they act only while something inside it has focus; and neither handles PageUp or PageDown at all.\n- Both already scroll the current row into view on a move, so the second issue needs a browser to see why it does not take; I cannot claim the cause from the code.\n\nThe shape that fits: one general list search, probabilitySearch.js; listSearch.js folded into it and deleted; the keys (up, down, home, end, page up, page down, enter) handled there once, on the whole list whether the field has focus or not, and the current row kept in view there.\n- ? Fold listSearch into probabilitySearch as part of this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:39:48.372Z",
+     "text": "also, i generally like when my list views are contained int he scroll box that occupies a height-defined/limited pane, so that my header tools don't scroll out of view when i examine the bottom of a list..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:40:22.500Z",
+     "text": "cw: added to the box (v7), beside the other two list issues. The code agrees: only a dropdown's list gets its own height and scroll today; a list in a pane has none, so the whole pane scrolls, header tools and all. That may also be why the current row does not come into view: the list itself never scrolls."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:43:08.706Z",
+     "text": "so, the general idea is that we make the layout of an app within the page and list-elements are bounded to their allotted space... i see other html/javascript applications do the same thing and it makes more of acontained app feel instead of a\"web-page\" feel..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:43:38.341Z",
+     "text": "cw: boxed (v8) as the rule the list issues follow: the page never scrolls; an app fills the space its pane is given, its header tools stay put, and each list fills what is left and scrolls inside itself. It belongs in two places: the frame (home shell and face) giving each pane its height, and the one list search making its list fill and scroll."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:45:47.011Z",
+     "text": "can you propose a UI rule for that?\n\nface-apps should be dividing the available window space, below the shells title bar, and we deliberately contain everything in that space?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:46:33.546Z",
+     "text": "cw: a proposal, THE CONTAINED APP:\n1. The window is the screen. The page itself never scrolls.\n2. The shell's title bar sits at the top. Below it, the app area takes exactly the rest of the window's height.\n3. The app area is divided among the apps on screen, each getting a bounded share. Today the face shows one app at a time, the top of its stack, so it gets all of it.\n4. Inside an app, its header and tools never scroll. Its body takes the rest of its share.\n5. Only a list or a viewer scrolls, and only inside itself. A list fills the space it is given, keeps its current row in view, and takes the keys on the whole list.\n6. No app sets its own height. The frame gives the space (face shell and home shell), and the one list search fills it, so every app behaves alike without doing anything itself.\n\nToday the face's layout sets no heights at all, so all of this is new.\n- ? Take it as the rule, for the face and the home shell alike?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:47:41.241Z",
+     "text": "this way, if the app wants a button-bar at the top, we don't need flaky things like the \"header-element\" in the old shell...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:48:10.962Z",
+     "text": "cw: right, and the code shows the flake: the old header element (shell/js/appHeader) sticks itself below the title bar by measuring the title bar's height, because everything scrolls in one page. Under the contained-app rule a button bar is just the app's first row: only the body below it scrolls, so it stays without being pinned or measured. The header element and its 3 other users could then go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:50:48.056Z",
+     "text": "the face doesn't use the header element, and we can consider it deprecated. this will cause a few issues when moving the desk to the face, BUT, it will them mean i can run the desk from anywhere in the world...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:51:27.638Z",
+     "text": "cw: boxed (v9): the header element deprecated. Two facts with it: the face does load it (it is on the list of parts I gave the face in G40.7), though nothing there calls it, so it can come off that list; and the Desk, Desk details and Rule details use it, which is what the Desk's move to the face will meet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:53:55.026Z",
+     "text": "how ever, the chatter app has a pretty cool, unrealized design in its box, and face will have a few standard containers like a botton row that acts like tabs on the panes in the container below and things like that, all oos for now.\n\nso where do we stand with this item?\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:54:16.173Z",
+     "text": "cw: green on the box from me, with two of your words still missing; nothing is built yet.\n\nThe box (v9) holds the item whole:\n- the face's 14 app scripts still on the kernel (the bug you hit);\n- the list keys, the current row kept in view, and the list in its own scroll box;\n- the contained-app rule they follow, and the header element deprecated;\n- the icons app's state to relay-state/shell/icons/, and the selector's set from shell/json/iconSet.json, shell/json/ made core.\n\nYour two words:\n- the contained-app rule: is it the rule?\n- folding listSearch into probabilitySearch, one list for everyone: in this item?\n\nWith those, I write its red and go.\n- ? Both yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:56:16.960Z",
+     "text": "the contained-app rule: it IS the rule.\n\nfolding listSearch into probabilitySearch, one list for everyone: in this item?\n\ni didn't know they were two separate things on face (only face matters to me now)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:57:07.047Z",
+     "text": "cw: boxed (v10): the contained-app rule, in its six points, as the rule.\n\nOn the face both lists are there: Contacts, Files, Icons and Apps use probabilitySearch, and opening a text file from Files shows the text viewer, whose search list is listSearch. So the face meets both, and a fix in one would leave the text viewer behind.\n- Recommended: fold listSearch into probabilitySearch in this item.\n- ? Fold it here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:58:20.926Z",
+     "text": "what the hell IS list search, i dont' get it. is it some dumb part of the legacy shell?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T10:58:49.591Z",
+     "text": "cw: yes, it is the legacy one. listSearch (shell/shared/js/listSearch.js, G29.4, 2026-10-17) was the old shell's list with a search. probabilitySearch (G30.17, 2026-10-21) was made from it as the standard list-tool of the new shell, and its own header says listSearch stays only until no app uses it, then it is deleted. That never happened: it is still used by the text view (the text viewer Files opens, on the face too), the contact selector and the Desk's fallout plugin.\n- So the fold is that promised deletion: the three move onto probabilitySearch, and listSearch goes.\n- ? In this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T10:59:27.109Z",
+     "text": "list search is deprecated, and forbidden in face. rule. decision."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T11:00:06.011Z",
+     "text": "cw: boxed (v11) as the rule: listSearch deprecated and forbidden in the face. For the face that means the text view moves onto probabilitySearch, and listSearch.js and the contact selector come off its list of parts; at home the Desk's fallout plugin and the contact selector keep it until they are ported.\n- With that the box is whole from me.\n- ? Go on G40.8?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T11:01:57.430Z",
+     "text": "now that explains some inconsistencies i struggled to diagnose in face.\n\nyes.\n\nI'll end design (which i should be able to bring back for items in desk)\n\nand press go..."
     }
    ]
   }
