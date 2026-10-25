@@ -211,6 +211,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const askFn = (faceShell.match(/function ask\(verb, args\) \{[\s\S]*?\n  \}/) || [''])[0];
   if (/state && state\.home/.test(askFn) && /spirit\.outcome\(/.test(askFn)) test.check('at home the face shell asks the node through spirit.js (its families, spirit.outcome); the relay\'s /face/call is a relay\'s only');
   else test.fail('at home the face shell still asks everything through the relay\'s /face/call');
+  // The node hands the file tree once, as a stream opens: at home the subscriptions made while the parts load are held,
+  // and released onto spirit.events once the parts (the data cache's translators) are in.
+  if (/held\.push\(h\)/.test(faceShell) && /waiting\.forEach\(function \(h\) \{ spirit\.events\.subscribe\(h\); \}\)/.test(faceShell)) test.check('at home the stream waits for the parts: subscriptions made while they load are held and released onto spirit.events after');
+  else test.fail('at home the stream opens before the parts are in, and the file tree is lost');
   const drawFn = (faceShell.match(/function drawDesktop\(\) \{[\s\S]*?\n  \}/) || [''])[0];
   if (/state && state\.home/.test(drawFn)) test.check('at home the desktop draws no login and no home step, only the face\'s apps');
   else test.fail('at home the desktop still draws the login step\'s icon');

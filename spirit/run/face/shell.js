@@ -668,14 +668,28 @@
           if (!can) { say('This browser cannot seal: your traffic is readable on the relay.'); return null; }
           return spirit.seal.newKey().then(function (key) { link.key = key; link.sealed = true; });
         });
+    // AT HOME THE STREAM WAITS FOR THE PARTS (goal/G40.10): the node hands the file tree once, as a stream opens, and a
+    // part that subscribes as it loads (the data cache) would open it before the parts that read the tree (its
+    // translators) are in, and lose it. So at home the subscriptions made while the parts load are held, and released
+    // onto spirit.events once they are all in. On a relay the face's own stream opens after the parts already.
+    var held = [];
     ready.then(function () {
       if (!home) window.spirit.transport = { ask: ask, events: events, file: file };
-      if (home) setConnected(true);
+      if (home) {
+        setConnected(true);
+        window.spirit.transport = { events: function (h) { held.push(h); return function () { held = held.filter(function (x) { return x !== h; }); }; } };
+      }
       // The spirit object (goal/G32.1), inline in this page, gets its families once the node can be reached, and the
       // parts load once they are there (goal/G40.7: "fetch the damn api's from home" first).
       var parts = function () { return loadParts(); };
       return Promise.resolve(window.spirit.start()).then(parts, parts);
     }).then(function () {
+      if (home) {
+        var waiting = held;
+        held = [];
+        delete window.spirit.transport;
+        waiting.forEach(function (h) { spirit.events.subscribe(h); });
+      }
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { activateApp: activateApp, factRow: factRow, faceApp: readFace });
       attachNavigation();
       link.loaded = true;
