@@ -35,7 +35,8 @@
 
 const http = require('http');
 const https = require('https');
-const spirit = require('./kernel.js');
+// The one body reader (goal/G16.6), serveCommon's (goal/G40.6).
+const readBody = require('./serveCommon').readBody;
 const limits = require('./limits.js');
 const assertRelayUrl = require('./relayUrl.js').assertRelayUrl;
 
@@ -113,7 +114,7 @@ function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders, opts) {
       // copied and decoded once, so a character split across two TCP
       // chunks arrives whole; past the cap it is refused by name and the
       // socket is cut, so the refusal does not cost what it refused.
-      spirit.core.readBody(res, {
+      readBody(res, {
         max: answerMax,
         code: 'relay-answer-too-large',
         message: 'relay answer too large',
@@ -177,7 +178,7 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
       // of shared code must ensure that raw bytes are copied. precisely."
       // The cap and the refusal keep their own words, because a pipe's
       // caller reads `refused` and never catches.
-      spirit.core.readBody(res, { max: answerMax, code: 'app-answer-too-large' }).then(function (text) {
+      readBody(res, { max: answerMax, code: 'app-answer-too-large' }).then(function (text) {
         const answer = {
           status: res.statusCode,
           text: text,

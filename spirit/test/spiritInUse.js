@@ -79,6 +79,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const relayKernel = /require\('\.\/kernel'\)/.test(code('spirit/relayServer.js')) || /require\('\.\/kernel'\)/.test(code('spirit/relay.js'));
   if (!onKernelFour.length && !relayKernel) test.check('the node, the relay, the shared code, jobs and appServer take the version, the MIME table, the debug switch and the default port from spirit.js; the relay requires no kernel');
   else test.fail('still on the kernel\'s four: ' + short(onKernelFour) + (relayKernel ? ' and the relay requires the kernel' : ''));
+  const readers = all.filter(function (f) { return f !== 'spirit/kernel.js' && /core\.readBody/.test(code(f)); });
+  const onKernelBody = ['spirit/serveCommon.js', 'spirit/relayRequest.js'].filter(function (f) { return /require\('\.\/kernel(\.js)?'\)/.test(code(f)); });
+  if (!readers.length && !onKernelBody.length && /function readBody\(stream, opts\)/.test(code('spirit/serveCommon.js'))) test.check('the body reader is serveCommon.readBody; nothing but the kernel\'s own name calls the kernel\'s, and serveCommon and relayRequest require no kernel');
+  else test.fail('the body reader: ' + short({ readers: readers, onKernel: onKernelBody }));
   const still = GONE.filter(function (f) { return fs.existsSync(path.join(RUN, f)); });
   if (!still.length) test.check('removeAgent, localReview and localResearch are gone');
   else test.fail('still there: ' + short(still));

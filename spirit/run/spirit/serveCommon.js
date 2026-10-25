@@ -15,7 +15,6 @@
 require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const kernel = require('./kernel');
 const limits = require('./limits.js');
 
 const MIME_TYPES = spirit.MIME_TYPES;
@@ -124,6 +123,76 @@ function sendFile(res, filePath) {
 const BODY_PROMISE = Symbol('spiritJsonBody');
 const BODY_BYTES = Symbol('bodyBytes');
 
+// ── ONE BODY READER: BYTES COPIED, BYTES COUNTED (goal/G16.6) ────────
+//
+//   Andy, 2026-10-10: "in a max_BYTE environment, BYTES must be copied.
+//   BYTES must be counted. that's a rule." And on where it belongs:
+//   "one single piece of shared code must ensure that raw bytes are
+//   copied. precisely", "ideally through a shared kernel.js utility or
+//   similar."
+//
+// WHAT WAS WRONG. Every reader did `body += chunk`, which decodes each
+// TCP chunk on its own. A character wider than one byte — any emoji,
+// any accent, any kanji — split across two chunks became two U+FFFD,
+// and the body was no longer the body that was sent. On a REQUEST that
+// is a spurious 403, because the signature is over the real bytes; on a
+// REPLY it is silent corruption, since nothing signs a reply until
+// goal/G16.1. The cap was already counted in bytes correctly
+// (`Buffer.byteLength`); it was the JOIN that lied, not the count.
+//
+// So the chunks are kept as Buffers and decoded ONCE over the whole
+// body, which cannot split a character because there is nothing left to
+// split it against. It is in serveCommon.js, the code the node and the relay share (goal/G40.6; it stood in
+// kernel.js until then).
+//
+// `max` refuses by name at the first chunk that passes it and STOPS
+// READING — a body refused for its size must not go on arriving, or the
+// refusal costs what it was refusing (serveCommon's own reasoning, kept).
+// `code` and `message` let a caller name its own refusal: the relay hop
+// says `relay-answer-too-large`, the proxy says its reply is too large,
+// and a caller that names neither gets `413 body-too-large`.
+// `onBytes` is called with the running total as each chunk lands, for
+// the one caller that must answer how much it has read even when it
+// refused (serveCommon.bodyBytes, read by the node's door).
+function readBody(stream, opts) {
+  const o = opts && typeof opts === 'object' ? opts : {};
+  const max = Number(o.max) > 0 ? Number(o.max) : Infinity;
+  return new Promise(function (resolve, reject) {
+    let chunks = [];
+    let seen = 0;
+    let done = false;
+    function refuse(err) {
+      if (done) return;
+      done = true;
+      chunks = null;
+      if (typeof stream.destroy === 'function') stream.destroy();
+      reject(err);
+    }
+    stream.on('data', function (c) {
+      if (done) return;
+      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c);
+      seen += buf.length;
+      if (typeof o.onBytes === 'function') o.onBytes(seen);
+      if (seen > max) {
+        const err = new Error(String(o.message || 'body too large'));
+        err.statusCode = 413;
+        err.code = String(o.code || 'body-too-large');
+        err.bytes = seen;
+        err.max = max;
+        refuse(err);
+        return;
+      }
+      chunks.push(buf);
+    });
+    stream.on('end', function () {
+      if (done) return;
+      done = true;
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    stream.on('error', function (e) { refuse(e); });
+  });
+}
+
 // ── THE CAP THAT WAS MISSING, AND IT IS THE ONE THAT MATTERS ─────────
 //
 // This read `body += chunk` with no limit of any kind. The payload caps
@@ -183,7 +252,7 @@ function readJsonBody(req, opts) {
     // past `max`, the socket destroyed, 413 — and the running total is
     // still kept on the request, because the node's door answers how much
     // it read even when it refused (`bodyBytes`).
-    kernel.core.readBody(req, {
+    readBody(req, {
       max: max,
       onBytes: seen => { req[BODY_BYTES] = seen; },
     }).then(body => {
@@ -409,6 +478,7 @@ module.exports = {
   portFromArgs: portFromArgs,
   emailFromArgs: emailFromArgs,
   sendFile: sendFile,
+  readBody: readBody,
   readJsonBody: readJsonBody,
   clientKeyFor: clientKeyFor,
   nodeRefusal: nodeRefusal,
