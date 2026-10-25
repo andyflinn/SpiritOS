@@ -3,7 +3,7 @@
   "name": "Join",
   "description": "From joining a relay to opening your face: the steps a new node takes, one list.",
   "icon": "EMAIL",
-  "hidden": false,
+  "hidden": true,
   "intrinsic": true,
   "owner": "system",
   "steps": [
