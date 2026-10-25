@@ -2624,10 +2624,9 @@ function createHub(rootDir) {
 
   // ── relay.join: THIS NODE JOINS A RELAY BY ITS USER'S EMAIL (goal/G30.2) ──
   //
-  //   Andy, 2026-10-19, confirmed: relay.join {url, email, code}, owner only, beside relay.add. With an email it
-  //   sends join (the relay mails a link to this node's port); with a code, from that link, it sends joinConfirm and
-  //   the seat is taken at once. The shell calls it with the email on first start, and with the code when it is
-  //   opened at http://127.0.0.1:<port>?join=<code>.
+  //   Andy, 2026-10-19, confirmed: relay.join {url, email, code}, owner only, beside relay.add; since goal/G40.10
+  //   {url, email, code, link}. With an email it sends join {email, url: link, card} (the relay mails the caller's
+  //   link with its code and key); with a code, from that link, it sends joinConfirm and the seat is taken at once.
   // The relay asked last is remembered in memory, so the link's code needs no url; a restart forgets it, and the
   // code then needs the url again. A seat taken is written down as a claim's is (relay list, seat, streams).
   var joinAskedOf = '';
@@ -2639,9 +2638,13 @@ function createHub(rootDir) {
     if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its url' });
     if (!email && !code) return Promise.resolve({ ok: false, status: 400, error: 'an email to ask with, or the code from the mail' });
     if (!router || typeof router.join !== 'function') return Promise.resolve({ ok: false, status: 503, error: 'this node has no router to join with' });
-    var port = Number(deps && deps.port) || 0;
+    // THE CALLER'S LINK (goal/G40.10, box v25; Andy: "{email, port, card} just turn into {email, URL, card}"): the link
+    // the asking page's shell wants opened, which only the shell knows; the relay adds its code and key and mails it. A
+    // join with no page behind it (joinAtStart, at boot) gets this node's own face on the loopback.
+    var link = String((body && body.link) || '').trim() ||
+      ('http://127.0.0.1:' + (Number(deps && deps.port) || 0) + '/face.html?app=join');
     // A router that throws before it answers (no route to the relay) is the same refusal as one that never answers.
-    return Promise.resolve().then(function () { return router.join(url, email, port, code); }).then(function (said) {
+    return Promise.resolve().then(function () { return router.join(url, email, link, code); }).then(function (said) {
       if (!code) {
         if (said.ok) joinAskedOf = url;
         return said.ok ? { ok: true, status: 200, url: url } : { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };

@@ -66,7 +66,13 @@
     if (bad) return Promise.resolve({ ok: false, text: bad });
     if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
     // Through the spirit object (goal/G32.2): spirit.relay.join answers the reply's body, or refuses with the node's words.
-    return spirit.ready.then(function (s) { return s.relay.join({ url: url, email: email, code: '' }); }).then(function (said) {
+    // THE CALLER'S LINK (goal/G40.10, box v25): the link the shell wants the mail to open, which only the shell knows
+    // (spirit.shell.joinLink); without a shell that says, the node puts its own face on the loopback.
+    var shell = window.spirit && window.spirit.shell;
+    var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
+    var args = { url: url, email: email, code: '' };
+    if (joinLink) args.link = joinLink;
+    return spirit.ready.then(function (s) { return s.relay.join(args); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };

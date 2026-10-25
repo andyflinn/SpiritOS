@@ -2033,10 +2033,11 @@ function createPeerPost(opts) {
   // ── A JOIN BY EMAIL, ON THE RELAY'S DOOR (goal/G30.2) ───────────────────
   //
   // The same stranger post a claim is: sealed to the relay, signed by this node's key, answered on the post. With
-  // an email it asks (join {email, port, card}): the relay mails a link to this node's port. With a code it confirms
-  // (joinConfirm {code, card}): the code from that link, under the same key, takes the seat. The card rides along so
-  // the relay can seal its answer to a node it holds no row for, as a claim's does.
-  function join(relayUrl, email, port, code, known) {
+  // an email it asks (join {email, url, card}): the relay mails the caller's link, url, with its code and key added
+  // (goal/G40.10, box v25). With a code it confirms (joinConfirm {code, card}): the code from that link, under the same
+  // key, takes the seat. The card rides along so the relay can seal its answer to a node it holds no row for, as a
+  // claim's does.
+  function join(relayUrl, email, link, code, known) {
     var keyed;
     if (known && typeof known === 'object' && known.relayPublicKey && known.relaySealKey) {
       keyed = Promise.resolve({ relayPublicKey: String(known.relayPublicKey), relaySealKey: String(known.relaySealKey) });
@@ -2049,7 +2050,7 @@ function createPeerPost(opts) {
       var card = nodeCard.describe(rootDir);
       var body = code
         ? { joinConfirm: { code: String(code), card: card } }
-        : { join: { email: String(email || ''), port: Number(port) || 0, card: card } };
+        : { join: { email: String(email || ''), url: String(link || ''), card: card } };
       var wrapped = seal.seal(key.relaySealKey, mine.publicKey, key.relayPublicKey, JSON.stringify({ v: 1, body: body }));
       if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
       return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped)).then(function (got) {

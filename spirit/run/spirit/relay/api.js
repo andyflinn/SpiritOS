@@ -12,7 +12,8 @@ module.exports = {
     remove: { key: 'text' },
     add: { url: 'url', label: 'name?' },
     face: { url: 'url', name: 'name' },
-    join: { url: 'url', email: 'text', code: 'text?' },
+    // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
+    join: { url: 'url', email: 'text', code: 'text?', link: 'url?' },
     // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
     leave: { key: 'text' },
     record: { relay: 'text', from: 'number?', to: 'number?' },

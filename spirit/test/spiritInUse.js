@@ -223,8 +223,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   test.subHeading('1f. Join on the loopback face: the face shell decides, the mailed link leads to the face only');
   // Read raw: the link holds http://, which the comment stripper would cut.
   const relayRaw = fs.readFileSync(path.join(RUN, 'spirit', 'relay.js'), 'utf8');
-  if (/\/face\.html\?join='/.test(relayRaw) && !/\+ p \+ '\?join='/.test(relayRaw)) test.check('the relay mails the face\'s address, /face.html?join=<code>&app=join');
-  else test.fail('the relay still mails the node\'s / for a join');
+  // Since box v25 the relay mails the caller's link and builds no address of its own (checked in 1l).
+  if (!/127\.0\.0\.1:' \+ p/.test(relayRaw)) test.check('the relay builds no loopback join link of its own');
+  else test.fail('the relay still builds a loopback join link from the node\'s port');
   if (!/get\('join'\)/.test(code('spirit/client/shell.js'))) test.check('the old shell\'s join from the link is gone');
   else test.fail('the old shell still takes the join code from its address');
   if (/get\('join'\)/.test(faceShell) && /relay\.join/.test(faceShell)) test.check('the face shell reads the mailed link: the code to relay.join, then Join opens');
@@ -414,7 +415,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/join\s*:\s*\{[^}]*link\s*:\s*'url\?'/.test(code('spirit/relay/api.js')) && /body && body\.link|body\.link/.test((code('spirit/hub.js').match(/function relayJoin\(body, deps\) \{[\s\S]*?\n  \}/) || [''])[0])) test.check('relay.join carries the caller\'s link, and the node passes it to the relay');
   else test.fail('relay.join does not carry the caller\'s link');
   const joinFormNow2 = code('shell/js/joinForm.js');
-  if (/joinLink/.test(joinFormNow2) && /link:/.test(joinFormNow2) && /joinLink\s*[:=]/.test(faceShell)) test.check('the email form sends the link the shell gives it (spirit.shell.joinLink)');
+  if (/joinLink/.test(joinFormNow2) && /\.link = |link:/.test(joinFormNow2) && /joinLink\s*[:=]/.test(faceShell)) test.check('the email form sends the link the shell gives it (spirit.shell.joinLink)');
   else test.fail('the email form sends no link of the shell\'s');
   const startFn = (faceShell.match(/function start\(\) \{[\s\S]*?\n  \}/) || [''])[0];
   if (/joinFromLink\(\)/.test(startFn) && !/if \(home\) \{ startJoin\(\); joinFromLink\(\); \}/.test(startFn)) test.check('the face shell reads the join link on a relay face too, after its login');

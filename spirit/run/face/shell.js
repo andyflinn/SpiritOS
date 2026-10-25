@@ -743,7 +743,9 @@
       link.loaded = true;
       openStream(false);
       listApps();
-      if (home) { startJoin(); joinFromLink(); }
+      if (home) startJoin();
+      // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).
+      joinFromLink();
     }).then(function () { hand(); }, function (e) {
       link.starting = false;
       setConnected(false);
@@ -770,6 +772,11 @@
 
   // THE LOGIN APP HANDS ITSELF OVER on the one spirit object, nothing on window (goal/G40.7).
   (window.spirit.shell = window.spirit.shell || {}).activateLogin = function (behavior) { login = behavior; mountLogin(); };
+  // THE CALLER'S LINK (goal/G40.10, box v25; Andy: "the join-app-link, which only the shell really knows"): this page,
+  // opening Join; the relay adds its code and key to it and mails it. At home the node's /face.html, on a relay this face.
+  window.spirit.shell.joinLink = function () {
+    return window.location.origin + window.location.pathname + '?app=join';
+  };
 
   // THE MAILED JOIN LINK (goal/G40.10; Andy: "break the join feature in the old shell and have that only work in the
   // face-shell"): the relay mails /face.html?join=<code>&app=join. Read here, before the address is cleared; at home, once

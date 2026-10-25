@@ -2559,7 +2559,7 @@ function createRelay(rootDir, deps) {
       try { jb = JSON.parse(plain).body; } catch (e) { jb = {}; }
       var asked = jb.join || jb.joinConfirm || {};
       var jout = jb.join
-        ? join(who.id, asked.email, asked.port, asked.card)
+        ? join(who.id, asked.email, asked.url, asked.card)
         : joinConfirm(who.id, asked.code, asked.card);
       var jcard = typeof asked.card === 'string' ? nodeCard.verify(asked.card) : null;
       var jseal = jcard && jcard.publicKey === who.id ? jcard.sealKey : '';
@@ -4113,30 +4113,32 @@ function createRelay(rootDir, deps) {
     var local = normalizeName(String(email || '').split('@')[0]).slice(0, 32);
     return local && !labelProblem(local) ? local : 'member';
   }
-  function join(publicKey, email, port, card) {
+  function join(publicKey, email, url, card) {
     joinSweep();
     var key = String(publicKey || '');
     var mail = String(email == null ? '' : email).trim().toLowerCase();
-    var p = Number(port);
+    // THE CALLER'S LINK (goal/G40.10, box v25; Andy: the relay "has NO business knowing about" the loopback, the port
+    // or the app): the link the node's shell wants opened, as the node sent it. The relay adds only its code and, last,
+    // its key.
+    var link = String(url == null ? '' : url).trim();
     if (!key) return { ok: false, status: 400, error: 'a join needs the key that asks' };
     // The one email rule (fieldRules.emailProblem, goal/G40.10), the forms' as well.
     var badMail = fieldRules.emailProblem(mail);
     if (badMail) return { ok: false, status: 400, error: badMail };
-    if (!(p >= 1 && p <= 65535 && Math.floor(p) === p)) return { ok: false, status: 400, error: 'a join needs the port of the node' };
+    if (!/^https?:\/\/[^\s]+$/.test(link) || Buffer.byteLength(link, 'utf8') > 2048) return { ok: false, status: 400, error: 'a join needs the link to mail, an http or https address' };
     // A SEATED KEY JOINING AGAIN CHANGES ITS EMAIL (goal/G30.1, box v28): the same mail, link and code, 10 minutes
     // and caps; it takes no seat, so a full relay does not refuse it.
     if (!findByKey(key) && seats.fullForMembers()) return seatsFull();
     if (!sendMail) return { ok: false, status: 503, error: 'this relay sends no mail, so it takes no join' };
     if (joinCapped('key:' + key) || joinCapped('mail:' + mail)) return { ok: false, status: 429, error: 'a join was asked a moment ago; wait a minute' };
     var code = require('crypto').randomBytes(24).toString('base64url');
-    pendingJoins.set(key, { email: mail, port: p, hash: joinHash(code), until: clock() + JOIN_MS, card: typeof card === 'string' ? card : '' });
+    pendingJoins.set(key, { email: mail, url: link, hash: joinHash(code), until: clock() + JOIN_MS, card: typeof card === 'string' ? card : '' });
     Promise.resolve(sendMail({
       to: mail,
       // A seated key is changing its email, not joining (goal/G30.1, box v31).
       subject: findByKey(key) ? 'Confirm your email address' : 'Join this relay',
-      // THE LINK NAMES ITS RELAY (goal/G40.10; Andy: "this email does not specify the router-ID to which my email
-      // confirmation is supposed to go"): by this relay's key, the one id it knows itself by; the node maps it to the url.
-      text: 'Open this link on the computer where SpiritOS runs, within 10 minutes:\n\nhttp://127.0.0.1:' + p + '/face.html?join=' + code + '&relay=' + encodeURIComponent(relayPublicKey() || '') + '&app=join\n\nIt counts once.',
+      // The code as a GET argument and, last, this relay's key, the one id it knows itself by (goal/G40.10, box v25).
+      text: 'Open this link within 10 minutes:\n\n' + link + (link.indexOf('?') === -1 ? '?' : '&') + 'join=' + code + '&relay=' + encodeURIComponent(relayPublicKey() || '') + '\n\nIt counts once.',
     })).catch(function () { /* the pending join lapses on its own */ });
     return { ok: true, status: 200 };
   }
