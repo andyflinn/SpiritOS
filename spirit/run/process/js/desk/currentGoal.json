@@ -1,5 +1,5 @@
 {
- "change": 101867,
+ "change": 101918,
  "goal": "goal/G40",
  "items": [
   {
@@ -17,7 +17,9 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.6"
+    "goal/G40.6",
+    "goal/G40.9",
+    "goal/G40.10"
    ],
    "codeOffered": false,
    "go": false,
@@ -55,7 +57,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -6386,6 +6388,241 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-25T13:12:29.429Z",
      "text": "cw: tagged v-2026-10-25-14-11 on 54c4274f and pushed; the relays take it within about 10 minutes. Your checkout is at the tag and your node (65432) restarted on it through labMaster.\n- Worth trying on the face: open Contacts, a contact, a relay, an icon, a file, an app's panel; back and home in the title bar."
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.9",
+   "title": "Make desk faceable",
+   "goal": "goal/G40",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:16:21.325Z",
+     "text": "what is required?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:17:28.727Z",
+     "text": "cw: what the Desk needs to run on the face, from its code as it stands:\n\nAlready fine:\n- It reads no kernel (G40.8 did that).\n- It talks to the desk server through its api, which on a face goes over the sealed link to your node.\n- Your node takes a face's call as the owner, so the desk writes it as you.\n- Its stream reaches the face like any server's published state.\n\nRequired:\n1. It is no face app: no face mark (Apps sets that), and its manifest says runs home.\n2. It loads three of its own scripts (its data translator, run status, desk element) and its plugins with script tags. On a face those would ask the relay, not home. They must come through spirit.require.\n3. It finds its plugins through the shell's file list (onFiles), which the face shell does not give. It must find them in the data set's file tree instead.\n4. The Desk, Desk details and Rule details use the deprecated header element. Their tool rows become first rows, under the contained-app rule.\n5. Its fallout plugin builds on listSearch, forbidden on the face. It moves to probabilitySearch.\n6. Its details (Desk details, Rule details, fallout history, a stack-frame check) open as apps with callDialog, and the Desk reads them closing to search again. They become navigation pages, and the Desk refreshes from its stream.\n7. Its table and its dialog are laid out to the contained-app rule: its list bounded, its tools fixed.\n- ? Anything you want added, or a part to leave out?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:19:59.124Z",
+     "text": "i get the feeling that desk would be either compatible with the legacy shell OR compatible with the news face shell, but not both.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:20:25.440Z",
+     "text": "cw: mostly not; it splits at one point only.\n\nWorks in both, unchanged: loading its parts through spirit.require (spirit.js is on the home page too), finding its plugins in the data set's file tree (the home page has it), first rows in place of the header element, probabilitySearch (the home page loads it), the bounded layout (the old shell would only scroll it its own way).\n\nThe split: its details as navigation pages. The navigation exists only in the face shell; the old shell has its own stack and callDialog, and nothing attached to the wrapper. Once Desk details and Rule details are pages, the Desk opens them on the face and cannot open them at home.\n- (The same is already so for contacts and relays at home since G40.8.)\n- ? Is losing the Desk at home acceptable once it runs on the face?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:28:11.262Z",
+     "text": "Is losing the Desk at home acceptable once it runs on the face?\n\nthe problem with that is: i tried running face  on loopback, but it doesn't. it puts up the home app. I'd first make the face run on loopback OR on relay, fold the join-app into the home-app for that matter. and then we'd have all face-apps running at home AND via the relay.\n\ni have lot's of simpler app-porting project before this is a topic. but desk MUST run at all times somewhere....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:28:47.954Z",
+     "text": "cw: agreed with the order: face on loopback first, the simpler ports next, the Desk last; until then the Desk keeps running in the old shell.\n\nWhy the face does not run on loopback today, from the code:\n- Your node serves the old home page at its own address (index.html at /).\n- face.html holds spirit.js only as a placeholder, which the relay fills in as it serves the page (serveCommon.inlineSpirit). Your node does not, so face.html from it would start without spirit.js.\n- The face shell itself is ready for it: it already has a home mode (no keys, no seal, it talks to its own node and logs in as home).\n\nSo face on loopback is mainly the node serving face.html with spirit.js filled in, its face shell and login, at the address you choose, plus folding Join into the home app.\n\nFor this item:\n- Recommended: box the seven requirements as they stand, and park the Desk until the face runs on loopback.\n- ? Shall I box it so, and do you want face on loopback as the next item?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G40.10",
+   "title": "Make face run on both: loopback AND relay",
+   "goal": "goal/G40",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 2,
+   "buttons": [
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G40"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "- first we just make face dual-boot, where it runs either \"join\" (if necessary) or it runs \"home\" permanently.\n\nNOW, THE ONE CONCERN (Andy: \"on loopback, home is not required, period. it does NOTHING and the other face apps don't show. that is my ONLY concern right now.\"):\n- On loopback (the node's own /face.html) the face shows its apps, as on a relay: no login, no home step, no home icon.\n- Why they do not show today: the face shell asks everything through /face/call, the relay's door, home or not; the node has none, so its first ask (each app's face mark) fails. Its file reads already go to the node directly.\n- The fix: on loopback the face shell asks through spirit.js's one post (the node's own /api/spirit); the sealed path and /face/call stay for a relay only.\n- No kernel.js on the face, relay or loopback (none since G40.7 and G40.8); not the old shell either.",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:31:43.227Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:32:41.852Z",
+     "text": "cw: one correction to what I said in G40.9, checked against my node just now: the node does fill spirit.js into face.html when it serves it (serveCommon.sendFile does it, as the relay does), and it serves the face shell too. So the face may already run on loopback, at your node's /face.html; only / serves the old home page.\n- Worth one try before anything is built: http://127.0.0.1:65432/face.html. The face shell then finds no relay login, asks the node itself, and starts in its home mode (no keys, no seal).\n\nFor the dual boot, what I see:\n- On a relay: the login, as now. On loopback: Join while the node has not joined, else home at once (the node's own page is the owner).\n- Whether it has joined is the node's join-steps job, which the face already hears on its stream; the old shell decides on it the same way.\n- Join itself must run on the face: today it is a home app (shell/join), not a face app.\n- And /: keep the old home page there, so the Desk keeps running, while the face lives at /face.html? Or the face at / and the old shell at /index.html?\n- ? Which address for which, once you have tried /face.html?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:34:10.777Z",
+     "text": "face does NOT run on loopback, it blocks at rest with \"home\" the only icon on display. and i will NOT tolerate a loopback face version with ANY trace of kernel.js and the other crap."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:34:58.046Z",
+     "text": "cw: found why it stops at the home icon, in the face shell's code:\n- On loopback the face shell knows it is home (it asks the node itself, logs in as home, sets no link), and it reads files from the node directly.\n- But its own ask always posts to /face/call, the relay's door, home or not. Your node has no such door, so the first thing it asks, each app's face mark (fs.annotations), fails, and no app icon is drawn. Only the home step's icon shows. Every face app's calls would fail the same way.\n\nOn kernel.js: the face loads none, on a relay or on loopback. It is not on the face's list of parts, and since G40.8 no app script the face can open reads it. The old shell is not involved either.\n\nThe fix: on loopback the face shell asks through spirit.js's one post (the node's own /api/spirit) and never touches a relay door; the sealed path stays for a relay only. Then the dual boot: Join while the node has not joined, home otherwise.\n- ? Box that as G40.10's shape?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:39:55.328Z",
+     "text": "- on loopback, \"home\" is not required, period. it does NOTHING and the other face apps don't show.\n\nthat is my ONLY concern right now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:40:23.382Z",
+     "text": "cw: understood, boxed (v2) as the one concern: on loopback no login, no home step, no home icon; the face's apps show, because the face shell asks through spirit.js there and never the relay's door. Join waits.\n- ? Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:44:26.017Z",
+     "text": "why would there be ANY door on the home node for the relay face, all that stuff must be invisible to the local clients, so why on earth would the home node need a fucking external door for the public face?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:44:47.709Z",
+     "text": "cw: it should not, and it does not: your node has no such door, and none is to be added.\n- /face/call is the relay's door, on the relay server only.\n- The bug is in the face shell: on loopback it still knocks on that relay door, which is not there, so it gets nothing.\n- The fix is in the face shell alone: on loopback it asks the node through spirit.js, as every local client does, and the relay paths stay unused. Nothing on the node changes.\n- ? Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T13:45:38.312Z",
+     "text": "Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T13:46:45.099Z",
+     "text": "cw: the desk will not open the red yet: G40.10 is still in design mode and has no Go press, and your typed go is not the press.\n- The red is written in my clone: red on the two things to change (the face shell's ask at home, the home step's icon); and a real node is seen serving its own face with spirit.js filled in and no kernel.js.\n- ? End design and press Go?"
     }
    ]
   }
