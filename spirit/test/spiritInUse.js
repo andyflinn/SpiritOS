@@ -205,6 +205,16 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!/data-icons="back"/.test(iconsApp) && /navigation\.push\(/.test(iconsApp)) test.check('Icons pushes its icon detail as a page; its own back row is gone');
   else test.fail('Icons: ' + (/data-icons="back"/.test(iconsApp) ? 'still draws its own back row' : 'pushes nothing through the wrapper'));
 
+  // THE FACE ON LOOPBACK (goal/G40.10, box v2): its apps show, no login and no home step; it asks the node through
+  // spirit.js and never the relay's door.
+  test.subHeading('1e. the face on loopback: its apps, through spirit.js, no relay door, no home step');
+  const askFn = (faceShell.match(/function ask\(verb, args\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/state && state\.home/.test(askFn) && /spirit\.outcome\(/.test(askFn)) test.check('at home the face shell asks the node through spirit.js (its families, spirit.outcome); the relay\'s /face/call is a relay\'s only');
+  else test.fail('at home the face shell still asks everything through the relay\'s /face/call');
+  const drawFn = (faceShell.match(/function drawDesktop\(\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/state && state\.home/.test(drawFn)) test.check('at home the desktop draws no login and no home step, only the face\'s apps');
+  else test.fail('at home the desktop still draws the login step\'s icon');
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
@@ -287,6 +297,13 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     else test.fail('the events family on the scratch node: door ' + oldDoor + ', ' + short(ev));
     if (ev && ev.snapshot > 0 && target && published === 'true' && ev.heard === target) test.check('one process subscribed (spirit.events.subscribe, ' + ev.snapshot + ' jobs in its snapshot); another published on the running job ' + target + ' through spirit.events.publish, and the subscriber heard it');
     else test.fail('subscribe and publish on the scratch node: target ' + target + ', published ' + short(published) + ', ' + short(ev));
+    // The face from the node itself (goal/G40.10): face.html with spirit.js filled in, no kernel.js on it, and the face
+    // shell served beside it.
+    const facePage = await fetch('http://127.0.0.1:' + port + '/face.html').then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
+    const faceJs = await fetch('http://127.0.0.1:' + port + '/face/shell.js').then(function (r) { return r.status; }, function () { return 0; });
+    if (facePage.status === 200 && /THE ONE INSTANCE/.test(facePage.text) && !/<!-- spirit\.js -->/.test(facePage.text) && !/kernel\.js/.test(facePage.text.replace(/\/\/[^\n]*/g, '')) && faceJs === 200)
+      test.check('the node serves its own face: /face.html with spirit.js filled in and no kernel.js, and the face shell beside it');
+    else test.fail('the face from the node: ' + facePage.status + ', shell ' + faceJs + (/<!-- spirit\.js -->/.test(facePage.text) ? ', spirit.js not filled in' : ''));
     const labels = (got && got.labels) || [];
     const servers2 = labels.filter(function (l) { return /server|Verifier|deskClient/i.test(l); });
     const down = labels.filter(function (l) { return /failed|exited|stopped/i.test(l); });
