@@ -22,8 +22,7 @@
 // dialog once and opens it per subject. Every job's events are heard whatever is on screen, so a reopen shows what
 // came meanwhile.
 
-var jdEscapeHtml = spirit.core.util.escapeHtml;
-var jdIcon = spirit.core.const.ICON;
+var jdEscapeHtml = spirit.escapeHtml;
 var jdApi = null;
 
 var jdId = '';          // which job this screen is about
@@ -34,13 +33,13 @@ var jdView = null;      // the Extract box's read-only text view
 var JD_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
 var JD_STATUS_ICON = {
-  pending: jdIcon.LOADING,
-  running: jdIcon.RUN,
-  completed: jdIcon.OK,
-  failed: jdIcon.ERROR,
-  cancelled: jdIcon.STOP,
-  stopped: jdIcon.STOP,
-  error: jdIcon.WARNING,
+  pending: '⏳',
+  running: '🏃‍♂️',
+  completed: '✅',
+  failed: '❌',
+  cancelled: '🟠',
+  stopped: '🟠',
+  error: '⚠️',
 };
 
 function jdJob() {
@@ -182,12 +181,12 @@ spirit.shell.activateApp({
       var id = event.target && event.target.id;
       if (id === 'jd-cancel') {
         // The screen stays: the next event shows the job stop.
-        spirit.core.jobs.cancel(jdId).catch(function (err) { console.error('cancel failed', err); });
+        spirit.jobs.cancel({ id: jdId }).catch(function (err) { console.error('cancel failed', err); });
         return;
       }
       if (id === 'jd-delete') {
         // THE SCREEN GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the table.
-        spirit.core.jobs.delete(jdId).then(function () {
+        spirit.jobs.delete({ id: jdId }).then(function () {
           if (jdApi) jdApi.closeDialog({ changed: true, id: jdId });
         }).catch(function (err) { console.error('delete failed', err); });
       }

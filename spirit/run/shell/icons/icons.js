@@ -1,4 +1,4 @@
-// Icons (goal/G30.21): the icon set this node's face uses, shell/icons/iconSet.json, each key a glyph (the icon itself,
+// Icons (goal/G30.21): the icon set this node's face uses, relay-state/shell/icons/iconSet.json (below), each key a glyph (the icon itself,
 // never a key into a table) and its value the keywords it is found by. A mountable wrapper over the icons list
 // (shell/js/icons/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
 // added at the top. Every change writes the whole set at once (fs.save), and every icons list on the page reads it
@@ -8,7 +8,12 @@
 // writable (box v22).
 
 var iconsList = null;
-var ICON_SET = 'shell/icons/iconSet.json';
+// WHERE THE SET LIVES (goal/G40.8; Andy: "all shell-app state data should go into spirit/run/relay-state/shell/<appname>/
+// analogous to the process user-data. this way my icon editing doesn't constantly push into github"): the owner's own
+// set in relay-state/shell/icons/, out of git; until he has one, the system set shell/json/iconSet.json, which only he
+// updates by hand.
+var ICON_SET = 'relay-state/shell/icons/iconSet.json';
+var SYSTEM_SET = 'shell/json/iconSet.json';
 
 function iconsEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function iconsWords(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
@@ -19,7 +24,7 @@ function iconsSame(a, b) { var strip = function (g) { return String(g || '').rep
 // The set as it stands, changed by fn, written whole.
 function iconsChange(api, fn, said) {
   // Through the spirit object (goal/G32.2).
-  return spirit.ready.then(function (s) { return s.fs.loadFile(ICON_SET); }).then(function (text) {
+  return spirit.ready.then(function (s) { return s.fs.loadFile(ICON_SET).then(function (own) { return own != null ? own : s.fs.loadFile(SYSTEM_SET); }); }).then(function (text) {
     var set = {};
     try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
     // fn answers a refusal (a sentence) when nothing is to change; the set is then not written.

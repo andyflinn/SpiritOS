@@ -164,7 +164,9 @@
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
       '</div>' +
-      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em' + (dropdown ? ';max-height:20em;overflow:auto' : '') + '"></div>';
+      // EVERY LIST SCROLLS IN ITS OWN BOX (goal/G40.8, the contained-app rule: "only a list or a viewer scrolls, inside
+      // itself"): a dropdown's up to 20em, a pane's list filling what its pane leaves it.
+      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em;overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>';
     // THE DROPDOWN IS JUST A POP-UP PANE (taken from listSearch, goal/G29.9): inline like any input, a field; the very
     // same pane pops up under it, solid, as wide as its rows up to the page.
     container.innerHTML = dropdown
@@ -174,9 +176,17 @@
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</span>'
       : paneHtml;
+    // A PANE'S LIST FILLS ITS PANE (goal/G40.8, the contained-app rule): the search a column as tall as the space it is
+    // given, its field and filters fixed at the top, its list taking the rest.
+    if (!dropdown && container.style) {
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.height = '100%';
+      container.style.minHeight = '0';
+    }
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
-    // THE MATCHED PARTS MARKED, by the one marking rule listSearch and the text view share (window.spirit.matchRanges).
+    // THE MATCHED PARTS MARKED, by the one marking rule the text view shares (window.spirit.matchRanges, below).
     function mark(text) {
       var s = String(text == null ? '' : text);
       var ranges = typeof window.spirit.matchRanges === 'function' ? window.spirit.matchRanges(s, words()) : [];
@@ -358,9 +368,18 @@
       if (!dropdown && typeof o.details === 'function') { o.details(w.row, w.key, w.el || null); return; }
       choose(w.el ? w.el.row : w.row, w.key);
     }
+    // A PAGE OF ROWS (goal/G40.8: page up and page down): as many as the list shows at once, at least one.
+    function pageRows() {
+      var l = el('list');
+      var row = l && typeof l.querySelector === 'function' ? l.querySelector('tr') : null;
+      var h = row && row.offsetHeight ? row.offsetHeight : 0;
+      return l && l.clientHeight && h ? Math.max(1, Math.floor(l.clientHeight / h) - 1) : 10;
+    }
     function move(to) {
       if (!shown.length) return;
       snap = false;
+      if (to === 'pagedown') to = pageRows();
+      else if (to === 'pageup') to = -pageRows();
       var at = shown.map(function (w) { return w.key; }).indexOf(currentKey);
       var next = to === 'top' ? 0 : to === 'bottom' ? shown.length - 1
         : Math.max(0, Math.min(shown.length - 1, (at === -1 ? (to > 0 ? -1 : shown.length) : at) + to));
@@ -379,11 +398,37 @@
       draw();
     }
     container.addEventListener('input', function (e) { var t = e && e.target; if (t && t.id === pre + 'text') typed(); });
+    // THE KEYS ON THE WHOLE LIST (goal/G40.8; Andy: "the up/down/home/end/pageUp/pageDown keys ... should always work, on
+    // the whole search list, if the search input string is activated or not"). Heard on the search itself, and on the
+    // page while this list is on screen and nothing else that takes typing has the focus.
+    function onKeys(e) {
+      var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
+      if (e.key === 'ArrowDown') { stop(); move(1); return true; }
+      if (e.key === 'ArrowUp') { stop(); move(-1); return true; }
+      if (e.key === 'PageDown') { stop(); move('pagedown'); return true; }
+      if (e.key === 'PageUp') { stop(); move('pageup'); return true; }
+      if (e.key === 'Home' || e.key === 'End') { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return true; }
+      return false;
+    }
+    function onScreen() {
+      var l = el('list');
+      return !!(l && typeof l.getClientRects === 'function' && l.getClientRects().length);
+    }
+    function typesElsewhere(t) {
+      if (!t || (typeof container.contains === 'function' && container.contains(t))) return false;
+      var tag = String(t.tagName || '').toUpperCase();
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable === true;
+    }
+    if (container.ownerDocument && typeof container.ownerDocument.addEventListener === 'function') {
+      container.ownerDocument.addEventListener('keydown', function (e) {
+        if (e.defaultPrevented || (typeof container.contains === 'function' && container.contains(e.target))) return;
+        if (typesElsewhere(e.target) || !onScreen()) return;
+        onKeys(e);
+      });
+    }
     container.addEventListener('keydown', function (e) {
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
-      if (e.key === 'ArrowDown') { stop(); move(1); return; }
-      if (e.key === 'ArrowUp') { stop(); move(-1); return; }
-      if (e.key === 'Home' || e.key === 'End') { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
+      if (onKeys(e)) return;
       if (e.key === 'Escape') { setOpen(false); return; }
       if (e.key === 'Enter' && !e.repeat) {
         // ENTER IN THE SEARCH FIELD SEARCHES, and only that (Andy: "that enter belong to the search input box only");
@@ -448,6 +493,23 @@
     return self;
   }
 
+  // THE ONE MARKING RULE, moved here from listSearch.js (goal/G40.8) (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
+  // place each word stands, partial words included, case ignored, as [from, to) index pairs in order. The list marks its
+  // rows with it, and the text view (shell/js/textView.js) marks a file's text with it, so the two never drift apart.
+  function matchRanges(text, words) {
+    var s = String(text == null ? '' : text);
+    var ws = String(words || '').split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!ws.length) return [];
+    var re = new RegExp(ws.join('|'), 'ig');
+    var out = [];
+    var hit;
+    while ((hit = re.exec(s)) !== null) {
+      if (!hit[0]) { re.lastIndex += 1; continue; }
+      out.push([hit.index, hit.index + hit[0].length]);
+    }
+    return out;
+  }
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   window.spirit.elements.probabilitySearch = { create: create, order: order };
+  window.spirit.matchRanges = matchRanges;
 }());

@@ -15,4 +15,39 @@ module.exports = {
     join: { url: 'url', email: 'text', code: 'text?' },
     record: { relay: 'text', from: 'number?', to: 'number?' },
   },
+  // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from kernel.js (goal/G40.8: no kernel on a face).
+  // status(name): the search with '*', then each relay got, put back into the shape the screens were written against,
+  // { status, text, body: { name, rows, ownedUrls, claimedUrls, mustPick, relayStatus, more } }; a refused search
+  // answers its own status and body.
+  names: function (call) {
+    function said(e) { return { status: (e && e.status) || 0, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; }
+    return {
+      status: function (name) {
+        return call('search', { q: '*', name: name || '' }).then(function (s) {
+          if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
+          return Promise.all((s.items || []).map(function (i) {
+            return call('get', { key: i.key }).then(function (g) { return g; }, function () { return null; });
+          })).then(function (gets) {
+            var rows = [];
+            var relayStatus = {};
+            gets.forEach(function (g) {
+              if (!g || !g.ok) return;
+              rows.push(g.relay);
+              if (g.report) relayStatus[g.key] = g.report;
+            });
+            var body = {
+              name: s.name,
+              rows: rows,
+              ownedUrls: rows.filter(function (r) { return r.owned; }).map(function (r) { return r.url; }),
+              claimedUrls: rows.filter(function (r) { return r.owned || r.claimed; }).map(function (r) { return r.url; }),
+              mustPick: !!s.mustPick,
+              relayStatus: relayStatus,
+              more: !!s.more,
+            };
+            return { status: 200, text: JSON.stringify(body), body: body };
+          });
+        }, said);
+      },
+    };
+  },
 };

@@ -277,7 +277,7 @@ var DD_PANELS = [
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 function ddIconsHtml() {
-  var ICON = spirit.core.const.ICON;
+  var ICON = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
   var blink = { qs: ddWaits('Q'), files: ddWaits('G') };
   return DD_PANELS.map(function (p) {
     var cls = (p.key === ddPanelSel ? 'dd-icon dd-icon-on' : 'dd-icon') + (blink[p.key] ? ' dd-blink' : '');

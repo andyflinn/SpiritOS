@@ -15,17 +15,16 @@
 // text}}; the bar is the shared progressBar (shell/shared/js/progressBar.js), fed here from those events. A server
 // between jobs shows idle, no bar; a transient process IS its job, so its progress alone draws the bar.
 
-var JOBS_ICON = spirit.core.const.ICON;
-var jobsEscapeHtml = spirit.core.util.escapeHtml;
+var jobsEscapeHtml = spirit.escapeHtml;
 
 var STATUS_ICON = {
-  pending: JOBS_ICON.LOADING,
-  running: JOBS_ICON.RUN,
-  completed: JOBS_ICON.OK,
-  failed: JOBS_ICON.ERROR,
-  cancelled: JOBS_ICON.STOP,
-  stopped: JOBS_ICON.STOP,
-  error: JOBS_ICON.WARNING,
+  pending: '⏳',
+  running: '🏃‍♂️',
+  completed: '✅',
+  failed: '❌',
+  cancelled: '🟠',
+  stopped: '🟠',
+  error: '⚠️',
 };
 // The canonical set lives in js/jobs.js, node-side; jobsDetails and app/stats keep the same copy.
 var JOBS_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];

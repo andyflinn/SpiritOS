@@ -347,7 +347,8 @@
   // WHAT THE FACE LOADS FROM HOME (goal/G40.7; Andy: "execute a hard-Coded download/fetch of all those scripts rather
   // than stealing them from index.html ... but do not download kernel.js"): in order, the home page's sheets and
   // scripts but the old shell, spirit.js (inline in this page, first), kernel.js and CodeMirror (loaded when an app
-  // needs it). A part added to the face is added here.
+  // needs it). A part added to the face is added here. Not on it, by rule (goal/G40.8): listSearch.js ("list search is
+  // deprecated, and forbidden in face"), the contact selector built on it, and the deprecated header element.
   var FACE_PARTS = [
     'spirit/ownerBadge.js',
     'spirit/fieldRules.js',
@@ -364,14 +365,11 @@
     'shell.css',
     'shell/js/textView.js',
     'shell/js/iconSelector.js',
-    'shell/js/appHeader/appHeader.js',
     'shell/js/contactLabel.js',
     'shell/js/joinForm.js',
     'shell/js/faceForm.js',
     'shell/js/joinSteps.js',
-    'shell/shared/js/listSearch.js',
     'shell/shared/js/progressBar.js',
-    'shell/js/contactSelector.js',
     'shell/js/appServerSelector.js',
     'shell/js/apiBranchSelector.js',
     'shell/js/spiritData.js',

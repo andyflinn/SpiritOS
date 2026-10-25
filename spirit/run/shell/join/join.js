@@ -27,15 +27,16 @@ function joinEl() {
   var w = window.spirit.elements || {};
   return { joinForm: w && window.spirit.elements.joinForm, contactList: w && window.spirit.elements.contactList, faceForm: w && window.spirit.elements.faceForm };
 }
-function joinIcon(name) { return spirit.core.const.ICON[name] || ''; }
+function joinIcon(name) { var t = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {}; return t[name] || ''; }
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
 // The steps' names, icons and words, read once from this app's own manifest.
+// Asked once, as it loads (goal/G40.8: spirit.fs answers when it has it, where the kernel's read waited in place).
 var joinStepList = null;
-function joinSteps() {
-  if (joinStepList) return joinStepList;
-  try { joinStepList = (JSON.parse(spirit.core.fs.loadFile('shell/join/join.json')) || {}).steps || []; } catch (e) { joinStepList = []; }
-  return joinStepList;
-}
+spirit.fs.loadFile('shell/join/join.json').then(function (text) {
+  try { joinStepList = (JSON.parse(text) || {}).steps || []; } catch (e) { joinStepList = []; }
+  if (joinHanded) { joinShown = ''; joinShow(); }
+}, function () { joinStepList = []; });
+function joinSteps() { return joinStepList || []; }
 
 function joinShow() {
   if (!joinHanded) return;

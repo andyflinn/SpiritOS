@@ -25,8 +25,7 @@
 // a hub verb, and the one file Contacts keeps (prefs.json, the stranger
 // policy) belongs to the list rather than to any row.
 
-var cdEscapeHtml = spirit.core.util.escapeHtml;
-var cdIcon = spirit.core.const.ICON;
+var cdEscapeHtml = spirit.escapeHtml;
 var cdApi = null;
 
 var cdKey = '';        // whose row this screen is
@@ -96,8 +95,8 @@ function cdRate(perDay) {
 // refused should say so where you are already looking.
 function cdTitle() {
   if (!cdPerson) return 'Contact';
-  var mark = cdPerson.blocked ? cdIcon.NO + ' '
-    : cdPerson.held ? cdIcon.WAITING + ' '
+  var mark = cdPerson.blocked ? '❌' + ' '
+    : cdPerson.held ? '⌛' + ' '
     : '';
   var name = cdPerson.publicLabel || '';
   var mine = cdPerson.myLabel || '';
@@ -174,7 +173,7 @@ function cdRender() {
     ['Unanswered inbound', String(cdPerson.unansweredInbound || 0)],
     ['Inbound rate', cdRate(cdPerson.inboundPerDay)],
     ['Outbound rate', cdRate(cdPerson.outboundPerDay)],
-    ['Storage', spirit.core.util.formatBytes(cdPerson.bytesHeld || 0)],
+    ['Storage', spirit.formatBytes(cdPerson.bytesHeld || 0)],
   ]);
 
   // Accept is offered only to somebody waiting, Unblock only to somebody
@@ -276,9 +275,9 @@ function cdRender() {
 // A relay is addressed by key like any other peer (removePeer rides the
 // ordinary post, natterDetails does the same) — no new verb.
 function cdReleaseSeats() {
-// relay.status is gone (puppets/G2): the page kernel's relays.status
+// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // asks relay.search and relay.get and hands back the same shape.
-  return spirit.core.relays.status('').then(function (r) {
+  return spirit.relay.status('').then(function (r) {
     var rows = (r.body && r.body.rows) || [];
     var keyFor = Object.create(null);
     var seats = [];

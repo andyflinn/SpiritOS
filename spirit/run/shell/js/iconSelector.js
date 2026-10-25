@@ -44,7 +44,23 @@
   function createIconSelector(excludeGlyphs, options) {
     options = options || {};
     var iconIndex = window.spirit.iconIndex;
-    var choices = iconIndex.choices(iconIndex.ICON, excludeGlyphs);
+    // WHAT IT OFFERS IS THE SYSTEM SET (goal/G40.8; Andy: "if you want a table for the icon-selector, it should go into
+    // spirit/run/shell/json/icons.json"): shell/json/iconSet.json, each glyph with the keywords it is found by, read once
+    // as it is made, the rows drawn when it is there.
+    var choices = [];
+    var excludedGlyph = Object.create(null);
+    (excludeGlyphs || []).forEach(function (g) { if (g) excludedGlyph[g] = true; });
+    spirit.ready.then(function (s) { return s.fs.loadFile('shell/json/iconSet.json'); }).then(function (text) {
+      var set = {};
+      try { set = JSON.parse(text || '{}') || {}; } catch (e) { set = {}; }
+      choices = Object.keys(set).filter(function (g) { return g && !excludedGlyph[g]; }).map(function (g) {
+        var keys = Array.isArray(set[g]) ? set[g].map(String) : [];
+        return { glyph: g, key: keys[0] || '', keys: keys, label: keys.join(', ') };
+      });
+      visible = choices;
+      paintField();
+      if (!list.hidden) paintRows();
+    }, function () { /* no set: the field still shows its glyph */ });
 
     var root = document.createElement('div');
     root.className = 'icon-selector';

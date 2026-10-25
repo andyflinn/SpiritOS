@@ -1,5 +1,5 @@
 // spirit/run/shell/js/icons/listElement.js
-// THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the Icons app's set (shell/icons/iconSet.json, each glyph with
+// THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the Icons app's set (relay-state/shell/icons/iconSet.json, else shell/json/iconSet.json, each glyph with
 // the keywords it is found by) on the standard list-tool (shell/js/probabilitySearch.js), each row an iconElement. The
 // Icons app draws it as a pane; the Apps panel's icon field as a dropdown. Words are matched against the glyph and its
 // keywords. A
@@ -15,7 +15,9 @@
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  var SET = 'shell/icons/iconSet.json';
+  // The owner's own set, out of git; the system set until he has one (goal/G40.8, shell/icons/icons.js says why).
+  var SET = 'relay-state/shell/icons/iconSet.json';
+  var SYSTEM_SET = 'shell/json/iconSet.json';
 
   function create(host, opts) {
     var o = opts || {};
@@ -23,7 +25,7 @@
     var list = null;
     function reload() {
       // Through the spirit object (goal/G32.2).
-      return spirit.ready.then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
+      return spirit.ready.then(function (s) { return s.fs.loadFile(SET).then(function (own) { return own != null ? own : s.fs.loadFile(SYSTEM_SET); }); }).then(function (text) {
         var set = {};
         try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
         rows = Object.keys(set).map(function (g) { return { key: g, glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }; });

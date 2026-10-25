@@ -31,8 +31,7 @@
 // it is watching the roll for) belongs to the list. A mint made here
 // is RETURNED, and Natter records it.
 
-var ndEscapeHtml = spirit.core.util.escapeHtml;
-var ndIcon = spirit.core.const.ICON;
+var ndEscapeHtml = spirit.escapeHtml;
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
 // rule is js/fieldRules.js, loaded by index.html, and the relay enforces
@@ -151,7 +150,7 @@ function ndPanel(id, mark, title, inner, extraClass) {
   return '<div class="stat-tile wide' + (extraClass ? ' ' + extraClass : '') + '">' +
     '<div class="panel-heading nd-fold" data-fold="' + ndEscapeHtml(id) + '"' +
       ' title="' + (shut ? 'Show' : 'Hide') + ' this">' +
-      '<span class="nd-fold-mark">' + (shut ? ndIcon.POINTRIGHT : ndIcon.POINTDOWN) + '</span> ' +
+      '<span class="nd-fold-mark">' + (shut ? '▶️' : '🔽') + '</span> ' +
       (mark ? mark + ' ' : '') + ndEscapeHtml(title) +
     '</div>' +
     (shut ? '' : '<div class="nd-panel-body">' + inner + '</div>') +
@@ -225,9 +224,9 @@ function ndBody() { return document.getElementById('nd-body'); }
 function ndLoad() {
   ndAsked = false;
   ndUnlisted = false;
-// relay.status is gone (puppets/G2): the page kernel's relays.status
+// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // asks relay.search and relay.get and hands back the same shape.
-  return spirit.core.relays.status(ndLabel || '').then(function (r) { return r && r.body; })
+  return spirit.relay.status(ndLabel || '').then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
@@ -306,7 +305,7 @@ function ndWhyNotGreen() {
   // 1. Nothing answered. A URL that is wrong and a box that is down look
   //    identical from here, and saying so is more useful than picking.
   if (!ndBadge.status) {
-    return ndPanel('why-red', ndIcon.WARNING, 'This relay did not answer',
+    return ndPanel('why-red', '⚠️', 'This relay did not answer',
       '<div>' + ndEscapeHtml(ndBadge.error || 'no answer') + '</div>' +
       '<div class="muted">Nothing is wrong with your node. A relay that is ' +
         'switched off and an address with a typo in it look the same from here, ' +
@@ -316,7 +315,7 @@ function ndWhyNotGreen() {
 
   // 2. It answered, and has no row for you. The only state with an
   //    actual next move, so the next move is the paragraph.
-  return ndPanel('why-red', ndIcon.WARNING, 'This relay answered, and you are not on it',
+  return ndPanel('why-red', '⚠️', 'This relay answered, and you are not on it',
     '<div>It is running and reachable. It simply has no row in your name, ' +
       'so this node cannot send through it or be reached on it.</div>' +
     '<div class="muted">Rows are not self-service: whoever owns this relay ' +
@@ -339,7 +338,7 @@ function ndWhyNotGreen() {
 // correct terms and neither of them tells somebody what to do next.
 function ndLocalHtml() {
   if (!ndIsLoopback(ndUrl)) return '';
-  return ndPanel('local', ndIcon.WARNING, 'Why this relay is not useful',
+  return ndPanel('local', '⚠️', 'Why this relay is not useful',
     '<div>This address points back at the machine you are on. ' +
       'Only programs running on this same computer can reach it — ' +
       'nobody else on the internet can, however well it is working.</div>' +
@@ -358,7 +357,7 @@ function ndRefusedHtml(refused) {
   var when = isNaN(since.getTime()) ? String(refused.at || 'an unknown time') : since.toLocaleString();
   var remove = ndRemoveBody();
   return '<div class="stat-tile wide">' +
-    '<div class="panel-heading">' + ndIcon.WARNING + ' This relay refused this node</div>' +
+    '<div class="panel-heading">' + '⚠️' + ' This relay refused this node</div>' +
     '<div>Since ' + ndEscapeHtml(when) + ' it has answered “' +
       ndEscapeHtml(refused.why || 'your id is not a valid sender here') + '”. ' +
       'Your seat is gone: the relay no longer holds a row for this node, so it sends nothing through it ' +
@@ -383,7 +382,7 @@ function ndRemoveBody() {
     '<div class="job-manifest-note nd-remove-out">Remove takes it off this node\'s list and gives up the seat record here.</div>';
 }
 function ndRemoveHtml() {
-  return ndPanel('remove', ndIcon.WARNING, 'Remove this relay from your list', ndRemoveBody());
+  return ndPanel('remove', '⚠️', 'Remove this relay from your list', ndRemoveBody());
 }
 
 // Two presses, then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node asks the same rule.
@@ -445,7 +444,7 @@ function ndReportHtml() {
   // which with one browser across several relays is a per-relay answer.
   if (!ndBadge.owned && ndBadge.claimed) {
     var c = ndBadge.roll || {};
-    return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
+    return ndPanel('relay', 'ℹ️', 'What this relay says', spirit.shell.factRow([
       ['Owner', c.owner || '(unknown)'],
       ['You', c.myLabel || '(unknown)'],
     ]));
@@ -466,7 +465,7 @@ function ndReportHtml() {
   // rendered them alike would be the careless half of the distinction
   // hub.js already takes care to preserve.
   if (!ndBadge.report) {
-    return ndPanel('relay', ndIcon.INFO, 'What this relay says',
+    return ndPanel('relay', 'ℹ️', 'What this relay says',
       '<div class="job-log-empty">this relay has not reported yet</div>');
   }
   var report = ndBadge.report;
@@ -485,7 +484,7 @@ function ndReportHtml() {
     ['Peers', report.peers == null ? '(unknown)' : report.peers],
     ['Connected', report.present == null ? '(unknown)' : report.present],
   ];
-  return ndPanel('relay', ndIcon.INFO, 'What this relay says',
+  return ndPanel('relay', 'ℹ️', 'What this relay says',
     spirit.shell.factRow(facts.concat(ndGovernorFacts(report))));
 }
 
@@ -615,7 +614,7 @@ function ndClaimHtml() {
   // ONLY WHERE THE RELAY SENDS MAIL (goal/G30.2): its card says services.sendMail, which the node keeps on the row.
   // An unlisted relay has no row yet, so it offers the invite form alone.
   var joinByMail = !!(ndBadge && ndBadge.services && ndBadge.services.sendMail === true);
-  return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
+  return ndPanel('claim', '▶️', 'Claim a seat on this relay',
     // ── THE ORDER IS THE ORDER OF THE PHONE CALL ────────────────────
     //
     //   Andy: "the redeem token should start with the same fields
@@ -669,7 +668,7 @@ function ndEmailHtml() {
   if (!ndJoinForm()) return '';
   // The words are the control's own (joinForm.words, box v41), the same the Join app's step 1 shows.
   var w = ndJoinForm().words({ seated: true, email: ndBadge.email, emailVerified: !!ndBadge.emailVerified });
-  return ndPanel('email', ndIcon.EMAIL, w.title, ndJoinForm().html(w), 'natter-email');
+  return ndPanel('email', '✉️', w.title, ndJoinForm().html(w), 'natter-email');
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): shell/js/joinForm.js, loaded by index.html.
@@ -829,8 +828,8 @@ function ndOwnerGroupHtml(inner) {
     '<div class="panel-heading nd-group-fold"' +
       ' title="' + (shut ? 'Show' : 'Hide') + ' what you can do as owner">' +
       '<span class="nd-fold-mark">' +
-        (shut ? ndIcon.POINTRIGHT : ndIcon.POINTDOWN) + '</span> ' +
-      ndIcon.STAR + ' Managing my relay' +
+        (shut ? '▶️' : '🔽') + '</span> ' +
+      '⭐' + ' Managing my relay' +
     '</div>' +
     (shut ? '' : '<div class="nd-group-body">' + inner + '</div>') +
     '</div>';
@@ -937,7 +936,7 @@ function ndRelayLabelHtml() {
   var roll = ndBadge.roll || {};
   // The relay's own label as its card said (goal/G30.7), or the one it just confirmed while the node's copy catches up.
   var now = ndRelayNamed || roll.relayLabel || '';
-  return ndPanel('relaylabel', ndIcon.INFO, 'Change what this relay is called',
+  return ndPanel('relaylabel', 'ℹ️', 'Change what this relay is called',
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Public label of this relay' +
       '<input type="text" class="nd-relay-label"' +
@@ -1014,7 +1013,7 @@ function ndAllocationHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   if (!ndAlloc && !ndAllocAsked) ndReadAlloc();
   if (!ndAlloc) {
-    return ndPanel('allocation', ndIcon.INFO, 'Memory and disc',
+    return ndPanel('allocation', 'ℹ️', 'Memory and disc',
       '<div class="job-manifest-note">' + ndEscapeHtml(ndAllocSaid || 'asking that relay…') + '</div>', 'natter-allocation');
   }
   var f = ndAlloc.onFile || {};
@@ -1025,7 +1024,7 @@ function ndAllocationHtml() {
   var disc = f.discLimitMB !== undefined ? f.discLimitMB : run.discLimitMB;
   // DISC IN GB (goal/G30.15; Andy: "disc should be measured in GB, not MB"); the relay keeps MB.
   var gb = function (mb) { return mb === undefined || mb === null ? 'not known' : (Math.round(Number(mb) / 1024 * 100) / 100) + ' GB'; };
-  return ndPanel('allocation', ndIcon.INFO, 'Memory and disc',
+  return ndPanel('allocation', 'ℹ️', 'Memory and disc',
     spirit.shell.factRow([
       ['Memory set', ram + ' MB'], ['Memory running', run.ramLimitMB + ' MB'],
       ['The box can give', (room.ramMaxMB !== undefined ? room.ramMaxMB + ' MB' : 'not known')],
@@ -1193,7 +1192,7 @@ function ndWhen(iso) {
 // genuinely owner-only — see the note on the device panel, which is not.
 function ndInvitePanel() {
   if (!ndBadge || !ndBadge.owned) return '';
-  return ndPanel('invite', ndIcon.STAR, 'Invites' + ndInviteCount(),
+  return ndPanel('invite', '⭐', 'Invites' + ndInviteCount(),
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
     '<div class="start-job-form card">' +

@@ -46,7 +46,7 @@ var deskAgentRemoteTranscript = [];   // the chat box's lines, the page's own: [
 var deskAgentRemoteChatBusy = false;
 
 function deskAgentRemoteIcon(name) {
-  var table = (typeof spirit !== 'undefined' && spirit.core && spirit.core.const && spirit.core.const.ICON) || {};
+  var table = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
   return table[name] || '';
 }
 

@@ -14,3 +14,16 @@
 /* What the face must say (goal/G30.11): unsealed, open on another device, taken. */
 #face-banner { display: flex; gap: 8px; align-items: center; padding: 6px 12px; background: #b00020; color: #fff; font-size: 13px; }
 #face-banner[hidden] { display: none; }
+
+/* THE CONTAINED APP (goal/G40.8; Andy: "the contained-app rule: it IS the rule."). The window is the screen and the page
+   never scrolls; below the title bar the app area takes exactly the rest; the title bar and an app's tools never
+   scroll; only a list or a viewer scrolls, inside itself. A pane not built to the rule yet scrolls inside itself, so
+   nothing is cut off and the title bar still stays. */
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body { display: flex; flex-direction: column; }
+#face-banner { flex: 0 0 auto; }
+#desktop { flex: 1; min-height: 0; overflow: auto; }
+#app-container:not([hidden]) { position: static; inset: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#app-header { position: static; flex: 0 0 auto; }
+#app-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#app-content > :not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; }

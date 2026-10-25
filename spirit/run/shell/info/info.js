@@ -273,9 +273,9 @@ function infoLoad() {
 // A FAILURE HERE IS NOT AN ERROR ON THE NAME. It means the table cannot
 // be drawn yet, and saying so beside the field would blame the field.
 function infoLoadRelays() {
-// relay.status is gone (puppets/G2): the page kernel's relays.status
+// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // asks relay.search and relay.get and hands back the same shape.
-  return spirit.core.relays.status('').then(function (r) {
+  return spirit.relay.status('').then(function (r) {
     var said = (r && r.body) || {};
     infoRelays = Array.isArray(said.rows) ? said.rows : [];
     infoDrawRelays();

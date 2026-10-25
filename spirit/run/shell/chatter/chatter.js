@@ -38,7 +38,6 @@ var chOpenSeq = 0;        // the newest openChat wins
 var chPresent = {};       // the keys the last relay-presence table named
 var chRows = {};          // chats.search's row per key: {at, sent, seq, unanswered}
 var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
-var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
 var CH_PREFS = 'prefs.json';
 var CH_STYLES = ['plain', 'bubbles'];
 
@@ -79,7 +78,7 @@ function chPeersSearch(text, ask) {
   var args = ask || { q: String(text || '') };
   var typed = String(args.q || '').trim();
   var book = {};
-  return spirit.core.ask('contact.search', args).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
+  return spirit.outcome(spirit.contact.search(args)).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
     // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
     .then(function () { return chAsk('chats.search', {}).then(function (b) { return b || {}; }, function () { return {}; }); })
     .then(function (chats) {
@@ -146,9 +145,9 @@ function chBefore(a, b) {
 
 function chMark(l) {
   if (Number(l.sent) !== 1) return '';
-  if (l.refused === 'unsent') return ICON.LOADING || '⏳';
-  if (!l.refused) return ICON.DELIVERED || '✓';
-  return ICON.REFUSED || '❗';
+  if (l.refused === 'unsent') return '⏳' || '⏳';
+  if (!l.refused) return '✓' || '✓';
+  return '❗' || '❗';
 }
 
 function chTime(at) {
@@ -492,8 +491,8 @@ spirit.shell.activateApp({
       });
       paint();
     }
-    fold('peers', 'ch-left', 'ch-divider-left', ICON.POINTLEFT || '◀', ICON.POINTRIGHT || '▶');
-    fold('objects', 'ch-right', 'ch-divider-right', ICON.POINTRIGHT || '▶', ICON.POINTLEFT || '◀');
+    fold('peers', 'ch-left', 'ch-divider-left', '◀️' || '◀', '▶️' || '▶');
+    fold('objects', 'ch-right', 'ch-divider-right', '▶️' || '▶', '◀️' || '◀');
 
     // A boundary dragged resizes the side pane beside it; the width is kept when the drag ends.
     function drag(dividerId, which, sign) {

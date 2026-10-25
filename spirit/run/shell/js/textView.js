@@ -38,7 +38,7 @@
     });
     var marks = [];
     var firstAt = null;   // where the first match stands, put in view again once the page is drawn
-    // EVERY MATCH MARKED, THE FIRST IN VIEW, BY THE LIST'S OWN RULE (window.spirit.matchRanges, listSearch.js): one
+    // EVERY MATCH MARKED, THE FIRST IN VIEW, BY THE LIST'S OWN RULE (window.spirit.matchRanges, probabilitySearch.js): one
     // marking rule for the list and the text view (goal/G29.12).
     function mark(words) {
       marks.forEach(function (m) { m.clear(); });

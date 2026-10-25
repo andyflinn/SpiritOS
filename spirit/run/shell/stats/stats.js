@@ -50,7 +50,7 @@ function statsTileHtml(value, label, wide, launchAppId) {
 // string, and it was going into innerHTML as it stood.
 function statsCountsHtml(counts) {
   var keys = Object.keys(counts);
-  var escape = spirit.core.util.escapeHtml;
+  var escape = spirit.escapeHtml;
   if (keys.length === 0) return '<div class="file-info-row">(none)</div>';
   return keys.map(function (k) {
     return '<div class="file-info-row">' +
@@ -98,8 +98,8 @@ spirit.shell.activateApp({
 
     var d = job.data;
     var html = '';
-    html += statsTileHtml(spirit.core.util.formatBytes(d.memory.rss), 'Memory (RSS)');
-    html += statsTileHtml(spirit.core.util.formatBytes(d.memory.heapUsed), 'Heap used');
+    html += statsTileHtml(spirit.formatBytes(d.memory.rss), 'Memory (RSS)');
+    html += statsTileHtml(spirit.formatBytes(d.memory.heapUsed), 'Heap used');
     html += statsTileHtml(d.cpu.percent.toFixed(1) + '%', 'CPU');
     html += statsTileHtml(statsFormatUptime(d.uptimeSeconds), 'Uptime');
     html += statsTileHtml(d.eventLoop.meanMs.toFixed(2) + ' ms', 'Event loop mean');

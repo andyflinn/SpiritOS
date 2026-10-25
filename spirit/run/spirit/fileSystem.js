@@ -88,6 +88,22 @@ const OWN_STATE_DIR = (function () {
 function isOwnState(canonical) {
   return !!OWN_STATE_DIR && (canonical === OWN_STATE_DIR || canonical.startsWith(OWN_STATE_DIR + '/'));
 }
+// A SHELL APP'S OWN STATE FOLDER (goal/G40.8; Andy: "all shell-app state data should go into
+// spirit/run/relay-state/shell/<appname>/ analogous to the process user-data"): a file inside relay-state/shell/<app>/,
+// out of git, read and written by the owner's pages. Path-only like every rule here: nothing server-side can tell which
+// app is asking. Nothing else under relay-state opens: the path is canonical already, and a second relay-state below it
+// (an app's own relay-state) stays shut.
+// The folders on the way to it are listed too (relay-state, relay-state/shell, relay-state/shell/<app>), only so the
+// node's file tree and its watcher reach the state inside; each file in them is still judged by itself, so the
+// identity key, the contacts and a process's state stay hidden.
+function isShellFolder(canonical) {
+  const parts = canonical.split('/');
+  return parts[0] === 'relay-state' && (parts.length === 1 || (parts[1] === 'shell' && parts.length <= 3));
+}
+function isShellState(canonical) {
+  const parts = canonical.split('/');
+  return parts.length >= 4 && parts[0] === 'relay-state' && parts[1] === 'shell' && !!parts[2] && parts.lastIndexOf('relay-state') === 0;
+}
 
 // A CORE FILE, by the one rule the commit check reads (js/coreFiles.js): spirit/run/spirit/, spirit/run/shell/js/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
@@ -144,6 +160,7 @@ function fileWritable(filePath) {
   if (canonical === null) return false;
   if (isOwnState(canonical)) return true;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
+  if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
   return !isCoreFile(canonical);
@@ -167,7 +184,7 @@ function fileServable(filePath) {
   // (faceServer.js:614), and a top-level-only check served that private
   // key to any shell app and to the static route (wsl-claude found it,
   // 2026-09-27; Andy's "go." on the fix).
-  if (isOwnState(canonical)) return true;
+  if (isOwnState(canonical) || isShellState(canonical) || isShellFolder(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   return true;
 }

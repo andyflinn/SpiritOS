@@ -55,7 +55,7 @@ var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClo
 // anything i NEED to deal with", "wherever i block"), CODE on any other item.
 // From the kernel's own set; a Desk mounted without it draws none.
 function deskIcon(name) {
-  var set = (typeof spirit !== 'undefined' && spirit.core && spirit.core.const && spirit.core.const.ICON) || {};
+  var set = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
   return set[name] || '';
 }
 var deskError = '';

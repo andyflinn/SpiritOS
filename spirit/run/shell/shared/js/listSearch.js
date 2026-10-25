@@ -43,22 +43,9 @@
 
 (function () {
   var made = 0;
-  // THE ONE MARKING RULE (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
-  // place each word stands, partial words included, case ignored, as [from, to) index pairs in order. The list marks its
-  // rows with it, and the text view (shell/js/textView.js) marks a file's text with it, so the two never drift apart.
-  function matchRanges(text, words) {
-    var s = String(text == null ? '' : text);
-    var ws = String(words || '').split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
-    if (!ws.length) return [];
-    var re = new RegExp(ws.join('|'), 'ig');
-    var out = [];
-    var hit;
-    while ((hit = re.exec(s)) !== null) {
-      if (!hit[0]) { re.lastIndex += 1; continue; }
-      out.push([hit.index, hit.index + hit[0].length]);
-    }
-    return out;
-  }
+  // THE ONE MARKING RULE is probabilitySearch's (goal/G40.8: listSearch is deprecated and forbidden in the face), asked
+  // as it is used.
+  function matchRanges(text, words) { return window.spirit.matchRanges(text, words); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -450,5 +437,4 @@
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   window.spirit.elements.shellCreateListSearch = shellCreateListSearch;
-  (window.spirit = window.spirit || {}).matchRanges = matchRanges;
 }());

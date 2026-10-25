@@ -1,6 +1,6 @@
 // spirit/run/shell/js/icons/rowElement.js
 // ONE ICON, AS A ROW ELEMENT (goal/G30.21). Its subject is a glyph, the icon itself (Andy: "it's the icon we store or
-// use"); its fields the glyph and the keywords it is found by, from the Icons app's set (shell/icons/iconSet.json).
+// use"); its fields the glyph and the keywords it is found by, from the Icons app's set (relay-state/shell/icons/iconSet.json, else shell/json/iconSet.json).
 // rowElement.js does the shared work; this file says what an icon is. The set is one file, not a stream, so there is no
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {

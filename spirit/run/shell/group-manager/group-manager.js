@@ -28,8 +28,7 @@
 // `api` arrives at mount and render never gets one, so it is kept here,
 // the same as Files does.
 
-var groupsEscapeHtml = spirit.core.util.escapeHtml;
-var groupsIcon = spirit.core.const.ICON;
+var groupsEscapeHtml = spirit.escapeHtml;
 var groupsApi = null;
 
 // This app's own mount container, kept so the render guard can ask
@@ -52,7 +51,7 @@ function groupsList() {
 function renderGroupManagerRow(g) {
   var isExpanded = g.id === expandedGroupId;
   var mainRow = '<tr class="job-row" data-group-row="' + groupsEscapeHtml(g.id) + '">' +
-    '<td>' + (isExpanded ? groupsIcon.POINTDOWN : groupsIcon.POINTRIGHT) + ' ' + groupsEscapeHtml(g.icon) + '</td>' +
+    '<td>' + (isExpanded ? '🔽' : '▶️') + ' ' + groupsEscapeHtml(g.icon) + '</td>' +
     '<td>' + groupsEscapeHtml(g.name) + '</td>' +
     '<td>' + g.memberCount + '</td>' +
     '</tr>';

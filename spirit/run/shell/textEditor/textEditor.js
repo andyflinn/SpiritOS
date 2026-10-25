@@ -27,7 +27,10 @@ var textEditorPath = '';
 var textEditorApi = null;
 var textEditorView = null;
 function textEditorLoadPath(path, words, line) {
-  var content = spirit.core.fs.loadFile(path);
+  // The file's text, when spirit.fs has it (goal/G40.8: the kernel's read waited in place).
+  return spirit.fs.loadFile(path).then(function (content) { textEditorShow(path, words, line, content); });
+}
+function textEditorShow(path, words, line, content) {
   textEditorPath = path;
   var pathEl = document.getElementById('editor-path');
   if (pathEl) pathEl.textContent = path;
@@ -79,8 +82,8 @@ spirit.shell.activateApp({
       }
       var content = textEditorView ? textEditorView.value() : '';
       statusEl.textContent = 'saving…';
-      spirit.core.fs.saveFile(path, content)
-        .then(function () { statusEl.textContent = 'saved'; })
+      spirit.fs.saveFile(path, content)
+        .then(function (r) { statusEl.textContent = r && r.ok === false ? 'save failed: ' + (r.reason || 'refused') : 'saved'; })
         .catch(function (err) { statusEl.textContent = 'save failed: ' + err.message; });
     });
 
