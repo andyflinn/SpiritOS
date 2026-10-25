@@ -36,18 +36,22 @@ const seal = require('./seal');
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
 const FACE_PIECE = 64 * 1024;
 
-// What a face may not ask its home node (the box: "minus the email and face changes with the relay"). The email is
-// set by relay.join, the face name by relay.face, which posts { face } to the relay; a peer.post carrying { face }
-// is that same change by hand.
-function faceRefuses(request) {
+// WHAT A FACE MAY NOT ASK ITS HOME NODE (goal/G40.10, box v26; Andy: "we only protect the face and its connection,
+// other than that the face uses the same door as a puppeteer would use on the home node", and "i can see the point of
+// refusing to change the face name for the face I'm calling from"). Only a face-name change on the relay this face is
+// called through: relay.face for that relay, or a post carrying { face } to that relay's key. relay.join, and a face
+// name on any other relay, go through. here: { url, key } of the relay the request came through.
+function faceRefuses(request, here) {
   const r = request || {};
+  const h = here || {};
+  const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
   const verb = String(r.verb || '');
-  if (verb === 'relay.face' || verb === 'relay.join') return verb + ' changes this node\'s email or face with the relay';
-  if (verb === 'peer.post') {
+  if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
+  if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
     let packet = null;
     try { packet = JSON.parse(String(r.text || '')); } catch (e) { packet = null; }
     const body = packet && packet.body;
-    if (body && typeof body === 'object' && body.face) return 'a post carrying a face name changes this node\'s face with the relay';
+    if (body && typeof body === 'object' && body.face) return 'a post carrying a face name would change the face you are calling from';
   }
   return '';
 }
@@ -270,7 +274,7 @@ function createFaceHome(opts) {
       json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || '') });
       return;
     }
-    const no = faceRefuses(r);
+    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '' });
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
     if (r.upload && typeof r.upload === 'object') { uploadPart(r.upload, res); return; }
