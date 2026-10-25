@@ -420,6 +420,23 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const startFn = (faceShell.match(/function start\(\) \{[\s\S]*?\n  \}/) || [''])[0];
   if (/joinFromLink\(\)/.test(startFn) && !/if \(home\) \{ startJoin\(\); joinFromLink\(\); \}/.test(startFn)) test.check('the face shell reads the join link on a relay face too, after its login');
   else test.fail('the face shell reads the join link at home only');
+  // WHAT A FACE MAY NOT ASK (box v26; Andy: "we only protect the face and its connection, other than that the face uses
+  // the same door as a puppeteer would use on the home node", and "fix it"): only a face-name change on the relay the
+  // face is called through; relay.join and face names on other relays go through.
+  const refuseRun = spawnSync(process.execPath, ['-e', [
+    "var F = require('./spirit/faceHome'); var here = { url: 'https://here.example', key: 'KEY-HERE' };",
+    "var face = function (body, to) { return JSON.stringify({ body: body, to: to }); };",
+    "process.stdout.write(JSON.stringify({",
+    "  join: F.faceRefuses({ verb: 'relay.join', url: 'https://here.example', email: 'a@b' }, here),",
+    "  faceHere: F.faceRefuses({ verb: 'relay.face', url: 'https://here.example/', name: 'x' }, here),",
+    "  faceThere: F.faceRefuses({ verb: 'relay.face', url: 'https://there.example', name: 'x' }, here),",
+    "  postHere: F.faceRefuses({ verb: 'peer.post', to: 'KEY-HERE', text: JSON.stringify({ body: { face: { name: 'x' } } }) }, here),",
+    "  postThere: F.faceRefuses({ verb: 'peer.post', to: 'KEY-THERE', text: JSON.stringify({ body: { face: { name: 'x' } } }) }, here) }));"].join('\n')], { cwd: RUN, encoding: 'utf8' });
+  let refuse = null;
+  try { refuse = JSON.parse(refuseRun.stdout); } catch (e) { refuse = { said: refuseRun.stdout + refuseRun.stderr }; }
+  if (refuse && refuse.join === '' && refuse.faceHere && refuse.faceThere === '' && refuse.postHere && refuse.postThere === '' && /faceRefuses\(r, \{/.test(code('spirit/faceHome.js')))
+    test.check('a face, driven: relay.join goes through, and a face name on another relay; only a face-name change on the relay it is called through is refused');
+  else test.fail('a face, driven: ' + short(refuse));
   const hearers = ['shell/js/contacts/listElement.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
   if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
   else test.fail('not hearing relay-rows: ' + short(hearers));
