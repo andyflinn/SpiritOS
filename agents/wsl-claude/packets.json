@@ -1,16 +1,16 @@
 {
   "agent": "wsl-claude",
-  "commit": "a6d9a372",
-  "measuredAt": "2026-10-24T14:24:08.276Z",
+  "commit": "d495572b",
+  "measuredAt": "2026-10-25T23:57:07.196Z",
   "asks": 20,
-  "posts": 25,
+  "posts": 19,
   "waitMs": {
-    "median": 45,
-    "max": 232
+    "median": 74,
+    "max": 94
   },
   "flight": {
-    "median": 152,
-    "max": 688
+    "median": 274,
+    "max": 395
   },
   "retried": 0,
   "refusals": {}

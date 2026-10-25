@@ -6,10 +6,10 @@
 |---|---|
 | OS / platform | Linux 6.18.33.2-microsoft-standard-WSL2 (linux, x64) |
 | total RAM | 64,148 MB |
-| RAM used when this was written | 4,950 MB |
+| RAM used when this was written | 3,029 MB |
 | node.js | node v24.21.0 (LTS Krypton), `/usr/bin/node` |
-| SpiritOS node processes running | 1 |
-| written | 2026-10-24 14:24:08 UTC |
+| SpiritOS node processes running | 2 |
+| written | 2026-10-25 23:57:07 UTC |
 
 ## Summary
 
@@ -21,11 +21,11 @@
 
 | | measured |
 |---|---|
-| [the box](platform.md) | 2026-10-24, `a6d9a372` |
-| [harness](harness.txt) | 2026-10-24, `a6d9a372` |
-| [capacity](capacity.md) | 2026-10-24, `a6d9a372` |
-| [packets](packets.md) | 2026-10-24, `a6d9a372` |
-| [test state](testState.md) | 2026-10-24, `a6d9a372` |
+| [the box](platform.md) | 2026-10-25, `d495572b` |
+| [harness](harness.txt) | 2026-10-25, `d495572b` |
+| [capacity](capacity.md) | 2026-10-25, `d495572b` |
+| [packets](packets.md) | 2026-10-25, `d495572b` |
+| [test state](testState.md) | 2026-10-25, `d495572b` |
 
 ## Studies
 

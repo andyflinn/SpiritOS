@@ -1,16 +1,16 @@
 {
-  "measuredAt": "2026-10-24T14:11:41.194Z",
-  "commit": "a6d9a372",
+  "measuredAt": "2026-10-25T23:43:37.968Z",
+  "commit": "d495572b",
   "platform": "linux",
   "release": "6.18.33.2-microsoft-standard-WSL2",
   "node": "v24.21.0",
-  "seconds": 385,
+  "seconds": 417,
   "exitCode": 1,
   "summary": {
-    "suites": 464,
-    "green": 6256,
-    "red": 82,
-    "unhappy": 48,
+    "suites": 470,
+    "green": 5950,
+    "red": 273,
+    "unhappy": 92,
     "notRun": 0
   },
   "summaryParsed": true
