@@ -156,6 +156,9 @@
       }).join('');
     }
     var paneHtml =
+      // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
+      // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
+      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
       '<div id="' + pre + 'filters" style="margin-top:1em">' + filterHtml() + '</div>' +
       '<div style="margin-top:1em;display:flex;gap:1em;align-items:center">' +
         '<span style="position:relative;display:inline-block;flex:1">' +
@@ -166,7 +169,8 @@
       '</div>' +
       // EVERY LIST SCROLLS IN ITS OWN BOX (goal/G40.8, the contained-app rule: "only a list or a viewer scrolls, inside
       // itself"): a dropdown's up to 20em, a pane's list filling what its pane leaves it.
-      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em;overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>';
+      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em;overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>' +
+      '</div>';
     // THE DROPDOWN IS JUST A POP-UP PANE (taken from listSearch, goal/G29.9): inline like any input, a field; the very
     // same pane pops up under it, solid, as wide as its rows up to the page.
     container.innerHTML = dropdown
@@ -176,14 +180,6 @@
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</span>'
       : paneHtml;
-    // A PANE'S LIST FILLS ITS PANE (goal/G40.8, the contained-app rule): the search a column as tall as the space it is
-    // given, its field and filters fixed at the top, its list taking the rest.
-    if (!dropdown && container.style) {
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.height = '100%';
-      container.style.minHeight = '0';
-    }
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
     // THE MATCHED PARTS MARKED, by the one marking rule the text view shares (window.spirit.matchRanges, below).

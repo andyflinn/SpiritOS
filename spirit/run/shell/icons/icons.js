@@ -67,13 +67,14 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     var E = window.spirit.elements;
     container.innerHTML =
-      '<div data-icons="list">' +
+      // Its list column takes its pane: the add row fixed on top, the list's box the rest (goal/G40.8).
+      '<div data-icons="list" class="fill">' +
         '<div class="stat-tile wide" style="display:flex;gap:1em;align-items:center">' +
           '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
           '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">' +
           '<button type="button" data-icons="add">Add</button><span data-icons="added" class="job-manifest-note"></span>' +
         '</div>' +
-        '<div data-icons="pane"></div>' +
+        '<div data-icons="pane" class="fill"></div>' +
       '</div><div data-icons="icon" hidden></div>';
     var listHost = container.querySelector('[data-icons="list"]');
     var iconHost = container.querySelector('[data-icons="icon"]');

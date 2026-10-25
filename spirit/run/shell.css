@@ -1168,3 +1168,9 @@ details.stat-tile > summary {
   .app-icon .label { font-size: 11px; }
 }
 
+/* SPACE IS GRANTED TOP-DOWN (goal/G40.8; Andy: "a desktop-application feel, where everything has its allotted space,
+   that's only possible if the space is granted top-down in an element-tree"). A box marked fill takes what its parent
+   leaves it and is a column inside; whoever mounts an element hands it such a box and the element lays out within it.
+   Hidden stays hidden. */
+.fill { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.fill[hidden] { display: none; }

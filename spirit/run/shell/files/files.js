@@ -29,7 +29,8 @@ function filesShow(host, listHost, path, words, line) {
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    container.innerHTML = '<div data-files="list"></div><div data-files="file" hidden></div>';
+    // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
+    container.innerHTML = '<div data-files="list" class="fill"></div><div data-files="file" hidden></div>';
     var listHost = container.querySelector('[data-files="list"]');
     var fileHost = container.querySelector('[data-files="file"]');
     filesList = window.spirit.elements.fileList.create(listHost, {

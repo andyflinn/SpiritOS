@@ -62,7 +62,8 @@
     var scores = Object.create(null);   // path -> the node's contents score, from the last contents search
     var list = null;
     host.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
-      '<div class="files-tree"></div>';
+      // The list search's box takes all of this one (goal/G40.8: space granted top-down).
+      '<div class="files-tree fill"></div>';
     var inner = host.lastChild;
     list = E.probabilitySearch.create(inner, {
       api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
