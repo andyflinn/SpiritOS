@@ -281,6 +281,37 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!/Natter/.test(fs.readFileSync(path.join(RUN, 'shell', 'js', 'faceForm.js'), 'utf8').replace(/^\s*\/\/.*$/mg, ''))) test.check('the face form sends nobody to Natter');
   else test.fail('the face form still says to change the email in Natter');
 
+  // ONE EMAIL FORM AND ONE FACE FORM, THE SAME EVERYWHERE (box v19; Andy: "the form is: [relay-dropdown]
+  // [email-adress-input] [change-or-join] the SAME FUCKING FORM EVERYWHERE", "same with the face form", and "First fix the
+  // form, then place the form everywhere with the correct options"). Driven on its own markup: one row, dropdown first,
+  // then the field, then the button; the relay details fix the dropdown to their one relay; the face form lists only
+  // relays with a verified email and draws nothing with none.
+  test.subHeading('1j. one email form and one face form, each one row with its own dropdown, drawn everywhere');
+  const formRun = spawnSync(process.execPath, ['-e', [
+    "global.window = {}; require(process.argv[1]); require(process.argv[2]); var J = window.spirit.elements.joinForm, F = window.spirit.elements.faceForm;",
+    "var relays = [{ url: 'https://a.example', label: 'a', claimed: true, email: 'x@y.z', emailVerified: true }, { url: 'https://b.example', label: 'b', claimed: false }];",
+    "function shape(h) { if (typeof h !== 'string') return h; var row = (h.match(/<div class=\"start-job-form[^\"]*\"[\\s\\S]*?<\\/button>/) || [''])[0];",
+    "  return { sel: row.indexOf('<select'), inp: row.indexOf('<input'), btn: row.indexOf('<button'), rows: (h.match(/start-job-form/g) || []).length, opts: (row.match(/<option/g) || []).length, fixed: /<select[^>]*disabled/.test(row) }; }",
+    "var has = function (o, n) { return typeof o[n] === 'function'; };",
+    "process.stdout.write(JSON.stringify({ join: has(J, 'row') ? shape(J.row(relays, {})) : null, joinFixed: has(J, 'row') ? shape(J.row(relays, { fixed: 'https://b.example' })) : null,",
+    "  face: has(F, 'row') ? shape(F.row(relays, {})) : null, faceNone: has(F, 'row') ? F.row([relays[1]], {}) : 'missing', oldHtml: typeof J.html }));"].join('\n'),
+    path.join(RUN, 'shell', 'js', 'joinForm.js'), path.join(RUN, 'shell', 'js', 'faceForm.js')], { encoding: 'utf8' });
+  let forms = null;
+  try { forms = JSON.parse(formRun.stdout); } catch (e) { forms = { said: formRun.stdout + formRun.stderr }; }
+  const oneRow = function (s, opts) { return !!s && s.rows === 1 && s.sel >= 0 && s.sel < s.inp && s.inp < s.btn && s.opts === opts; };
+  if (forms && oneRow(forms.join, 2) && !forms.join.fixed && oneRow(forms.joinFixed, 1) && forms.joinFixed.fixed && forms.oldHtml === 'undefined')
+    test.check('the email form, driven: one row, [relay dropdown] [email] [Join or Change]; fixed to one relay where it is given one; the old dropdownless form gone');
+  else test.fail('the email form, driven: ' + short(forms && { join: forms.join, joinFixed: forms.joinFixed, oldHtml: forms.oldHtml, said: forms.said }));
+  if (forms && oneRow(forms.face, 1) && forms.faceNone === '') test.check('the face form, driven: one row, [relay dropdown] [face name] [Ask], only relays with a verified email, nothing with none');
+  else test.fail('the face form, driven: ' + short(forms && { face: forms.face, faceNone: forms.faceNone }));
+  const PLACES = { 'shell/join/join.js': false, 'shell/info/info.js': false, 'shell/js/natterDetails/natterDetails.js': true };
+  const misplaced = Object.keys(PLACES).filter(function (f) {
+    const c = code(f);
+    return !/joinForm(\(\))?\.mount\(/.test(c) || !/[fF]aceForm(\(\))?\.mount\(/.test(c) || /joinForm(\(\))?\.html\(/.test(c) || (PLACES[f] && !/fixed:/.test(c));
+  });
+  if (!misplaced.length) test.check('Join, Info and the relay details draw both forms through mount, the relay details fixed to their relay');
+  else test.fail('the forms are not drawn everywhere the same: ' + short(misplaced));
+
   // NO KEYS IN ANY FACE APP (box v15; Andy: "remove ANY indication of keys from all user interfaces"): no app the face
   // shows, and no element it loads, puts a key or a sentence about one on the screen.
   const faceApps = fs.readdirSync(path.join(RUN, 'shell')).filter(function (d) {
