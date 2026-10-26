@@ -630,6 +630,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       out.rt2 = await rule('test', 'The red names its suites');
       out.rc = await rule('code', 'Delete what you replace');
       out.rdAuto = ((await call('rule.get', { key: out.rd }, ANDY)).body || {}).autoAttach;
+      // Q1, Andy: "rule.version? carries the full rule." So autoAttach is turned on by a new version.
+      if (out.rc) await call('rule.version', { key: out.rc, text: 'Delete what you replace.', status: 'active', autoAttach: true }, ANDY);
+      out.rcAuto = out.rc ? ((await call('rule.get', { key: out.rc }, ANDY)).body || {}).autoAttach : undefined;
       const ts = await call('rules.search', { text: '', types: ['test'], statuses: [] }, ANDY);
       out.testFound = ((ts.body && ts.body.items) || []).map(function (i) { return i.key; }).sort();
       const g2 = out.newGoal || '';
@@ -678,6 +681,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     const same = function (a, b) { return JSON.stringify((a || []).slice().sort()) === JSON.stringify((b || []).slice().sort()); };
     if (dr.rd && dr.rdAuto === false) test.check('autoAttach is false unless it is set');
     else test.fail('autoAttach on a rule added without it: ' + short(dr.rdAuto));
+    if (dr.rc && dr.rcAuto === true) test.check('rule.version carries the full rule, autoAttach with it: a new version turns it on');
+    else test.fail('autoAttach through rule.version: ' + short(dr.rcAuto));
     if (dr.rt && dr.rt2 && dr.ruleAdded && same(dr.testFound, [dr.ruleAdded, dr.rt, dr.rt2])) test.check('the rules search filters by the test type');
     else test.fail('the rules search for test rules: ' + short(dr.testFound));
     if (dr.item2 && dr.attached.every(Boolean) && dr.goalRules.indexOf(dr.rd) !== -1 && dr.goalRules.indexOf(dr.rt) !== -1 && dr.goalRules.indexOf(dr.rc) !== -1 &&
