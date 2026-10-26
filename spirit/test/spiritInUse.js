@@ -441,6 +441,76 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
   else test.fail('not hearing relay-rows: ' + short(hearers));
 
+  // ONE TABLE FOR ALL KNOWN IDS (goal/G40.11, box v24). Driven on a scratch node.db made in the old shape (the relays
+  // and peers tables, seen with choice and kind) and a contacts.json, then opened by the new code: the move runs once,
+  // the old stores are gone, and their rows are in seen.
+  test.subHeading('1m. one table for all known IDs: seen holds everything, the old stores moved in and gone');
+  const oneHome = setupRelayFakes('spiritInUseOne').andy;
+  fs.rmSync(path.join(oneHome, 'relay-state'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(oneHome, 'relay-state'), { recursive: true });
+  const REL = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=';
+  const BERT = 'MCowBQYDK2VwAyEAZQ/IHHn57kdPt0aaaaaaaaaaaaaaaaaaaaaaaaaaaaa=';
+  fs.writeFileSync(path.join(oneHome, 'relay-state', 'contacts.json'), JSON.stringify([{ publicKey: BERT, publicLabel: 'Bert', myLabel: 'bert', owned: true, relays: ['https://one.example'] }]), 'utf8');
+  const oneRun = spawnSync(process.execPath, ['-e', [
+    "const { DatabaseSync } = require('node:sqlite'); const path = require('path'); const file = path.join(process.cwd(), 'relay-state', 'node.db');",
+    "const old = new DatabaseSync(file);",
+    "old.exec(\"CREATE TABLE seen (publicKey TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', labelRank INTEGER NOT NULL DEFAULT 4, labelAt INTEGER NOT NULL DEFAULT 0, present INTEGER NOT NULL DEFAULT 0, seen INTEGER NOT NULL DEFAULT 0, choice TEXT NOT NULL DEFAULT '', blocked INTEGER NOT NULL DEFAULT 0, kind TEXT NOT NULL DEFAULT 'node')\");",
+    "old.exec(\"CREATE TABLE relays (key TEXT PRIMARY KEY, url TEXT NOT NULL, label TEXT NOT NULL DEFAULT '', listed INTEGER NOT NULL DEFAULT 0, pos INTEGER NOT NULL DEFAULT 0, firstSeen TEXT NOT NULL DEFAULT '', acceptedAt TEXT NOT NULL DEFAULT '', replaced TEXT NOT NULL DEFAULT '', seatLabel TEXT NOT NULL DEFAULT '', seatClaimedAt TEXT NOT NULL DEFAULT '', refusal TEXT NOT NULL DEFAULT '', refusedAt TEXT NOT NULL DEFAULT '')\");",
+    "old.exec(\"CREATE TABLE peers (peer_id TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '')\");",
+    "old.prepare('INSERT INTO relays (key, url, label, listed, pos, firstSeen, seatLabel, seatClaimedAt) VALUES (?, ?, ?, 1, 0, ?, ?, ?)').run(process.argv[1], 'https://one.example', 'one', '2026-10-01T00:00:00.000Z', 'me', '2026-10-01T00:00:00.000Z');",
+    "old.prepare(\"INSERT INTO seen (publicKey, label, seen, choice, kind) VALUES (?, 'Stranger', 5, '', 'node')\").run('MCowStranger');",
+    "old.close();",
+    "const store = require('./spirit/nodeStore').open(process.cwd());",
+    "const db = new DatabaseSync(file, { readOnly: true });",
+    "const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type = 'table'\").all().map(function (r) { return r.name; });",
+    "const cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });",
+    "const idx = db.prepare(\"SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'seen'\").all();",
+    "const row = function (k) { try { return db.prepare('SELECT * FROM seen WHERE publicKey = ?').get(k) || null; } catch (e) { return null; } };",
+    "const routes = function (k) { try { return db.prepare('SELECT via, url FROM seen_routes WHERE publicKey = ?').all(k); } catch (e) { return []; } };",
+    "process.stdout.write(JSON.stringify({ tables: tables, cols: cols, idx: idx.map(function (i) { return String(i.sql || ''); }), relay: row(process.argv[1]), relayRoutes: routes(process.argv[1]), bert: row(process.argv[2]), stranger: row('MCowStranger'), contactsFile: require('fs').existsSync(path.join(process.cwd(), 'relay-state', 'contacts.json')) }));",
+    "if (store && typeof store.close === 'function') store.close();"].join('\n'), REL, BERT], { cwd: oneHome, encoding: 'utf8' });
+  let one = null;
+  try { one = JSON.parse(oneRun.stdout); } catch (e) { one = { said: (oneRun.stdout + oneRun.stderr).slice(0, 600) }; }
+  const WANT_COLS = ['publicKey', 'label', 'labelRank', 'labelAt', 'present', 'myLabel', 'card', 'firstSeen', 'lastSeen', 'keep', 'mine', 'relay', 'held', 'ignored', 'blocked', 'seated'];
+  const GONE_COLS = ['choice', 'kind', 'seen'];
+  const colsOk = one && Array.isArray(one.cols) && WANT_COLS.every(function (c) { return one.cols.indexOf(c) !== -1; }) && GONE_COLS.every(function (c) { return one.cols.indexOf(c) === -1; });
+  if (colsOk) test.check('seen, driven: one row per ID with label, myLabel, card, present, firstSeen, lastSeen and the booleans keep, mine, relay, held, ignored, blocked, seated; choice, kind and seen gone');
+  else test.fail('seen\'s columns, driven: ' + short(one && (one.cols || one.said)));
+  if (one && Array.isArray(one.tables) && one.tables.indexOf('relays') === -1 && one.tables.indexOf('peers') === -1 && one.tables.indexOf('seen_routes') !== -1 && one.tables.indexOf('grants') !== -1 && one.contactsFile === false)
+    test.check('the move, driven: the relays and peers tables and contacts.json are gone; seen_routes and grants stay');
+  else test.fail('the old stores, driven: ' + short(one && { tables: one.tables, contactsFile: one.contactsFile, said: one.said }));
+  const partial = function (flag) { return one && Array.isArray(one.idx) && one.idx.some(function (s) { return new RegExp('WHERE\\s+' + flag + '\\s*=\\s*1', 'i').test(s); }); };
+  const shedIdx = one && Array.isArray(one.idx) && one.idx.some(function (s) { return /lastSeen/.test(s) && /keep\s*=\s*0/i.test(s) && /mine\s*=\s*0/i.test(s); });
+  if (partial('keep') && partial('mine') && partial('relay') && shedIdx) test.check('seen\'s indexes, driven: a partial index for keep, mine and relay, and one for shedding over rows with neither keep nor mine, by lastSeen');
+  else test.fail('seen\'s indexes, driven: ' + short(one && one.idx));
+  const rel = one && one.relay;
+  if (rel && rel.relay === 1 && rel.keep === 1 && rel.seated === 1 && one.relayRoutes.some(function (r) { return r.via === '' && r.url === 'https://one.example'; }))
+    test.check('the move, driven: a listed, seated relay becomes a row with relay, keep and seated, its url a direct route');
+  else test.fail('the relay\'s row after the move, driven: ' + short(one && { relay: one.relay, routes: one.relayRoutes }));
+  const bert = one && one.bert;
+  if (bert && bert.keep === 1 && bert.mine === 1 && bert.myLabel === 'bert' && one.stranger && one.stranger.keep === 0 && one.stranger.lastSeen === 5)
+    test.check('the move, driven: a contact becomes a kept row (owned as mine, its own name kept); a shadow row keeps its last seen and no flag');
+  else test.fail('the contact\'s row after the move, driven: ' + short(one && { bert: one.bert, stranger: one.stranger }));
+
+  // THE ONE SEARCH AND THE ONE STREAM (box v24; Andy: "yes. those names."): contact.search covers the whole table, relays
+  // too, with a yes-filter per boolean; relay.search goes. The stream job is shadow, one changed row per update;
+  // relay-rows goes. Seated is cleared by a refusal as no member; what the network search finds is held.
+  const contactApi = fs.readFileSync(path.join(RUN, 'spirit', 'contact', 'api.js'), 'utf8');
+  const searchDecl = (contactApi.match(/search\s*:\s*\{[^}]*\}/) || [''])[0];
+  const flagsOk = ['keep', 'mine', 'relay', 'seated', 'held', 'blocked'].every(function (f) { return new RegExp('\\b' + f + "\\s*:\\s*'flag\\?'").test(searchDecl); }) && !/owned/.test(searchDecl);
+  if (flagsOk && !/\bsearch\s*:/.test((code('spirit/relay/api.js').match(/verbs\s*:\s*\{[\s\S]*?\n  \}/) || [''])[0])) test.check('one search: contact.search with yes-filters keep, mine, relay, seated, held, blocked; relay.search gone');
+  else test.fail('the search: contact.search declares ' + short(searchDecl) + (flagsOk ? '' : '') + ', relay.search ' + (/\bsearch\s*:/.test(code('spirit/relay/api.js')) ? 'still there' : 'gone'));
+  const stillRows = ['spirit/server.js', 'spirit/faceHome.js', 'shell/info/info.js', 'shell/js/contacts/listElement.js', 'shell/js/faceForm.js', 'shell/js/joinForm.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return /relay-rows|relayRowsJob/.test(code(f)); });
+  if (!fs.existsSync(path.join(RUN, 'spirit', 'relayRowsJob.js')) && !stillRows.length && /'shadow'/.test(code('spirit/server.js') + code('spirit/nodeStore.js') + code('spirit/seenPeers.js')))
+    test.check('one stream: the shadow job; relay-rows and relayRowsJob gone from every file');
+  else test.fail('the stream: relay-rows still in ' + short(stillRows) + (fs.existsSync(path.join(RUN, 'spirit', 'relayRowsJob.js')) ? ', relayRowsJob.js still there' : ''));
+  const rejectedFn = (code('spirit/peerPost.js').match(/function rejectedBy\(relayUrl, status, said\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/seated/.test(rejectedFn)) test.check('a refusal as no member clears seated on that relay\'s row');
+  else test.fail('a refusal does not clear seated');
+  const netFn = (code('spirit/hub.js').match(/function networkSearch\(q, d\) \{[\s\S]*?\n  \}/) || [''])[0];
+  if (/held:\s*true|held\s*=\s*1|'held'\)/.test(netFn)) test.check('what the network search finds lands held');
+  else test.fail('the network search\'s finds are not held');
+
   // NO KEYS IN ANY FACE APP (box v15; Andy: "remove ANY indication of keys from all user interfaces"): no app the face
   // shows, and no element it loads, puts a key or a sentence about one on the screen.
   const faceApps = fs.readdirSync(path.join(RUN, 'shell')).filter(function (d) {
