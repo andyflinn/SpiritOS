@@ -413,8 +413,7 @@ function deskOnPublished(obj) {
   // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
   // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
   if (obj.rule && !obj.item && !obj.verb) {
-    if (obj.row && deskRuleTake(obj.row)) { if (!deskRulesElement) deskDrawRules(); return; }
-    if (deskTab === 'rules') deskRulesSearch();
+    if (deskRulesList) deskRulesList.refresh();
     return;
   }
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
@@ -498,7 +497,6 @@ function deskOnPublished(obj) {
 //   Without the shared element (a page that did not load it) none is made and the face is drawn whole, as before.
 var deskRowElements = [];
 var deskTeamElement = null;
-var deskRulesElement = null;
 // THE SHARED ELEMENT, LOADED ON DEMAND (goal/G27.9). Andy, 2026-10-17, denying a line in index.html for it ("a core
 // element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
 // know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
@@ -578,10 +576,6 @@ function deskMountElements() {
       if (team) team.innerHTML = deskGroupChat();
       if (deskTab === 'team') deskMarkTeamSeen();
     },
-  });
-  deskRulesElement = deskMakeElement({
-    wants: function (obj) { return !!(obj && obj.rule && obj.row && !obj.item && !obj.verb); },
-    paint: function () { deskDrawRules(); },
   });
 }
 function deskRowAt(id) {
@@ -1116,70 +1110,79 @@ function deskDraw() {
 //   rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails
 //   (goal/G6.4)."
 //
-// The server does the searching and the filtering, as for the List. A toggle that is on narrows to its value; with
-// none on in a group, that group is not narrowed (rules.search reads an empty list as all).
+// THE PROBABILITY SEARCH (goal/G40.12, box v7, first set 3: "all searches in desk are of the new probability variety"):
+// the list is shell/js/probabilitySearch.js over rules.search, ranking as he types with the matched words marked, a type
+// filter and a status filter beside the words; a row opens ruleDetails. A rule's publish asks it again.
 // The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
 var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: 'EDIT', active: 'LOCK', deleted: 'DEAD' };
-var deskRuleFilter = { text: '', types: [], statuses: [] };
-var deskRules = [];
 var deskRulesNote = '';
+var deskRulesList = null;
+var DESK_SEARCH = '/shell/js/probabilitySearch.js';
 function deskRulesSearch() {
-  var f = deskRuleFilter;
-  return deskAsk('rules.search', { text: f.text, types: f.types.slice(), statuses: f.statuses.slice() }).then(function (r) {
-    deskRules = (r.items || []).map(function (p) {
-      var l = {};
-      try { l = JSON.parse(p.label); } catch (e) { l = {}; }
-      return { key: String(p.key), label: String(l.label || ''), type: String(l.type || ''), status: String(l.status || '') };
+  if (deskRulesList) { deskRulesList.refresh(); return; }
+  var el = document.getElementById('desk-rule-list');
+  if (!el) return;
+  var make = function () {
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    if (!P || typeof P.create !== 'function' || deskRulesList) return;
+    var choices = function (values) { return [{ value: '', word: 'all' }].concat(values.map(function (v) { return { value: v, word: v }; })); };
+    deskRulesList = P.create(el, {
+      api: deskApi, server: 'desk', verb: 'rules.search',
+      args: function (text, values) {
+        var v = values || {};
+        return { text: text, types: v.type ? [v.type] : [], statuses: v.status ? [v.status] : [] };
+      },
+      columns: [{ field: 'status', label: 'Status', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
+      filters: [
+        { name: 'type', choices: choices(DESK_RULE_TYPES), test: function (row, v) { return !v || row.type === v ? 1 : 0; } },
+        { name: 'status', choices: choices(DESK_RULE_STATUSES), test: function (row, v) { return !v || row.status === v ? 1 : 0; } },
+      ],
+      matched: function (row) { return { label: String((row && row.label) || '') }; },
+      details: function (row, key) { deskOpenRule(key); },
+      empty: 'No rule matches.',
     });
-    deskRulesNote = r.more ? 'More rules match than are shown: narrow the search.' : '';
-    deskDrawRules();
-  }, function (e) { deskRulesNote = 'Not searched: ' + e.message; deskDrawRules(); });
+    deskRulesList.refresh();
+  };
+  deskLoadSearch(make);
 }
-// A rule's published row into the list as rules.search would hold it (goal/G27.9): replaced in place, added first when
-// the toggles let it in, taken out when they no longer do. With text in the search box it answers false: the server
-// ranks by text, so the list asks again.
-function deskRuleTake(r) {
-  var f = deskRuleFilter;
-  if (String(f.text || '').trim() !== '') return false;
-  var row = { key: String(r.key), label: String(r.label || ''), type: String(r.type || ''), status: String(r.status || '') };
-  var fits = (!f.types.length || f.types.indexOf(row.type) !== -1) && (!f.statuses.length || f.statuses.indexOf(row.status) !== -1);
-  var at = -1;
-  deskRules.forEach(function (x, i) { if (x.key === row.key) at = i; });
-  if (at !== -1 && fits) deskRules[at] = row;
-  else if (at !== -1) deskRules.splice(at, 1);
-  else if (fits) deskRules.unshift(row);
-  return true;
+// THE LIST'S FINDER (goal/G40.12): items.search through the probability search, as a dropdown; the toggles beside it
+// narrow it as they narrow the List.
+var deskFind = null;
+function deskMountFind() {
+  var el = document.getElementById('desk-find');
+  if (!el || deskFind) return;
+  deskLoadSearch(function () {
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    if (!P || typeof P.create !== 'function' || deskFind) return;
+    deskFind = P.create(el, {
+      api: deskApi, server: 'desk', verb: 'items.search',
+      args: function (text) { return { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed }; },
+      columns: [{ field: 'id', label: 'Id', sort: 'path' }, { field: 'title', label: 'Title', sort: 'text' }, { field: 'status', label: 'Status', sort: 'text' }],
+      face: 'dropdown', placeholder: 'search…',
+      matched: function (row) { return { title: String((row && row.title) || ''), id: String((row && row.id) || '') }; },
+      pick: function (row, key) { if (key) deskOpenRow(String(key)); },
+      empty: 'Nothing matches.',
+    });
+    deskFind.refresh();
+  });
+}
+// probabilitySearch.js, loaded once for the page however many asks wait on it.
+var deskSearchWaiting = null;
+function deskLoadSearch(done) {
+  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { done(); return; }
+  if (deskSearchWaiting) { deskSearchWaiting.push(done); return; }
+  if (typeof document.createElement !== 'function' || !document.body) return;
+  deskSearchWaiting = [done];
+  var script = document.createElement('script');
+  script.src = DESK_SEARCH;
+  script.onload = function () { var w = deskSearchWaiting; deskSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
+  document.body.appendChild(script);
 }
 function deskDrawRules() {
-  var toggles = document.getElementById('desk-rule-toggles');
-  if (toggles) {
-    toggles.innerHTML = DESK_RULE_TYPES.map(function (v) { return [v, 'types']; }).concat(DESK_RULE_STATUSES.map(function (v) { return [v, 'statuses']; }))
-      .map(function (p) {
-        var on = deskRuleFilter[p[1]].indexOf(p[0]) !== -1;
-        return '<button type="button" data-rule-toggle="' + p[0] + '" style="font-weight:' + (on ? 'bold' : 'normal') + '">' + p[0] + (on ? ' ✓' : '') + '</button>';
-      }).join(' ');
-  }
   var note = document.getElementById('desk-rule-error');
   if (note) note.textContent = deskRulesNote;
-  var list = document.getElementById('desk-rule-list');
-  if (!list) return;
-  if (!deskRules.length) { list.innerHTML = '<div class="job-manifest-note">No rule matches.</div>'; return; }
-  list.innerHTML = '<table class="jobs-table"><thead><tr><th></th><th>Label</th><th>Type</th><th>Key</th></tr></thead><tbody>' +
-    deskRules.map(function (r) {
-      return '<tr data-rule="' + deskEsc(r.key) + '" style="cursor:pointer"><td title="' + deskEsc(r.status) + '">' + deskIcon(DESK_RULE_ICON[r.status] || '') + '</td>' +
-        '<td>' + deskEsc(r.label) + '</td><td>' + deskEsc(r.type) + '</td><td>' + deskEsc(r.key) + '</td></tr>';
-    }).join('') + '</tbody></table>';
-}
-function deskRuleToggle(v) {
-  var group = DESK_RULE_TYPES.indexOf(v) !== -1 ? 'types' : DESK_RULE_STATUSES.indexOf(v) !== -1 ? 'statuses' : '';
-  if (!group) return;
-  var on = deskRuleFilter[group];
-  var i = on.indexOf(v);
-  if (i === -1) on.push(v); else on.splice(i, 1);
-  deskDrawRules();
-  deskRulesSearch();
 }
 // The text as he typed it: a rule is a paragraph with its line breaks (goal/G5.5); the server normalizes and limits it.
 function deskRuleAdd() {
@@ -1557,7 +1560,10 @@ spirit.shell.activateApp({
           '<div class="start-job-form card" id="desk-add-goal" hidden><label class="field-label grow">Add Goal' +
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
-          '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
+          // THE LIST'S SEARCH IS THE PROBABILITY SEARCH (goal/G40.12: "all searches in desk are of the new probability
+          // variety"): a dropdown over items.search under the toggles beside it, ranked as he types, the words marked; a
+          // pick opens that row. The List below it is the List.
+          '<div class="start-job-form card"><div id="desk-find" style="flex:1"></div>' +
           '<button type="button" id="desk-current-goal"></button>' +
           '<button type="button" id="desk-goals-only"></button>' +
           // [INCLUDE CLOSED] (goal/G4.20 point 1), off when Desk opens.
@@ -1588,7 +1594,6 @@ spirit.shell.activateApp({
             '<label class="field-label grow">Label<input id="desk-rule-label" placeholder="the rule in a few words"></label>' +
             '<label class="field-label grow">Text<textarea id="desk-rule-text" rows="3" placeholder="the rule; up to 2048 bytes, line breaks kept"></textarea></label>' +
             '<button type="button" id="desk-rule-add">New</button></div>' +
-          '<div class="start-job-form card"><input id="desk-rule-search" placeholder="search rules"><span id="desk-rule-toggles"></span></div>' +
           '<div id="desk-rule-error" class="job-start-error"></div>' +
           '<div id="desk-rule-list"></div>' +
         '</div></div>' +
@@ -1682,10 +1687,7 @@ spirit.shell.activateApp({
       if (row) deskOpenRow(row.getAttribute('data-row'));
     });
     document.getElementById('desk-goal-add').addEventListener('click', function () { deskAddGoal(); });
-    document.getElementById('desk-search').addEventListener('input', function () {
-      deskFilter.text = String(document.getElementById('desk-search').value || '');
-      deskSearchItems();
-    });
+    deskMountFind();
     document.getElementById('desk-current-goal').addEventListener('click', function () {
       deskFilter.currentGoalOnly = !deskFilter.currentGoalOnly;
       // EXCLUSIVE, goal/G9.2. Andy: "only one of the two buttons ... may be selected at the same time."
@@ -1708,17 +1710,7 @@ spirit.shell.activateApp({
     document.getElementById('desk-rules').addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
-      var toggle = t.closest && t.closest('[data-rule-toggle]');
-      if (toggle) { deskRuleToggle(toggle.getAttribute('data-rule-toggle')); return; }
       if (t.id === 'desk-rule-add') { deskRuleAdd(); return; }
-      var row = t.closest && t.closest('[data-rule]');
-      if (row) deskOpenRule(row.getAttribute('data-rule'));
-    });
-    document.getElementById('desk-rules').addEventListener('input', function (e) {
-      if (!e || !e.target || e.target.id !== 'desk-rule-search') return;
-      var el = document.getElementById('desk-rule-search');
-      deskRuleFilter.text = String((el && el.value) || e.target.value || '');
-      deskRulesSearch();
     });
     // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop, and Chores now (goal/G33.11).
     document.getElementById('desk-verifier').addEventListener('click', function (e) {

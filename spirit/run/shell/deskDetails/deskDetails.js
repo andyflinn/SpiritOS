@@ -24,7 +24,6 @@ var ddFiles = [];            // item.files, its own answer since goal/G32.2: cor
 var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
-var ddFound = null;           // the chat search's ranked lines; null while the search is empty (goal/G18.5)
 var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
 // GRANTS SENT, NOT YET PUSHED BACK (goal/G33.8, box v11; Andy: "i had to grant appServer.js twice"): a confirmed grant
 // shows granting… until the desk's pushed check row says granted; a refusal clears it. Never asked again (Andy's rule:
@@ -113,9 +112,10 @@ function ddFrame() {
       '</div>' +
     '</div>' +
     // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
-    // box.", then "yes, add it here." The desk ranks the lines (chat.search); while it holds text they replace the chat.
-    '<div class="start-job-form card"><label class="field-label grow">Search the chat' +
-      '<input type="search" id="dd-chat-search" placeholder="ranks the lines below"></label></div>' +
+    // box.", then "yes, add it here." The probability search over chat.search (goal/G40.12: "all searches in desk are of
+    // the new probability variety"): a dropdown that ranks the lines as he types and marks the words; a line said in
+    // another item opens that item. In the frame, so it survives every repaint.
+    '<div class="start-job-form card"><div id="dd-chat-find" style="flex:1"></div></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       // Return is a new line; only Send sends (desk/G1.12).
       '<textarea id="dd-say" rows="3" placeholder="under this item"></textarea></label>' +
@@ -476,13 +476,6 @@ function ddName(label) {
   return names[label] || label;
 }
 function ddChatHtml() {
-  // While the search holds text, the lines in the order the desk ranked them.
-  // goal/G29.21: on a goal they come from its items' chats too; a line said in another item names it, a link that
-  // opens that item.
-  if (ddFound) return ddFound.length ? ddFound.map(function (l) {
-    var from = l.item && l.item !== ddId ? '<a href="#" data-open-item="' + ddEsc(l.item) + '" style="color:#cfe2ff">' + ddEsc(l.item) + '</a>' : '';
-    return from + ddBubble(l);
-  }).join('') : '<div class="job-manifest-note">No lines found.</div>';
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
   return ddChat.slice().reverse().map(ddBubble).join('') + older;
@@ -498,6 +491,8 @@ function ddPaint() {
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddSet('dd-icons', ddIconsHtml());
+  // The chat search stands in the frame; it is made once the frame is drawn (ddMountChatFind), never again by a paint.
+  if (!ddChatFind) ddMountChatFind();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) ddSet('dd-panel', ddPanelHtml());
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
@@ -600,6 +595,17 @@ function ddLoadSuites(id) {
 var ddRuleNames = Object.create(null);
 var DD_SEARCH = '/shell/js/probabilitySearch.js';
 var ddRulePick = null;
+// probabilitySearch.js, loaded once for the page however many asks wait on it.
+var ddSearchWaiting = null;
+function ddLoadSearch(done) {
+  if (ddSearchWaiting) { ddSearchWaiting.push(done); return; }
+  if (typeof document.createElement !== 'function' || !document.body) return;
+  ddSearchWaiting = [done];
+  var script = document.createElement('script');
+  script.src = DD_SEARCH;
+  script.onload = function () { var w = ddSearchWaiting; ddSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
+  document.body.appendChild(script);
+}
 function ddLoadRuleNames() {
   return ddAsk('rules.search', { text: '', types: [], statuses: [] }).then(function (r) {
     (r.items || []).forEach(function (i) { try { var l = JSON.parse(i.label); ddRuleNames[i.key] = l.label + ' (' + l.type + ')'; } catch (e) { /* named by its key */ } });
@@ -632,11 +638,7 @@ function ddMountRulePick() {
     ddRulePick.refresh();
   };
   if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
-  if (typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DD_SEARCH;
-  script.onload = make;
-  document.body.appendChild(script);
+  ddLoadSearch(make);
 }
 function ddSuitesHtml() {
   if (ddSuites === null) return '<div class="job-manifest-note">Reading the suites.</div>';
@@ -650,18 +652,29 @@ function ddLoadFiles(id) {
   return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
 }
 
-// Asks the desk to rank this item's lines by the text; an answer that comes after the text changed is dropped. On a
-// goal (goal/G29.21) the scope is items: the goal's chat and its items' chats, ranked together.
-function ddChatSearch() {
-  var text = ddValue('dd-chat-search');
-  var id = ddId;
-  if (!text) { ddFound = null; ddPaint(); return; }
-  var scope = ddFacts && ddFacts.goal === '' ? 'items' : '';
-  ddAsk('chat.search', { id: id, text: text, by: '', since: '', before: '', scope: scope }).then(function (r) {
-    if (ddId !== id || ddValue('dd-chat-search') !== text) return;
-    ddFound = (r.items || []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return null; } }).filter(Boolean);
-    ddPaint();
-  }, function (e) { ddNote = e.message; ddPaint(); });
+// THE CHAT SEARCH (goal/G18.5, on the probability search since goal/G40.12): chat.search for the item on screen; on a
+// goal (goal/G29.21) the scope is items, the goal's chat and its items' chats ranked together.
+var ddChatFind = null;
+function ddMountChatFind() {
+  var el = document.getElementById('dd-chat-find');
+  if (!el) return;
+  if (ddChatFind) { ddChatFind.refresh(); return; }
+  var make = function () {
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    if (!P || typeof P.create !== 'function' || ddChatFind) return;
+    ddChatFind = P.create(el, {
+      api: ddApi, server: 'desk', verb: 'chat.search',
+      args: function (text) { return { id: ddId, text: text, by: '', since: '', before: '', scope: ddFacts && ddFacts.goal === '' ? 'items' : '' }; },
+      columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'by', label: 'Who', sort: 'text' }, { field: 'text', label: 'Line', sort: 'text' }],
+      face: 'dropdown', placeholder: 'search the chat…',
+      matched: function (row) { return { text: String((row && row.text) || ''), by: String((row && row.by) || '') }; },
+      pick: function (row) { if (row && row.item && row.item !== ddId) ddApi.closeDialog({ open: row.item }); },
+      empty: 'No lines found.',
+    });
+    ddChatFind.refresh();
+  };
+  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
+  ddLoadSearch(make);
 }
 
 var ddSending = false;
@@ -907,7 +920,6 @@ spirit.shell.activateApp({
     // EVERY MARKED INPUT, CHECKED AS TYPED (rule/12): one listener on the body, which is repainted.
     document.getElementById('dd-body').addEventListener('input', function (event) {
       var t = event && event.target;
-      if (t && t.id === 'dd-chat-search') { ddChatSearch(); return; }
       if (!t || !t.getAttribute || t.getAttribute('data-field') !== 'label') return;
       if (DD_FIELD_ACTION[t.id]) ddFieldCheck(t.id);
     });
@@ -953,8 +965,8 @@ spirit.shell.activateApp({
     ddFilesMore = false;
     ddChat = [];
     ddChatMore = false;
-    ddFound = null;
-    ddClear('dd-chat-search');
+    // The chat search reads the item on screen; its rows are asked again for it.
+    ddMountChatFind();
     ddArmed = '';
     ddPending = {};
     ddRowChange = {};
