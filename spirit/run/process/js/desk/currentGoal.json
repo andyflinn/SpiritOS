@@ -1,5 +1,5 @@
 {
- "change": 104429,
+ "change": 104442,
  "goal": "goal/G40",
  "items": [
   {
@@ -18,7 +18,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G40.6",
     "goal/G40.9",
     "goal/G40.13",
     "goal/G40.14"
@@ -2971,14 +2970,13 @@
    "id": "goal/G40.6",
    "title": "Root test folder in spirit/run",
    "goal": "goal/G40",
-   "status": "verified green",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 46,
    "buttons": [
-    "start-design",
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -3025,7 +3023,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "Make spirit.js what it is supposed to be (goal/G40).\n\nRULE ONE, ALL CODE (Andy, 2026-10-24)\n- spirit.js is the only JavaScript client interface to the SpiritOS core.\n- Every module and page loads spirit.js first and does everything through it.\n\nSCOPE (Andy, 2026-10-24): \"all we do, is: replace duplicate hand-rolled shit with the use of spirit.js, no other stuff, no new desk button no new verbs, just kill removeAgent\".\n\nTHE DESIGN\n1. One instance per VM. On a page it is window.spirit; in node it is the only export of spirit.js, the same object for every module that requires it. Nothing makes a second one: no createSpirit, assemble, forNode or forPeer.\n2. Where it runs: isNode() and isBrowser(), in spirit.js and nowhere else. Then, always in this order (Andy, 2026-10-25: \"spirit.js is loaded, it then check node/browser, then if browser it check loopback/not-loopback, then decides what more to fetch\"): in a browser, a loopback page is on its home node, any other page is a face reached through a relay; from that spirit.js decides what more to fetch. Through a relay: the face shell from the relay, and, once linked, the seal from the home node.\n3. Its node. On a page, the page's own origin. In node, 127.0.0.1 and the port spirit.js reads from relay-state/environment.json whenever it is required. Only a server listening on a loopback port writes that port, and only serveCommon writes it (writeEnvironment, called by the node at its start, before any server process starts). Andy: \"it really belongs in serverCommon.\" No port, no node: never a default.\n4. One post and one get, nothing else reaches the node. post(verb, args) sends {verb, ...args} to the node's /api/spirit; get(path) fetches a file. On a face both go through the face's link to its home node, which spirit.js owns. A peer is asked by one post too, the node's peer.post.\n5. The node's families on the instance: spirit.<family>.<verb>(args), each a function that checks its arguments against the family's api.js and then posts. The families are what the node names; each is bound on the instance.\n6. spirit.require(path, key): the one loader, the same on a page and in node. A component by its run-root path (in node required, on a page got and run); an interface binds its family on the instance; with a key, the peer's family.\n6a. Every loaded or required module inserts its own api functions into the one instance (Andy, 2026-10-24: \"every loaded/required module then simply inserts its api functions into the one spirit object\"): a component as it loads, a node family's api.js as spirit.js runs it.\n7. Its helpers: error, formatBytes, escapeHtml, check, rules, outcome. No spirit.call (Andy, 2026-10-24: \"just kill it. i see absolutely no need for it.\"): a caller holding a verb in a variable writes spirit[family][verb](args). In node spirit.js loads no kernel: the node's facts, the job, peerPost, VERSION, DEFAULT_SPIRIT_PORT, MIME_TYPES and debug are its own; the node and the relay load no kernel.js either (fileSystem.js, serveCommon.readBody, jobs.js its own state).\n8. face.html holds spirit.js alone; spirit.js loads the seal and face/shell.js; face/shell.js keeps only drawing and opening apps.\n\nTHE EVENTS FAMILY (Andy, 2026-10-25: \"two verbs on events - publish - subscribe\"): /api/events, a door outside any api, becomes spirit/events/, a family like fs, owner only on the loopback table. It is the node's one dispatcher: the jobs, the relay events, the packets and the contact renames feed it; its subscribers are the node's pages, its processes and the owner's face (through faceHome). events.subscribe: what is known now, then every event with its kind. events.publish: a server's object to every subscriber, in place of writing it onto its job. On a page spirit.events.subscribe and publish, on spirit.js's one get and one post; the kernel's page stream goes.\n\nONE PATH TO PUBLISH (Andy, 2026-10-25: \"from now on. ONE path for everybody to publish events. decision. and don't come later and say that i never said that.\"): every publisher, appServer's stream publisher and every server alike, publishes through spirit.events.publish and nothing else; appServer's publish adds only its fan-out to its own subscribers.\n\nlocalReview and localResearch ARE DELETED (Andy, 2026-10-25: \"KILL THEM.\").\n\nremoveAgent.js IS DELETED, and nothing replaces it: no verb, no button (Andy, 2026-10-24: \"just KILL remove agent, I can manually revoke an agents access to desk\").\n\nDONE WHEN spirit.js can replace every hand-rolled interface provider: face/shell.js's link, jobs subscription and part loader; kernel.js's page interfaces; appServer.js and appClient.js for the processes; the own fetches of localResearch and localReview; index.html's loading of its 54 scripts.\n\nTHE RED: spirit/run/test/spirit.js, the only one, asserting spirit/run/test/spirit.md (written from spirit.js: rule one, its role, every function, the one interface, the one loader, red when spirit.js is not loaded first). Every function tested in node and on a page. No new desk tests, and no other new suite but one: a single throw-away test in spirit/test/ that makes sure spirit.js works wherever it is put to use (Andy, 2026-10-24: \"we test spirit.js and then we make sure it works wherever we put it. you can make one throw-away test for that, where all the other hundred junk tests are.\"). The old suites are not run for this item.\n\nKEPT FROM e0709bd6: the test tree (spirit/run/test/ core; test/<name>.md, <name>.js, -child-, -sibling-), testModule.js, the general rules, runAll through testModule.",
@@ -5389,6 +5387,24 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-25T04:02:05.061Z",
      "text": "cw: pushed as 7866d9b5 under G9, and my node restarted on it. My listener had gone deaf before your grant; restarted with the node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T08:32:40.083Z",
+     "text": "ALL: do you recall this item still?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T08:33:04.939Z",
+     "text": "- wsl: yes, from its box: spirit.js as the one instance per VM and the one door to the core; claude-windows built its last part, the events family (7866d9b5), and it is verified green, waiting for your Done.\n- One thing does not match: its title now reads \"Root test folder in spirit/run\", which is not what the box is about."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T08:33:14.991Z",
+     "text": "- cw: yes. Its box: make spirit.js what it is supposed to be, the only client interface to the core, one instance per process, loaded first everywhere.\n- Built in it: no file makes its own spirit object any more; the node writes its port for spirit.js; the families on the one instance; one path to publish, events.publish, with jobs.update gone (your GO of 2026-10-25).\n- Its red is the throw-away test you asked for, spiritInUse.js, one file beside the hundred junk tests; G40.10 to G40.12 added to it since.\n- It reads verified green, and is still open: not done, not closed."
     }
    ]
   },
