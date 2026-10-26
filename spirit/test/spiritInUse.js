@@ -562,6 +562,162 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/relay-status[\s\S]{0,600}ownerSeat\(/.test(presenceCode)) test.check('the node notes the owner\'s seat when a relay it owns reports to it');
   else test.fail('the node does not note the owner\'s seat on a relay\'s report');
 
+  // MORE DESK FIXES (goal/G40.12, box v7, first set). A desk on scratch state, driven through its verbs, his presses as
+  // the owner and an agent's as claude-windows.
+  test.subHeading('1n. more desk fixes: design at any time, no commit in design, one search, test rules that attach themselves');
+  const deskRun = await (async function () {
+    const os = require('os');
+    const appClient = require('../run/spirit/appClient.js');
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inuse-desk-'));
+    const state = path.join(scratch, 'state');
+    test.seedDesk(state, [{ goal: { id: 'goal/G100', title: 'Fixes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }]);
+    const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
+    const client = appClient.createAppClient({ rootDir: scratch });
+    client.register('desk', pipe);
+    const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAspiritInUseDeskOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
+    const CW = { key: 'MCowBQYDK2VwAyEAspiritInUseDeskCWAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+    const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { refused: e && (e.code || e.message) }; }); };
+    const took = function (r) { return r && r.status === 200 && r.body && r.body.ok !== false; };
+    const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); const f = r.body && r.body.item; try { return typeof f === 'string' ? JSON.parse(f) : (f || {}); } catch (e) { return {}; } };
+    const kid = spawn(process.execPath, [path.join(RUN, 'process', 'js', 'desk', 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    const out = {};
+    try {
+      let up = false;
+      for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+      if (!up) return { up: false };
+      out.up = true;
+      await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+      await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
+      // 1. Design on a running item, at any time.
+      out.runningButtons = (await facts('goal/G100.1')).buttons || [];
+      out.startOnRunning = took(await call('press', { id: 'goal/G100.1', what: 'start-design' }, ANDY));
+      out.itemDesign = (await facts('goal/G100.1')).design;
+      // 2. No commit while the item, or its goal, is in design.
+      out.mayItemDesign = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body;
+      await call('press', { id: 'goal/G100.1', what: 'end-design' }, ANDY);
+      out.mayOut = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body;
+      await call('press', { id: 'goal/G100', what: 'start-design' }, ANDY);
+      out.mayGoalDesign = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body;
+      await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+      // 6. One red Q per agent per item.
+      out.q1 = took(await call('check.add', { id: 'goal/G100.1', kind: 'Q', words: 'Which of the two names is it?', test: '' }, CW));
+      out.q2 = took(await call('check.add', { id: 'goal/G100.1', kind: 'Q', words: 'And which file does it live in?', test: '' }, CW));
+      // 7. A reopened goal is in design again.
+      await call('press', { id: 'goal/G100', what: 'close' }, ANDY);
+      await call('press', { id: 'goal/G100', what: 'reopen' }, ANDY);
+      out.reopenedGoalDesign = (await facts('goal/G100')).design;
+      // 4. The test type, and a rule that attaches itself to every goal at its creation.
+      const added = await call('rule.add', { type: 'test', label: 'The red is the check', text: 'A build and a verify run the item\'s red only.', autoAttach: true }, ANDY);
+      out.ruleAdded = took(added) ? added.body.key : short(added.body || added);
+      if (took(added)) {
+        await call('rule.version', { key: added.body.key, text: 'A build and a verify run the item\'s red only.', status: 'active' }, ANDY);
+        out.ruleRow = (await call('rule.get', { key: added.body.key }, ANDY)).body || {};
+      }
+      const g = await call('goal.add', { title: 'Next' }, ANDY);
+      out.newGoal = took(g) ? g.body.id : '';
+      out.newGoalRules = out.newGoal ? ((await facts(out.newGoal)).rules || []) : [];
+      // SECOND SET. Each goal and item keeps a list of attached rules (item.rules.add / item.rules.remove {id, rule}); an
+      // agent's work carries the goal's rules for its phase plus the item's, each once (facts.phaseRules): design rules
+      // in design, test rules in red and verify, code rules in build.
+      const rule = async function (type, label) {
+        const r = await call('rule.add', { type: type, label: label, text: label + '.' }, ANDY);
+        if (!took(r)) return '';
+        await call('rule.version', { key: r.body.key, text: label + '.', status: 'active' }, ANDY);
+        return r.body.key;
+      };
+      out.rd = await rule('design', 'Design one point at a time');
+      out.rt = await rule('test', 'Assert his outcome on real data');
+      out.rt2 = await rule('test', 'The red names its suites');
+      out.rc = await rule('code', 'Delete what you replace');
+      out.rdAuto = ((await call('rule.get', { key: out.rd }, ANDY)).body || {}).autoAttach;
+      const ts = await call('rules.search', { text: '', types: ['test'], statuses: [] }, ANDY);
+      out.testFound = ((ts.body && ts.body.items) || []).map(function (i) { return i.key; }).sort();
+      const g2 = out.newGoal || '';
+      const it2 = g2 ? await call('item.add', { goal: g2, title: 'Two', blocks: g2 }, ANDY) : {};
+      out.item2 = took(it2) ? it2.body.id : '';
+      const attach = async function (id, key) { return took(await call('item.rules.add', { id: id, rule: key }, ANDY)); };
+      if (g2) await call('press', { id: g2, what: 'make-current' }, ANDY);
+      out.attached = out.item2 ? [await attach(g2, out.rd), await attach(g2, out.rt), await attach(g2, out.rc), await attach(out.item2, out.rt), await attach(out.item2, out.rt2), await attach(out.item2, out.rc)] : [];
+      const keysOf = function (list) { return (list || []).map(function (r) { return r && (r.key || r); }).sort(); };
+      if (out.item2) {
+        out.goalRules = keysOf((await facts(g2)).rules);
+        out.itemRules = keysOf((await facts(out.item2)).rules);
+        out.removed = took(await call('item.rules.remove', { id: out.item2, rule: out.rc }, ANDY));
+        out.itemRulesAfter = keysOf((await facts(out.item2)).rules);
+        out.designRules = keysOf((await facts(out.item2)).phaseRules);
+        await call('press', { id: g2, what: 'end-design' }, ANDY);
+        if ((await facts(out.item2)).code !== true) await call('press', { id: out.item2, what: 'code' }, ANDY);
+        await call('press', { id: out.item2, what: 'go' }, ANDY);
+        out.redTake = took(await call('phase.take', { id: out.item2, phase: 'red' }, CW));
+        out.redRules = keysOf((await facts(out.item2)).phaseRules);
+        await call('item.suites.add', { id: out.item2, path: 'spirit/test/spiritInUse.js' }, CW);
+        await call('claim', { id: out.item2, phase: 'red', commit: '0000000000000000000000000000000000000000' }, CW);
+        await call('phase.done', { id: out.item2, phase: 'red' }, CW);
+        out.buildTake = took(await call('phase.take', { id: out.item2, phase: 'build' }, CW));
+        out.buildRules = keysOf((await facts(out.item2)).phaseRules);
+      }
+    } finally { kid.kill(); }
+    return out;
+  }());
+  const dr = deskRun;
+  if (!dr.up) test.fail('the scratch desk did not start');
+  else {
+    if (dr.runningButtons.indexOf('start-design') !== -1 && dr.startOnRunning && dr.itemDesign === true) test.check('an item after his Go offers Start design, and his press puts it in design: design on an item at any time');
+    else test.fail('Start design on a running item: buttons ' + short(dr.runningButtons) + ', pressed ' + dr.startOnRunning + ', design ' + dr.itemDesign);
+    if (dr.mayItemDesign && dr.mayItemDesign.allowed === false && dr.mayGoalDesign && dr.mayGoalDesign.allowed === false && dr.mayOut && dr.mayOut.allowed === true)
+      test.check('no commit lands while the item, or its goal, is in design (phase.may refuses both, and allows out of design)');
+    else test.fail('commits in design: item in design ' + short(dr.mayItemDesign) + ', goal in design ' + short(dr.mayGoalDesign) + ', out of design ' + short(dr.mayOut));
+    if (dr.q1 && !dr.q2) test.check('an agent raises one red Q per item: its second open Q is refused');
+    else test.fail('one red Q per agent: first ' + dr.q1 + ', second ' + dr.q2);
+    if (dr.reopenedGoalDesign === true) test.check('reopening a goal puts it back into design');
+    else test.fail('a reopened goal\'s design: ' + short(dr.reopenedGoalDesign));
+    if (dr.ruleRow && dr.ruleRow.type === 'test' && dr.ruleRow.autoAttach === true) test.check('a rule takes the type test and the field autoAttach, and rule.get answers both');
+    else test.fail('the test type and autoAttach: added ' + short(dr.ruleAdded) + ', row ' + short(dr.ruleRow));
+    if (dr.newGoal && (dr.newGoalRules || []).some(function (r) { return r && (r.key || r) === dr.ruleAdded; })) test.check('a goal created after it carries the active autoAttach rule among its rules');
+    else test.fail('auto-attach at goal creation: goal ' + short(dr.newGoal) + ', its rules ' + short(dr.newGoalRules));
+    const same = function (a, b) { return JSON.stringify((a || []).slice().sort()) === JSON.stringify((b || []).slice().sort()); };
+    if (dr.rd && dr.rdAuto === false) test.check('autoAttach is false unless it is set');
+    else test.fail('autoAttach on a rule added without it: ' + short(dr.rdAuto));
+    if (dr.rt && dr.rt2 && dr.ruleAdded && same(dr.testFound, [dr.ruleAdded, dr.rt, dr.rt2])) test.check('the rules search filters by the test type');
+    else test.fail('the rules search for test rules: ' + short(dr.testFound));
+    if (dr.item2 && dr.attached.every(Boolean) && dr.goalRules.indexOf(dr.rd) !== -1 && dr.goalRules.indexOf(dr.rt) !== -1 && dr.goalRules.indexOf(dr.rc) !== -1 &&
+      same(dr.itemRules, [dr.rt, dr.rt2, dr.rc]) && dr.removed && same(dr.itemRulesAfter, [dr.rt, dr.rt2]))
+      test.check('a goal and an item each keep their attached rules: item.rules.add puts one on, item.rules.remove takes it off');
+    else test.fail('attached rules: item ' + short(dr.item2) + ', added ' + short(dr.attached) + ', goal ' + short(dr.goalRules) + ', item ' + short(dr.itemRules) + ', removed ' + dr.removed + ', after ' + short(dr.itemRulesAfter));
+    if (dr.item2 && same(dr.designRules, [dr.rd])) test.check('in design an item\'s work carries the design rules, its goal\'s and its own');
+    else test.fail('the rules in design: ' + short(dr.designRules) + ', expected ' + short([dr.rd]));
+    if (dr.redTake && same(dr.redRules, [dr.rt, dr.rt2])) test.check('the take of red carries the test rules of the goal and the item, each once');
+    else test.fail('the rules of the red: taken ' + dr.redTake + ', ' + short(dr.redRules) + ', expected ' + short([dr.rt, dr.rt2]));
+    if (dr.buildTake && same(dr.buildRules, [dr.rc])) test.check('the take of build carries the code rules of the goal and the item, each once');
+    else test.fail('the rules of the build: taken ' + dr.buildTake + ', ' + short(dr.buildRules) + ', expected ' + short([dr.rc]));
+  }
+  const wakeCode = code('process/js/deskClient/deskClient.js');
+  if (/fx\.phaseRules/.test(wakeCode) && !/fx\.rules\b/.test(wakeCode)) test.check('a wake names the rules of the phase the agent is in (facts.phaseRules), not those stamped at his Go');
+  else test.fail('the wake still reads the rules stamped at his Go');
+  if (!/function typesOf\(|function rulesForGo\(/.test(code('process/js/desk/desk.js'))) test.check('the rules stamped at his Go by the paths in the box are gone: no typesOf, no rulesForGo');
+  else test.fail('typesOf or rulesForGo still stamps rules at his Go');
+  const ddCode = code('shell/deskDetails/deskDetails.js');
+  if (/key:\s*'rules'/.test(ddCode) && /probabilitySearch/.test(ddCode) && /rules\.search/.test(ddCode) && /item\.rules\.add/.test(ddCode) && /item\.rules\.remove/.test(ddCode))
+    test.check('the details\' icon strip has a rules icon: its panel lists the attached rules, adds one through a probability search of the rules, and removes one by its row\'s delete');
+  else test.fail('no rules panel in the details\' icon strip with its search and delete');
+  // 3. Every search on the desk's pages is the probability search.
+  const deskPages = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(js|html)$/.test(e.name)) deskPages.push(path.relative(RUN, p).replace(/\\/g, '/'));
+    });
+  }(path.join(RUN, 'shell', 'desk')));
+  ['shell/deskDetails', 'shell/ruleDetails'].forEach(function (d) { fs.readdirSync(path.join(RUN, d)).filter(function (n) { return /\.(js|html)$/.test(n); }).forEach(function (n) { deskPages.push(d + '/' + n); }); });
+  const oldSearch = deskPages.filter(function (f) { return /listSearch|shellCreateListSearch/.test(code(f)); });
+  if (!oldSearch.length) test.check('every search on the desk\'s pages is the probability search: none of their ' + deskPages.length + ' files uses the old list search');
+  else test.fail('the old list search on the desk\'s pages: ' + oldSearch.join(', '));
+  // 5. The desk raises no question of its own.
+  const deskCode = code('process/js/desk/desk.js').replace(/^\s*\/\/.*$/mg, '');
+  if (!/kind:\s*'Q'[^}]*by:\s*'desk'|by:\s*'desk'[^}]*kind:\s*'Q'|stale:/.test(deskCode)) test.check('the desk raises no idle question: no Q written by the desk, no stale Q');
+  else test.fail('the desk still writes a question of its own');
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
