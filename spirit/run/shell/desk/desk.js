@@ -1163,7 +1163,11 @@ function deskRulesSearch() {
         var v = values || {};
         return { text: text, types: v.type ? [v.type] : [], statuses: v.status ? [v.status] : [] };
       },
-      columns: [{ field: 'status', label: 'Status', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
+      // A RULE ROW IS A ROW ELEMENT (shell/js/rowElement.js, the element's own element(row, key)): it paints its status as
+      // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
+      columns: [{ field: 'status', label: '', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' },
+        { field: 'type', label: 'Type', sort: 'text' }, { field: 'key', label: 'Key' }],
+      element: function (row, key) { return deskRuleElement(row, key); },
       filters: [
         { name: 'type', choices: choices(DESK_RULE_TYPES), test: function (row, v) { return !v || row.type === v ? 1 : 0; } },
         { name: 'status', choices: choices(DESK_RULE_STATUSES), test: function (row, v) { return !v || row.status === v ? 1 : 0; } },
@@ -1176,17 +1180,43 @@ function deskRulesSearch() {
   };
   deskLoadSearch(make);
 }
-// probabilitySearch.js, loaded once for the page however many asks wait on it.
+// One rule row's element: its four cells, the status drawn as its icon.
+var deskRuleIndex = null;
+function deskRuleElement(row, key) {
+  var E = window.spirit.elements;
+  deskRuleIndex = deskRuleIndex || E.rowElement.index(function () { /* the list asks again on a rule's publish */ });
+  return E.rowElement.create({
+    kind: 'rule', key: key, index: deskRuleIndex,
+    row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
+    fields: [
+      { name: 'status', paint: function (v) { return '<span title="' + deskEsc(v.status) + '">' + deskIcon(DESK_RULE_ICON[v.status] || '') + '</span>'; } },
+      { name: 'label', paint: function (v) { return deskEsc(v.label); } },
+      { name: 'type', paint: function (v) { return deskEsc(v.type); } },
+      { name: 'key', paint: function (v) { return deskEsc(v.key); } },
+    ],
+  });
+}
+// probabilitySearch.js and the rowElement it draws rule rows with, loaded once for the page however many asks wait.
+var DESK_ROW_ELEMENT = '/shell/js/rowElement.js';
 var deskSearchWaiting = null;
 function deskLoadSearch(done) {
-  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { done(); return; }
+  var have = function () { return window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch && window.spirit.elements.rowElement; };
+  if (have()) { done(); return; }
   if (deskSearchWaiting) { deskSearchWaiting.push(done); return; }
   if (typeof document.createElement !== 'function' || !document.body) return;
   deskSearchWaiting = [done];
-  var script = document.createElement('script');
-  script.src = DESK_SEARCH;
-  script.onload = function () { var w = deskSearchWaiting; deskSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
-  document.body.appendChild(script);
+  var left = 0;
+  var loaded = function () { left -= 1; if (left > 0) return; var w = deskSearchWaiting; deskSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
+  [DESK_ROW_ELEMENT, DESK_SEARCH].forEach(function (src) {
+    var E = window.spirit && window.spirit.elements;
+    if (src === DESK_SEARCH ? (E && E.probabilitySearch) : (E && E.rowElement)) return;
+    left += 1;
+    var script = document.createElement('script');
+    script.src = src;
+    script.onload = loaded;
+    document.body.appendChild(script);
+  });
+  if (!left) { left = 1; loaded(); }
 }
 function deskDrawRules() {
   var note = document.getElementById('desk-rule-error');

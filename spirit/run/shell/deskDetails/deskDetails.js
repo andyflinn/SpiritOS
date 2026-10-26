@@ -595,6 +595,8 @@ function ddLoadSuites(id) {
 var ddRuleNames = Object.create(null);
 var DD_SEARCH = '/shell/js/probabilitySearch.js';
 var ddRulePick = null;
+// The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
+var DD_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 // probabilitySearch.js, loaded once for the page however many asks wait on it.
 var ddSearchWaiting = null;
 function ddLoadSearch(done) {
@@ -628,7 +630,11 @@ function ddMountRulePick() {
     if (!P || typeof P.create !== 'function' || ddRulePick) return;
     ddRulePick = P.create(el, {
       api: ddApi, server: 'desk', verb: 'rules.search',
-      args: function (text) { return { text: text, types: [], statuses: ['active'] }; },
+      // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
+      // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
+      args: function (text, values) { var v = values || {}; return { text: text, types: v.type ? [v.type] : [], statuses: ['active'] }; },
+      filters: [{ name: 'type', choices: [{ value: '', word: 'all' }].concat(DD_RULE_TYPES.map(function (t) { return { value: t, word: t }; })),
+        test: function (row, v) { return !v || row.type === v ? 1 : 0; } }],
       columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
       face: 'dropdown', placeholder: 'attach a rule…',
       matched: function (row) { return { label: String((row && row.label) || '') }; },
