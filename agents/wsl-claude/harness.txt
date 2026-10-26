@@ -1,497 +1,516 @@
 
 470 suites, 6 at a time
 
-labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. — the lab suites will say so themselves
+labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. — the lab suites will say so themselves
 
-  ok  ../run/test/spirit-child-generalRules.js spirit.js   2 ✅                         99ms
-  ok  ../run/test/spirit.js       38 ✅                        746ms
-  ok  agentNodeRows.js             7 ✅                        116ms
-  ok  agentReadme.js              10 ✅                        215ms
-  ok  agentsAppGone.js             3 ✅                        248ms
-  ok  answerRelay.js              10 ✅                       2243ms
-FAIL  answersCarryMore.js          9 ✅   2 ❌                2367ms
-  ok  apiBranchSelector.js         4 ✅                         58ms
-  ok  apiDoorNoOwnerName.js        4 ✅                        228ms
-  ok  apiGate.js                  10 ✅                        558ms
-  ok  appAgentsFile.js             5 ✅                       1460ms
-  ok  appApi.js                    8 ✅                        490ms
-  ok  appApiDoor.js                5 ✅                        428ms
-  ok  appClient.js                15 ✅                       3173ms
-  ok  appClientName.js             3 ✅                        283ms
-  ok  appDependencies.js           9 ✅                       2653ms
-  ok  appErrorCodes.js             9 ✅                        346ms
-  ok  appHeader.js                 8 ✅                        137ms
-  ok  appReferences.js             4 ✅                         89ms
-  ok  appServer.js                11 ✅                       1197ms
-  ok  appServerSelector.js         5 ✅                         63ms
-FAIL  appServerStream.js           6 ✅   2 ❌               15743ms
-FAIL  appsApp.js                  20 ✅   1 ❌                 298ms
-  ok  armedButtons.js              8 ✅                        116ms
-FAIL  arrivals.js                 23 ✅   1 ❌               18482ms
-  ok  arrivalsBacklogQuick.js      5 ✅                      45443ms
-  ok  authTables.js                7 ✅                      10945ms
+  ok  ../run/test/spirit-child-generalRules.js spirit.js   2 ✅                        128ms
+  ok  ../run/test/spirit.js       48 ✅                       2796ms
+  ok  agentNodeRows.js             7 ✅                        126ms
+  ok  agentReadme.js              10 ✅                        168ms
+  ok  agentsAppGone.js             3 ✅                        278ms
+  ok  answerRelay.js              10 ✅                       1952ms
+FAIL  answersCarryMore.js          7 ✅   4 ❌                1841ms
+  ok  apiBranchSelector.js         4 ✅                         82ms
+  ok  apiDoorNoOwnerName.js        4 ✅                        224ms
+  ok  apiGate.js                  10 ✅                        570ms
+  ok  appAgentsFile.js             5 ✅                       1527ms
+  ok  appApi.js                    8 ✅                        522ms
+  ok  appApiDoor.js                5 ✅                        416ms
+  ok  appClient.js                15 ✅                       3139ms
+  ok  appClientName.js             3 ✅                        270ms
+  ok  appDependencies.js           9 ✅                       3046ms
+  ok  appErrorCodes.js             9 ✅                        376ms
+  ok  appHeader.js                 8 ✅                        147ms
+FAIL  appReferences.js             3 ✅   1 ❌                 124ms
+  ok  appServer.js                11 ✅                       1202ms
+  ok  appServerSelector.js         5 ✅                        105ms
+FAIL  appServerStream.js           2 ✅   6 ❌               31380ms
+FAIL  appsApp.js                  19 ✅   2 ❌                 305ms
+  ok  armedButtons.js              8 ✅                        107ms
+FAIL  arrivals.js                  0 ✅   ? ❌               16586ms
+  ok  arrivalsBacklogQuick.js      5 ✅                      40543ms
+  ok  authTables.js                7 ✅                      10962ms
 FAIL  authWorld.js                 2 ✅   1 ❌                 363ms
-  ok  backupRoundTrip.js           5 ✅                       6132ms
-  ok  backupServer.js             18 ✅                       5126ms
-  ok  boardPostSuite.js            3 ✅                         95ms
-  ok  boardRankSuite.js           16 ✅                         71ms
-  ok  bodiesJoinedOnce.js         12 ✅                        682ms
-  ok  boundedByTime.js             8 ✅                       7232ms
-  ok  boxesSuite.js                6 ✅                        129ms
-  ok  budgetChain.js               9 ✅                       1270ms
-  ok  buildStamp.js                9 ✅                        329ms
+  ok  backupRoundTrip.js           5 ✅                       6356ms
+  ok  backupServer.js             18 ✅                       5092ms
+  ok  boardPostSuite.js            3 ✅                         90ms
+  ok  boardRankSuite.js           16 ✅                        131ms
+FAIL  bodiesJoinedOnce.js          8 ✅   1 ❌                 629ms
+  ok  boundedByTime.js             8 ✅                       6821ms
+  ok  boxesSuite.js                6 ✅                        134ms
+  ok  budgetChain.js               9 ✅                       1094ms
+  ok  buildStamp.js                9 ✅                        244ms
 FAIL  capacityFresh.js             5 ✅   1 ❌                 104ms
-FAIL  capacityRule.js              7 ✅   1 ❌                1063ms
-  ok  cardFetch.js                12 ✅                      11009ms
-  ok  cardRotation.js              9 ✅                       9036ms
-FAIL  chatClerverLines.js          8 ✅   5 ❌               10765ms
-FAIL  chatClerverWrite.js          3 ✅   9 ❌                 972ms
-  ok  chatMemory.js                8 ✅                        719ms
-FAIL  chatsSearch.js              22 ✅   5 ❌                8951ms
-FAIL  chatter.js                   1 ✅   1 ❌                  87ms
-  ok  chosenMarks.js              11 ✅                      40932ms
-  ok  circularity.js               1 ✅                         98ms
-  ok  cleanupDead.js               8 ✅                        161ms
-  ok  clientLayer.js              17 ✅                        514ms
-  ok  contactCard.js              17 ✅                       1261ms
-FAIL  contactLabel.js              0 ✅   2 ❌                 439ms
-FAIL  contactSearchTiers.js       13 ✅   1 ❌                1294ms
-  ok  contactSelector.js           4 ✅                        106ms
-FAIL  contactSelectorPane.js       0 ✅   1 ❌                 116ms
-FAIL  contacts.js                  0 ✅   ? ❌                 137ms
-  ok  contactsDetails.js          52 ✅                         96ms
-FAIL  contactsFilter.js            0 ✅   1 ❌                 137ms
-FAIL  contactsListSearch.js        7 ✅   1 ❌                 132ms
-  ok  coreFilesMove.js            15 ✅                        133ms
-  ok  counterLog.js                2 ✅                       1497ms
-  ok  counterPage.js               4 ✅                        504ms
-  ok  counterPort.js               3 ✅                       1127ms
-  ok  cycle10Pending.js            1 ✅                        106ms
-  ok  cycleA.js                   28 ✅                      10730ms
-FAIL  cycleCitations.js            1 ✅   2 ❌                 296ms
-  ok  cycleRequirements.js       145 ✅                        137ms
-  ok  debugSwitch.js              12 ✅                       3217ms
-  ok  deprecations.js             12 ✅                         81ms
-  ok  deskAddBlocking.js          13 ✅                       1135ms
-  ok  deskAddGoal.js               9 ✅                        742ms
-  ok  deskAddKeepsCurrent.js       5 ✅                       1199ms
-  ok  deskAdjustments.js          28 ✅                       1516ms
-FAIL  deskAgentAbort.js           21 ✅  11 ❌               67450ms
-FAIL  deskAgentAgent.js           13 ✅   5 ❌               11464ms
-FAIL  deskAgentCommand.js          8 ✅   3 ❌                2789ms
-  ok  deskAgentCommandJob.js       9 ✅                      27463ms
-  ok  deskAgentConnectTable.js    12 ✅                        541ms
-FAIL  deskAgentContext.js          2 ✅   1 ❌               17560ms
-FAIL  deskAgentCurrentGoal.js      0 ✅   1 ❌                9168ms
-FAIL  deskAgentDesk.js             9 ✅   4 ❌               39966ms
-FAIL  deskAgentDeskName.js         0 ✅   2 ❌               18102ms
-FAIL  deskAgentEarJobs.js          6 ✅   1 ❌               13098ms
-  ok  deskAgentEarState.js         3 ✅                       1498ms
-FAIL  deskAgentEarThin.js          2 ✅   6 ❌                1254ms
-  ok  deskAgentEffort.js          21 ✅                       1213ms
-FAIL  deskAgentFileEdit.js         5 ✅   7 ❌                 527ms
-  ok  deskAgentFileRange.js       10 ✅                        383ms
-FAIL  deskAgentFileSearch.js      12 ✅   2 ❌                6727ms
-  ok  deskAgentFs.js              16 ✅                       2478ms
-FAIL  deskAgentGo.js               4 ✅   1 ❌                 120ms
-  ok  deskAgentLearnsContext.js    7 ✅                       1440ms
-FAIL  deskAgentModels.js          36 ✅   1 ❌               60985ms
-  ok  deskAgentModelsSearch.js    13 ✅                       1778ms
-FAIL  deskAgentOneAnswer.js        0 ✅   6 ❌               38727ms
-FAIL  deskAgentPairs.js           22 ✅   5 ❌                1034ms
-FAIL  deskAgentPlainContext.js     5 ✅   4 ❌                1246ms
-FAIL  deskAgentRecommend.js        9 ✅   5 ❌               10912ms
-  ok  deskAgentRemoteHidden.js     3 ✅                        211ms
-  ok  deskAgentRemoteTabs.js      25 ✅                        684ms
-  ok  deskAgentRename.js           4 ✅                        113ms
-FAIL  deskAgentRepoRoot.js         0 ✅   1 ❌                 634ms
-FAIL  deskAgentSwitch.js          13 ✅   6 ❌               13532ms
-FAIL  deskAgentSwitchKept.js       4 ✅   3 ❌               26763ms
-  ok  deskAgentTabs.js             3 ✅                        156ms
-FAIL  deskAgentTakesLine.js        3 ✅   5 ❌               34525ms
-FAIL  deskAgentToolRounds.js       3 ✅   7 ❌                9924ms
-FAIL  deskAgentTools.js           12 ✅   7 ❌               12101ms
-  ok  deskAgentToolsMore.js       18 ✅                        129ms
-  ok  deskAgentVerbFiles.js       17 ✅                        138ms
-  ok  deskAgentWorkspace.js       14 ✅                       1355ms
-  ok  deskArchive.js               5 ✅                       1511ms
-  ok  deskBackupFresh.js           1 ✅                        129ms
-  ok  deskBindingNick.js          38 ✅                      14379ms
-  ok  deskBlocks.js               17 ✅                       1969ms
-  ok  deskBoundedInterface.js      7 ✅                      10817ms
-  ok  deskBoxTake.js              17 ✅                        985ms
-  ok  deskBusyReply.js             5 ✅                       1151ms
-  ok  deskChatBubbles.js           6 ✅                        154ms
-  ok  deskChatFlowOneTask.js      18 ✅                       2226ms
-  ok  deskChatFollowsAddress.js    7 ✅                       2146ms
+FAIL  capacityRule.js              7 ✅   1 ❌                 955ms
+  ok  cardFetch.js                12 ✅                       7932ms
+  ok  cardRotation.js              9 ✅                       6990ms
+FAIL  chatClerverLines.js          7 ✅   6 ❌               10561ms
+FAIL  chatClerverWrite.js          3 ✅   9 ❌                 920ms
+  ok  chatMemory.js                8 ✅                        560ms
+FAIL  chatsSearch.js              22 ✅   5 ❌                7226ms
+FAIL  chatter.js                   1 ✅   1 ❌                 115ms
+  ok  chosenMarks.js              11 ✅                      44840ms
+  ok  circularity.js               1 ✅                        100ms
+  ok  cleanupDead.js               8 ✅                        187ms
+FAIL  clientLayer.js               1 ✅   2 ❌                 434ms
+  ok  contactCard.js              16 ✅                       1269ms
+FAIL  contactLabel.js              0 ✅   1 ❌                 447ms
+FAIL  contactSearchTiers.js       12 ✅   2 ❌                1272ms
+FAIL  contactSelector.js           0 ✅   ? ❌                 120ms
+FAIL  contactSelectorPane.js       0 ✅   1 ❌                 113ms
+FAIL  contacts.js                  0 ✅   ? ❌                 144ms
+FAIL  contactsDetails.js           0 ✅   ? ❌                 127ms
+FAIL  contactsFilter.js            0 ✅   1 ❌                 148ms
+FAIL  contactsListSearch.js        7 ✅   1 ❌                 153ms
+  ok  coreFilesMove.js            15 ✅                        143ms
+  ok  counterLog.js                2 ✅                       1550ms
+  ok  counterPage.js               4 ✅                        548ms
+  ok  counterPort.js               3 ✅                       1055ms
+  ok  cycle10Pending.js            1 ✅                        116ms
+  ok  cycleA.js                   28 ✅                       9478ms
+FAIL  cycleCitations.js            1 ✅   2 ❌                 451ms
+  ok  cycleRequirements.js       145 ✅                        162ms
+  ok  debugSwitch.js              12 ✅                       3070ms
+  ok  deprecations.js             12 ✅                        155ms
+  ok  deskAddBlocking.js          13 ✅                       1117ms
+  ok  deskAddGoal.js               9 ✅                        743ms
+  ok  deskAddKeepsCurrent.js       5 ✅                       1188ms
+FAIL  deskAdjustments.js          27 ✅   1 ❌                1378ms
+FAIL  deskAgentAbort.js           18 ✅  14 ❌               73530ms
+FAIL  deskAgentAgent.js           13 ✅   5 ❌               11426ms
+FAIL  deskAgentCommand.js          8 ✅   3 ❌                2843ms
+  ok  deskAgentCommandJob.js       9 ✅                      27581ms
+FAIL  deskAgentConnectTable.js    11 ✅   1 ❌                 543ms
+FAIL  deskAgentContext.js          2 ✅   1 ❌               17594ms
+FAIL  deskAgentCurrentGoal.js      0 ✅   1 ❌                9140ms
+FAIL  deskAgentDesk.js             9 ✅   4 ❌               39903ms
+FAIL  deskAgentDeskName.js         0 ✅   2 ❌               18175ms
+FAIL  deskAgentEarJobs.js          1 ✅   1 ❌               22930ms
+FAIL  deskAgentEarState.js         2 ✅   1 ❌                1476ms
+FAIL  deskAgentEarThin.js          2 ✅   6 ❌                1032ms
+  ok  deskAgentEffort.js          21 ✅                       1237ms
+FAIL  deskAgentFileEdit.js         5 ✅   7 ❌                 552ms
+  ok  deskAgentFileRange.js       10 ✅                        399ms
+FAIL  deskAgentFileSearch.js      12 ✅   2 ❌                6693ms
+  ok  deskAgentFs.js              16 ✅                       2224ms
+FAIL  deskAgentGo.js               4 ✅   1 ❌                 140ms
+  ok  deskAgentLearnsContext.js    7 ✅                       1539ms
+FAIL  deskAgentModels.js          24 ✅   4 ❌               68454ms
+FAIL  deskAgentModelsSearch.js    12 ✅   1 ❌                7805ms
+FAIL  deskAgentOneAnswer.js        0 ✅   6 ❌               38763ms
+FAIL  deskAgentPairs.js           22 ✅   5 ❌                1076ms
+FAIL  deskAgentPlainContext.js     5 ✅   4 ❌                1264ms
+FAIL  deskAgentRecommend.js        8 ✅   6 ❌               11035ms
+  ok  deskAgentRemoteHidden.js     3 ✅                        204ms
+FAIL  deskAgentRemoteTabs.js      19 ✅   6 ❌                3812ms
+  ok  deskAgentRename.js           4 ✅                        112ms
+FAIL  deskAgentRepoRoot.js         0 ✅   1 ❌                 609ms
+FAIL  deskAgentSwitch.js          13 ✅   6 ❌               13586ms
+FAIL  deskAgentSwitchKept.js       4 ✅   3 ❌               26844ms
+  ok  deskAgentTabs.js             3 ✅                        140ms
+FAIL  deskAgentTakesLine.js        3 ✅   5 ❌               34534ms
+FAIL  deskAgentToolRounds.js       3 ✅   7 ❌                9953ms
+FAIL  deskAgentTools.js           12 ✅   7 ❌               12068ms
+  ok  deskAgentToolsMore.js       18 ✅                        181ms
+  ok  deskAgentVerbFiles.js       17 ✅                        178ms
+  ok  deskAgentWorkspace.js       14 ✅                       1338ms
+  ok  deskArchive.js               5 ✅                       1380ms
+  ok  deskBackupFresh.js           1 ✅                        117ms
+FAIL  deskBindingNick.js          36 ✅   2 ❌               25642ms
+  ok  deskBlocks.js               17 ✅                       1785ms
+  ok  deskBoundedInterface.js      7 ✅                       9757ms
+  ok  deskBoxTake.js              17 ✅                        936ms
+  ok  deskBusyReply.js             5 ✅                       1009ms
+  ok  deskChatBubbles.js           6 ✅                        143ms
+  ok  deskChatFlowOneTask.js      18 ✅                       2077ms
+FAIL  deskChatFollowsAddress.js    5 ✅   2 ❌                1412ms
   ok  deskChatFormat.js           15 ✅                        114ms
-  ok  deskChatQuestion.js         12 ✅                       1267ms
-  ok  deskChatSearch.js           11 ✅                       4437ms
-  ok  deskCheckNumbers.js          5 ✅                        855ms
-  ok  deskChecksPanel.js          10 ✅                       1618ms
-  ok  deskClaimCommit.js          16 ✅                        835ms
-FAIL  deskClientAsk.js            10 ✅   2 ❌               17056ms
-FAIL  deskClientNext.js            8 ✅   3 ❌               35590ms
-FAIL  deskClientPull.js            2 ✅   4 ❌               14944ms
-FAIL  deskClientPush.js           19 ✅   9 ❌              120285ms
-  ok  deskClientQuiet.js           8 ✅                      12981ms
-  ok  deskClientStatus.js          4 ✅                        108ms
-  ok  deskClosedBlocker.js        10 ✅                       1130ms
-  ok  deskCodeToggle.js           13 ✅                       1609ms
-FAIL  deskCoreGrants.js            3 ✅   5 ❌                1991ms
-  ok  deskDelete.js               17 ✅                       1630ms
-  ok  deskDeleteOutsideDesign.js  15 ✅                       1352ms
-  ok  deskDesignButtons.js         8 ✅                        138ms
-  ok  deskDetailsPanels.js        15 ✅                         97ms
-  ok  deskDialog.js               23 ✅                        137ms
-  ok  deskDialogClose.js           4 ✅                        118ms
-  ok  deskDialogFollowsItem.js    22 ✅                       1017ms
-  ok  deskDoneAsks.js              6 ✅                       1040ms
-  ok  deskEmptyBox.js              5 ✅                        109ms
-  ok  deskExclusiveToggles.js      7 ✅                         80ms
-  ok  deskExplainTop.js            1 ✅                        129ms
-  ok  deskFallout.js              32 ✅                       4337ms
-  ok  deskFilesTouched.js         16 ✅                       3354ms
-  ok  deskFold.js                  2 ✅                        109ms
-  ok  deskForAgents.js             6 ✅                       1066ms
-  ok  deskForAndy.js              37 ✅                       1254ms
-  ok  deskFresh.js                 2 ✅                        435ms
-  ok  deskFrontPage.js             9 ✅                        116ms
-  ok  deskG3.js                   11 ✅                       1110ms
-  ok  deskGoOrDone.js              9 ✅                       1086ms
-  ok  deskGoalClose.js             6 ✅                        173ms
-  ok  deskGoalDone.js              5 ✅                       1037ms
-  ok  deskGoalFile.js             14 ✅                       3455ms
-  ok  deskGroupChat.js            10 ✅                       1812ms
-  ok  deskHeaderArea.js            8 ✅                        111ms
-  ok  deskIds.js                  12 ✅                       1109ms
-FAIL  deskIssues.js                6 ✅   1 ❌                1488ms
-  ok  deskItemAddGrant.js         17 ✅                       1288ms
-  ok  deskItemsFind.js             6 ✅                       5833ms
-  ok  deskKnownAgents.js           9 ✅                       1324ms
-  ok  deskLatest.js               12 ✅                       1386ms
-  ok  deskLayout.js               14 ✅                        126ms
-  ok  deskLimbo.js                 7 ✅                       1123ms
-  ok  deskLimboHolder.js           4 ✅                       1175ms
-  ok  deskLineTakeAddressed.js    18 ✅                       3036ms
-  ok  deskList.js                 22 ✅                        143ms
-  ok  deskListRows.js             16 ✅                       9590ms
-  ok  deskListTakesAdditions.js   14 ✅                        648ms
-  ok  deskLiveFixes.js            16 ✅                       2299ms
-  ok  deskLog.js                   9 ✅                        163ms
-  ok  deskMakeCurrent.js          14 ✅                       2289ms
-  ok  deskMirror.js                7 ✅                       5104ms
-  ok  deskOnServer.js             10 ✅                        649ms
-  ok  deskPageNoNudge.js           8 ✅                        117ms
-  ok  deskPanels.js                7 ✅                       1393ms
-  ok  deskPhaseRestart.js          9 ✅                       1406ms
-  ok  deskPhases.js                9 ✅                       2391ms
-  ok  deskPlainTake.js             3 ✅                       2011ms
-FAIL  deskPluginsGg.js           141 ✅   1 ❌                9527ms
-  ok  deskProfiles.js              8 ✅                       1239ms
-  ok  deskQuickFixes.js            7 ✅                       1317ms
-  ok  deskRealtimeFace.js         13 ✅                       1967ms
-  ok  deskRealtimeServer.js        4 ✅                       1164ms
-  ok  deskRedQOnPurpose.js        29 ✅                       7988ms
-  ok  deskRefusalReason.js         8 ✅                       1091ms
-  ok  deskRows.js                  5 ✅                       2451ms
-  ok  deskRuleChatPublish.js       4 ✅                       1437ms
-  ok  deskRuleTable.js            12 ✅                       1337ms
-FAIL  deskRules.js                16 ✅   7 ❌               32529ms
-  ok  deskRulesAtGo.js             7 ✅                       1290ms
-  ok  deskRulesTab.js             10 ✅                        148ms
-  ok  deskSearchLines.js           6 ✅                        761ms
-  ok  deskSearches.js             10 ✅                       1160ms
-  ok  deskServer.js               13 ✅                       2863ms
-  ok  deskSignoffGrants.js        12 ✅                       1238ms
-  ok  deskSmallFixes.js           18 ✅                        994ms
-  ok  deskSplitGreen.js           10 ✅                       1332ms
-  ok  deskSplitRelation.js         9 ✅                       1074ms
-FAIL  deskStacksDialog.js         25 ✅   2 ❌                8842ms
-  ok  deskStacksDoorSearch.js      6 ✅                       2025ms
-  ok  deskState.js                25 ✅                       1255ms
-  ok  deskStatusActivity.js       22 ✅                       2030ms
-  ok  deskSword.js                 8 ✅                        147ms
-FAIL  deskTables.js               44 ✅   1 ❌               14096ms
-  ok  deskTakeToAnswer.js          8 ✅                       1594ms
-  ok  deskVerbListingSlash.js     20 ✅                        172ms
-  ok  deskVerifyCommitBound.js     4 ✅                       1984ms
-  ok  deskVerifyDataset.js        14 ✅                       3191ms
-FAIL  deskVerifyDriven.js         37 ✅  23 ❌              101866ms
-  ok  deskVerifyFixes.js          45 ✅                      28431ms
-  ok  deskVerifyFull.js            4 ✅                       2115ms
-  ok  deskVerifyLive.js           17 ✅                       4949ms
-  ok  deskVerifyModes.js           5 ✅                       1320ms
-  ok  deskVerifyRunsSearch.js      6 ✅                       1156ms
-  ok  deskVerifyStopTree.js        7 ✅                      11676ms
-  ok  deskVerifyTab.js            12 ✅                       3149ms
-  ok  deskVision.js               24 ✅                       1524ms
-  ok  deskWaive.js                19 ✅                       1243ms
-  ok  deskWhileBackup.js           2 ✅                       8334ms
-  ok  deskWorking.js               3 ✅                        117ms
-  ok  deskWriterKey.js             7 ✅                       1435ms
-FAIL  deviceGone.js                1 ✅   1 ❌                 250ms
-  ok  dialogClose.js               4 ✅                        114ms
-  ok  discBound.js                 9 ✅                       1834ms
-  ok  discFull.js                 12 ✅                        588ms
-  ok  diskClient.js               10 ✅                       1307ms
-FAIL  doorContract.js              8 ✅   2 ❌                 119ms
-FAIL  everyVerb.js                 8 ✅   2 ❌                6073ms
-  ok  faceApply.js                21 ✅                       2452ms
-  ok  faceDevices.js               6 ✅                        736ms
-  ok  faceFixes.js                 8 ✅                       2022ms
-FAIL  faceHome.js                  7 ✅   1 ❌                 803ms
-  ok  faceKeys.js                  3 ✅                        214ms
-  ok  faceLogin.js                14 ✅                        795ms
-  ok  faceRouteSuite.js            6 ✅                        111ms
-FAIL  faceSealed.js                6 ✅   1 ❌                 684ms
-  ok  faceStream.js                8 ✅                        539ms
-  ok  faceUpload.js                4 ✅                        602ms
-  ok  fieldRules.js               27 ✅                       1298ms
+  ok  deskChatQuestion.js         12 ✅                       1052ms
+FAIL  deskChatSearch.js            9 ✅   2 ❌                3545ms
+  ok  deskCheckNumbers.js          5 ✅                        715ms
+  ok  deskChecksPanel.js          10 ✅                       1524ms
+  ok  deskClaimCommit.js          16 ✅                        654ms
+FAIL  deskClientAsk.js             4 ✅   8 ❌               16621ms
+FAIL  deskClientNext.js            5 ✅   6 ❌               64191ms
+FAIL  deskClientPull.js            1 ✅   5 ❌              150896ms
+FAIL  deskClientPush.js            0 ✅   ? ❌              180017ms
+FAIL  deskClientQuiet.js           4 ✅   4 ❌               92246ms
+  ok  deskClientStatus.js          4 ✅                         86ms
+  ok  deskClosedBlocker.js        10 ✅                        906ms
+  ok  deskCodeToggle.js           13 ✅                       1471ms
+FAIL  deskCoreGrants.js            3 ✅   5 ❌                1805ms
+  ok  deskDelete.js               17 ✅                       1430ms
+  ok  deskDeleteOutsideDesign.js  15 ✅                       1133ms
+  ok  deskDesignButtons.js         8 ✅                        110ms
+FAIL  deskDetailsPanels.js        14 ✅   1 ❌                  99ms
+  ok  deskDialog.js               23 ✅                        109ms
+  ok  deskDialogClose.js           4 ✅                        137ms
+FAIL  deskDialogFollowsItem.js     0 ✅   1 ❌                 108ms
+  ok  deskDoneAsks.js              6 ✅                        869ms
+  ok  deskEmptyBox.js              5 ✅                        100ms
+  ok  deskExclusiveToggles.js      7 ✅                        142ms
+  ok  deskExplainTop.js            1 ✅                        119ms
+FAIL  deskFallout.js               0 ✅   ? ❌                 832ms
+  ok  deskFilesTouched.js         16 ✅                       2858ms
+  ok  deskFold.js                  2 ✅                        150ms
+  ok  deskForAgents.js             6 ✅                        846ms
+FAIL  deskForAndy.js              36 ✅   1 ❌                1109ms
+  ok  deskFresh.js                 2 ✅                        428ms
+  ok  deskFrontPage.js             9 ✅                        148ms
+  ok  deskG3.js                   11 ✅                        867ms
+  ok  deskGoOrDone.js              9 ✅                        839ms
+  ok  deskGoalClose.js             6 ✅                        118ms
+  ok  deskGoalDone.js              5 ✅                        814ms
+  ok  deskGoalFile.js             14 ✅                       3239ms
+  ok  deskGroupChat.js            10 ✅                       1636ms
+  ok  deskHeaderArea.js            8 ✅                        147ms
+  ok  deskIds.js                  12 ✅                        945ms
+FAIL  deskIssues.js                5 ✅   2 ❌                1345ms
+  ok  deskItemAddGrant.js         17 ✅                       1080ms
+  ok  deskItemsFind.js             6 ✅                       5444ms
+  ok  deskKnownAgents.js           9 ✅                       1359ms
+  ok  deskLatest.js               12 ✅                       1189ms
+FAIL  deskLayout.js               13 ✅   1 ❌                 145ms
+  ok  deskLimbo.js                 7 ✅                        898ms
+  ok  deskLimboHolder.js           4 ✅                       1115ms
+  ok  deskLineTakeAddressed.js    18 ✅                       2729ms
+  ok  deskList.js                 22 ✅                        122ms
+  ok  deskListRows.js             16 ✅                       8718ms
+FAIL  deskListTakesAdditions.js    0 ✅   1 ❌                 161ms
+FAIL  deskLiveFixes.js            15 ✅   1 ❌                2229ms
+  ok  deskLog.js                   9 ✅                        132ms
+  ok  deskMakeCurrent.js          14 ✅                       2303ms
+FAIL  deskMirror.js                4 ✅   3 ❌                4439ms
+  ok  deskOnServer.js             10 ✅                        525ms
+  ok  deskPageNoNudge.js           8 ✅                        104ms
+  ok  deskPanels.js                7 ✅                       1184ms
+  ok  deskPhaseRestart.js          9 ✅                       1216ms
+FAIL  deskPhases.js                8 ✅   1 ❌                2029ms
+  ok  deskPlainTake.js             3 ✅                       1855ms
+FAIL  deskPluginsGg.js           141 ✅   1 ❌                8681ms
+  ok  deskProfiles.js              8 ✅                       1069ms
+  ok  deskQuickFixes.js            7 ✅                       1035ms
+  ok  deskRealtimeFace.js         13 ✅                       2000ms
+FAIL  deskRealtimeServer.js        0 ✅   4 ❌               11042ms
+FAIL  deskRedQOnPurpose.js        27 ✅   2 ❌                6138ms
+  ok  deskRefusalReason.js         8 ✅                        918ms
+FAIL  deskRows.js                  3 ✅   2 ❌                2276ms
+FAIL  deskRuleChatPublish.js       0 ✅   4 ❌               16952ms
+  ok  deskRuleTable.js            12 ✅                       1312ms
+FAIL  deskRules.js                13 ✅  10 ❌               70653ms
+  ok  deskRulesAtGo.js             7 ✅                       1118ms
+FAIL  deskRulesTab.js              9 ✅   1 ❌                 151ms
+  ok  deskSearchLines.js           6 ✅                       1108ms
+  ok  deskSearches.js             10 ✅                       1065ms
+  ok  deskServer.js               13 ✅                       2329ms
+  ok  deskSignoffGrants.js        12 ✅                       1092ms
+  ok  deskSmallFixes.js           18 ✅                       1034ms
+  ok  deskSplitGreen.js           10 ✅                       1071ms
+  ok  deskSplitRelation.js         9 ✅                        910ms
+FAIL  deskStacksDialog.js         25 ✅   2 ❌                8829ms
+  ok  deskStacksDoorSearch.js      6 ✅                       1886ms
+  ok  deskState.js                25 ✅                       1105ms
+FAIL  deskStatusActivity.js       21 ✅   1 ❌                1918ms
+FAIL  deskSword.js                 7 ✅   1 ❌                 129ms
+FAIL  deskTables.js               40 ✅   5 ❌               13155ms
+  ok  deskTakeToAnswer.js          8 ✅                       1454ms
+  ok  deskVerbListingSlash.js     20 ✅                        169ms
+  ok  deskVerifyCommitBound.js     4 ✅                       1439ms
+  ok  deskVerifyDataset.js        14 ✅                       3035ms
+FAIL  deskVerifyDriven.js         36 ✅  24 ❌              101420ms
+FAIL  deskVerifyFixes.js          34 ✅  11 ❌               26087ms
+FAIL  deskVerifyFull.js            3 ✅   1 ❌                1849ms
+FAIL  deskVerifyLive.js           12 ✅   5 ❌                4358ms
+  ok  deskVerifyModes.js           5 ✅                       1338ms
+  ok  deskVerifyRunsSearch.js      6 ✅                       1113ms
+  ok  deskVerifyStopTree.js        7 ✅                      11666ms
+  ok  deskVerifyTab.js            12 ✅                       3147ms
+  ok  deskVision.js               24 ✅                       1357ms
+  ok  deskWaive.js                19 ✅                       1154ms
+  ok  deskWhileBackup.js           2 ✅                       8079ms
+  ok  deskWorking.js               3 ✅                        112ms
+  ok  deskWriterKey.js             7 ✅                       1256ms
+FAIL  deviceGone.js                1 ✅   1 ❌                 194ms
+FAIL  dialogClose.js               0 ✅   ? ❌                  66ms
+  ok  discBound.js                 9 ✅                       1660ms
+  ok  discFull.js                 12 ✅                        535ms
+  ok  diskClient.js               10 ✅                       1104ms
+FAIL  doorContract.js              8 ✅   2 ❌                 153ms
+FAIL  everyVerb.js                 0 ✅   ? ❌              180021ms
+FAIL  faceApply.js                18 ✅   3 ❌                1495ms
+FAIL  faceDevices.js               1 ✅   5 ❌                 444ms
+FAIL  faceFixes.js                 3 ✅   5 ❌                1574ms
+FAIL  faceHome.js                  3 ✅   5 ❌                 669ms
+  ok  faceKeys.js                  3 ✅                        239ms
+FAIL  faceLogin.js                10 ✅   4 ❌                 723ms
+  ok  faceRouteSuite.js            6 ✅                        120ms
+FAIL  faceSealed.js                2 ✅   5 ❌                 741ms
+FAIL  faceStream.js                3 ✅   5 ❌                 362ms
+  ok  faceUpload.js                4 ✅                        562ms
+FAIL  fieldRules.js               25 ✅   1 ❌                1293ms
   ok  fileBottom.js                9 ✅                        358ms
-  ok  fileCap.js                   5 ✅                        476ms
-  ok  fileCore.js                 12 ✅                       1447ms
-  ok  fileFetch.js                11 ✅                        984ms
-  ok  fileIntrinsic.js             2 ✅                        821ms
-  ok  fileOneLabel.js              7 ✅                        949ms
-  ok  fileSlots.js                 7 ✅                       2339ms
-FAIL  filesContentsSearch.js      19 ✅   2 ❌                 264ms
-  ok  filesSharedList.js          13 ✅                       4820ms
-  ok  filesViewers.js             10 ✅                        111ms
-  ok  firstOwner.js               12 ✅                        915ms
-  ok  fixedAllowance.js            6 ✅                       1191ms
-  ok  forwardKey.js                4 ✅                        581ms
-  ok  frontDoor.js                18 ✅                       5794ms
-  ok  fsOwnerUnlimited.js         16 ✅                       2060ms
-  ok  fsWatcherCommands.js        15 ✅                       8122ms
-  ok  fsWatcherConsole.js          7 ✅                       1129ms
-  ok  fsWatcherQuiet.js            5 ✅                       3749ms
-FAIL  gitHelpersOwnOnly.js        14 ✅   4 ❌               35847ms
-FAIL  goalShare.js                10 ✅   4 ❌               20493ms
-FAIL  grantsApp.js                 2 ✅   1 ❌                 110ms
-FAIL  grantsSharedList.js         11 ✅  14 ❌                1010ms
-FAIL  guarantees.js               10 ✅   1 ❌                1115ms
-  ok  harnessAppSuites.js          5 ✅                        327ms
-  ok  harnessRetry.js              4 ✅                         95ms
-  ok  heldStranger.js             11 ✅                       2829ms
-FAIL  hostHardening.js            45 ✅   1 ❌                 118ms
-  ok  htmlEscaping.js             29 ✅                        115ms
-  ok  hubPost.js                  14 ✅                       1628ms
-  ok  hygieneG19_11.js            29 ✅                       1445ms
-FAIL  iconIndex.js                29 ✅   2 ❌                 116ms
-  ok  iconsAddKnown.js             4 ✅                        173ms
-  ok  identityAtBoot.js           11 ✅                       4867ms
-  ok  identityPerception.js       26 ✅                       2461ms
-FAIL  introSpectorApp.js          17 ✅   1 ❌                 597ms
-  ok  introSpectorFamily.js        9 ✅                        627ms
-  ok  introSpectorNode.js         14 ✅                        118ms
-  ok  introspectSearch.js         13 ✅                        100ms
-  ok  introspectionCleanup.js     26 ✅                        184ms
-  ok  inviteLock.js                5 ✅                        518ms
-  ok  inviteMint.js               21 ✅                       2301ms
-  ok  inviteRedeem.js              8 ✅                        607ms
-  ok  inviteSpeakable.js          15 ✅                       1530ms
-  ok  invites.js                  26 ✅                       1808ms
-FAIL  jobCallback.js              20 ✅   2 ❌               14484ms
-FAIL  jobCycle.js                 14 ✅   3 ❌                 993ms
-FAIL  jobsApiGone.js              13 ✅   1 ❌                 235ms
-  ok  jobsAuth.js                 14 ✅                       2531ms
-  ok  jobsCleanUp.js              10 ✅                       5181ms
-  ok  jobsDetails.js              20 ✅                        181ms
-FAIL  jobsLifecycle.js             5 ✅   2 ❌                 172ms
-  ok  jobsSearch.js               39 ✅                       1546ms
-  ok  joinOnboarding.js           40 ✅                       2571ms
-  ok  joinSteps.js                18 ✅                       1308ms
-  ok  keyPermissions.js            4 ✅                        100ms
-  ok  labGone.js                   3 ✅                        232ms
-FAIL  labHome.js                   0 ✅   1 ❌                 248ms
-  ok  labLifecycle.js              0 ✅                1 ⏭     314ms
-  ok  labPanel.js                 14 ✅                        122ms
-  ok  labPersistence.js            0 ✅                1 ⏭     286ms
-  ok  labRefusals.js               0 ✅                1 ⏭     256ms
-  ok  labRelaySurface.js           0 ✅                1 ⏭     147ms
-  ok  labRunLock.js               10 ✅                        517ms
-  ok  labServableStatic.js         0 ✅                1 ⏭     172ms
-  ok  labelIsOwned.js             22 ✅                       2616ms
-  ok  labelShape.js               20 ✅                       2069ms
-  ok  lever.js                    26 ✅                        121ms
-  ok  listElements.js             11 ✅                        119ms
-  ok  listSearch.js               19 ✅                        645ms
-  ok  listSearchModes.js          16 ✅                        181ms
-  ok  listeningApp.js             15 ✅                        230ms
-  ok  liveFrontDoor.js             0 ✅                1 ⏭     323ms
-  ok  logIndexes.js                7 ✅                      22614ms
-  ok  logMigration.js              7 ✅                       1584ms
-  ok  logTable.js                  4 ✅                        926ms
-  ok  memberBroadcast.js           6 ✅                        759ms
-  ok  memberCard.js                8 ✅                        747ms
-  ok  moduleIds.js                 5 ✅                        523ms
-  ok  monitorApp.js               38 ✅                        139ms
-  ok  natterDetails.js            72 ✅                        204ms
-  ok  natterShellFixes.js         23 ✅                       2026ms
-  ok  netFence.js                 20 ✅                       1539ms
-  ok  noCoalescing.js              3 ✅                         88ms
-  ok  noKeylessNode.js             6 ✅                       1038ms
-  ok  nodeCardSigned.js           17 ✅                        185ms
-  ok  nodeInfo.js                 55 ✅                       4724ms
-  ok  nodeServerSettings.js        9 ✅                        872ms
-  ok  nodeSettings.js             11 ✅                        848ms
-  ok  nodeStore.js                32 ✅                      18256ms
-  ok  noderoutesAlive.js           3 ✅                        329ms
-  ok  oldSearchGone.js             6 ✅                        274ms
-  ok  oneDeclaration.js            2 ✅                        180ms
-FAIL  oneDecoder.js                8 ✅   2 ❌                 177ms
-FAIL  oneDoor.js                   0 ✅   ? ❌                 103ms
-  ok  oneNodeName.js               8 ✅                       2790ms
-  ok  oversize.js                 13 ✅                       1668ms
-  ok  ownStateFolder.js            6 ✅                        208ms
-  ok  ownerAtInstall.js           20 ✅                       1233ms
-  ok  ownerCommand.js             10 ✅                        124ms
-  ok  ownerFile.js                17 ✅                       1011ms
-  ok  ownerLog.js                 37 ✅                       6744ms
-  ok  ownerPost.js                 7 ✅                        412ms
-  ok  ownerToken.js                1 ✅                        699ms
-  ok  packet.js                   34 ✅                        311ms
-  ok  pathCanonicalization.js    100 ✅                        119ms
-  ok  pathJail.js                 13 ✅                         82ms
-  ok  payloadCeiling.js            6 ✅                        687ms
-  ok  peerFile.js                 16 ✅                        259ms
-  ok  peerPost.js                 48 ✅                      13784ms
-  ok  peerPostWiring.js            3 ✅                        107ms
-  ok  peerSearchShared.js         16 ✅                        114ms
-  ok  peerStats.js                20 ✅                        164ms
-  ok  postQueue.js                28 ✅                        101ms
-  ok  postQueueBusyAdaptive.js     4 ✅                        109ms
-  ok  postWaitFields.js            5 ✅                       2073ms
-  ok  presenceFeeding.js          17 ✅                       2080ms
-  ok  presenceLearned.js           7 ✅                       3167ms
-  ok  presenceNode.js             42 ✅                       5763ms
-FAIL  presenceProof.js             9 ✅   1 ❌                1100ms
-  ok  presenceReconcile.js        11 ✅                       2460ms
-  ok  presenceStream.js           25 ✅                        808ms
-  ok  presenceWire.js             10 ✅                       8755ms
-  ok  probabilityBucket.js        12 ✅                         96ms
-  ok  probabilitySearch.js         3 ✅                        134ms
-  ok  probabilityStringMatch.js   13 ✅                        104ms
-  ok  probabilityStringObjectMatch.js   8 ✅                        107ms
-FAIL  processBrowserGone.js        4 ✅   1 ❌                 151ms
-  ok  processPipe.js               6 ✅                        360ms
-FAIL  protocolSurface.js          12 ✅   1 ❌                 106ms
-  ok  puppetCommands.js            4 ✅                        347ms
-  ok  puppetDoor.js               10 ✅                        662ms
-  ok  puppetStream.js             12 ✅                        421ms
-  ok  puppetsPending.js            7 ✅          2 ⏳           118ms
-  ok  pushOrigin.js               10 ✅                       4223ms
-  ok  queueRestart.js              9 ✅                       2814ms
-  ok  queueUnderLoad.js            6 ✅                      10617ms
-FAIL  receiptBindsReply.js         5 ✅   4 ❌                 177ms
-  ok  refusalCodes.js              6 ✅                       1098ms
-  ok  relayAdd.js                  4 ✅                        103ms
-  ok  relayCannotRead.js           7 ✅                        684ms
-  ok  relayCompact.js              6 ✅                        471ms
-  ok  relayConfig.js              20 ✅                         66ms
-  ok  relayConfigWire.js          13 ✅                      16552ms
-  ok  relayForwardedAddress.js     8 ✅                        101ms
-  ok  relayGates.js               11 ✅                       3623ms
-  ok  relayHashDiffers.js          4 ✅                       1565ms
-  ok  relayIntrospection.js       12 ✅                        847ms
-  ok  relayKeyDoor.js             14 ✅                      17854ms
-  ok  relayKeys.js                18 ✅                       2194ms
-  ok  relayLimits.js              24 ✅                        117ms
-  ok  relayLimitsTool.js          12 ✅                        127ms
-FAIL  relayListIsNodeState.js     19 ✅   3 ❌                1466ms
-  ok  relayListNoCall.js          14 ✅                       1239ms
-  ok  relayMeter.js               21 ✅                       1961ms
-  ok  relayMonitor.js             23 ✅                       5362ms
-  ok  relayOwnerContacts.js        8 ✅                       2355ms
-  ok  relayRamRaise.js            10 ✅                       1219ms
-  ok  relayReconfigure.js         22 ✅                       6126ms
-  ok  relayRecord.js              29 ✅                      47167ms
-  ok  relaySearch.js               8 ✅                        967ms
-  ok  relaySearchMatcher.js       12 ✅                       6184ms
-  ok  relaySeats.js                8 ✅                       2721ms
-  ok  relayStatus.js              15 ✅                        647ms
-  ok  relayStore.js               22 ✅                       1636ms
-  ok  relayStrangerDoor.js        35 ✅                      40838ms
-  ok  relayTableByKey.js          28 ✅                       3241ms
-  ok  removePeer.js               18 ✅                       2261ms
-  ok  replayIndex.js               9 ✅                       3815ms
-  ok  replyCap.js                  3 ✅                        583ms
-FAIL  reviewCleanup.js            11 ✅   1 ❌                 249ms
-  ok  rollNarrow.js               10 ✅                        199ms
-  ok  rootTestFolder.js           38 ✅                       1368ms
-  ok  routeStash.js               11 ✅                       3966ms
-  ok  router.js                   30 ✅                         88ms
-  ok  routerPost.js               19 ✅                        717ms
-FAIL  rowElements.js               1 ✅   2 ❌                 124ms
-  ok  ruleDetails.js              12 ✅                        112ms
-  ok  runSpiritFolder.js          10 ✅                       1478ms
-FAIL  runStandsAlone.js            2 ✅   4 ❌                 202ms
-  ok  seal.js                     15 ✅                        117ms
-  ok  sealKeys.js                 12 ✅                        151ms
-  ok  sealedDerivation.js          9 ✅                        195ms
-  ok  sealedLayering.js            5 ✅                       1230ms
-FAIL  searchMemory.js             13 ✅   1 ❌                6201ms
-  ok  seatsKept.js                38 ✅                       6094ms
-  ok  seenPeers.js                16 ✅                      29439ms
-  ok  selfTargetCapacity.js        7 ✅                       1567ms
-  ok  servableAssets.js           80 ✅                        133ms
-  ok  serverKinds.js               6 ✅                       5176ms
-  ok  serverSurface.js            27 ✅                       3550ms
-  ok  sharedLimit.js               5 ✅                       1727ms
-FAIL  shellAppNeedsServer.js       0 ✅   ? ❌                 125ms
-  ok  shellElements.js             8 ✅                        132ms
-  ok  shellRename.js               3 ✅                       6147ms
-  ok  shellStreamSenders.js       20 ✅                       1106ms
-  ok  shutdownWire.js              9 ✅                       5333ms
-  ok  silentNoMore.js              5 ✅                        403ms
-FAIL  spiritAtRunRoot.js          16 ✅   4 ❌                1918ms
-  ok  spiritDataSearch.js          4 ✅                        186ms
-FAIL  spiritErrors.js             13 ✅   2 ❌                 166ms
-  ok  spiritInUse.js               5 ✅                       2716ms
-  ok  spiritNamespace.js           4 ✅                        159ms
-FAIL  spiritObject.js              4 ✅   4 ❌                 106ms
-FAIL  spiritServers.js             8 ✅   2 ❌                 128ms
-FAIL  stackFrameTestItems.js       5 ✅   2 ❌                 103ms
-  ok  stackFrameViolators.js      18 ✅                        125ms
-  ok  stalledReader.js            12 ✅                       2604ms
-  ok  storeImport.js               9 ✅                        696ms
-  ok  storeOwnership.js           11 ✅                        314ms
-  ok  storeSheds.js                6 ✅                      76005ms
-  ok  streamHeaderNamesRelay.js    7 ✅                       1049ms
-FAIL  streamReconnect.js           0 ✅   1 ❌                 115ms
-  ok  streamSig.js                20 ✅                       1326ms
-  ok  targetBusy.js                6 ✅                       3940ms
-  ok  testHome.js                  2 ✅                       1981ms
-FAIL  textViewCodeMirror.js       19 ✅   1 ❌                 329ms
-  ok  trafficLog.js               23 ✅                       8043ms
-  ok  transportPending.js          0 ✅          2 ⏳           107ms
-  ok  vaultGuardBattery.js         0 ✅                1 ⏭      99ms
-  ok  verbTable.js                13 ✅                        101ms
-FAIL  verifiedEmail.js            17 ✅   1 ❌                2457ms
-  ok  worldBuilder.js             22 ✅                       4227ms
-  ok  writableRoots.js            12 ✅                        126ms
-  ok  wslDesktop.js               10 ✅                         93ms
-FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
+  ok  fileCap.js                   5 ✅                        491ms
+FAIL  fileCore.js                  8 ✅   1 ❌                1069ms
+FAIL  fileFetch.js                 5 ✅   6 ❌               90680ms
+  ok  fileIntrinsic.js             2 ✅                        768ms
+  ok  fileOneLabel.js              7 ✅                        942ms
+  ok  fileSlots.js                 7 ✅                       1982ms
+FAIL  filesContentsSearch.js      10 ✅   1 ❌                 212ms
+FAIL  filesSharedList.js           4 ✅   1 ❌                4824ms
+  ok  filesViewers.js             10 ✅                        154ms
+  ok  firstOwner.js               12 ✅                        715ms
+  ok  fixedAllowance.js            6 ✅                        922ms
+  ok  forwardKey.js                4 ✅                        677ms
+  ok  frontDoor.js                18 ✅                       5271ms
+FAIL  fsOwnerUnlimited.js         11 ✅   1 ❌                2048ms
+FAIL  fsWatcherCommands.js        13 ✅   2 ❌               16102ms
+FAIL  fsWatcherConsole.js          0 ✅   1 ❌                 122ms
+  ok  fsWatcherQuiet.js            5 ✅                       3767ms
+FAIL  gitHelpersOwnOnly.js        14 ✅   4 ❌               35355ms
+FAIL  goalShare.js                10 ✅   4 ❌               20286ms
+FAIL  grantsApp.js                 2 ✅   1 ❌                 138ms
+FAIL  grantsSharedList.js          6 ✅   9 ❌                 733ms
+FAIL  guarantees.js               10 ✅   1 ❌                1104ms
+  ok  harnessAppSuites.js          5 ✅                        301ms
+  ok  harnessRetry.js              4 ✅                        104ms
+  ok  heldStranger.js             11 ✅                       2762ms
+FAIL  hostHardening.js            45 ✅   1 ❌                 130ms
+  ok  htmlEscaping.js             29 ✅                         96ms
+  ok  hubPost.js                  14 ✅                       1009ms
+  ok  hygieneG19_11.js            29 ✅                       1449ms
+FAIL  iconIndex.js                29 ✅   2 ❌                 109ms
+FAIL  iconsAddKnown.js             1 ✅   3 ❌                 175ms
+  ok  identityAtBoot.js           11 ✅                       4693ms
+  ok  identityPerception.js       25 ✅                       2562ms
+FAIL  introSpectorApp.js          17 ✅   1 ❌                 867ms
+  ok  introSpectorFamily.js        9 ✅                        662ms
+  ok  introSpectorNode.js         14 ✅                        102ms
+  ok  introspectSearch.js         13 ✅                         66ms
+  ok  introspectionCleanup.js     26 ✅                        207ms
+  ok  inviteLock.js                5 ✅                        565ms
+  ok  inviteMint.js               21 ✅                       1930ms
+  ok  inviteRedeem.js              8 ✅                        578ms
+  ok  inviteSpeakable.js          15 ✅                       1330ms
+  ok  invites.js                  26 ✅                       1746ms
+FAIL  jobCallback.js              10 ✅  12 ❌               28765ms
+FAIL  jobCycle.js                  0 ✅  17 ❌                 356ms
+FAIL  jobsApiGone.js              12 ✅   2 ❌                 279ms
+  ok  jobsAuth.js                 14 ✅                       2168ms
+FAIL  jobsCleanUp.js               9 ✅   1 ❌                7929ms
+FAIL  jobsDetails.js               2 ✅   3 ❌                 166ms
+FAIL  jobsLifecycle.js             5 ✅   2 ❌                 176ms
+FAIL  jobsSearch.js                9 ✅   1 ❌                 119ms
+FAIL  joinOnboarding.js           31 ✅   9 ❌                1897ms
+FAIL  joinSteps.js                11 ✅   7 ❌                 808ms
+  ok  keyPermissions.js            4 ✅                        143ms
+  ok  labGone.js                   3 ✅                        241ms
+FAIL  labHome.js                   0 ✅   1 ❌                 250ms
+  ok  labLifecycle.js              0 ✅                1 ⏭     207ms
+  ok  labPanel.js                 14 ✅                        117ms
+  ok  labPersistence.js            0 ✅                1 ⏭     303ms
+  ok  labRefusals.js               0 ✅                1 ⏭     228ms
+  ok  labRelaySurface.js           0 ✅                1 ⏭     202ms
+FAIL  labRunLock.js                7 ✅   1 ❌                 333ms
+  ok  labServableStatic.js         0 ✅                1 ⏭     141ms
+  ok  labelIsOwned.js             22 ✅                       2964ms
+  ok  labelShape.js               20 ✅                       2063ms
+  ok  lever.js                    26 ✅                        103ms
+  ok  listElements.js             11 ✅                        158ms
+  ok  listSearch.js               19 ✅                        700ms
+FAIL  listSearchModes.js           0 ✅   1 ❌                 111ms
+FAIL  listeningApp.js              0 ✅   ? ❌                 143ms
+  ok  liveFrontDoor.js             0 ✅                1 ⏭     364ms
+  ok  logIndexes.js                7 ✅                      20851ms
+  ok  logMigration.js              7 ✅                       1628ms
+  ok  logTable.js                  4 ✅                        826ms
+  ok  memberBroadcast.js           6 ✅                        755ms
+  ok  memberCard.js                8 ✅                        762ms
+FAIL  moduleIds.js                 4 ✅   1 ❌                 487ms
+  ok  monitorApp.js               38 ✅                        106ms
+FAIL  natterDetails.js             0 ✅   ? ❌                 101ms
+FAIL  natterShellFixes.js         18 ✅   5 ❌                1912ms
+  ok  netFence.js                 20 ✅                       1194ms
+FAIL  noCoalescing.js              2 ✅   1 ❌                 124ms
+  ok  noKeylessNode.js             6 ✅                       1078ms
+  ok  nodeCardSigned.js           17 ✅                        197ms
+FAIL  nodeInfo.js                  0 ✅   ? ❌                 133ms
+  ok  nodeServerSettings.js        9 ✅                        812ms
+  ok  nodeSettings.js              9 ✅                        833ms
+  ok  nodeStore.js                32 ✅                      16374ms
+FAIL  noderoutesAlive.js           0 ✅   3 ❌               28811ms
+  ok  oldSearchGone.js             6 ✅                        316ms
+FAIL  oneDeclaration.js            1 ✅   1 ❌                 176ms
+FAIL  oneDecoder.js                8 ✅   2 ❌                 160ms
+FAIL  oneDoor.js                   0 ✅   ? ❌                 171ms
+  ok  oneNodeName.js               8 ✅                       2487ms
+  ok  oversize.js                 13 ✅                       1550ms
+  ok  ownStateFolder.js            6 ✅                        223ms
+  ok  ownerAtInstall.js           20 ✅                       1162ms
+  ok  ownerCommand.js             10 ✅                        154ms
+  ok  ownerFile.js                17 ✅                        956ms
+  ok  ownerLog.js                 37 ✅                       6285ms
+  ok  ownerPost.js                 7 ✅                        420ms
+  ok  ownerToken.js                1 ✅                        799ms
+  ok  packet.js                   34 ✅                        264ms
+  ok  pathCanonicalization.js    100 ✅                        132ms
+  ok  pathJail.js                 13 ✅                         97ms
+  ok  payloadCeiling.js            6 ✅                        657ms
+  ok  peerFile.js                 16 ✅                        234ms
+  ok  peerPost.js                 48 ✅                      12853ms
+  ok  peerPostWiring.js            3 ✅                        146ms
+  ok  peerSearchShared.js         16 ✅                        137ms
+  ok  peerStats.js                20 ✅                        179ms
+  ok  postQueue.js                28 ✅                        132ms
+  ok  postQueueBusyAdaptive.js     4 ✅                        100ms
+  ok  postWaitFields.js            5 ✅                       2019ms
+  ok  presenceFeeding.js          17 ✅                       2079ms
+  ok  presenceLearned.js           7 ✅                       2822ms
+  ok  presenceNode.js             42 ✅                       5224ms
+FAIL  presenceProof.js             9 ✅   1 ❌                 983ms
+  ok  presenceReconcile.js        11 ✅                       2467ms
+  ok  presenceStream.js           25 ✅                        785ms
+  ok  presenceWire.js             10 ✅                       8671ms
+  ok  probabilityBucket.js        12 ✅                        141ms
+  ok  probabilitySearch.js         3 ✅                        156ms
+  ok  probabilityStringMatch.js   13 ✅                        106ms
+  ok  probabilityStringObjectMatch.js   8 ✅                        101ms
+FAIL  processBrowserGone.js        4 ✅   1 ❌                 171ms
+  ok  processPipe.js               6 ✅                        291ms
+FAIL  protocolSurface.js          12 ✅   1 ❌                  75ms
+  ok  puppetCommands.js            4 ✅                        332ms
+  ok  puppetDoor.js               10 ✅                        687ms
+  ok  puppetStream.js             12 ✅                        383ms
+FAIL  puppetsPending.js            7 ✅   1 ❌   1 ⏳           109ms
+  ok  pushOrigin.js               10 ✅                       4022ms
+  ok  queueRestart.js              9 ✅                       2843ms
+  ok  queueUnderLoad.js            6 ✅                      10433ms
+FAIL  receiptBindsReply.js         5 ✅   4 ❌                 152ms
+  ok  refusalCodes.js              6 ✅                        977ms
+  ok  relayAdd.js                  4 ✅                        105ms
+  ok  relayCannotRead.js           7 ✅                        638ms
+  ok  relayCompact.js              6 ✅                        450ms
+  ok  relayConfig.js              20 ✅                        117ms
+  ok  relayConfigWire.js          13 ✅                      16468ms
+  ok  relayForwardedAddress.js     8 ✅                        121ms
+  ok  relayGates.js               11 ✅                       3078ms
+  ok  relayHashDiffers.js          4 ✅                       1894ms
+  ok  relayIntrospection.js       12 ✅                        835ms
+  ok  relayKeyDoor.js             14 ✅                      18345ms
+  ok  relayKeys.js                15 ✅                       2122ms
+  ok  relayLimits.js              24 ✅                         99ms
+  ok  relayLimitsTool.js          12 ✅                        146ms
+FAIL  relayListIsNodeState.js     19 ✅   3 ❌                1575ms
+  ok  relayListNoCall.js          15 ✅                       1271ms
+  ok  relayMeter.js               21 ✅                       1922ms
+  ok  relayMonitor.js             23 ✅                       5738ms
+  ok  relayOwnerContacts.js        8 ✅                       2605ms
+  ok  relayRamRaise.js            10 ✅                       1282ms
+  ok  relayReconfigure.js         22 ✅                       6291ms
+  ok  relayRecord.js              29 ✅                      46868ms
+  ok  relaySearch.js              10 ✅                       1048ms
+  ok  relaySearchMatcher.js       11 ✅                       6194ms
+  ok  relaySeats.js                8 ✅                       2846ms
+  ok  relayStatus.js              15 ✅                        638ms
+  ok  relayStore.js               22 ✅                       1718ms
+  ok  relayStrangerDoor.js        35 ✅                      40680ms
+  ok  relayTableByKey.js          26 ✅                       2731ms
+  ok  removePeer.js               18 ✅                       2228ms
+  ok  replayIndex.js               9 ✅                       3749ms
+  ok  replyCap.js                  3 ✅                        588ms
+FAIL  reviewCleanup.js            11 ✅   1 ❌                 236ms
+  ok  rollNarrow.js               10 ✅                        237ms
+  ok  rootTestFolder.js           48 ✅                       3295ms
+  ok  routeStash.js               11 ✅                       3787ms
+  ok  router.js                   30 ✅                        128ms
+  ok  routerPost.js               19 ✅                        839ms
+FAIL  rowElements.js               1 ✅   2 ❌                 107ms
+  ok  ruleDetails.js              12 ✅                        107ms
+FAIL  runSpiritFolder.js           9 ✅   1 ❌                1693ms
+FAIL  runStandsAlone.js            2 ✅   4 ❌                 176ms
+  ok  seal.js                     15 ✅                        110ms
+  ok  sealKeys.js                 12 ✅                        131ms
+  ok  sealedDerivation.js          9 ✅                        214ms
+  ok  sealedLayering.js            5 ✅                       1123ms
+  ok  searchMemory.js             12 ✅                       6568ms
+FAIL  seatsKept.js                23 ✅   1 ❌                3738ms
+  ok  seenPeers.js                16 ✅                      27834ms
+  ok  selfTargetCapacity.js        7 ✅                       1665ms
+FAIL  servableAssets.js           78 ✅   2 ❌                 190ms
+  ok  serverKinds.js               6 ✅                       5251ms
+FAIL  serverSurface.js            25 ✅   2 ❌                3272ms
+FAIL  sharedLimit.js               3 ✅   2 ❌                1710ms
+FAIL  shellAppNeedsServer.js       0 ✅   ? ❌                 121ms
+FAIL  shellElements.js             0 ✅   ? ❌                 129ms
+  ok  shellRename.js               3 ✅                       6017ms
+FAIL  shellStreamSenders.js        0 ✅   1 ❌                 100ms
+  ok  shutdownWire.js              9 ✅                       5179ms
+FAIL  silentNoMore.js              0 ✅   1 ❌                 117ms
+FAIL  spiritAtRunRoot.js          15 ✅   5 ❌                1778ms
+  ok  spiritDataSearch.js          4 ✅                        133ms
+FAIL  spiritErrors.js             13 ✅   2 ❌                 150ms
+  ok  spiritInUse.js              91 ✅                       9718ms
+  ok  spiritNamespace.js           4 ✅                        193ms
+FAIL  spiritObject.js              4 ✅   4 ❌                  71ms
+FAIL  spiritServers.js             8 ✅   2 ❌                  86ms
+FAIL  stackFrameTestItems.js       5 ✅   2 ❌                  60ms
+  ok  stackFrameViolators.js      18 ✅                        152ms
+  ok  stalledReader.js            12 ✅                       2379ms
+  ok  storeImport.js               9 ✅                        602ms
+  ok  storeOwnership.js           11 ✅                        233ms
+  ok  storeSheds.js                6 ✅                      78247ms
+  ok  streamHeaderNamesRelay.js    7 ✅                       1020ms
+FAIL  streamReconnect.js           0 ✅   1 ❌                 119ms
+  ok  streamSig.js                20 ✅                       1213ms
+  ok  targetBusy.js                6 ✅                       3947ms
+  ok  testHome.js                  2 ✅                       1948ms
+FAIL  textViewCodeMirror.js       13 ✅   7 ❌                 345ms
+  ok  trafficLog.js               23 ✅                       7813ms
+  ok  transportPending.js          0 ✅          2 ⏳           131ms
+  ok  vaultGuardBattery.js         0 ✅                1 ⏭     111ms
+  ok  verbTable.js                13 ✅                         98ms
+FAIL  verifiedEmail.js             7 ✅  11 ❌                2239ms
+  ok  worldBuilder.js             22 ✅                       3774ms
+  ok  writableRoots.js            12 ✅                        133ms
+  ok  wslDesktop.js               10 ✅                        126ms
+FAIL  visualScenarios.js           7 ✅   1 ❌                1832ms
 
 --- RED: something that used to hold does not. These are unmet assertions or suites that died — not the awaiting group below, which is work nobody has written yet.
 
 --- answersCarryMore.js
-    ***   FAILURE #1.1: owed by goal/G4.19: deskAgentEar item.get exited 1: deskAgentEar: 0 null ❌
-    ***   FAILURE #1.2: owed by goal/G4.19: deskAgentEar item.chat exited 1: deskAgentEar: 0 null ❌
+    ***   FAILURE #1.1: owed by goal/G4.19: deskClient.desk item.get answered 200 with keys ["ok","code","error"] ❌
+    ***   FAILURE #1.2: owed by goal/G4.19: an item.chat read of the long chat answered 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"} ❌
+    ***   FAILURE #1.3: owed by goal/G4.19: deskAgentEar item.get exited 1: deskAgentEar: 0 null ❌
+    ***   FAILURE #1.4: owed by goal/G4.19: deskAgentEar item.chat exited 1: deskAgentEar: 0 null ❌
+
+--- appReferences.js
+    ***   FAILURE #1.1: shell.js (INTRINSIC_APP_FOLDERS and the app id renames) names shell/contactsDetails, which is not on disk ❌
 
 --- appServerStream.js
-    ***   FAILURE #1.1: OWED by goal/G33.8 (stream): sub answered {"subscribed":true}; granted false; bootstrap heard true ❌
-    ***   FAILURE #1.2: OWED by goal/G33.8 (stream): after the restart the follower heard [{"said":"for the follower","to":["MCowBQYDK2VwAyEAappServerStreamTestFollowerAAAAAAAAAAAAAAAA="]},{"said":"boot"},{"said":"back again"}] ❌
+    ***   FAILURE #1.1: OWED by goal/G33.8 (stream): sub answered {"subscribed":false}; granted false; bootstrap heard false ❌
+    ***   FAILURE #1.2: OWED by goal/G33.8 (stream): the subscriber heard []; the pages got [] ❌
+    ***   FAILURE #1.3: OWED by goal/G33.8 (stream): the follower's spirit.data holds {} ❌
+    ***   FAILURE #1.4: OWED by goal/G33.8 (stream): the row to the follower arrived false, the row to a stranger arrived false ❌
+    ***   FAILURE #1.5: OWED by goal/G33.8 (stream): while away it heard false; after subscribing again false ❌
+    ***   FAILURE #1.6: OWED by goal/G33.8 (stream): after the restart the follower heard [] ❌
 
 --- appsApp.js
-    ***   FAILURE #1.1: OWED by goal/G33.1: saveFile refused answered [{"threw":"S.createSpirit is not a function"}] ❌
+    ***   FAILURE #1.1: OWED by goal/G30.21: iconSet.json: 0 keys (missing) ❌
+    ***   FAILURE #1.2: OWED by goal/G33.1: saveFile refused answered [{"threw":"S.createSpirit is not a function"}] ❌
 
---- arrivals.js
+--- arrivals.js never reported (exit 1)
     ***   FAILURE #1.1: kept: [] ❌
+    TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at theLastHop (/tmp/spirit-publish-tree-F5DPls/spirit/test/arrivals.js:573:3), <anonymous>:2883:17)
+        at eval (eval at theLastHop (/tmp/spirit-publish-tree-F5DPls/spirit/test/arrivals.js:573:3), <anonymous>:2968:3)
+        at theLastHop (/tmp/spirit-publish-tree-F5DPls/spirit/test/arrivals.js:573:42)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/arrivals.js:494:7
 
 --- authWorld.js
-    ***   FAILURE #1.1: OWED by apiAuth/G1.0: the auth world did not build: {"ok":false,"error":"the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_ ❌
+    ***   FAILURE #1.1: OWED by apiAuth/G1.0: the auth world did not build: {"ok":false,"error":"the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_ ❌
+
+--- bodiesJoinedOnce.js
+    ***   FAILURE #1.1: OWED by goal/G16.6: the red itself tripped: TypeError: Cannot read properties of undefined (reading 'report')
+        at suite (/tmp/spirit-publish-tree-F5DPls/spirit/test/bodiesJoinedOnce.js:149:37)
 
 --- capacityFresh.js
     ***   FAILURE #1.1: FIGURES THAT CANNOT DEPEND ON THE BOX DISAGREE ACROSS BOXES. Either a schema change landed on one box and not the other, or one of these is not box-independent and capacityKinds.js is wrong: perMemberRowBytesUncarded: claude-ubuntu=206, claude-windows=199, wsl-claude=206; cardBytes: claude-ubuntu=387, claude-windows=376, wsl-claude=387; perShadowRowBytes: claude-ubuntu=165, claude-windows=159, wsl-claude=165; perReachablePeerBytes: claude-ubuntu=585, claude-windows=579, wsl-claude=585 ❌
@@ -500,11 +519,12 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.1: OWED by goal/G4.19: capacityFresh.js fails: ***   FAILURE #1.1: FIGURES THAT CANNOT DEPEND ON THE BOX DISAGREE ACROSS BOXES. Either a schema change landed on one box and not the other, or one of these is  ❌
 
 --- chatClerverLines.js
-    ***   FAILURE #1.1: OWED by goal/G4.2: chat.read answered [{"sent":0,"seq":1,"at":"2026-10-25T23:44:39.465Z","text":"theirs, answering yours","receivedAt":"2026-10-25T23:44:39.468Z","re":{"writer":"MCowBQYDK2VwAyEAchatClerverLinesTestSelfAAAAAAAAAAAAAAAAAAA=","seq":1},"refused":""}] ❌
-    ***   FAILURE #1.2: OWED by goal/G4.2: publishes of my line 0, of theirs 1: [{"announce":{"name":"chatClerver","verbs":[{"verb":"DEBUG","request":"{on: false}","reply":"{debug: false}"},{"verb":"DEPENDENCIES","request":"{}","reply":"{paths: ['']}"},{"verb":"FS.annotateFile"," ❌
-    ***   FAILURE #1.3: OWED by goal/G4.2: to a slow peer line.write answered {"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}} after 3 ms ❌
-    ***   FAILURE #1.4: OWED by goal/G4.2: after the slow peer answered, the line reads [] ❌
-    ***   FAILURE #1.5: OWED by goal/G4.2: two writes at once answered [{"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}},{"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}}] ❌
+    ***   FAILURE #1.1: OWED by goal/G4.2: chat.read answered [{"sent":0,"seq":1,"at":"2026-10-26T06:38:59.518Z","text":"theirs, answering yours","receivedAt":"2026-10-26T06:38:59.521Z","re":{"writer":"MCowBQYDK2VwAyEAchatClerverLinesTestSelfAAAAAAAAAAAAAAAAAAA=","seq":1},"refused":""}] ❌
+    ***   FAILURE #1.2: OWED by goal/G4.2: publishes of my line 0, of theirs 0: [] ❌
+    ***   FAILURE #1.3: OWED by goal/G4.2: the line with an unknown re was published as null ❌
+    ***   FAILURE #1.4: OWED by goal/G4.2: to a slow peer line.write answered {"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}} after 4 ms ❌
+    ***   FAILURE #1.5: OWED by goal/G4.2: after the slow peer answered, the line reads [] ❌
+    ***   FAILURE #1.6: OWED by goal/G4.2: two writes at once answered [{"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}},{"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}}] ❌
 
 --- chatClerverWrite.js
     ***   FAILURE #1.1: OWED by goal/G4.6: to a blocked key: {"ok":false,"code":"no-answer","error":"no answer yet","extra":{"verb":"line.write"}}; granted false, posted 0 ❌
@@ -526,73 +546,95 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 
 --- chatter.js
     ***   FAILURE #1.1: owed by goal/G4.10 and G4.11: chatter did not mount: TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at mount (/tmp/spirit-publish-tree-5t50WR/spirit/test/chatter.js:292:8)
-        at main (/tmp/spirit-publish-tree-5t50WR/spirit/test/chatter.js:381:15)
+        at Object.spiritFor (/tmp/spirit-publish-tree-F5DPls/spirit/test/testSupport.js:520:24)
+        at mount (/tmp/spirit-publish-tree-F5DPls/spirit/test/chatter.js:292:8)
+        at main (/tmp/spirit-publish-tree-F5DPls/spirit/test/chatter.js:381:15)
+
+--- clientLayer.js
+    ***   FAILURE #1.1: browser-only, but still in js/ where a relay could load it: kernel.js — these belong in js/client/ ❌
+    ***   FAILURE #1.2: clientLayer threw: TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at mountShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/clientLayer.js:136:3), <anonymous>:2883:17)
+        at eval (eval at mountShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/clientLayer.js:136:3), <anonymous>:2968:3)
+        at mountShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/clientLayer.js:136:61)
+        at aPostAnswersInTheShapeTheProtocolHas (/tmp/spirit-publish-tree-F5DPls/spirit/test/clientLayer.js:179:17)
 
 --- contactLabel.js
-    ***   FAILURE #1.1: owed by goal/G4.13: the kernel handed onContactRename [] ❌
-    ***   FAILURE #1.2: owed by goal/G4.13: the red itself tripped: TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at thePage (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactLabel.js:194:8)
-        at main (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactLabel.js:349:9)
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactLabel.js:354:1)
+    ***   FAILURE #1.1: owed by goal/G4.13: the red itself tripped: TypeError: win.spirit.core.jobs.subscribe is not a function
+        at thePage (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactLabel.js:163:24)
+        at main (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactLabel.js:349:9)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactLabel.js:354:1)
 
 --- contactSearchTiers.js
-    ***   FAILURE #1.1: the suite threw S.assemble is not a function ❌
+    ***   FAILURE #1.1: OWED by goal/G30.19: face stream: row false, rename false in [] ❌
+    ***   FAILURE #1.2: the suite threw S.assemble is not a function ❌
+
+--- contactSelector.js never reported (exit 1)
+    Error: ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/natterDetails/natterDetails.js'
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactSelector.js:55:19)
 
 --- contactSelectorPane.js
     ***   FAILURE #1.1: owed by goal/G4.14: contactSelector.js did not load: S.assemble is not a function ❌
 
 --- contacts.js never reported (exit 1)
     TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at mountApp (/tmp/spirit-publish-tree-5t50WR/spirit/test/contacts.js:274:8)
-        at listsTheBook (/tmp/spirit-publish-tree-5t50WR/spirit/test/contacts.js:472:15)
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/contacts.js:1289:1)
+        at Object.spiritFor (/tmp/spirit-publish-tree-F5DPls/spirit/test/testSupport.js:520:24)
+        at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/contacts.js:274:8)
+        at listsTheBook (/tmp/spirit-publish-tree-F5DPls/spirit/test/contacts.js:472:15)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contacts.js:1289:1)
+
+--- contactsDetails.js never reported (exit 1)
+    Error: ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/contactsDetails/contactsDetails.json'
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsDetails.js:314:34)
 
 --- contactsFilter.js
     ***   FAILURE #1.1: OWED by goal/G2.7: the red itself tripped: TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at mountApp (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactsFilter.js:109:8)
-        at /tmp/spirit-publish-tree-5t50WR/spirit/test/contactsFilter.js:139:15
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactsFilter.js:173:3)
+        at Object.spiritFor (/tmp/spirit-publish-tree-F5DPls/spirit/test/testSupport.js:520:24)
+        at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsFilter.js:109:8)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/contactsFilter.js:139:15
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsFilter.js:173:3)
 
 --- contactsListSearch.js
     ***   FAILURE #1.1: OWED by goal/G29.6: the red itself tripped: TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at page (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactsListSearch.js:114:8)
-        at main (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactsListSearch.js:134:13)
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/contactsListSearch.js:225:2)
+        at Object.spiritFor (/tmp/spirit-publish-tree-F5DPls/spirit/test/testSupport.js:520:24)
+        at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsListSearch.js:116:8)
+        at main (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsListSearch.js:136:13)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/contactsListSearch.js:227:2)
 
 --- cycleCitations.js
     ***   FAILURE #1.1: bare R-numbers added — name the cycle beside the number ("gap R13", "cycle 3's R5"):
     ***   FAILURE #1.2: counts fell — lower the tally in the same commit, so the room is not reused:
 
+--- deskAdjustments.js
+    ***   FAILURE #1.1: OWED by goal/G33.8: the goal row <tr data-row="goal/G103" id="desk-row-goal/G103" data-goal="1" style="cursor:pointer;font-weight:bold;background:rgba(127,127,127,0.18);border-top:2px solid #888"> icon <td><span title="a goal"></span></td>; an item row <tr data-row="goal/G103.1" id="desk-row-goal/G103.1" style="cursor:pointer"> icon <td></td> ❌
+
 --- deskAgentAbort.js
-    ***   FAILURE #1.1: OWED by goal/G19.7: after a failure the desk got [] ❌
-    ***   FAILURE #1.2: OWED by goal/G19.7: abort of desk work answered {"ok":false,"code":"bad-request","error":"text required","extra":{"verb":"abort","why":"the model is not working: there is nothing to abort"}}; cancelled 0; the desk got [] ❌
-    ***   FAILURE #1.3: OWED by goal/G19.7: calls carried 35 bytes against a prompt room of 7600 (1 calls, answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
-    ***   FAILURE #1.4: OWED by goal/G19.7: no tool message says it was cut for room: [] ❌
-    ***   FAILURE #1.5: OWED by goal/G19.7: the chat logged kinds ["request","abort","request"] ❌
-    ***   FAILURE #1.6: OWED by goal/G19.7: the desk work on w/G2 logged [] ❌
-    ***   FAILURE #1.7: OWED by goal/G19.7: failure logged undefined; aborts logged [{"seq":2,"at":"2026-10-25T23:44:57.962Z","from":"chat","kind":"abort","text":"aborted from the Remote"}] ❌
-    ***   FAILURE #1.8: OWED by goal/G19.7: tool results logged at [] bytes ❌
-    ***   FAILURE #1.9: OWED by goal/G19.7: the tool result reads  ❌
-    ***   FAILURE #1.10: OWED by goal/G19.7: deskAgent_file_load declares required undefined ❌
-    ***   FAILURE #1.11: OWED by goal/G19.7: chat A's tool was published under chat B's id 0 time(s); A done published 0 ❌
+    ***   FAILURE #1.1: OWED by goal/G19.7: while the model works the published state reads working undefined ❌
+    ***   FAILURE #1.2: OWED by goal/G19.7: after the abort the published state reads working undefined ❌
+    ***   FAILURE #1.3: OWED by goal/G19.7: after a failure the desk got [] ❌
+    ***   FAILURE #1.4: OWED by goal/G19.7: abort of desk work answered {"ok":false,"code":"bad-request","error":"text required","extra":{"verb":"abort","why":"the model is not working: there is nothing to abort"}}; cancelled 0; the desk got [] ❌
+    ***   FAILURE #1.5: OWED by goal/G19.7: calls carried 35 bytes against a prompt room of 7600 (1 calls, answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
+    ***   FAILURE #1.6: OWED by goal/G19.7: no tool message says it was cut for room: [] ❌
+    ***   FAILURE #1.7: OWED by goal/G19.7: the published log reads [] (last published keys []) ❌
+    ***   FAILURE #1.8: OWED by goal/G19.7: the chat logged kinds [] ❌
+    ***   FAILURE #1.9: OWED by goal/G19.7: the desk work on w/G2 logged [] ❌
+    ***   FAILURE #1.10: OWED by goal/G19.7: failure logged undefined; aborts logged [] ❌
+    ***   FAILURE #1.11: OWED by goal/G19.7: tool results logged at [] bytes ❌
+    ***   FAILURE #1.12: OWED by goal/G19.7: the tool result reads  ❌
 
 --- deskAgentAgent.js
     ***   FAILURE #1.1: OWED by goal/G10.8: after an unaddressed press the model was called 0 time(s):  ❌
     ***   FAILURE #1.2: OWED by goal/G10.8: the call's tools are [] ❌
     ***   FAILURE #1.3: OWED by goal/G10.8: file.save on its own item answered 500 {"ok":false,"code":"handler-failed","error":"the handler failed","extra":{"verb":"file.save"}} ❌
     ***   FAILURE #1.4: OWED by goal/G10.8: commit answered {"ok":false,"code":"handler-failed","error":"the handler failed","extra":{"verb":"commit"}}; the log reads first ❌
-    ***   FAILURE #1.5: OWED by goal/G10.8: push answered {"commit":"d71616e"}; the remote has first ❌
+    ***   FAILURE #1.5: OWED by goal/G10.8: push answered {"commit":"2570cc3"}; the remote has first ❌
 
 --- deskAgentCommand.js
     ***   FAILURE #1.1: OWED by goal/G23.8: disconnected ({"connected":false}), the tools offered are [] ❌
     ***   FAILURE #1.2: OWED by goal/G23.8: disconnected, the call came back as null; ran false ❌
     ***   FAILURE #1.3: OWED by goal/G23.8: connected ({"connected":true}), the call came back as null; ran false ❌
+
+--- deskAgentConnectTable.js
+    ***   FAILURE #1.1: OWED by goal/G14.9: the dot sits on [] ❌
 
 --- deskAgentContext.js
     ***   FAILURE #1.1: OWED by goal/G10.3: with both files it asked next 0 time(s) ❌
@@ -611,7 +653,10 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.2: the world (nameless): Andy's line never reached the model ❌
 
 --- deskAgentEarJobs.js
-    ***   FAILURE #1.1: OWED by goal/G5.8: with an unsaved edit: head moved false, edit kept true, lines [] ❌
+    ***   FAILURE #1.1: the world: deskClient handed no line at all ([]) ❌
+
+--- deskAgentEarState.js
+    ***   FAILURE #1.1: OWED by goal/G2.3: no publish carried the goal row with the new working list: [] ❌
 
 --- deskAgentEarThin.js
     ***   FAILURE #1.1: OWED by goal/G3.6: the wait exited 1 after 0 next ask(s) of 0, printing "" and "deskAgentEar: 0 null\n" ❌
@@ -639,6 +684,13 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 
 --- deskAgentModels.js
     ***   FAILURE #1.1: OWED by goal/G14.4: the desk-driven call named undefined ❌
+    ***   FAILURE #1.2: OWED by goal/G14.4: the last published object is null ❌
+    ***   FAILURE #1.3: OWED by goal/G14.4: after connect off, published 0 object(s), last null ❌
+    ***   FAILURE #1.4: OWED by goal/G14.4: the red itself tripped: TypeError: Cannot read properties of null (reading 'connected')
+        at suite (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskAgentModels.js:424:16) ❌
+
+--- deskAgentModelsSearch.js
+    ***   FAILURE #1.1: OWED by goal/G27.17: the published state reads 2 bytes, models none, loaded undefined; publishes dropped as too large: 0 ❌
 
 --- deskAgentOneAnswer.js
     ***   FAILURE #1.1: the world: desk_chat_add is not offered: undefined ❌
@@ -649,24 +701,33 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.6: OWED by goal/G24.2: under goal/T3: [] ❌
 
 --- deskAgentPairs.js
-    ***   FAILURE #1.1: OWED by goal/G18.6: after model.test gpt-x: {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-25T23:45:35.120Z"} ❌
+    ***   FAILURE #1.1: OWED by goal/G18.6: after model.test gpt-x: {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-26T06:40:02.465Z"} ❌
     ***   FAILURE #1.2: OWED by goal/G18.7: the test sent OpenAI [] ❌
-    ***   FAILURE #1.3: OWED by goal/G18.7: gpt-x after its test: {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-25T23:45:35.120Z"} ❌
+    ***   FAILURE #1.3: OWED by goal/G18.7: gpt-x after its test: {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-26T06:40:02.465Z"} ❌
     ***   FAILURE #1.4: OWED by goal/G18.6: connected before false, after false; signoffs 0 -> 0 ❌
-    ***   FAILURE #1.5: OWED by goal/G18.6: back on openai: model gpt-x, gpt-x {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":true,"audio":false,"recommended":false,"tested":"2026-10-25T23:45:35.120Z"} ❌
+    ***   FAILURE #1.5: OWED by goal/G18.6: back on openai: model gpt-x, gpt-x {"id":"gpt-x","quant":"","loaded":true,"bytes":0,"task":"","vision":false,"reasoning":true,"audio":false,"recommended":false,"tested":"2026-10-26T06:40:02.465Z"} ❌
 
 --- deskAgentPlainContext.js
-    ***   FAILURE #1.1: the world: big pair set {"url":"http://127.0.0.1:40379/v1","answers":true,"error":""}; no chat request carried a tool message (1 chat calls; answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
+    ***   FAILURE #1.1: the world: big pair set {"url":"http://127.0.0.1:36009/v1","answers":true,"error":""}; no chat request carried a tool message (1 chat calls; answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
     ***   FAILURE #1.2: OWED by goal/G14.11: big-x (max_input_tokens 1000000): no chat request carried a tool message (1 chat calls; answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
     ***   FAILURE #1.3: OWED by goal/G14.11: len-x (context_length 1000000): no chat request carried a tool message (1 chat calls; answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
     ***   FAILURE #1.4: none-x: the result is cut for room with no context known: no chat request carried a tool message (1 chat calls; answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"}) ❌
 
 --- deskAgentRecommend.js
-    ***   FAILURE #1.1: OWED by goal/G10.9: after testing Q4_K_M: entry {"id":"fake/Agent-9B-GGUF","quant":"Q4_K_M","loaded":true,"bytes":5000000000,"task":"text-generation","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-25T23:45:35.907Z","learnedContext":0,"bytesPerToken":0}, state {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34591/v1","answers":true,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34591/v1","use":true}],"working":false,"effort":{"supported":false ❌
-    ***   FAILURE #1.2: OWED by goal/G10.9: after testing Q8_0: entry {"id":"fake/Agent-9B-GGUF","quant":"Q8_0","loaded":true,"bytes":9000000000,"task":"text-generation","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-25T23:45:36.268Z","learnedContext":0,"bytesPerToken":0}, state {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34591/v1","answers":true,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34591/v1","use":true}],"working":false,"effort":{"supported":false, loaded {"model":"fake/Agent-9B-GGUF","variant":"Q8_0"} ❌
+    ***   FAILURE #1.1: OWED by goal/G10.9: after testing Q4_K_M: entry {"id":"fake/Agent-9B-GGUF","quant":"Q4_K_M","loaded":true,"bytes":5000000000,"task":"text-generation","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-26T06:40:04.551Z","learnedContext":0,"bytesPerToken":0}, state {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34919/v1","answers":true,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34919/v1","use":true}],"working":false,"effort":{"supported":false ❌
+    ***   FAILURE #1.2: OWED by goal/G10.9: after testing Q8_0: entry {"id":"fake/Agent-9B-GGUF","quant":"Q8_0","loaded":true,"bytes":9000000000,"task":"text-generation","vision":false,"reasoning":false,"audio":false,"recommended":false,"tested":"2026-10-26T06:40:04.911Z","learnedContext":0,"bytesPerToken":0}, state {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34919/v1","answers":true,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34919/v1","use":true}],"working":false,"effort":{"supported":false, loaded {"model":"fake/Agent-9B-GGUF","variant":"Q8_0"} ❌
     ***   FAILURE #1.3: OWED by goal/G10.9: connect on with Q8_0 loaded answered {"ok":false,"code":"bad-request","error":"text required","extra":{"verb":"connect","why":"the loaded model fake/Agent-9B-GGUF Q8_0 has no desk-recommended mark: test it first"}} ❌
-    ***   FAILURE #1.4: OWED by goal/G10.9: at start with the 🧵 pair {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34591/v1","answers":false,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34591/v1","use":true}],"working":false,"effort":{"supported":fals, with the other {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34591/v1","answers":false,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34591/v1","use":true}],"working":false,"effort":{"supported":fals ❌
-    ***   FAILURE #1.5: OWED by goal/G10.9: connected before false, while running [false,false,false], signoffs 0 ❌
+    ***   FAILURE #1.4: OWED by goal/G10.9: at start with the 🧵 pair {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34919/v1","answers":false,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34919/v1","use":true}],"working":false,"effort":{"supported":fals, with the other {"connected":false,"persona":"Levant","model":"fake/Agent-9B-GGUF","server":{"url":"http://127.0.0.1:34919/v1","answers":false,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:34919/v1","use":true}],"working":false,"effort":{"supported":fals ❌
+    ***   FAILURE #1.5: OWED by goal/G10.9: connected before false, while running [], signoffs 0 ❌
+    ***   FAILURE #1.6: OWED by goal/G10.9: the options read ["<option value=\"fake/Agent-9B-GGUF|Q8_0\" selected>fake/Agent-9B-GGUF · Q8_0</option>","<option value=\"fake/Agent-9B-GGUF|Q4_K_M\">fake/Agent-9B-GGUF · Q4_K_M</option>"] ❌
+
+--- deskAgentRemoteTabs.js
+    ***   FAILURE #1.1: OWED by goal/G10.7: state {"connected":false,"persona":"Levant","model":"","server":{"url":"http://127.0.0.1:39053/v1","answers":true,"error":""},"connections":[{"name":"studio","url":"http://127.0.0.1:39053/v1","use":true}],"working":false,"effort":{"supported":false,"level":"medium"}; published [] ❌
+    ***   FAILURE #1.2: OWED by goal/G10.7: with no state: [" No node with deskAgent is connected: use the [connect] tab to connect to a node that has deskAgent installed."] ❌
+    ***   FAILURE #1.3: OWED by goal/G10.7: with no server: [" deskAgent is not connected to an OpenAI compatible server: use the [connect] tab to connect to an OpenAI compatible server."] ❌
+    ***   FAILURE #1.4: OWED by goal/G10.7: with no model loaded: [" No model is loaded: use the model selector in the [configure] tab to select and load a model."] ❌
+    ***   FAILURE #1.5: OWED by goal/G10.7: while loading: [" Be patient, a model (big/Model-GGUF) is currently loading."] ❌
+    ***   FAILURE #1.6: OWED by goal/G10.7: #dur-warnings reads <div class="job-start-error"> deskAgent is not connected to an OpenAI compatible server: use the [connect] tab to connect to an OpenAI compatible server.</div> ❌
 
 --- deskAgentRepoRoot.js
     ***   FAILURE #1.1: the world: no tools were offered (1 chat requests) ❌
@@ -705,64 +766,177 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.2: OWED by goal/G14.6: the first call carried tools [] ❌
     ***   FAILURE #1.3: OWED by goal/G14.6: the second call's messages: undefined ❌
     ***   FAILURE #1.4: OWED by goal/G14.6: chat.answer ended {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"} ❌
-    ***   FAILURE #1.5: OWED by goal/G14.6: no published object carried chat.tool for the load: [{"id":"5aca5da36df99f5a","done":false,"text":"","tool":{"name":"","url":"","done":true}},{"id":"5aca5da36df99f5a","done":false,"text":"","tool":{"name":"","url":"","done":true}},{"id":"5aca5da36df99f5a","done":false,"text":"","tool":{"name":"","url":"","done":true}},{"id":"5aca5da36df99f5a","done": ❌
+    ***   FAILURE #1.5: OWED by goal/G14.6: no published object carried chat.tool for the load: [] ❌
     ***   FAILURE #1.6: goal/G23.4: rounds: 1 calls, script left 5, fetches , last call tools false, last message {"role":"user","content":"keep fetching"}, answer {"done":true,"text":"(the model asked for a tool though none was offered, and said nothing)"} ❌
     ***   FAILURE #1.7: OWED by goal/G21.5: the system message said you are Levant, a genius ❌
 
+--- deskBindingNick.js
+    ***   FAILURE #1.1: OWED by goal/G21.1: the stream: wsl false, claude-windows false, Andy false ❌
+    ***   FAILURE #1.2: OWED by goal/G21.1: the cap reached cw false, wsl false ❌
+
+--- deskChatFollowsAddress.js
+    ***   FAILURE #1.1: OWED by goal/G27.10: deskClient refused the creator under goal/G100.3: {"ok":false,"code":"not-taken","error":"deskClient: this agent holds neither the item nor a line it took here","extra":{"verb":"desk","why":"this agent holds neither the item nor a line it took here"}} ❌
+    ***   FAILURE #1.2: OWED by goal/G27.10: deskClient refused the earlier red holder under goal/G100.1: {"ok":false,"code":"not-taken","error":"deskClient: this agent holds neither the item nor a line it took here","extra":{"verb":"desk","why":"this agent holds neither the item nor a line it took here"}} ❌
+
+--- deskChatSearch.js
+    ***   FAILURE #1.1: OWED by goal/G3.11: the desk had published 0 row(s) before two searches and 0 after; an unnamed argument answered 400 {"ok":false,"code":"no-such-argument","error":"no such argument","extra":{"verb":"chat.search"}} ❌
+    ***   FAILURE #1.2: OWED by goal/G3.11: through deskClient the fullest answer came back 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"} ❌
+
 --- deskClientAsk.js
-    ***   FAILURE #1.1: OWED by goal/G3.3: after the late answer the record read {"key":"3","row":{"at":"2026-10-25T23:46:22.799Z","verb":"item.get","ms":10007,"outcome":"no-answer","bytes":67,"port":46285,"count":1}} and 1 post(s) had gone ❌
-    ***   FAILURE #1.2: OWED by goal/G3.3: deskClient.js does not call spirit.peerPost and still holds  ❌
+    ***   FAILURE #1.1: OWED by goal/G3.3: the ask answered 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"}; posts [] ❌
+    ***   FAILURE #1.2: OWED by goal/G33.4: deskClient never asked the desk node for the desk family interface: [] ❌
+    ***   FAILURE #1.3: OWED by goal/G3.3: a refused ask answered 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"} ❌
+    ***   FAILURE #1.4: OWED by goal/G3.3: history answered [{"key":"2","row":{"at":"2026-10-26T06:40:47.060Z","verb":"item.get","ms":1,"outcome":"no-answer","bytes":72,"port":46005,"count":1}},{"key":"1","row":{"at":"2026-10-26T06:40:47.028Z","verb":"items.search","ms":0,"outcome":"no-answer","bytes":72,"port":46005,"count":1}}]; deskClient.db exists ❌
+    ***   FAILURE #1.5: OWED by goal/G3.3: the slow ask answered after 68 ms: 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"}; its record undefined ❌
+    ***   FAILURE #1.6: OWED by goal/G3.3: after the late answer the record read undefined and 0 post(s) had gone ❌
+    ***   FAILURE #1.7: OWED by goal/G3.3: after a restart: 3 record(s) where there were 3, an ask answered 200 {"ok":false,"code":"no-answer","error":"the desk family did not answer"} ❌
+    ***   FAILURE #1.8: OWED by goal/G3.3: deskClient.js does not call spirit.peerPost and still holds  ❌
 
 --- deskClientNext.js
-    ***   FAILURE #1.1: OWED by goal/G3.4: next handed over 0 line(s), 1 wanted missing, unwanted []: [] ❌
-    ***   FAILURE #1.2: OWED by goal/G3.4: after the restart next answered [], then null ❌
-    ***   FAILURE #1.3: OWED by goal/G3.4: deskClient.js reads --node and holds  ❌
+    ***   FAILURE #1.1: OWED by goal/G3.4: agent.state went [] during the empty wait and [] at the hand-over ❌
+    ***   FAILURE #1.2: OWED by goal/G3.4: after Andy's line next answered {"lines":[]} after 10008 ms ❌
+    ***   FAILURE #1.3: OWED by goal/G3.4: next handed over 0 line(s), 1 wanted missing, unwanted []: [] ❌
+    ***   FAILURE #1.4: OWED by goal/G3.4: after the restart next answered [], then [] ❌
+    ***   FAILURE #1.5: OWED by goal/G3.4: history holds 8 record(s) where historyMax is 8, the newest {"key":"19","row":{"at":"2026-10-26T06:41:50.059Z","verb":"items.search","ms":0,"outcome":"no-answer","bytes":72,"port":35225,"count":1}} ❌
+    ***   FAILURE #1.6: OWED by goal/G3.4: deskClient.js reads --node and holds  ❌
 
 --- deskClientPull.js
-    ***   FAILURE #1.1: OWED by goal/G19.6: next answered after 27 ms with [] ❌
+    ***   FAILURE #1.1: OWED by goal/G19.6: next answered after 10007 ms with [] ❌
     ***   FAILURE #1.2: OWED by goal/G19.6: told in the first next: false; the later nexts handed over [] ❌
-    ***   FAILURE #1.3: OWED by goal/G19.6: with a rebase in progress the nexts handed over [] ❌
-    ***   FAILURE #1.4: OWED by goal/G19.6: with an unsaved edit the nexts handed over [] ❌
+    ***   FAILURE #1.3: OWED by goal/G19.6: after the clash: the slow hook ran false, HEAD 7504d85 (was 7504d85), rebase in progress false ❌
+    ***   FAILURE #1.4: OWED by goal/G19.6: with a rebase in progress the nexts handed over [] ❌
+    ***   FAILURE #1.5: OWED by goal/G19.6: with an unsaved edit the nexts handed over [] ❌
 
---- deskClientPush.js
-    ***   FAILURE #1.1: OWED by goal/G33.4 (push): its wait ended with ["NEWS check.set {\"id\":\"goal/G100.7\",\"check\":\"C2\",\"kind\":\"C\",\"state\":\"open\"}","NEWS goal.whole {\"id\":\"goal/G100.2\",\"with\":\"claude-windows\"}","DESK desk goal.whole {\"id\":\"goal/G100.7\",\"status\":\"running\",\"phase\":\"build\",\"go\" ❌
-    ***   FAILURE #1.2: OWED by goal/G33.8 (wake): the wait ended with null ❌
-    ***   FAILURE #1.3: OWED by goal/G33.4 (push): deskClient.js builds no desk packet, and names no family interface ❌
-    ***   FAILURE #1.4: OWED by goal/G33.2 (news after a restart): reopen answered {"change":140}; B's wake ended with null ❌
-    ***   FAILURE #1.5: OWED by goal/G33.2 (take wakes): the other agent's take answered {"change":144}; B's wait ended with null; the next, B's wait ended with null ❌
-    ***   FAILURE #1.6: OWED by goal/G33.2 (all): the line went to []; B's wait ended with null ❌
-    ***   FAILURE #1.7: OWED by goal/G33.2 (all answers): B's answer {"ok":false,"code":"not-taken","error":"deskClient: this agent holds neither the item nor a line it took here","extra":{"verb":"desk","why":"this agent holds neither the item nor a line it took here"}}, A's {"change":148}; landed ["A pulled and restarted"] ❌
-    ***   FAILURE #1.8: OWED by goal/G33.4 (push): the desk's start pushed 0 rows, 0 of them parts: [] ❌
-    ***   FAILURE #1.9: OWED by goal/G33.4 (push): after the restart the wait ended with null; deskClient asked ["","subscribe","agent.state","work.open","subscribe","line.take","agent.state","agent.state","item.box","item.chat","subscribe","work.open","item.get","agent.state","agent.state","work.open","work.open","work.open","item.status","work.open","item.status","wor ❌
+--- deskClientPush.js never reported (exit null)
+    ***   FAILURE #1.1: OWED by goal/G33.4 (push): the wait ended with []; deskClient asked [] ❌
+    ***   FAILURE #1.2: OWED by goal/G33.4 (push): the first reads asked the desk [] (box {"ok":false,"code":"no-answer","error":"the desk family did not answer"}), the second [] (box {"ok":false,"code":"no-answer","error":"the desk family did not answer"}) ❌
+    ***   FAILURE #1.3: OWED by goal/G33.4 (push): after his box write the read answered {"ok":false,"code":"no-answer","error":"the desk family did not answer"} and asked [] ❌
+    ***   FAILURE #1.4: OWED by goal/G33.2 (one wake): the wake of the job ended with [] ❌
+    ***   FAILURE #1.5: OWED by goal/G33.4 (push): his Go on goal/G100.3 answered 200 {"change":17}; the wait ended with [] after 8482 ms ❌
+    ***   FAILURE #1.6: OWED by goal/G33.4 (push): phase.take answered {"change":22}; B's wait ended with [] ❌
+    ***   FAILURE #1.7: OWED by goal/G33.8: item.take answered {"change":29}, his Go {"change":30}; B's wait ended with [] after 9005 ms ❌
+    ***   FAILURE #1.8: OWED by goal/G33.8: subscribed again false; the wait after the drop ended with []; asked [] ❌
+    ***   FAILURE #1.9: OWED by goal/G33.2 (one wake): the wake of the grant ended with [] ❌
+    ***   FAILURE #1.10: OWED by goal/G33.9 (grant wake): check.add {"change":41}, check.set {"change":44}; B's wait ended with [] after 8481 ms ❌
+    ***   FAILURE #1.11: OWED by goal/G33.9 (held item wake): the other agent's check.add answered {"change":45}; B's wait ended with [] ❌
+
+--- deskClientQuiet.js
+    ***   FAILURE #1.1: OWED by goal/G27.12: his chat line never came: [] ❌
+    ***   FAILURE #1.2: OWED by goal/G27.12: the line handed over reads at the desk {"by":"andy","at":"2026-10-26T06:41:12.248Z","text":"after the box","taken":"","key":"MCowBQYDK2VwAyEAdeskClientQuietTestDeskNodeAAAAAAAAAAAAAAAA=","name":""} ❌
+    ***   FAILURE #1.3: OWED by goal/G27.12: the free line never came: [] ❌
+    ***   FAILURE #1.4: OWED by goal/G27.12: box.take on goal/G100.2, where it took his line, answered {"ok":false,"code":"not-taken","error":"deskClient: this agent holds neither the item nor a line it took here","extra":{"verb":"desk","why":"this agent holds neither the item nor a line it took here"}} ❌
 
 --- deskCoreGrants.js
-    ***   FAILURE #1.1: the app file commit answered 1 commitCheck: REFUSED, the node on port 46711 could not be asked items.search: deskClient on port 46711 answered 0 null ❌
-    ***   FAILURE #1.2: OWED by goal/G10.8: a file outside any folder answered 1 commitCheck: REFUSED, the node on port 46711 could not be asked items.search: deskClient on port 46711 answered 0 null ❌
-    ***   FAILURE #1.3: OWED by goal/G4.23 (core grants): the ungranted core file: commit 1 (0 commits): commitCheck: REFUSED, the node on port 46711 could not be asked items.search: deskClient on port 46711 answered 0 null ❌
-    ***   FAILURE #1.4: OWED by goal/G32.2: the refusal raised [] and said commitCheck: REFUSED, the node on port 46711 could not be asked items.search: deskClient on port 46711 answered 0 null ❌
-    ***   FAILURE #1.5: OWED by goal/G4.23 (core grants): after his grant the commit answered 1 commitCheck: REFUSED, the node on port 46711 could not be asked items.search: deskClient on port 46711 answered 0 null ❌
+    ***   FAILURE #1.1: the app file commit answered 1 commitCheck: REFUSED, the node on port 37229 could not be asked items.search: deskClient on port 37229 answered 0 null ❌
+    ***   FAILURE #1.2: OWED by goal/G10.8: a file outside any folder answered 1 commitCheck: REFUSED, the node on port 37229 could not be asked items.search: deskClient on port 37229 answered 0 null ❌
+    ***   FAILURE #1.3: OWED by goal/G4.23 (core grants): the ungranted core file: commit 1 (0 commits): commitCheck: REFUSED, the node on port 37229 could not be asked items.search: deskClient on port 37229 answered 0 null ❌
+    ***   FAILURE #1.4: OWED by goal/G32.2: the refusal raised [] and said commitCheck: REFUSED, the node on port 37229 could not be asked items.search: deskClient on port 37229 answered 0 null ❌
+    ***   FAILURE #1.5: OWED by goal/G4.23 (core grants): after his grant the commit answered 1 commitCheck: REFUSED, the node on port 37229 could not be asked items.search: deskClient on port 37229 answered 0 null ❌
+
+--- deskDetailsPanels.js
+    ***   FAILURE #1.1: OWED by goal/G30.8: the strip reads <button type="button" data-panel="box" class="dd-icon dd-icon-on" title="the box">undefined</button><button type="button" data-panel="suites" class="dd-icon" title="the suites attached to this item">undefined</button><button type="button" data-panel="qs" class ❌
+
+--- deskDialogFollowsItem.js
+    ***   FAILURE #1.1: the suite threw: TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:150:3), <anonymous>:2883:17)
+        at eval (eval at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:150:3), <anonymous>:2968:3)
+        at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:150:88)
+        at sequence (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:227:16)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:283:9
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskDialogFollowsItem.js:287:3)
+
+--- deskFallout.js never reported (exit 1)
+    TypeError: window.spirit.matchRanges is not a function
+        at matchRanges (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:241:28), <anonymous>:50:60)
+        at mark (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:241:28), <anonymous>:164:7)
+        at Object.paint (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:247:3), <anonymous>:69:21)
+        at eval (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:241:28), <anonymous>:248:78)
+        at draw (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:241:28), <anonymous>:244:140)
+        at eval (eval at paneHalf (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskFallout.js:241:28), <anonymous>:294:31)
+
+--- deskForAndy.js
+    ***   FAILURE #1.1: the row Loud (asks 2) has no ICON.ERROR: " data-row=\"goal/G100.2\" id=\"desk-row-goal/G100.2\" style=\"cursor:pointer\"><td></td><td></td><td title=\"Loud\">Loud <span class=\"job-manifest-note\">(goal/G100.2)</span></td><td></td><td></td><td></td><td></td><td ❌
 
 --- deskIssues.js
-    ***   FAILURE #1.1: OWED by goal/G2.1: the dialog has no older-change guard ❌
+    ***   FAILURE #1.1: OWED by goal/G2.1: after bring-back the publish said listed undefined and the facts carry alert true ❌
+    ***   FAILURE #1.2: OWED by goal/G2.1: the dialog has no older-change guard ❌
+
+--- deskLayout.js
+    ***   FAILURE #1.1: OWED by desk/G1.12: first two cells ["<td></td>","<td></td>"] ❌
+
+--- deskListTakesAdditions.js
+    ***   FAILURE #1.1: the suite threw: TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskListTakesAdditions.js:173:3), <anonymous>:2883:17)
+        at eval (eval at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskListTakesAdditions.js:173:3), <anonymous>:2968:3)
+        at bootPage (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskListTakesAdditions.js:173:88)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/deskListTakesAdditions.js:219:16
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/deskListTakesAdditions.js:286:3)
+
+--- deskLiveFixes.js
+    ***   FAILURE #1.1: OWED by goal/G18.5: item.files.add published [] ❌
+
+--- deskMirror.js
+    ***   FAILURE #1.1: OWED by goal/G33.3: the desk published [] ❌
+    ***   FAILURE #1.2: OWED by goal/G33.3: goal.whole rows for []; box.write answered 200, box rows [] ❌
+    ***   FAILURE #1.3: OWED by goal/G33.3: the second reads posted []; item.get answered {"ok":false,"code":"no-answer","error":"the desk family did not answer"}, item.box {"ok":false,"code":"no-answer","error":"the desk family did not answer"} ❌
+
+--- deskPhases.js
+    ***   FAILURE #1.1: OWED by goal/G5.7: a stale holder left no red question; checks [] ❌
 
 --- deskPluginsGg.js
     ***   FAILURE #1.1: OWED by goal/G22.3: deskVerify was asked [] ❌
 
+--- deskRealtimeServer.js
+    ***   FAILURE #1.1: the world: item.rename published [] ❌
+    ***   FAILURE #1.2: OWED by goal/G27.9 (S1): rule.add published [] ❌
+    ***   FAILURE #1.3: OWED by goal/G27.9 (S1): rule.draft published [] ❌
+    ***   FAILURE #1.4: OWED by goal/G27.9 (S1): rule.version published [] ❌
+
+--- deskRedQOnPurpose.js
+    ***   FAILURE #1.1: OWED by goal/G21.2: claude-windows's stream after the clear: [] ❌
+    ***   FAILURE #1.2: OWED by goal/G21.2: the clears did not reach both placers ❌
+
+--- deskRows.js
+    ***   FAILURE #1.1: OWED by desk/G3.10: the go-all publish carried rows [] of [] ❌
+    ***   FAILURE #1.2: OWED by desk/G3.10: the done publish carried rows [] ❌
+
+--- deskRuleChatPublish.js
+    ***   FAILURE #1.1: rule.add answered 200 {"key":"rule/1"}; published [] ❌
+    ***   FAILURE #1.2: OWED by goal/G2.18: the rule chat line published nothing that names rule.chat or rule/1: [] ❌
+    ***   FAILURE #1.3: OWED by goal/G2.18: his line answered 200; published [] ❌
+    ***   FAILURE #1.4: an item line answered 200; published [] ❌
+
 --- deskRules.js
-    ***   FAILURE #1.1: OWED by goal/G3.9: D: with the other agent blocked next answered 409 {"ok":false,"code":"unblocked","error":"deskClient: another agent is not blocked on this node","extra":{"verb":"next","name":"wsl-claude","key":"MCowBQYDK2VwAyE; the book was asked 0 times ❌
-    ***   FAILURE #1.2: owed by goal/G4.19: E2: commit -> 1 commitCheck: REFUSED, the node on port 40507 could not be asked items.search: deskClient on port 40507 answered 0 null; commits: 0; written before the push: false ❌
-    ***   FAILURE #1.3: owed by goal/G4.19: E2: push -> 1 error: src refspec HEAD does not match any
-    ***   FAILURE #1.4: OWED by goal/G3.9: E2: no deskClient.<verb> ask came from the check ❌
-    ***   FAILURE #1.5: owed by goal/G4.19: E2: made HEAD, re-stacked HEAD, remote b75796b, push -> 1; written as pushed false, as made false ❌
-    ***   FAILURE #1.6: OWED by goal/G4.27: E2: refused push -> 1 (refused by the server false); a line names HEAD: false ❌
-    ***   FAILURE #1.7: OWED by goal/G4.27: E2: the second push -> 1; remote b75796b, a line names it: false ❌
+    ***   FAILURE #1.1: OWED by goal/G3.9: D: after his line next answered 200 {"lines":[]} ❌
+    ***   FAILURE #1.2: OWED by goal/G3.9: D: with the other agent unblocked next answered 200 {"lines":[]} ❌
+    ***   FAILURE #1.3: OWED by goal/G3.9: D: with the other agent blocked next answered 200 {"lines":[]}; the book was asked 0 times ❌
+    ***   FAILURE #1.4: OWED by goal/G3.9: D: after the block was lifted next answered 200 {"lines":[]} ❌
+    ***   FAILURE #1.5: owed by goal/G4.19: E2: commit -> 1 commitCheck: REFUSED, the node on port 42585 could not be asked items.search: deskClient on port 42585 answered 0 null; commits: 0; written before the push: false ❌
+    ***   FAILURE #1.6: owed by goal/G4.19: E2: push -> 1 error: src refspec HEAD does not match any
+    ***   FAILURE #1.7: OWED by goal/G3.9: E2: no deskClient.<verb> ask came from the check ❌
+    ***   FAILURE #1.8: owed by goal/G4.19: E2: made HEAD, re-stacked HEAD, remote a9abe82, push -> 1; written as pushed false, as made false ❌
+    ***   FAILURE #1.9: OWED by goal/G4.27: E2: refused push -> 1 (refused by the server false); a line names HEAD: false ❌
+    ***   FAILURE #1.10: OWED by goal/G4.27: E2: the second push -> 1; remote a9abe82, a line names it: false ❌
+
+--- deskRulesTab.js
+    ***   FAILURE #1.1: OWED by goal/G6.5: rows wrong for rule/1, rule/2, rule/3 — list: <table class="jobs-table"><thead><tr><th></th><th>Label</th><th>Type</th><th>Key</th></tr></thead><tbody><tr data-rule="rule/1" style="cursor:pointer"><td title="proposed"></td><td>LABEL-ONE</td><td>ui</td><td>rule/1</td></tr><tr data-rule= ❌
 
 --- deskStacksDialog.js
     ***   FAILURE #1.1: OWED by goal/G27.2: deskVerify was asked [] ❌
     ***   FAILURE #1.2: the world: a press on the current goal shared nothing (current is goal/G104) ❌
 
+--- deskStatusActivity.js
+    ***   FAILURE #1.1: OWED by goal/G33.11: the silent hold on goal/G100.2 has 0 stale red Qs ❌
+
+--- deskSword.js
+    ***   FAILURE #1.1: OWED by goal/G9.1: goal/G101's row has no sword: <tr data-row="goal/G101" id="desk-row-goal/G101" data-goal="1" style="cursor:pointer;font-weight:bold;background:rgba(127,127,127,0.18);border-top:2px solid #888"><td><span title="There is a battle to be fought: make it the current goal in its Details"></span></td><td><span title="a goal"></span></t ❌
+
 --- deskTables.js
-    ***   FAILURE #1.1: OWED by goal/G33.4: hand-built packets in []; forPeer used by deskClient false, the desk posts to clients itself false ❌
+    ***   FAILURE #1.1: OWED by goal/G33.4: the line was pushed nowhere ❌
+    ***   FAILURE #1.2: OWED by goal/G33.4: the box just under the bound answered {"change":41,"version":3}; pushed whole 0 time(s), no pieces true, over the limit 0 ❌
+    ***   FAILURE #1.3: OWED by goal/G33.4: making the goal current pushed {"rows":"0/3","box":false,"line":false,"over":0,"ok":false} ❌
+    ***   FAILURE #1.4: OWED by goal/G33.4: after the restart the desk pushed {"rows":"0/3","box":false,"line":false,"over":0,"ok":false} ❌
+    ***   FAILURE #1.5: OWED by goal/G33.4: hand-built packets in []; forPeer used by deskClient false, the desk posts to clients itself false ❌
 
 --- deskVerifyDriven.js
     ***   FAILURE #1.1: OWED by goal/G33.3: his Verify on goal/G100.1 answered {"ok":false,"code":"not-offered","error":"desk: that press is not offered for this item now","extra":{"verb":"press","why":"no deskVerify answers on this node, so nothing can be verified"}}; the desk asked [] ❌
@@ -778,32 +952,156 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.11: OWED by goal/G33.3: deskVerify.run while busy answered 200 {"taken":true} ❌
     ***   FAILURE #1.12: OWED by goal/G33.3: his Verify on goal/G100.3 asked [] ❌
 
+--- deskVerifyFixes.js
+    ***   FAILURE #1.1: OWED by goal/G21.3: nothing published carried stopAsked: [] ❌
+    ***   SUCCESS #1.12: the red run's row: red, with the FAILURE lines the suite printed ✅
+    ***   FAILURE #1.2: OWED by goal/G21.3: search over zzRed.js reds answered {"items":[],"more":false,"total":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G21.3: the short red's failure text is undefined ❌
+    ***   FAILURE #1.4: OWED by goal/G21.3: the long red's failure text is -1 bytes ❌
+    ***   FAILURE #1.5: OWED by goal/G21.3: the row carries undefined ❌
+    ***   FAILURE #1.6: OWED by goal/G21.3: zzA.js greens: [] ❌
+    ***   FAILURE #1.7: OWED by goal/G21.3: by words: [] ❌
+    ***   FAILURE #1.8: OWED by goal/G21.3: by commit: {"head":[],"none":[]} ❌
+    ***   FAILURE #1.9: OWED by goal/G21.3: the newest idle object: null ❌
+    ***   FAILURE #1.10: OWED by goal/G21.3: chore runs: ["ran 0"] (port 43549) ❌
+    ***   FAILURE #1.11: OWED by goal/G21.3: the newest idle object: null ❌
+
+--- deskVerifyFull.js
+    ***   FAILURE #1.1: OWED by goal/G8.12 (full run): goal.emptied records: [] ❌
+
+--- deskVerifyLive.js
+    ***   FAILURE #1.1: OWED by goal/G8.12: published: [] ❌
+    ***   FAILURE #1.2: OWED by goal/G8.12: tests counts published for zzLiveA.js: [] ❌
+    ***   FAILURE #1.3: OWED by goal/G8.12: no publish for suite 2: [] ❌
+    ***   FAILURE #1.4: OWED by goal/G8.12: objects without a line: [] ❌
+    ***   FAILURE #1.5: OWED by goal/G8.12: the last object published was {} ❌
+
 --- deviceGone.js
-    ***   FAILURE #1.1: OWED by goal/G28.2: 61 file(s) still say "device", first: spirit-publish-tree-5t50WR/spirit/run/face/face.css, spirit-publish-tree-5t50WR/spirit/run/face/shell.js, spirit-publish-tree-5t50WR/spirit/run/face.html, spirit-publish-tree-5t50WR/spirit/run/index.html, spirit-publish-tree-5t50WR/spirit/run/process/js/starter/starter.html ❌
+    ***   FAILURE #1.1: OWED by goal/G28.2: 59 file(s) still say "device", first: spirit-publish-tree-F5DPls/spirit/run/face/face.css, spirit-publish-tree-F5DPls/spirit/run/face/shell.js, spirit-publish-tree-F5DPls/spirit/run/face.html, spirit-publish-tree-F5DPls/spirit/run/index.html, spirit-publish-tree-F5DPls/spirit/run/process/js/starter/starter.html ❌
+
+--- dialogClose.js never reported (exit 1)
+    TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/dialogClose.js:78:1), <anonymous>:2883:17)
+        at eval (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/dialogClose.js:78:1), <anonymous>:2968:3)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/dialogClose.js:78:86)
 
 --- doorContract.js
     ***   FAILURE #1.1: undocumented: none | on the page but not in the tree: config.searchModules, config.setModules, contact.accept, contact.block, contact.forget, contact.get, contact.label, contact.search, contact.senders, contact.setSenders, contact.unblock, fs.annotate, fs.annotations, fs.delete, fs.load, fs.save, fs.search, fs.stat, jobs.api, jobs.authGrant, jobs.authPeer, jobs.authQuery, jobs.authRelabel, jobs.authRevoke, jobs.authSearch, jobs.cancel, jobs.create, jobs.delete, jobs.get, jobs.search, jobs.update, net.fetch, owner.boxGet, owner.boxSearch, owner.command, node.card, node.debug, node.rotateCipher, node.setDescription, node.setName, peer.acquire, peer.post, peer.search, proxy.allow, proxy.close, proxy.get, proxy.open, proxy.remove, proxy.search, relay.claim, relay.get, relay.partnerCheck, relay.record, relay.remove, relay.search ❌
     ***   FAILURE #1.2: the page says 55/10, the tree has 0/0 ❌
 
---- everyVerb.js
-    ***   FAILURE #1.1: verbs that did not answer properly: config.search (400), config.stat (400), config.load (400), config.annotations (400), config.save (400), config.delete (400), config.annotate (400) ❌
-    ***   FAILURE #1.2: fs.search leaked: secret ["shell/desk/linkout/secret-probe.json"], relay-state [], through the link ["shell/desk/linkout/","shell/desk/linkout/secret-probe.json","shell/desk/linkout/environment.json","shell/desk/linkout/identity.json","shell/desk/linkout/node.db","shell/desk/linkout/process/","shell/desk/linkout/process/chatClerver/","shell/desk/linkout/process/deskVerify/","shell/desk/linkout/process/fileServer/","shell/desk/linkout/process/desk/desk.db-shm","shell/desk/linkout/process/desk/desk.db-wal","shell/desk/linkout/process/backup/","shell/desk/linkout/process/desk/door.sock","shell/desk/linkout/process/chatClerver/memory.db-shm","shell/desk/linkout/process/chatClerver/memory.db-wal","shell/desk/linkout/process/backup/door.sock","shell/desk/linkout/process/backup/seen.json","shell/desk/linkout/process/desk/","shell/desk/linkout/process/desk/desk.db","shell/desk/linkout/process/deskVerify/door.sock","shell/desk/linkout/process/fileServer/door.sock","shell/desk/linkout/process/chatClerver/door.sock","shell/desk/linkout/process/chatClerver/memory.db"] ❌
+--- everyVerb.js never reported (exit null)
+    
+    **************************************************************************
+    ********   #1 Every verb the node claims is called, and answers   ********
+    **************************************************************************
+    
+    ***   SUCCESS #1.1: 49 verbs read from server.js's claim blocks, node.card and net.fetch among them ✅
+    ***   SUCCESS #1.2: the loopback door and the owner door both look verbs up in loopbackVerbs, so every verb here is every verb a puppet's owner can reach (subject to what it carries) ✅
+    
+
+--- faceApply.js
+    ***   FAILURE #1.1: OWED by goal/G30.1: (open on goal/G40.11) the relay's row has ["publicKey","label","labelRank","labelAt","present","myLabel","card","face","firstSeen","lastSeen","keep","mine","relay","held","ignored","blocked","seated"] ❌
+    ***   FAILURE #1.2: OWED by goal/G30.1: (open on goal/G40.11) relayKeys.faceOf answered {"name":"harbour"} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.1: the info app does not show the kept face of the selected relay ❌
+
+--- faceDevices.js
+    ***   FAILURE #1.1: OWED by goal/G30.12: first {"ok":false,"status":401,"error":"not logged in"}, second {"ok":false,"status":401,"error":"not logged in"}, old ended false with , face-open 0, face-close 0 ❌
+    ***   FAILURE #1.2: OWED by goal/G30.12: a second login opening got {"ok":false,"status":401,"error":"not logged in"}; the first face ended false ❌
+    ***   FAILURE #1.3: OWED by goal/G30.12: Connect here got {"ok":false,"status":401,"error":"not logged in"}; the old face ended false with last line undefined; face-open +0, face-close 0 ❌
+    ***   FAILURE #1.4: OWED by goal/G30.12: feeds [{"ok":false,"status":403,"error":"bad face signature"},{"ok":false,"status":403,"error":"bad face signature"}], threw , new face , old face  ❌
+    ***   FAILURE #1.5: OWED by goal/G30.12: carl refused {"ok":false,"status":403,"error":"your id is not a valid sender here"}, carl in {"ok":false,"status":403,"error":"your id is not a valid sender here"}, the face {"ok":false,"status":401,"error":"not logged in"} ❌
+
+--- faceFixes.js
+    ***   FAILURE #1.1: OWED by goal/G30.15: the roll took 1 members; the sixth got {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"} ❌
+    ***   FAILURE #1.2: OWED by goal/G30.15: with the ceiling at three, carl got {"ok":false,"status":403,"error":"your id is not a valid sender here"}; streams by kind {"nodes":0,"faces":0,"feeds":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.15: missing: statusParts, allocationScreen, listFillsWhenDrawn ❌
+    ***   FAILURE #1.4: OWED by goal/G30.15: logins across a restart: {"afterRestart":[false,false],"clear":true,"afterLogout":[false,false],"afterIdle":false} ❌
+    ***   FAILURE #1.5: OWED by goal/G30.15: missing: discInGB, restartOnly, refusalStays ❌
 
 --- faceHome.js
-    ***   FAILURE #1.1: OWED by goal/G30.13: a file request got {"head":{"status":200,"headers":{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store"}},"bytes":26765} ❌
+    ***   FAILURE #1.1: OWED by goal/G30.13: the face got {"head":null,"text":""}, the door was called [], uploads [] ❌
+    ***   FAILURE #1.2: OWED by goal/G30.13: a file request got {"head":null,"bytes":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.13: the refusals got [{"_events":{},"_readableState":{"highWaterMark":65536,"buffer":[],"bufferIndex":0,"length":0,"pipes":[],"awaitDrainWriters":null},"_writableState":{"highWaterMark":65536,"length":0,"corked":0,"writelen":0,"bufferedIndex":0,"pendingcb":0},"allowHalfOpen":true,"_eventsCount":2,"head":null,"text":""},, the door was called 0 times ❌
+    ***   FAILURE #1.4: OWED by goal/G30.13: the face's stream got [] ❌
+    ***   FAILURE #1.5: OWED by goal/G30.13: after a presence change the face got [] ❌
+
+--- faceLogin.js
+    ***   FAILURE #1.1: OWED by goal/G30.9: faceAt answered {"absent":{"ok":false,"face":true,"status":404,"error":"no such face"},"present":{"ok":false,"face":true,"status":404,"error":"no such face"},"unknown":{"ok":false,"face":true,"status":404,"error":"no such face"},"bare":{"ok":false,"face":false,"status":404,"e ❌
+    ***   FAILURE #1.2: OWED by goal/G30.9: the login mail: {"text":"","mails":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.9: the token: {"first":{"ok":true,"status":200,"loggedIn":false},"twice":{"ok":true,"status":200,"loggedIn":false},"expired":{"ok":true,"status":200,"loggedIn":false}} ❌
+    ***   FAILURE #1.4: OWED by goal/G30.9: the session: {"a":{"ok":false,"status":401,"error":"not logged in"},"b":{"ok":false,"status":401,"error":"not logged in"},"c":{"ok":false,"status":401,"error":"not logged in"},"d":{"ok":false,"status":401,"error":"not logged in"},"e":{"ok":false,"status":401,"error":"not l ❌
 
 --- faceSealed.js
-    ***   FAILURE #1.1: OWED by goal/G30.11: the face shell lacks: contacts ❌
+    ***   FAILURE #1.1: OWED by goal/G30.11: the sealed node.card came back {"head":null,"bytes":{"type":"Buffer","data":[]},"lines":0,"refused":0,"plainOnWire":false,"body":null} ❌
+    ***   FAILURE #1.2: OWED by goal/G30.11: the sealed file came back {"head":null,"bytes":0,"lines":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.11: an unsealed request got {"head":null} ❌
+    ***   FAILURE #1.4: OWED by goal/G30.11: the stream was {"keyed":false,"got":[],"clear":false} ❌
+    ***   FAILURE #1.5: OWED by goal/G30.11: the face shell lacks: kernelHook, homeVersion, contacts, sealed ❌
+
+--- faceStream.js
+    ***   FAILURE #1.1: OWED by goal/G30.14: faceCall answered {"ok":false,"status":401,"error":"not logged in"}, the stream got undefined ❌
+    ***   FAILURE #1.2: OWED by goal/G30.14: faceAnswer answered {"ok":false,"status":403,"error":"bad face signature"}, the face got {"head":null,"bytes":0} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.14: forged {"ok":false,"status":403,"error":"bad face signature"}, unknown {"ok":false,"status":403,"error":"bad face signature"} ❌
+    ***   FAILURE #1.4: OWED by goal/G30.14: none {"ok":false,"status":403,"error":"bad face signature"}, opened {"ok":false,"status":401,"error":"not logged in"}, face-open events 0, fed {"ok":false,"status":403,"error":"bad face signature"}, the face got  ❌
+    ***   FAILURE #1.5: OWED by goal/G30.14: no face-close after the face's stream ended ❌
+
+--- fieldRules.js
+    ***   FAILURE #1.1: owed by goal/G4.16: the red itself tripped: Error: ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/contactsDetails/contactsDetails.js'
+        at mountDetails (/tmp/spirit-publish-tree-F5DPls/spirit/test/fieldRules.js:305:18)
+        at theShellInput (/tmp/spirit-publish-tree-F5DPls/spirit/test/fieldRules.js:332:15)
+        at main (/tmp/spirit-publish-tree-F5DPls/spirit/test/fieldRules.js:354:9)
+
+--- fileCore.js
+    ***   FAILURE #1.1: OWED by fileTransfer goal/G1.3: kernel.js's spirit object has no peerPost ❌
+
+--- fileFetch.js
+    ***   FAILURE #1.1: OWED by fileTransfer goal/G1.2: the transfer never completed (0 asks made) ❌
+    ***   FAILURE #1.2: OWED by fileTransfer goal/G1.2: the receiver's status says {"ok":false,"code":"no-such-file","error":"fileServer: no such file","extra":{"verb":"status"}} ❌
+    ***   FAILURE #1.3: OWED by fileTransfer goal/G1.2: asks: 0, maxInFlight 0, kinds [] ❌
+    ***   FAILURE #1.4: OWED by fileTransfer goal/G1.2: the second transfer never completed ❌
+    ***   FAILURE #1.5: OWED by fileTransfer goal/G1.2: the resume never completed (0 chunk asks) ❌
+    ***   FAILURE #1.6: OWED by fileTransfer goal/G1.2: the progress rows say [] … [] ❌
 
 --- filesContentsSearch.js
-    ***   FAILURE #1.1: OWED by goal/G29.11: files.js launches  ❌
-    ***   FAILURE #1.2: OWED by goal/G29.11: the viewer passes no line to createTextView ❌
+    ***   FAILURE #1.1: the suite threw: TypeError: window.spirit.matchRanges is not a function
+        at matchRanges (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:56:3), <anonymous>:50:60)
+        at mark (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:56:3), <anonymous>:164:7)
+        at Object.paint (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:124:51)
+        at eval (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:56:3), <anonymous>:248:78)
+        at draw (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:56:3), <anonymous>:244:140)
+        at Object.shellCreateListSearch (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:56:3), <anonymous>:436:39)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:123:26
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesContentsSearch.js:206:3)
+
+--- filesSharedList.js
+    ***   FAILURE #1.1: the suite threw: TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesSharedList.js:212:3), <anonymous>:2883:17)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesSharedList.js:212:3), <anonymous>:2968:3)
+        at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/filesSharedList.js:212:129)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/filesSharedList.js:130:22 ❌
+
+--- fsOwnerUnlimited.js
+    ***   FAILURE #1.1: the suite threw ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/icons/iconSet.json' ❌
+
+--- fsWatcherCommands.js
+    ***   FAILURE #1.1: OWED by goal/G4.25: the snapshot's fs-watcher job: undefined ❌
+    ***   FAILURE #1.2: OWED by goal/G4.25: after the snapshot 0 commands arrived; the mirror holds spirit false, spirit/client/shell.js false ❌
+
+--- fsWatcherConsole.js
+    ***   FAILURE #1.1: OWED by goal/G2.16: the red itself tripped: TypeError: jdEscapeHtml is not a function
+        at eval (eval at mountDialog (/tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:62:3), <anonymous>:79:74)
+        at jdLogHtml (eval at mountDialog (/tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:62:3), <anonymous>:78:16)
+        at jdRender (eval at mountDialog (/tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:62:3), <anonymous>:128:19)
+        at eval (eval at mountDialog (/tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:62:3), <anonymous>:171:44)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:74:80
+        at Object.put (/tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:74:56)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/fsWatcherConsole.js:98:8 ❌
 
 --- gitHelpersOwnOnly.js
     ***   FAILURE #1.1: the world: publishData exited 1, origin's newest reads a tracked file; it said publishData: this agent has no name at the desk yet (Andy sets it in its pane): undefined ❌
     ***   FAILURE #1.2: OWED by goal/G19.6: the publish commit holds ["tracked.txt"] ❌
-    ***   FAILURE #1.3: OWED by goal/G19.6: confirm of A exited 1 commitCheck: REFUSED, the node on port 44099 could not be asked chat.add: deskClient on port 44099 answered 0 null
-    ***   FAILURE #1.4: OWED by goal/G19.6: made 9022994, re-stacked 9b6f9bd; confirm exited 1 commitCheck: REFUSED, the node on port 44099 could not be asked chat.add: deskClient on port 44099 answered 0 null
+    ***   FAILURE #1.3: OWED by goal/G19.6: confirm of A exited 1 commitCheck: REFUSED, the node on port 39743 could not be asked chat.add: deskClient on port 39743 answered 0 null
+    ***   FAILURE #1.4: OWED by goal/G19.6: made 13b15cb, re-stacked 906e621; confirm exited 1 commitCheck: REFUSED, the node on port 39743 could not be asked chat.add: deskClient on port 39743 answered 0 null
 
 --- goalShare.js
     ***   FAILURE #1.1: OWED by goal/G4.21: jobs.create asked 0 after the world was seeded and 0 after his go ❌
@@ -816,9 +1114,9 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 
 --- grantsSharedList.js
     ***   FAILURE #1.1: OWED by goal/G29.7: Grants did not mount: TypeError: Cannot read properties of undefined (reading 'create')
-        at Object.mount (eval at load (/tmp/spirit-publish-tree-5t50WR/spirit/test/grantsSharedList.js:127:40), <anonymous>:173:52)
-        at /tmp/spirit-publish-tree-5t50WR/spirit/test/grantsSharedList.js:137:16
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/grantsSharedList.js:264:3)
+        at Object.mount (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/grantsSharedList.js:127:40), <anonymous>:173:52)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/grantsSharedList.js:137:16
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/grantsSharedList.js:264:3)
     ***   FAILURE #1.2: OWED by goal/G29.7: the line is {"line":true,"display":"flex","children":[]} ❌
     ***   FAILURE #1.3: OWED by goal/G29.7: native selects made: 0; branch markup  ❌
     ***   FAILURE #1.4: OWED by goal/G29.7: the verb selector before a server: none ❌
@@ -826,7 +1124,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.6: OWED by goal/G29.7: a row reads  ❌
     ***   FAILURE #1.7: OWED by goal/G29.7: after choosing desk: picked false, rows [], verb hidden undefined ❌
     ***   FAILURE #1.8: OWED by goal/G29.7: the branch selector displays , its server half  ❌
-    ***   FAILURE #1.9: OWED by goal/G29.7: the contact dropdown's None:  (cells before it -1) ❌
+    ***   FAILURE #1.9: the suite threw: TypeError: window.spirit.matchRanges is not a function
 
 --- guarantees.js
     ***   FAILURE #1.1: the published block and the measurement disagree — run `node spirit/test/publishCapacity.js`: README.md: What one small server holds is OUT OF DATE against agents/claude-ubuntu/summary.json. Run: ❌
@@ -838,50 +1136,183 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.1: the Apps panel: createIconSelector false, typed fields [] ❌
     ***   FAILURE #1.2: the Apps panel reaches the selector through the globals ❌
 
+--- iconsAddKnown.js
+    ***   FAILURE #1.1: OWED by goal/G40.5: Add on a known glyph: list hidden false, icon view hidden false, it says "not saved: Cannot read properties of undefined (reading 'push')" ❌
+    ***   FAILURE #1.2: OWED by goal/G40.5: Add on the known glyph with a variation selector: icon view hidden false, it says "not saved: Cannot read properties of undefined (reading 'push')" ❌
+    ***   FAILURE #1.3: a new glyph: saved 1, list hidden false, icon view hidden false ❌
+
 --- introSpectorApp.js
     ***   FAILURE #1.1: OWED by goal/G30.5: the app lacks ["the contact selector"] ❌
 
 --- jobCallback.js
-    ***   FAILURE #1.1: OWED by desk/G2.3: the published object never arrived: [{"announce":{"name":"publishFixture","verbs":[{"verb":"DEBUG","request":"{on: false}","reply":"{debug: false}"},{"verb":"DEPENDENCIES","request":"{}","reply":"{paths: ['']}"},{"verb":"FS.annotateFile","request":"{path: '', payload: {}}","reply":"{saved: true}"},{"verb":"FS.deleteFile","request":"{path: ''}","reply":"{deleted: false}"},{"verb":"FS.fileExists","request":"{path: ''}","reply":"{exists: false}"},{"verb":"FS.getAnnotations","request":"{path: ''}","reply":"{}"},{"verb":"FS.loadFile","request":"{path: ''}","reply":"{}"},{"verb":"FS.loadJsonValue","request":"{path: ''}","reply":"{}"},{"verb":"FS.saveFile","request":"{path: '', content: ''}","reply":"{saved: true}"},{"verb":"FS.saveJsonValue","request":"{path: '', value: {}}","reply":"{saved: true}"},{"verb":"FS.search","request":"{q: ''}","reply":"{items: [{key: '', label: ''}], more: false}"},{"verb":"FS.statFile","request":"{path: ''}","reply":"{}"},{"verb":"ping","request":"{}","reply":"{pong: ''}"}]}},{"announce":{"name":"publishFixture","verbs":[{"verb":"DEBUG","request":"{on: false}","reply":"{debug: false}"},{"verb":"DEPENDENCIES","request":"{}","reply":"{paths: ['']}"},{"verb":"FS.annotateFile","request":"{path: '', payload: {}}","reply":"{saved: true}"},{"verb":"FS.deleteFile","request":"{path: ''}","reply":"{deleted: false}"},{"verb":"FS.fileExists","request":"{path: ''}","reply":"{exists: false}"},{"verb":"FS.getAnnotations","request":"{path: ''}","reply":"{}"},{"verb":"FS.loadFile","request":"{path: ''}","reply":"{}"},{"verb":"FS.loadJsonValue","request":"{path: ''}","reply":"{}"},{"verb":"FS.saveFile","request":"{path: '', content: ''}","reply":"{saved: true}"},{"verb":"FS.saveJsonValue","request":"{path: '', value: {}}","reply":"{saved: true}"},{"verb":"FS.search","request":"{q: ''}","reply":"{items: [{key: '', label: ''}], more: false}"},{"verb":"FS.statFile","request":"{path: ''}","reply":"{}"},{"verb":"ping","request":"{}","reply":"{pong: ''}"}]}}] ❌
-    ***   FAILURE #1.2: OWED by fileTransfer goal/G1.4: a burst of 200 arrived as 0 updates ❌
+    ***   FAILURE #1.1: complete() should have reached "completed" but status is "failed" ❌
+    ***   FAILURE #1.2: complete()'s data payload was not merged correctly: {"command":"node","args":["/tmp/spirit-publish-tree-F5DPls/spirit/test/fixtures/jobCallbackFixture.js","{\"outcome\":\"complete\",\"data\":{\"sample\":42}}"],"progress":0,"exitCode":1,"pid":83639} ❌
+    ***   FAILURE #1.3: expected log entry "fixture running" is missing from job.log ❌
+    ***   FAILURE #1.4: fail()'s error message was not recorded correctly: {"command":"node","args":["/tmp/spirit-publish-tree-F5DPls/spirit/test/fixtures/jobCallbackFixture.js","{\"outcome\":\"fail\",\"message\":\"boom\"}"],"progress":0,"exitCode":1,"pid":83646} ❌
+    ***   FAILURE #1.5: OWED by desk/G2.2: a server job reported nothing, or without its job id: null ❌
+    ***   FAILURE #1.6: OWED by desk/G2.2: the server has no IPC channel: null ❌
+    ***   FAILURE #1.7: the one-shot reported nothing: null ❌
+    ***   FAILURE #1.8: OWED by desk/G2.2: the one-shot has no IPC channel ❌
+    ***   FAILURE #1.9: OWED by desk/G2.3: the published object never arrived: [] ❌
+    ***   FAILURE #1.10: OWED by desk/G2.3: no published object names the verb ping ❌
+    ***   FAILURE #1.11: OWED by desk/G2.3: the server publishing 1 MB published nothing at all ❌
+    ***   FAILURE #1.12: OWED by fileTransfer goal/G1.4: a burst of 200 arrived as 0 updates ❌
 
 --- jobCycle.js
-    ***   FAILURE #1.1: OWED by goal/G29.15: appServer.js still holds publish ❌
-    ***   FAILURE #1.2: OWED by goal/G29.15: appServer.publish still called in process/js/desk/desk.js ❌
-    ***   FAILURE #1.3: OWED by goal/G29.15: not switched: process/js/desk/desk.js ❌
+    ***   FAILURE #1.1: OWED by goal/G29.15: spirit.core.jobs lacks report, log, complete, fail, publish, start, progress, end ❌
+    ***   FAILURE #1.2: OWED by goal/G29.15: start published undefined ❌
+    ***   FAILURE #1.3: OWED by goal/G29.15: a second start answered {"broke":"Cannot read properties of undefined (reading 'start')"} ❌
+    ***   FAILURE #1.4: OWED by goal/G29.15: starts published: [] ❌
+    ***   FAILURE #1.5: OWED by goal/G29.15: progress published undefined ❌
+    ***   FAILURE #1.6: OWED by goal/G29.15: progress with total 0 published undefined ❌
+    ***   FAILURE #1.7: OWED by goal/G29.15: end published undefined ❌
+    ***   FAILURE #1.8: OWED by goal/G29.15: the start after an end answered {"broke":"Cannot read properties of undefined (reading 'start')"}, ends [] ❌
+    ***   FAILURE #1.9: OWED by goal/G29.15: bodies posted: [] ❌
+    ***   FAILURE #1.10: OWED by goal/G29.15: a transient progress published [], said null ❌
+    ***   FAILURE #1.11: OWED by goal/G29.15: publish answered null, posted [] ❌
+    ***   FAILURE #1.12: OWED by goal/G29.15: oversize publish answered null, stderr "[eval]:2\nconst a = spirit.core.jobs.publish({ hello: \"page\", n: 1 });\n                           ^\n\nTypeError: Cannot re" ❌
 
 --- jobsApiGone.js
-    ***   FAILURE #1.1: OWED by goal/G30.6: spirit/auth/ holds ["AGENTS.md","api.js","grant.warning.txt","peer.json","query.json","search.json"], js/jobs/ ["AGENTS.md","api.js","get.json","search.json"] ❌
+    ***   FAILURE #1.1: OWED by goal/G30.6: the jobs mount declares ["cancel","create","delete","get","search"] ❌
+    ***   FAILURE #1.2: OWED by goal/G30.6: spirit/auth/ holds ["AGENTS.md","api.js","grant.warning.txt","peer.json","query.json","search.json"], js/jobs/ ["AGENTS.md","api.js","get.json","search.json"] ❌
+
+--- jobsCleanUp.js
+    ***   FAILURE #1.1: OWED by goal/G29.16: a job that reported complete() is still listed 3 s later (job_12) ❌
+
+--- jobsDetails.js
+    ***   FAILURE #1.1: OWED by goal/G2.11: the list tripped: TypeError: jobsEscapeHtml is not a function
+        at Object.jobsPaint [as paint] (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:109:3), <anonymous>:96:54)
+        at eval (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:108:3), <anonymous>:248:78)
+        at draw (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:108:3), <anonymous>:244:140)
+        at self.redraw (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:108:3), <anonymous>:428:33)
+        at jobsRedraw (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:109:3), <anonymous>:110:48)
+        at throttledRedraw (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:109:3), <anonymous>:113:3)
+        at Object.render (eval at load (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:109:3), <anonymous>:158:5)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:137:12
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsDetails.js:248:3) ❌
+    ***   FAILURE #1.2: rows drawn: 0 of 2 ❌
+    ***   FAILURE #1.3: OWED by goal/G2.11: the red itself tripped: TypeError: jobsEscapeHtml is not a function
 
 --- jobsLifecycle.js
     ***   FAILURE #1.1: a 'completed' job could not be deleted ❌
     ***   FAILURE #1.2: a 'cancelled' job could not be deleted ❌
 
+--- jobsSearch.js
+    ***   FAILURE #1.1: the run broke: TypeError: jobsEscapeHtml is not a function
+        at Object.jobsPaint [as paint] (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:151:5), <anonymous>:96:54)
+        at eval (eval at loadInto (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:73:3), <anonymous>:248:78)
+        at draw (eval at loadInto (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:73:3), <anonymous>:244:140)
+        at self.redraw (eval at loadInto (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:73:3), <anonymous>:428:33)
+        at jobsRedraw (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:151:5), <anonymous>:110:48)
+        at throttledRedraw (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:151:5), <anonymous>:113:3)
+        at eval (eval at <anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:151:5), <anonymous>:152:7)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/jobsSearch.js:154:75
+
+--- joinOnboarding.js
+    ***   FAILURE #1.1: OWED by goal/G30.2: join answered {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"}, mail {} ❌
+    ***   FAILURE #1.2: OWED by goal/G30.2: joinConfirm answered {"ok":false,"status":403,"error":"no join waits for that code under this key"}, row {} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.2: a second join at once answered {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"}, mails 0 ❌
+    ***   FAILURE #1.4: OWED by goal/G30.2: a stranger's join on the door answered 200, mails to dora 0 ❌
+    ***   FAILURE #1.5: OWED by goal/G30.2: server.js declares no relay.join {url, email, code} ❌
+    ***   FAILURE #1.6: OWED by goal/G30.2: the shell neither asks relay.join nor reads ?join= ❌
+    ***   FAILURE #1.7: OWED by goal/G30.2: the first-run screen has no email field asking relay.join ❌
+    ***   FAILURE #1.8: OWED by goal/G30.2: a join at start printed {"lines":["A mail to fern@example.org will arrive shortly from kept.example. Open its link on this computer within 10 minutes to connect this node to the network."]}, mail {"to":"fern@example.org","subject":"Join this relay","text":"Open this link within 10 minutes:\n\nhttp://127.0.0.1:11112/face.html?app=join&join=phtxH7OIOyAKWrQhmN2uTH-euxyT_pc1&relay=MCowBQYDK2VwAyEAfRX7BsMfdIaF7ngb3JoUp88l4Qhr3NBmjrDdTYh6 ❌
+    ***   FAILURE #1.9: OWED by goal/G30.2: natterDetails draws the email field without reading services.sendMail ❌
+
+--- joinSteps.js
+    ***   FAILURE #1.1: OWED by goal/G30.1: the mail's link reads  ❌
+    ***   FAILURE #1.2: OWED by goal/G30.1: faceForm is missing, or Info keeps its own face form, or the Join app does not draw it ❌
+    ***   FAILURE #1.3: OWED by goal/G30.1: the Join app still decides or subscribes, or lacks onSteps, the join form or faceOpened ❌
+    ***   FAILURE #1.4: OWED by goal/G30.1: joinForm.words answered [{"title":"Join a relay","label":"Your email","button":"Join","email":""},{"title":"Change email address","label":"Email address","button":"Change","email":""},{"title":"Change email address","label":"Email address","button":"Change","email":""}], or a caller keeps its own words ❌
+    ***   FAILURE #1.5: OWED by goal/G30.1: the face form row reads  ❌
+    ***   FAILURE #1.6: OWED by goal/G30.1: the Join app does not draw from what the shell hands it: {"threw":"Cannot read properties of undefined (reading 'loadFile')"} ❌
+    ***   FAILURE #1.7: OWED by goal/G30.1: the Join app redrew or asked: {"threw":"Cannot read properties of undefined (reading 'loadFile')"} ❌
+
 --- labHome.js
-    ***   FAILURE #1.1: no labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. ❌
+    ***   FAILURE #1.1: no labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. ❌
+
+--- labRunLock.js
+    ***   FAILURE #1.1: OWED by goal/G8.9: the claim answered {"status":200,"body":{"held":false,"by":"claude-windows"}} ❌
+
+--- listSearchModes.js
+    ***   FAILURE #1.1: OWED by goal/G29.9: the red itself tripped: TypeError: window.spirit.matchRanges is not a function
+        at matchRanges (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:56:3), <anonymous>:50:60)
+        at mark (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:56:3), <anonymous>:164:7)
+        at Object.paint (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:87:106)
+        at eval (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:56:3), <anonymous>:248:78)
+        at draw (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:56:3), <anonymous>:244:140)
+        at shellCreateListSearch (eval at page (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:56:3), <anonymous>:436:39)
+        at main (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:85:16)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/listSearchModes.js:200:2)
+
+--- listeningApp.js never reported (exit 1)
+    TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/listeningApp.js:88:3), <anonymous>:2883:17)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/listeningApp.js:88:3), <anonymous>:2968:3)
+        at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/listeningApp.js:88:88)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/listeningApp.js:127:16
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/listeningApp.js:137:3)
+
+--- moduleIds.js
+    ***   FAILURE #1.1: OWED by slim/G1.5: the row reads "threw jobsEscapeHtml is not a function" ❌
+
+--- natterDetails.js never reported (exit 1)
+    Error: ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/natterDetails/natterDetails.js'
+        at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/natterDetails.js:247:18)
+        at ownedMailbox (/tmp/spirit-publish-tree-F5DPls/spirit/test/natterDetails.js:397:15)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/natterDetails.js:1828:1)
+
+--- natterShellFixes.js
+    ***   FAILURE #1.1: OWED by goal/G30.7: natterDetails still reads lever.position or lever.allowed ❌
+    ***   FAILURE #1.2: OWED by goal/G30.7: the Contacts peer list has no relay filter or no way to natterDetails ❌
+    ***   FAILURE #1.3: OWED by goal/G30.7: the contact selector has no relay filter, or still two all buttons ❌
+    ***   FAILURE #1.4: OWED by goal/G30.7: the contact list shows no relays, or a relay row opens no natterDetails ❌
+    ***   FAILURE #1.5: OWED by goal/G30.7: natterDetails still takes canRemove from Natter ❌
+
+--- noCoalescing.js
+    ***   FAILURE #1.1: OWED by fileTransfer goal/G1.4: the size cap went with the coalescing ❌
+
+--- nodeInfo.js never reported (exit 1)
+    TypeError: Cannot read properties of undefined (reading 'status')
+        at infoLoadRelays (eval at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/nodeInfo.js:174:3), <anonymous>:274:23)
+        at Object.mount (eval at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/nodeInfo.js:174:3), <anonymous>:513:5)
+        at mountApp (/tmp/spirit-publish-tree-F5DPls/spirit/test/nodeInfo.js:177:12)
+        at theScreen (/tmp/spirit-publish-tree-F5DPls/spirit/test/nodeInfo.js:286:15)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/nodeInfo.js:846:1)
+
+--- noderoutesAlive.js
+    ***   FAILURE #1.1: a card ask on https://noderoutes.net was not answered as a relay: status 429 {"error":"too early — wait Infinity ms","inFlight":false,"busy":false,"retryAfterMs":null,"tooLittleTime":false,"code":" ❌
+    ***   FAILURE #1.2: the relay key is not the one recorded in goal/G19.16: no card ❌
+    ***   FAILURE #1.3: its owner is not Andy's node key: no card ❌
+
+--- oneDeclaration.js
+    ***   FAILURE #1.1: spirit/nodeStore.js  open > row  lines 554 and 805 — the LAST declaration wins in JavaScript, so a duplicate runs fine and hides until somebody edits the copy that loses. Usually a bad paste or an over-wide cut. ❌
 
 --- oneDecoder.js
-    ***   FAILURE #1.1: OWED by goal/G16.5: 1 envelope reader(s) outside arrivals.js: hub.js:2573 try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; ❌
-    ***   FAILURE #1.2: OWED by goal/G16.5: 3 packet parse(s) of their own: peerPost.js:1926 try { said = JSON.parse(pkt.text).body; } catch (e) { said = null; } | peerPost.js:2020 try { said = JSON.parse(plain).body; } catch (e) { said = null; } | peerPost.js:2064 try { said = JSON.parse(plain).body; } catch (e) { said = null; } ❌
+    ***   FAILURE #1.1: OWED by goal/G16.5: 2 envelope reader(s) outside arrivals.js: hub.js:2381 try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; | hub.js:2412 try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; ❌
+    ***   FAILURE #1.2: OWED by goal/G16.5: 3 packet parse(s) of their own: peerPost.js:1922 try { said = JSON.parse(pkt.text).body; } catch (e) { said = null; } | peerPost.js:2016 try { said = JSON.parse(plain).body; } catch (e) { said = null; } | peerPost.js:2061 try { said = JSON.parse(plain).body; } catch (e) { said = null; } ❌
 
 --- oneDoor.js never reported (exit 1)
     ***   FAILURE #1.1: reaching past the interface: shell/js/fileViewer.js (1) — use peerPost, or decide to modify the interface. Do not add a line to the tally. ❌
-    Error: ENOENT: no such file or directory, scandir '/tmp/spirit-publish-tree-5t50WR/spirit/run/js'
-        at walk (/tmp/spirit-publish-tree-5t50WR/spirit/test/oneDoor.js:214:6)
-        at /tmp/spirit-publish-tree-5t50WR/spirit/test/oneDoor.js:378:7
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/oneDoor.js:377:32)
+    Error: ENOENT: no such file or directory, scandir '/tmp/spirit-publish-tree-F5DPls/spirit/run/js'
+        at walk (/tmp/spirit-publish-tree-F5DPls/spirit/test/oneDoor.js:214:6)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/oneDoor.js:378:7
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/oneDoor.js:377:32)
 
 --- presenceProof.js
     ***   FAILURE #1.1: OWED by goal/G2.9: the red itself tripped: TypeError: S.assemble is not a function
-        at Object.spiritFor (/tmp/spirit-publish-tree-5t50WR/spirit/test/testSupport.js:520:24)
-        at mountContacts (/tmp/spirit-publish-tree-5t50WR/spirit/test/presenceProof.js:161:8)
-        at /tmp/spirit-publish-tree-5t50WR/spirit/test/presenceProof.js:253:16 ❌
+        at Object.spiritFor (/tmp/spirit-publish-tree-F5DPls/spirit/test/testSupport.js:520:24)
+        at mountContacts (/tmp/spirit-publish-tree-F5DPls/spirit/test/presenceProof.js:161:8)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/presenceProof.js:253:16 ❌
 
 --- processBrowserGone.js
     ***   FAILURE #1.1: OWED by goal/G29.13: the file viewer's start form is gone ❌
 
 --- protocolSurface.js
     ***   FAILURE #1.1: taken — registered in 0010 and gone from the tree. Remove it from the register, or find out what deleted it. ❌
+
+--- puppetsPending.js
+    ***   FAILURE #1.1: puppets/G1 — `a response bound in limits.js` EXISTS NOW. It was declared as awaiting; write the assertion it was standing in for (one number that bounds what a verb hands back, so a call cannot succeed on loopback and fail as a packet. BODY_MAX (23552) bounds what the door accepts and PLAINTEXT_MAX (16384) bounds what a composer may build; nothing bounds the answer) ❌
 
 --- receiptBindsReply.js
     ***   FAILURE #1.1: OWED by goal/G16.1: deliverForwardedReply announces a route without checking the receipt against the reply text ❌
@@ -891,7 +1322,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 
 --- relayListIsNodeState.js
     ***   FAILURE #1.1: OWED by goal/G16.3: only 0 verbs parsed: the claim shape moved and the checks below mean nothing ❌
-    ***   FAILURE #1.2: OWED by goal/G16.3: relay.search went missing: the verb he approved for listing relays must survive ❌
+    ***   FAILURE #1.2: OWED by goal/G16.3: the verb that lists relays is missing, or relay.search survived goal/G40.11 ❌
     ***   FAILURE #1.3: OWED by goal/G16.3: the node claims no relay.remove ❌
 
 --- reviewCleanup.js
@@ -899,7 +1330,10 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 
 --- rowElements.js
     ***   FAILURE #1.1: OWED by goal/G30.18: fileElement: {"threw":"Cannot read properties of undefined (reading 'then')"} ❌
-    ***   FAILURE #1.2: OWED by goal/G30.18: contactElement: {"threw":"Cannot read properties of undefined (reading 'then')"} ❌
+    ***   FAILURE #1.2: OWED by goal/G30.18: contactElement: {"subs":0,"pPresence":"<span title=\"not known — no relay you are connected to mentions this key\">⚪</span>","pPresencePaints":1,"qPresencePaints":1,"qLabel":"Quin","pLabelPaints":1,"pStatusPaints":1,"blockAsked":"","opened":null,"expand":"","fields":"presence,status,label,add","rule":false} ❌
+
+--- runSpiritFolder.js
+    ***   FAILURE #1.1: OWED by goal/G40.2: spirit.js requires require('./spirit/fieldRules.js') require('fs') require('path') require('path') require('./spirit/limits.js') require('./spirit/client/packet.js') ❌
 
 --- runStandsAlone.js
     ***   FAILURE #1.1: process/js/desk/desk.family/item.suites.add.json — the path spirit/test: "description": "Add one suite to an item, the spirit/test/ .js path a Verify of it runs (goal/G40.3); the red writer's,  ❌
@@ -907,25 +1341,52 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.3: process/js/desk/desk.js — the path spirit/test: if (suite && (!/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p))) throw refusedWhy('bad-request', 'a suite is a spirit/test ❌
     ***   FAILURE #1.4: process/js/deskClient/deskClient.js — the path spirit/test: countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: rel.indexOf('spirit/test/') === 0 ? 'test'  ❌
 
---- searchMemory.js
-    ***   FAILURE #1.1: after the walk, memory holds K-LIVE as {"name":"bella live","owned":false,"blocked":false,"held":false,"book":false,"publicLabel":"bella live","present":true,"relay":"http://relay-a.example","kind":"node","seenAt":"2026-10-25T23:49:08.556Z","publicKey":"K-LIVE"} ❌
+--- seatsKept.js
+    ***   FAILURE #1.1: OWED by goal/G19.1: the suite itself tripped: Error: ENOENT: no such file or directory, open '/tmp/spirit-publish-tree-F5DPls/spirit/run/shell/natterDetails/natterDetails.js'
+        at mountDetails (/tmp/spirit-publish-tree-F5DPls/spirit/test/seatsKept.js:533:8)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/seatsKept.js:376:19 ❌
+
+--- servableAssets.js
+    ***   FAILURE #1.1: relay-state (the folder itself) — fileServable should be false ❌
+    ***   FAILURE #1.2: relay-state is still a row in the tree ❌
+
+--- serverSurface.js
+    ***   FAILURE #1.1: jobs.update is claimed by nobody; relay.search is claimed by nobody — a verb nobody claimed is refused BY THE DOOR, which is an answer. Without this, deleting a claim leaves the check above green. ❌
+    ***   FAILURE #1.2: claimed but never posted to: events.subscribe, events.publish, relay.leave — add them above, or this suite is green about code it never ran ❌
+
+--- sharedLimit.js
+    ***   FAILURE #1.1: OWED by the shared-layer limit: publish of an object over MAX_PAYLOAD returned null, stderr "[eval]:2\nconst r = spirit.core.jobs.publish({ big: 'm'.repeat(24576) });\n                           ^\n\nTypeError: Cannot" ❌
+    ***   FAILURE #1.2: OWED by the shared-layer limit: jobs.update with an oversized body answered {"status":400,"body":{"error":"no such verb: jobs.update"}} ❌
 
 --- shellAppNeedsServer.js never reported (exit 1)
-    ReferenceError: window is not defined
-        at stepsOf (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:591:17)
-        at openStep (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:598:13)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:621:20)
-        at renderDesktop (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:613:23)
-        at declareDynamicApp (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2733:27)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2766:7)
-        at declareIntrinsicApps (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2758:27)
-        at eval (eval at bootShell (/tmp/spirit-publish-tree-5t50WR/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2841:3)
+    TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2883:17)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellAppNeedsServer.js:73:3), <anonymous>:2968:3)
+        at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellAppNeedsServer.js:73:72)
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellAppNeedsServer.js:105:16)
+
+--- shellElements.js never reported (exit 1)
+    TypeError: window.spirit.matchRanges is not a function
+
+--- shellStreamSenders.js
+    ***   FAILURE #1.1: the run broke: TypeError: Cannot read properties of undefined (reading 'subscribe')
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellStreamSenders.js:138:3), <anonymous>:2883:17)
+        at eval (eval at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellStreamSenders.js:138:3), <anonymous>:2968:3)
+        at bootShell (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellStreamSenders.js:138:88)
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/shellStreamSenders.js:278:18
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/shellStreamSenders.js:387:3)
+
+--- silentNoMore.js
+    ***   FAILURE #1.1: the run broke: TypeError: Cannot read properties of undefined (reading 'report')
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/silentNoMore.js:53:33
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/silentNoMore.js:98:3)
 
 --- spiritAtRunRoot.js
-    ***   FAILURE #1.1: OWED by goal/G40.1: spirit.require of an interface in node, its own node at 33315: {"refused":"no-node"} ❌
+    ***   FAILURE #1.1: OWED by goal/G40.1: spirit.require of an interface in node, its own node at 36887: {"refused":"no-node"} ❌
     ***   FAILURE #1.2: OWED by goal/G40.1: helpers true, loaders false ❌
-    ***   FAILURE #1.3: OWED by goal/G40.1: a spirit made on a transport has no require (no spirit) ❌
-    ***   FAILURE #1.4: OWED by goal/G40.1: 1 of 11 do not: ["process/js/desk/removeAgent.js (missing)"] ❌
+    ***   FAILURE #1.3: OWED by goal/G40.1: the kernel's members on spirit: jobs missing false, node.const false, VERSION false, MIME_TYPES false, peerPost true ❌
+    ***   FAILURE #1.4: OWED by goal/G40.1: a spirit made on a transport has no require (no spirit) ❌
+    ***   FAILURE #1.5: OWED by goal/G40.1: 1 of 11 do not: ["process/js/desk/removeAgent.js (missing)"] ❌
 
 --- spiritErrors.js
     ***   FAILURE #1.1: uncatalogued errors — add each to spiritErrors.js with its meaning:
@@ -938,7 +1399,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.4: OWED by goal/G32.1: a 404 reply: undefined ❌
 
 --- spiritServers.js
-    ***   FAILURE #1.1: OWED by goal/G32.3: api.js files naming their family or registering: ["process/js/desk/desk.family/api.js"] ❌
+    ***   FAILURE #1.1: OWED by goal/G32.3: api.js files naming their family or registering: ["spirit/relay/api.js","process/js/desk/desk.family/api.js"] ❌
     ***   FAILURE #1.2: OWED by goal/G32.3: the object asked [], made ["threw"], wrote {"threw":"S.createSpirit is not a function"} ❌
 
 --- stackFrameTestItems.js
@@ -946,26 +1407,36 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     ***   FAILURE #1.2: goal/G22.2: its door(s) are in the list, each gated by one file::function — OWED by goal/G22.2: the list names no door for it ❌
 
 --- streamReconnect.js
-    ***   FAILURE #1.1: the run broke: TypeError: Cannot set properties of undefined (setting 'readyState')
-        at /tmp/spirit-publish-tree-5t50WR/spirit/test/streamReconnect.js:53:20
-        at Object.<anonymous> (/tmp/spirit-publish-tree-5t50WR/spirit/test/streamReconnect.js:130:3)
+    ***   FAILURE #1.1: the run broke: TypeError: win.spirit.core.jobs.subscribe is not a function
+        at /tmp/spirit-publish-tree-F5DPls/spirit/test/streamReconnect.js:46:24
+        at Object.<anonymous> (/tmp/spirit-publish-tree-F5DPls/spirit/test/streamReconnect.js:130:3)
 
 --- textViewCodeMirror.js
-    ***   FAILURE #1.1: OWED by goal/G29.12: the text launcher draws  ❌
+    ***   FAILURE #1.1: OWED by goal/G29.12: spirit.matchRanges undefined; textView uses it true, has its own RegExp false ❌
+    ***   FAILURE #1.2: OWED by goal/G29.12: listSearch.js: RegExps 0, its mark() uses the shared ranges true ❌
+    ***   FAILURE #1.3: OWED by goal/G29.12: the marks cover [] ❌
+    ***   FAILURE #1.4: OWED by goal/G29.12: scrolled into view: [] ❌
+    ***   FAILURE #1.5: OWED by goal/G29.12: after the page was drawn: refreshed 1 time(s), scrolled 0 ❌
+    ***   FAILURE #1.6: OWED by goal/G29.12: two words gave 0 marks ❌
+    ***   FAILURE #1.7: OWED by goal/G29.12: the text launcher draws  ❌
 
 --- verifiedEmail.js
-    ***   FAILURE #1.1: OWED by goal/G30.1: joinForm asked null, said null, drew  ❌
+    ***   FAILURE #1.1: OWED by goal/G30.1: first join {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"} / {"ok":false,"status":403,"error":"no join waits for that code under this key"}, row {} ❌
+    ***   FAILURE #1.2: OWED by goal/G30.1: joinConfirm answered {"ok":false,"status":403,"error":"no join waits for that code under this key"} ❌
+    ***   FAILURE #1.3: OWED by goal/G30.1: the repeat join answered {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"}, row {} ❌
+    ***   FAILURE #1.4: OWED by goal/G30.1: after the confirm {"ok":false,"status":403,"error":"no join waits for that code under this key"}, row {}, peers 1 ❌
+    ***   FAILURE #1.5: OWED by goal/G30.1: the owner's join {"ok":false,"status":400,"error":"a join needs the link to mail, an http or https address"} / {"ok":false,"status":403,"error":"no join waits for that code under this key"}, row {"publicKey":"MCowBQYDK2VwAyEAiJhn6J5eI+mJ6DmrAikAjR3a60LxuBPohrAjuyaqZj0=","publicLabel":"owner","claimedAt":"2026-10-26T06:45:07.392Z","card":"","faceName":"","faceEmail":"","email":"","emailVerified":false} ❌
+    ***   FAILURE #1.6: OWED by goal/G30.1: natterDetails has no email panel for a seated relay, or not its words ❌
+    ***   FAILURE #1.7: OWED by goal/G30.1: the mail subjects were [] ❌
+    ***   FAILURE #1.8: OWED by goal/G30.1: relay.join hands no change apart from a new seat, or the page never says Email address verified ❌
+    ***   FAILURE #1.9: OWED by goal/G30.1: Info draws the face form without a verified email, or offers no way to natterDetails ❌
+    ***   FAILURE #1.10: OWED by goal/G30.1: joinForm asked null, said null, drew  ❌
+    ***   FAILURE #1.11: OWED by goal/G30.1: joinForm is not loaded, or natterDetails or the Join app keeps its own form ❌
 
 --- visualScenarios.js
     ***   FAILURE #1.1: dangling: buddies.visual.json -> natterIntrinsic.js ❌
 
---- declared, not built yet: 4 assertion(s) across 4 requirement(s)
-
-    puppets/G1  a response bound exists, and both paths obey it
-          PUPPETS · status OPEN
-          missing: a response bound in limits.js   ~0% there, guess: one line, plus deciding the number
-                   one number that bounds what a verb hands back, so a call cannot succeed on loopback and fail as a packet. BODY_MAX (23552) bounds what the door accepts and PLAINTEXT_MAX (16384) bounds what a composer may build; nothing bounds the answer
-          declared in puppetsPending.js
+--- declared, not built yet: 3 assertion(s) across 3 requirement(s)
 
     puppets/G10  the face door and the puppet group
           PUPPETS · status OPEN
@@ -992,16 +1463,16 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
 --- stood down: these suites ran, diagnosed the MACHINE rather than the tree, and declined. Not red and not awaiting — the board below is that much smaller than it looks, and clearing the condition is what makes them run.
 
     liveFrontDoor.js
-      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
     labLifecycle.js
-      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
-
-    labRefusals.js
-      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
     labPersistence.js
-      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-5t50WR), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
+
+    labRefusals.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/tmp/spirit-publish-tree-F5DPls), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
     labRelaySurface.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not this checkout — run your own: LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own when none is up.
@@ -1012,6 +1483,6 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1787ms
     vaultGuardBattery.js
       STOOD DOWN: this box does not identify its agent — this box does not say where its vault is: SPIRIT_VAULT is unset, no .spiritbox at the checkout root, and none beside this checkout (expected spirit/run/brains/VAULT_RULES.md). On a box whose agent works in a clone of its own, the vault sits elsewhere and only the box can say where — write .spiritbox, see .spiritbox.example. An unidentified box must not default to either agent: it would assert that one guard should behave like the other, which is how this suite read eight failures against a guard that was right every time
 
-470 suites, 5950 green, 273 red, 92 unhappy, 4 awaiting, 7 stood down, 1 not run
+470 suites, 5324 green, 487 red, 162 unhappy, 3 awaiting, 7 stood down, 1 not run
 
---- 4 owed
+--- 3 owed
