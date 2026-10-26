@@ -724,6 +724,150 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!/kind:\s*'Q'[^}]*by:\s*'desk'|by:\s*'desk'[^}]*kind:\s*'Q'|stale:/.test(deskCode)) test.check('the desk raises no idle question: no Q written by the desk, no stale Q');
   else test.fail('the desk still writes a question of its own');
 
+  // FIX THE CONTACTS UI, AND THE PRODUCT TEST SYSTEM (goal/G40.13, box v22).
+  test.subHeading('1o. the contacts list gets a sized box; the product test system stands alone; the desk brings tests and ui rules by the file list');
+  // The Contacts page hands its list a box of a stated size, as Apps and Icons do (shell.css .fill, rule/16).
+  const contactsPage = code('shell/contacts/contacts.js');
+  if (/id="contacts-book" class="[^"]*\bfill\b/.test(contactsPage) && /flex-direction:\s*column|class="fill"|classList\.add\('fill'\)/.test(contactsPage))
+    test.check('the Contacts page hands its list a sized box: the list box takes fill, in a page that is a flex column');
+  else test.fail('the Contacts list box has no stated size (no fill, or no flex column around it)');
+  // 1. The product test system depends on nothing outside spirit/run/: nothing in a test/ folder of the run tree reaches
+  // into spirit/test/, and its own reporter in spirit/run/test/ prints the lines the verifier reads.
+  const productTests = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === '.git') return;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.js$/.test(e.name) && /[\\/]test[\\/][^\\/]+$/.test(p)) productTests.push(path.relative(RUN, p).replace(/\\/g, '/'));
+    });
+  }(RUN));
+  const reaching = productTests.filter(function (f) { return /testSupport|'\.\.',\s*'\.\.',\s*'test'|spirit\/test\//.test(code(f)); });
+  if (productTests.length && !reaching.length) test.check('no product test reaches into spirit/test/ (' + productTests.length + ' files in the run tree\'s test folders read)');
+  else test.fail('product tests that reach into spirit/test/: ' + reaching.join(', '));
+  const REPORTER = path.join(RUN, 'test', 'testReport.js');
+  const reporterCode = fs.existsSync(REPORTER) ? code('test/testReport.js') : '';
+  const PROBE_TEST = [
+    "const t = require(process.argv[1]);",
+    "t.startTest('probe'); t.subHeading('one'); t.check('a pass'); t.fail('a fail'); t.reportSuccessFailureCount();",
+  ].join('\n');
+  const probed = reporterCode ? spawnSync(process.execPath, ['-e', PROBE_TEST, REPORTER], { encoding: 'utf8', timeout: 20000 }) : { stdout: '' };
+  const lines = String(probed.stdout || '').split('\n').filter(function (l) { return /^\**\s*(SUCCESS|FAILURE) #/.test(l); });
+  if (lines.length === 2 && /SUCCESS #/.test(lines[0]) && /FAILURE #/.test(lines[1]) && !/testSupport|spirit\/test\//.test(reporterCode))
+    test.check('the product test system has its own reporter, spirit/run/test/testReport.js: it prints the SUCCESS and FAILURE lines the verifier reads, and needs nothing of spirit/test/');
+  else test.fail('the product reporter spirit/run/test/testReport.js: ' + (reporterCode ? short(probed.stdout + probed.stderr) : 'not there'));
+  if (reporterCode && /--verify-port/.test(reporterCode) && /deskVerify\.record/.test(reporterCode) && /spirit\.js/.test(reporterCode) && !/\bfetch\(/.test(reporterCode))
+    test.check('when the verifier started the run, the reporter posts each result to the node\'s verifier through the spirit object (deskVerify.record), with no fetch of its own');
+  else test.fail('the product reporter does not post its results to the verifier through the spirit object');
+  // 3, 11. Test pairs beside the modules the Contacts face-app uses: ./test/<name>.js and ./test/<name>.md.
+  const CONTACT_MODULES = ['shell/js/contacts/listElement.js', 'shell/js/contacts/rowElement.js', 'shell/js/contacts/data.js', 'shell/js/probabilitySearch.js',
+    'shell/js/rowElement.js', 'shell/js/spiritData.js', 'shell/js/contactLabel.js'];
+  const pairOf = function (m) { const d = path.posix.dirname(m); const n = path.posix.basename(m, '.js'); return { js: d + '/test/' + n + '.js', md: d + '/test/' + n + '.md' }; };
+  const unpaired = CONTACT_MODULES.filter(function (m) { const p = pairOf(m); return !fs.existsSync(path.join(RUN, p.js)) || !fs.existsSync(path.join(RUN, p.md)); });
+  if (!unpaired.length) test.check('each module the Contacts face-app uses has its pair beside it, ./test/<name>.js and ./test/<name>.md: ' + CONTACT_MODULES.length + ' modules');
+  else test.fail('modules of the Contacts face-app without their test pair: ' + unpaired.join(', '));
+  const tm = require(path.join(RUN, 'test', 'testModule.js'));
+  const notNamed = CONTACT_MODULES.filter(function (m) { return !(tm.testsFor(m) || []).some(function (t) { return t.test === pairOf(m).js; }); });
+  if (!unpaired.length && !notNamed.length) test.check('testModule.js names each of those tests for its module');
+  else test.fail('testModule.js does not name the own test of: ' + (unpaired.length ? 'the missing pairs' : notNamed.join(', ')));
+  // 4. A test exercises its module: it loads it and its run prints the result lines; none reads the module as text alone.
+  const ran = unpaired.length ? [] : CONTACT_MODULES.map(function (m) {
+    const t = pairOf(m).js;
+    const r = spawnSync(process.execPath, [path.join(RUN, t)], { cwd: path.join(RUN, '..', '..'), encoding: 'utf8', timeout: 120000 });
+    const own = String(r.stdout || '').split('\n').filter(function (l) { return /^\**\s*(SUCCESS|FAILURE) #/.test(l); });
+    const loads = new RegExp(path.posix.basename(m).replace('.', '\\.')).test(code(t));
+    return { t: t, lines: own.length, red: own.filter(function (l) { return /FAILURE #/.test(l); }).length, loads: loads };
+  });
+  const thin = ran.filter(function (x) { return !x.loads || !x.lines || x.red; });
+  if (ran.length && !thin.length) test.check('each of those tests loads its module and runs green through the product reporter (' + ran.reduce(function (n, x) { return n + x.lines; }, 0) + ' results)');
+  else test.fail('the contacts modules\' tests: ' + (ran.length ? short(thin) : 'not there'));
+  // 6, 7. The desk, driven: a listed file with its own test brings that test; a shell file brings the auto-attach ui
+  // rules, which then ride on every take and wake; at goal creation no auto-attach ui rule comes.
+  const fileRun = await (async function () {
+    const os = require('os');
+    const appClient = require('../run/spirit/appClient.js');
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inuse-files-'));
+    const state = path.join(scratch, 'state');
+    test.seedDesk(state, [{ goal: { id: 'goal/G100', title: 'Fixes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] }]);
+    const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
+    const client = appClient.createAppClient({ rootDir: scratch });
+    client.register('desk', pipe);
+    const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAspiritInUseFilesOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
+    const CW = { key: 'MCowBQYDK2VwAyEAspiritInUseFilesCWAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+    const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { refused: e && (e.code || e.message) }; }); };
+    const took = function (r) { return r && r.status === 200 && r.body && r.body.ok !== false; };
+    const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); const f = r.body && r.body.item; try { return typeof f === 'string' ? JSON.parse(f) : (f || {}); } catch (e) { return {}; } };
+    const keysOf = function (list) { return (list || []).map(function (r) { return r && (r.key || r); }).sort(); };
+    const suitesOf = async function (id) { const r = await call('item.suites.search', { id: id, text: '' }, ANDY); return ((r.body && r.body.items) || []).map(function (i) { return i.key; }).sort(); };
+    const kid = spawn(process.execPath, [path.join(RUN, 'process', 'js', 'desk', 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    const out = {};
+    try {
+      let up = false;
+      for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+      if (!up) return { up: false };
+      out.up = true;
+      const rule = async function (type, label, auto) {
+        const r = await call('rule.add', { type: type, label: label, text: label + '.', autoAttach: auto }, ANDY);
+        if (!took(r)) return '';
+        await call('rule.version', { key: r.body.key, text: label + '.', status: 'active', autoAttach: auto }, ANDY);
+        return r.body.key;
+      };
+      out.ui = await rule('ui', 'A list gets a box of a stated size', true);
+      out.desk = await rule('desk', 'Check for work before going idle', true);
+      // 6. A file of the product tree with its own test (spirit.js beside test/spirit.js) brings that test; a file
+      // without one brings nothing.
+      out.before = await suitesOf('goal/G100.1');
+      await call('item.files.add', { id: 'goal/G100.1', path: 'spirit/run/spirit.js' }, CW);
+      out.withTest = await suitesOf('goal/G100.1');
+      await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/process/js/desk/desk.js' }, CW);
+      out.noTest = await suitesOf('goal/G100.2');
+      out.noShellRules = keysOf((await facts('goal/G100.2')).rules);
+      // 7. A shell file brings the auto-attach ui rules onto the item, and they ride on every take and wake.
+      await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/shell/js/probabilitySearch.js' }, CW);
+      out.shellRules = keysOf((await facts('goal/G100.2')).rules);
+      out.designRules = keysOf((await facts('goal/G100.2')).phaseRules);
+      await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+      if ((await facts('goal/G100.2')).code !== true) await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
+      await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+      out.redTake = took(await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW));
+      out.redRules = keysOf((await facts('goal/G100.2')).phaseRules);
+      // At goal creation: the auto-attach desk rule comes, the auto-attach ui rule does not.
+      const g = await call('goal.add', { title: 'Next' }, ANDY);
+      out.newGoal = took(g) ? g.body.id : '';
+      out.newGoalRules = out.newGoal ? keysOf((await facts(out.newGoal)).rules) : [];
+    } finally { kid.kill(); }
+    return out;
+  }());
+  const fr = fileRun;
+  if (!fr.up) test.fail('the scratch desk for the file list did not start');
+  else {
+    if (fr.withTest.indexOf('spirit/run/test/spirit.js') !== -1 && fr.before.indexOf('spirit/run/test/spirit.js') === -1 && !fr.noTest.some(function (p) { return /^spirit\/run\//.test(p); }))
+      test.check('a file of the product tree with its own test brings that test into the item\'s list by itself; a file without one brings nothing');
+    else test.fail('tests by the file list: before ' + short(fr.before) + ', with spirit.js ' + short(fr.withTest) + ', with desk.js ' + short(fr.noTest));
+    if (fr.ui && fr.noShellRules.indexOf(fr.ui) === -1 && fr.shellRules.indexOf(fr.ui) !== -1) test.check('a file in spirit/run/shell/ on the item attaches the auto-attach ui rules to it; a file elsewhere attaches none');
+    else test.fail('ui rules by the file list: rule ' + short(fr.ui) + ', before the shell file ' + short(fr.noShellRules) + ', after ' + short(fr.shellRules));
+    if (fr.ui && fr.designRules.indexOf(fr.ui) !== -1 && fr.redTake && fr.redRules.indexOf(fr.ui) !== -1) test.check('the ui rules attached to an item ride on every take and wake: in design and on the take of red alike');
+    else test.fail('ui rules riding: in design ' + short(fr.designRules) + ', red taken ' + fr.redTake + ', in red ' + short(fr.redRules));
+    if (fr.newGoal && fr.desk && fr.newGoalRules.indexOf(fr.desk) !== -1 && fr.newGoalRules.indexOf(fr.ui) === -1) test.check('at goal creation the auto-attach desk rule comes, the auto-attach ui rule never does');
+    else test.fail('auto-attach at goal creation: goal ' + short(fr.newGoal) + ', its rules ' + short(fr.newGoalRules) + ', ui ' + short(fr.ui) + ', desk ' + short(fr.desk));
+  }
+  // 8. The verifier runs product tests: a path under spirit/run/ that testModule.js names is not refused.
+  const verifyCode = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js'), 'utf8');
+  const leavesSrc = (verifyCode.match(/function leavesTests\(rel\) \{[\s\S]*?\n\}/) || [''])[0];
+  let leaves = null;
+  try { leaves = leavesSrc ? new Function('path', leavesSrc + '\nreturn leavesTests;')(path) : null; } catch (e) { leaves = null; }
+  if (leaves && leaves('spirit/run/test/spirit.js') === false && leaves('spirit/test/spiritInUse.js') === false && leaves('spirit/run/../../x.js') === true && leaves('spirit/run/spirit.js') === true)
+    test.check('the verifier runs product tests: a test under spirit/run/ is taken beside those under spirit/test/; a module, or a path that leaves the tree, is not');
+  else test.fail('the verifier still refuses product tests under spirit/run/' + (leaves ? '' : ' (no leavesTests to ask)'));
+  // 9, 10. The verifier UI: a button that runs the full product test tree; the tab opens at any time, a run going or not.
+  const deskPage = code('shell/desk/desk.js');
+  if (/product/i.test((deskPage.match(/function deskDrawVerifier[\s\S]*?\n\}/) || [''])[0]) && /testsFor\(/.test(verifyCode))
+    test.check('the Verifier tab has a button that runs the full product test tree, and the verifier takes its list from testModule.js');
+  else test.fail('no button in the Verifier tab for the full product test tree, or the verifier does not ask testModule.js for it');
+  const askVerifierFn = (deskPage.match(/function deskAskVerifier\(\) \{[\s\S]*?\n\}/) || [''])[0];
+  if (askVerifierFn && !/if \(!deskVerifier\) return;/.test(askVerifierFn)) test.check('the Verifier tab opens at any time: a first ask that finds the verifier busy still draws the tab');
+  else test.fail('the Verifier tab is drawn only if the verifier answers the first ask, so it does not open while a run keeps it busy');
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
