@@ -1,5 +1,5 @@
 {
- "change": 103029,
+ "change": 103358,
  "goal": "goal/G40",
  "items": [
   {
@@ -58,12 +58,13 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [],
    "agents": {
@@ -8589,13 +8590,11 @@
    "id": "goal/G40.11",
    "title": "One table for all known IDs",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 2,
+   "version": 24,
    "buttons": [
-    "go",
-    "close",
     "delete",
     "verify"
    ],
@@ -8604,17 +8603,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -8622,7 +8621,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -8631,14 +8659,701 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-25: \"add item: One table for all known ID's.\"\n\nTHE SHADOW ROLL, AS ANDY DESIGNED IT (\"i KNOW we decided that contacts wre just marked (remember) rows in the shadow roll\"):\n- One size-capped table of IDs other than the node itself, keyed by ID, with its staleness (time of last update, for shedding).\n- Kept current by the relay streams, all the time.\n- A remember flag and a mine flag on every row; a flagged row is never shed.\n- A type field (node, relay). What an ID does for the node is known by introspection.\n- Contacts are rows with remember; relays are rows of type relay, kept too, with what the node holds there (url, seat, email, face).\n- Every row is a peerPost target with its routes, a relay among them (\"the relay is just another fucking node\").\n\nTODAY (to go): three tables in node.db for the same IDs: relays (the relay list with seat, email, face), peers (the contacts), seen (the shadow, with seen_routes). They move into the one table; every holder of it streams its changes (relay-rows today covers only the relays).",
-   "checks": [],
-   "chat": []
+   "box": "ONE TABLE FOR ALL KNOWN IDS (Andy, 2026-10-25 and 26)\n\nTHE TABLE\n- seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers table move into it and go. The grants table stays its own, keyed by ID.\n- One row per ID other than the node itself, size-capped, kept current by the relay streams.\n- Every row: label (with how sure and when), myLabel, card, present, firstSeen, lastSeen.\n- Booleans on every row: keep, mine, relay, held, ignored, blocked, seated. choice and kind go.\n- Gone: acquiredVia, memberOf, missingSince, cardVia, cardDisputed; from the relays table listed, pos, acceptedAt, replaced, seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply, email, emailVerified.\n\nROUTES\n- seen_routes stays, per ID: via, url, when, rank, told. The contacts' own relay and route lists move into it.\n- A URL is a route: an ID's own address, a relay's or a node's on a LAN, is a direct route through no relay.\n- The route is the pin. The check stays in answerRelay: an answer from a URL must come from the ID whose route it is; a new one is accepted, a different one refused and reported. One lookup, on an index over the routes' url.\n\nMEANINGS\n- keep: a chosen contact, never shed. mine: owned, puppets and owned relays, never shed. relay: the ID is a relay. held: waits for your yes. ignored: politely refused, no reason given, never shown. blocked: refused, a relay as well as a node.\n- seated: that ID holds this node, a relay its seat, a node its chosen contacts. Set by any post it carried or answered, cleared by a refusal as no member. Nothing else of a seat is stored.\n- The node stores no email: it is given only to take a seat. A member's row on a relay is always pushed by the member, so the relay need not tell the node who it is; no seat verb.\n- Home is every relay this node is seated on. The relays shown on screens are the relays kept.\n- A card is valid only signed by the row's ID; any other is refused and nothing of it kept.\n- lastSeen is the staleness: it orders shedding once the cap is reached, never age alone. Shedding takes unflagged rows first, then ignored or blocked, then held, oldest first in each; keep and mine never.\n\nINDEXES\n- A partial index per flag, holding only the rows where it is true, and one over the rows with neither keep nor mine, by lastSeen.\n\nSEARCH\n- One verb over the one table replaces contact.search and relay.search: words ranked as now; kept and held rows only; yes-filters keep, mine, relay, seated, held, blocked; each boolean a mark on its row in Contacts.\n- What the network search finds is held: a search is your look at its results, so each find waits for your yes like any held row.\n\nTHE STREAM: one job for the table, one changed row per update, never the whole table.\n\nTHE MOVE: on each node's first start on the new code, contacts.json, the relays table and the peers table go into the one table, then are deleted. One tag; the relays do not move.\n\nGRANTED FOR THIS ITEM: verb changes and removals, table changes and removals.\n\nOUT OF SCOPE, FORESEEN\n- Posting to a peer through the relay its route names, as a stranger at that relay's door; a node as its own relay, or a one-member relay for its owner; nodes talking directly on a LAN; evaluating held rows. Every route says whether it goes through a relay or straight to a URL, so these build on what the table keeps.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "held and ignored, the other two values of choice: booleans, or gone?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-25T23:34:45.363Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T22:55:34.721Z",
+     "text": "what is the blast radius of this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T22:56:25.975Z",
+     "text": "- Storage: in node.db the relays, peers and seen tables (and seen_routes beside seen) become one table with its routes; every node's rows move over on its first start, contacts and seats kept. One tag, a flag day.\n- Core modules: four, about 2,100 lines, become one: relayKeys (608), contacts (668), seenPeers (339), ownerBadge (527), on nodeStore's schema.\n- Their callers, all core: hub (about 100 calls), peerPost, presenceNode, server, apiAuth, answerRelay, nodeCard, joinStepsJob, relayRowsJob.\n- Not touched, if contact.* and relay.* keep their answers: the shell, the face, every app, and the relays (their members table is their own).\n- Optional, a verb change: one search over the one table, instead of Contacts merging contact.search and relay.search itself.\n- Tests: 63 old suites name these modules; the red for this item goes in spiritInUse as before.\n- Large, but all inside the node's core, nothing on the wire."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:01:23.654Z",
+     "text": "Approach\n- pick the db-table that is going to be THE ONE, figure out what it already has, and what it needs to support all features we have so far."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:02:19.461Z",
+     "text": "- THE ONE: seen, the shadow, in node.db. Keyed by ID, capped, shed by staleness, fed by the relay streams; already a target of peerPost. Today 49 rows on your node.\n- It has: publicKey, label (with how sure and when), seen (last heard, for shedding), present, choice, blocked, kind (node or relay). Beside it seen_routes: ID, via which relay, url, rank, told.\n- Four stores hold the same IDs today, not three: seen; contacts.json (a file, 5 rows on your node); the relays table (4 rows); and the peers table (6 rows, IDs holding grants, beside the grants table).\n- What seen lacks, from contacts.json: remember (your contacts), mine (owned, your puppets), myLabel (your own name for it), its card and cardVia, acquiredVia, memberOf, missingSince. Its relays and routes fit seen_routes.\n- What seen lacks, from the relays table, for a row of kind relay: url (its address), listed and pos (your relay list and its order), the key's pin history (firstSeen, acceptedAt, replaced), your seat (seatLabel, seatClaimedAt), the relay's refusal (refusal, refusedAt), your face there (faceName, faceEmail, faceReply), your email there (email, emailVerified).\n- The peers table: one label per ID that holds a grant; seen has the label already. The grants table (ID by path) stays its own, keyed by ID.\n- So seen gains two flags and about 18 columns, and the shed sweep spares any row with remember or mine."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:02:26.997Z",
+     "text": "- Correction, counted: two flags and 21 columns (6 from contacts.json, 15 from the relays table), not about 18."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:06:48.719Z",
+     "text": "is staleness an alternate key/timestamp of last-touched?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:07:24.544Z",
+     "text": "- Yes: a timestamp, not a key. The column seen holds when the ID was last heard of (milliseconds), with its own index, seen_when; the key stays the ID.\n- It only orders who goes first when the table is full: no row goes for age alone (your 0021: \"I don't see why the node should throw away memories when the 20 Megabyte cap is not exhausted yet\").\n- And I missed one thing it has: the choice mark. A row marked added and not blocked is never shed; then held, then ignored or blocked, oldest first. So remember exists already as choice added; mine (owned) is the flag still missing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:10:17.074Z",
+     "text": "additional boolean fields: mine, keep, relay ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:10:44.856Z",
+     "text": "- mine and keep: yes, as booleans. keep takes the place of choice added; mine is the new one (owned, your puppets); either spares the row from shedding.\n- relay: the column kind already says node or relay. A boolean would say the same twice; I would keep kind and drop the idea of a relay flag, unless you want more kinds than two never.\n- What choice still carries beside added: held (a contact you took in but do not listen to yet) and ignored (someone who wrote, turned away); blocked is its own boolean already. Do held and ignored stay, as booleans too, or go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:11:53.545Z",
+     "text": "kind is kind of a waste of space, it's really  boolean choice?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:12:20.715Z",
+     "text": "- Right: kind only ever holds node or relay, so it is one boolean, relay, in place of the text column.\n- So far the row gains booleans mine, keep, relay (keep for choice added, relay for kind).\n- Still open: held and ignored, the other two values of choice. Stay as booleans, or go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:13:32.295Z",
+     "text": "thing is: i thing that those three boolens need indexing."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:14:03.072Z",
+     "text": "- Agreed, and the right kind of index for them: a partial one each, holding only the rows where the flag is true (WHERE keep = 1, WHERE mine = 1, WHERE relay = 1). Those rows are few, so each index is tiny, and \"my contacts\", \"my puppets\", \"my relays\" each read only their own rows.\n- Plus one for shedding: the rows with neither keep nor mine, in order of last seen, so the sweep never walks the kept ones."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:15:58.314Z",
+     "text": "we already consider owned relays puppets.\n\ndo we need any other fields for any existing functionality?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:16:45.154Z",
+     "text": "- Noted: owned relays are puppets, so mine covers them.\n- Fields existing features still need, on every row: myLabel (your own name for it); card, the signed card it published (its seal key; sealing to it needs it); cardVia (where that card came from); cardDisputed (cards that disagreed with it, a short list); acquiredVia (how it arrived: roll, hold, message, invite, handle, member; it decides whether this node listens, and \"hold\" is your held).\n- On a relay row only: url; listed and pos (your relay list and its order); firstSeen, acceptedAt, replaced (the key pinned for it); seatLabel, seatClaimedAt; refusal, refusedAt; faceName, faceEmail, faceReply; email, emailVerified.\n- Go away, nothing reads them: memberOf and missingSince, left on old rows only.\n- The routes stay beside the table in seen_routes, keyed by ID."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:16:49.379Z",
+     "text": "Agreed, and the right kind of index for them: a partial one each, holding only the rows where the flag is true (WHERE keep = 1, WHERE mine = 1, WHERE relay = 1). Those rows are few, so each index is tiny, and \"my contacts\", \"my puppets\", \"my relays\" each read only their own rows.\nPlus one for shedding: the rows with neither keep nor mine, in order of last seen, so the sweep never walks the kept one\n\nagreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:17:38.359Z",
+     "text": "Boxed (v4): the one table, staleness, the three booleans and the indexes. Q1: held and ignored, booleans or gone? The field list above waits on your word too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:18:20.377Z",
+     "text": "and the fan-outs (routes) stay as they are?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:18:41.436Z",
+     "text": "- Yes, seen_routes stays as it is: per ID, which relay reaches it (via), the url, when, its rank and whether it was told; trimmed per ID.\n- What changes: contacts.json keeps its own relays and routes lists per contact today, the same facts; they move into seen_routes, so a contact's fan-out and a stranger's are read the same way.\n- A relay's own url stays on its row: it is where the relay answers, not a route through another."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:20:20.499Z",
+     "text": "may as well have first_seen and last_seen for every row"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:20:47.830Z",
+     "text": "Boxed (v5): firstSeen and lastSeen on every row, lastSeen being today's seen; and the routes as they are, the contacts' lists moved into them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:30:16.300Z",
+     "text": "- thing is: nodes may become reachable by URL, too, thats a field everybody needs (in a LAN, nodes might communicate directly...)\n\n- this has been bugging me for a long time: \n- if a route puts peer A in noderoutes and peer B on spirit. why cannot A, who knows B's home on spirit, ask spirit directly to relay a peerPost to B? relays already will relay from an unknowns source, it the destination is a member ID of theirs....\n- why can't a node on a VPS be its own home-relay, or a relay just for its owner (a one member relay)\n- these strategies will all reduce workload for the 4000 member relays?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:30:47.427Z",
+     "text": "a URL is alway a route, too"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:31:18.432Z",
+     "text": "- Agreed, and boxed (v6): an ID's own URL, a relay's or a node's on a LAN, is a route like the others, a direct one through no relay, in seen_routes. I take back keeping the url on the relay row.\n- A to B through B's home relay: today the node posts only through relays it holds a stream to, and a relay no longer reads route hints. Spirit's door already carries a stranger's post to its member and hands the reply back on that post (G22.6). Missing is only the choice: when the route says B lives on spirit and A holds no stream there, post to spirit's door.\n- A node as its own relay, or a one-member relay for its owner: that is your one-process VPS seed (2026-10-19, not opened).\n- Yes, each of the three takes traffic off the big relays. Both are routing, not this table: separate items?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:32:50.177Z",
+     "text": "there are obvious optimizations to our peer network. oos for now, but the shadow-toll should foresee that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:33:17.186Z",
+     "text": "Boxed (v7), out of scope and foreseen: every route says whether it goes through a relay or straight to a URL, so those optimizations later read what the table already keeps."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:34:11.654Z",
+     "text": "Q1: held and ignored, the other two values of choice: booleans, or gone?\n\nbooleans, they support policy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:34:26.508Z",
+     "text": "also for all rows."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:34:48.089Z",
+     "text": "- Boxed (v8): held and ignored are booleans, choice goes; shedding keeps today's order (unflagged, then ignored or blocked, then held, oldest first).\n- Last open point: the field list I posted (myLabel, card, cardVia, cardDisputed, acquiredVia on every row; the relay facts on relay rows; memberOf and missingSince gone). Agreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:35:06.356Z",
+     "text": "I read it as: the relay facts (listed and pos, the pin history, seat, refusal, face, email) are columns of every row, not only of relay rows, since any node may become a relay. Right?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:36:02.332Z",
+     "text": "what is pin history? listed and pos?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:36:23.618Z",
+     "text": "- Pin history: which key this node trusts for that relay's address. The first key that answered there is pinned (firstSeen, acceptedAt); if a different key ever answers at the same address, the node refuses it until accepted, and replaced keeps the key it took over from. It is what stops someone else standing at spirit's address.\n- listed: the relay is on your relay list (the relays in Contacts, Info, the forms). A relay can be unlisted and still keep its pinned key, so a later add knows it.\n- pos: its place in that list; the first listed is the node's home relay, the one it falls back to."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:37:19.287Z",
+     "text": "explain: \"which key this node trusts for that relay's address\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:37:42.052Z",
+     "text": "- A relay is reached at an address, https://spirit.andyflinn.com, but it is who it is by its ID, its key. Anyone who gets hold of that address (a DNS trick, a hijacked box) could answer there.\n- So the first time your node talks to that address, it writes down the ID that answered, beside the address. After that, every answer from that address must come from that same ID; a different ID answering there is refused. That is the pin: this address belongs to this ID.\n- In the one table it gets simpler: the row is the relay's ID, its URL is a route on that row, and the pin is just when that route was accepted (acceptedAt) and which ID the address belonged to before, if it ever changed (replaced)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:39:18.996Z",
+     "text": "isn't that kind of dumb? we already have, by nature of the main table, a clear association of key and addres (URL) isn't that already there?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:39:38.414Z",
+     "text": "- Yes, it is there already: the row is the ID, its URL a route on it. That IS the pin; it needs no columns of its own.\n- What stays is the check, as behaviour: an answer from that URL must come from the row's ID, or it is refused. firstSeen is the row's own already.\n- So acceptedAt and replaced go, and the pin with them. Box it that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:41:04.534Z",
+     "text": "the check is where it always was? some place in the code? that may have to look at two different fields to see if the key/address combo shifted..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:41:35.887Z",
+     "text": "- One place: answerRelay.js asks the relay at a URL for its key and calls relayKeys.check with url and key: new (first contact, accepted), match, or changed (refused, and said out loud). Everything else (presenceNode, hub, about 10 calls) only asks relayKeys.pinned: which ID belongs to this URL.\n- Today that is one row, keyed by ID, unique on url: one lookup, two fields on the same row, no second field to compare.\n- In the one table the same: find the row whose route is that URL, compare its ID with the key that answered. One lookup on an index over the routes' url. The check stays where it is; only its two helpers read the one table."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:42:01.471Z",
+     "text": "acceptedAt and replaced go, and the pin with them. Box it that way."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:42:27.859Z",
+     "text": "Boxed (v9): no pin of its own; acceptedAt and replaced go; the check stays in answerRelay, one lookup over the routes' url."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:44:30.677Z",
+     "text": "i actually thing that peerPost through two relays is a total waste :)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:44:50.573Z",
+     "text": "- Agreed. Since partnering went (G22.6) a post never crosses two relays: it goes through one relay that holds both ends, or it does not arrive. The foreseen change keeps it at one: straight to the door of the relay where the peer lives."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:45:35.064Z",
+     "text": "anything missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:46:00.212Z",
+     "text": "- Five gaps:\n- 1. The field list (myLabel, card, cardVia, cardDisputed, acquiredVia; the relay facts; memberOf and missingSince gone) has no yes yet, nor my reading of \"also for all rows\": the relay facts on every row.\n- 2. The move: every node's contacts.json, relays and peers rows go into seen on its first start on the new code, then the old stores are deleted. One tag, nodes and relays together.\n- 3. The stream: which job carries the table's changes. My proposal: relay-rows becomes one job for the whole table, one changed row per update, never the whole table, so it stays small at any size.\n- 4. The verbs: contact.* and relay.* keep their answers (nothing outside the core moves), or one search over the table replaces both (a verb change).\n- 5. The cap: rows with keep or mine are never shed. If they alone fill it, today's rule holds (0021): no more adds until one is unkept or blocked.\n- Which first: 1?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:46:07.197Z",
+     "text": "Correction to 2: nodes only; the relays keep their own members table and do not move."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:47:01.689Z",
+     "text": "why missingSince? that sounds like a pre-shedding-terminal-illness"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:47:39.162Z",
+     "text": "- It is dead already, not proposed: missingSince marked a contact that no relay's roster listed any more, written by the roster sweep. The roster went 2026-09-18 and the sweep with it (2026-09-19); nothing writes or reads it since. It survives only on old rows in contacts.json, and the move drops it. memberOf the same."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:49:07.665Z",
+     "text": "acquiredVia sounds cute, BUT\n\n... as if somebody in the node actuall evaluates trustworthyness...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:49:37.458Z",
+     "text": "- Right, nothing evaluates trust with it. It does two jobs only: it decides held (a contact that came by \"hold\" is not listened to until you say yes), and it is copied into a few answers (contact.get and friends) as a word nobody acts on.\n- So it can go: held is a boolean now, keep says the contact is yours, and blocked says no. The word in those answers goes with it.\n- Drop acquiredVia?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:51:36.736Z",
+     "text": "held is enough. there likely is a route associated with the held row, that's the via, as far as I'm concerned, evaluation of a held key-row is oos."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:52:04.833Z",
+     "text": "Boxed (v10): acquiredVia goes, its route is the via and held the waiting; evaluating a held row is out of scope; memberOf and missingSince go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:53:45.557Z",
+     "text": "drop acquiredVia\n\ni bet nobody looks at that field or uses it for anything."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:54:06.394Z",
+     "text": "Dropped, boxed already (v10). Checked: no screen, app or face reads it; only the core copies it into answers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:55:17.457Z",
+     "text": "data-design green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:55:45.021Z",
+     "text": "- Not green: one thing left in the data. The rest of the fields have no yes: myLabel, card, cardVia, cardDisputed on every row; and the relay facts (listed, pos, seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply, email, emailVerified): on every row, as I read your \"also for all rows\", or on relay rows only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:56:15.263Z",
+     "text": "what is card-disputed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:56:49.289Z",
+     "text": "- When a card arrives for a contact but is signed by a different ID than the row's, the node refuses it and keeps it on the row as evidence, the last 5 (cardDisputed: the card, when, why). It is the one moment a node could notice a relay swapping keys under it.\n- But nothing reads it: no screen, no verb, no other module; it is written and never shown.\n- So: drop it, or keep the refusal as an event in the node's log instead of a column on every row?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:57:15.257Z",
+     "text": "just refuse it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:57:42.015Z",
+     "text": "- Boxed (v11): cardDisputed goes; such a card is refused, nothing kept.\n- Left: myLabel, card, cardVia on every row; and the relay facts, every row or relay rows only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-25T23:59:24.294Z",
+     "text": "- myLabel stays for all rows.\n- card, also necessary \n\nwhat are the relay facts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-25T23:59:53.252Z",
+     "text": "- The relay facts are what your node holds about its own membership at a relay:\n- listed, pos: the relay is on your relay list, and its place there (the first is your home relay).\n- seatLabel, seatClaimedAt: your seat there, what the relay calls you, since when.\n- refusal, refusedAt: the relay refused your node as no member, and when.\n- faceName, faceEmail, faceReply: the face name you hold there, the email it pairs with, and the relay's signed answer kept whole.\n- email, emailVerified: your email at that relay, and whether its link confirmed it.\n- They mean something only on a row your node is a member of, a relay today. Every row, or relay rows only?\n- And cardVia (where the card came from: an acquisition, a reply, a roll): nothing outside the contacts module reads it. Drop it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:01:26.961Z",
+     "text": "the only relevant fact is see is one boolean value: seated."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:01:48.724Z",
+     "text": "- seated as one boolean for the seat: yes, in place of seatLabel and seatClaimedAt (the label is what the relay calls you, which the relay knows).\n- But four things on screen today read the others, so before they go:\n- email and emailVerified: the email form's Join, Add or Change, Join's first step, and the face form's list of relays.\n- faceName (and its email): Info's and Join's face line, and the face link https://<face>.<relay>.\n- listed and pos: your relay list and which relay is home.\n- refusal: the relay showing as refused you, and Leave.\n- Keep those, or drop the features with them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:02:00.228Z",
+     "text": "- One more I should have named: Info's table \"what each relay calls you\" reads seatLabel. With seated only, that table asks the relays instead, or goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:05:16.427Z",
+     "text": "the seat is associated with a key, all allowed information can be obtained from the relay,\nthe same field for members, means I'm in their chosen contacts, this can be asserted, like you have proven grants to my desk, so you ARE seated on my node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:06:02.300Z",
+     "text": "- Understood, boxed (v12): seated on every row means that ID holds this node, a relay its seat, a node its chosen contacts, asserted as a grant is. Label, email, face, refusal: asked of the relay when a screen needs them, not stored. myLabel and card stay.\n- Left in the data: listed and pos, your relay list and which relay is home. Are those keep and relay together (a kept relay is on the list), with home as one more boolean, or go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:06:03.607Z",
+     "text": "any successful peerPost is evidence of \"seated-ness\""
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:06:27.645Z",
+     "text": "seated is boolean."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:06:34.283Z",
+     "text": "- Boxed (v13): seated is set by evidence, any successful peerPost through or to that ID; a refusal as no member clears it. That also fixes the lost-leave case: the next refused post clears the seat on its own.\n- Still open: listed and pos (your relay list, which relay is home)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:06:49.298Z",
+     "text": "Yes, one boolean, boxed so (v12, v13): seated, set by a carried post, cleared by a refusal. Nothing else of the seat is stored."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:07:21.600Z",
+     "text": "what's left?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:07:40.767Z",
+     "text": "- In the data, two:\n- 1. listed and pos: your relay list and which relay is home. My proposal: the list is the rows with relay and keep; home is one more boolean.\n- 2. cardVia, where a card came from: nothing outside contacts reads it; drop?\n- Then, not data: the stream (one job for the table, one changed row per update), the verbs (contact.* and relay.* keep their answers, or one search), and the move on first start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:08:15.055Z",
+     "text": "any relay where i'm \"seated\" is home."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:08:45.122Z",
+     "text": "- Boxed (v14): home is every relay you are seated on; no single home, no order, pos goes.\n- So listed is just relay and keep together (a relay you keep is on your list), no column of its own. Agreed? And cardVia: drop?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:10:45.059Z",
+     "text": "cardVia?\n\nif it's signed by the ID, its valid, else it's rejected, did we not already discuss that?\n\nwhere it came from must be the card-owner, which way it came from would be the cached route(s)\n\nwho ever uses cardVia?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:11:12.975Z",
+     "text": "- Nobody uses it; only the contacts module writes it. Yes, we discussed it: a card is valid by its signature, else refused. Boxed (v15): cardVia goes; the way a card came is the routes.\n- Last data point: listed = relay and keep together, no column. Agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:12:02.902Z",
+     "text": "listed = relay and keep together, no column. Agreed?\n\nno idea. in english?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:12:21.475Z",
+     "text": "- Your list of relays, the one you see in Contacts under relays and in the forms' dropdowns, today has its own yes-or-no on each relay row: on the list, or not.\n- My point: that is the same as \"a relay I keep\". So no separate yes-or-no: a relay you keep is on your list; one you do not keep is only remembered until it is shed.\n- Fine that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:12:50.519Z",
+     "text": "a yes or no to/for what?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:13:06.992Z",
+     "text": "toss it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:13:13.162Z",
+     "text": "- For whether a relay shows on your screens. Today the node can know a relay (its key, its address) without showing it; a field named listed says which known relays show in Contacts and in the dropdowns.\n- Proposal: that field goes. The relays that show are the ones you keep."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:13:41.657Z",
+     "text": "- Tossed, boxed (v16): the relays that show are the ones you keep.\n- The data is settled: one row per ID with myLabel, card, firstSeen, lastSeen, and the booleans keep, mine, relay, held, ignored, blocked, seated; the routes beside it, a URL among them.\n- Left, outside the data: the stream, the verbs, the move. Next: the stream?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:13:48.720Z",
+     "text": "Correction to the summary: the row also keeps what seen has today, the label the ID calls itself (with how sure and when) and present."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:14:11.112Z",
+     "text": "block will work on a relay just as well as on a peer, \n\n:)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:14:32.086Z",
+     "text": "Yes: one row, one blocked flag, a relay like a peer. Blocking a relay means your node neither posts through it nor takes from it. Next: the stream?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:15:33.007Z",
+     "text": "all these boolean will just become cute little icons in the contact-Search"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:15:58.562Z",
+     "text": "Yes, as owned (⭐), blocked (❌) and held (⌛) are marked today; boxed (v17): each boolean a mark on its row in Contacts' search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:16:43.238Z",
+     "text": "data green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:17:03.047Z",
+     "text": "Data green: settled, nothing open in it, box current (v17). Open outside the data: the stream, the verbs, the move."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:19:12.723Z",
+     "text": "now a point about what it means for ID-search, and which booleans make filters for search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:19:36.104Z",
+     "text": "- For the search: one table means one search. Today Contacts calls two (contact.search over the contacts, relay.search over the relays) and merges them itself; with one table it is one verb over one table, words ranked as now, each boolean a yes-filter beside the words. A verb change, so it needs your yes.\n- Filters, as I see them: keep (my contacts), mine (my puppets, owned relays among them), relay (relays only), seated (where I hold a seat, who holds me), held (waiting for my yes), blocked. The \"network\" toggle stays: off shows kept rows only, on adds the rest of the shadow.\n- ignored as a filter too, or only a mark?\n- The network search (asking the relays as you type) stays as it is: what it finds lands in the table, and the same search shows it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:21:32.854Z",
+     "text": "verb changes, eliminations and table modifications and eliminations are herewith granted for the scope of this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:22:01.842Z",
+     "text": "- Boxed (v18): your grant for this item, and the search as one verb over the one table with those six filters and the network toggle.\n- Still open: ignored a filter too, or only a mark?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:26:21.464Z",
+     "text": "you mean \"ignored\" as the policy next to \"held\" and \"added\"\n\nif that is it, then: ignored is (unknown, never, listed), doesn't it mean politely refused? without reason?\n\nhow would those ID's ever make it onto our search results. can't we only list/search what is held or added?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:26:44.023Z",
+     "text": "- Yes, that one, and yes: ignored is politely refused, no reason given (today: someone wrote, you were not asked, the node said no). It never needs to show.\n- So the search lists keep and held rows only, and ignored is a mark nobody sees.\n- One case to settle: the people the network search finds while you type, so you can press Add. They are neither kept nor held yet. Show them during that search only, as the network toggle does today, or not at all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:27:22.134Z",
+     "text": "correct."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:27:49.577Z",
+     "text": "- Boxed (v19): the search lists kept and held rows only; ignored never shows.\n- To be sure of your \"correct\": the people the network search finds, neither kept nor held, show during that search only, so you can Add them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:32:52.776Z",
+     "text": "cap carefully, removing quotes, redundancies. then report on the green-ness of this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:33:55.910Z",
+     "text": "- Capped (v20): quotes and repeats out, one statement per decision, grouped as table, routes, meanings, indexes, search.\n- Not green, three open:\n- 1. The network search's finds. The search lists kept and held rows only, so someone it finds while you type, neither kept nor held, would never show to be added. I dropped the line that said the search shows them, because it contradicts that. Show them during that search only?\n- 2. The stream: one job for the table, one changed row per update.\n- 3. The move: on each node's first start on the new code, its old stores go into the table, then are deleted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:36:56.513Z",
+     "text": "1. The network search's finds. The search lists kept and held rows only, so someone it finds while you type, neither kept nor held, would never show to be added. I dropped the line that said the search shows them, because it contradicts that. Show them during that search only?\n- how can you show them if they're refused at the door and don't make it into the shadow roll?\n\n2. The stream: one job for the table, one changed row per update.\n- yes.\n\n3. The move: on each node's first start on the new code, its old stores go into the table, then are deleted.\n- yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:37:28.508Z",
+     "text": "- Boxed (v21): the stream and the move, yes to both.\n- On 1, two different kinds of stranger: ignored are people who wrote to your node and were turned away at the door. The network search's finds are people a relay names when you search it; nobody refused them. Today they land in the shadow as unflagged rows.\n- So the question stands for those: show them while that search runs, so you can press Add, or not at all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:38:44.380Z",
+     "text": "search finds are \"held\"?\n\nthat would be my strategy, if i search, it includes examining the search results."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:39:36.371Z",
+     "text": "- Boxed (v22): what the network search finds is held, waiting for your yes like any held row.\n- Green: settled, nothing open, box current (v22). Ready for your Go, red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:39:54.279Z",
+     "text": "- Correction: not green yet, one gap I missed. The box says what a seat carries (label, email and verified, face name) is asked of the relay when a screen needs it. But a relay answers its members only card, face, removePeer, rename and search; none tells a member its own row. So the relay needs one member verb, say seat: your own row there, its label, email, whether verified, face name. A relay change, so with the tag.\n- Add that member verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:39:59.248Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:44:52.936Z",
+     "text": "email is private. the node knows email only by ID and label. and it does not share emails with other members, so the nodes own email is private node-state, not associated with any peer."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T00:45:25.392Z",
+     "text": "- On wsl?: checked at da232a0d, claude-windows is right; no member verb hands a member its own row (relay.js:2622: card, face, removePeer, rename, search).\n- With the email as the node's own private state, a seat verb would answer only the label and face name, never an email."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:45:32.387Z",
+     "text": "- Boxed (v23): the node's email is its own private state, with the node, on no row.\n- Two follow-ups: today the node may hold a different email per relay, each verified there on its own. One email for the node, verified per relay (a yes per seated relay), or one email, one yes?\n- And then the seat verb carries only what the relay calls you and your face name there. Still wanted, or are those asked another way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:49:24.304Z",
+     "text": "a members row is always pushed by the member to the relay. everything the relay know about a member comes from the member. there is no need for the relay to tell me who or what i am.\n\nthe email address holds no value to the personal node, it is injected only for seating, nothing in this item will break, if the node doesn't store emails natively.\n\ngo and build a SpiritOS app, if you want..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:49:57.690Z",
+     "text": "- Understood, boxed (v24): no email stored, no seat verb; the node pushes its row, the relay holds what it was given.\n- Two screens change with it, so you see them now, not after the build: the face form lists relays where you are seated (a seat taken by email is a verified one) instead of reading a stored verified flag; and the email form shows an empty field with Join or Change, never your address prefilled.\n- Fine?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T00:51:47.511Z",
+     "text": "it's a great spirit-app idea, collect for every id, their many email address, facebook, ID's, phone numbers, go ahead...\n\nall: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T00:52:10.928Z",
+     "text": "Green from claude-windows: settled, nothing open, box current (v24). No personal data kept about anyone; the two screen effects (face form by seat, email form never prefilled) stand as I said."
+    }
+   ]
   }
  ]
 }
