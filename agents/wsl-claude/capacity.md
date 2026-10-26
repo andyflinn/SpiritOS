@@ -1,6 +1,6 @@
 # Capacity on `linux-6.18`
 
-**Measured 2026-10-26, against `fcf4a91f`.**
+**Measured 2026-10-26, against `9959d36e`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 |
 | node | v24.21.0 |
 | cpus / ram | 32 / 64148 MB |
-| measured at | 2026-10-26T06:52:23.410Z |
-| tree | `fcf4a91f` |
+| measured at | 2026-10-26T09:43:31.520Z |
+| tree | `9959d36e` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,21 +18,21 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-10-26, against `fcf4a91f`
+measured 2026-10-26, against `9959d36e`
 on linux, Node v24.21.0
 
 | minimum to run | |
 |---|---|
 | Node.js | **22.13 or later** (`node:sqlite`, which both stores need) |
 | dependencies | **none** — built-ins only, no `npm install` |
-| RAM, personal node | **86 MB** at rest |
+| RAM, personal node | **87 MB** at rest |
 | RAM, relay | **61 MB** at rest, before any connection |
-| disc, the install | **4915 KB** in 371 files |
+| disc, the install | **5039 KB** in 373 files |
 
 | fixed cost | RSS |
 |---|---|
 | bare `node`, nothing loaded | **42 MB** |
-| a personal node at rest | **86 MB** |
+| a personal node at rest | **87 MB** |
 | a relay at rest, 0 streams | **61 MB** |
 | — of which SpiritOS | ~19 MB |
 
