@@ -48,6 +48,13 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/15 (version 39): An agent never just goes idle
+
+An agent never goes idle without 
+- checking for available work first.
+- checking for new chatlines to respond to, first.
+
+
 ### rule/14 (version 34): When blocked by unmade decisions, post a red Q
 
 When an agent is blocked during any phase of an item, by unmade decisions, contradictions etc, post a red Question on the item, to get the users attention.
