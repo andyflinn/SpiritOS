@@ -79,7 +79,7 @@ var deskError = '';
 // blocks lists link to the respective items").
 function deskLinks(ids) {
   return (ids || []).map(function (id) {
-    return '<a href="#" data-open="' + deskEsc(id) + '">' + deskEsc(id) + '</a>';
+    return '<a href="#" data-action="open" data-open="' + deskEsc(id) + '">' + deskEsc(id) + '</a>';
   }).join(', ');
 }
 
@@ -385,7 +385,8 @@ function deskLabels(r) {
 // THE PROBABILITY SEARCH FRAMEWORK ON THE LIST (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
 // same."): the rows the page holds are its cache, kept by id. With no words the desk's answer is the List as the toggles
 // have it; with words the answer only adds to the cache, and what is drawn is the cache ranked against the words as
-// they stand now (deskShownItems). One call on the wire at a time: words typed while one is out ask once more after it.
+// they stand now (the List, deskMountList). One call on the wire at a time: words typed while one is out ask once more
+// after it.
 var deskSearching = false;
 var deskSearchAgain = false;
 function deskSearchItems() {
@@ -403,17 +404,6 @@ function deskSearchItems() {
       else got.forEach(function (row) { var at = deskRowAt(row.id); if (at === -1) deskItems.push(row); else deskItems[at] = row; });
       deskNotePlugins(deskItems); deskDraw(); done();
     }, function (e) { done(); deskWriteError('read its list')(e); });
-}
-// What the List draws: the rows held, in the List's order with no words; with words, ranked by
-// probabilitySearch.order (shell/js/probabilitySearch.js, the framework's pure heart), best first, a row the words
-// miss still listed, last.
-function deskShownItems() {
-  var words = String(deskFilter.text || '').trim();
-  var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-  if (!words || !P || typeof P.order !== 'function') return deskItems;
-  return P.order(deskItems.map(function (r, i) { return { key: r.id, row: r, at: i }; }), {
-    words: words, matched: function (r) { return { title: String((r && r.title) || ''), id: String((r && r.id) || '') }; },
-  }).map(function (x) { return x.row; });
 }
 // A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
 // asks again, since it adds and drops whole rows. A row the List does not hold
@@ -508,10 +498,11 @@ function deskOnPublished(obj) {
     moved = true;
   });
   if (unknown) { deskSearchItems(); return; }
-  // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B): a row that stays where it was is repainted by its own element,
-  // which heard this same publish after this store took it; the face is drawn only when rows came or went. What sits
-  // outside the List and reads the rows (the tabs' count, Go-All, the session bubble) is redrawn, never the List.
-  if (moved || !deskRowElements.length) { deskDraw(); return; }
+  // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B; on the probability search since goal/G40.12): the List takes the
+  // rows the store now holds, and a row that stays is repainted by its own element, the cells that changed alone. What
+  // sits outside the List and reads the rows (the tabs' count, Go-All, the session bubble) is redrawn too.
+  if (moved || !deskList) { deskDraw(); return; }
+  deskList.redraw();
   deskDrawTabs();
   deskDrawGoAll();
   var bubble = document.getElementById('desk-session');
@@ -524,7 +515,6 @@ function deskOnPublished(obj) {
 //   automatically subscribed to the events that update them." Each is made with the shared createDeskElement
 //   (shell/shared/js/deskElement.js): it subscribes itself and repaints only what it shows, from what this page holds.
 //   Without the shared element (a page that did not load it) none is made and the face is drawn whole, as before.
-var deskRowElements = [];
 var deskTeamElement = null;
 // THE SHARED ELEMENT, LOADED ON DEMAND (goal/G27.9). Andy, 2026-10-17, denying a line in index.html for it ("a core
 // element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
@@ -580,22 +570,6 @@ function deskRowIdsOf(obj) {
   return it && it.id ? [it.id] : [];
 }
 // One element per row on the List, made again whenever the List is drawn.
-function deskMountRowElements() {
-  deskRowElements.forEach(function (e) { e.destroy(); });
-  deskRowElements = [];
-  deskItems.forEach(function (row) {
-    var id = row.id;
-    var e = deskMakeElement({
-      wants: function (obj) { return deskRowIdsOf(obj).indexOf(id) !== -1; },
-      paint: function () {
-        var el = document.getElementById('desk-row-' + id);
-        var at = deskRowAt(id);
-        if (el && at !== -1) el.innerHTML = deskRowCells(deskItems[at]);
-      },
-    });
-    if (e) deskRowElements.push(e);
-  });
-}
 // The team chat and the rule list, made once at mount.
 function deskMountElements() {
   deskTeamElement = deskMakeElement({
@@ -674,18 +648,6 @@ function deskInRow(row, what) {
   if (what === 'close' && row.status !== 'done' && !(row.goal === '')) return false;
   return true;
 }
-var DESK_GOAL_ROW = 'background:rgba(127,127,127,0.18);border-top:2px solid #888';
-function deskRowHtml(row) {
-  var goal = row.goal === '';
-  var presses = deskRowPresses(row);
-  // A MARKED ITEM (goal/G33.2). Andy: "make an item go red in the list when the phase holder posts a report or
-  // questions", "red until i open it": the desk marks it (alert) and his opening clears it. Since goal/G33.8 (box v13,
-  // "it's enough to put a red ! next to the item") the mark is a red ! beside its title (deskRowCells), not a red row.
-  // THE GOAL ROW STANDS OUT (goal/G33.8, box v12; Andy: "it's really hard to tell the goal from it's items in the list"):
-  // marked data-goal, shaded (DESK_GOAL_ROW, the one style), and its icon cell holds the goal sign (deskRowCells).
-  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '"' + (goal ? ' data-goal="1"' : '') + (row.alert ? ' data-alert="1"' : '') + ' style="cursor:pointer' + (goal ? ';font-weight:bold;' + DESK_GOAL_ROW : '') + '">' +
-    deskRowCells(row, presses) + '</tr>';
-}
 // ONE BUTTON IN A ROW, THE NEXT ONE WANTED (goal/G33.6). Andy: "the main list may only show one single button, and it
 // is the button for the next wanted user-action, so verify button for any done button, a done button before any close
 // button. the detail shows all available buttons.", "and go before done etc....", and "just in the list, a goal offers
@@ -722,11 +684,21 @@ function deskRowPresses(row) {
     }
     // goal/G33.6: no Verify shows the verifier's busy state (Andy: "please don't show verifier-busy an any verify
     // button, i can check that for myself").
-    return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
+    // data-action: the List (probabilitySearch) leaves a press inside a row to its owner, this page, and opens nothing.
+    return '<button type="button" data-action="press" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
       (armed ? ' data-armed="1"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
 }
-// THE CELLS OF A ROW, apart from its <tr>, so the row's own element repaints them alone (goal/G27.9).
+// THE CELLS OF A ROW, each its own part, so the row's own element paints and repaints them one by one (goal/G27.9;
+// since goal/G40.12 the List is the probability search, and a row is its row element, deskListElement).
+var DESK_LIST_FIELDS = ['mark', 'type', 'todo', 'with', 'yours', 'blocks', 'waits', 'status'];
+// THE GOAL ROW STANDS OUT (goal/G33.8, box v12; Andy: "it's really hard to tell the goal from it's items in the list"):
+// its icon cell holds the goal sign, and its to-do cell is bold (the row tag is the element's since goal/G40.12).
+function deskRowCellParts(row) {
+  var parts = deskRowCells(row).replace(/^<td[^>]*>/, '').replace(/<\/td>$/, '').split(/<\/td><td[^>]*>/);
+  if (row && row.goal === '' && parts[2] !== undefined) parts[2] = '<b>' + parts[2] + '</b>';
+  return parts;
+}
 function deskRowCells(row, presses) {
   var goal = row.goal === '';
   if (presses === undefined) presses = deskRowPresses(row);
@@ -861,14 +833,8 @@ function deskStatusCell(row) {
   return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
 }
 // The toggles say how they stand; the server does the filtering.
+// The toggles are the List's own filters (deskMountList); what follows them here is the Add Goal bubble.
 function deskDrawToggles() {
-  [['desk-current-goal', 'Current Goal Only', deskFilter.currentGoalOnly], ['desk-goals-only', 'Goals Only', deskFilter.goalsOnly],
-    ['desk-include-closed', 'Include Closed', deskFilter.includeClosed]].forEach(function (t) {
-    var b = document.getElementById(t[0]);
-    if (!b) return;
-    b.textContent = t[1] + (t[2] ? ' ✓' : '');
-    b.style.fontWeight = t[2] ? 'bold' : 'normal';
-  });
   var add = document.getElementById('desk-add-goal');
   if (add) add.hidden = !deskFilter.goalsOnly;
 }
@@ -884,10 +850,66 @@ function deskAddGoal() {
     return deskPress(r.id, 'make-current');
   }, function (e) { deskError = 'Goal not added: ' + ((e && e.message) || e); deskDraw(); });
 }
-function deskTable() {
-  if (!deskItems.length) return '<div class="job-manifest-note">Nothing to show.</div>';
-  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>yours</th><th>blocks</th><th>waits on</th><th style="width:16em">status</th></tr>';
-  return '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + deskShownItems().map(deskRowHtml).join('') + '</tbody></table>';
+// ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
+//
+// The element in its pane face (shell/js/probabilitySearch.js): the search box, the filters in the row above it, its
+// one call on the wire, its cache by key. Its rows are the rows the page holds (deskItems, rows()), which every
+// publish keeps current; items.search's answers to the words feed the same cache. Each row is a row element
+// (shell/js/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
+// repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
+//
+// THE TOGGLES (goal/G9.2, goal/G4.20 point 1): Current Goal Only, on when Desk opens (a multi filter: on until pressed
+// off), Goals Only and Include Closed, off (toggles). Exclusive as before (Andy: "only one of the two buttons ... may be
+// selected at the same time"): Goals Only on means every goal's.
+var deskList = null;
+var deskListIndex = null;
+function deskListElement(row, key) {
+  var E = window.spirit.elements;
+  deskListIndex = deskListIndex || E.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
+  return E.rowElement.create({
+    kind: 'deskRow', key: key, index: deskListIndex, row: row,
+    fields: DESK_LIST_FIELDS.map(function (name, i) { return { name: name, paint: function (r) { return deskRowCellParts(r)[i] || ''; } }; }),
+  });
+}
+function deskListFilter(values) {
+  var v = values || {};
+  var goalsOnly = v.goalsOnly === true;
+  return { currentGoalOnly: !goalsOnly && !((v.current || {}).on), goalsOnly: goalsOnly, includeClosed: v.includeClosed === true };
+}
+function deskMountList() {
+  var el = document.getElementById('desk-list');
+  if (!el || deskList) return;
+  deskLoadSearch(function () {
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    if (!P || typeof P.create !== 'function' || deskList) return;
+    deskList = P.create(el, {
+      api: deskApi, server: 'desk', verb: 'items.search',
+      args: function (text, values) {
+        var want = deskListFilter(values);
+        var moved = want.currentGoalOnly !== deskFilter.currentGoalOnly || want.goalsOnly !== deskFilter.goalsOnly || want.includeClosed !== deskFilter.includeClosed;
+        deskFilter.currentGoalOnly = want.currentGoalOnly; deskFilter.goalsOnly = want.goalsOnly; deskFilter.includeClosed = want.includeClosed;
+        // A toggle changed: the rows the page holds are read again for it.
+        if (moved) { deskDrawToggles(); deskFilter.text = ''; deskSearchItems(); }
+        return { text: text, currentGoalOnly: want.currentGoalOnly, goalsOnly: want.goalsOnly, includeClosed: want.includeClosed };
+      },
+      rows: function () { return deskItems.map(function (r) { return Object.assign({ key: r.id }, r); }); },
+      columns: [
+        { field: 'mark', label: '' }, { field: 'type', label: '' }, { field: 'todo', label: 'to-do' },
+        { field: 'with', label: 'with' }, { field: 'yours', label: 'yours' }, { field: 'blocks', label: 'blocks' },
+        { field: 'waits', label: 'waits on' }, { field: 'status', label: 'status', width: '16em' },
+      ],
+      filters: [
+        { name: 'current', multi: true, choices: [{ value: 'on', word: 'Current Goal Only' }], test: function () { return 1; } },
+        { name: 'goalsOnly', toggle: true, word: 'Goals Only', test: function (row, on) { return !on || row.goal === '' ? 1 : 0; } },
+        { name: 'includeClosed', toggle: true, word: 'Include Closed', test: function (row, on) { return on || row.status !== 'closed' ? 1 : 0; } },
+      ],
+      matched: function (row) { return { title: String((row && row.title) || ''), id: String((row && row.id) || '') }; },
+      element: function (row, key) { return deskListElement(row, key); },
+      details: function (row, key) { deskOpenRow(String(key)); },
+      empty: 'Nothing to show.',
+    });
+    deskList.redraw();
+  });
 }
 
 // The bubble at the top of Team: the goal, by title, and a line that opens it.
@@ -1126,9 +1148,9 @@ function deskDraw() {
   // A chat on screen is being seen as it arrives.
   if (deskTab === 'team') deskMarkTeamSeen();
   deskDrawTabs();
-  el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
-    deskTable();
-  deskMountRowElements();
+  var err = document.getElementById('desk-list-error');
+  if (err) err.innerHTML = deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '';
+  if (deskList) deskList.redraw(); else deskMountList();
 }
 
 // ── THE RULES TAB (goal/G6.5) ─────────────────────────────────────────
@@ -1603,15 +1625,11 @@ spirit.shell.activateApp({
           '<div class="start-job-form card" id="desk-add-goal" hidden><label class="field-label grow">Add Goal' +
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
-          // THE LIST IS A PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
-          // same. That is part of the whole probability search frame work"): see deskShownItems.
-          '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
-          '<button type="button" id="desk-current-goal"></button>' +
-          '<button type="button" id="desk-goals-only"></button>' +
-          // [INCLUDE CLOSED] (goal/G4.20 point 1), off when Desk opens.
-          '<button type="button" id="desk-include-closed"></button>' +
-          '</div>' +
-          '<div id="desk-top"></div></div>' +
+          // THE LIST IS THE PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
+          // same. That is part of the whole probability search frame work"): shell/js/probabilitySearch.js in its pane
+          // face over items.search, its toggles the element's filters in the row above the box, each row a row element
+          // (deskMountList). The error line above it.
+          '<div id="desk-top"><div id="desk-list-error"></div><div id="desk-list"></div></div></div>' +
         // APPS (goal/G22.3): its inner tab row, then one inner pane per special goal. Team's pane is the Team tab's, moved
         // whole; a plugin's pane is made inside #desk-app-panes when its goal is found (deskNotePlugins).
         '<div data-pane="apps" hidden>' +
@@ -1731,33 +1749,8 @@ spirit.shell.activateApp({
       if (row) deskOpenRow(row.getAttribute('data-row'));
     });
     document.getElementById('desk-goal-add').addEventListener('click', function () { deskAddGoal(); });
-    document.getElementById('desk-search').addEventListener('input', function () {
-      deskFilter.text = String(document.getElementById('desk-search').value || '');
-      // Ranked from what the page holds at once; the desk's answer then adds what it held that the page did not.
-      deskDraw();
-      deskSearchItems();
-    });
-    // The ranking is probabilitySearch.order, loaded with the page's other searches.
-    deskLoadSearch(function () { if (String(deskFilter.text || '').trim()) deskDraw(); });
-    document.getElementById('desk-current-goal').addEventListener('click', function () {
-      deskFilter.currentGoalOnly = !deskFilter.currentGoalOnly;
-      // EXCLUSIVE, goal/G9.2. Andy: "only one of the two buttons ... may be selected at the same time."
-      if (deskFilter.currentGoalOnly) deskFilter.goalsOnly = false;
-      deskDrawToggles();
-      deskSearchItems();
-    });
-    document.getElementById('desk-goals-only').addEventListener('click', function () {
-      deskFilter.goalsOnly = !deskFilter.goalsOnly;
-      if (deskFilter.goalsOnly) deskFilter.currentGoalOnly = false;
-      deskDrawToggles();
-      deskSearchItems();
-    });
-    document.getElementById('desk-include-closed').addEventListener('click', function () {
-      deskFilter.includeClosed = !deskFilter.includeClosed;
-      deskDrawToggles();
-      deskSearchItems();
-    });
     deskDrawToggles();
+    deskMountList();
     document.getElementById('desk-rules').addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
