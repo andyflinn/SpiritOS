@@ -1112,13 +1112,14 @@ function deskDraw() {
 //
 //   The box: "A new tab "Rules" between "Team" and "Musings": 1. The new bubble: type, label, text and a new button:
 //   rule.add (the rule comes in proposed; agents may add one too). 2. The search bubble: a search box and 7 toggles
-//   (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per
+//   (ui, code, design, desk, test; proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per
 //   rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails
 //   (goal/G6.4)."
 //
 // The server does the searching and the filtering, as for the List. A toggle that is on narrows to its value; with
 // none on in a group, that group is not narrowed (rules.search reads an empty list as all).
-var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk'];
+// The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
+var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: 'EDIT', active: 'LOCK', deleted: 'DEAD' };
 var deskRuleFilter = { text: '', types: [], statuses: [] };
