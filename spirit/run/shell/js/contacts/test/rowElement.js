@@ -101,6 +101,20 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   D.merge('contacts/K11', { blocked: true });
   if (ha.status.innerHTML === '❌') test.check('a flag the status is drawn from repaints the status');
   else test.fail('status after block: ' + ha.status.innerHTML);
+  // A row added stays on the page and becomes a row of the book: its Add goes, and it offers what a kept row offers.
+  const found = C.create({ key: 'K14', publicLabel: 'finn' });
+  const hf = hostsFor(found); found.mount(hf);
+  const beforeAdd = names(found) + '|' + (hf.add.innerHTML.indexOf('data-action="add"') !== -1);
+  D.merge('contacts/K14', { keep: true });
+  if (beforeAdd === 'add|true' && hf.add.innerHTML === '' && names(found) === 'open,block,unblock,remove') test.check('a row the owner adds loses its Add, and offers open, block, unblock, remove');
+  else test.fail('a row after its add: ' + JSON.stringify({ before: beforeAdd, add: hf.add.innerHTML, actions: names(found) }));
+  await found.act('block');
+  const blockAfterAdd = asked.pop();
+  if (blockAfterAdd && blockAfterAdd.verb === 'contact.block' && blockAfterAdd.body.publicKey === 'K14') test.check('and its new actions ask the node');
+  else test.fail('block after the add asked: ' + JSON.stringify(blockAfterAdd));
+  D.merge('contacts/K14', { keep: false });
+  if (names(found) === 'add' && hf.add.innerHTML.indexOf('data-action="add"') !== -1) test.check('a row that leaves the book offers Add again');
+  else test.fail('a row out of the book: ' + JSON.stringify({ add: hf.add.innerHTML, actions: names(found) }));
   b.destroy();
   hb.label.innerHTML = 'after destroy';
   D.merge('contacts/K11', { name: 'Carla' });

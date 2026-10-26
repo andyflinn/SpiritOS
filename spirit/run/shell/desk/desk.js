@@ -1424,10 +1424,28 @@ function deskVerifyConsoleHeard(obj) {
   deskVerifyCon.want = Number(obj.consoleTo) || 0;
   if (deskVerifyCon.want > deskVerifyCon.to) deskVerifyTail();
 }
+// THE CONSOLE IS DRAWN ONCE AND WRITTEN IN PLACE (goal/G40.13). Andy: "the rolling console area keeps jumping out of
+// sight, maybe redrawn of every waiting tick of the verifier, even if nothing changes???": the tile above it repaints
+// on every publish and tick, the console only when its text grew, and it follows the newest line only while he is
+// at its end; scrolled up, it stays where he is. It takes the height the window leaves below it ("why does not the
+// console pane use up all the space it can").
 function deskVerifyConsoleHtml() {
-  return '<div class="label" style="margin-top:1em">Console</div>' +
-    '<pre id="desk-verify-console" style="font-family:monospace;white-space:pre-wrap;max-height:24em;overflow:auto;margin-top:0.5em">' +
-    deskEsc(deskVerifyCon.text) + '</pre>';
+  return '<div class="stat-tile wide"><div class="label">Console</div>' +
+    '<pre id="desk-verify-console" style="font-family:monospace;white-space:pre-wrap;min-height:12em;overflow:auto;margin:0.5em 0 0"></pre></div>';
+}
+function deskVerifyConsoleFit() {
+  var con = document.getElementById('desk-verify-console');
+  if (!con || typeof con.getBoundingClientRect !== 'function' || typeof window === 'undefined' || !window.innerHeight) return;
+  var scroller = document.getElementById('app-container');
+  var top = con.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0);
+  con.style.height = Math.max(192, Math.floor(window.innerHeight - top - 32)) + 'px';
+}
+function deskVerifyConsoleWrite() {
+  var con = document.getElementById('desk-verify-console');
+  if (!con || con.textContent === deskVerifyCon.text) return;
+  var atEnd = con.scrollTop + con.clientHeight >= con.scrollHeight - 8;
+  con.textContent = deskVerifyCon.text;
+  if (atEnd) con.scrollTop = con.scrollHeight;
 }
 // THE LIVE RUN (goal/G8.12), as deskVerify publishes it: the newest object only, never a log. Andy, 2026-10-09: "what
 // now is displayed as a log.. should be an updated status message underneath a progress bar", and the bar is suites
@@ -1492,7 +1510,7 @@ function deskVerifyCountdown(since) {
   if (left <= 0) return '<div>' + deskVerifyIdleSaid() + '</div>';
   return '<div>Idle in ' + left + ' min of quiet.</div>';
 }
-function deskVerifyHtml() {
+function deskVerifyHtml(more) {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { suite: '', since: '' };
   var live = deskVerifyRun;
@@ -1515,9 +1533,8 @@ function deskVerifyHtml() {
     // STOP (goal/G33.3): pressable whenever anything runs. A run is started from the item.
     // CHORES NOW (goal/G33.11): the idle chores at once, chores.run; pressable while nothing runs, where chores are named.
     '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button>' +
-    ' <button type="button" id="desk-verify-chores"' + (!running && (!live || live.hasChores === true) ? '' : ' disabled') + '>Chores now</button></div>' +
-    // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
-    deskVerifyConsoleHtml() +
+    ' <button type="button" id="desk-verify-chores"' + (!running && (!live || live.hasChores === true) ? '' : ' disabled') + '>Chores now</button>' +
+    (more ? ' ' + more(running) : '') + '</div>' +
     '</div>';
   // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
@@ -1525,15 +1542,28 @@ function deskVerifyHtml() {
   // caller but a suite; the dataset is read on his clone's disc (verify.db), never through the tab.
   return out;
 }
-// THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): one button under the tab's own, a run of every test the
-// product tree holds (the suite 'spirit/run', which the verifier names through testModule.js).
+// THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): a button in the tab's own row (Andy: "[Stop the run]
+// [Chores now] [Run the product tests]"), a run of every test the product tree holds (the suite 'spirit/run', which the
+// verifier names through testModule.js); pressable while nothing runs.
+function deskVerifyProductButton(running) {
+  return '<button type="button" id="desk-verify-product"' + (running ? ' disabled' : '') + '>Run the product tests</button>';
+}
+var deskVerifyHeadDrawn = null;
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');
-  if (box) box.innerHTML = deskVerifyHtml() + (deskVerifier ? '<div style="margin-top:1em"><button type="button" id="desk-verify-product">Run the product tests</button></div>' : '');
-  // The console shows its newest line, as a console does (goal/G22.3).
-  var con = box ? document.getElementById('desk-verify-console') : null;
-  if (con) con.scrollTop = con.scrollHeight;
+  if (!box) return;
+  var head = document.getElementById('desk-verify-head');
+  // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
+  if (!head || !!deskVerifier !== !!document.getElementById('desk-verify-console')) {
+    box.innerHTML = '<div id="desk-verify-head"></div>' + (deskVerifier ? deskVerifyConsoleHtml() : '');
+    head = document.getElementById('desk-verify-head');
+    deskVerifyHeadDrawn = null;
+  }
+  var html = deskVerifyHtml(deskVerifyProductButton);
+  if (html !== deskVerifyHeadDrawn) { head.innerHTML = html; deskVerifyHeadDrawn = html; deskVerifyConsoleFit(); }
+  deskVerifyConsoleWrite();
 }
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('resize', deskVerifyConsoleFit);
 // THE COUNTDOWN MOVES ON ITS OWN (goal/G8.12). Andy: "the progress bar can show the countdown live". Nothing is asked
 // of anybody for this - the clock is local, which is the one thing a page may read without pulling; it repaints only
 // while the tab is open and the verifier is idle, so a running verifier's bar is only ever what it published.
@@ -1700,7 +1730,7 @@ spirit.shell.activateApp({
       if (tab === 'team') deskMarkTeamSeen();
       if (tab === 'rules') deskRulesSearch();
       // goal/G8.11: opening the tab reads what runs and the newest records; it is not pulled while it is closed.
-      if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); } else deskVerifyTicking(false);
+      if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); deskVerifyConsoleFit(); } else deskVerifyTicking(false);
       deskDrawTabs();
     }
     // The strips are redrawn, so one listener on each, and the click may

@@ -53,16 +53,17 @@
     var r = row || {};
     var key = String(r.key || r.publicKey || '');
     var relay = r.relay === true;
+    var was = known(key) || {};
     // Kept, owned or blocked: the owner has decided about them, and a block has to stay undoable. A held row waits for
     // the yes, which is Add.
-    var inBook = r.keep === true || r.mine === true || r.blocked === true;
-    var was = known(key) || {};
-    var actions = relay ? [
+    function bookOf(v) { return v.keep === true || v.mine === true || v.blocked === true; }
+    var relayActions = [
       // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
       { name: 'open', label: 'Open', run: function (el) {
         return window.spirit.elements.natterDetails.open({ url: String(el.row.url || el.key) });
       } },
-    ] : inBook ? [
+    ];
+    var bookActions = [
       { name: 'open', label: 'Open', run: function (el) {
         return window.spirit.elements.contactDetails.open({ key: el.key });
       } },
@@ -70,19 +71,26 @@
       { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
       { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.ready.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
       { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
-    ] : [
+    ];
+    var heldActions = [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
         var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
         return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
-    return E.rowElement.create({
+    function offered(v) { return relay ? relayActions : bookOf(v) ? bookActions : heldActions; }
+    // WHAT A ROW OFFERS FOLLOWS ITS FLAGS (goal/G40.13): a row added stays on the page and is now a row of the book, so
+    // its actions are refilled as the stream moves its flags, never kept as they were when it was made. The one array is
+    // the element's own, so its act reads it as it stands.
+    var actions = offered(r).slice();
+    var made = null;
+    made = E.rowElement.create({
       kind: 'contact',
       key: key,
       index: index(),
       row: { key: key, name: r.name || '', keep: r.keep === true, mine: r.mine === true, blocked: r.blocked === true,
-        held: r.held === true, seated: r.seated === true, relay: relay, book: inBook,
+        held: r.held === true, seated: r.seated === true, relay: relay,
         present: was.present !== undefined ? was.present : r.present, url: r.url || '', publicLabel: r.publicLabel || '' },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
@@ -106,16 +114,25 @@
             return spirit.ready.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
               .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
-        { name: 'add', from: ['book', 'relay'], paint: function (v) {
-          return v.book === false && v.relay !== true ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
+        { name: 'add', from: ['keep', 'mine', 'blocked', 'relay'], paint: function (v) {
+          return !bookOf(v) && v.relay !== true ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
         } },
       ],
       actions: actions,
       expand: function (el) {
-        if (relay || !inBook) return Promise.resolve(null);
+        if (relay || !bookOf(el.row)) return Promise.resolve(null);
         return spirit.ready.then(function (s) { return s.contact.get({ key: el.key }); });
       },
     });
+    var apply = made.apply;
+    made.apply = function (changes) {
+      apply(changes);
+      var now = offered(made.row);
+      if (now[0] === actions[0]) return;
+      actions.splice.apply(actions, [0, actions.length].concat(now));
+      made.actions = now.map(function (a) { return { name: a.name, label: a.label || a.name }; });
+    };
+    return made;
   }
 
   E.contactElement = { create: create };

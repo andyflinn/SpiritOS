@@ -15,7 +15,8 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 - **Actions by what the row is**: a relay → `open` (its details by url); kept, mine or blocked → `open` (contact details
   by key), `block`, `unblock`, `remove` (`contact.block`, `contact.unblock`, `contact.forget`, by `publicKey`); anything
   else → `add` (`peer.acquire { publicKey, publicLabel }`). An action asks and paints nothing; an action the row does
-  not offer asks nothing.
+  not offer asks nothing. **What the row is follows its flags**: a row added (its `keep` set on `data.contacts`) loses
+  its Add and offers what a kept row offers; a row that leaves the book offers Add again.
 - **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⌛ held over ⭐ mine, else blank; label
   the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay.
 - **Presence already known** in `data.contacts` wins over the row's own `present` at create.
@@ -29,4 +30,4 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 ## What its test must try to break
 
 Two rows of one key and one of another under one write; a flag that only the status draws from; a destroyed row; an
-HTML name; a blank name; a relay that is also kept; acting a verb the row lacks; expanding twice.
+HTML name; a blank name; a relay that is also kept; acting a verb the row lacks; expanding twice; a row added while it is on the page, then taken out of the book.
