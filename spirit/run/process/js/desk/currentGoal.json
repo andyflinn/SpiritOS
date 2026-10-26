@@ -1,5 +1,5 @@
 {
- "change": 103997,
+ "change": 104149,
  "goal": "goal/G40",
  "items": [
   {
@@ -18,6 +18,7 @@
    ],
    "blocking": [],
    "blocked": [
+    "goal/G40.4",
     "goal/G40.6",
     "goal/G40.9",
     "goal/G40.12",
@@ -44,6 +45,7 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -60,7 +62,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 5,
+   "waiting": 7,
    "excluded": [
     "ollama agent node"
    ],
@@ -68,7 +70,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -390,44 +394,8 @@
    "claimCommit": "4cba4624",
    "redCommit": "ee5eb029",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/13",
-     "version": 31
-    },
-    {
-     "key": "rule/11",
-     "version": 27
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -1100,44 +1068,8 @@
    "claimCommit": "3d860839",
    "redCommit": "242d3543",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/13",
-     "version": 31
-    },
-    {
-     "key": "rule/11",
-     "version": 27
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -1752,36 +1684,8 @@
    "claimCommit": "00efe7b8",
    "redCommit": "7df82fff",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -2196,25 +2100,28 @@
    "id": "goal/G40.4",
    "title": "Relay RAM raise checks the difference",
    "goal": "goal/G40",
-   "status": "closed",
+   "status": "verified green",
    "statusTone": "",
    "with": "",
    "version": 8,
    "buttons": [
-    "reopen"
+    "end-design",
+    "close",
+    "delete",
+    "verify"
    ],
    "blocking": [
     "goal/G40"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
+   "design": true,
    "fileCount": 10,
    "green": true,
    "code": true,
@@ -2226,36 +2133,8 @@
    "claimCommit": "e4737add",
    "redCommit": "66a64c97",
    "waived": false,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -2267,7 +2146,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Raising a running relay's RAM limit is checked against the difference, not the whole new figure (goal/G40). Andy, 2026-10-24: \"the relay calculates if there's room for a 512MB relay, when it is supposed to calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right now. It needs to asses the difference^....\"\n\nToday: the owner's config verb refuses a new ramLimitMB above what the relay measures as free, less the safety margin. On Linux that measure is the smaller of the box's free memory and the room left under the relay's own service cap, which install-units set to the old limit plus 128 MB. So with 256 MB set, the cap is 384 MB, and a raise to 512 can never pass, however much the box has free.\n\nWanted: a raise passes when the new limit less the limit the relay runs on fits in what the box itself has free, less the margin; the relay's own cap does not count against its own raise. A lowering always passes this check. The cap at twice the limit is the safety, and nothing further is counted for it. Andy, 2026-10-24: \"the twice is safe. decision. period.\"\n\nThe relay's service cap is twice its RAM limit, written at install and moved by the relay itself with every limit change (it runs as root under systemd). Andy, 2026-10-24, answering Q1: \"the relay raises its own service cap to exactly twice the amount of RAM it uses for itself.\" Andy, 2026-10-24: \"the cap must be twice the size of what we compute for relay-internal use, per member, so for a 256MB not as computed today the cap must be 512MB, simple, AND safe.\" The limit already holds what the relay needs at rest and its members' share, so twice it also covers the kernel's buffers for those members.\n\nThe relay keeps its own memory calculation; nothing is measured from the kernel. Andy, 2026-10-24: \"I'll stay with the old calculation then. we stick with our own memory calculation, and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB figure for a 1GB RAM VPS. and keep its simple for ourselves.\"\n\nAlso owed: the relay host documentation says what a relay box spends beside the relay: the system itself, Caddy's own memory per connection, and the kernel's socket buffers. It recommends a 256 MB limit for a 1 GB VPS.\n\nRuns in parallel with goal/G40.5: it touches the relay's config and limits code and the relay host documentation, which that item does not.",
@@ -2289,9 +2168,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-24T16:15:12.627Z",
+     "at": "2026-10-26T07:32:59.249Z",
      "made": "desk"
     },
     {
@@ -2305,6 +2184,16 @@
      "made": "desk",
      "placedBy": "desk",
      "placedKey": ""
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-26T07:32:59.249Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -2860,36 +2749,8 @@
    "claimCommit": "9bfd6a3a",
    "redCommit": "0a7c1f2b",
    "waived": false,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -3061,6 +2922,7 @@
    "with": "",
    "version": 46,
    "buttons": [
+    "start-design",
     "done",
     "verify"
    ],
@@ -3087,44 +2949,8 @@
    "claimCommit": "e0709bd6",
    "redCommit": "b91fbda9",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/13",
-     "version": 31
-    },
-    {
-     "key": "rule/11",
-     "version": 27
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -5537,36 +5363,8 @@
    "claimCommit": "f25ff1cd8577eb2ba3be30e0d4a6dcc589e583fa",
    "redCommit": "6ef475bedbc0ef7fe4e3ff82a778ae25b6b6938f",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -5756,52 +5554,8 @@
    "claimCommit": "54c4274ff3fbd297bb22a88f7cb03fdf7ebf1d21",
    "redCommit": "e1c2f3202a324c6c038218d426ae78055d7bbc9a",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/12",
-     "version": 29
-    },
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/8",
-     "version": 18
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/2",
-     "version": 12
-    },
-    {
-     "key": "rule/1",
-     "version": 11
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -6404,6 +6158,7 @@
    "with": "",
    "version": 0,
    "buttons": [
+    "start-design",
     "go",
     "close",
     "delete",
@@ -6433,6 +6188,7 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "phaseRules": [],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -6521,36 +6277,8 @@
    "claimCommit": "364dea24",
    "redCommit": "bab8b938",
    "waived": true,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -8622,36 +8350,8 @@
    "claimCommit": "fcf4a91f",
    "redCommit": "f0281af5",
    "waived": false,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
+   "rules": [],
+   "phaseRules": [],
    "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -11021,12 +10721,13 @@
    "id": "goal/G40.12",
    "title": "More desk fixes",
    "goal": "goal/G40",
-   "status": "running",
-   "statusTone": "",
-   "with": "",
+   "status": "deskDetails.js changed",
+   "statusTone": "code",
+   "with": "wsl-claude",
    "version": 7,
    "buttons": [
-    "delete",
+    "start-design",
+    "done",
     "verify"
    ],
    "blocking": [
@@ -11036,53 +10737,25 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 8,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "creator": "wsl-claude",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "ad783a42",
+   "redCommit": "5f469795",
    "waived": false,
-   "rules": [
-    {
-     "key": "rule/6",
-     "version": 25
-    },
-    {
-     "key": "rule/10",
-     "version": 23
-    },
-    {
-     "key": "rule/9",
-     "version": 20
-    },
-    {
-     "key": "rule/7",
-     "version": 16
-    },
-    {
-     "key": "rule/5",
-     "version": 10
-    },
-    {
-     "key": "rule/4",
-     "version": 9
-    },
-    {
-     "key": "rule/3",
-     "version": 6
-    }
-   ],
-   "verified": "none",
+   "rules": [],
+   "phaseRules": [],
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -11093,11 +10766,25 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
    "asks": 0,
    "half": false,
    "full": false,
    "box": "the first set of changes i propose\n- 1. You can turn design on for an item at any time.\n- 2. No commit lands while the current goal, or the item the agent is on, is in design mode, granted or not.\n- 3. all searches in desk are of the new probability variety.\n- 4. the rules get a new \"test\" type. all rules get a field that indicates \"auto-attach-at-goal-creation-time\"\n- 5. The desk sends no idle question at all (the stale-Q code is gone since 03858cf9, and nothing replaces it).\n- 6. An agent raises ONE red Q when a decision blocks its progress; that Q is then discussed.\n- 7. Reopening an item or a goal puts it back into design.\n- 8. A build and a verify run the item's red only (rule/10), and rule/10 rides on build and verify by default.\n\nsecond set of changes\n- 1. each goal and item gets a list of attached rules.\n- 2. the icons strip to the left of a goal has an icon for the list of attached rules\n- 3. rules can be added with a propabilitySearch-dropdown for rules and they can be remove from the goal/item with a delete button on the rule-row\n- 4. during design, attached \"design\" rules will accompany every wake-up for the agent.\n- 5 during red phase, attached \"test\" rules to item and goal accompany the successful take of the red phase, and all wakes of the test-writing agent during the red phase. Verify falls under the test rules too: they accompany the take of verify and its wakes.\n- 6. the equivalent for \"code\" phase. a successful take of \"code\" will be accompanied by \"code\" rules attached to \"code\" item and goal. (The code phase is today's build.)\n- 7. The rules attached to an agent's work are the goal's rules for the current phase plus the current item's, each once.\n- 8. The desk client caches the rule attachments of the current goal and its items; the desk pushes them only when an attachment changes, so a wake carries no rule text it already holds.\n",
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "To turn autoAttach on for a rule that already exists, may rule.version carry it, so no new verb is needed?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-26T07:10:06.818Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -11176,6 +10863,162 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-26T06:32:41.134Z",
      "text": "- wsl: green. Box v7 holds every point raised, mine included; nothing open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T06:35:13.123Z",
+     "text": "- cw: taking the red. Files: the red only.\n- The second set needs new desk verbs. My names: item.rules.add {id, rule} and item.rules.remove {id, rule}, shaped like item.files.add; they work on a goal id as well.\n- A rule gets the new type test beside ui, code, design and desk, and a yes/no field autoAttach, set by rule.add and changed by a new rule.autoAttach {key, on}.\n- At goal creation the desk copies every active autoAttach rule into the goal's list.\n- Q: yes to these names?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:03:18.356Z",
+     "text": "cw. ENGLISH!\n\n- and post this shit as red Q so it catches my attention!\n- item.rules.add end remove are approved\n- new test type (and search filter), . yes.\n- new boolean field autoAttach (to goal at goal-creation). defaults to false, must be set to true so a modified goal creator auto-attaches a reference to this rule to the goal.\n- At goal creation the desk copies every active autoAttach rule into the goal's list. (why not just a reference?)\n\ndoes this get you to move on???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T07:04:26.635Z",
+     "text": "- cw: yes, that moves me on.\n- A reference, you are right: the new goal's list holds the rule's key, never a copy of its text. \"Copies\" was the wrong word.\n- autoAttach is false until you set it. The rules search gets a test filter. Both are in the red.\n- I am committing the red now; one question is below as a red Q."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T07:04:57.340Z",
+     "text": "commit 73ff7e1a5fcba2f61147c37a528cd0e66d358d39: goal/G40.12 red: more desk fixes: design at any time, no commit in design, reopened goal in design, the test type and autoAttach, attached rules per goal and item, the phase's rules on a take, the rul\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:05:44.910Z",
+     "text": "wsl?!?!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:06:36.803Z",
+     "text": "- wsl: taking the build, from red 73ff7e1a; checked by its red only."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:06:53.787Z",
+     "text": "- wsl: correction, the item is still in red with claude-windows; I take the build the moment red is claimed.\n- Q1 waits on you: may rule.version carry autoAttach, so no new verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:08:32.727Z",
+     "text": "Q1: To turn autoAttach on for a rule that already exists, may rule.version carry it, so no new verb is needed?\n\n- autoAttach is false by default.\n- rule.version? carries the full rule."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:10:09.113Z",
+     "text": "- desk rules apply to ALL phases...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-26T07:10:09.291Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T07:10:15.326Z",
+     "text": "- cw: Q1 is in the red: a new rule.version turns autoAttach on.\n- The red is done at 5f469795: 16 checks fail, one for each open point; the older checks pass.\n- wsl: the build is yours.\n- Still open, for later: rule/10 has one type, so as a test rule it rides on red and verify, not on build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T07:10:32.443Z",
+     "text": "commit 5f46979544001d5cfb638720d1cfc0a93d8fc3d9: goal/G40.12 red: rule.version carries autoAttach (Q1)\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:10:52.586Z",
+     "text": "- wsl: build taken, from red 5f469795; checked by its red only."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:17:46.305Z",
+     "text": "commit 1fc8b8b7: goal/G40.12 build, pushed; its red 109/109. Build claimed at 1fc8b8b7.\n- claude-windows: one fix in your red: the red phase's rules include the goal's autoAttach test rule (rule/1), as your auto-attach check above it says."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:18:11.536Z",
+     "text": "commit 1fc8b8b7c68c7931d3f97c289245a0ac06204dca: goal/G40.12: more desk fixes: design at any time, no commit in design, reopened goal in design, the test type and autoAttach, attached rules per goal and item, the phase's rules, the rules panel, one \n- spirit/run/process/js/desk/desk.family/item.rules.add.json\n- spirit/run/process/js/desk/desk.family/item.rules.remove.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:27:59.518Z",
+     "text": "where is the new \"test\" rule-type?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:28:45.986Z",
+     "text": "all: WHERE IS THE NEW \"test\" rule-type?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T07:29:20.093Z",
+     "text": "- cw: the desk accepts test now, but the desk page has its own list of rule types, and test is missing from it. So the type picker and the filter never offer it.\n- My red missed that list; that is my fault.\n- The fix is one word in the desk page, in the build: wsl, yours.\n- Your node runs the old code until your checkout is updated and the node restarted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:29:43.702Z",
+     "text": "commit ad783a42607131235b83bb10fb6967af921b7d33: goal/G40.12: the desk page's rule types include test: the type filter and the new-rule form offer it\n- spirit/run/shell/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:29:53.002Z",
+     "text": "- wsl: the Desk page had its own list of rule types without test; fixed and pushed (ad783a42), the red still 109/109.\n- Your node shows it once it runs ad783a42: pull, restart the desk server, reload the page."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:29:57.891Z",
+     "text": "- where are the proper probability type Searches?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-26T07:29:58.082Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T07:30:32.044Z",
+     "text": "- wsl: not built. The red only checked that the old list search is gone, and I built to the red.\n- Three desk searches are still hand-rolled: the List (items.search), the Rules list (rules.search) and the item chat search (chat.search); only the new rules dropdown and Fallout use probabilitySearch.\n- I move all three onto probabilitySearch now, under this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:30:58.838Z",
+     "text": "third item in the box:\n\n- 3. all searches in desk are of the new probability variety."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T07:31:53.651Z",
+     "text": "an this item is CLEAR:\n\n\"- 3. all searches in desk are of the new probability variety.\"\n\nthis includes caching of data on the deskClient side!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-26T07:31:53.834Z",
+     "text": "message delivered, wsl-claude busy"
     }
    ]
   },
@@ -11217,6 +11060,7 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "phaseRules": [],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -11270,6 +11114,7 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "phaseRules": [],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
