@@ -52,6 +52,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/17 (version 44): Diligence
+
+Before claiming completion of ANY task, test-writing, coding, or verifying, the agent MUST make sure that every single point in the items box is satisfied.
+
 ### rule/15 (version 39): An agent never just goes idle
 
 An agent never goes idle without 
