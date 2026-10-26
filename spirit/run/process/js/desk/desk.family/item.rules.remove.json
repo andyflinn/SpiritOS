@@ -1,5 +1,5 @@
 {
-  "description": "Take one rule off a goal or an item, by its key (goal/G40.12). Refused for a rule not attached to it.",
+  "description": "Andy's alone: take one rule off a goal or an item, by its key (goal/G40.12). Refused for a rule not attached to it.",
   "request": {
     "id": "",
     "rule": ""

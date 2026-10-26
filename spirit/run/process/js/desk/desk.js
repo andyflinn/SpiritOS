@@ -271,6 +271,8 @@ function ruleRowVerb(verb, adding) {
   return {
     request: { id: '', rule: '' }, reply: { change: 0 },
     handler: function (a, caller) {
+      // HIS ALONE (Andy, 2026-10-26: "it is I, the USER who controls auto-attach and the rules, NOT the agents").
+      ownerOnly(caller);
       const w = writerOf(caller);
       const it = itemFor(walkState(), a);
       const key = String(a.rule || '');
@@ -3388,6 +3390,9 @@ appServer.serve(withPlugins({
       mayWrite(walkState(), w);
       const fr = require('../../../spirit/fieldRules.js');
       if (RULE_TYPES.indexOf(a.type) === -1) throw refusedWhy('bad-request', 'a rule type is one of ' + RULE_TYPES.join(', '));
+      // AUTO-ATTACH IS HIS (goal/G40.12; Andy, 2026-10-26: "it is I, the USER who controls auto-attach and the rules, NOT
+      // the agents, not the desk"): an agent may propose a rule, never one that attaches itself.
+      if (a.autoAttach === true && !(caller && caller.owner === true)) throw refusedWhy('not-owner', 'autoAttach is set by Andy alone');
       if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
@@ -3594,7 +3599,7 @@ appServer.serve(withPlugins({
   'item.suites.remove': listRowVerb('item.suites.remove', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, false, true),
   // THE RULES ATTACHED TO A GOAL OR AN ITEM (goal/G40.12, second set 1-3; the names Andy approved: "yes, that moves me
   // on"): item.rules.add {id, rule} puts one rule on, by its key, item.rules.remove takes it off; on a goal's id as on an
-  // item's. Each refuses a rule that does not exist, one already there, or one not there.
+  // item's; his alone. Each refuses a rule that does not exist, one already there, or one not there.
   'item.rules.add': ruleRowVerb('item.rules.add', true),
   'item.rules.remove': ruleRowVerb('item.rules.remove', false),
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
