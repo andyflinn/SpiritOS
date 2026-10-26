@@ -582,8 +582,46 @@ function handOver(to, t0) {
     lines.unshift(text);
   }
   agentState = 'busy';
-  const answer = lines.length < all.length ? { lines: lines, more: true } : { lines: lines };
-  return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
+  const cut = lines.length < all.length;
+  return rulesOfWake(to, lines).then(function (rules) {
+    rules.forEach(function (l) { if (Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true }), 'utf8') <= ANSWER_ROOM) lines.push(l); });
+    const answer = cut ? { lines: lines, more: true } : { lines: lines };
+    return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
+  });
+}
+
+// THE RULES WITH EVERY WAKE (goal/G40.12, box v7, second set 4-6 and 8): a wake names, for each item its lines are about,
+// the rules of the phase that item is in, its goal's and its own, each once (the facts' phaseRules, kept from the desk's
+// push, so nothing is asked of the desk for them): "RULES <id>: rule/n@v ...". A rule's text comes once, the first time
+// this deskClient hands that version over ("RULE rule/n@v <type>: <label>: <text>"), asked of the desk then; after that
+// the key is enough. Kept for the life of this process.
+const rulesHanded = new Set();
+function rulesOfWake(to, lines) {
+  const ids = [];
+  lines.forEach(function (l) {
+    const m = /"id":"(goal\/G[0-9.]+)"/.exec(String(l));
+    if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]);
+  });
+  const out = [];
+  const texts = [];
+  ids.forEach(function (id) {
+    const row = dataSet.get('deskItems/' + id);
+    const rules = row && Array.isArray(row.phaseRules) ? row.phaseRules : [];
+    if (!rules.length) return;
+    out.push('RULES ' + id + ': ' + rules.map(function (r) { return r.key + '@' + r.version; }).join(' '));
+    rules.forEach(function (r) {
+      const tag = r.key + '@' + r.version;
+      if (rulesHanded.has(tag) || texts.some(function (t) { return t.tag === tag; })) return;
+      texts.push({ tag: tag, key: r.key });
+    });
+  });
+  return Promise.all(texts.map(function (t) {
+    return askDesk(to, 'rule.get', { key: t.key }).then(function (g) {
+      if (!g || g.ok === false || !g.text) return '';
+      rulesHanded.add(t.tag);
+      return 'RULE ' + t.tag + ' ' + g.type + ': ' + g.label + ': ' + String(g.text).replace(/\s+$/, '');
+    }, function () { return ''; });
+  })).then(function (said) { return out.concat(said.filter(Boolean)); }, function () { return out; });
 }
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
