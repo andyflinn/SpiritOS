@@ -255,6 +255,10 @@ spirit.shell.activateApp({
     contactsApi = api;
 
     container.innerHTML =
+      // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (goal/G40.13, rule/16; as in Apps and Icons, goal/G40.8:
+      // space granted top-down): the page is one fill box, the list box another inside it, and the panels below it keep
+      // their own height.
+      '<div class="fill">' +
       // No Key column, and none in the panel either (Andy). Six
       // characters of somebody's key are what two people compare down a
       // phone while one adds the other; once they are in this list that
@@ -305,7 +309,7 @@ spirit.shell.activateApp({
       // all available relays. the box on top, should not." It searches only
       // this node's book, and what it finds is added to the table.
       // THE ONE LIST (goal/G30.19): the book, the shadow and the network, with a filter instead of two folds.
-      '<div id="contacts-book" class="stat-tile wide"></div>' +
+      '<div id="contacts-book" class="fill"></div>' +
       // ADD A RELAY, moved here from Natter (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
       // folding-panel, right below \"Find someone on the network\""). relay.add lists it on its card's answer; the label
       // is this node's private caption, never on the wire.
@@ -322,7 +326,8 @@ spirit.shell.activateApp({
         '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
         '<div id="contacts-unknown-choices"></div>' +
       '</details>' +
-      '<div class="job-manifest-note" id="contacts-status"></div>';
+      '<div class="job-manifest-note" id="contacts-status"></div>' +
+      '</div>';
 
     // Painted when the node answers, not before. The read is a round trip
     // now rather than a file, so painting on the next line would draw

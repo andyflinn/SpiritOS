@@ -192,9 +192,21 @@ function killTree(kid) {
 }
 // A LISTED PATH STAYS IN spirit/test (goal/G19.4): spirit/test/../../x.js matched the pattern and was run. The path is
 // normalised first; one that leaves the folder is not run, and the run's row says so.
+// A suite it runs: under spirit/test/, or a product test (goal/G40.13, box v22, point 8): a file in a test/ folder of
+// the product tree, spirit/run/. A module, or a path that leaves the tree, is not run.
 function leavesTests(rel) {
-  const norm = path.posix.normalize(String(rel || '').replace(/\\/g, '/'));
-  return norm.indexOf('spirit/test/') !== 0 || norm.split('/').indexOf('..') !== -1;
+  const raw = String(rel || '').replace(/\\/g, '/');
+  if (raw.split('/').indexOf('..') !== -1) return true;
+  const norm = path.posix.normalize(raw);
+  if (norm.indexOf('spirit/test/') === 0) return false;
+  return !(norm.indexOf('spirit/run/') === 0 && path.posix.basename(path.posix.dirname(norm)) === 'test');
+}
+// THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): the suite 'spirit/run' in a run is every test the product
+// tree holds, as testModule.js names them (spirit/run/test/testModule.js, testsFor with no file); a general test is
+// run once per module it judges, that module its argument ("<test> <module>").
+function productSuites() {
+  const tm = require(path.join(REPO, 'spirit', 'run', 'test', 'testModule.js'));
+  return tm.testsFor('').map(function (t) { return 'spirit/run/' + t.test + (t.file ? ' spirit/run/' + t.file : ''); });
 }
 // ── THE CONSOLE OF THE CURRENT RUN (goal/G22.3) ──────────────────────────
 //
@@ -265,14 +277,14 @@ function consoleRead(from) {
   }
 }
 
-function runSuite(file, port, onTests, env) {
+function runSuite(file, port, onTests, env, args) {
   return new Promise(function (resolve) {
     const out = [];
     let timedOut = false;
     let tests = 0;
     // THE CONSOLE (goal/G22.3): each suite under a line naming it, then everything it prints.
     consoleAdd('\n=== ' + path.relative(REPO, file).split(path.sep).join('/') + ' ===\n');
-    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32',
+    const kid = spawn(process.execPath, [file].concat(args || []).concat(['--verify-port', String(port)]), { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32',
       env: env ? Object.assign({}, process.env, env) : process.env });
     runningKid = kid;
     // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
@@ -371,12 +383,14 @@ async function runSuites(suites, commit, row) {
   let lacking = '';
   if (commit && !(await holds(commit))) lacking = 'the tree lacks the commit ' + commit.slice(0, 8) + ' the run was handed';
   for (let i = 0; i < suites.length && !lacking; i++) {
-    const rel = suites[i];
+    // A general product test carries the module it judges after a space (productSuites).
+    const parts = String(suites[i]).split(' ');
+    const rel = parts[0];
     const one = out[i];
     const file = path.join(REPO, rel);
     // THE STOP IS CHECKED BEFORE EACH SUITE (goal/G21.3).
     if (stopped) { one.outcome = 'stopped'; one.failures = ['stopped by hand before it ran']; continue; }
-    if (leavesTests(rel)) { one.failures = ['the path leaves spirit/test, so it was not run']; continue; }
+    if (leavesTests(rel)) { one.failures = ['the path is neither under spirit/test nor a product test, so it was not run']; continue; }
     if (!fs.existsSync(file)) { one.failures = ['missing from this checkout']; continue; }
     running = { suite: rel, since: new Date().toISOString() };
     const expected = expectedOf(rel);
@@ -386,7 +400,7 @@ async function runSuites(suites, commit, row) {
         line: 'running ' + where + (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'), since: running.since });
     };
     told(0);
-    const r = await runSuite(file, port, told);
+    const r = await runSuite(file, port, told, undefined, parts.slice(1).map(function (p) { return path.join(REPO, p); }));
     // THE PRINTED LINES ARE THE VERDICT, not the exit code: a suite that ends with process.exit(0) after a failure
     // would otherwise read green. Only a line that STARTS with the mark counts (goal/G33.4): a success that quotes a
     // FAILURE line in its text is still a success.
@@ -704,7 +718,10 @@ appServer.serve({
       const commit = String(a.commit || '');
       if (commit && !/^[0-9a-f]{7,40}$/.test(commit)) throw refusedWhy('a commit is 7 to 40 hex characters (lower case), not ' + JSON.stringify(commit.slice(0, 50)));
       if (!a.suites.length) throw refusedWhy('a run needs at least one suite');
-      return startRun(a.suites.map(String), commit);
+      const asked = [];
+      a.suites.map(String).forEach(function (p) { if (p === 'spirit/run') productSuites().forEach(function (q) { asked.push(q); }); else asked.push(p); });
+      if (!asked.length) throw refusedWhy('the product tree holds no test yet');
+      return startRun(asked, commit);
     },
   },
   // THE VERIFIER TAB'S VERBS (goal/G8.11), deskVerify's own:

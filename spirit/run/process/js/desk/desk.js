@@ -263,7 +263,16 @@ function listRowVerb(verb, has, adding, suite) {
       if (adding && there) throw refusedWhy('bad-request', p + ' is on the list of ' + it.id + ' already');
       if (!adding && !there) throw refusedWhy('bad-request', p + ' is not on the list of ' + it.id);
       // The grant is kept in the walk, beside the list it describes, so the record decides the same everywhere.
-      return { change: write(verb, { id: it.id, path: p, by: w.by, key: w.key }).change };
+      const body = { id: it.id, path: p, by: w.by, key: w.key };
+      // THE FILE LIST BRINGS TESTS AND UI RULES (goal/G40.13, box v22, points 6 and 7), decided at the write and kept in
+      // the record, so a replay brings the same: a file of the product tree with its own test beside it brings that
+      // test into the item's suites; a file in spirit/run/shell/ brings every active auto-attach ui rule.
+      if (verb === 'item.files.add') {
+        const own = ownProductTest(p);
+        if (own) body.test = own;
+        if (/^spirit\/run\/shell\//.test(p.replace(/\\/g, '/'))) body.uiRules = autoAttachKeys('ui');
+      }
+      return { change: write(verb, body).change };
     },
   };
 }
@@ -283,6 +292,14 @@ function ruleRowVerb(verb, adding) {
       return { change: write(verb, { id: it.id, rule: key, by: w.by, key: w.key }).change };
     },
   };
+}
+// A file's own product test (spirit/run/test/TEST_SYSTEM.md: ./test/<name>.js beside ./<name>.js), as a repository
+// path, or '' when the file is not in the product tree or has none: a module without its own test brings nothing.
+function ownProductTest(p) {
+  const rel = String(p || '').replace(/\\/g, '/');
+  if (!/^spirit\/run\/.+\.js$/.test(rel) || rel.split('/').indexOf('test') !== -1) return '';
+  const own = path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel));
+  return fs.existsSync(path.join(__dirname, '..', '..', '..', '..', '..', own)) ? own : '';
 }
 // The item a table's search is about: by id, refused when there is none.
 function itemFor(st, a) {
@@ -1520,6 +1537,12 @@ function apply(s, r, b, item, goalOf) {
       const mine = (it.files[r.by] = it.files[r.by] || []);
       if (mine.indexOf(String(b.path)) === -1) mine.push(String(b.path));
       coreGrantAfter(it, r, String(b.path));
+      // goal/G40.13: the file's own product test joins the suites, and a shell file's ui rules join the attached.
+      if (b.test) { if (!Array.isArray(it.suites)) it.suites = []; if (it.suites.indexOf(String(b.test)) === -1) it.suites.push(String(b.test)); }
+      if (Array.isArray(b.uiRules)) {
+        if (!Array.isArray(it.attached)) it.attached = [];
+        b.uiRules.forEach(function (k) { if (it.attached.indexOf(String(k)) === -1) it.attached.push(String(k)); });
+      }
       return;
     }
     case 'item.files.remove': {
@@ -1873,8 +1896,13 @@ function mayTake(s, it, phase, who) {
 // work are "the combination of the goals applicable phase rules (test/design/code) the current items applicable phase
 // rules", each once: design rules in design, test rules in red and verify, code rules in build; and "desk rules apply
 // to ALL phases....". Only rules active now.
-function autoAttachKeys() {
-  return newestRules.all().filter(function (r) { return r.status === 'active' && r.autoAttach === true; }).map(function (r) { return r.key; });
+// The active auto-attach rules, at goal creation every type but ui; with type 'ui', the ui ones alone, which a shell file
+// on an item brings (goal/G40.13, box v22, point 7: "Auto-attach ui rules never come at goal creation: a new goal cannot
+// tell yet whether it will touch the UI").
+function autoAttachKeys(type) {
+  return newestRules.all().filter(function (r) {
+    return r.status === 'active' && r.autoAttach === true && (type === 'ui' ? r.type === 'ui' : r.type !== 'ui');
+  }).map(function (r) { return r.key; });
 }
 function phaseKind(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
@@ -1890,7 +1918,8 @@ function phaseRulesOf(s, it) {
   [gi, it].forEach(function (x) { ((x && x.attached) || []).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); }); });
   return keys.filter(function (k) {
     const r = newestRule.get(k);
-    return r && r.status === 'active' && (r.type === 'desk' || (kind && r.type === kind));
+    // Desk rules and the ui rules attached ride on every take and wake (goal/G40.12 point 9, goal/G40.13 point 7).
+    return r && r.status === 'active' && (r.type === 'desk' || r.type === 'ui' || (kind && r.type === kind));
   }).map(function (k) { return { key: k, version: newestRule.get(k).n }; });
 }
 

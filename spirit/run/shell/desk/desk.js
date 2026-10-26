@@ -1361,7 +1361,9 @@ function deskAskVerifier() {
     deskDrawTabs();
     deskDrawVerifier();
   }, function () {
-    if (!deskVerifier) return;
+    // THE TAB OPENS AT ANY TIME (goal/G40.13, box v22, point 10): a first ask that finds the verifier busy with a run still
+    // draws the tab, saying it did not answer; its next publish fills it in.
+    if (!deskVerifier) { deskVerifier = { running: { suite: '', since: '' } }; deskDrawTabs(); }
     deskVerifyMissed = true;
     deskDrawVerifier();
   });
@@ -1523,9 +1525,11 @@ function deskVerifyHtml() {
   // caller but a suite; the dataset is read on his clone's disc (verify.db), never through the tab.
   return out;
 }
+// THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): one button under the tab's own, a run of every test the
+// product tree holds (the suite 'spirit/run', which the verifier names through testModule.js).
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');
-  if (box) box.innerHTML = deskVerifyHtml();
+  if (box) box.innerHTML = deskVerifyHtml() + (deskVerifier ? '<div style="margin-top:1em"><button type="button" id="desk-verify-product">Run the product tests</button></div>' : '');
   // The console shows its newest line, as a console does (goal/G22.3).
   var con = box ? document.getElementById('desk-verify-console') : null;
   if (con) con.scrollTop = con.scrollHeight;
@@ -1767,6 +1771,17 @@ spirit.shell.activateApp({
           return deskVerifyRefresh();
         }, function (e) {
           deskVerifyAnswered('Chores now was not taken: ' + ((e && e.message) || e) + '.');
+          return deskVerifyRefresh();
+        });
+        return;
+      }
+      if (t.id === 'desk-verify-product') {
+        deskVerifyPressed('The product tests sent; waiting for deskVerify\'s answer.');
+        deskVerifyAsk('run', { suites: ['spirit/run'], commit: '' }).then(function () {
+          deskVerifyAnswered('deskVerify answered: the product test tree is running.');
+          return deskVerifyRefresh();
+        }, function (e) {
+          deskVerifyAnswered('The product tests were not taken: ' + ((e && e.message) || e) + '.');
           return deskVerifyRefresh();
         });
         return;

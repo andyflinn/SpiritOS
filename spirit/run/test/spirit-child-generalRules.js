@@ -18,7 +18,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(__dirname, '..', '..', 'test', 'testSupport.js'));
+// The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
+const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
 const REPO = path.join(RUN, '..', '..');
