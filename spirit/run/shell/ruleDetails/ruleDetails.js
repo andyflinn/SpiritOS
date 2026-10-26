@@ -74,15 +74,20 @@ function rdHeader() {
 function rdHeadHtml() {
   if (!rdRule) return rdEsc(rdKey);
   return rdEsc(rdRule.key || rdKey) + ' — ' + rdEsc(rdRule.label || '') +
-    ' <span class="job-manifest-note">' + rdEsc(rdRule.type || '') + ', ' + rdEsc(rdRule.status || '') + '</span>';
+    ' <span class="job-manifest-note">' + rdEsc(rdRule.type || '') + ', ' + rdEsc(rdRule.status || '') + (rdRule.autoAttach ? ', auto-attached to new goals' : '') + '</span>';
 }
 function rdButtonsHtml() {
   var armedButton = function (id, label, sure) {
     return '<button type="button" id="' + id + '"' + (rdArmed === id ? ' data-armed="1"' : '') + '>' + (rdArmed === id ? sure : label) + '</button>';
   };
+  // AUTO-ATTACH (goal/G40.12, box v7, first set 4): a toggle, as the item's Code✓ is; on, the rule is attached to every
+  // goal made from then on. A press is one version of the rule with it changed (Q1, Andy: "rule.version? carries the
+  // full rule.").
+  var auto = !!(rdRule && rdRule.autoAttach);
   return '<button type="button" id="rd-version">Version</button>' +
     armedButton('rd-activate', 'Activate', 'Activate: sure?') +
-    armedButton('rd-delete', 'Delete', 'Delete: sure?');
+    armedButton('rd-delete', 'Delete', 'Delete: sure?') +
+    '<button type="button" id="rd-auto" aria-pressed="' + (auto ? 'true' : 'false') + '" title="attach this rule to every goal made from now on">Auto-attach' + (auto ? ' ✓' : '') + '</button>';
 }
 
 // CHAT LINES AS deskDetails DRAWS THEM (goal/G6.2): every line a bubble, left-aligned, 1em apart; line breaks kept,
@@ -162,10 +167,15 @@ function rdLoad() {
   });
 }
 
-// ONE VERSION, ONE PRESS (rule.version {key, text, status}): the textbox as it stands, with the status given.
-function rdVersion(status) {
+// ONE VERSION, ONE PRESS (rule.version {key, text, status, autoAttach}): the textbox as it stands, with the status given;
+// autoAttach as the rule has it, unless the press is the toggle's, which keeps the rule's own text (his draft stays a
+// draft until his Version).
+function rdVersion(status, autoAttach) {
   if (!rdRule) return;
-  rdWrite('rule.version', { key: rdKey, text: rdText(), status: status }).then(function (taken) { if (taken) rdLoadRule(); });
+  var toggling = typeof autoAttach === 'boolean';
+  var args = { key: rdKey, text: toggling ? String(rdRule.text || '') : rdText(), status: status };
+  if (toggling) args.autoAttach = autoAttach;
+  rdWrite('rule.version', args).then(function (taken) { if (taken) rdLoadRule(); });
 }
 
 var rdSending = false;
@@ -189,6 +199,7 @@ spirit.shell.activateApp({
     body.addEventListener('click', function (event) {
       var id = event.target && event.target.id;
       if (id === 'rd-version') { rdVersion(rdRule ? rdRule.status : ''); return; }
+      if (id === 'rd-auto') { if (rdRule) rdVersion(rdRule.status, !rdRule.autoAttach); return; }
       if (id === 'rd-activate' || id === 'rd-delete') {
         if (rdArmed !== id) {
           rdArmed = id;
