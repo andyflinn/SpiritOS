@@ -2,6 +2,10 @@
 
 ## ui
 
+### rule/16 (version 42): A list gets a box of a stated size
+
+Every probabilitySearch (shell/js/probabilitySearch.js, and the lists made on it) is mounted in a box that states its size: class fill (shell.css), inside a pane that fills its app, the way the Apps and Icons face apps do. Never in a stat-tile or another box that is only as tall as its content.
+
 ### rule/12 (version 29): Inputs validate with the field rules
 
 every input in the shell, system or app level, whose value a field rule governs is marked with that rule (data-field="label", "paragraph", ...) and validated as typed with the same rule the node uses (fieldRules.js, window.spiritFieldRules in the browser): bytes left shown beside it, its action refused while the rule says no.
