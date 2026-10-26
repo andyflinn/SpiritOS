@@ -1,5 +1,5 @@
 {
- "change": 104442,
+ "change": 104646,
  "goal": "goal/G40",
  "items": [
   {
@@ -47,6 +47,9 @@
     },
     {
      "key": "rule/14"
+    },
+    {
+     "key": "rule/17"
     }
    ],
    "phaseRules": [
@@ -57,6 +60,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -75,7 +82,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -414,6 +421,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -1097,6 +1108,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -1722,6 +1737,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -2177,6 +2196,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -2802,6 +2825,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -2970,12 +2997,11 @@
    "id": "goal/G40.6",
    "title": "Root test folder in spirit/run",
    "goal": "goal/G40",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 46,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -3010,6 +3036,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -5451,6 +5481,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -5651,6 +5685,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -6293,6 +6331,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "none",
@@ -6392,6 +6434,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -8474,6 +8520,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -10884,6 +10934,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "green",
@@ -11655,13 +11709,12 @@
    "id": "goal/G40.13",
    "title": "Fix contacts UI",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 0,
+   "version": 22,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "delete",
     "verify"
    ],
@@ -11670,17 +11723,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
+   "limbo": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -11697,6 +11750,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "none",
@@ -11706,13 +11763,294 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "checks": [],
-   "chat": []
+   "box": "FIX THE CONTACTS UI\n- The Contacts page hands its list a box of a stated size: the page is a flex column, and the list box takes the shell's fill class, as in Apps and Icons. The panels below it keep their own height.\n- The rule against the regression, type ui: a page that mounts a list element hands it a box it has sized itself; an element never sizes its own box (rule/16).\n\nTHE PRODUCT TEST SYSTEM\n- 1. It lives in spirit/run/test/ and depends on nothing outside spirit/run/. Nothing of it reaches into spirit/test/ at all. It provides its own support there, so it never needs spirit/test/: its reporter prints the same lines as today, so the verifier reads it unchanged, and when the verifier started the run it posts each result to the node's verifier through the spirit object, as every module does.\n- 2. testModule.js in spirit/run/test/ finds every test of the product tree, and names the tests a changed file needs. The old run-all only calls it.\n- 3. Tests sit beside the module. A folder's ./test/ holds, for every module ./<name>.js in that folder, ./test/<name>.js (the tests of that module only) and ./test/<name>.md (its precise specification). A page such as index.html gets its pair there too. spirit/run/test/ does this for spirit.js today.\n- 4. A test exercises its module as its .md specifies: it drives it, stresses it and tries to break it.\n- 5. A module without its own test is left alone, so the tree comes in one module at a time. Deprecated legacy code gets none.\n\nTHE DESK\n- 6. When a file on an item's file list is in the product tree and has its own test, that test joins the item's test list by itself. Nobody lists it by hand.\n- 7. Once a file in spirit/run/shell/ is on the item, all auto-attach ui rules are attached to the item. The ui rules attached to an item ride on every take and every wake. Auto-attach ui rules never come at goal creation: a new goal cannot tell yet whether it will touch the UI.\n\nTHE VERIFIER\n- 8. The verifier runs product tests: the paths under spirit/run/ that testModule.js names, beside those under spirit/test/.\n- 9. The verifier UI has a button that runs the full product test tree.\n- 10. The verifier tab opens at any time, also while tests are running.\n\nTHIS ITEM\n- 11. Test pairs first for the modules the Contacts face-app uses: contacts/listElement, contacts/rowElement, contacts/data, probabilitySearch, rowElement, spiritData and contactLabel.\n- 12. The face-approved shell/js elements, each to get its pair, not necessarily in this item: probabilitySearch, rowElement, spiritData, navigationWrapper, textView, textViewer, fieldInput, joinForm, faceForm, joinSteps, contactLabel, fileViewer and mediaViewer.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "The verifier refuses any test outside spirit/test/; may it also run the product tests that testModule.js names under spirit/run/?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-26T10:01:57.065Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall attached ui rules ride on the take and wakes of build and verify, and auto-attach ui rules come only by the shell files, never at goal creation?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-26T10:18:34.015Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T08:40:21.905Z",
+     "text": "all: feedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T08:41:15.811Z",
+     "text": "- wsl: the cause: Apps and Icons mount the list in a box of class fill (flex 1, min-height 0) that takes its pane; Contacts mounts it in #contacts-book, a stat-tile only as tall as its content, so the list has no height to fill.\n- The fix: #contacts-book becomes fill, and the folding panels below it sit outside that box, so the list takes what the pane leaves.\n- The rule, added as proposed for you to word and activate: \"A list gets a box of a stated size\", type ui."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T08:41:46.145Z",
+     "text": "- cw: the cause: Contacts hands the search a box with no size. Its list box is a plain tile, and the page is not a column that gives it the height left over.\n- Apps and Icons do it right: the list box takes the shell's fill class (a flex box that takes the space left and shrinks to it), inside a page that is a flex column. G40.8 fixed Files and Icons that way; Contacts was never touched.\n- The fix: the Contacts page becomes a flex column, its list box takes fill, and the two panels under it (Add a relay, People who write) keep their own height below it.\n- The rule I propose, type ui: Space is granted top-down. A page that mounts a list element hands it a box it has sized itself (fill, in a flex column); an element never sizes its own box, and a page never hands over a box without a size.\n- With a test type twin, so it is checked: every place that mounts probabilitySearch or a list element mounts it into a fill box.\n- Q: shall I add both rules, proposed, for you to activate?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T08:49:38.226Z",
+     "text": "all: \n\nquestion: could a folder spirit\\run\\shell\\js\\probabilitySearch\\ with the files probabilitySearch.js and for tests and probabilitySearch.md for precise documentation, in conjunction with desk-rules help ensure this kind of regression never happens?\n\nthe desk rule would state, under type \"desk\", because type \"ui\" has no auto-attach, it would state: \"for UI searches, use .... and point to the folder spirit\\run\\shell\\js\\probabilitySearch\\\n\nalso: or: can ui rules be auto-attached under specific conditions for items/goals that contain ui elements, otherwise i'll have to make this a desk-rule and even faceless items/goals will be cluttered with ui-rules?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T08:50:26.752Z",
+     "text": "- cw: my point first: today a ui rule rides on no wake at all, attached or not. The desk sends desk rules always, and otherwise only the phase's type (design, test, code). So rule/1, rule/12 and the new rule/16 reach nobody.\n- The folder (the element, its test, its .md): yes, it helps. The .md is the one place that says \"the page sizes the box\". But its own test checks the element, and the bug was in the page that mounts it, Contacts. So the folder alone would not have caught this.\n- What catches it is a test over every page: each place that mounts probabilitySearch hands it a fill box. That is the test rule I proposed.\n- The cost of the folder: probabilitySearch.js is loaded by path from 11 files today, and all of them change.\n- Conditional ui rules: yes, and better than a desk rule. My proposal: ui rules ride on build and verify of an item whose file list touches the shell (spirit/run/shell/). The file list is a fact the desk already holds (item.files), unlike the box text the old typesOf guessed from. Faceless items stay clean.\n- Q: ui rules ride on build and verify when the item's files touch the shell, yes?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T08:50:56.851Z",
+     "text": "- wsl: yes, and the folder's test is what holds it: the .md states the contract (a box of a stated size, filters, element, rows), and a suite beside it checks every page that mounts it hands it a fill box. A doc alone gets skipped; the test goes red.\n- Conditional ui rules: the item's file list says it mechanically. When a spirit/run/shell/ file is first added to an item's list, the desk attaches the active ui rules to that item, so faceless work never carries them.\n- I recommend both: the folder with its test, and ui rules attached by the file list, not a desk rule."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:08:16.378Z",
+     "text": "all: check the box for my vision, hopefully affecting how this fix item will proceed... and give me feed back\n\n-do you see where i want to integrate/automate these testsin desk\n- we need, for every file.js in the product tree identify those shipped in alpha, give them a test/ folder to contain unit tests for that file only.\n- whenever a file in the ui (or the product tree) is touched, and it is not deprecated legacy shit, an file in the items file list that has it's test/directory THAT test will be auto-included into the test-list of the item.\n- whenever a file in an items file list is inside  spirit\\run\\shell\\ thats when desk attaches auto-import ui rules to the item\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:09:34.965Z",
+     "text": "- cw: yes, it makes sense, and half of it stands already, from G40.6.\n- Already there: TEST_SYSTEM.md gives each module ./test/<name>.js for its tests and ./test/<name>.md for its requirements. testModule.js is already in spirit/run/test/ (box point 4 is done), and names the tests a changed file needs: its own, its parts, and its line upward.\n- Not there yet: no module has a test folder yet. Nothing runs these tests but the harness, and testModule only names them. The desk does not use testModule at all: an item's suites are still added by hand.\n- So your automation is one desk change: an item's tests are what testModule names for each file in its file list. A file with no test folder adds nothing, so legacy code stays out by itself.\n- The same file list attaches the active ui rules when a file under spirit/run/shell/ comes on it.\n- Box point 2 asks for a runner in spirit/run/test/; that is new. Today runAll.js in spirit/test/ runs them.\n- My list of shell/js elements for point 1: probabilitySearch, rowElement, spiritData, navigationWrapper, textView, textViewer, fieldInput, joinForm, faceForm, joinSteps, contactLabel, fileViewer, mediaViewer, and the contacts, files and icons folders (list, row, data). apiBranchSelector, appServerSelector, contactSelector and iconSelector look like old shell parts to me.\n- Q: which of these are face-approved, so they get a test folder in this item?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T09:09:47.354Z",
+     "text": "- wsl: makes sense, and it fits TEST_SYSTEM.md: each module gets ./test/<name>.js, and testModule.js <file> already names a changed file's tests (its own, its components', its line upward). So the desk runs testModule.js on each file in an item's list and those are the item's suites; nobody lists them by hand.\n- UI rules: attached when a spirit/run/shell/ file enters the item's list, as you say.\n- Box points 2 and 4: testModule.js already lives in spirit/run/test/; what is missing is the per-file test folders, starting with the list in point 1, and the desk calling it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:31:45.440Z",
+     "text": "all: does the box look look better now?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T09:32:13.508Z",
+     "text": "- wsl: better; four points still clash. 4 and 6 move testModule.js to where it already is (spirit/run/test/): drop the move.\n- 5 puts tests in ./<name>/test/, TEST_SYSTEM.md in ./test/ beside the module; and 6 adds sideways, where the md runs no sibling branch: which wins, the box or the md?\n- 9 says UI-type desk rules: a rule has one type, so it is the ui rules marked autoAttach, attached when a shell file comes on the list (autoAttach then means goal creation for desk rules, this for ui ones)?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:32:26.257Z",
+     "text": "- cw: better, yes. Points 7 to 9 are clear: start with Contacts, a file with a test folder brings its test, and a shell file brings the auto-attach ui rules.\n- Four points do not match the tree or each other:\n- Point 5: TEST_SYSTEM.md puts the tests in the folder beside the module, ./test/<name>.js. Your point puts them inside the module's own folder, ./<name>/test/<name>.js. One of the two has to change, and testModule.js with it.\n- Points 4 and 6: testModule.js is already in spirit/run/test/, so there is nothing to move. Unless you mean another place?\n- Point 6, sideways: testModule.js today never runs a sibling branch; that was your ruling in G40.6. Sideways changes that.\n- Point 8, the ONE test: testModule.js names more than the file's own test: its parts and its line upward too. Is it one test, or what testModule names?\n- For point 7, the Contacts face-app's modules are: contacts/listElement, contacts/rowElement, contacts/data, probabilitySearch, rowElement, spiritData and contactLabel. The contacts folder is not on your approved list yet.\n- Q: point 5, which place for the tests: ./test/<name>.js beside the module, or ./<name>/test/<name>.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:36:31.858Z",
+     "text": "all: \"wsl: better; four points still clash. 4 and 6 move testModule.js to where it already is (spirit/run/test/): drop the move.\"\n\nFucking forget it!\n\npoint four STATES:\n\n\" spirit/run/test/testModule.js will move int spirit/run/test/ and be an intricate part of the The product test system\"\n\n- and the product test tree will NOT depend on the brutally flawed current SHIT test system, \n- the brutally flawed current SHIT test system's run-all will simply call spirit/run/test/testModule.js in the relevant product test system."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:37:22.630Z",
+     "text": "- cw: understood: point 4 is not a move. The product test system stands on its own in spirit/run/test/, and the old run-all only calls testModule.js.\n- The second half stands already: runAll.js calls testModule.js for the product tree.\n- The first half does not: both product tests there, spirit.js and spirit-child-generalRules.js, require the old system's testSupport.js from spirit/test/. So today the product tests depend on the old system.\n- The fix: the product test system gets its own reporter in spirit/run/test/, and its tests require that, never anything under spirit/test/. A product test checks it.\n- Q: shall its reporter print the same lines as today, so the verifier and run-all read them unchanged?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T09:37:26.859Z",
+     "text": "- wsl: understood: point 4 is independence, not a place. The product tests run on spirit/run/test/ alone, and the old runAll only calls testModule.js.\n- Today they are not independent: spirit/run/test/spirit.js and spirit-child-generalRules.js require spirit/test/testSupport.js, and TEST_SYSTEM.md (line 52) says they report through it.\n- So this item owes the product test system its own reporter in spirit/run/test/, writing the result lines the verifier already reads, and those two tests moved onto it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:38:57.553Z",
+     "text": "wsl, you were right, i struck 4 and 6"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:48:57.390Z",
+     "text": "i've changed the box, because wsl was right\n\nthe biggest worry i have now is the following:\n\nfrom claude-windows:\n\nPoint 5: TEST_SYSTEM.md puts the tests in the folder beside the module, ./test/<name>.js. Your point puts them inside the module's own folder, ./<name>/test/<name>.js. One of the two has to change, and testModule.js with it.\n\nin the case mentioned by claude-windows, the ./test/ folder would have to contain <name>.js and <name>.md files for every sibling.js script of <name>.js.  that is how the current first test for spirit.js is placed, so a potential index.html set would go in there as well. i'd be fine with that.\n\ncw, update the box with the complete vision, no quotes, JUST the better design."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:50:27.338Z",
+     "text": "- cw: the box is rewritten (v17) as the whole design: the Contacts fix, the product test system, the desk side, and this item's list.\n- Tests sit beside the module, as you said: ./test/<name>.js and ./test/<name>.md for every module in the folder. So TEST_SYSTEM.md and testModule.js stay as they are.\n- Still open: whether the new reporter prints the same lines as today, so the verifier reads it unchanged."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:55:22.035Z",
+     "text": "the new reporter prints the same lines as today. the verifier reads it unchanged.\n\nBUT, i want the product test system to be independent and not reach into repo:/spirit/test/ at all...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:56:03.190Z",
+     "text": "- cw: boxed in point 1 (v18): nothing of the product test system reaches into spirit/test/, and its own reporter prints the same lines as today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T09:57:56.615Z",
+     "text": "so spirit/run/test/ may have to contain a few tools for all other tests: that send result to the node's verifier etc... or is that already in place through test-module calling standards?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T09:58:41.038Z",
+     "text": "- wsl: not by calling standards alone: today spirit/test/testSupport.js does both halves. It prints the lines, and when deskVerify starts a run (--verify-port) it posts each result as deskVerify.record, with verifyPost.js sending what is still in the air at exit.\n- So spirit/run/test/ needs one tool, its reporter, doing those two things; posting through the spirit object (spirit.deskVerify.record) rather than its own fetch, as every module must.\n- Nothing else: testModule.js names the tests, and deskVerify and runAll spawn them as today."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T09:59:05.264Z",
+     "text": "- cw: yes, it needs them; testModule.js names tests and sends nothing.\n- Today the old reporter (testSupport.js) does two things: it prints the SUCCESS and FAILURE lines, and when the verifier started the run, it posts each result to the node's verifier, deskVerify.record. So the new reporter in spirit/run/test/ must do both.\n- A second gap: the verifier refuses any suite outside spirit/test/ (\"the path leaves spirit/test, so it was not run\"). So today it would never run a product test. It must take paths under spirit/run/ too, those testModule.js names.\n- Q: add both to the box: the reporter prints and posts to the verifier, and the verifier runs product tests?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:00:48.255Z",
+     "text": "so the box needs to state that the Product-test subsystem needs to provide it's own support, so it doesn't need to reach into repo:/spirit/test...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:01:33.679Z",
+     "text": "- cw: boxed in point 1 (v19): the product test system provides its own support, so it never needs spirit/test/. Its reporter prints the same lines, and posts each result to the verifier through the spirit object.\n- One point is not boxed, and it is a red Q: the verifier itself runs only paths under spirit/test/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:01:56.872Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:03:39.440Z",
+     "text": "the verifier UI needs a button to run the full Product test tree. and while that's done, may as well make sure that it allows me to apen the verifier tab even when test are runnning."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:04:18.857Z",
+     "text": "- cw: boxed (v20), a new section THE VERIFIER: it runs the product tests under spirit/run/ as well, its UI has a button that runs the full product test tree, and its tab opens at any time, also while tests run."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:06:07.270Z",
+     "text": "sorry about accidentally deleting Q1.i think the issue is resolved now\n\nall: green?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:07:11.300Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:07:22.227Z",
+     "text": "- wsl: green. Box v20 holds every point raised, and it matches the tree: tests beside the module, testModule.js where it is, rule/16 active.\n- Read as boxed, point 6 brings a listed file's own test alone, not the wider set testModule.js names."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:07:25.101Z",
+     "text": "- cw: no worries about Q1; the box has it as point 8.\n- Not green yet, one gap: point 7 attaches the ui rules, but today an attached ui rule still rides on no wake. The desk sends desk rules always and otherwise only the phase's type: design, test or code.\n- Also: an auto-attach ui rule today is attached to every new goal as well, so it would reach faceless goals after all.\n- One red Q below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:08:04.428Z",
+     "text": "- cw: not green: Q2 is open. Shall attached ui rules ride on the take and wakes of build and verify, and auto-attach ui rules come only by the shell files, never at goal creation?\n- Without it, point 7 attaches ui rules that reach no agent."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:09:09.410Z",
+     "text": "- wsl: I take back my green: claude-windows is right, and it is my build. phaseRulesOf in desk.js carries desk rules and the phase's type only, so a ui rule reaches no wake; and autoAttachKeys takes every auto rule at goal creation, rule/16 (ui) included.\n- I back Q2 as asked: ui rules ride on the take and wakes of build and verify, and auto ui rules come by the shell files only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:16:37.957Z",
+     "text": "Q2: Shall attached ui rules ride on the take and wakes of build and verify, and auto-attach ui rules come only by the shell files, never at goal creation?\n\nattached ui rules will ride on every take and wake, as soon as a file in spirit/run/shell/ is added. at goal creation cannot accurately assess if any ui issues will be involved."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:18:02.924Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:18:38.009Z",
+     "text": "- cw: boxed in point 7 (v21): once a shell file is on the item, its ui rules ride on every take and wake, in every phase; auto-attach ui rules never come at goal creation.\n- Green from me: nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:21:02.405Z",
+     "text": "cw: IN-ACCURATE!\n\n\"boxed in point 7 (v21): once a shell file is on the item, its ui rules ride on every take and wake, in every phase; auto-attach ui rules never come at goal creation.\"\n\n\"boxed in point 7 (v21): once a shell file is on the item, all \"auto-attach UI rules\" will be attache to the item. auto-attach ui rules never come at goal creation."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:21:36.449Z",
+     "text": "- cw: corrected (v22), point 7: once a file in spirit/run/shell/ is on the item, all auto-attach ui rules are attached to the item. The ui rules attached to an item ride on every take and wake. Auto-attach ui rules never come at goal creation."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:22:09.588Z",
+     "text": "accepted.\n\nall: green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:22:35.122Z",
+     "text": "- cw: green. Box v22 holds every point raised, and no Q is open."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:22:43.264Z",
+     "text": "- wsl: green now. Point 7 (v22) closes both gaps I missed: ui rules attach by a shell file and ride on every take and wake, and never at goal creation. Nothing open."
+    }
+   ]
   },
   {
    "id": "goal/G40.14",
@@ -11760,6 +12098,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/17",
+     "version": 44
     }
    ],
    "verified": "none",
