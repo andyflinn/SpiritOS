@@ -1156,12 +1156,15 @@ function deskRulesSearch() {
   var make = function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     if (!P || typeof P.create !== 'function' || deskRulesList) return;
-    var choices = function (values) { return [{ value: '', word: 'all' }].concat(values.map(function (v) { return { value: v, word: v }; })); };
+    // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
+    // presses it off (probabilitySearch's multi filter, which keeps the ones pressed off); all on asks every rule.
+    var choices = function (values) { return values.map(function (v) { return { value: v, word: v }; }); };
+    var kept = function (all, off) { var on = all.filter(function (v) { return !(off || {})[v]; }); return on.length === all.length ? [] : on; };
     deskRulesList = P.create(el, {
       api: deskApi, server: 'desk', verb: 'rules.search',
       args: function (text, values) {
         var v = values || {};
-        return { text: text, types: v.type ? [v.type] : [], statuses: v.status ? [v.status] : [] };
+        return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };
       },
       // A RULE ROW IS A ROW ELEMENT (shell/js/rowElement.js, the element's own element(row, key)): it paints its status as
       // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
@@ -1169,8 +1172,8 @@ function deskRulesSearch() {
         { field: 'type', label: 'Type', sort: 'text' }, { field: 'key', label: 'Key' }],
       element: function (row, key) { return deskRuleElement(row, key); },
       filters: [
-        { name: 'type', choices: choices(DESK_RULE_TYPES), test: function (row, v) { return !v || row.type === v ? 1 : 0; } },
-        { name: 'status', choices: choices(DESK_RULE_STATUSES), test: function (row, v) { return !v || row.status === v ? 1 : 0; } },
+        { name: 'type', multi: true, choices: choices(DESK_RULE_TYPES), test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } },
+        { name: 'status', multi: true, choices: choices(DESK_RULE_STATUSES), test: function (row, off) { return (off || {})[row.status] ? 0 : 1; } },
       ],
       matched: function (row) { return { label: String((row && row.label) || '') }; },
       details: function (row, key) { deskOpenRule(key); },

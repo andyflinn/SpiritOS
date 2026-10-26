@@ -632,9 +632,16 @@ function ddMountRulePick() {
       api: ddApi, server: 'desk', verb: 'rules.search',
       // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
       // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
-      args: function (text, values) { var v = values || {}; return { text: text, types: v.type ? [v.type] : [], statuses: ['active'] }; },
-      filters: [{ name: 'type', choices: [{ value: '', word: 'all' }].concat(DD_RULE_TYPES.map(function (t) { return { value: t, word: t }; })),
-        test: function (row, v) { return !v || row.type === v ? 1 : 0; } }],
+      // THE SAME TOGGLES AS ON THE RULES LIST (Andy, quoting: "the type toggles (ui, code, design, desk, test) beside the
+      // dropdown, sent as its types filter, the same toggles as on the Rules list"): a button per type, each on until
+      // pressed off (the multi filter keeps the ones pressed off); all on asks every type.
+      args: function (text, values) {
+        var off = (values || {}).type || {};
+        var on = DD_RULE_TYPES.filter(function (t) { return !off[t]; });
+        return { text: text, types: on.length === DD_RULE_TYPES.length ? [] : on, statuses: ['active'] };
+      },
+      filters: [{ name: 'type', multi: true, choices: DD_RULE_TYPES.map(function (t) { return { value: t, word: t }; }),
+        test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } }],
       columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
       face: 'dropdown', placeholder: 'attach a rule…',
       matched: function (row) { return { label: String((row && row.label) || '') }; },
