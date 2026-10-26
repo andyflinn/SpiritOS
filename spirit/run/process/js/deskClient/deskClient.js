@@ -703,7 +703,8 @@ const server = appServer.serve({
           return countedAsk(to, 'item.get', { id: j.id }).answer.then(function (g) {
             let fx = {};
             try { fx = JSON.parse(g.item); } catch (e) { fx = {}; }
-            const keys = (Array.isArray(fx.rules) ? fx.rules : []).map(function (r) { return r.key + '@' + r.version; });
+            // THE RULES OF THE PHASE IT IS IN (goal/G40.12): its goal's and its own, each once (facts.phaseRules).
+            const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
             return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
           });
         }).catch(function () { return ''; });

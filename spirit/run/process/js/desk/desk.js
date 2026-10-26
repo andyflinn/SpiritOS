@@ -267,6 +267,21 @@ function listRowVerb(verb, has, adding, suite) {
     },
   };
 }
+function ruleRowVerb(verb, adding) {
+  return {
+    request: { id: '', rule: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const it = itemFor(walkState(), a);
+      const key = String(a.rule || '');
+      if (!newestRule.get(key)) throw refused('no-such-item');
+      const there = Array.isArray(it.attached) && it.attached.indexOf(key) !== -1;
+      if (adding && there) throw refusedWhy('bad-request', key + ' is attached to ' + it.id + ' already');
+      if (!adding && !there) throw refusedWhy('bad-request', key + ' is not attached to ' + it.id);
+      return { change: write(verb, { id: it.id, rule: key, by: w.by, key: w.key }).change };
+    },
+  };
+}
 // The item a table's search is about: by id, refused when there is none.
 function itemFor(st, a) {
   const it = st.items[String((a && a.id) || '')];
@@ -357,17 +372,21 @@ db.exec(
   " profile TEXT NOT NULL DEFAULT '');" +
   'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
 );
-const RULE_TYPES = ['ui', 'code', 'design', 'desk'];
+// THE TEST TYPE AND autoAttach (goal/G40.12, box v7, first set 4): "the rules get a new \"test\" type. all rules get a
+// field that indicates \"auto-attach-at-goal-creation-time\"". autoAttach is false until he sets it (Q1, Andy:
+// "autoAttach is false by default.", "rule.version? carries the full rule.").
+if (!tableHas('rules', 'autoAttach')) db.exec('ALTER TABLE rules ADD COLUMN autoAttach INTEGER NOT NULL DEFAULT 0');
+const RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 const RULE_STATUSES = ['proposed', 'active', 'deleted'];
 // A rule as the verbs answer it: key rule/<number>, as before goal/G33.4.
-function ruleOut(r) { return r ? Object.assign({}, r, { key: 'rule/' + r.rule }) : r; }
+function ruleOut(r) { return r ? Object.assign({}, r, { key: 'rule/' + r.rule, autoAttach: r.autoAttach === 1 }) : r; }
 function ruleNumber(key) { const m = /^rule\/(\d+)$/.exec(String(key)); return m ? Number(m[1]) : -1; }
-const addRuleRowAt = db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text) VALUES (?, ?, ?, ?, ?, ?, ?)');
-const addRuleRow = { run: function (key, at, by, type, label, status, text) { return addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text); } };
+const addRuleRowAt = db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+const addRuleRow = { run: function (key, at, by, type, label, status, text, autoAttach) { return addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text, autoAttach ? 1 : 0); } };
 const ruleCount = db.prepare('SELECT COUNT(DISTINCT rule) AS c FROM rules');
-const newestRuleRow = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE rule = ? ORDER BY n DESC LIMIT 1');
-const newestRulesRows = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY rule) ORDER BY n DESC');
-const ruleRowsOf = db.prepare('SELECT n, rule, at, by, type, label, status, text FROM rules WHERE rule = ? ORDER BY n DESC');
+const newestRuleRow = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE rule = ? ORDER BY n DESC LIMIT 1');
+const newestRulesRows = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY rule) ORDER BY n DESC');
+const ruleRowsOf = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE rule = ? ORDER BY n DESC');
 const newestRule = { get: function (key) { return ruleOut(newestRuleRow.get(ruleNumber(key))); } };
 const newestRules = { all: function () { return newestRulesRows.all().map(ruleOut); } };
 const ruleRows = { all: function (key) { return ruleRowsOf.all(ruleNumber(key)).map(ruleOut); } };
@@ -1431,6 +1450,9 @@ function apply(s, r, b, item, goalOf) {
       if (!gi.made) gi.made = madeBy(r);
       gi.title = String(b.title || gi.title);
       gi.at = r.at;
+      // THE RULES IT WAS BORN WITH (goal/G40.12): every active autoAttach rule at its creation, by key, in the record, so
+      // a replay attaches the same.
+      if (Array.isArray(b.rules) && !Array.isArray(gi.attached)) gi.attached = b.rules.map(String);
       // goal/G29.21: an agent's goal spends his "add goal".
       if (r.by !== 'andy' && r.by !== 'desk' && s.goalGrant > 0) s.goalGrant -= 1;
       return;
@@ -1513,6 +1535,17 @@ function apply(s, r, b, item, goalOf) {
       if (it.suites.indexOf(String(b.path)) === -1) it.suites.push(String(b.path));
       it.suitesKey = String(r.key || r.by || 'desk');
       return;
+    // THE ATTACHED RULES, ONE ROW A WRITE (goal/G40.12, second set 1-3): a goal or an item keeps a list of rule keys;
+    // item.rules.add puts one on, item.rules.remove takes it off.
+    case 'item.rules.add':
+      if (!it) return;
+      if (!Array.isArray(it.attached)) it.attached = [];
+      if (it.attached.indexOf(String(b.rule)) === -1) it.attached.push(String(b.rule));
+      return;
+    case 'item.rules.remove':
+      if (!it || !Array.isArray(it.attached)) return;
+      it.attached = it.attached.filter(function (k) { return k !== String(b.rule); });
+      return;
     case 'item.suites.remove':
       if (!it || !Array.isArray(it.suites)) return;
       it.suites = it.suites.filter(function (p) { return p !== String(b.path); });
@@ -1579,9 +1612,6 @@ function nextCheckNumber(it, kind) {
 }
 
 function press(s, it, what, r, goalOf, b) {
-  // THE RULES IN FORCE AT HIS GO (goal/G5.8), recorded in the press itself, so a rule changed later never moves under
-  // work already running.
-  const rulesAtGo = function (m) { if (b && b.rules && Array.isArray(b.rules[m.id])) m.rules = b.rules[m.id]; };
   const g = goalOf(it.id);
   // DESIGN MODE ON GOAL LEVEL AND ON ITEM LEVEL (goal/G33.4). Andy, in the item's box: "Design mode on goal level AND on
   // item level, so further items can be designed while other items of the same goal already go through their
@@ -1612,8 +1642,8 @@ function press(s, it, what, r, goalOf, b) {
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
-  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; if (it.code && !it.phase) it.phase = 'red'; rulesAtGo(it); }
-  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; if (m.code && !m.phase) m.phase = 'red'; rulesAtGo(m); });
+  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; if (it.code && !it.phase) it.phase = 'red'; }
+  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; if (m.code && !m.phase) m.phase = 'red'; });
   // HIS WAIVE (goal/G5.7). Andy: "absolutely. with only one agent this must be waved." One agent may take every phase.
   else if (what === 'waive') it.waived = true;
   // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
@@ -1644,7 +1674,8 @@ function press(s, it, what, r, goalOf, b) {
     // so Done came straight back on the old run's word. Andy, 2026-10-12, to the four fixes that hold back an unearned
     // Done: "yes. with my addendum." Both go here, in the walk, so a replay agrees; with the mark gone the press below
     // writes a new goal.emptied when every item is still done or closed, and that is the fresh run.
-    if (it.goal) { it.checked = false; if (g) g.emptied = false; }
+    // A REOPENED GOAL IS IN DESIGN AGAIN (goal/G40.12, box v7, first set 7).
+    if (it.goal) { it.checked = false; if (g) { g.emptied = false; g.design = true; } }
   }
   else if (what === 'close') { it.closed = true; if (!it.goal) repairBlocks(s, it); }
   // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
@@ -1721,6 +1752,8 @@ function buttonsOf(s, it) {
   // goal/G33.4: no Go while the item itself is in design, nor while its goal is. An item in its own design while its
   // goal is out of it offers its End design (his alone, as the goal's is), so a new item can be built.
   if (!it.goal && it.design && g && !g.design) out.push('end-design');
+  // DESIGN AT ANY TIME (goal/G40.12, box v7, first set 1: "You can turn design on for an item at any time.").
+  if (!it.goal && !it.design && it.id !== GROUP_CHAT) out.push('start-design');
   if (!it.goal && !claimed && g && !g.design && !it.design && !it.went && !blockers(s, it).length) out.push('go');
   // A GOAL OFFERS DONE AT ANY TIME, AND NEVER ON A CLAIM (goal/G33.6, replacing goal/G2.10's "only when all items are
   // done"). Andy: "just in the list, a goal offers no done or closed while items are not done or closed, the goal
@@ -1833,33 +1866,30 @@ function mayTake(s, it, phase, who) {
   return 'bad-request';
 }
 
-// WHICH RULES APPLY (goal/G5.8). Andy: "if a job involves ui, there are rules of that type to considered", "is there a
-// mechanical way to attach applicable rules to an item before or when it's given a go?". The desk rules always, plus
-// the types the item's box names paths of: spirit/run/spirit/ and process/js/ are code, spirit/run/shell/ is ui.
-// AND THE DESIGN RULES ALWAYS (goal/G2.20). Asked what the type design should attach to, Andy, 2026-10-06: "every
-// item". Until this, a design rule matched no item at all, whatever its box said, and his Go stamped nothing of it:
-// the kind of rule that governs how the work is done belongs on every item, like a desk rule.
-function typesOf(it) {
-  const box = String(it.box || '');
-  const types = ['desk', 'design'];
-  if (/spirit\/run\/spirit\/|process\/js\//.test(box)) types.push('code');
-  if (/spirit\/run\/shell\//.test(box)) types.push('ui');
-  return types;
+// WHICH RULES APPLY (goal/G40.12, second set; it replaced goal/G5.8's rules stamped at his Go from the paths a box
+// named, typesOf and rulesForGo). Andy: "each goal and item gets a list of attached rules", and the rules of an agent's
+// work are "the combination of the goals applicable phase rules (test/design/code) the current items applicable phase
+// rules", each once: design rules in design, test rules in red and verify, code rules in build; and "desk rules apply
+// to ALL phases....". Only rules active now.
+function autoAttachKeys() {
+  return newestRules.all().filter(function (r) { return r.status === 'active' && r.autoAttach === true; }).map(function (r) { return r.key; });
 }
-function rulesFor(it) {
-  const types = typesOf(it);
-  return newestRules.all().filter(function (r) { return r.status === 'active' && types.indexOf(r.type) !== -1; })
-    .map(function (r) { return { key: r.key, version: r.n }; });
-}
-// The items his Go starts, each with its rules, as the press records them.
-function rulesForGo(s, id, what) {
-  const it = s.items[String(id)];
-  if (!it) return {};
+function phaseKind(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
-  const going = what === 'go-all' ? (g ? goable(s, g) : []) : [it];
-  const out = {};
-  going.forEach(function (m) { out[m.id] = rulesFor(m); });
-  return out;
+  if (it.design || (g && g.design)) return 'design';
+  if (it.phase === 'red' || it.phase === 'verify') return 'test';
+  if (it.phase === 'build') return 'code';
+  return '';
+}
+function phaseRulesOf(s, it) {
+  const kind = phaseKind(s, it);
+  const gi = s.items[it.goal ? it.id : it.goalId];
+  const keys = [];
+  [gi, it].forEach(function (x) { ((x && x.attached) || []).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); }); });
+  return keys.filter(function (k) {
+    const r = newestRule.get(k);
+    return r && r.status === 'active' && (r.type === 'desk' || (kind && r.type === kind));
+  }).map(function (k) { return { key: k, version: newestRule.get(k).n }; });
 }
 
 // AN OPEN RED QUESTION (goal/G6.8). Andy: "i want mechanical tracking of design-greens. Yes i want opens to light up my
@@ -1952,8 +1982,10 @@ function facts(s, it) {
     claimCommit: it.claimCommit || '', redCommit: it.redCommit || '',
     // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
     waived: it.waived === true,
-    // goal/G5.8: the rules in force at his Go, each { key, version }.
-    rules: Array.isArray(it.rules) ? it.rules : [],
+    // goal/G40.12: the rules attached to it, each { key }, and the rules its work carries now (phaseRules): its goal's
+    // and its own for the phase it is in, each once, each { key, version }.
+    rules: (Array.isArray(it.attached) ? it.attached : []).map(function (k) { return { key: k }; }),
+    phaseRules: phaseRulesOf(s, it),
     // WHETHER IT IS VERIFIED (goal/G33.3), as the desk last read the verifier's search: 'green', 'red' (verifyFailures
     // the failure lines) or 'none' (no run yet); '' where no deskVerify answers on this node, so no mark is drawn.
     verified: hasDeskVerify() ? String(it.verifyState || 'none') : '', verifyFailures: boundFailures(it.verifyFailures).lines,
@@ -2013,7 +2045,7 @@ function facts(s, it) {
   }
   // A ROW ALWAYS FITS ONE ANSWER (goal/G33.4, box v46: "Bound the facts themselves ... so a row always fits"). Measured
   // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way, failure
-  // lines first, then the rules recorded at his Go, each saying more.
+  // lines first, then the attached rules, each saying more.
   const travel = function () { return Buffer.byteLength(JSON.stringify({ item: JSON.stringify(f), version: 0, change: 0 }), 'utf8'); };
   while (travel() > FACTS_ROOM && f.verifyFailures.length) { f.verifyFailures = f.verifyFailures.slice(0, -1); f.verifyFailuresMore = true; }
   while (travel() > FACTS_ROOM && f.rules.length) { f.rules = f.rules.slice(0, -1); f.rulesMore = true; }
@@ -2355,7 +2387,7 @@ function ruleRow(key) {
   const r = newestRule.get(String(key));
   if (!r) return null;
   const d = getDraft.get(r.key);
-  return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by };
+  return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by, autoAttach: r.autoAttach === true };
 }
 const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code', 'verify'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
@@ -2694,7 +2726,7 @@ function mountPlugins() {
         let goal = pluginGoalOf(walkState(), name);
         if (!goal) {
           const args = { title: String((manifest && (manifest.goal || manifest.label)) || name), plugin: name, by: 'desk', key: '' };
-          write('goal.add', args, function (st) { args.minted = nextGoalId(st); });
+          write('goal.add', args, function (st) { args.minted = nextGoalId(st); args.rules = autoAttachKeys(); });
           goal = args.minted;
         }
         PLUGIN_GOAL[goal] = name;
@@ -2961,6 +2993,7 @@ appServer.serve(withPlugins({
         // goal/G29.21, decided by Andy: an agent creates a goal only under his "add goal": one goal, no items.
         if (w.by !== 'andy' && !(st.goalGrant > 0)) throw refusedWhy('not-granted', 'an agent creates a goal only while Andy\'s newest line says "add goal"; propose it to him instead');
         args.minted = nextGoalId(st);
+        args.rules = autoAttachKeys();
       });
       return { id: args.minted, change: r.change };
     },
@@ -3301,8 +3334,15 @@ appServer.serve(withPlugins({
     request: { id: '' }, reply: { allowed: true, why: '' },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      const it = walkState().items[String(a.id)];
+      const st = walkState();
+      const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
+      // NO COMMIT IN DESIGN (goal/G40.12, box v7, first set 2: "No commit lands while the current goal, or the item the
+      // agent is on, is in design mode, granted or not.").
+      const gd = st.goals[it.goal ? it.id : it.goalId];
+      const cur = st.goals[st.current];
+      if (it.design || (gd && gd.design)) return { allowed: false, why: 'design: ' + it.id + ' or its goal is in design, so no commit lands' };
+      if (cur && cur.design) return { allowed: false, why: 'design: the current goal ' + st.current + ' is in design, so no commit lands' };
       if (!it.code || it.phase !== 'build' || it.waived === true) return { allowed: true, why: '' };
       const wrote = it.redKey ? it.redKey === w.key : it.red === w.by;
       return wrote ? { allowed: false, why: 'red writer: ' + w.by + ' wrote the red of ' + it.id + ', which is in build' } : { allowed: true, why: '' };
@@ -3335,7 +3375,14 @@ appServer.serve(withPlugins({
   // and create an updated version with one button/verb that belongs to me."), activate and delete being versions
   // too; his draft is kept here ("yes to all of it").
   'rule.add': {
-    request: { type: '', label: '', text: '' }, reply: { key: '' },
+    request: { type: '', label: '', text: '', autoAttach: false }, reply: { key: '' },
+    // autoAttach optional (goal/G40.12): left out, false.
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['type', 'label', 'text', 'autoAttach'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.type === 'string' &&
+        typeof x.label === 'string' && typeof x.text === 'string' && (x.autoAttach === undefined || typeof x.autoAttach === 'boolean');
+    },
     handler: function (a, caller) {
       const w = writerOf(caller);
       mayWrite(walkState(), w);
@@ -3344,14 +3391,14 @@ appServer.serve(withPlugins({
       if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
-      addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
+      addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text), a.autoAttach === true);
       appServer.publish({ rule: key, row: ruleRow(key) });
       rulesChanged(key, 'added, proposed');
       return { key: key };
     },
   },
   'rule.get': {
-    request: { key: '' }, reply: { key: '', label: '', type: '', status: '', text: '', draft: '', at: '', by: '' },
+    request: { key: '' }, reply: { key: '', label: '', type: '', status: '', text: '', draft: '', at: '', by: '', autoAttach: false },
     handler: function (a) {
       const row = ruleRow(String(a.key));
       if (!row) throw refused('no-such-item');
@@ -3371,7 +3418,15 @@ appServer.serve(withPlugins({
     },
   },
   'rule.version': {
-    request: { key: '', text: '', status: '' }, reply: { key: '' },
+    request: { key: '', text: '', status: '', autoAttach: false }, reply: { key: '' },
+    // THE FULL RULE (goal/G40.12, Q1, Andy: "rule.version? carries the full rule."): autoAttach with it, optional; left
+    // out, the rule keeps what it had.
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['key', 'text', 'status', 'autoAttach'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.key === 'string' &&
+        typeof x.text === 'string' && typeof x.status === 'string' && (x.autoAttach === undefined || typeof x.autoAttach === 'boolean');
+    },
     handler: function (a, caller) {
       ownerOnly(caller);
       const fr = require('../../../spirit/fieldRules.js');
@@ -3379,7 +3434,8 @@ appServer.serve(withPlugins({
       if (!r) throw refused('no-such-item');
       if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
-      addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
+      addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text),
+        typeof a.autoAttach === 'boolean' ? a.autoAttach : r.autoAttach === true);
       appServer.publish({ rule: r.key, row: ruleRow(r.key) });
       rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
@@ -3536,6 +3592,11 @@ appServer.serve(withPlugins({
   'item.files.remove': listRowVerb('item.files.remove', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, false),
   'item.suites.add': listRowVerb('item.suites.add', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, true, true),
   'item.suites.remove': listRowVerb('item.suites.remove', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, false, true),
+  // THE RULES ATTACHED TO A GOAL OR AN ITEM (goal/G40.12, second set 1-3; the names Andy approved: "yes, that moves me
+  // on"): item.rules.add {id, rule} puts one rule on, by its key, item.rules.remove takes it off; on a goal's id as on an
+  // item's. Each refuses a rule that does not exist, one already there, or one not there.
+  'item.rules.add': ruleRowVerb('item.rules.add', true),
+  'item.rules.remove': ruleRowVerb('item.rules.remove', false),
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
   // deactivates the input, also by leaving the details dialog, the box input is released from the take." A take was
   // freed only by its holder's box.write until then, so leaving the box unchanged held it for good. Only the holder
@@ -3610,7 +3671,6 @@ appServer.serve(withPlugins({
         return verifyEvent(it.id).then(function () { return { change: walkState().change }; });
       }
       const body = Object.assign({}, a, { by: w.by, key: w.key });
-      if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
       const land = function () {
         const landed = write('press', body, pressCheck(a));
         // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.

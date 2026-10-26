@@ -107,6 +107,9 @@ function ddFrame() {
       '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
+    // ATTACH A RULE (goal/G40.12, second set 3): a probability search of the rules as a dropdown; a pick attaches it.
+    // In the frame, as the add row is, so the search survives every repaint; it shows with the rules panel only.
+    '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
       '</div>' +
     '</div>' +
     // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
@@ -274,6 +277,8 @@ var DD_PANELS = [
   { key: 'qs', icon: 'NO', title: 'red Qs and checks' },
   { key: 'blocks', icon: 'PLUNGER', title: 'blocks' },
   { key: 'files', icon: 'OPENFOLDER', title: 'files and grants' },
+  // goal/G40.12, second set 2: "the icons strip to the left of a goal has an icon for the list of attached rules".
+  { key: 'rules', icon: 'BOOK', title: 'the rules attached' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 function ddIconsHtml() {
@@ -323,6 +328,7 @@ function ddPanelHtml() {
   if (ddPanelSel === 'qs') return ddQsHtml();
   if (ddPanelSel === 'blocks') return ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>';
   if (ddPanelSel === 'suites') return ddSuitesHtml();
+  if (ddPanelSel === 'rules') return ddRulesHtml();
   if (ddPanelSel === 'files') return ddGrantsHtml(true) + (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false);
   return ddBoxHtml();
 }
@@ -497,6 +503,8 @@ function ddPaint() {
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
   var addRow = document.getElementById('dd-add-row');
   if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
+  var ruleRow = document.getElementById('dd-rule-add-row');
+  if (ruleRow && ruleRow.style) ruleRow.style.display = ddPanelSel === 'rules' ? '' : 'none';
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
@@ -585,6 +593,50 @@ function ddLoadSuites(id) {
     ddSuitesMore = !!r.more;
     ddPaint();
   }, function () { ddSuites = []; ddSuitesMore = false; ddPaint(); });
+}
+// THE RULES PANEL (goal/G40.12, second set 1-3): the rules attached to this goal or item, each named and with its
+// delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
+// add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
+var ddRuleNames = Object.create(null);
+var DD_SEARCH = '/shell/js/probabilitySearch.js';
+var ddRulePick = null;
+function ddLoadRuleNames() {
+  return ddAsk('rules.search', { text: '', types: [], statuses: [] }).then(function (r) {
+    (r.items || []).forEach(function (i) { try { var l = JSON.parse(i.label); ddRuleNames[i.key] = l.label + ' (' + l.type + ')'; } catch (e) { /* named by its key */ } });
+    ddPaint();
+  }, function () { /* the keys stand for the names */ });
+}
+function ddRulesHtml() {
+  var rules = (ddFacts && Array.isArray(ddFacts.rules)) ? ddFacts.rules : [];
+  if (!rules.length) return '<div class="job-manifest-note">No rule is attached here.</div>';
+  return rules.map(function (r) {
+    var key = String((r && r.key) || r);
+    return '<div>' + ddEsc(key) + ' ' + ddEsc(ddRuleNames[key] || '') + ' <button type="button" data-rule-remove="' + ddEsc(key) + '" title="take this rule off">delete</button></div>';
+  }).join('') + (ddFacts && ddFacts.rulesMore ? '<div class="job-manifest-note">More rules than shown.</div>' : '');
+}
+function ddMountRulePick() {
+  var el = document.getElementById('dd-rule-pick');
+  if (!el || ddRulePick) return;
+  var make = function () {
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    if (!P || typeof P.create !== 'function' || ddRulePick) return;
+    ddRulePick = P.create(el, {
+      api: ddApi, server: 'desk', verb: 'rules.search',
+      args: function (text) { return { text: text, types: [], statuses: ['active'] }; },
+      columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
+      face: 'dropdown', placeholder: 'attach a rule…',
+      matched: function (row) { return { label: String((row && row.label) || '') }; },
+      pick: function (row, key) { if (key) ddWrite('item.rules.add', { id: ddId, rule: String(key) }); },
+      empty: 'No rule matches.',
+    });
+    ddRulePick.refresh();
+  };
+  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
+  if (typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DD_SEARCH;
+  script.onload = make;
+  document.body.appendChild(script);
 }
 function ddSuitesHtml() {
   if (ddSuites === null) return '<div class="job-manifest-note">Reading the suites.</div>';
@@ -766,8 +818,11 @@ spirit.shell.activateApp({
         ddPaint();
         if (panel === 'blocks') ddLoadTargets();
         if (panel === 'suites') ddLoadSuites(ddId);
+        if (panel === 'rules') { ddLoadRuleNames(); ddMountRulePick(); }
         return;
       }
+      var ruleOff = attr('data-rule-remove');
+      if (ruleOff) { ddWrite('item.rules.remove', { id: ddId, rule: ruleOff }); return; }
       var qclear = attr('data-qclear');
       if (qclear) { ddWrite('chat.add', { id: ddId, text: qclear + ': clear' }); return; }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }

@@ -1,0 +1,7 @@
+{
+  "description": "Attach one rule to a goal or an item, by its key (goal/G40.12). The rules an agent's work carries are its goal's and its item's for the phase it is in (design, test in red and verify, code in build; desk rules always), each once: item.get's phaseRules. Refused for a rule that does not exist or is attached already.",
+  "request": {
+    "id": "",
+    "rule": ""
+  }
+}

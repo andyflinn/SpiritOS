@@ -6,8 +6,8 @@
 // don't fill the second tab yet". So two inner tabs: Reds, and Items, empty for now, saying so.
 //
 // FALLOUT TALKS TO DESKVERIFY ONLY (goal/G29.5; Andy, 2026-10-17: "correct. fallout talks to deskVerify only."). Its
-// Reds list is the shared list with its search, shellCreateListSearch (shell/shared/js/listSearch.js, goal/G29.4),
-// over deskVerify's own search verb and stream; the pane keeps no cache, no wire slot, no timer and no ranking of its
+// Reds list is the probability search (shell/js/probabilitySearch.js; goal/G40.12: "all searches in desk are of the new
+// probability variety"), over deskVerify's own search verb and stream; the pane keeps no cache, no wire slot, no timer and no ranking of its
 // own: the list does all of that the same way everywhere. Desk hands the pane its own call (ctx.verb) and stream
 // (ctx.onPublished); they are the list's api. THE SUMMARY GOES THROUGH THE LIST'S ONE SLOT (list.ask): Andy, on
 // goal/G27.14, "make SURE there's MAX one search in flight over the wire.... IMPORTANT."
@@ -18,15 +18,11 @@
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
   var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
-  var LIST_SCRIPT = '/shell/shared/js/listSearch.js';
+  var LIST_SCRIPT = '/shell/js/probabilitySearch.js';
   var ctx = null;
   var inner = 'reds';
   var list = null;
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-  function when(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
   function tabButton(name, label) {
     var on = inner === name;
     return '<button type="button" data-fallout-tab="' + name + '" aria-selected="' + (on ? 'true' : 'false') + '" style="margin-right:1em' +
@@ -61,11 +57,14 @@
   }];
   // ONE NICE LINE PER TEST (Andy: "test-file-name | failure-description | success or fail | since"), and NO DETAIL ON
   // SCREEN ("I know you can read those details, so it doesn't need to be on-screen."): the failure and the commit stay in
-  // deskVerify. goal/G29.9: the list hands paint its mark(text), the matched words marked.
-  function paint(row, mark) {
-    var m = typeof mark === 'function' ? mark : esc;
-    return '<td>' + m(row.suite) + '</td><td>' + m(row.title) + '</td><td>' + (row.outcome === 'red' ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(row.at)) + '</td>';
-  }
+  // deskVerify. The probability search draws the columns from each row's own fields (outcome red or green, at the time);
+  // matched words are marked there.
+  var COLUMNS = [
+    { field: 'suite', label: 'Suite', sort: 'text' },
+    { field: 'title', label: 'Test', sort: 'text' },
+    { field: 'outcome', label: 'Result', sort: 'text' },
+    { field: 'at', label: 'Since', sort: 'date' },
+  ];
   // A test's history in a dialog (Andy: "if you want to show the history of one test, use a dialog."): the list's details
   // hook, a press in its pane (goal/G29.9).
   function details(row) {
@@ -89,16 +88,17 @@
   }
 
   function mountList() {
-    var make = win.spirit.elements && win.spirit.elements.shellCreateListSearch;
+    var P = win.spirit.elements && win.spirit.elements.probabilitySearch;
     var el = document.getElementById('fallout-list');
-    if (typeof make !== 'function' || !el || !ctx) return;
-    list = make(el, {
+    if (!P || typeof P.create !== 'function' || !el || !ctx) return;
+    list = P.create(el, {
       api: { verb: ctx.verb, onPublished: ctx.onPublished },
       server: 'deskVerify',
       verb: 'search',
       args: args,
+      columns: COLUMNS,
+      matched: function (row) { return { suite: String((row && row.suite) || ''), title: String((row && row.title) || '') }; },
       filters: FILTERS,
-      paint: paint,
       details: details,
       empty: 'No test matches.',
     });
@@ -107,9 +107,9 @@
     // The summary follows deskVerify too: each of its publishes counts again, through the same slot.
     if (typeof ctx.onPublished === 'function') ctx.onPublished(function () { summary(); }, 'deskVerify');
   }
-  // THE SHARED LIST, LOADED ON DEMAND, as Desk loads its shared element (deskLoadSharedElement): once per page.
+  // THE PROBABILITY SEARCH, LOADED ON DEMAND, as Desk loads its shared element (deskLoadSharedElement): once per page.
   function withList(done) {
-    if (win.spirit.elements && typeof win.spirit.elements.shellCreateListSearch === 'function') { done(); return; }
+    if (win.spirit.elements && win.spirit.elements.probabilitySearch) { done(); return; }
     if (typeof document.createElement !== 'function' || !document.body) return;
     var script = document.createElement('script');
     script.src = LIST_SCRIPT;

@@ -691,8 +691,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     else test.fail('attached rules: item ' + short(dr.item2) + ', added ' + short(dr.attached) + ', goal ' + short(dr.goalRules) + ', item ' + short(dr.itemRules) + ', removed ' + dr.removed + ', after ' + short(dr.itemRulesAfter));
     if (dr.item2 && same(dr.designRules, [dr.rd])) test.check('in design an item\'s work carries the design rules, its goal\'s and its own');
     else test.fail('the rules in design: ' + short(dr.designRules) + ', expected ' + short([dr.rd]));
-    if (dr.redTake && same(dr.redRules, [dr.rt, dr.rt2])) test.check('the take of red carries the test rules of the goal and the item, each once');
-    else test.fail('the rules of the red: taken ' + dr.redTake + ', ' + short(dr.redRules) + ', expected ' + short([dr.rt, dr.rt2]));
+    // The goal is the one made after the autoAttach test rule (ruleAdded), so that rule is among its test rules too.
+    if (dr.redTake && same(dr.redRules, [dr.ruleAdded, dr.rt, dr.rt2])) test.check('the take of red carries the test rules of the goal and the item, each once');
+    else test.fail('the rules of the red: taken ' + dr.redTake + ', ' + short(dr.redRules) + ', expected ' + short([dr.ruleAdded, dr.rt, dr.rt2]));
     if (dr.buildTake && same(dr.buildRules, [dr.rc])) test.check('the take of build carries the code rules of the goal and the item, each once');
     else test.fail('the rules of the build: taken ' + dr.buildTake + ', ' + short(dr.buildRules) + ', expected ' + short([dr.rc]));
   }
