@@ -1,5 +1,5 @@
 {
- "change": 104646,
+ "change": 104879,
  "goal": "goal/G40",
  "items": [
   {
@@ -19,7 +19,6 @@
    "blocking": [],
    "blocked": [
     "goal/G40.9",
-    "goal/G40.13",
     "goal/G40.14"
    ],
    "codeOffered": false,
@@ -87,7 +86,6 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
     "wsl-claude"
    ],
    "working": [],
@@ -11709,14 +11707,13 @@
    "id": "goal/G40.13",
    "title": "Fix contacts UI",
    "goal": "goal/G40",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
-   "with": "",
+   "with": "wsl-claude",
    "version": 22,
    "buttons": [
-    "start-design",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G40"
@@ -11726,22 +11723,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 22,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "creator": "wsl-claude",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "088f8f27c925d7acb3e85838bccb3577a5ca6204",
+   "redCommit": "99456ab7",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/15",
@@ -11754,9 +11755,13 @@
     {
      "key": "rule/17",
      "version": 44
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -11764,9 +11769,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -11795,6 +11801,38 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "May I fix the row-order bug the new test found in probabilitySearch.js, or shall the test skip that check and the bug get its own item?",
+     "test": "spirit/run/shell/js/test/probabilitySearch.js",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-26T10:54:28.646Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-26T11:20:38.969Z",
+     "made": "desk"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-26T11:49:35.529Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -12049,6 +12087,156 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-26T10:22:43.264Z",
      "text": "- wsl: green now. Point 7 (v22) closes both gaps I missed: ui rules attach by a shell file and ride on every take and wake, and never at goal creation. Nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:25:10.549Z",
+     "text": "all: SHIT, all agents went idle WITHOUT observing rule/15 — An agent never just goes idle desk, active, auto-attached to new goals"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:26:00.197Z",
+     "text": "- wsl: you are right, I went idle without checking work.open, against rule/15. Checked now: the red was open, and I took it.\n- The red: one check per box point that is not built yet, in spiritInUse.js, as G40.11 and G40.12 had it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:26:08.920Z",
+     "text": "- wsl: correction: claude-windows took the red first; it is theirs. I take the build when the red is claimed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:26:09.430Z",
+     "text": "- cw: my fault: your Go landed after my green, and I armed the ear without checking for work, against rule/15. The red was open and nobody took it.\n- Taken now: the red of G40.13. Files: the red only, spirit/test/spiritInUse.js, beside the new test pairs the box asks for."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:29:59.713Z",
+     "text": "commit 99456ab71f29e2d55912e543e19bad4a93f0fd7c: goal/G40.13 red: the contacts list gets a sized box; the product test system stands alone with its own reporter; test pairs for the contacts modules; the desk brings tests and ui rules by the file lis\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T10:30:22.127Z",
+     "text": "- cw: the red is done at 99456ab7: 14 checks fail, one or more for every point of box v22; the older checks pass.\n- Contacts: the list box takes fill, in a flex column page.\n- The product test system: no test in the run tree reaches into spirit/test/; its own reporter, spirit/run/test/testReport.js, prints the same lines and posts each result through the spirit object.\n- The seven Contacts modules each get ./test/<name>.js and .md, named by testModule.js, loading their module and running green.\n- The desk, driven: a file with its own test brings that test; a shell file brings the auto-attach ui rules, which ride in design and red alike; a new goal gets the auto desk rule, never the ui one.\n- The verifier runs tests under spirit/run/, its tab has a button for the full product tree, and the tab draws even when the first ask finds it busy.\n- The build is open to take."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:30:33.204Z",
+     "text": "- wsl: build taken, from red 99456ab7; checked by its red only."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:42:54.999Z",
+     "text": "- wsl: build at 121 green, 1 red. The red is a real bug the new probabilitySearch test found. The fix is in a core file, so Q above."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:45:14.626Z",
+     "text": "Q3: May I fix the row-order bug the new test found in probabilitySearch.js, or shall the test skip that check and the bug get its own item?\n\nwhich row order bug?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:45:27.546Z",
+     "text": "- wsl: with no words and no sort, a list shows rows in arrival order. Page rows count 0,1,2; rows from a server answer count from 0 again, so a later server row sorts in among the first page rows (b,n,z,q instead of b,z,q,n).\n- The fix: one shared counter for both, a few lines in probabilitySearch.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:51:13.763Z",
+     "text": "the point of probability search is; as soon as a user uses the search-input (client-side) the rows will instantly display in \"relevant\" order based on a computed probability that it's relevant, what other sort criteria can there be. empty searches generally just bring back the most recent rows of an object table, search only becomes sortable against user input\n\nmake sense?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:51:30.070Z",
+     "text": "- wsl: makes sense. Then the empty order is what the search brings back, newest first, and the test asserted an order the design never promised.\n- So I drop that check from the test and leave probabilitySearch.js untouched. Q3 answered that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:52:01.694Z",
+     "text": "you drop that check from the test"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T10:54:28.238Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-26T10:54:28.435Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:54:40.438Z",
+     "text": "- wsl: check dropped; the red is green, 123, every point of box v22 met.\n- The commit waits on your grant of the file list: the test pairs, the reporter, contacts.js and the two run tests. probabilitySearch.js itself is not on it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:55:53.454Z",
+     "text": "commit 6d10b6f32cd950c129451f4f8efee8b8b3655134: goal/G40.13 build: the contacts list takes a sized box; the product test system stands alone with its own reporter, testReport.js; test pairs for the seven Contacts modules; the desk brings a file's o\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/js/contacts/test/data.js\n- spirit/run/shell/js/contacts/test/data.md\n- spirit/run/shell/js/contacts/test/listElement.js\n- spirit/run/shell/js/contacts/test/listElement.md\n- spirit/run/shell/js/contacts/test/rowElement.js\n- spirit/run/shell/js/contacts/test/rowElement.md\n- spirit/run/shell/js/test/contactLabel.js\n- spirit/run/shell/js/test/contactLabel.md\n- spirit/run/shell/js/test/probabilitySearch.js\n- spirit/run/shell/js/test/probabilitySearch.md\n- spirit/run/shell/js/test/rowElement.js\n- spirit/run/shell/js/test/rowElement.md\n- spirit/run/shell/js/test/spiritData.js\n- spirit/run/shell/js/test/spiritData.md\n- spirit/run/test/spirit-child-generalRules.js\n- spirit/run/test/spirit.js\n- spirit/run/test/testReport.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T10:56:00.476Z",
+     "text": "commit 6d10b6f3: goal/G40.13 build, pushed. The red is green, 123; claimed. Verify is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T11:11:18.557Z",
+     "text": "- why is the \"Run the product tests\" at the bottom of the verifier tab in desk and not in the button row:\n\n- in the verifier tab: the rolling console area keeps jumping out of sight, maybe redrawn of every waiting tick of the verifier, even if nothing changes???  also: the why does not the console pane use up all the space it can, with all the unused vertical space in that verifier tab???\n\n[Stop the run]     [Chores now]     [Run the product tests]\n\n- in the contact rows in contact search, when i click on an [add] button to add one of the found peers, nothing happens, and the [add] button does not disappear..... why would that be?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T11:20:55.994Z",
+     "text": "- wsl: all three fixed, tried on a real Desk page:\n- the product button sits in the row; the console is drawn once and written in place, keeps your scroll, and fills the window to the bottom.\n- Add: the row kept its button because it never learned it was added. Now Add goes, and it offers Open, Block, Remove.\n- The commit waits on your grant: contacts/rowElement.js and its test."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T11:53:36.587Z",
+     "text": "wsl is this committed so i can pull and verify?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T11:54:08.562Z",
+     "text": "wsl: is this committed so i can pull and verify?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-26T11:54:08.776Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T11:54:33.456Z",
+     "text": "commit 088f8f27c925d7acb3e85838bccb3577a5ca6204: goal/G40.13: a contact row added loses its Add and offers what a kept row offers (its actions follow its flags); the verifier's product button stands in the tab's row, and its console is drawn once, w\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/js/contacts/rowElement.js\n- spirit/run/shell/js/contacts/test/rowElement.js\n- spirit/run/shell/js/contacts/test/rowElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T11:54:44.217Z",
+     "text": "commit 088f8f27: yes, pushed now; pull and verify. Your WSL checkout is pulled too."
     }
    ]
   },
