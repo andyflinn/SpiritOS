@@ -2245,18 +2245,8 @@ function write(verb, a, check) {
   }
   // NO LIMBO LINE (goal/G29.10, point 1: "The limbo posts go."). Limbo stays a mark in the item's facts; the desk
   // posts nothing under the item when it enters it.
-  const gW = s.goals[gidW || s.current];
-  // A HOLDER GONE STALE (goal/G5.7). Andy: "the deskServer throws a red question." Once per hold: a holder silent past
-  // LIVE_MS gets one open red question on its item. Written after this write's own publishes.
-  const stale = [];
-  if (gW) gW.members.forEach(function (id) {
-    const m = s.items[id];
-    if (!m || !m.code || !m.phaseWith || m.closed || m.done) return;
-    const at = s.agentsAt[m.phaseWith];
-    if (at && Date.now() - Date.parse(at) < LIVE_MS) return;
-    if (m.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open' && String(c.words).indexOf('stale:') === 0; })) return;
-    stale.push(m);
-  });
+  // THE STALE RED QUESTION (goal/G5.7) STOOD HERE, and is gone (Andy, 2026-10-26: "i delete that shit from my code.",
+  // "you go change that in my clone."): every clear was itself a write that raised the next one, 83 on one item.
   // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"), one row at a time (goal/G33.4): the written item's facts and
   // whether it is still on the List, always; then every other row whose facts changed (desk/G3.10: a press changes more
   // than its own row), each its own publish; then each side row it changed.
@@ -2279,13 +2269,6 @@ function write(verb, a, check) {
   writeGoalFile(s, verb, a, s.change);
   // A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4).
   if (s.current && s.current !== currentBefore) pushGoalWhole(s.current);
-  // Each against the state as it is now: a red Q written above is itself a write, whose own walk may already have
-  // given a later hold in this list its one (goal/G33.11: the second red Q on one hold).
-  stale.forEach(function (m) {
-    const cur = S.items[m.id];
-    if (!cur || cur.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open' && String(c.words).indexOf('stale:') === 0; })) return;
-    write('check.add', { id: m.id, kind: 'Q', words: 'stale: ' + m.phaseWith + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
-  });
   shed();
   return s;
 }
