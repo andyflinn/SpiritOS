@@ -1,5 +1,5 @@
 {
- "change": 103981,
+ "change": 103997,
  "goal": "goal/G40",
  "items": [
   {
@@ -60,7 +60,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -11021,13 +11021,11 @@
    "id": "goal/G40.12",
    "title": "More desk fixes",
    "goal": "goal/G40",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
    "version": 7,
    "buttons": [
-    "end-design",
-    "close",
     "delete",
     "verify"
    ],
@@ -11036,17 +11034,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
+   "limbo": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -11054,7 +11052,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "verified": "none",
    "verifyFailures": [],
    "verifyFailuresMore": false,
@@ -11125,6 +11152,30 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-26T06:21:39.034Z",
      "text": "- wsl: yes, if test rules ride on the take of red and of verify alike, three kinds do it: design, test, code (build).\n- The box is claude-windows's, as you said."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T06:31:45.377Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T06:32:12.860Z",
+     "text": "Green: settled, nothing open, box current (v7). One thing the build will ask, not a design gap: which kind each existing rule gets (design, test, code); rule/10 on test and code by default, as boxed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T06:32:23.165Z",
+     "text": "wsl? green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-26T06:32:41.134Z",
+     "text": "- wsl: green. Box v7 holds every point raised, mine included; nothing open."
     }
    ]
   },
