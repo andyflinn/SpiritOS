@@ -1199,8 +1199,10 @@ function deskRuleAdd() {
   var label = val('desk-rule-label');
   var text = val('desk-rule-text');
   if (!label.trim() || !text.trim()) { deskRulesNote = 'A rule needs a label and a text.'; deskDrawRules(); return; }
-  deskAsk('rule.add', { type: type, label: label, text: text }).then(function () {
+  var autoBox = document.getElementById('desk-rule-auto');
+  deskAsk('rule.add', { type: type, label: label, text: text, autoAttach: !!(autoBox && autoBox.checked) }).then(function () {
     ['desk-rule-label', 'desk-rule-text'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    if (autoBox) autoBox.checked = false;
     deskRulesNote = '';
     deskRulesSearch();
   }, function (e) { deskRulesNote = 'Not added: ' + e.message; deskDrawRules(); });
@@ -1600,6 +1602,8 @@ spirit.shell.activateApp({
               DESK_RULE_TYPES.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('') + '</select></label>' +
             '<label class="field-label grow">Label<input id="desk-rule-label" placeholder="the rule in a few words"></label>' +
             '<label class="field-label grow">Text<textarea id="desk-rule-text" rows="3" placeholder="the rule; up to 2048 bytes, line breaks kept"></textarea></label>' +
+            // goal/G40.12: autoAttach, off unless ticked: the rule is attached to every goal made from then on.
+            '<label class="field-label"><input type="checkbox" id="desk-rule-auto"> auto-attach to new goals</label>' +
             '<button type="button" id="desk-rule-add">New</button></div>' +
           '<div id="desk-rule-error" class="job-start-error"></div>' +
           '<div id="desk-rule-list"></div>' +
