@@ -382,9 +382,38 @@ function deskDesignOn() {
 function deskLabels(r) {
   return ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
 }
+// THE PROBABILITY SEARCH FRAMEWORK ON THE LIST (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
+// same."): the rows the page holds are its cache, kept by id. With no words the desk's answer is the List as the toggles
+// have it; with words the answer only adds to the cache, and what is drawn is the cache ranked against the words as
+// they stand now (deskShownItems). One call on the wire at a time: words typed while one is out ask once more after it.
+var deskSearching = false;
+var deskSearchAgain = false;
 function deskSearchItems() {
-  return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
-    .then(function (r) { deskItems = deskLabels(r); deskNotePlugins(deskItems); deskDraw(); }, deskWriteError('read its list'));
+  if (deskSearching) { deskSearchAgain = true; return Promise.resolve(); }
+  deskSearching = true;
+  var text = String(deskFilter.text || '');
+  var done = function () {
+    deskSearching = false;
+    if (deskSearchAgain) { deskSearchAgain = false; deskSearchItems(); }
+  };
+  return deskAsk('items.search', { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
+    .then(function (r) {
+      var got = deskLabels(r);
+      if (!text.trim()) deskItems = got;
+      else got.forEach(function (row) { var at = deskRowAt(row.id); if (at === -1) deskItems.push(row); else deskItems[at] = row; });
+      deskNotePlugins(deskItems); deskDraw(); done();
+    }, function (e) { done(); deskWriteError('read its list')(e); });
+}
+// What the List draws: the rows held, in the List's order with no words; with words, ranked by
+// probabilitySearch.order (shell/js/probabilitySearch.js, the framework's pure heart), best first, a row the words
+// miss still listed, last.
+function deskShownItems() {
+  var words = String(deskFilter.text || '').trim();
+  var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+  if (!words || !P || typeof P.order !== 'function') return deskItems;
+  return P.order(deskItems.map(function (r, i) { return { key: r.id, row: r, at: i }; }), {
+    words: words, matched: function (r) { return { title: String((r && r.title) || ''), id: String((r && r.id) || '') }; },
+  }).map(function (x) { return x.row; });
 }
 // A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
 // asks again, since it adds and drops whole rows. A row the List does not hold
@@ -858,7 +887,7 @@ function deskAddGoal() {
 function deskTable() {
   if (!deskItems.length) return '<div class="job-manifest-note">Nothing to show.</div>';
   var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>yours</th><th>blocks</th><th>waits on</th><th style="width:16em">status</th></tr>';
-  return '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + deskItems.map(deskRowHtml).join('') + '</tbody></table>';
+  return '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + deskShownItems().map(deskRowHtml).join('') + '</tbody></table>';
 }
 
 // The bubble at the top of Team: the goal, by title, and a line that opens it.
@@ -1146,27 +1175,6 @@ function deskRulesSearch() {
     deskRulesList.refresh();
   };
   deskLoadSearch(make);
-}
-// THE LIST'S FINDER (goal/G40.12): items.search through the probability search, as a dropdown; the toggles beside it
-// narrow it as they narrow the List.
-var deskFind = null;
-function deskMountFind() {
-  var el = document.getElementById('desk-find');
-  if (!el || deskFind) return;
-  deskLoadSearch(function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-    if (!P || typeof P.create !== 'function' || deskFind) return;
-    deskFind = P.create(el, {
-      api: deskApi, server: 'desk', verb: 'items.search',
-      args: function (text) { return { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed }; },
-      columns: [{ field: 'id', label: 'Id', sort: 'path' }, { field: 'title', label: 'Title', sort: 'text' }, { field: 'status', label: 'Status', sort: 'text' }],
-      face: 'dropdown', placeholder: 'search…',
-      matched: function (row) { return { title: String((row && row.title) || ''), id: String((row && row.id) || '') }; },
-      pick: function (row, key) { if (key) deskOpenRow(String(key)); },
-      empty: 'Nothing matches.',
-    });
-    deskFind.refresh();
-  });
 }
 // probabilitySearch.js, loaded once for the page however many asks wait on it.
 var deskSearchWaiting = null;
@@ -1560,10 +1568,9 @@ spirit.shell.activateApp({
           '<div class="start-job-form card" id="desk-add-goal" hidden><label class="field-label grow">Add Goal' +
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
-          // THE LIST'S SEARCH IS THE PROBABILITY SEARCH (goal/G40.12: "all searches in desk are of the new probability
-          // variety"): a dropdown over items.search under the toggles beside it, ranked as he types, the words marked; a
-          // pick opens that row. The List below it is the List.
-          '<div class="start-job-form card"><div id="desk-find" style="flex:1"></div>' +
+          // THE LIST IS A PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
+          // same. That is part of the whole probability search frame work"): see deskShownItems.
+          '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
           '<button type="button" id="desk-current-goal"></button>' +
           '<button type="button" id="desk-goals-only"></button>' +
           // [INCLUDE CLOSED] (goal/G4.20 point 1), off when Desk opens.
@@ -1687,7 +1694,14 @@ spirit.shell.activateApp({
       if (row) deskOpenRow(row.getAttribute('data-row'));
     });
     document.getElementById('desk-goal-add').addEventListener('click', function () { deskAddGoal(); });
-    deskMountFind();
+    document.getElementById('desk-search').addEventListener('input', function () {
+      deskFilter.text = String(document.getElementById('desk-search').value || '');
+      // Ranked from what the page holds at once; the desk's answer then adds what it held that the page did not.
+      deskDraw();
+      deskSearchItems();
+    });
+    // The ranking is probabilitySearch.order, loaded with the page's other searches.
+    deskLoadSearch(function () { if (String(deskFilter.text || '').trim()) deskDraw(); });
     document.getElementById('desk-current-goal').addEventListener('click', function () {
       deskFilter.currentGoalOnly = !deskFilter.currentGoalOnly;
       // EXCLUSIVE, goal/G9.2. Andy: "only one of the two buttons ... may be selected at the same time."

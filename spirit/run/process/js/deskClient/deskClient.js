@@ -614,6 +614,40 @@ function mayChat(to, verb, args) {
   }).catch(function () { return false; });
 }
 
+// THE PROBABILITY SEARCH FRAMEWORK ON THIS CLIENT (goal/G40.12; Andy, 2026-10-26: "ALL desk clients need to cache
+// search results, the same. That is part of the whole probability search frame work"): every desk search's rows are
+// kept here by key, per verb and the arguments beside its words, the newest answer replacing a row with the same key.
+// An answer with words is the kept rows ranked against those words (probabilityStringObjectMatch over the row's label),
+// best first, cut in bytes to one answer (probabilityBucket), so a row an earlier search brought is found again
+// without the desk holding it in its answer. With no words the desk's answer is passed on as it came. Kept in memory
+// for the life of this process, as the desk's pushes are.
+const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
+const searchKept = new Map();
+function searchCached(name, args, got) {
+  if (!/(^|\.)search$/.test(String(name)) || !got || got.ok === false || !Array.isArray(got.items)) return got;
+  const scope = Object.assign({}, args || {});
+  const words = String(scope.text != null ? scope.text : (scope.q != null ? scope.q : '')).trim();
+  delete scope.text; delete scope.q;
+  const where = name + ' ' + JSON.stringify(scope);
+  const rows = searchKept.get(where) || new Map();
+  searchKept.set(where, rows);
+  got.items.forEach(function (i) { if (i && i.key != null) rows.set(String(i.key), i.label); });
+  if (!words) return got;
+  const bucket = createProbabilityBucket(Infinity);
+  let n = 0;
+  rows.forEach(function (label, key) {
+    let fields = label;
+    if (typeof label === 'string') { try { fields = JSON.parse(label); } catch (e) { fields = { label: label }; } }
+    const flat = {};
+    Object.keys(fields || {}).forEach(function (k) { if (typeof fields[k] === 'string') flat[k] = fields[k]; });
+    const score = Number(probabilityStringObjectMatch(words, flat)) || 0;
+    n += 1;
+    if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: key, label: label });
+  });
+  const r = bucket.serialize(null, SEARCH_ROOM);
+  return Object.assign({}, got, { items: r.items, more: !!(r.more || got.more) });
+}
+
 const server = appServer.serve({
   // ONE ASK OF ANDY'S DESK. What comes back is the answer, a refusal of the desk's included: it is the desk's to
   // say no. THE ANSWER ITSELF, NOT A JSON STRING (goal/G4.19, issue 4): the reply is declared {} and may carry more
@@ -649,7 +683,7 @@ const server = appServer.serve({
           // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
           // into spirit.data through the desk's translator, which the push keeps current from now on.
           if (reading && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(a.name, args, got);
-          return got;
+          return searchCached(a.name, args, got);
         });
         let timer = null;
         const held = new Promise(function (resolve, reject) {
