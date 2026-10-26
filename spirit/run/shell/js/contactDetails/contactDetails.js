@@ -276,7 +276,7 @@ function cdRender() {
 // ordinary post, natterDetails does the same) — no new verb.
 function cdReleaseSeats() {
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // asks relay.search and relay.get and hands back the same shape.
+  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
   return spirit.relay.status('').then(function (r) {
     var rows = (r.body && r.body.rows) || [];
     var keyFor = Object.create(null);

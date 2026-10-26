@@ -56,9 +56,10 @@ const STORES = [
   // design/DEPRECATIONS.md) and renamed *.imported. Owned by the import.
   { file: 'routingTable.json', owner: 'relayStore.js', what: 'a relay\'s peer rows before cycle 3, imported once' },
   { file: 'invites.json', owner: 'relayStore.js', what: 'live invite tokens before cycle 3, imported once' },
-  // Since goal/G19.15 the relay records are node.db's relays table; the old file is read once by the import.
+  // Since goal/G19.15 the relay records are node.db's; the old file is read once by the import (relayKeys.importOld).
   { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys before goal/G19.15, moved into node.db once' },
-  { file: 'contacts.json', owner: 'contacts.js', what: 'the address book' },
+  // THE BOOK IS ROWS OF node.db'S ONE TABLE SINCE goal/G40.11: the old file is read once by nodeStore's move and deleted.
+  { file: 'contacts.json', owner: 'nodeStore.js', what: 'the address book before goal/G40.11, moved into the one table once' },
   // The name it wore until 2026-09-18, renamed on first load. Listed so a
   // node upgrading in place is a case somebody decided rather than a file
   // that quietly stops being read — `who` was the roll's word, and this

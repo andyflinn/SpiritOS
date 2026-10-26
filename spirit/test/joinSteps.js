@@ -76,20 +76,19 @@ try {
   const r = { kind: made && made.kind, type: made && made.type, start: at() };
   r.quiet = J.refresh('nothing') === false && published.length === 0;
   relayKeys.list(home, 'https://relay.example', 'relay', 'RELAYKEY-J');
-  relayKeys.seat(home, 'https://relay.example', 'carl');
+  relayKeys.seat(home, 'https://relay.example');
   r.seatPublished = J.refresh('relay.join') === true && published.length === 1;
-  // A seat with no verified email (joined by invite): step 1 is still open, its form reading Add.
+  // A SEAT ENDS STEP 1 (goal/G40.11): the node keeps no email (box v24), so the job carries none and step 1 is done
+  // once a relay holds this node; the remote control is next.
   r.afterSeat = at();
-  r.noEmail = made.data.emailVerified === false;
-  relayKeys.keepEmail(home, 'https://relay.example', 'carl@example.org', true);
-  J.refresh('relay.join');
-  r.emailVerified = made.data.emailVerified === true && made.data.email === 'carl@example.org';
-  r.afterEmail = at();
+  r.noEmailKept = !('email' in made.data) && !('emailVerified' in made.data);
   contactBook.acquire(home, { publicKey: 'BERTKEY-J', publicLabel: 'bert' }, 'handle');
   J.refresh('peer.acquire');
   r.contact = made.data.contact === true;
   r.afterContact = at();
-  relayKeys.keepFace(home, 'https://relay.example', 'harbour', 'carl@example.org', '{}');
+  // THE FACE NAME IS ANDY'S OPEN QUESTION ON goal/G40.11 (keep it on the relay's row as the node's own fact, or drop
+  // the face lines): nothing keeps a face until he answers, so this stays red rather than invent an answer.
+  if (typeof relayKeys.keepFace === 'function') relayKeys.keepFace(home, 'https://relay.example', 'harbour', 'carl@example.org', '{}');
   J.refresh('relay.face');
   r.faceUrl = made.data.faceUrl;
   r.afterFace = at();
@@ -99,8 +98,8 @@ try {
 const n = nodeSide || {};
 if (n.kind === 'permanent' && n.type === 'join-steps' && n.quiet === true) test.check('the node makes a permanent join-steps job, and a refresh with nothing changed publishes nothing');
 else test.fail(OWED + 'the join-steps job: ' + short(n));
-if (n.start === 'email' && n.seatPublished === true && n.afterSeat === 'email' && n.noEmail === true && n.emailVerified === true && n.afterEmail === 'face')
-  test.check('a seat taken publishes the job; step 1 stays open until the email is verified (the job carries email and emailVerified), then the remote control is next');
+if (n.start === 'email' && n.seatPublished === true && n.afterSeat === 'face' && n.noEmailKept === true)
+  test.check('a seat taken publishes the job and ends step 1 (the job carries no email), and the remote control is next');
 else test.fail(OWED + 'after a seat: ' + short(n));
 if (n.contact === true && n.afterContact === 'face') test.check('a contact added is in the job; Find someone is optional, so the open step stays');
 else test.fail(OWED + 'after a contact: ' + short(n));
@@ -168,17 +167,17 @@ if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(
 else test.fail(OWED + 'the shell does not hand the steps to the app');
 
 test.subHeading('4b. one join control, and the face form on one line (box v41)');
-// joinForm.words({seated, email, emailVerified}) picks the control's words, so natterDetails and the Join app draw the
-// same control: no seat Join; a seat without a verified email Add; verified Change, prefilled.
+// joinForm.words({seated}) picks the control's words, so natterDetails and the Join app draw the same control: no seat
+// Join; a seat Change, never prefilled (goal/G40.11: the node keeps no email, so a caller handing one changes nothing).
 const joinFormEl = element('shell/js/joinForm.js', 'joinForm');
 let words = null;
 try {
-  words = [joinFormEl.words({ seated: false }), joinFormEl.words({ seated: true, email: '', emailVerified: false }), joinFormEl.words({ seated: true, email: 'carl@example.org', emailVerified: true })];
+  words = [joinFormEl.words({ seated: false }), joinFormEl.words({ seated: true }), joinFormEl.words({ seated: true, email: 'carl@example.org', emailVerified: true })];
 } catch (e) { words = { threw: e.message }; }
 const nd = code('shell/natterDetails/natterDetails.js');
-if (Array.isArray(words) && words[0].button === 'Join' && words[1].button === 'Add' && /Add email address/.test(words[1].title) && words[2].button === 'Change' && words[2].email === 'carl@example.org'
+if (Array.isArray(words) && words[0].button === 'Join' && words[1].button === 'Change' && /Change email address/.test(words[1].title) && words[1].email === '' && words[2].button === 'Change' && words[2].email === ''
     && /ndJoinForm\(\)\.words\(/.test(nd) && /\.joinForm\.words\(/.test(joinApp) && !/'Add email address'|'Change email address'/.test(nd))
-  test.check('joinForm picks Join, Add or Change by where the node stands, and natterDetails and the Join app both ask it');
+  test.check('joinForm picks Join or Change by where the node stands, never prefilled, and natterDetails and the Join app both ask it');
 else test.fail(OWED + 'joinForm.words answered ' + short(words) + ', or a caller keeps its own words');
 let faceHtml = '';
 try {

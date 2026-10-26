@@ -38,6 +38,8 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/spirit/relayAuth');
 const contactBook = require('../run/spirit/contacts');
+const relayKeys = require('../run/spirit/relayKeys');
+const nodeStore = require('../run/spirit/nodeStore');
 
 const MINE = 'https://mine.example';
 const THEIRS = 'https://theirs.example';
@@ -88,21 +90,25 @@ function aClaimAdopts() {
   const home = tmpHome();
   const me = auth.loadIdentity(home).publicKey;
   const hub = hubFor(home);
+  // The relay I own, pinned, so the relay a claim happened on can be a route to the claimer (goal/G40.11).
+  relayKeys.accept(home, MINE, 'K-RELAY-MINE');
 
   // What presenceNode hands onOwnerEvent: the relay's row, with the relay
   // it arrived from stamped on.
   const row = hub.adoptClaim({ kind: 'claim', key: 'K-CRUELLA', label: 'Cruella',
     invite: 'cruella', owner: false, relay: MINE });
   const held = contactBook.byPublicKey(home, 'K-CRUELLA');
-  if (row && held && contactBook.acquiredVia(held) === contactBook.MEMBER) {
-    test.check('the claimer is a contact, acquired as a member — how they came, recorded');
+  // KEPT (goal/G40.11): the row's keep flag. How they came (acquiredVia 'member') went with the box.
+  if (row && held && held.keep === true) {
+    test.check('the claimer is a contact: their row is kept');
   } else {
     test.fail('adopted: ' + JSON.stringify(held));
   }
-  if (held && held.publicLabel === 'Cruella' && (held.relays || []).indexOf(MINE) !== -1) {
-    test.check('with the label they chose and the relay it happened on');
+  const routes = nodeStore.open(home).seen.routes('K-CRUELLA');
+  if (held && held.publicLabel === 'Cruella' && routes.some(function (r) { return r.url === MINE && r.at === 'K-RELAY-MINE'; })) {
+    test.check('with the label they chose, and the relay it happened on as a route to them');
   } else {
-    test.fail('row: ' + JSON.stringify(held));
+    test.fail('row: ' + JSON.stringify({ row: held, routes: routes }));
   }
   if (contactBook.listens(held)) {
     test.check('and this node listens to them — they can write to me');
@@ -122,14 +128,14 @@ function aClaimAdopts() {
     test.fail('adopted what it should not have');
   }
 
-  // Andy: "membership can only expire, not be demoted." `member` is the
-  // top of the ladder (contacts.js ACQUIRED_RANK), so a member acquired
-  // again at a lower rank — found by handle, say — stays a member.
-  contactBook.acquire(home, { publicKey: 'K-CRUELLA', publicLabel: 'Cruella', relay: THEIRS }, 'handle');
-  if (contactBook.acquiredVia(contactBook.byPublicKey(home, 'K-CRUELLA')) === contactBook.MEMBER) {
-    test.check('and a member acquired again at a lower rank stays a member — ranks never fall');
+  // Andy: "membership can only expire, not be demoted." The ladder of ranks is gone (goal/G40.11); kept is kept, and
+  // acquiring a kept row again, found somewhere else, leaves it kept.
+  contactBook.acquire(home, { publicKey: 'K-CRUELLA', publicLabel: 'Cruella', relay: THEIRS });
+  const again = contactBook.byPublicKey(home, 'K-CRUELLA');
+  if (again && again.keep === true && contactBook.listens(again) && typeof contactBook.acquiredVia === 'undefined') {
+    test.check('and a member acquired again stays kept, with no ladder of ranks left to fall down');
   } else {
-    test.fail('rank fell: ' + JSON.stringify(contactBook.byPublicKey(home, 'K-CRUELLA')));
+    test.fail('after a second acquire: ' + JSON.stringify(again));
   }
 
   // Tolerant: node.db may still be open (0021 marks the memory on every
@@ -146,18 +152,14 @@ async function forgetDoesNotAsk() {
   const hub = hubFor(home);
 
   hub.adoptClaim({ kind: 'claim', key: 'K-CRUELLA', label: 'Cruella', owner: false, relay: MINE });
-  // A book written by older code, still carrying the sweep's fields.
-  const rows = JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'contacts.json'), 'utf8'));
-  rows.forEach(function (r) {
-    if (r.publicKey === 'K-CRUELLA') { r.memberOf = [MINE]; r.missingSince = '2026-09-17T01:00:00.000Z'; }
-  });
-  fs.writeFileSync(path.join(home, 'relay-state', 'contacts.json'), JSON.stringify(rows));
 
+  // FORGOTTEN, NOT ERASED (goal/G40.11): the row stays in the table, its routes with it, and is no contact any more.
   const res = fakeRes();
   hub.handlePeer({}, res, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
   await res.wait();
-  if (res.status === 200 && !contactBook.byPublicKey(home, 'K-CRUELLA')) {
-    test.check('a member is forgotten like anybody — a stale memberOf decides nothing');
+  const left = contactBook.byPublicKey(home, 'K-CRUELLA');
+  if (res.status === 200 && left && !left.keep && !contactBook.listens(left)) {
+    test.check('a member is forgotten like anybody — no seat is asked about, and the row is no contact any more');
   } else {
     test.fail('forget answered ' + res.status + ': ' + res.text);
   }
@@ -167,31 +169,26 @@ async function forgetDoesNotAsk() {
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* reclaimed at exit */ }
 }
 
-// ── 3. THE OLD FIELDS FALL AWAY ──────────────────────────────────────
+// ── 3. NO BOOK FILE TO CARRY OLD FIELDS ──────────────────────────────
+//
+// memberOf and missingSince fell away on a row's next write to contacts.json. That file is gone (goal/G40.11): the
+// book is rows of node.db's one table, which has no column for either.
 
 function staleFieldsFallAway() {
-  test.subHeading('A row older code wrote loses memberOf and missingSince on its next write');
+  test.subHeading('The book writes no contacts.json, and the table has no seat fields');
 
   const home = tmpHome();
-  contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE }, 'handle');
-  const file = path.join(home, 'relay-state', 'contacts.json');
-  const rows = JSON.parse(fs.readFileSync(file, 'utf8'));
-  rows[0].memberOf = [MINE];
-  rows[0].missingSince = '2026-09-17T01:00:00.000Z';
-  fs.writeFileSync(file, JSON.stringify(rows));
-
-  // Any write through the book — here, a label of my own.
+  contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE });
   contactBook.setMyLabel(home, 'K-JAZZ', 'Jazzmin');
-  contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE }, 'handle');
-  const after = JSON.parse(fs.readFileSync(file, 'utf8'))[0];
-  if (after && after.memberOf === undefined && after.missingSince === undefined) {
-    test.check('the next write through the book drops both — nothing reads them');
+  const row = contactBook.byPublicKey(home, 'K-JAZZ');
+  if (!fs.existsSync(path.join(home, 'relay-state', 'contacts.json')) && row && row.myLabel === 'Jazzmin' &&
+      !('memberOf' in row) && !('missingSince' in row)) {
+    test.check('writes through the book land in the table, with no memberOf or missingSince to carry');
   } else {
-    test.fail('still carried: ' + JSON.stringify(after));
+    test.fail('the book: ' + JSON.stringify({ file: fs.existsSync(path.join(home, 'relay-state', 'contacts.json')), row: row }));
   }
 
-  // Tolerant: node.db may still be open (0021 marks the memory on every
-  // book write), and testSupport reclaims whatever is left at exit.
+  // Tolerant: node.db may still be open, and testSupport reclaims whatever is left at exit.
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* reclaimed at exit */ }
 }
 

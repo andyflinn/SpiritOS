@@ -32,9 +32,9 @@ test.startTest('Identity vs perception (sticks and stones)');
 
   // contactBook.handshake (a roll sync) wrote these until 2026-09-19;
   // it went with the roll readers. Known by handle is the same row.
-  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'john' }, 'handle');
-  contactBook.acquire(annie, { publicKey: johnB.publicKey, publicLabel: 'john' }, 'handle');
-  contactBook.acquire(annie, { publicKey: jim.publicKey, publicLabel: 'jim' }, 'handle');
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'john' });
+  contactBook.acquire(annie, { publicKey: johnB.publicKey, publicLabel: 'john' });
+  contactBook.acquire(annie, { publicKey: jim.publicKey, publicLabel: 'jim' });
 
   contactBook.setMyLabel(annie, johnA.publicKey, 'lovelyJohn');
   contactBook.setMyLabel(annie, johnB.publicKey, 'john-work');
@@ -61,7 +61,7 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('public johns: ' + publicJohns.length);
   }
 
-  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' }, 'handle');
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' });
   const afterRename = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterRename.publicLabel === 'jonathan' && afterRename.myLabel === 'lovelyJohn') {
     test.check('their public rename does not smash my caption');
@@ -69,33 +69,26 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('after rename: ' + JSON.stringify(afterRename));
   }
 
-  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:43410');
-  contactBook.addRoute(annie, johnA.publicKey, 'https://spirit.andyflinn.com');
-  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:43410');
-  const routed = contactBook.byPublicKey(annie, johnA.publicKey);
-  if (routed.relays && routed.relays.length === 2) {
-    test.check('routes append per key and do not duplicate');
+  // A CONTACT'S RELAYS ARE ROUTES OF THE ONE TABLE (goal/G40.11; addRoute and the row's `relays` went): the relay it was
+  // met on, when this node knows that relay's key, is a route to them through it, per key and never twice.
+  const relayKeys = require('../run/spirit/relayKeys');
+  const shadow = require('../run/spirit/hub').shadow(annie);
+  const RK = auth.generateIdentity('relay').publicKey;
+  relayKeys.accept(annie, 'http://127.0.0.1:43411', RK);
+  if (shadow.routes(johnB.publicKey).length === 0 && !('relays' in contactBook.byPublicKey(annie, johnA.publicKey))) {
+    test.check('a contact row has no relays field, and john-work has no route until seen somewhere');
   } else {
-    test.fail('routes: ' + JSON.stringify(routed));
+    test.fail('john B routes: ' + JSON.stringify(shadow.routes(johnB.publicKey)));
   }
 
-  const bRoutes = contactBook.byPublicKey(annie, johnB.publicKey).relays || [];
-  if (bRoutes.length === 0) {
-    test.check('john-work has no routes until seen elsewhere');
-  } else {
-    test.fail('john B should start with no routes');
-  }
-
-  contactBook.acquire(annie, {
-    publicKey: johnA.publicKey,
-    publicLabel: 'jonathan',
-    relay: 'http://127.0.0.1:43411',
-  }, 'handle');
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan', relay: 'http://127.0.0.1:43411' });
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan', relay: 'http://127.0.0.1:43411' });
   const afterSeen = contactBook.byPublicKey(annie, johnA.publicKey);
-  if (afterSeen.relays.length === 3 && afterSeen.myLabel === 'lovelyJohn') {
-    test.check('seeing them again appends a new route and keeps my caption');
+  const viaRK = shadow.routes(johnA.publicKey).filter(function (r) { return r.at === RK && r.url === 'http://127.0.0.1:43411'; });
+  if (viaRK.length === 1 && afterSeen.myLabel === 'lovelyJohn') {
+    test.check('seeing them again on a relay adds one route through it, never twice, and keeps my caption');
   } else {
-    test.fail('after seen: ' + JSON.stringify(afterSeen));
+    test.fail('after seen: ' + JSON.stringify({ row: afterSeen, routes: shadow.routes(johnA.publicKey) }));
   }
 }
 
@@ -182,33 +175,32 @@ test.subHeading('Knowing somebody, and merely seeing them');
   const seen = auth.generateIdentity('stranger').publicKey;
   const wrote = auth.generateIdentity('bert').publicKey;
 
-  // A roll row, as older code wrote one (nothing writes `roll` now).
-  contactBook.acquire(annie2, { publicKey: seen, publicLabel: 'stranger' }, 'roll');
-  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
+  // A row the table only heard of (a relay named them) is not a contact; one acquired is kept (goal/G40.11).
+  require('../run/spirit/hub').shadow(annie2).note(seen, { at: 'SOME-RELAY', label: 'stranger' });
+  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' });
 
   const known = contactBook.contacts(annie2).map(function (r) { return r.publicKey; });
   if (known.length === 1 && known[0] === wrote) {
-    test.check('a roll row is not a contact; a message is');
+    test.check('a row merely heard of is not a contact; an acquired one is');
   } else {
     test.fail('contacts: ' + JSON.stringify(known));
   }
 
-  // Every row written before the field is exactly what a roll row is,
-  // so it reads as one without anything being migrated.
-  if (contactBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'roll') {
-    test.check('a row with no acquiredVia reads as roll');
+  // acquiredVia, the ladder of how a key arrived, went with the box ("Gone: acquiredVia").
+  if (typeof contactBook.acquiredVia === 'undefined' && !('acquiredVia' in contactBook.byPublicKey(annie2, wrote))) {
+    test.check('there is no acquiredVia, on the module or on a row');
   } else {
-    test.fail('a fieldless row was treated as acquired');
+    test.fail('acquiredVia survives');
   }
 
   // Perception is still the caption and never the identity: renaming a
   // contact does not change what the mailbox calls them, and seeing them
   // again in a roll does not unknow them.
   contactBook.setMyLabel(annie2, wrote, 'bertie');
-  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bertram' }, 'roll');
+  require('../run/spirit/hub').shadow(annie2).note(wrote, { at: 'SOME-RELAY', label: 'bertram' });
   const row = contactBook.byPublicKey(annie2, wrote);
-  if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && contactBook.acquiredVia(row) === 'message') {
-    test.check('seeing them again at a lower rank corrects the public label and leaves the rest alone');
+  if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && row.keep === true) {
+    test.check('seeing them again corrects the public label and leaves the rest alone');
   } else {
     test.fail('after sync: ' + JSON.stringify(row));
   }
@@ -224,7 +216,7 @@ test.subHeading('Waiting to be let in, and shut out again');
   // it is. Not somebody this node listens to.
   contactBook.hold(home, { publicKey: 'KEY-CAROL', publicLabel: 'carol', relay: 'https://spirit.example' });
   const carol = contactBook.byPublicKey(home, 'KEY-CAROL');
-  if (contactBook.acquiredVia(carol) === 'hold' && contactBook.listens(carol) === false) {
+  if (carol.held === true && carol.keep === false && contactBook.listens(carol) === false) {
     test.check('a held row is a name, not a correspondent');
   } else {
     test.fail('held row: ' + JSON.stringify(carol));
@@ -237,30 +229,28 @@ test.subHeading('Waiting to be let in, and shut out again');
     test.fail('book ' + contactBook.addressBook(home).length + ', contacts ' + contactBook.contacts(home).length);
   }
 
-  // Accepting is saying yes to somebody who wrote: that is what
-  // `message` means. It does not inflate into `handle`, which is a key
-  // confirmed out of band and nothing else.
+  // Accepting is saying yes to somebody who wrote: kept, no longer held.
   contactBook.accept(home, 'KEY-CAROL');
   const accepted = contactBook.byPublicKey(home, 'KEY-CAROL');
-  if (contactBook.acquiredVia(accepted) === 'message' && contactBook.listens(accepted)) {
-    test.check('accepting makes them somebody you hear, at the rank that is true');
+  if (accepted.keep === true && accepted.held === false && contactBook.listens(accepted)) {
+    test.check('accepting makes them somebody you hear: kept, no longer held');
   } else {
     test.fail('after accept: ' + JSON.stringify(accepted));
   }
 
-  // Blocking a contact keeps how they were acquired. Unblocking has to
+  // Blocking a contact keeps whether they were kept. Unblocking has to
   // put something back, and inventing it later would be a guess.
-  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'handle');
+  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' });
   contactBook.setBlocked(home, 'KEY-BERT', true);
   const blocked = contactBook.byPublicKey(home, 'KEY-BERT');
-  if (contactBook.acquiredVia(blocked) === 'handle' && contactBook.listens(blocked) === false) {
-    test.check('blocking silences a contact without forgetting how they got in');
+  if (blocked.keep === true && blocked.blocked === true && contactBook.listens(blocked) === false) {
+    test.check('blocking silences a contact without forgetting that they were kept');
   } else {
     test.fail('blocked row: ' + JSON.stringify(blocked));
   }
 
   // The path that would quietly undo it: they write again.
-  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'message');
+  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' });
   if (contactBook.isBlocked(contactBook.byPublicKey(home, 'KEY-BERT'))) {
     test.check('and writing again does not unblock anybody');
   } else {
@@ -276,7 +266,7 @@ test.subHeading('Waiting to be let in, and shut out again');
 
   contactBook.accept(home, 'KEY-BERT');
   const unblocked = contactBook.byPublicKey(home, 'KEY-BERT');
-  if (!contactBook.isBlocked(unblocked) && contactBook.acquiredVia(unblocked) === 'handle') {
+  if (!contactBook.isBlocked(unblocked) && unblocked.keep === true && contactBook.listens(unblocked)) {
     test.check('and unblocking gives back exactly what was there before');
   } else {
     test.fail('after unblock: ' + JSON.stringify(unblocked));

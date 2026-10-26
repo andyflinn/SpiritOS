@@ -1,4 +1,4 @@
 {
-  "description": "This node's address book and the peers it has heard of (the shadow), searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; a label's book says whether the book holds them. It also starts one network search across the relays if none is in flight; its rows land in the shadow, so asking again finds them.",
-  "parameters": "q is optional."
+  "description": "The one table of the IDs this node knows (goal/G40.11): the people and relays its owner keeps, owns, holds or blocked, searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; a label is the row as JSON, its flags keep, mine, relay, held, blocked and seated, and a relay's url. keep, mine, relay, seated, held and blocked are yes-filters. It also starts one network search across the relays if none is in flight; what it finds lands in the table held, so asking again lists it.",
+  "parameters": "q is optional; each filter is optional and takes yes."
 }

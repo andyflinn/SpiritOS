@@ -13,14 +13,14 @@
 //     when the code is confirmed does it write the address on that member's row, verified (members.email and
 //     members.emailVerified); until then the old email stands. No seat, no rename, not refused for a full relay.
 //   - A first join writes the joined address on the new member's row the same way, verified.
-//   - joinConfirm brings the address and the flag back; the node keeps them on that relay's row in node.db
-//     (relays.email and relays.emailVerified), and natterDetails reads the label from it.
+//   - joinConfirm brings the address and the flag back. SINCE goal/G40.11 THE NODE KEEPS NO EMAIL (box v24; Andy,
+//     2026-10-26: "the email address holds no value to the personal node, it is injected only for seating"): the
+//     relay holds it, and the node's form is never prefilled.
 //   - Info's face section loses its email field.
 // NAMED HERE where the box names none:
 //   - relayStore members rows answer email and emailVerified; members.setEmail(key, email) writes it verified.
 //   - The join and joinConfirm answers carry email and emailVerified.
-//   - relayKeys.keepEmail(rootDir, url, email, verified) and relayKeys.emailOf(rootDir, url) -> {email, verified};
-//     relay.get's row carries email and emailVerified.
+//   - relayKeys.keepEmail and emailOf stood here until goal/G40.11; relay.get's row carries no email.
 //   - natterDetails: a panel for a seated relay (ndEmailHtml), its input class nd-join-email, its button nd-join-go.
 // rule/11: through testSupport only; its own scratch folders.
 
@@ -95,21 +95,24 @@ if (ownerJoin && ownerJoin.ok && ownerOk && ownerOk.ok && r4.email === 'andy@exa
   test.check('the owner\'s seat takes andy@example.org, verified, and keeps its label');
 else test.fail(OWED + 'the owner\'s join ' + short(ownerJoin) + ' / ' + short(ownerOk) + ', row ' + short(r4));
 
-test.subHeading('4. the node keeps the verified email on that relay\'s row');
+test.subHeading('4. the node keeps no email: the relay holds it (goal/G40.11)');
 const relayKeys = require('../run/spirit/relayKeys');
 const nodeHome = home('node');
 plant.ensureAt(nodeHome, 'andy');
 let held = null;
 try {
   relayKeys.list(nodeHome, 'https://relay.example', 'relay', 'RELAYKEY-R');
-  relayKeys.keepEmail(nodeHome, 'https://relay.example', 'andy@example.org', true);
-  held = relayKeys.emailOf(nodeHome, 'https://relay.example');
+  relayKeys.seat(nodeHome, 'https://relay.example');
+  held = { api: ['keepEmail', 'emailOf'].filter(function (n) { return typeof relayKeys[n] === 'function'; }),
+    cols: new (require('node:sqlite').DatabaseSync)(path.join(nodeHome, 'relay-state', 'node.db'), { readOnly: true })
+      .prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; }).filter(function (n) { return /email/i.test(n); }) };
 } catch (e) { held = { threw: e.message }; }
-if (held && held.email === 'andy@example.org' && held.verified === true) test.check('relayKeys keeps the email and its flag on the relay\'s row (node.db relays.email, emailVerified)');
-else test.fail(OWED + 'relayKeys.emailOf answered ' + short(held));
+if (held && Array.isArray(held.api) && !held.api.length && Array.isArray(held.cols) && !held.cols.length) test.check('relayKeys keeps no email and the one table has no email column');
+else test.fail('the node still keeps an email: ' + short(held));
 const hub = code('spirit/hub.js');
-if (/relayKeys\.keepEmail\(/.test(hub) && /emailOf\(/.test(hub)) test.check('relay.join keeps what the confirm answered, and relay.get\'s row carries it');
-else test.fail(OWED + 'hub.js keeps no email from the join, or relay.get carries none');
+const joinFn = (hub.match(/function relayJoin\(body, deps\) \{[\s\S]*?\n  \}/) || [''])[0];
+if (joinFn && !/keepEmail|emailOf/.test(hub) && !/said\.email[^V]/.test(joinFn)) test.check('relay.join keeps nothing of what the confirm answered, and relay.get\'s row carries no email');
+else test.fail('hub.js still keeps an email from the join');
 const peerPost = code('spirit/peerPost.js');
 if (/email: said\.email/.test(peerPost) && /emailVerified: said\.emailVerified/.test(peerPost)) test.check('peerPost hands the confirm\'s email and flag back');
 else test.fail(OWED + 'peerPost drops the confirm\'s email');
@@ -190,23 +193,26 @@ const elementDone = sendIt().then(function (r) {
 });
 
 test.subHeading('6. a newly started node presents noderoutes.net as a contact');
-// Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' relay rows are relay.search's
-// (contacts.js asks it); a new node's list is what boot asserts (server.js calls ownerBadge.ensureRelays). So a fresh
-// home, the boot's call, and relay.search as Contacts asks it.
+// Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' rows are contact.search's,
+// relays among them since goal/G40.11 (relay.search went); a new node's list is what boot asserts (server.js calls
+// ownerBadge.ensureRelays). So a fresh home, the boot's call, and contact.search as Contacts asks it.
 const freshHome = home('fresh');
 plant.ensureAt(freshHome, 'carl');
 let fresh = null;
 try {
   require('../run/spirit/ownerBadge').ensureRelays(freshHome);
-  fresh = require('../run/spirit/hub').createHub(freshHome).relaySearch({ q: '*' }, {});
+  fresh = Promise.resolve(require('../run/spirit/hub').createHub(freshHome).contactSearch({ q: '*' }, {}));
 } catch (e) { fresh = Promise.resolve({ threw: e.message }); }
 const server = code('spirit/server.js');
 elementDone.then(function () { return fresh; }).then(function (r) {
   const items = (r && r.items) || [];
-  const seed = items.filter(function (i) { return i.key === 'https://noderoutes.net'; })[0];
-  if (/ownerBadge\.ensureRelays\(ROOT_DIR\)/.test(server) && seed) test.check('a fresh node\'s relay.search, what Contacts lists relays from, holds noderoutes.net');
-  else test.fail('a fresh node\'s relay.search answered ' + short(r));
-}, function (e) { test.fail('a fresh node\'s relay.search threw ' + e.message); }).then(function () {
+  const seed = items.filter(function (i) {
+    let l = {}; try { l = JSON.parse(i.label); } catch (e) { l = {}; }
+    return l.relay === true && l.url === 'https://noderoutes.net';
+  })[0];
+  if (/ownerBadge\.ensureRelays\(ROOT_DIR\)/.test(server) && seed) test.check('a fresh node\'s contact.search, what Contacts lists from, holds noderoutes.net as a relay');
+  else test.fail('a fresh node\'s contact.search answered ' + short(r));
+}, function (e) { test.fail('a fresh node\'s contact.search threw ' + e.message); }).then(function () {
   homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
   test.reportSuccessFailureCount();
   process.exit(0);

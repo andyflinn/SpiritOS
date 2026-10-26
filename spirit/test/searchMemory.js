@@ -1,7 +1,9 @@
 'use strict';
 
 // spirit/test/searchMemory.js
-// A SEARCH ASKS MEMORY TOO, BESIDE EVERY BOUND RELAY (R39, 0021).
+// A SEARCH ASKS MEMORY TOO, BESIDE EVERY BOUND RELAY (R39, 0021). Since goal/G40.11 the memory it asks is the one
+// table's listed rows: the kept, the owned and the held; a stranger the network finds is held, one the shadow only
+// heard of is not listed.
 //
 //   Andy: "thing is. if the userbox is offline, search can revert to
 //   memory....." — "in fact if search fans out to all bound relays first,
@@ -87,7 +89,7 @@ async function run() {
   // The owner's own people: more of them than a search has slots, and one
   // last seen absent.
   for (let n = 0; n < SLOTS + 5; n += 1) {
-    contactBook.acquire(H, { publicKey: 'K-FRIEND-' + n, publicLabel: 'bella friend ' + n }, 'handle');
+    contactBook.acquire(H, { publicKey: 'K-FRIEND-' + n, publicLabel: 'bella friend ' + n });
   }
   S.note('K-FRIEND-0', { at: 'RK-B', label: 'bella friend 0', present: false });
   const seenBefore = S.get('K-MEM').seen;
@@ -107,42 +109,39 @@ async function run() {
   } else {
     test.fail('live row: ' + JSON.stringify(liveNet) + ', in memory\'s answer ' + m.filter(function (r) { return r.publicKey === 'K-LIVE'; }).length);
   }
+  // WHAT THE NETWORK FINDS IS HELD (goal/G40.11, box v24: "what the network search finds is held"): the next search
+  // lists it, under the name the relay gave, waiting for the owner's yes.
   const after = rowsOf((await search(H, 'bella live', null)).body);
-  if (byKey(after, 'K-LIVE') && /^bella live …/.test(byKey(after, 'K-LIVE').name)) test.check('and the next search finds it in memory under the name the relay gave');
-  else test.fail('after the walk, memory holds K-LIVE as ' + JSON.stringify(byKey(after, 'K-LIVE')));
+  const liveAfter = byKey(after, 'K-LIVE');
+  if (liveAfter && liveAfter.name === 'bella live' && liveAfter.held === true && liveAfter.keep === false) test.check('and the next search lists it held, under the name the relay gave');
+  else test.fail('after the walk, the search holds K-LIVE as ' + JSON.stringify(liveAfter));
 
-  const mem = byKey(m, 'K-MEM');
-  if (mem && mem.book === false && mem.present === true && mem.relay === 'http://relay-b.example' && typeof mem.seenAt === 'string') {
-    test.check('somebody only memory knows is answered at once, marked not in the book, dated, with the relay they were at');
+  // NO STRANGERS FROM THE SHADOW (goal/G40.11: "the search lists kept and held rows only"; fromMemory went): somebody
+  // the node has only heard of is not listed, absent or present.
+  if (!byKey(m, 'K-MEM') && !byKey(m, 'K-GONE')) {
+    test.check('somebody only the shadow knows, present or absent, is not listed');
   } else {
-    test.fail('memory row: ' + JSON.stringify(mem));
-  }
-
-  if (!byKey(m, 'K-GONE')) {
-    test.check('a stranger remembered as absent is dropped, exactly as a relay row would be');
-  } else {
-    test.fail('an absent stranger was returned');
+    test.fail('a shadow stranger was listed: ' + JSON.stringify(byKey(m, 'K-MEM') || byKey(m, 'K-GONE')));
   }
 
   const strangers = m.filter(function (r) { return /^K-STRANGER-/.test(r.publicKey); }).length;
-  if (strangers > 0 && strangers <= SLOTS && on.body.more === true) {
-    test.check('strangers from memory get the slots a relay gets (' + strangers + ' of ' + (SLOTS + 10) +
-      '), and the answer says there were more');
+  if (strangers === 0) {
+    test.check('and none of the ' + (SLOTS + 10) + ' strangers the shadow holds take a row');
   } else {
-    test.fail(strangers + ' strangers, more=' + on.body.more);
+    test.fail(strangers + ' strangers listed');
   }
 
   const friends = m.filter(function (r) { return /^K-FRIEND-/.test(r.publicKey); });
   if (friends.length === SLOTS + 5 && byKey(friends, 'K-FRIEND-0')) {
-    test.check('every one of the ' + (SLOTS + 5) + ' chosen who match is returned — past the slots, and the one last seen absent');
+    test.check('every one of the ' + (SLOTS + 5) + ' kept who match is returned — past the slots, and the one last seen absent');
   } else {
     test.fail(friends.length + ' friends of ' + (SLOTS + 5) + ', friend 0: ' + JSON.stringify(byKey(friends, 'K-FRIEND-0')));
   }
 
-  if (friends.every(function (r) { return r.book === true; }) && m.filter(function (r) { return /^K-STRANGER-|^K-MEM$/.test(r.publicKey); }).every(function (r) { return r.book === false; })) {
-    test.check('and each row says whether the book holds it (the count of remembered rows went with peer.search)');
+  if (friends.every(function (r) { return r.keep === true && r.held === false; })) {
+    test.check('and each row says it is kept, a flag on its row (the book field went with goal/G40.11)');
   } else {
-    test.fail('book marks: ' + JSON.stringify(m.slice(0, 3)));
+    test.fail('flags: ' + JSON.stringify(friends.slice(0, 3)));
   }
 
   if (S.get('K-MEM').seen === seenBefore) {
@@ -151,74 +150,57 @@ async function run() {
     test.fail('the search re-stamped a remembered row');
   }
 
-  const none = await search(H, 'zzzz', live);
-  if ((rowsOf(none.body)).filter(function (r) { return r.book === false; }).length === 0) {
-    test.check('memory is matched like a relay: a name nobody has finds nobody');
+  const none = await search(H, 'zzzz', null);
+  if (rowsOf(none.body).length === 0) {
+    test.check('the table is matched like a relay: a name nobody has finds nobody');
   } else {
     test.fail('zzzz matched: ' + JSON.stringify(rowsOf(none.body)));
   }
 
-  test.subHeading('A relay that does not answer: memory answers for it');
+  test.subHeading('A relay that does not answer: the table answers for it');
 
-  const quiet = await search(H, 'bella remembered', relayAnswering(null));
-  if (quiet.status === 200 && byKey(rowsOf(quiet.body), 'K-MEM') && quiet.net.length === 0) {
-    test.check('memory still finds who it can, and the silent relay adds nobody');
+  const quiet = await search(H, 'bella friend 1', relayAnswering(null));
+  if (quiet.status === 200 && byKey(rowsOf(quiet.body), 'K-FRIEND-1') && quiet.net.length === 0) {
+    test.check('the kept rows are still found, and the silent relay adds nobody');
   } else {
     test.fail('quiet: ' + JSON.stringify(quiet.body) + ', network rows ' + JSON.stringify(quiet.net));
   }
 
-  test.subHeading('Not connected at all: memory, instead of a refusal');
+  test.subHeading('Not connected at all: the table, instead of a refusal');
 
-  const off = await search(H, 'bella remembered', null);
-  if (off.status === 200 && byKey(rowsOf(off.body), 'K-MEM') && off.net.length === 0) {
-    test.check('a node with no connection answers from memory (it used to answer 503), asking nobody');
+  const off = await search(H, 'bella friend 1', null);
+  if (off.status === 200 && byKey(rowsOf(off.body), 'K-FRIEND-1') && off.net.length === 0) {
+    test.check('a node with no connection answers from its table (it used to answer 503), asking nobody');
   } else {
     test.fail('offline: ' + off.status + ' ' + JSON.stringify(off.body));
   }
 
-  test.subHeading('Newest first, and capped — the chosen are read apart');
+  test.subHeading('The listed rows are read through their partial indexes');
 
   {
-    //   Andy: "we'll run those searches down a newest-first key and cap at
-    //   1000 rows compared. (or a tunable value with default)"
+    // THE NEWEST-FIRST CAP ON STRANGERS STOOD HERE (R39: "cap at 1000 rows compared"): no stranger is read since
+    // goal/G40.11. What is read is the kept, the owned and the held, each through its own partial index.
     const C = makeHome();
-    fs.writeFileSync(path.join(C, 'relay-state', 'node.json'), JSON.stringify({ searchMemoryRows: 5 }));
-    // The friend is the OLDEST row here: a cap that read the chosen with
-    // everybody else would lose them first.
-    contactBook.acquire(C, { publicKey: 'K-OLD-FRIEND', publicLabel: 'carl friend' }, 'handle');
+    contactBook.acquire(C, { publicKey: 'K-OLD-FRIEND', publicLabel: 'carl friend' });
     const T = hubModule.shadow(C);
-    T.note('K-OLD-FRIEND', { at: 'RK-B', label: 'carl friend' });
     for (let n = 0; n < 10; n += 1) T.note('K-CARL-' + n, { at: 'RK-B', label: 'carl ' + n });
-    // seen is a millisecond clock; make the order unambiguous.
-    const st = require('../run/spirit/nodeStore').open(C);
-    st.seen.put('K-OLD-FRIEND', { seen: 1 });
-    for (let n = 0; n < 10; n += 1) st.seen.put('K-CARL-' + n, { seen: 100 + n });
-
     const got = await search(C, 'carl', null);
-    const keys = (rowsOf(got.body)).map(function (r) { return r.publicKey; });
-    const carls = keys.filter(function (k) { return /^K-CARL-/.test(k); }).sort();
-    if (carls.join(',') === 'K-CARL-5,K-CARL-6,K-CARL-7,K-CARL-8,K-CARL-9') {
-      test.check('with the cap at 5, the five newest strangers are compared and the five oldest are not');
+    // People only: the node's kept relay is a row of the same search and may match a word in its address.
+    const keys = (rowsOf(got.body)).filter(function (r) { return !r.relay; }).map(function (r) { return r.publicKey; });
+    if (keys.join(',') === 'K-OLD-FRIEND') {
+      test.check("the owner's friend is found, and the ten strangers matching the same word are not");
     } else {
-      test.fail('compared: ' + carls.join(','));
+      test.fail('found: ' + keys.join(','));
     }
-    if (keys.indexOf('K-OLD-FRIEND') !== -1) {
-      test.check("and the owner's friend, the oldest row of all, is still found");
-    } else {
-      test.fail('the old friend was capped away: ' + keys.join(','));
-    }
-
-    // BOTH HALVES ON AN INDEX, asserted rather than assumed: the chosen
-    // read only uses the partial index while it repeats its condition.
+    // ON AN INDEX, asserted rather than assumed: a partial index is used only while the query repeats its condition.
     const db = new (require('node:sqlite').DatabaseSync)(path.join(C, 'relay-state', 'node.db'));
     const plan = function (sql) { return db.prepare('EXPLAIN QUERY PLAN ' + sql).all().map(function (r) { return r.detail; }).join(' | '); };
-    const recent = plan("SELECT publicKey FROM seen WHERE label <> '' AND choice NOT IN ('held', 'added') AND blocked = 0 ORDER BY seen DESC LIMIT 1000");
-    const chosenPlan = plan("SELECT publicKey FROM seen WHERE (choice <> '' OR blocked = 1) AND (choice IN ('held', 'added') OR blocked = 1)");
+    const listed = plan('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1 UNION SELECT * FROM seen WHERE held = 1');
     db.close();
-    if (/seen_when/.test(recent) && /seen_chosen/.test(chosenPlan)) {
-      test.check('newest-first walks seen_when and the chosen read walks seen_chosen — neither scans the table');
+    if (/seen_keep/.test(listed) && /seen_mine/.test(listed) && /seen_held/.test(listed) && !/SCAN seen(?! USING)/.test(listed)) {
+      test.check('the list walks seen_keep, seen_mine and seen_held — none scans the table');
     } else {
-      test.fail('plans: ' + recent + ' / ' + chosenPlan);
+      test.fail('plan: ' + listed);
     }
   }
 

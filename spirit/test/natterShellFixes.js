@@ -21,8 +21,9 @@
 //   - serveCommon.ensureFirstRun(rootDir, {kind: 'node' | 'relay', now}). The first description reads "this <kind>
 //     described for the first time <date> UTC"; a relay's first label is "relay " and its machine's name (goal/G40.1: no key tail),
 //     written as its identity's name when the name is empty or the installer's 'relay'.
-//   - seenPeers.note(key, {kind}) keeps kind on the row, get(key).kind answers it ('node' when never said).
-//   - peer.search rows carry kind in their label JSON; peerPost keeps the card label as labelOf(url).
+//   - seenPeers.note(key, {kind}) kept kind on the row; since goal/G40.11 it is the flag relay on the one table
+//     (note(key, {relay: true}), get(key).relay, false when never said), and a relay's own URL is its direct route.
+//   - contact.search rows carry relay in their label JSON; peerPost keeps the card label as labelOf(url).
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -65,9 +66,10 @@ const finder = code('shell/js/contacts/listElement.js');
 if (/spirit\.elements.contactList\.create\(/.test(contactsList) && /spirit\.elements\.probabilitySearch\.create\(/.test(finder) && !natterApp())
   test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
-const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
-if (/label:\s*JSON\.stringify\(/.test(relaySearch)) test.check('relay.search answers each row\'s label as JSON');
-else test.fail(OWED + 'relay.search answers a plain string label');
+// Since goal/G40.11 relay.search is gone: contact.search answers relays too, each row's label JSON (contactLabel).
+const contactLabelFn = (/function contactLabel\(p\) \{[\s\S]*?\n\}/.exec(hub) || [''])[0];
+if (/JSON\.stringify\(/.test(contactLabelFn) && /relay: p\.relay === true/.test(contactLabelFn) && !/function relaySearch\(/.test(hub)) test.check('contact.search answers each row\'s label as JSON, a relay\'s with relay, and relay.search is gone');
+else test.fail(OWED + 'the search answers a plain string label, or relay.search is still there');
 
 test.subHeading('4. first-run defaults in serveCommon');
 const common = require('../run/spirit/serveCommon');
@@ -120,20 +122,20 @@ plant.ensureAt(peerHome, 'andy');
 let kinds = null;
 try {
   const S = hubMod.shadow(peerHome);
-  S.note('RELAYKEY-A', { label: 'a relay', at: 'https://relay.example', kind: 'relay' });
+  S.note('RELAYKEY-A', { label: 'a relay', at: 'https://relay.example', relay: true });
   S.note('NODEKEY-B', { label: 'a node', at: 'https://relay.example' });
-  kinds = { relay: (S.get('RELAYKEY-A') || {}).kind, node: (S.get('NODEKEY-B') || {}).kind };
+  kinds = { relay: (S.get('RELAYKEY-A') || {}).relay, node: (S.get('NODEKEY-B') || {}).relay };
 } catch (e) { kinds = { threw: e.message }; }
-if (kinds && kinds.relay === 'relay' && kinds.node === 'node') test.check('a shadow row carries kind: relay when said, node when never said');
+if (kinds && kinds.relay === true && kinds.node === false) test.check('a row of the one table carries the flag relay: true when said, false when never said');
 else test.fail(OWED + 'the shadow rows answered ' + short(kinds));
 let seed = null;
 try {
   require('../run/spirit/ownerBadge').ensureRelays(peerHome);
   const KEY = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=';
   const row = hubMod.shadow(peerHome).get(KEY) || {};
-  seed = { kind: row.kind, at: row.at };
+  seed = { relay: row.relay, at: row.at, url: row.url, key: KEY };
 } catch (e) { seed = { threw: e.message }; }
-if (seed && seed.kind === 'relay' && seed.at === 'https://noderoutes.net') test.check('the seeded relay noderoutes.net enters the shadow at boot as a relay peer, its route its own URL');
+if (seed && seed.relay === true && seed.at === seed.key && seed.url === 'https://noderoutes.net') test.check('the seeded relay noderoutes.net is a row of the one table at boot, flagged relay, its route its own URL');
 else test.fail(OWED + 'the seed in the shadow: ' + short(seed));
 // Andy, 2026-10-20: "and natter itself, when i add a relay, stashes that relay in the peer-list now?" — a relay a claim
 // adds (ownerBadge.addRelay) enters the shadow the same way.
@@ -141,14 +143,15 @@ let added = null;
 try {
   require('../run/spirit/ownerBadge').addRelay(peerHome, 'https://added.example', 'added', 'RELAYKEY-ADDED');
   const row = hubMod.shadow(peerHome).get('RELAYKEY-ADDED') || {};
-  added = { kind: row.kind, at: row.at };
+  added = { relay: row.relay, at: row.at, url: row.url };
 } catch (e) { added = { threw: e.message }; }
-if (added && added.kind === 'relay' && added.at === 'https://added.example') test.check('a relay added to the list enters the shadow as a relay peer too');
+if (added && added.relay === true && added.at === 'RELAYKEY-ADDED' && added.url === 'https://added.example') test.check('a relay added to the list is a relay row the same way');
 else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
-// Since goal/G30.19 the shadow's rows are contact.search's (strangerLabel), peer.search being gone.
-if (/kind:/.test((/function fromMemory[\s\S]*?\n  \}/.exec(hub) || [''])[0]) && /kind: row\.kind/.test((/function strangerLabel[\s\S]*?\n  \}/.exec(hub) || [''])[0]))
-  test.check('the shadow\'s rows carry kind in their label');
-else test.fail(OWED + 'the shadow\'s rows carry no kind');
+// Since goal/G40.11 every row contact.search answers is a row of the one table (buildPeople), its label carrying the
+// flag relay (contactLabel above); fromMemory and strangerLabel are gone.
+if (/relay: row\.relay/.test((/function buildPeople[\s\S]*?\n\}/.exec(hub) || [''])[0]) && !/function fromMemory\(|function strangerLabel\(/.test(hub))
+  test.check('the search\'s rows carry relay in their label, one shape for every row');
+else test.fail(OWED + 'the search\'s rows carry no relay flag');
 const contactRow = code('shell/js/contacts/rowElement.js');
 if (/value: 'relay', word: 'relays'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(contactRow)) test.check('Contacts\' one list has a relay filter, and a relay row opens natterDetails');
 else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
@@ -167,18 +170,18 @@ const selector = code('shell/js/contactSelector.js');
 if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
   test.check('the contact selector has one row of mutually exclusive choices: all, my puppets, relays (and blocked, held when present)');
 else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
-// Since goal/G30.19 Contacts' one list (contactSearch) asks relay.search beside contact.search, and a relay row's
-// element opens natterDetails.
+// Since goal/G40.11 Contacts' one list asks contact.search alone, relays among its rows (relay.search went), and a
+// relay row's element opens natterDetails.
 const contactsCode = code('shell/js/contacts/listElement.js');
-if (/function search\(args\)[\s\S]{0,900}\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
-  test.check('the contact list adds this node\'s relays (relay.search) and a relay row opens natterDetails');
+if (/function search\(args\)[\s\S]{0,600}\.contact\.search\(/.test(contactsCode) && !/\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
+  test.check('the contact list lists this node\'s relays (contact.search) and a relay row opens natterDetails');
 else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
 
 // Andy, 2026-10-20: on noderoutes he got Block and Forget ("It also allows me to block or forget a relay that i have a
-// seat on..... not optimal...."): a relay's book row (added before relays were peers) gives way to the relay row, and
-// the network search offers no Add for a relay.
-if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\[i\.key\]/.test(contactsCode) && /v\.book === false && v\.kind !== 'relay'/.test(contactRow))
-  test.check('a relay\'s book row gives way to its relay row (matched by the relay key relay.search now carries), and a relay has no Add');
+// seat on..... not optimal...."): since goal/G40.11 a relay is one row per ID, the relay's own (no second book row to
+// give way), its actions open its details, and it has no Add.
+if (!/relay\.search\(/.test(contactsCode) && /var actions = relay \? \[/.test(contactRow) && /v\.book === false && v\.relay !== true/.test(contactRow))
+  test.check('a relay is one row, its own, with no Block or Forget, and a relay has no Add');
 else test.fail(OWED + 'a relay can still show as a book contact, or be added to the book');
 
 test.subHeading('7. Natter retires');

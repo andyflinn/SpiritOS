@@ -24,7 +24,7 @@
 // is the owner's and is not. So it is JSON a person can open and edit,
 // in megabytes, which is the unit Andy asked for.
 //
-//   { "cacheMaxMB": 20, "searchMemoryRows": 1000 }
+//   { "cacheMaxMB": 20 }
 //
 // Absent, the defaults apply and nothing is written: a node that has
 // never been configured should not grow a file saying so.
@@ -43,21 +43,9 @@ const DEFAULT_CACHE_MAX_MB = 20;
 // reachable people — small, and still a cache.
 const MIN_CACHE_MAX_MB = 1;
 
-// ── HOW MANY REMEMBERED STRANGERS ONE SEARCH READS (R39) ────────────
-//
-//   Andy: "we'll run those searches down a newest-first key and cap at
-//   1000 rows compared. (or a tunable value with default)"
-//
-// Newest first, so the cap costs the oldest strangers and nobody else:
-// the owner's own people are read apart and always compared (0021).
-// A count of rows, not bytes, because it bounds WORK — how many labels
-// one search scores — and a row is the unit of that work.
-//
-// THE OWNER'S TO SET, AND IT COULD BE SHOWN TO THEM. Andy: "the capped read
-// is controlled by a lever the human user can use ... I'm saying we state
-// that that is possible." An Info control with a floor and a ceiling is
-// possible and not built (R39); until then the owner edits this file.
-const DEFAULT_SEARCH_MEMORY_ROWS = 1000;
+// searchMemoryRows STOOD HERE (R39): how many remembered strangers one search compared. Gone with goal/G40.11: the
+// search lists the owner's kept and held rows of the one table, no stranger, so there is nothing for it to cap. A
+// node.json that still names it is read as before, the field unread.
 
 function filePath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.json');
@@ -73,7 +61,6 @@ function load(rootDir) {
 
   const settings = {
     cacheMaxMB: DEFAULT_CACHE_MAX_MB,
-    searchMemoryRows: DEFAULT_SEARCH_MEMORY_ROWS,
     problems: [],
   };
   let raw = null;
@@ -105,18 +92,6 @@ function load(rootDir) {
     }
   }
 
-  if (parsed_ && parsed_.searchMemoryRows !== undefined) {
-    const r = Number(parsed_.searchMemoryRows);
-    // Zero is a real answer — "never search memory for strangers" — and
-    // the chosen are still read. Anything else not a whole count is a typo.
-    if (!isFinite(r) || r < 0 || Math.floor(r) !== r) {
-      settings.problems.push('searchMemoryRows must be a whole number of rows; using ' +
-        DEFAULT_SEARCH_MEMORY_ROWS);
-    } else {
-      settings.searchMemoryRows = r;
-    }
-  }
-
   // THE SERVERS' OWN SETTINGS ON THIS NODE (goal/G33.9): { "<server>": { "runs": [...], "<argument>": value } }, read
   // by js/jobs.js, which judges each against its server's manifest. Not an object, or none: no settings.
   settings.servers = parsed_ && parsed_.servers && typeof parsed_.servers === 'object' && !Array.isArray(parsed_.servers) ? parsed_.servers : {};
@@ -131,10 +106,6 @@ function serverSettings(rootDir, name) {
   return s && typeof s === 'object' && !Array.isArray(s) ? s : {};
 }
 
-function searchMemoryRows(rootDir) {
-  return load(rootDir).searchMemoryRows;
-}
-
 function cacheMaxBytes(rootDir) {
   return Math.round(load(rootDir).cacheMaxMB * 1024 * 1024);
 }
@@ -142,10 +113,8 @@ function cacheMaxBytes(rootDir) {
 module.exports = {
   load: load,
   cacheMaxBytes: cacheMaxBytes,
-  searchMemoryRows: searchMemoryRows,
   serverSettings: serverSettings,
   filePath: filePath,
   DEFAULT_CACHE_MAX_MB: DEFAULT_CACHE_MAX_MB,
   MIN_CACHE_MAX_MB: MIN_CACHE_MAX_MB,
-  DEFAULT_SEARCH_MEMORY_ROWS: DEFAULT_SEARCH_MEMORY_ROWS,
 };

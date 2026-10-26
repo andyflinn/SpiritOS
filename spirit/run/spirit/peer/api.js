@@ -6,6 +6,7 @@
 module.exports = {
   verbs: {
     post: { to: 'key', text: 'text', via: 'text?', patienceMs: 'number?', kind: 'text?' },
-    acquire: { publicKey: 'key', publicLabel: 'name?', url: 'url?', via: 'text?' },
+    // No via since goal/G40.11: how a key arrived went with acquiredVia; acquiring keeps the row.
+    acquire: { publicKey: 'key', publicLabel: 'name?', url: 'url?' },
   },
 };

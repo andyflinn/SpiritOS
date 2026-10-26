@@ -110,16 +110,16 @@ test.subHeading('Bounded by space alone (0021)');
   //   Andy: "why is the max for nodeStore not in Megabytes... we can
   //   easily default to a small city."
   //
-  // A row measures 225 bytes on disc, so a 40 KB cap is a couple of
-  // hundred people — small enough to fill here, large enough to be past
-  // an empty file's own few pages.
-  const T = shadow({ now: c.now, maxBytes: 40 * 1024 });
+  // A row with its route measures about 577 bytes on disc, so a 96 KB cap is a hundred-odd people — small enough to
+  // fill here, large enough to be past an empty store's own pages (56 KB since goal/G40.11: one for each partial index
+  // of the one table).
+  const T = shadow({ now: c.now, maxBytes: 96 * 1024 });
   for (let n = 0; n < 400; n += 1) {
     c.tick(10);
     T.note('K' + String(n).padStart(4, '0'), { at: 'R', url: 'https://relay.example', label: 'p' + n });
   }
 
-  if (T.bytes() <= 40 * 1024 && T.size() > 0) {
+  if (T.bytes() <= 96 * 1024 && T.size() > 0) {
     test.check('the store is held under its cap in BYTES, which is the unit the owner spends — ' +
       T.size() + ' rows in ' + Math.round(T.bytes() / 1024) + ' KB');
   } else {

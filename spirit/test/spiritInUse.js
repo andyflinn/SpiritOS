@@ -239,7 +239,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const linkRun = spawnSync(process.execPath, ['-e', [
     "global.window = {}; require(process.argv[1]); var S = window.spirit.elements.joinSteps;",
     "var spec = require(process.argv[2]).verbs.join;",
-    "var items = [{ key: 'https://spirit.example', label: JSON.stringify({ relayKey: 'KEY-A' }) }, { key: 'https://noderoutes.example', label: JSON.stringify({ relayKey: 'KEY-B' }) }];",
+    // contact.search's items since goal/G40.11: a relay keyed by its ID, its url on the label.
+    "var items = [{ key: 'KEY-A', label: JSON.stringify({ relay: true, url: 'https://spirit.example' }) }, { key: 'KEY-B', label: JSON.stringify({ relay: true, url: 'https://noderoutes.example' }) }];",
     "var url = typeof S.linkRelay === 'function' ? S.linkRelay('KEY-B', items) : 'missing';",
     "var none = typeof S.linkRelay === 'function' ? S.linkRelay('KEY-C', items) : 'missing';",
     "process.stdout.write(JSON.stringify({ url: url, none: none, urlRule: String(spec.url), gone: typeof S.linkJoin }));"].join('\n'), path.join(RUN, 'shell', 'js', 'joinSteps.js'), path.join(RUN, 'spirit', 'relay', 'api.js')], { encoding: 'utf8' });
@@ -346,57 +347,57 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/clip\(/.test(infoNow) && !/too many/.test(infoNow)) test.check('Info\'s name and description stop at their limit, and count only what is left');
   else test.fail('Info still counts past the limit');
 
-  // THE RELAYS ON THE STREAM (box v21): one permanent job, relay-rows, the relays this node lists with seat, email and
-  // face, published only when they change; the forms, Info and the relay details redraw from it.
-  test.subHeading('1l. the relays on the stream: relay-rows, published when they change, heard by every screen');
+  // THE ONE TABLE ON THE STREAM (goal/G40.11 replaced box v21's relay-rows; Andy: "yes." to "one job for the table, one
+  // changed row per update"): the store hands each row it wrote differently to its listeners, and the node publishes
+  // that row on the permanent job shadow; the forms, Info and the relay details hear it.
+  test.subHeading('1l. the one table on the stream: each changed row, heard by every screen');
   const rowsHome = setupRelayFakes('spiritInUseRows').andy;
   fs.rmSync(path.join(rowsHome, 'relay-state'), { recursive: true, force: true });
   const rowsRun = spawnSync(process.execPath, ['-e', [
-    "var J = null; try { J = require('./spirit/relayRowsJob'); } catch (e) { process.stdout.write('missing'); process.exit(0); }",
     "var k = require('./spirit/relayKeys'); var b = require('./spirit/ownerBadge'); var url = 'https://rows.example';",
     "var key = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls='; k.accept(process.cwd(), url, key); b.addRelay(process.cwd(), url, 'rows', key);",
-    "var sent = []; var jobs = { createJob: function (kind, type, data) { return { id: 'j1', type: type, data: data }; }, updateJob: function (id, p) { sent.push(p.data); } };",
-    "var r = J.create(process.cwd(), jobs);",
-    "var same = r.refresh('nothing');",
-    "k.seat(process.cwd(), url, 'me'); k.keepEmail(process.cwd(), url, 'me@example.org', true);",
-    "var changed = r.refresh('seated');",
-    "var row = (sent[0] && sent[0].rows || []).filter(function (x) { return x.url === url; })[0] || null;",
-    "process.stdout.write(JSON.stringify({ type: r.job.type, same: same, changed: changed, row: row }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
+    "var S = require('./spirit/nodeStore').open(process.cwd()).seen; var sent = [];",
+    "var stop = typeof S.onChange === 'function' ? S.onChange(function (row) { sent.push(row); }) : null;",
+    "if (!stop) { process.stdout.write('missing'); process.exit(0); }",
+    "var again = k.seat(process.cwd(), url); var none = sent.length; k.seat(process.cwd(), url); var twice = sent.length;",
+    "process.stdout.write(JSON.stringify({ none: none, twice: twice, row: sent[0] || null, key: key }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
   let rows = null;
   try { rows = JSON.parse(rowsRun.stdout); } catch (e) { rows = { said: rowsRun.stdout + rowsRun.stderr }; }
-  if (rows && rows.type === 'relay-rows' && rows.same === false && rows.changed === true && rows.row && rows.row.claimed === true && rows.row.emailVerified === true && rows.row.email === 'me@example.org')
-    test.check('relay-rows, driven: published only when a row changed; a seat and a verified email show on the row');
-  else test.fail('relay-rows, driven: ' + short(rows));
+  if (rows && rows.none === 1 && rows.twice === 1 && rows.row && rows.row.publicKey === rows.key && rows.row.seated === true && rows.row.relay === true)
+    test.check('the one table on the stream, driven: a seat taken is one changed row, the relay\'s, seated; the same write again changes nothing and sends nothing');
+  else test.fail('the one table on the stream, driven: ' + short(rows));
   const serverCode = code('spirit/server.js');
-  if (/relayRowsJob/.test(serverCode) && /relayRowsJob\.refresh\(/.test(serverCode) && /kind === 'status'[\s\S]{0,200}relayRowsJob\.refresh|relayRowsJob\.refresh[\s\S]{0,200}kind === 'status'/.test(serverCode)) test.check('the node refreshes relay-rows after a relay verb and on a relay\'s report');
-  else test.fail('the node does not refresh relay-rows after relay verbs and reports');
+  if (/createJob\('permanent', 'shadow'/.test(serverCode) && /onChange\(/.test(serverCode)) test.check('the node publishes every changed row on the permanent job shadow');
+  else test.fail('the node does not publish the table\'s changed rows');
   // On a relay face too (Andy: "onBoards face https://master.noderoutes.net/ did not update its relay dropdowns in the
-  // info page"): the face stream carries relay-rows, as it changes and once as a face opens.
+  // info page"): the face stream carries the shadow job as it changes (goal/G40.11). It holds the one row changed last,
+  // so a face opened reads its screens as it draws, and no snapshot of it is sent.
   const faceHomeCode = code('spirit/faceHome.js');
   const priorityFn = (faceHomeCode.match(/function priorityOf\(job\) \{[\s\S]*?\n  \}/) || [''])[0];
   const openFn = (faceHomeCode.match(/function open\(url, k\) \{[\s\S]*?\n  \}/) || [''])[0];
-  if (/relay-rows/.test(priorityFn) && /relay-rows/.test(openFn)) test.check('a relay face hears relay-rows: on the face stream as it changes, and once when the face opens');
-  else test.fail('a relay face never hears relay-rows' + (/relay-rows/.test(priorityFn) ? ' when it opens' : ''));
+  if (/'shadow'/.test(priorityFn) && !/'shadow'/.test(openFn)) test.check('a relay face hears the shadow job on the face stream as it changes');
+  else test.fail('a relay face never hears the shadow job' + (/'shadow'/.test(openFn) ? ', or replays its last row when it opens' : ''));
   // LEAVING A RELAY (Andy: "add the leave verb to node. and publish the \"leaving\"", go): relay.leave {key} posts the
-  // removal of this node's own key to that relay and, on its yes, clears the seat, email and face on that relay's row;
-  // the row stays for a later join. A relay verb, so relay-rows publishes it. Never for a relay this node owns.
+  // removal of this node's own key to that relay and, on its yes, clears seated and the face name on that relay's row
+  // (goal/G40.11: no email is kept; the face name is the node's own fact on the row, Andy: "keep it"); the row stays for
+  // a later join, and the shadow stream publishes it. Never for a relay this node owns.
   const relayApiNow = code('spirit/relay/api.js');
   if (/leave\s*:\s*\{\s*key\s*:/.test(relayApiNow)) test.check('the relay family declares leave {key}');
   else test.fail('the relay family has no leave verb');
   const leaveRun = spawnSync(process.execPath, ['-e', [
     "var k = require('./spirit/relayKeys'); var b = require('./spirit/ownerBadge'); var url = 'https://leave.example';",
     "var key = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls='; k.accept(process.cwd(), url, key); b.addRelay(process.cwd(), url, 'leave', key);",
-    "k.seat(process.cwd(), url, 'me'); k.keepEmail(process.cwd(), url, 'me@example.org', true); k.keepFace(process.cwd(), url, 'me', 'me@example.org', 'reply');",
-    "var did = typeof k.leaveSeat === 'function' ? k.leaveSeat(process.cwd(), url) : 'missing';",
-    "process.stdout.write(JSON.stringify({ did: did, seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1, mail: k.emailOf(process.cwd(), url), face: k.faceOf(process.cwd(), url), listed: b.loadRelays(process.cwd()).some(function (r) { return r.url === url; }) }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
+    "k.seat(process.cwd(), url); k.keepFace(process.cwd(), url, 'me'); var face = k.faceOf(process.cwd(), url);",
+    "var did = k.unseat(process.cwd(), url);",
+    "process.stdout.write(JSON.stringify({ did: did, face: face, seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1, kept: ['keepEmail', 'emailOf', 'leaveSeat'].filter(function (n) { return typeof k[n] === 'function'; }), listed: b.loadRelays(process.cwd()).some(function (r) { return r.url === url; }) }));"].join('\n')], { cwd: rowsHome, encoding: 'utf8' });
   let left = null;
   try { left = JSON.parse(leaveRun.stdout); } catch (e) { left = { said: leaveRun.stdout + leaveRun.stderr }; }
-  if (left && left.did === true && left.seated === false && left.mail && left.mail.email === '' && !left.mail.verified && left.face === null && left.listed === true)
-    test.check('leaving, driven: the seat, the email and the face on that relay\'s row are cleared; the relay stays listed');
+  if (left && left.did === true && left.face && left.face.name === 'me' && left.seated === false && Array.isArray(left.kept) && !left.kept.length && left.listed === true)
+    test.check('leaving, driven: the face name kept on the relay\'s row, seated cleared, no email kept; the relay stays listed');
   else test.fail('leaving, driven: ' + short(left));
   const hubCode = code('spirit/hub.js');
   const leaveFn = (hubCode.match(/function relayLeave\(body, deps\) \{[\s\S]*?\n  \}/) || [''])[0];
-  if (/removePeer/.test(leaveFn) && /leaveSeat\(/.test(leaveFn) && /owned|reports\[/.test(leaveFn) && /'leave'\s*:/.test(code('spirit/server.js')))
+  if (/removePeer/.test(leaveFn) && /unseat\(/.test(leaveFn) && /keepFace\(rootDir, row\.url, ''\)/.test(leaveFn) && /owned|reports\[/.test(leaveFn) && /'leave'\s*:/.test(code('spirit/server.js')))
     test.check('relay.leave on the node: the removal of its own key posted to the relay, the seat cleared on its yes, refused for a relay it owns');
   else test.fail('relay.leave is not on the node');
   const ndNow = code('shell/js/natterDetails/natterDetails.js');
@@ -437,9 +438,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (refuse && refuse.join === '' && refuse.faceHere && refuse.faceThere === '' && refuse.postHere && refuse.postThere === '' && /faceRefuses\(r, \{/.test(code('spirit/faceHome.js')))
     test.check('a face, driven: relay.join goes through, and a face name on another relay; only a face-name change on the relay it is called through is refused');
   else test.fail('a face, driven: ' + short(refuse));
-  const hearers = ['shell/js/contacts/listElement.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'relay-rows'/.test(code(f)); });
-  if (!hearers.length) test.check('the two forms, Info and the relay details hear relay-rows and redraw');
-  else test.fail('not hearing relay-rows: ' + short(hearers));
+  const hearers = ['shell/js/contacts/listElement.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/info/info.js', 'shell/js/natterDetails/natterDetails.js'].filter(function (f) { return !/'shadow'/.test(code(f)); });
+  if (!hearers.length) test.check('Contacts, the two forms, Info and the relay details hear the shadow job and redraw');
+  else test.fail('not hearing the shadow job: ' + short(hearers));
 
   // ONE TABLE FOR ALL KNOWN IDS (goal/G40.11, box v24). Driven on a scratch node.db made in the old shape (the relays
   // and peers tables, seen with choice and kind) and a contacts.json, then opened by the new code: the move runs once,
@@ -538,23 +539,24 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else test.fail('Contacts shows nameless rows: ' + short(named));
 
   // THE OWNER'S SEAT, ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner has a
-  // seat"). The relay seats him at boot (goal/G30.7); his node notes that seat, under what the relay calls him, when the
-  // relay reports to its owner, so Info shows the name and a rename's answer is written.
-  test.subHeading('1h. the owner\'s seat on his node: an owned relay\'s report notes the seat under the relay\'s name for him');
+  // seat"). The relay seats him at boot (goal/G30.7); his node notes that seat when the relay reports to its owner, and
+  // the relay as his (goal/G40.11: mine, "owned, puppets and owned relays"). What the relay calls him is his node's own
+  // name, which the node pushes; nothing of the seat is stored (box v24).
+  test.subHeading('1h. the owner\'s seat on his node: an owned relay\'s report notes the seat, and the relay as his');
   const ownerHome = setupRelayFakes('spiritInUseOwner').andy;
   // A fresh home each run: the scratch copy keeps its relay-state between runs.
   fs.rmSync(path.join(ownerHome, 'relay-state'), { recursive: true, force: true });
   const seatRun = spawnSync(process.execPath, ['-e', [
     "const k = require('./spirit/relayKeys'); const b = require('./spirit/ownerBadge'); const url = 'https://owned.example';",
     "b.addRelay(process.cwd(), url, 'owned', ''); k.accept(process.cwd(), url, 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=');",
-    "const before = k.seatLabel(process.cwd(), url);",
+    "const before = k.seatLabel(process.cwd(), url); const name = require('./spirit/relayAuth').loadIdentity(process.cwd()).name;",
     "const noted = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
     "const again = typeof k.ownerSeat === 'function' ? k.ownerSeat(process.cwd(), url, 'Andy Flinn Music') : 'missing';",
-    "process.stdout.write(JSON.stringify({ before: before, noted: noted, again: again, label: k.seatLabel(process.cwd(), url), seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1 }));"].join('\n')], { cwd: ownerHome, encoding: 'utf8' });
+    "process.stdout.write(JSON.stringify({ before: before, noted: noted, again: again, label: k.seatLabel(process.cwd(), url), name: name, mine: (k.byUrl(process.cwd(), url) || {}).mine, seated: k.seatedUrls(process.cwd()).indexOf(url) !== -1 }));"].join('\n')], { cwd: ownerHome, encoding: 'utf8' });
   let seat = null;
   try { seat = JSON.parse(seatRun.stdout); } catch (e) { seat = { said: seatRun.stdout + seatRun.stderr }; }
-  if (seat && seat.before === '' && seat.noted === true && seat.again === false && seat.label === 'Andy Flinn Music' && seat.seated)
-    test.check('an owned relay\'s seat, driven: noted once under the relay\'s name for its owner, seated, and not written again while unchanged');
+  if (seat && seat.before === '' && seat.noted === true && seat.again === false && seat.label === seat.name && !!seat.name && seat.mine === true && seat.seated)
+    test.check('an owned relay\'s seat, driven: noted once, seated and mine, called by the node\'s own name, and not written again while unchanged');
   else test.fail('the owner\'s seat, driven: ' + short(seat));
   const presenceCode = code('spirit/presenceNode.js');
   if (/relay-status[\s\S]{0,600}ownerSeat\(/.test(presenceCode)) test.check('the node notes the owner\'s seat when a relay it owns reports to it');

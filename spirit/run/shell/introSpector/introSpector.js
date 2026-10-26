@@ -146,7 +146,7 @@ spirit.shell.activateApp({
       placeholder: 'self (this node)',
       all: 'self (this node)',
       pick: function (row, key) {
-        var relay = !!row && (row.kind === 'relay' || row.relay === true);
+        var relay = !!row && row.relay === true;
         isParty = !row ? { kind: 'self', key: '', name: 'self' }
           : { kind: relay ? 'relay' : 'peer', key: relay ? String(row.url || key) : key, name: String(row.name || key) };
         isShow('');

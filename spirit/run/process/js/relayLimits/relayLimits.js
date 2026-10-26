@@ -51,7 +51,7 @@ const WAIT_MS = 20000;
 // THE NODE THROUGH THE ONE SPIRIT OBJECT (goal/G32.3, goal/G40.6): one verb by its name on this checkout's own node, its
 // answer or its refusal's body; a node that does not answer says so.
 function door(verb, args) {
-  // A node family's verb (relay.search, peer.post): the family bound on the one spirit object (goal/G40.6).
+  // A node family's verb (contact.search, peer.post): the family bound on the one spirit object (goal/G40.6).
   const dot = String(verb).indexOf('.');
   return spirit.outcome(spirit.require('spirit/' + String(verb).slice(0, dot) + '/api.js').then(function (fam) { return fam[String(verb).slice(dot + 1)](args); })).then(function (r) {
     if (!r || !r.status) throw new Error('the node of this checkout did not answer — start it');
@@ -61,21 +61,21 @@ function door(verb, args) {
 
 // ── THE RELAYS THIS NODE OWNS ───────────────────────────────────────
 //
-// `relay.search` answers every relay this node holds a row on, with
-// `owned` saying which of them this key may configure. A relay this node
-// is merely a member of is listed and refused here rather than at the far
-// end, so the reason arrives now instead of as a silent non-answer.
+// The relays this node keeps, listed by contact.search (goal/G40.11: relay.search went, a relay is a row of the one
+// table), each got by relay.get, whose row says `owned`: which of them this key may configure. A relay this node is
+// merely a member of is listed and refused here rather than at the far end, so the reason arrives now instead of as a
+// silent non-answer.
 function relays(doorFn) {
-  // relay.status is gone from the node: a list is a search (puppets/G2). relay.search answers one row per relay this
-  // node holds, its label the row as the node paints it: url, owned, relayLabel and relayKey among it (hub.js relayRow).
-  return (doorFn || door)('relay.search', { q: '' }).then(function (out) {
-    if (out && out.ok === false) throw new Error('the node refused relay.search: ' + (out.error || out.code || JSON.stringify(out).slice(0, 200)));
+  const ask = doorFn || door;
+  return ask('contact.search', { q: '', relay: 'yes', keep: 'yes' }).then(function (out) {
+    if (out && out.ok === false) throw new Error('the node refused contact.search: ' + (out.error || out.code || JSON.stringify(out).slice(0, 200)));
     if (out && out.more) console.error('relayLimits: the node holds more relays than one answer carries; only the first are considered');
-    return ((out && out.items) || []).map(function (item) {
-      let row = {};
-      try { row = JSON.parse(item.label) || {}; } catch (e) { row = {}; }
-      return { url: String(row.url || item.key || ''), owned: !!row.owned, label: row.relayLabel || row.name || '', key: row.relayKey || '' };
-    });
+    return Promise.all(((out && out.items) || []).map(function (item) {
+      return ask('relay.get', { key: item.key }).then(function (g) {
+        const r = (g && g.relay) || {};
+        return { url: String(r.url || ''), owned: !!r.owned, label: (r.roll && r.roll.relayLabel) || r.label || '', key: item.key };
+      }, function () { return null; });
+    })).then(function (rows) { return rows.filter(function (r) { return r && r.url; }); });
   });
 }
 

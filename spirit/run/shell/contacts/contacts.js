@@ -12,7 +12,7 @@
 //
 //   peer.list       the address book, captioned by this node
 //   peer.find       every key the mailbox carries under a word
-//   peer.acquire    confirm one of those keys (acquiredVia handle)
+//   peer.acquire    confirm one of those keys (kept)
 //   contact.accept .block .unblock .label     what this node keeps
 //   contact.senders .setSenders               and who it listens to
 //

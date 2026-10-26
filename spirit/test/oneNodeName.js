@@ -20,8 +20,8 @@
 //   2. A refused name changes nothing: identity and seat labels stay as they were.
 //   3. The window title reads the node's name, not shell/natter/session.json: shell.js's title code names the node
 //      card and no longer loads the Natter session file.
-//   4. A relay's yes to a rename writes the same name the node holds, never a third one: after keepRename the seat
-//      label equals the node name (one label, two readers).
+//   4. A relay's yes to a rename writes nothing of its own (goal/G40.11: nothing of a seat is stored, box v24): what
+//      every relay calls the node is the node's name, so there is no third label to drift (one label, two readers).
 
 const os = require('os');
 const fs = require('fs');
@@ -47,9 +47,9 @@ function nodeWithSeats(name) {
   const A = 'https://a.example', B = 'https://b.example';
   const rA = auth.generateIdentity('relay-a'), rB = auth.generateIdentity('relay-b');
   relayKeys.list(home, A, 'a', rA.publicKey);
-  relayKeys.seat(home, A, name);
+  relayKeys.seat(home, A);
   relayKeys.list(home, B, 'b', rB.publicKey);
-  relayKeys.seat(home, B, name);
+  relayKeys.seat(home, B);
   return { home: home, A: A, B: B, rA: rA, rB: rB };
 }
 
@@ -95,16 +95,15 @@ test.subHeading('3. the window title reads the node\'s name, not the Natter sess
 }
 
 // ── 4 ───────────────────────────────────────────────────────────────
-test.subHeading('4. a relay\'s yes writes the name the node holds, never a third one');
+test.subHeading('4. a relay\'s yes writes nothing of its own: there is no third name');
 {
   const n = nodeWithSeats('mary');
   nodeCard.setName(n.home, 'marianne');
-  // The relay said yes to the rename the node asked for: the seat takes the label it answered with.
-  relayKeys.renameSeat(n.home, n.rA.publicKey, 'marianne');
   const name = nodeCard.read(n.home).name;
   const seats = { A: relayKeys.seatLabel(n.home, n.A), B: relayKeys.seatLabel(n.home, n.B) };
-  if (name === 'marianne' && seats.A === name && seats.B === name) test.check('name and both seats agree on marianne');
-  else test.fail(OWED + 'after the relay\'s yes: name ' + show(name) + ', seats ' + show(seats));
+  if (name === 'marianne' && seats.A === name && seats.B === name && typeof relayKeys.renameSeat === 'undefined') {
+    test.check('name and both seats agree on marianne, and no relay\'s answer has anywhere to write another (renameSeat is gone)');
+  } else test.fail(OWED + 'after the rename: name ' + show(name) + ', seats ' + show(seats) + ', renameSeat ' + typeof relayKeys.renameSeat);
 }
 
 test.reportSuccessFailureCount();

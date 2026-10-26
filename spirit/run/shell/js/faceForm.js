@@ -4,14 +4,15 @@
 // name with the verified email it holds for this node. THE SAME FORM EVERYWHERE (goal/G40.10, box v19; Andy: "same with
 // the face form"): Join, Info and the relay details draw it by mount; the relay details fix the dropdown to their relay.
 // ITS OWN RELAYS (Andy: "doesn't show up if the user has zero verified emails anywhere; only shows relay in the dropdown,
-// where the user has a confirmed email address. THAT's WHY THE FORMS HAVE SEPARATE RELAY DROPDOWNS."): the dropdown
-// offers only relays with a verified email, and with none the form draws nothing.
+// where the user has a confirmed email address. THAT's WHY THE FORMS HAVE SEPARATE RELAY DROPDOWNS."): since goal/G40.11
+// the node keeps no email, and a seat taken by email is a verified one, so the dropdown offers the relays this node is
+// seated on, and with none the form draws nothing.
 //
 //   row(relays, opts)  -> the form's markup, or '' with no relay to offer: relays are relay rows (url, label, face,
-//                         email, emailVerified); opts.fixed, a url, fixes the dropdown to that relay; opts.picked.
+//                         claimed or owned); opts.fixed, a url, fixes the dropdown to that relay; opts.picked.
 //   mount(box, opts)   -> draws the row and asks: opts.relays, opts.fixed, opts.reload() (Promise, after a face is
-//                         confirmed), opts.escape. It hears relay-rows itself and redraws when the relays it offers
-//                         changed (goal/G40.10, box v21).
+//                         confirmed), opts.escape. It hears the shadow stream itself and, when a relay's row changed,
+//                         reads the relays again and redraws if the ones it offers changed (goal/G40.11).
 
 (function () {
   function esc(s) {
@@ -19,15 +20,14 @@
   }
 
   function offered(relays, o) {
-    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && r.emailVerified; });
+    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned); });
     return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
   }
 
-  // What this node holds on a relay: its face and the verified email it is paired with (relay.get's row).
+  // What this node holds on a relay: its face name (relay.get's row; the node keeps no email, goal/G40.11).
   function holds(r) {
     var face = (r && r.face) || {};
-    return (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
-      (r && r.email ? ' Verified email: ' + r.email + '.' : '');
+    return face.name ? 'This node holds ' + face.name + ' on this relay.' : 'No face name on this relay yet.';
   }
 
   function row(relays, opts) {
@@ -70,25 +70,28 @@
     draw(was ? was.value : '', typed && typed.value ? typed.value : null);
     if (box._spFaceBound) return;
     box._spFaceBound = true;
-    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, heard here; the form redraws only when the relays it
-    // offers changed (a verified email or a face anywhere), keeps what is picked and typed, and lets go once its box has
-    // left the page.
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row changing (a
+    // seat taken or left anywhere) reads the relays again, and the form redraws only when the relays it offers changed,
+    // keeping what is picked and typed. It lets go once its box has left the page.
     var heard = JSON.stringify(offered(box._spFace.relays, { fixed: box._spFace.fixed }));
     var stop = null;
     function take(job) {
-      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!job || job.type !== 'shadow' || !job.data || !job.data.row || job.data.row.relay !== true) return;
       if (!box.isConnected) { if (stop) stop(); return; }
-      var rows = Array.isArray(job.data.rows) ? job.data.rows : [];
-      var asJson = JSON.stringify(offered(rows, { fixed: box._spFace.fixed }));
-      if (asJson === heard) return;
-      heard = asJson;
-      box._spFace.relays = rows;
-      var pick = box.querySelector('.sp-face-relay');
-      var name = box.querySelector('.sp-face-name');
-      draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
+      if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
+      window.spirit.relay.status('').then(function (r) {
+        var rows = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
+        var asJson = JSON.stringify(offered(rows, { fixed: box._spFace.fixed }));
+        if (asJson === heard) return;
+        heard = asJson;
+        box._spFace.relays = rows;
+        var pick = box.querySelector('.sp-face-relay');
+        var name = box.querySelector('.sp-face-name');
+        draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
+      }, function () { /* the next change reads them again */ });
     }
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      stop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
+      stop = window.spirit.events.subscribe({ onUpdate: take });
     }
 
     var busy = false;

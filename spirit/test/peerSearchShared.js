@@ -62,8 +62,11 @@ const relay = code('spirit/relay.js');
 const hub = code('spirit/hub.js');
 if (/require\('\.\/peerRank'\)/.test(relay) && /peerRank\.rank\(/.test(relay)) test.check('relay.js ranks its connected members with peerRank');
 else test.fail(OWED + 'relay.js does not rank with peerRank');
-if (/require\('\.\/peerRank'\)/.test(hub) && /peerRank\.rank\(/.test(hub)) test.check('hub.js merges the relays\' answers and memory with peerRank');
-else test.fail(OWED + 'hub.js does not rank with peerRank');
+// SINCE goal/G40.11 the node merges nothing: the network's finds land in the one table, held, and contact.search ranks
+// the table's listed rows with the probability modules (searchPeople). fromMemory, its peerRank caller, went.
+const searchPeopleFn = (hub.match(/function searchPeople\([\s\S]*?\n\}/) || [''])[0];
+if (!/peerRank/.test(hub) && /probabilityStringObjectMatch\(/.test(searchPeopleFn)) test.check('hub.js ranks the one table with the probability modules, and needs no peerRank of its own');
+else test.fail(OWED + 'hub.js still requires peerRank, or searchPeople ranks without the probability modules');
 if (!/require\('\.\/peerSearch'\)/.test(relay + hub) && !fs.existsSync(path.join(RUN, 'spirit', 'peerSearch.js'))) test.check('spirit/peerSearch.js is gone, and nothing requires it');
 else test.fail(OWED + 'peerSearch.js is still there or still required');
 if (!fs.existsSync(path.join(__dirname, 'peerSearch.js'))) test.check('its suite, test/peerSearch.js, is retired with it');
@@ -75,10 +78,10 @@ else test.fail(OWED + 'peerRank does not stand on the probability modules');
 test.subHeading('3. the network search answers the shared shape (contact.search, goal/G30.19)');
 const server = code('spirit/server.js');
 // contact.search in the flat door's tables: q and the state filters in, the shared shape out.
-const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*'',\s*owned[^\n]*/.exec(server) || [''])[0];
+const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*'',\s*keep[^\n]*/.exec(server) || [''])[0];
 if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /more:\s*false/.test(decl) && /hub\.contactSearch\(/.test(decl)) test.check('server.js declares contact.search answering {items: [{key, label}], more, ...}');
 else test.fail(OWED + 'server.js declares ' + short(decl));
-if (/item:\s*\{\s*key:\s*row\.publicKey,\s*label:\s*label\s*\}/.test(hub)) test.check('each network row is one peer-search job update in the same shape, {key, label}');
+if (/item:\s*\{\s*key:\s*row\.publicKey,\s*label:\s*contactLabel\(/.test(hub)) test.check('each network row is one peer-search job update in the same shape, {key, label}');
 else test.fail(OWED + 'the network search\'s rows are not {key, label}');
 
 test.subHeading('4. Contacts\' one list is the standard list-tool');

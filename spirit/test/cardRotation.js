@@ -124,7 +124,7 @@ function everyFileUnder(dir) {
     }
 
     // THE PAIR: the old card is dead now, not merely unused.
-    const back = contacts.setCard(a.home, b.id.publicKey, oldCard, 'reply');
+    const back = contacts.setCard(a.home, b.id.publicKey, oldCard);
     if (back && !back.ok && back.why === 'not newer' && a.sealKeyHeldFor(b.id.publicKey) === newKey) {
       test.check('and the OLD card handed back later is refused as not newer — the new one being taken '
         + 'proves nothing on its own about the old one dying');

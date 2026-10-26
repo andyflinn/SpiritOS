@@ -793,7 +793,7 @@
     var code = joinCode;
     joinCode = '';
     var S = window.spirit.elements && window.spirit.elements.joinSteps;
-    Promise.resolve(spirit.relay.search({ q: '*' })).then(function (s) {
+    Promise.resolve(spirit.contact.search({ q: '*', relay: 'yes' })).then(function (s) {
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');
       return ask('relay.join', { url: url, email: '', code: code });

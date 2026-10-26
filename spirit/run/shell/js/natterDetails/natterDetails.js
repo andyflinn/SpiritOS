@@ -225,7 +225,7 @@ function ndLoad() {
   ndAsked = false;
   ndUnlisted = false;
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // asks relay.search and relay.get and hands back the same shape.
+  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
   return spirit.relay.status(ndLabel || '').then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
@@ -387,12 +387,12 @@ function ndRemoveHtml() {
 
 // LEAVE THIS RELAY (goal/G40.10; Andy: "add the leave verb to node. and publish the \"leaving\""): only where this node
 // holds a seat and does not own the relay. Two presses, then relay.leave; the relay stays on the list for a later join,
-// and relay-rows tells every screen, this one among them.
+// and the shadow stream tells every screen, this one among them (goal/G40.11).
 function ndLeaveHtml() {
   if (!ndBadge || !ndBadge.claimed || ndBadge.owned) return '';
   return ndPanel('leave', '🚪', 'Leave this relay',
     '<div class="start-job-form"><button type="button" class="cancel-btn nd-leave">Leave this relay</button></div>' +
-    '<div class="job-manifest-note nd-leave-out">Leave gives up your seat, your email and your face name on this relay. It stays on your list, so you can join again.</div>');
+    '<div class="job-manifest-note nd-leave-out">Leave gives up your seat on this relay, and the email and face name it holds for you. It stays on your list, so you can join again.</div>');
 }
 function ndLeave(button) {
   if (button.getAttribute('data-armed') !== 'yes') {
@@ -687,22 +687,21 @@ function ndClaimHtml() {
 
 // YOUR EMAIL ON A RELAY WHERE YOU HOLD A SEAT (goal/G30.1, box v28): the join form for a seated member and the owner
 // too. A repeat join from a seated key is an email update on the relay: the same mail, link and code, and the address
-// is written only when the code is confirmed. "Add" while this node holds none for the relay, "Change" once it does,
-// and the input shows the address held, so he sees whether a change is needed. Only where the relay sends mail, as the
-// claim panel's join form.
+// is written only when the code is confirmed. "Change", with the field empty: the node keeps no email (goal/G40.11,
+// box v24). Only where the relay sends mail, as the claim panel's join form.
 function ndEmailHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
   if (!(ndBadge.services && ndBadge.services.sendMail === true)) return '';
   if (!ndJoinForm()) return '';
   // The words are the control's own (joinForm.words, box v41), the same the Join app's step 1 shows.
-  var w = ndJoinForm().words({ seated: true, email: ndBadge.email, emailVerified: !!ndBadge.emailVerified });
+  var w = ndJoinForm().words({ seated: true });
   return ndPanel('email', '✉️', w.title, '<div class="nd-join-form"></div>', 'natter-email');
 }
 
 // THE FACE FORM ON ITS RELAY (goal/G40.10, box v19): the same face form as Join and Info, its dropdown fixed to this relay;
-// it offers a relay only with a verified email, so without one it draws nothing.
+// it offers a relay where this node is seated (goal/G40.11: a seat taken by email is a verified one).
 function ndFaceHtml() {
-  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed) || !ndBadge.emailVerified) return '';
+  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
@@ -1678,22 +1677,23 @@ var ndPage = ({
     // status has effectively always landed by then. It is not a formal
     // guarantee, and it is the thing to suspect if an invite ever shows
     // up exactly one beat late.
-    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): this relay's row in relay-rows, its seat, email or face, changed
-    // anywhere: the page reads it again. The two forms in it hear relay-rows themselves.
-    var ndRowHeard = null;
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row whose seat,
+    // keep, ownership or block changed anywhere reads this page again (its presence is the dot's). The two forms in it
+    // hear the stream themselves.
+    var ndRowHeard = Object.create(null);
     var ndRowsStop = null;
     var ndRowsTake = function (job) {
-      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      var row = job && job.type === 'shadow' && job.data && job.data.row;
+      if (!row || row.relay !== true) return;
       var body = ndBody();
       if (!body || !body.isConnected) { if (ndRowsStop) ndRowsStop(); return; }
-      var mine = JSON.stringify((job.data.rows || []).filter(function (r) { return r && r.url === ndUrl; })[0] || null);
-      if (ndRowHeard === null) { ndRowHeard = mine; return; }
-      if (mine === ndRowHeard) return;
-      ndRowHeard = mine;
+      var said = [row.keep, row.seated, row.mine, row.blocked, !!row.gone].join();
+      if (ndRowHeard[row.publicKey] === said) return;
+      ndRowHeard[row.publicKey] = said;
       if (ndUrl) ndLoad();
     };
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      ndRowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(ndRowsTake); }, onUpdate: ndRowsTake });
+      ndRowsStop = window.spirit.events.subscribe({ onUpdate: ndRowsTake });
     }
 
     if (api.onRelayEvent) {

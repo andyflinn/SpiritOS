@@ -27,7 +27,8 @@
 // cannot write into the book because there is nowhere in the book for a
 // route to go; `learnRoute` is deleted. That is the same shift 0012 gave
 // the one-hop rule — a rule that cannot be broken needs nobody to police
-// it — and it is what this file asserts now.
+// it — and it is what this file asserts now. Since goal/G40.11 the book is the one table's kept rows: a route is a
+// row of seen_routes, never a field of a contact, and a stranger a relay names has a row that is not kept.
 
 const os = require('os');
 const fs = require('fs');
@@ -55,7 +56,7 @@ test.subHeading('The book has nowhere to put a route, which is the safety');
 
 {
   const root = freshRoot();
-  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' }, 'handle');
+  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' });
 
   // `learnRoute` IS GONE. Asserted rather than assumed, because the whole
   // claim of this file is that the hazard was REMOVED rather than
@@ -80,7 +81,7 @@ test.subHeading('A route goes to the shadow — for a contact and a stranger ali
 {
   const root = freshRoot();
   const shadow = hub.shadow(root);
-  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' }, 'handle');
+  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' });
 
   shadow.note(KNOWN, { at: AT, via: MINE, rank: seenPeers.PROVED });
   const kept = shadow.get(KNOWN);
@@ -102,8 +103,9 @@ test.subHeading('A route goes to the shadow — for a contact and a stranger ali
   }
 
   // AND THE BOOK IS UNTOUCHED BY EITHER. The old rule's purpose survives
-  // its mechanism: a relay still cannot put anybody in the address book.
-  if (contactBook.byPublicKey(root, STRANGER) === null) {
+  // its mechanism: a relay still cannot put anybody in the address book — its row is not kept.
+  const strangerRow = contactBook.byPublicKey(root, STRANGER);
+  if (strangerRow && !strangerRow.keep && !contactBook.listens(strangerRow)) {
     test.check('while the address book gains nobody — a relay still cannot write into it');
   } else {
     test.fail('a stranger reached the book');
@@ -156,48 +158,38 @@ test.subHeading('Deleting a contact does not reach into the shadow');
   const root = freshRoot();
   const shadow = hub.shadow(root);
 
-  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' }, 'handle');
+  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' });
   shadow.note(KNOWN, { at: AT, via: MINE, rank: seenPeers.PROVED });
   contactBook.forget(root, KNOWN);
 
-  if (contactBook.byPublicKey(root, KNOWN) === null && shadow.get(KNOWN).at === AT) {
+  const gone = contactBook.byPublicKey(root, KNOWN);
+  if (gone && !gone.keep && shadow.get(KNOWN).at === AT) {
     test.check('the book was emptied and the memory was not');
   } else {
     test.fail('the shadow went with the contact: ' + JSON.stringify(shadow.get(KNOWN)));
   }
 }
 
-test.subHeading('A node that already had routes in its book keeps them (R1 migration)');
+test.subHeading('An old contacts.json moves into the table, and no route goes on a row (goal/G40.11)');
 
 {
-  // A node that ran before today has `routes` sitting in contacts.json.
-  // Dropping them silently would throw away the only routes such a node
-  // holds for its foreign contacts — which is exactly what 0018 said to
-  // wait for the store to avoid. server.js moves them once at boot; this
-  // asserts the reader that makes that possible.
+  // everyRouteHeld and the boot import STOOD HERE (R1): a book's `routes` field read out at hearsay at every boot since
+  // 2026-09-21, so any node that ran since holds them in the shadow. Since goal/G40.11 contacts.json itself moves into
+  // the table on the first start and is deleted; its `routes` field moves nowhere, and no contact row has one.
   const root = freshRoot();
-  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' }, 'handle');
-
-  // The old shape, written by hand: a row from before the field went.
+  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   const file = path.join(root, 'relay-state', 'contacts.json');
-  const rows = JSON.parse(fs.readFileSync(file, 'utf8'));
-  rows[0].routes = [AT, AT2];
-  fs.writeFileSync(file, JSON.stringify(rows, null, 2));
-
-  const held = contactBook.everyRouteHeld(root);
-  if (held.length === 2 && held[0].at === AT && held[0].publicKey === KNOWN) {
-    test.check('every route an old book still holds can be read back out of it');
+  fs.writeFileSync(file, JSON.stringify([{ publicKey: KNOWN, publicLabel: 'kim', myLabel: 'kim', acquiredVia: 'handle', routes: [AT, AT2] }], null, 2));
+  const row = contactBook.byPublicKey(root, KNOWN);
+  if (row && row.keep === true && row.myLabel === 'kim' && !fs.existsSync(file)) {
+    test.check('a row of an old book is a kept row of the table, and the file is gone');
   } else {
-    test.fail('found: ' + JSON.stringify(held));
+    test.fail('after the move: ' + JSON.stringify(row) + ', file ' + fs.existsSync(file));
   }
-
-  // AND THEY FALL AWAY ON THE NEXT WRITE, because `upsert` stopped
-  // carrying the field. No sweep, no flag, no migration to remember.
-  contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim, renamed' }, 'handle');
-  if (!('routes' in contactBook.byPublicKey(root, KNOWN))) {
-    test.check('and the field falls away on the next write, with nothing to remember');
+  if (row && !('routes' in row) && typeof contactBook.everyRouteHeld === 'undefined') {
+    test.check('and a contact row has no routes field, nor a reader for one');
   } else {
-    test.fail('routes survived an upsert');
+    test.fail('routes still on the row or read: ' + JSON.stringify(row));
   }
 }
 

@@ -1,18 +1,20 @@
 // spirit/run/shell/js/contacts/listElement.js
 // THE CONTACTS LIST, A DROP-IN SHELL ELEMENT (goal/G30.19, G30.20). Contacts draws it as a pane, and Join as its contact
 // step; grants and introSpector draw it as a dropdown (opts.face, placeholder, all, pick(row, key)). The box:
-//   - One search in two tiers. contact.search answers at once from the book and the shadow (the peers the node has
-//     heard of), and starts a network search on the node; each network result streams in as one row. All of it lands in
+//   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
+//     the owner keeps, owns, holds or blocked; and starts a network search on the node, whose finds land in the table
+//     held, each streaming in as one row. All of it lands in
 //     data.contacts, the faceless layer (shell/js/spiritData.js, goal/G30.16), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
-//   - One list, cached by key: a peer in the book and found on the network is one row. One row of filters instead of
-//     two folds: all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8).
-//     Columns: presence, status, label (sorts as text), and Add on a row the book does not hold.
+//   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
+//     all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8): on, the held rows
+//     the owner has not decided about show as well. Columns: presence, status, label (sorts as text), and Add on a row
+//     the owner does not keep.
 //   - Each row is a contactElement and keeps itself current; this paints no presence.
-//   - Pressing a row opens it: Contact for a person in the book, Relay Details for a relay. A network row asks that
-//     node who it is and says so.
+//   - Pressing a row opens it: Contact for a person kept, Relay Details for a relay. A held row asks that node who it
+//     is and says so.
 //   - It fills as soon as it is drawn; an empty search answers like any other.
-// This node's relays stand beside the book (goal/G30.7): relay.search, a relay row keyed by its url.
+// This node's relays are rows of the same search (goal/G40.11: relay.search went), each keyed by its ID, its url on it.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.api        the app's shell api: verb, peerPost
@@ -22,10 +24,12 @@
 //     opts.empty                              the words when nothing matches
 (function () {
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
-  // A row of that kind: owned, blocked, held, or a relay (this node's, or one the network or the shadow found).
+  // A row with that flag: mine, blocked, held, or relay.
   function is(kind) {
-    return function (row) { return !!row && (kind === 'relay' ? (row.kind === 'relay' || row.relay === true) : row[kind] === true); };
+    return function (row) { return !!row && row[kind] === true; };
   }
+  // Held and nothing else: somebody the owner has not decided about (the network's finds, a stranger who wrote).
+  function undecided(row) { return !!row && row.held === true && row.keep !== true && row.mine !== true && row.blocked !== true && row.relay !== true; }
 
   // ONE ROW OF FILTERS (box v8; Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when
   // its on then it shows peers from the network ALSO").
@@ -35,54 +39,42 @@
     { name: 'show',
       choices: function (all) {
         var out = [{ value: 'all', word: 'all' }];
-        if (all.some(is('owned'))) out.push({ value: 'owned', icon: '⭐', word: 'my puppets' });
+        if (all.some(is('mine'))) out.push({ value: 'mine', icon: '⭐', word: 'my puppets' });
         if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
         if (all.some(is('held'))) out.push({ value: 'held', icon: '⌛', word: 'held' });
         if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
         return out;
       },
       test: function (row, v) { return !v || v === 'all' || is(v)(row) ? 1 : 0; },
-      when: function (all) { return ['owned', 'blocked', 'held', 'relay'].some(function (n) { return all.some(is(n)); }); } },
-    // At its very end. Off, the book and this node's relays; on, the network's peers (book: false) as well.
+      when: function (all) { return ['mine', 'blocked', 'held', 'relay'].some(function (n) { return all.some(is(n)); }); } },
+    // At its very end. Off, the rows the owner has decided about and this node's relays; on, the held ones as well.
     { name: 'network', word: 'network', toggle: true,
-      test: function (row, on) { return row.book === false && row.kind !== 'relay' && row.relay !== true ? (on ? 1 : 0) : 1; } },
+      test: function (row, on) { return undecided(row) ? (on ? 1 : 0) : 1; } },
     // NO NAMELESS ROWS (goal/G40.10, box v15): the presence data marks every key a relay reports present, the relay's own
     // and this node's among them; a key with nothing but its presence is no row until a search or the book names it.
     // No button: it always holds.
     { name: 'named', when: function () { return false; },
-      test: function (row) { return row && (row.name || row.kind === 'relay' || row.relay === true) ? 1 : 0; } },
+      test: function (row) { return row && (row.name || row.relay === true) ? 1 : 0; } },
   ];
 
   function create(host, opts) {
     var o = opts || {};
     var api = o.api;
     var els = Object.create(null);    // key -> its contactElement, as the list made it
-    var relayKeys = Object.create(null);
     var list = null;
     function say(text) { if (typeof o.say === 'function') o.say(text); }
     function body(r) { return (r && r.body) || {}; }
 
-    // THE SOURCE: the book and the shadow (contact.search), this node's relays beside them (relay.search). A relay once
-    // added to the book by its key shows once, as the relay.
+    // THE SOURCE: the one table (contact.search, goal/G40.11), people and relays alike.
     function search(args) {
       var q = String((args && args.q) || '').trim();
-      // Through the spirit object (goal/G32.2): each answers the reply's body.
-      var book = spirit.ready.then(function (s) { return s.contact.search({ q: q }); });
-      var relays = spirit.ready.then(function (s) { return s.relay.search({ q: q || '*' }); }).then(null, function () { return { items: [] }; });
-      return Promise.all([book, relays]).then(function (got) {
-        var rows = (got[1].items || []).map(function (i) {
-          var r = null;
-          try { r = JSON.parse(i.label); } catch (e) { r = null; }
-          if (r && r.relayKey) relayKeys[r.relayKey] = true;
-          // owned is the star, as on a puppet: this node owns that relay.
-          return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, kind: 'relay', relay: true, url: i.key, owned: !!(r && r.owned), relayKey: (r && r.relayKey) || '' }) };
-        });
-        var people = (got[0].items || []).filter(function (i) { return !relayKeys[i.key]; });
-        return { status: 200, body: { ok: true, items: people.concat(rows), more: !!got[0].more } };
+      // Through the spirit object (goal/G32.2): the reply's body.
+      return spirit.ready.then(function (s) { return s.contact.search({ q: q }); }).then(function (got) {
+        return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
 
-    // A network row: that node is asked who it is (its card, checked against the key it was addressed to).
+    // A held row: that node is asked who it is (its card, checked against the key it was addressed to).
     function askCard(row, key) {
       say('asking them…');
       Promise.resolve(api.peerPost('', key, { card: true })).then(function (r) {
@@ -112,7 +104,7 @@
       matched: function (row) { return { name: String((row && row.name) || ''), publicLabel: String((row && row.publicLabel) || '') }; },
       filters: FILTERS,
       details: function (row, key, el) {
-        if (row.book === false && row.kind !== 'relay') { askCard(row, key); return; }
+        if (undecided(row)) { askCard(row, key); return; }
         if (!el) return;
         // Its page opens on the navigation; what it changes comes back on the stream, so nothing is read when it closes
         // (goal/G40.8: "the stack doesn't need to handle results").
@@ -140,21 +132,23 @@
     });
 
     list.refresh();
-    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): a relay joined or left anywhere changes its row here (member,
-    // not joined), so relay-rows, when it changed, makes the list search again; it lets go once the list left the page.
-    var rowsHeard = null;
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row of the table as it changed. A row this
+    // list does not show yet that the owner now lists (kept, owned, held, blocked), or a row it shows whose flags moved,
+    // makes the list search again; presence alone is the presence data's, and repaints nothing here. It lets go once
+    // the list left the page.
+    var FLAGS = ['keep', 'mine', 'relay', 'held', 'blocked', 'seated'];
     var rowsStop = null;
     function rowsTake(job) {
-      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!job || job.type !== 'shadow' || !job.data || !job.data.row) return;
       if (!host.isConnected) { if (rowsStop) rowsStop(); return; }
-      var asJson = JSON.stringify(job.data.rows || []);
-      if (rowsHeard === null) { rowsHeard = asJson; return; }
-      if (asJson === rowsHeard) return;
-      rowsHeard = asJson;
-      list.refresh();
+      var row = job.data.row;
+      var el = els[row.publicKey];
+      var listed = row.keep || row.mine || row.held || row.blocked;
+      var moved = el ? (row.gone || FLAGS.some(function (f) { return (el.row && el.row[f] === true) !== (row[f] === true); })) : !!listed;
+      if (moved) list.refresh();
     }
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      rowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(rowsTake); }, onUpdate: rowsTake });
+      rowsStop = window.spirit.events.subscribe({ onUpdate: rowsTake });
     }
     return {
       list: list,

@@ -12,6 +12,8 @@
 //   - The network search is a job whose updates each carry one found row; the face stream carries it and contact.rename.
 //   - peer.search and peerFind are deleted; Join's contact step shows the same list; the desk onboarding asks
 //     contact.search.
+// SINCE goal/G40.11 tier one is the one table's listed rows (kept, owned, held, blocked); a shadow stranger is not
+// listed, and what the network finds is held. A row's label carries the flags (keep, held, ...) where it said book.
 // NAMED HERE where the box names none:
 //   - hub.contactSearch(body, { jobs, walk }): walk(q, onRow) is the relay walk (default: every configured relay asked,
 //     as peer.search did), resolving when the walk ends. A contact.search row label carries book: true or false.
@@ -70,7 +72,7 @@ const done = (async function () {
   const ann = auth.generateIdentity('ann').publicKey;
   const zed = auth.generateIdentity('zed').publicKey;
   const far = auth.generateIdentity('far').publicKey;
-  contactBook.acquire(home, { publicKey: ann, publicLabel: 'annika', relay: 'https://lab.example' }, 'handle');
+  contactBook.acquire(home, { publicKey: ann, publicLabel: 'annika', relay: 'https://lab.example' });
   hubModule.shadow(home).note(zed, { at: auth.generateIdentity('relay').publicKey, url: 'https://lab.example', label: 'annabel', present: true, rank: 1 });
   const hub = hubModule.createHub(home);
   const jobs = fakeJobs();
@@ -81,8 +83,8 @@ const done = (async function () {
   const rows = labelsOf(first);
   const annRow = rows.filter(function (r) { return r.key === ann; })[0];
   const zedRow = rows.filter(function (r) { return r.key === zed; })[0];
-  if (annRow && annRow.row && annRow.row.book === true && zedRow && zedRow.row && zedRow.row.book === false && /annabel/.test(zedRow.row.name || ''))
-    test.check('one answer: annika from the book (book: true) and annabel from the shadow (book: false), no relay waited for');
+  if (annRow && annRow.row && annRow.row.keep === true && !zedRow)
+    test.check('one answer: annika, kept, at once; annabel, whom the shadow only heard of, is not listed; no relay waited for');
   else test.fail(OWED + 'contact.search for "ann" answered ' + short(rows));
 
   // ── 2. Tier two: one network search, streamed as rows, written to the shadow ──────────────────────────────────────
@@ -105,8 +107,8 @@ const done = (async function () {
   const annLine = lines.filter(function (i) { return i.key === ann; })[0];
   let annNet = null;
   try { annNet = JSON.parse(annLine.label); } catch (e) { annNet = null; }
-  if (farRow && farRow.book === false && farRow.present === true && annNet && annNet.book === true && annNet.present === true)
-    test.check('each network result is one peer-search job update: a stranger as book: false, a contact as its book row, present');
+  if (farRow && farRow.held === true && farRow.keep === false && farRow.present === true && annNet && annNet.keep === true && annNet.held === false && annNet.present === true)
+    test.check('each network result is one peer-search job update: a stranger held, a contact as its kept row, present');
   else test.fail(OWED + 'peer-search job updates: ' + short(lines));
   const seen = hubModule.shadow(home).get(far);
   if (seen && seen.label === 'annfar') test.check('a network result is written into the shadow');
@@ -114,7 +116,7 @@ const done = (async function () {
   if (walks[0]) walks[0].end();
   await settle();
   const after = labelsOf(hub.contactSearch({ q: 'annfar' }, { jobs: jobs, walk: walk }));
-  if (walks.length === 2 && after.some(function (r) { return r.key === far; })) test.check('once it returned, the next search starts one, and tier one now finds what it learned');
+  if (walks.length === 2 && after.some(function (r) { return r.key === far && r.row && r.row.held === true; })) test.check('once it returned, the next search starts one, and tier one now lists what it found, held');
   else test.fail(OWED + 'after the walk ended: walks ' + walks.length + ', tier one ' + short(after));
 
   // ── 3. peer.search is gone ─────────────────────────────────────────────────────────────────────────────────────────
@@ -188,15 +190,15 @@ const done = (async function () {
   let shell = null;
   try {
     subscribers.slice().forEach(function (h) { if (h.onUpdate) h.onUpdate({ id: 'job_9', type: 'peer-search', data: { item: { key: far, label: '{"name":"annfar","book":false}' } } }); });
-    const net = E.contactElement.create({ key: far, name: 'annfar', book: false, relay: 'https://lab.example', publicLabel: 'annfar' });
+    const net = E.contactElement.create({ key: far, name: 'annfar', held: true, publicLabel: 'annfar' });
     asked.length = 0;
     await net.act('add', {});
     const add = asked.filter(function (x) { return x.verb === 'peer.acquire'; })[0];
     const landed = window.spirit.data && window.spirit.data.get('contacts/' + far);
-    shell = { found: landed && landed.book === false ? far : '', off: 'function', add: add ? add.args : null, contactSearch: !!(E.contactList && typeof E.contactList.create === 'function') };
+    shell = { found: landed ? far : '', off: 'function', add: add ? add.args : null, contactSearch: !!(E.contactList && typeof E.contactList.create === 'function') };
   } catch (e) { shell = { threw: e.message, loaded: loaded }; }
-  if (shell && shell.found === far && shell.off === 'function' && shell.add && shell.add.publicKey === far && shell.add.url === 'https://lab.example' && shell.contactSearch)
-    test.check('a peer-search update lands in data.contacts; Add asks peer.acquire with the row\'s relay; contactSearch is an element');
+  if (shell && shell.found === far && shell.off === 'function' && shell.add && shell.add.publicKey === far && shell.contactSearch)
+    test.check('a peer-search update lands in data.contacts; Add asks peer.acquire for the held row; contactSearch is an element');
   else test.fail(OWED + 'shell elements: ' + short(shell));
   if (/data: 'contacts'/.test(code('shell/js/contacts/listElement.js')) && /window\.spirit.data\.seat\(o\.data/.test(code('shell/js/probabilitySearch.js')))
     test.check('the contact list is a view of data.contacts, its answers seated in the tree');
@@ -211,15 +213,15 @@ const done = (async function () {
   const names = F.map(function (f) { return f.name; }).join(',');
   const net6 = F.filter(function (f) { return f.name === 'network'; })[0];
   const P = E.probabilitySearch;
-  const entries = [{ key: 'B', row: { name: 'bert', book: true }, at: 0 }, { key: 'N', row: { name: 'nina …x', book: false }, at: 1 },
-    { key: 'R', row: { name: 'relay', kind: 'relay', relay: true }, at: 2 }];
+  const entries = [{ key: 'B', row: { name: 'bert', keep: true }, at: 0 }, { key: 'N', row: { name: 'nina', held: true }, at: 1 },
+    { key: 'R', row: { name: 'relay', relay: true, keep: true }, at: 2 }];
   const shown = function (on) {
     try { return P.order(entries, { words: '', values: { show: 'all', network: on }, filters: F }).map(function (w) { return w.key; }).join(','); }
     catch (e) { return 'threw ' + e.message; }
   };
   if (names === 'show,network' && net6 && net6.toggle === true) test.check('the filters are show, then network as a toggle; no where, no book, no second all');
   else test.fail(OWED + 'the filters are ' + short(names) + ', network ' + short(net6 && { toggle: net6.toggle }));
-  if (shown(false) === 'B,R' && shown(true) === 'B,N,R') test.check('off, the book and the relays; on, the network\'s peers as well');
+  if (shown(false) === 'B,R' && shown(true) === 'B,N,R') test.check('off, the kept and the relays; on, the held ones as well');
   else test.fail(OWED + 'off shows ' + shown(false) + ', on shows ' + shown(true));
   const ps = code('shell/js/probabilitySearch.js');
   if (/f\.toggle/.test(ps) && /values\[f\.name\] = f\.toggle \? false/.test(ps)) test.check('probabilitySearch draws a toggle filter as one button, off until pressed');

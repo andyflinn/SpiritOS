@@ -137,9 +137,8 @@ function removalRefusal(relays, url) {
 // list over is asked of Andy separately, and the node does not read the
 // app's folder even once.
 //
-// IN node.db SINCE goal/G19.15: the list is the `listed` rows of the one
-// relays table, keyed by relay key, which relayKeys.js reads and writes.
-// relay-state/relays.json is read once, copied in and deleted.
+// IN node.db SINCE goal/G19.15, AND IN THE ONE TABLE SINCE goal/G40.11: the list is the relays kept (seen rows
+// flagged relay and keep), which relayKeys.js reads and writes.
 
 // Rows, in list order, one per URL. Never a throw, because the browser
 // asks for this on every claim: a store that cannot be read is no
@@ -195,24 +194,12 @@ var SEED_RELAYS = [KEPT_RELAY];
 function ensureRelays(rootDir) {
   try { relayKeys.assertSeeds(rootDir, SEED_RELAYS); }
   catch (e) { return []; }
-  notePeers(rootDir);
   return loadRelays(rootDir);
 }
 
-// EVERY LISTED RELAY IS A PEER (goal/G30.7, relays are peers): in the shadow, a relay whose route is its own url, so the
-// peer search finds it. At boot for the whole list (the seed included, so a new node finds noderoutes.net), and on every
-// relay a claim adds (Andy, 2026-10-20: "and natter itself, when i add a relay, stashes that relay in the peer-list
-// now?"). Known by its pinned key, so noted as arrived, not as hearsay; a url with no key yet is left out.
-function notePeers(rootDir) {
-  try {
-    var seen = require('./seenPeers');
-    var S = require('./hub').shadow(rootDir);
-    loadRelays(rootDir).forEach(function (r) {
-      var key = relayKeys.pinned(rootDir, r.url);
-      if (key) S.note(key, { label: r.label, at: r.url, url: r.url, kind: 'relay', rank: seen.ARRIVED });
-    });
-  } catch (e) { /* the relay list stands without its shadow rows; the next boot notes them again */ }
-}
+// EVERY LISTED RELAY IS A PEER (goal/G30.7, relays are peers): since goal/G40.11 a listed relay IS a row of the one
+// table, flagged relay and kept, its url a direct route (relayKeys), so the peer search finds it without a second
+// write. notePeers, which copied each into the shadow, stood here.
 
 // A SUCCESSFUL CLAIM IS WHAT ADDS A RELAY (goal/G16.3, Andy's Q4 above).
 // There is no verb for adding one: his yes covered two verbs, and a relay
@@ -227,7 +214,6 @@ function addRelay(rootDir, url, label, relayKey) {
   var u = normalizeUrl(url);
   if (!u) return loadRelays(rootDir);
   relayKeys.list(rootDir, u, label, relayKey);
-  notePeers(rootDir);
   return loadRelays(rootDir);
 }
 
@@ -243,8 +229,9 @@ function removeRelay(rootDir, url, opts) {
     var row = { url: r.url, label: r.label };
     if (r.url === u) {
       row.owned = !!(opts && opts.owned);
-      // A seat the relay has refused is gone already (goal/G19.1): only a seat it still honours blocks the removal.
-      row.claimed = !!relayKeys.seatLabel(rootDir, r.url) && !relayKeys.refusal(rootDir, r.url);
+      // A seat the relay has refused is gone already (goal/G19.1, seated cleared): only a seat it still honours blocks
+      // the removal.
+      row.claimed = !!(relayKeys.byUrl(rootDir, r.url) || {}).seated;
     }
     return row;
   });

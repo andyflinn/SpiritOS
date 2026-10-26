@@ -268,7 +268,7 @@ function infoLoad() {
 // be drawn yet, and saying so beside the field would blame the field.
 function infoLoadRelays() {
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // asks relay.search and relay.get and hands back the same shape.
+  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
   return spirit.relay.status('').then(function (r) {
     var said = (r && r.body) || {};
     infoRelays = Array.isArray(said.rows) ? said.rows : [];
@@ -484,21 +484,22 @@ spirit.shell.activateApp({
       infoCount();
     });
 
-    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): the table reads the relays again when relay-rows says one
-    // changed; the two forms hear it themselves.
-    var rowsHeard = '';
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; the table reads the relays
+    // again when a relay's row changed what it says of the relay (kept, seated, owned, blocked), and not for its
+    // presence, which the dots already show. The two forms hear it themselves.
+    var rowsHeard = Object.create(null);
     var rowsStop = null;
     var rowsTake = function (job) {
-      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      var row = job && job.type === 'shadow' && job.data && job.data.row;
+      if (!row || row.relay !== true) return;
       if (!container.isConnected) { if (rowsStop) rowsStop(); return; }
-      var asJson = JSON.stringify(job.data.rows || []);
-      if (asJson === rowsHeard) return;
-      var first = !rowsHeard;
-      rowsHeard = asJson;
-      if (!first) infoLoadRelays();
+      var said = [row.keep, row.seated, row.mine, row.blocked, !!row.gone].join();
+      if (rowsHeard[row.publicKey] === said) return;
+      rowsHeard[row.publicKey] = said;
+      infoLoadRelays();
     };
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      rowsStop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(rowsTake); }, onUpdate: rowsTake });
+      rowsStop = window.spirit.events.subscribe({ onUpdate: rowsTake });
     }
 
     // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this

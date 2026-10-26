@@ -1958,8 +1958,8 @@
   //   is: the own local node, and any puppet owned, including owned relays."
   //
   // Checked here, once, before any app sees the object, so no app has to. Implicit: this node's key (node.card), the
-  // key of every relay it owns (relay rows with owned) and of every contact marked owned (a puppet: its signed card
-  // names this node, the same ownerBadge.ownedBy rule), asked the first time a stream arrives from a key no app
+  // key of every row marked mine: a relay it owns (its owner report says so) and a puppet (its signed card names this
+  // node, the same ownerBadge.ownedBy rule), asked the first time a stream arrives from a key no app
   // named, and again after the page's stream comes back. Explicit: the keys a handler named
   // (api.onPublished(fn, server, { from: [...] })), for that handler alone. Anything else is dropped, with one
   // console line per sender.
@@ -1980,18 +1980,11 @@
       var b = said(r);
       if (b && b.publicKey) found[String(b.publicKey)] = true;
     }, function () {});
-    var relays = Promise.resolve().then(function () {
-      return spirit.core.relays && typeof spirit.core.relays.status === 'function' ? spirit.core.relays.status() : null;
-    }).then(function (r) {
-      var b = said(r);
-      ((b && b.rows) || []).forEach(function (row) {
-        if (row && row.owned && row.roll && row.roll.relayKey) found[String(row.roll.relayKey)] = true;
-      });
-    }, function () {});
-    // The owned contacts, by contact.search's owned filter (goal/G29.6; Andy: "why would owned not be a binary filter,
-    // owned or not?"): the node answers those alone, owned read from each row's json label. A search is
-    // bucket-bounded; past its cap the rest are not heard until the next ask, and the console says so once.
-    var owned = Promise.resolve().then(function () { return spirit.core.ask('contact.search', { q: '', owned: 'yes' }); }).then(function (r) {
+    // Everything owned, puppets and owned relays alike, by contact.search's mine filter (goal/G40.11: one table, mine
+    // "owned, puppets and owned relays"; goal/G29.6, Andy: "why would owned not be a binary filter, owned or not?"):
+    // the node answers those alone, mine read from each row's json label. A search is bucket-bounded; past its cap the
+    // rest are not heard until the next ask, and the console says so once.
+    var owned = Promise.resolve().then(function () { return spirit.core.ask('contact.search', { q: '', mine: 'yes' }); }).then(function (r) {
       var b = said(r);
       if (b && b.more && !askOwnSenders.partial) {
         askOwnSenders.partial = true;
@@ -2000,10 +1993,10 @@
       ((b && b.items) || []).forEach(function (item) {
         var label = null;
         try { label = JSON.parse(item && item.label); } catch (e) { label = null; }
-        if (item && item.key && label && label.owned === true) found[String(item.key)] = true;
+        if (item && item.key && label && label.mine === true) found[String(item.key)] = true;
       });
     }, function () {});
-    ownSendersAsking = Promise.all([card, relays, owned]).then(function () {
+    ownSendersAsking = Promise.all([card, owned]).then(function () {
       ownSenders = found;
       ownSendersAt = Date.now();
       ownSendersAsking = null;

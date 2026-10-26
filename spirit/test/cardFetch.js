@@ -17,7 +17,7 @@
 //   peerPost.js:823   records `askedCard` on the slot when one was sent
 //   peerPost.js:411   keepCard(slot, answer) stores the reply
 //   peerPost.js:980   answerCard — we answer everybody ELSE's ask
-//   server.js:1262-5  the keeper: upsert at ROLL, then setCard(...'reply')
+//   server.js keepCard  the keeper: setCard on that key's row of the one table (goal/G40.11)
 //
 // Only the DECISION TO ASK is missing. That is why three days of total
 // reporting failure passed with a green board.
@@ -219,22 +219,20 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
   //
   // A relay that answers our ask with its OWN card gets everything we
   // ever send sealed to it. Both layers already refuse independently —
-  // peerPost.js:415 codes it `card-wrong-key`, contacts.js:472 files it
-  // under `cardDisputed` and stores nothing — and the fetch must not
+  // peerPost.js codes it `card-wrong-key`, contacts.setCard refuses it and keeps nothing of it (goal/G40.11, box
+  // v24: "any other is refused and nothing of it kept") — and the fetch must not
   // route around either. Checked at the keeper, which is the layer the
   // new caller will hand its answer to.
   {
     const victim = nodeFor('victim', relay);
     const impostor = nodeFor('impostor', relay);
-    contacts.upsert(asker.home, { publicKey: victim.id.publicKey, acquiredVia: contacts.ROLL });
     const verdict = contacts.setCard(asker.home, victim.id.publicKey,
-      nodeCard.cardFrom(Object.assign({ name: impostor.name }, impostor.id)), 'reply');
+      nodeCard.cardFrom(Object.assign({ name: impostor.name }, impostor.id)));
     const row = contacts.byPublicKey(asker.home, victim.id.publicKey);
-    if (verdict && !verdict.ok && verdict.why === 'wrong key'
-        && !contacts.sealKeyOf(row) && row.cardDisputed && row.cardDisputed.length === 1) {
-      test.check('a card signed by somebody else is refused as `wrong key`, leaves NO seal key '
-        + 'on the row, and is kept as a dispute rather than dropped — the swap a node gets '
-        + 'exactly one chance to notice');
+    if (verdict && !verdict.ok && verdict.why === 'wrong key' && verdict.signedBy === impostor.id.publicKey
+        && !contacts.sealKeyOf(row) && !(row && row.card)) {
+      test.check('a card signed by somebody else is refused as `wrong key`, naming who signed it, and nothing of '
+        + 'it is kept: no card, no seal key on the row');
     } else {
       test.fail('a wrong-key card was not refused cleanly: ' + JSON.stringify(verdict)
         + ' sealKey=' + JSON.stringify(contacts.sealKeyOf(row)));

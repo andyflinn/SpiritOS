@@ -1,7 +1,7 @@
 'use strict';
 
 // apiAuth/G1.3: where the allow-table lives — two tables in node.db.
-//   The box @ version read this sitting: peers(peer_id PRIMARY KEY, label) and
+//   (Since goal/G40.11 the peers table is rows of seen; grants stays.) The box @ version read this sitting: peers(peer_id PRIMARY KEY, label) and
 //   grants(peer_id, path) with PRIMARY KEY (peer_id, path), made the way nodeStore.js
 //   makes its tables (CREATE TABLE IF NOT EXISTS, nodeStore.js:212, 244-322), in
 //   node.db and nowhere else.
@@ -110,35 +110,33 @@ async function readDb(fn) {
     test.check('the owner\'s auth.query on the loopback door answers the table (allowed: true for the planted grant)');
   } else test.fail(OWED + 'auth.query answered ' + JSON.stringify(reach.body).slice(0, 220));
 
-  test.subHeading('on disk: two tables in node.db, shaped as decided');
+  // ON DISK SINCE goal/G40.11 (box v24: "the peers table move[s] into" the one table; "The grants table stays its
+  // own, keyed by ID"): grants as decided, no peers table, and the name a grant shows is that ID's row in seen — here
+  // alice from the contacts.json this home was planted with, moved in at the node's first start.
+  test.subHeading('on disk: the grants table, and the name on the ID\'s row of the one table');
   await down();
   try {
     const seen = await readDb(function (db) {
-      const names = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('peers', 'grants') ORDER BY name").all().map(function (r) { return r.name; });
-      const peersCols = names.indexOf('peers') !== -1 ? db.prepare('PRAGMA table_info(peers)').all() : [];
+      const names = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('peers', 'grants', 'seen') ORDER BY name").all().map(function (r) { return r.name; });
       const grantsCols = names.indexOf('grants') !== -1 ? db.prepare('PRAGMA table_info(grants)').all() : [];
-      const peers = names.indexOf('peers') !== -1 ? db.prepare('SELECT peer_id, label FROM peers ORDER BY peer_id').all() : [];
       const grants = names.indexOf('grants') !== -1 ? db.prepare('SELECT peer_id, path FROM grants ORDER BY peer_id, path').all() : [];
-      return { names: names, peersCols: peersCols, grantsCols: grantsCols, peers: peers, grants: grants };
+      const a = names.indexOf('seen') !== -1 ? db.prepare('SELECT myLabel, keep FROM seen WHERE publicKey = ?').get(KEYA) : null;
+      return { names: names, grantsCols: grantsCols, grants: grants, a: a || null };
     });
-    if (seen.names.length === 2) test.check('node.db holds peers and grants');
-    else test.fail(OWED + 'node.db holds ' + JSON.stringify(seen.names) + ', not peers and grants');
+    if (seen.names.indexOf('grants') !== -1 && seen.names.indexOf('peers') === -1) test.check('node.db holds grants and no peers table');
+    else test.fail(OWED + 'node.db holds ' + JSON.stringify(seen.names) + ', not grants alone');
     const col = function (cols, name) { return cols.filter(function (c) { return c.name === name; })[0] || {}; };
-    const peersShape = col(seen.peersCols, 'peer_id').pk === 1 && col(seen.peersCols, 'label').name === 'label';
-    const grantsShape = col(seen.grantsCols, 'peer_id').pk >= 1 && col(seen.grantsCols, 'path').pk >= 1;
-    if (peersShape && grantsShape) {
-      test.check('peers(peer_id PRIMARY KEY, label); grants(peer_id, path) PRIMARY KEY (peer_id, path) — the double key refuses a duplicate row');
-    } else test.fail(OWED + 'the columns: peers ' + JSON.stringify(seen.peersCols) + ', grants ' + JSON.stringify(seen.grantsCols));
-    const aRow = seen.peers.filter(function (r) { return r.peer_id === KEYA; })[0];
-    const bRow = seen.peers.filter(function (r) { return r.peer_id === KEYB; })[0];
-    if (seen.peers.length === 2 && aRow && aRow.label === 'alice' && bRow && seen.grants.length === 3) {
-      test.check('the planted rows are there: one peers row per key, one grants row per grant');
-    } else test.fail(OWED + 'the rows: peers ' + JSON.stringify(seen.peers).slice(0, 180) + ', grants ' + JSON.stringify(seen.grants).slice(0, 180));
+    if (col(seen.grantsCols, 'peer_id').pk >= 1 && col(seen.grantsCols, 'path').pk >= 1) {
+      test.check('grants(peer_id, path) PRIMARY KEY (peer_id, path) — the double key refuses a duplicate row');
+    } else test.fail(OWED + 'the columns: grants ' + JSON.stringify(seen.grantsCols));
+    if (seen.grants.length === 3 && seen.a && seen.a.myLabel === 'alice' && seen.a.keep === 1) {
+      test.check('one grants row per grant, and the name is alice, on her row of the one table, kept');
+    } else test.fail(OWED + 'the rows: grants ' + JSON.stringify(seen.grants).slice(0, 180) + ', her row ' + JSON.stringify(seen.a));
   } catch (e) {
     test.fail(OWED + 'node.db could not be read: ' + e.message);
   }
 
-  test.subHeading('the rows survive a restart, and the last revoke takes the peers row with it');
+  test.subHeading('the rows survive a restart, and the last revoke takes the grants and leaves the row');
   if (!(await boot())) test.fail('the node did not boot again');
   const kept = (await ask('auth.query', { key: KEYA, path: 'desk.chat.add' })).body;
   if (kept.allowed === true) test.check('a grant made before the restart still answers after it');
@@ -151,14 +149,14 @@ async function readDb(fn) {
   try {
     const after = await readDb(function (db) {
       return {
-        peers: db.prepare('SELECT peer_id FROM peers ORDER BY peer_id').all().map(function (r) { return r.peer_id; }),
         grants: db.prepare('SELECT peer_id FROM grants ORDER BY peer_id').all().map(function (r) { return r.peer_id; }),
+        a: db.prepare('SELECT publicKey FROM seen WHERE publicKey = ?').get(KEYA) || null,
       };
     });
-    if ((gone.records || []).length === 0 && after.peers.length === 1 && after.peers[0] === KEYB &&
-        (still.records || []).length === 1 && after.grants.length === 1 && after.grants[0] === KEYB) {
-      test.check('KEYA\'s last revoke took its peers row ("it disappears."); KEYB\'s row and grant stand');
-    } else test.fail(OWED + 'after the revokes: ' + JSON.stringify({ gone: gone, peers: after.peers, grants: after.grants }).slice(0, 240));
+    // "it disappears." was the peers row; the access is what disappears now, and alice stays a contact.
+    if ((gone.records || []).length === 0 && (still.records || []).length === 1 && after.grants.length === 1 && after.grants[0] === KEYB && after.a) {
+      test.check('KEYA\'s last revoke took its access, its row in the one table stays; KEYB\'s grant stands');
+    } else test.fail(OWED + 'after the revokes: ' + JSON.stringify({ gone: gone, grants: after.grants, a: after.a }).slice(0, 240));
   } catch (e) {
     test.fail(OWED + 'node.db could not be read after the revokes: ' + e.message);
   }

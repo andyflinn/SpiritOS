@@ -9,24 +9,24 @@
 //   done(step, facts)      -> whether that step's fact holds.
 //   current(steps, facts)  -> the first step not done and not optional, or null when every one that counts is done.
 //       Find someone is optional (box: "it never blocks the steps after it"): open in the list, never the open step.
-//   linkRelay(key, items)  -> the url of the relay the mailed link names by its key (&relay=), out of relay.search's
-//                             items; '' when this node lists no relay under that key. The code goes to that relay, never
+//   linkRelay(key, items)  -> the url of the relay the mailed link names by its key (&relay=), out of contact.search's
+//                             items (goal/G40.11: a relay is a row keyed by its ID, its url on its label); '' when this
+//                             node lists no relay under that key. The code goes to that relay, never
 //                             to the first one listed (goal/G40.10, box v15).
 
 (function () {
   function fromJob(data, opened) {
     var d = data || {};
     return {
-      seated: !!d.seated, relayUrl: String(d.relayUrl || ''), email: String(d.email || ''), emailVerified: !!d.emailVerified,
-      contact: !!d.contact,
+      seated: !!d.seated, relayUrl: String(d.relayUrl || ''), contact: !!d.contact,
       face: String(d.face || ''), faceUrl: String(d.faceUrl || ''), opened: !!opened,
     };
   }
 
   function done(step, f) {
     var until = step && step.until;
-    // Step 1 (box v41): a seat with a verified email; a seat taken by invite still owes the email.
-    if (until === 'email') return !!(f.seated && f.emailVerified);
+    // Step 1: a seat. The node keeps no email since goal/G40.11 (box v24), so a seat is what step 1 ends on.
+    if (until === 'email') return !!f.seated;
     if (until === 'contact') return !!f.contact;
     if (until === 'face') return !!f.face;
     if (until === 'opened') return !!f.opened;
@@ -44,12 +44,10 @@
   function linkRelay(key, items) {
     var k = String(key || '');
     if (!k) return '';
-    var hit = (Array.isArray(items) ? items : []).filter(function (i) {
-      var row = null;
-      try { row = JSON.parse(i.label); } catch (e) { row = null; }
-      return !!(row && row.relayKey === k);
-    })[0];
-    return hit ? String(hit.key || '') : '';
+    var hit = (Array.isArray(items) ? items : []).filter(function (i) { return i && i.key === k; })[0];
+    var row = null;
+    try { row = hit ? JSON.parse(hit.label) : null; } catch (e) { row = null; }
+    return row && row.relay === true ? String(row.url || '') : '';
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};

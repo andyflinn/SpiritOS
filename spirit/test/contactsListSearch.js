@@ -13,6 +13,8 @@
 //     held}} and takes owned, blocked and held as yes-filters beside q; shell.js finds the puppets with owned: yes.
 //   - The app repaints one row when presence or status changes, without asking the server.
 //   - ONE BY ONE, STARTING WITH CONTACTS: hub's contact.search ranks with the probability modules.
+// SINCE goal/G40.11 owned is the one table's flag mine ("owned, puppets and owned relays"), and the label is the row's
+// flags {name, keep, mine, relay, held, blocked, seated, ...}; the yes-filters are keep, mine, relay, seated, held, blocked.
 // Andy, 2026-10-17, on the old design: "no fucking protecting old design." A row's name comes from the row; a rename is
 // a publish on the node's stream, and the list asks again.
 // rule/11: through testSupport only. No node: hub's pure functions, and a fake page.
@@ -32,18 +34,18 @@ test.startTest('goal/G29.6: the peer picker on the shared list, Contacts first')
 // ── THE NODE: contact.search's rows and its ranking ──
 const hub = require('../run/spirit/hub.js');
 const PEOPLE = [
-  { publicKey: 'K-bert', tail: 'aaaaaa', publicLabel: 'Bert', myLabel: '', held: false, blocked: false, owned: false },
-  { publicKey: 'K-bertie', tail: 'bbbbbb', publicLabel: 'Bertie', myLabel: '', held: false, blocked: false, owned: false },
-  { publicKey: 'K-pup', tail: 'cccccc', publicLabel: 'pup', myLabel: '', held: false, blocked: false, owned: true },
-  { publicKey: 'K-dave', tail: 'dddddd', publicLabel: 'dave', myLabel: '', held: false, blocked: true, owned: false },
-  { publicKey: 'K-carol', tail: 'eeeeee', publicLabel: 'carol', myLabel: '', held: true, blocked: false, owned: false },
+  { publicKey: 'K-bert', tail: 'aaaaaa', publicLabel: 'Bert', myLabel: '', held: false, blocked: false, mine: false },
+  { publicKey: 'K-bertie', tail: 'bbbbbb', publicLabel: 'Bertie', myLabel: '', held: false, blocked: false, mine: false },
+  { publicKey: 'K-pup', tail: 'cccccc', publicLabel: 'pup', myLabel: '', held: false, blocked: false, mine: true },
+  { publicKey: 'K-dave', tail: 'dddddd', publicLabel: 'dave', myLabel: '', held: false, blocked: true, mine: false },
+  { publicKey: 'K-carol', tail: 'eeeeee', publicLabel: 'carol', myLabel: '', held: true, blocked: false, mine: false },
 ];
 const rowsOf = function (r) { return ((r && r.items) || []).map(function (i) { let l = null; try { l = JSON.parse(i.label); } catch (e) { l = null; } return { key: i.key, label: l, raw: i.label }; }); };
 
-test.subHeading('1. contact.search answers each peer as {key, label: json {name, owned, blocked, held}}');
+test.subHeading('1. contact.search answers each peer as {key, label: json {name, mine, blocked, held, ...}}');
 let pupLabel = null;
 try { pupLabel = JSON.parse(hub.contactLabel(PEOPLE[2])); } catch (e) { pupLabel = null; }
-if (pupLabel && pupLabel.name === 'pup' && pupLabel.owned === true && pupLabel.blocked === false && pupLabel.held === false) test.check('a label is json {name, owned, blocked, held}: ' + hub.contactLabel(PEOPLE[2]));
+if (pupLabel && pupLabel.name === 'pup' && pupLabel.mine === true && pupLabel.blocked === false && pupLabel.held === false && !('owned' in pupLabel)) test.check('a label is json {name, mine, blocked, held, ...}, no owned: ' + hub.contactLabel(PEOPLE[2]));
 else test.fail(OWED + 'the label reads ' + short(hub.contactLabel(PEOPLE[2])));
 const all = rowsOf(hub.searchPeople(PEOPLE, ''));
 if (all.length === 5 && all.every(function (r) { return r.label && !/ — /.test(r.label.name || ''); })) test.check('no state word in any name: a star says it all');
@@ -68,18 +70,18 @@ const sp = fnBody(hubSrc, 'searchPeople');
 if (sp && /probabilityStringObjectMatch|probabilityStringMatch/.test(sp) && /createProbabilityBucket/.test(hubSrc) && !/searchBucket/.test(sp) && !/CONTACT_STATE/.test(hubSrc)) test.check('searchPeople ranks with the probability modules; no searchBucket in it, no state words in hub.js');
 else test.fail(OWED + 'searchPeople still reads ' + short(sp.slice(0, 300)));
 
-test.subHeading('3. owned, blocked and held are yes-filters beside q');
+test.subHeading('3. mine, blocked and held are yes-filters beside q');
 const only = function (f) { return rowsOf(hub.searchPeople(PEOPLE, '', f)).map(function (r) { return r.key; }); };
-if (JSON.stringify(only({ owned: 'yes' })) === '["K-pup"]' && JSON.stringify(only({ blocked: 'yes' })) === '["K-dave"]' && JSON.stringify(only({ held: 'yes' })) === '["K-carol"]') test.check('owned: yes answers the puppets only; blocked: yes and held: yes alike');
-else test.fail(OWED + 'filters answer ' + short([only({ owned: 'yes' }), only({ blocked: 'yes' }), only({ held: 'yes' })]));
+if (JSON.stringify(only({ mine: 'yes' })) === '["K-pup"]' && JSON.stringify(only({ blocked: 'yes' })) === '["K-dave"]' && JSON.stringify(only({ held: 'yes' })) === '["K-carol"]') test.check('mine: yes answers the puppets only; blocked: yes and held: yes alike');
+else test.fail(OWED + 'filters answer ' + short([only({ mine: 'yes' }), only({ blocked: 'yes' }), only({ held: 'yes' })]));
 const cs = fnBody(hubSrc, 'contactSearch');
 const server = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
 // The contact family's search in the flat door's tables since goal/G30.5: the 'search' whose handler is hub.contactSearch.
 const route = (server.match(/'search':\s*\{\s*request:\s*\{[^}]*\}[^\n]*hub\.contactSearch/) || [''])[0];
-if (/searchPeople\([^;]*body\s*\)/.test(cs) && /owned/.test(route) && /blocked/.test(route) && /held/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares owned, blocked and held');
+if (/searchPeople\([^;]*body\s*\)/.test(cs) && /mine/.test(route) && /blocked/.test(route) && /held/.test(route) && !/owned/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares mine, blocked and held, and no owned');
 else test.fail(OWED + 'contactSearch ' + short(cs.slice(0, 200)) + '; the route ' + short(route));
 const shellJs = strip(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'));
-if (/contact\.search['"],\s*\{[^}]*owned:\s*['"]yes['"]/.test(shellJs) && !/contact\.search['"],\s*\{\s*q:\s*['"]owned['"]/.test(shellJs)) test.check('shell.js finds the puppets with owned: yes, not by the word owned');
+if (/contact\.search['"],\s*\{[^}]*mine:\s*['"]yes['"]/.test(shellJs) && !/contact\.search['"],\s*\{\s*q:\s*['"]owned['"]/.test(shellJs)) test.check('shell.js finds what it owns with mine: yes, not by the word owned');
 else test.fail(OWED + 'shell.js still finds puppets by the word: ' + short((shellJs.match(/contact\.search[^)]*\)/g) || []).join(' | ')));
 
 // ── THE PICKER: contactSelector on shellCreateListSearch ──
@@ -171,10 +173,10 @@ const listHtml = function (p, m) {
   if (!/⭐/.test(hf2) && !/blocked/i.test(hf2) && !/held|waiting/i.test(hf2)) test.check('a list holding none of them shows none of those filters');
   else test.fail(OWED + 'a plain list shows filters ' + short(hf2));
   // One row of mutually exclusive choices since goal/G30.7 (Andy: "Gimme 3 Buttons ... where all 3 are mutually
-  // exclusive"): the filter is 'show', and my puppets is its value 'owned'.
+  // exclusive"): the filter is 'show', and my puppets is its value 'mine' (goal/G40.11).
   const fOwned = (m.cfg.filters || []).filter(function (f) { return f.name === 'show'; })[0];
-  const argsOn = m.cfg.args('', { show: 'owned' });
-  if (fOwned && fOwned.test({ owned: true }, 'owned') === 1 && fOwned.test({ owned: false }, 'owned') === 0 && argsOn && argsOn.owned === 'yes') test.check('the ★ choice passes puppets only, and asks contact.search with owned: yes');
+  const argsOn = m.cfg.args('', { show: 'mine' });
+  if (fOwned && fOwned.test({ mine: true }, 'mine') === 1 && fOwned.test({ mine: false }, 'mine') === 0 && argsOn && argsOn.mine === 'yes' && fOwned.choices([{ mine: true }]).some(function (c) { return c.value === 'mine'; })) test.check('the ★ choice passes puppets only, and asks contact.search with mine: yes');
   else test.fail(OWED + 'the owned filter ' + short(fOwned) + ', args ' + short(argsOn));
 
   test.subHeading('7. presence and status repaint one row, without asking the node');

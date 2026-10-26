@@ -22,7 +22,8 @@
 //   relay-state/node.db     the shadow roll (this cycle). The post queue
 //                           (R16) and the owner's cache cap (R31) join it.
 //
-// NOT contacts, NOT the traffic log, NOT identity.json, allow.json or
+// CONTACTS ARE HERE SINCE goal/G40.11 (Andy's box, v24: "contacts.json, the relays table and the peers table move
+// into it and go"): one table for every known ID, the owner's chosen ones flagged keep. NOT identity.json, allow.json or
 // config.json. 0018 is explicit that it licenses the route cache and
 // "everything else on a node's disk" stays as it is — and relayStore.js
 // gives the reason for the last three: they are "constant, tiny, and the
@@ -99,10 +100,6 @@ function driver() {
 // the shadow today, the queue and the settings later. Keyed by the
 // resolved path, exactly as relayStore does it.
 const open_ = new Map();
-
-// What a row may be marked (0021). Empty is "nobody chose": the default,
-// and the first in line when space runs out.
-const CHOICES = ['', 'ignored', 'held', 'added'];
 
 function dbPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.db');
@@ -236,29 +233,61 @@ function open(rootDir, opts) {
   // fixtures, so no migration is written for a case that cannot happen.
   db.exec('PRAGMA auto_vacuum = INCREMENTAL');
 
-  // ── THE SHADOW ─────────────────────────────────────────────────────
+  // ── ONE TABLE FOR ALL KNOWN IDS (goal/G40.11) ────────────────────────
   //
-  // Keyed by peer, so somebody seen a thousand times is one row and
-  // growth is bounded by distinct people rather than by traffic.
+  //   Andy, 2026-10-25 and 26, box v24: seen "is the one table. contacts.json, the relays table and the peers table
+  //   move into it and go. The grants table stays its own, keyed by ID."
   //
-  // `seen` IS AN INTEGER, unlike relay.db's ISO strings. Those are read by
-  // a person over SSH; this one is compared and ordered on the eviction
-  // path, and a millisecond count is what that path wants: the one
-  // eviction orders by it within each tier of the mark (0021).
+  // One row per ID other than the node itself. Keyed by ID, so somebody seen a thousand times is one row and growth
+  // is bounded by distinct IDs rather than by traffic. Every row: label (with how sure, labelRank, and when, labelAt),
+  // myLabel, card, present, firstSeen, lastSeen, and seven booleans:
+  //
+  //   keep     a chosen contact, never shed       mine     owned (puppets, owned relays), never shed
+  //   relay    the ID is a relay                  held     waits for the owner's yes
+  //   ignored  politely refused, never shown      blocked  refused, a relay as well as a node
+  //   seated   that ID holds this node: a relay its seat, a node its chosen contacts
+  //
+  // A CARD IS KEPT ONLY SIGNED BY THE ROW'S ID (contacts.setCard checks it); any other is refused and nothing of it
+  // kept. TIMES ARE MILLISECONDS, unlike relay.db's ISO strings: they are compared and ordered on the shedding path.
+  // `present` is three-valued: -1 nobody has said, 0 said absent, 1 said present.
+  //
+  // THE OLD SHAPE IS SET ASIDE FIRST, so the table below is made new and the move (moveIn, after every table exists)
+  // copies the old rows in: a seen with no `keep` is the shadow before this item, whichever earlier shape it has.
+  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'held', 'ignored', 'blocked', 'seated'];
+  const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
+  const oldSeen = (function () {
+    const cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
+    if (!cols.length || cols.indexOf('keep') !== -1) return null;
+    db.exec('DROP INDEX IF EXISTS seen_when; DROP INDEX IF EXISTS seen_chosen; ALTER TABLE seen RENAME TO seen_old');
+    return cols;
+  }());
   db.exec(`
     CREATE TABLE IF NOT EXISTS seen (
       publicKey TEXT PRIMARY KEY,
       label     TEXT    NOT NULL DEFAULT '',
       labelRank INTEGER NOT NULL DEFAULT 4,
       labelAt   INTEGER NOT NULL DEFAULT 0,
-      present   INTEGER NOT NULL DEFAULT 0,
-      seen      INTEGER NOT NULL DEFAULT 0,
-      choice    TEXT    NOT NULL DEFAULT '',
-      blocked   INTEGER NOT NULL DEFAULT 0,
-      kind      TEXT    NOT NULL DEFAULT 'node'
+      present   INTEGER NOT NULL DEFAULT -1,
+      myLabel   TEXT    NOT NULL DEFAULT '',
+      card      TEXT    NOT NULL DEFAULT '',
+      face      TEXT    NOT NULL DEFAULT '',
+      firstSeen INTEGER NOT NULL DEFAULT 0,
+      lastSeen  INTEGER NOT NULL DEFAULT 0,
+      ${SEEN_FLAGS.map(function (f) { return f + ' INTEGER NOT NULL DEFAULT 0'; }).join(',\n      ')}
     );
-    CREATE INDEX IF NOT EXISTS seen_when ON seen (seen);
   `);
+  // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
+  // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). Added
+  // to a table made before it.
+  if (db.prepare('PRAGMA table_info(seen)').all().every(function (c) { return c.name !== 'face'; })) {
+    db.exec("ALTER TABLE seen ADD COLUMN face TEXT NOT NULL DEFAULT ''");
+  }
+  // A PARTIAL INDEX PER FLAG, holding only the rows where it is true, and one over the rows with neither keep nor mine,
+  // by lastSeen: the line shedding takes. A query uses a partial index only when it repeats its WHERE, which is why
+  // the statements below spell those conditions out again.
+  db.exec(SEEN_FLAGS.map(function (f) {
+    return 'CREATE INDEX IF NOT EXISTS seen_' + f + ' ON seen (lastSeen) WHERE ' + f + ' = 1;';
+  }).join('\n') + '\nCREATE INDEX IF NOT EXISTS seen_shed ON seen (lastSeen) WHERE keep = 0 AND mine = 0;');
 
   // ── A ROUTE IS A PAIR OF DOORS, NOT AN ADDRESS (cycle R1, R29) ────
   //
@@ -291,6 +320,10 @@ function open(rootDir, opts) {
     );
     CREATE INDEX IF NOT EXISTS seen_routes_peer ON seen_routes (publicKey, rank, told DESC);
   `);
+  // A URL IS A ROUTE (goal/G40.11): an ID's own address, a relay's or a node's on a LAN, is a direct route through no
+  // relay — via empty, at the ID itself, url the address. The route is the pin: answerRelay's check asks which ID a
+  // url's direct route belongs to, one lookup on this index.
+  db.exec("CREATE INDEX IF NOT EXISTS seen_routes_url ON seen_routes (url) WHERE url <> ''");
 
   // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
   //
@@ -458,15 +491,14 @@ function open(rootDir, opts) {
 
   // ── WHO MAY CALL WHICH API (apiAuth/G1.3) ───────────────────────────
   //
-  //   Andy: "the lookup table is in node.db", "peers: peer_id (key) and label, one row per key. grants: peer_id
-  //   and path, one row per grant; issue inserts it, revoke deletes it.", "yes we neeed doulbe keyed for selective
-  //   delete", and on the last revoke: "it disappears." Only authorization is stored; an empty table is no access
-  //   for anybody but the owner. "the peer never sees our apiAuth data": nothing here travels to a member.
+  //   Andy: "the lookup table is in node.db", "grants: peer_id and path, one row per grant; issue inserts it, revoke
+  //   deletes it.", "yes we neeed doulbe keyed for selective delete", and on the last revoke: "it disappears." Only
+  //   authorization is stored; an empty table is no access for anybody but the owner. "the peer never sees our apiAuth
+  //   data": nothing here travels to a member.
+  //
+  // THE GRANTS TABLE STAYS ITS OWN, KEYED BY ID (goal/G40.11); its peers table moved into seen, so the name a grant
+  // shows is that ID's row's.
   db.exec(`
-    CREATE TABLE IF NOT EXISTS peers (
-      peer_id TEXT PRIMARY KEY,
-      label   TEXT NOT NULL DEFAULT ''
-    );
     CREATE TABLE IF NOT EXISTS grants (
       peer_id TEXT NOT NULL,
       path    TEXT NOT NULL,
@@ -474,97 +506,121 @@ function open(rootDir, opts) {
     );
   `);
 
-  // ── THE RELAYS THIS NODE KNOWS (goal/G19.15) ─────────────────────────
+  // ── THE MOVE, ON EACH NODE'S FIRST START ON THIS CODE (goal/G40.11) ──
   //
-  //   Andy, 2026-10-12: "the authoritative info about relays on the node MUST
-  //   be by ID (key)", and "there will be only ONE relay table in node.db."
+  //   Andy, 2026-10-26: "yes." to "on each node's first start on the new code, its old stores go into the table, then
+  //   are deleted."
   //
-  // relayKeys.js owns what a row MEANS and is the only reader and writer;
-  // this file owns where it lives. Keyed by the relay's public key; the url
-  // is the address the relay answers at, one relay per address. `listed` and
-  // `pos` are the node's relay list and its order (hub.loadRelayUrl reads the
-  // first); a seat is held when `seatClaimedAt` is not empty.
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS relays (
-      key           TEXT PRIMARY KEY,
-      url           TEXT    NOT NULL,
-      label         TEXT    NOT NULL DEFAULT '',
-      listed        INTEGER NOT NULL DEFAULT 0,
-      pos           INTEGER NOT NULL DEFAULT 0,
-      firstSeen     TEXT    NOT NULL DEFAULT '',
-      acceptedAt    TEXT    NOT NULL DEFAULT '',
-      replaced      TEXT    NOT NULL DEFAULT '',
-      seatLabel     TEXT    NOT NULL DEFAULT '',
-      seatClaimedAt TEXT    NOT NULL DEFAULT '',
-      refusal       TEXT    NOT NULL DEFAULT '',
-      refusedAt     TEXT    NOT NULL DEFAULT ''
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS relays_url ON relays (url);
-  `);
-  // The relay's refusal of this node and its time (goal/G19.1), added to a
-  // node.db made before them. Empty `refusal` means none recorded.
-  (function relayColumns() {
-    const cols = db.prepare('PRAGMA table_info(relays)').all().map(function (c) { return c.name; });
-    if (cols.indexOf('refusal') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusal TEXT NOT NULL DEFAULT ''");
-    if (cols.indexOf('refusedAt') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusedAt TEXT NOT NULL DEFAULT ''");
-    // The face name and email this node applied for on that relay, and the relay's signed answer kept whole, as
-    // received (goal/G30.1). Empty means none was asked or kept.
-    if (cols.indexOf('faceName') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceName TEXT NOT NULL DEFAULT ''");
-    if (cols.indexOf('faceEmail') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceEmail TEXT NOT NULL DEFAULT ''");
-    if (cols.indexOf('faceReply') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceReply TEXT NOT NULL DEFAULT ''");
-    // The email this node's join code confirmed on that relay, and the relay's flag for it (goal/G30.1, box v28).
-    if (cols.indexOf('email') === -1) db.exec("ALTER TABLE relays ADD COLUMN email TEXT NOT NULL DEFAULT ''");
-    if (cols.indexOf('emailVerified') === -1) db.exec('ALTER TABLE relays ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0');
-  }());
-
-  // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
+  // Four old stores, one table. In one transaction, and contacts.json is deleted only after it commits: a crash leaves
+  // the old stores in place and the next start moves them again, and a row already here only gains what it lacked.
   //
-  // `node.db` shipped a few hours before this with `at` and `url` on the
-  // peer row — one route, no `via`, no rank. Any node that has run since
-  // has one, so this is a real migration and not a hypothetical.
-  //
-  // Asked of the table rather than guarded by a version number: a schema
-  // that answers what it has needs no second place to record what it had.
-  (function migrate() {
-    let cols;
-    try {
-      cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
-    } catch (e) { return; }
-
-    // The new columns first, so the copy below can be read back.
-    if (cols.indexOf('labelRank') === -1) db.exec("ALTER TABLE seen ADD COLUMN labelRank INTEGER NOT NULL DEFAULT 4");
-    if (cols.indexOf('labelAt') === -1) db.exec("ALTER TABLE seen ADD COLUMN labelAt INTEGER NOT NULL DEFAULT 0");
-    if (cols.indexOf('present') === -1) db.exec("ALTER TABLE seen ADD COLUMN present INTEGER NOT NULL DEFAULT -1");
-    // THE MARK (0021, R38). Nothing to copy: a row that predates it was
-    // chosen by nobody, which is what the defaults say. The book writes
-    // its marks on its next save, and the node saves it at boot.
-    if (cols.indexOf('choice') === -1) db.exec("ALTER TABLE seen ADD COLUMN choice TEXT NOT NULL DEFAULT ''");
-    if (cols.indexOf('blocked') === -1) db.exec("ALTER TABLE seen ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0");
-    // RELAYS ARE PEERS (goal/G30.7): a row says whether it is a node or a relay; every row before it is a node.
-    if (cols.indexOf('kind') === -1) db.exec("ALTER TABLE seen ADD COLUMN kind TEXT NOT NULL DEFAULT 'node'");
-
-    // THE OLD SINGLE ROUTE BECOMES A ROW IN THE NEW TABLE, at rank 4 and
-    // with no `via`: nothing recorded which door proved it, and claiming
-    // otherwise would be inventing provenance. Its `told` is the row's own
-    // `seen`, which is the best date anybody has for it.
-    if (cols.indexOf('at') !== -1) {
-      db.exec(`INSERT OR IGNORE INTO seen_routes (publicKey, via, at, url, rank, told)
-        SELECT publicKey, '', at, ${cols.indexOf('url') !== -1 ? 'url' : "''"}, 4, seen
-        FROM seen WHERE at <> ''`);
-      db.exec('ALTER TABLE seen DROP COLUMN at');
+  //   the old seen   its rows as they were: choice 'added' is keep, 'held' held, 'ignored' ignored; kind 'relay' is
+  //                  relay; `seen` is lastSeen, and the best date there is for firstSeen.
+  //   relays         each a relay row: listed is keep, a seat with no refusal is seated, the list's label is myLabel,
+  //                  the face name is face, and its url a direct route. The rest of that row is gone with the box
+  //                  (seat label, email, refusal: the relay holds what the node gave it).
+  //   peers          apiAuth's names, as myLabel where the row has none.
+  //   contacts.json  each a kept row, a held one held; owned is mine, the card kept; a relay it was seen on is a route
+  //                  to that relay, at hearsay. Shown only signed by its ID: contacts.cardOf verifies on every read.
+  (function moveIn() {
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; });
+    const has = function (name) { return tables.indexOf(name) !== -1; };
+    const bookFile = path.join(rootDir, 'relay-state', 'contacts.json');
+    const haveBook = fs.existsSync(bookFile);
+    if (!oldSeen && !has('relays') && !has('peers') && !haveBook) return;
+    let book = [];
+    if (haveBook) {
+      try { const parsed = JSON.parse(fs.readFileSync(bookFile, 'utf8')); if (Array.isArray(parsed)) book = parsed; }
+      catch (e) { book = []; }
     }
-    if (cols.indexOf('url') !== -1) db.exec('ALTER TABLE seen DROP COLUMN url');
-  }());
+    // A row already here keeps what it has and gains what it lacked; a flag set by any old store stays set.
+    const put = db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, myLabel, card, face, firstSeen,
+        lastSeen, ${SEEN_FLAGS.join(', ')})
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${SEEN_FLAGS.map(function () { return '?'; }).join(', ')})
+      ON CONFLICT(publicKey) DO UPDATE SET
+        label     = CASE WHEN seen.label = '' THEN excluded.label ELSE seen.label END,
+        labelRank = CASE WHEN seen.label = '' THEN excluded.labelRank ELSE seen.labelRank END,
+        labelAt   = CASE WHEN seen.label = '' THEN excluded.labelAt ELSE seen.labelAt END,
+        present   = CASE WHEN seen.present < 0 THEN excluded.present ELSE seen.present END,
+        myLabel   = CASE WHEN seen.myLabel = '' THEN excluded.myLabel ELSE seen.myLabel END,
+        card      = CASE WHEN seen.card = '' THEN excluded.card ELSE seen.card END,
+        face      = CASE WHEN seen.face = '' THEN excluded.face ELSE seen.face END,
+        firstSeen = CASE WHEN seen.firstSeen = 0 OR (excluded.firstSeen > 0 AND excluded.firstSeen < seen.firstSeen)
+                         THEN excluded.firstSeen ELSE seen.firstSeen END,
+        lastSeen  = MAX(seen.lastSeen, excluded.lastSeen),
+        ${SEEN_FLAGS.map(function (f) { return f + ' = MAX(seen.' + f + ', excluded.' + f + ')'; }).join(',\n        ')}`);
+    const route = db.prepare(`INSERT OR IGNORE INTO seen_routes (publicKey, via, at, url, rank, told)
+      VALUES (?, ?, ?, ?, ?, ?)`);
+    function row(key, r) {
+      const f = r.flags || {};
+      put.run(String(key), String(r.label || ''), Number(r.labelRank) || 4, Number(r.labelAt) || 0,
+        typeof r.present === 'number' ? r.present : -1, String(r.myLabel || ''), String(r.card || ''), String(r.face || ''),
+        Number(r.firstSeen) || 0, Number(r.lastSeen) || 0,
+        ...SEEN_FLAGS.map(function (k) { return f[k] ? 1 : 0; }));
+    }
+    const ms = function (iso) { const t = Date.parse(String(iso || '')); return t > 0 ? t : 0; };
+    const now = Date.now();
+    const relayKeyAt = Object.create(null);
+    const self = (function () {
+      try { return JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8')).publicKey || ''; }
+      catch (e) { return ''; }
+    }());
 
-  // ── THE CHOSEN, BY INDEX (0021) ──────────────────────────────────────
-  //
-  //   Andy: "so there might be a index in the shadow row, that only
-  //   return the "chosen" ones...."
-  //
-  // Partial, so a node that remembers thirty thousand strangers and
-  // chose forty people keeps an index of forty. Created after the
-  // migration because it names columns an old file gains only there.
-  db.exec("CREATE INDEX IF NOT EXISTS seen_chosen ON seen (choice) WHERE choice <> '' OR blocked = 1");
+    db.exec('BEGIN');
+    try {
+      if (oldSeen) {
+        db.prepare('SELECT * FROM seen_old').all().forEach(function (r) {
+          if (!r.publicKey || r.publicKey === self) return;
+          // THE FIRST SHAPE OF ALL (cycle R29) had one route on the row, `at` and `url`: it becomes a route at rank 4
+          // with no `via`, since nothing recorded which door proved it, told when the row was seen.
+          if (r.at) route.run(r.publicKey, '', r.at, String(r.url || ''), 4, Number(r.seen) || 0);
+          row(r.publicKey, {
+            label: r.label, labelRank: r.labelRank, labelAt: r.labelAt, present: r.present,
+            firstSeen: r.seen, lastSeen: r.seen,
+            flags: { keep: r.choice === 'added', held: r.choice === 'held', ignored: r.choice === 'ignored',
+              blocked: !!r.blocked, relay: r.kind === 'relay' },
+          });
+        });
+        db.exec('DROP TABLE seen_old');
+      }
+      if (has('relays')) {
+        db.prepare('SELECT * FROM relays').all().forEach(function (r) {
+          if (!r.key || !r.url) return;
+          relayKeyAt[String(r.url).replace(/\/+$/, '')] = r.key;
+          row(r.key, {
+            myLabel: r.label && r.label !== r.url ? r.label : '', face: r.faceName || '',
+            firstSeen: ms(r.firstSeen) || ms(r.acceptedAt), lastSeen: ms(r.acceptedAt) || ms(r.firstSeen),
+            flags: { relay: true, keep: !!r.listed, seated: !!r.seatClaimedAt && !r.refusal },
+          });
+          route.run(r.key, '', r.key, String(r.url).replace(/\/+$/, ''), 1, now);
+        });
+        db.exec('DROP TABLE relays');
+      }
+      if (has('peers')) {
+        db.prepare('SELECT * FROM peers').all().forEach(function (r) {
+          if (r.peer_id && r.peer_id !== self) row(r.peer_id, { myLabel: r.label });
+        });
+        db.exec('DROP TABLE peers');
+      }
+      book.forEach(function (b) {
+        if (!b || typeof b.publicKey !== 'string' || !b.publicKey || b.publicKey === self) return;
+        const held = b.acquiredVia === 'hold';
+        // A blocked row the book had forgotten (contacts.forget kept it as a roll row) is blocked and not kept.
+        const forgotten = b.acquiredVia === 'roll' && b.blocked === true;
+        row(b.publicKey, {
+          label: b.publicLabel, myLabel: b.myLabel, card: typeof b.card === 'string' ? b.card : '',
+          flags: { keep: !held && !forgotten, held: held, blocked: b.blocked === true, mine: b.owned === true },
+        });
+        (Array.isArray(b.relays) ? b.relays : []).forEach(function (u) {
+          const url = String(u || '').replace(/\/+$/, '');
+          const at = relayKeyAt[url];
+          if (at) route.run(b.publicKey, '', at, url, 4, now);
+        });
+      });
+      db.exec('COMMIT');
+    } catch (e) { db.exec('ROLLBACK'); throw e; }
+    if (haveBook) { try { fs.unlinkSync(bookFile); } catch (e) { /* the rows are in; a later start finds no new ones */ } }
+  }());
 
   const q = {
     get: db.prepare('SELECT * FROM seen WHERE publicKey = ?'),
@@ -594,6 +650,9 @@ function open(rootDir, opts) {
     trimRoutes: db.prepare(`DELETE FROM seen_routes WHERE publicKey = ? AND rowid NOT IN (
       SELECT rowid FROM seen_routes WHERE publicKey = ? ORDER BY rank ASC, told DESC LIMIT ?)`),
     dropRoutes: db.prepare('DELETE FROM seen_routes WHERE publicKey = ?'),
+    dropRoute: db.prepare('DELETE FROM seen_routes WHERE publicKey = ? AND via = ? AND at = ?'),
+    // THE PIN'S ONE LOOKUP (goal/G40.11): whose direct route a url is, on seen_routes_url (its WHERE repeated).
+    routeByUrl: db.prepare("SELECT * FROM seen_routes WHERE url = ? AND url <> '' AND via = '' AND at = publicKey"),
     orphanRoutes: db.prepare(
       'DELETE FROM seen_routes WHERE publicKey NOT IN (SELECT publicKey FROM seen)'),
     clearRoutes: db.prepare('DELETE FROM seen_routes'),
@@ -639,31 +698,24 @@ function open(rootDir, opts) {
     bAll: db.prepare('SELECT * FROM queue_backoff'),
     // A backoff that has run out is not worth carrying into a new process.
     bExpired: db.prepare('DELETE FROM queue_backoff WHERE untilWall <= ?'),
-    // apiAuth/G1.3: the two exact lookups are the double key's; search walks the joined rows.
+    // apiAuth/G1.3: the two exact lookups are the double key's; search walks the joined rows. The name a grant shows
+    // is its ID's row's (goal/G40.11: the peers table moved into seen): what I call them, else what they call
+    // themselves, '' when the table has no row for them.
     aHas: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? AND path = ?'),
     aPaths: db.prepare('SELECT path FROM grants WHERE peer_id = ? ORDER BY path'),
-    aPeer: db.prepare('SELECT g.peer_id AS key, p.label AS label, g.path AS path FROM grants g JOIN peers p ON p.peer_id = g.peer_id WHERE g.peer_id = ? ORDER BY g.path'),
-    aAll: db.prepare('SELECT g.peer_id AS key, p.label AS label, g.path AS path FROM grants g JOIN peers p ON p.peer_id = g.peer_id ORDER BY p.label, g.path'),
+    aPeer: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
+      LEFT JOIN seen s ON s.publicKey = g.peer_id WHERE g.peer_id = ? ORDER BY g.path`),
+    aAll: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
+      LEFT JOIN seen s ON s.publicKey = g.peer_id ORDER BY label, g.path`),
     aKnownPath: db.prepare('SELECT 1 FROM grants WHERE path = ? LIMIT 1'),
-    aPeerRow: db.prepare('SELECT label FROM peers WHERE peer_id = ?'),
-    aPeerPut: db.prepare('INSERT OR IGNORE INTO peers (peer_id, label) VALUES (?, ?)'),
+    aGranted: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? LIMIT 1'),
     aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
     aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
-    aPeerDelIfBare: db.prepare('DELETE FROM peers WHERE peer_id = ? AND NOT EXISTS (SELECT 1 FROM grants WHERE peer_id = ?)'),
-    aRelabel: db.prepare('UPDATE peers SET label = ? WHERE peer_id = ?'),
-    relAll: db.prepare('SELECT * FROM relays ORDER BY listed DESC, pos, url'),
-    relByKey: db.prepare('SELECT * FROM relays WHERE key = ?'),
-    relByUrl: db.prepare('SELECT * FROM relays WHERE url = ?'),
-    relPut: db.prepare(`INSERT OR REPLACE INTO relays (key, url, label, listed, pos, firstSeen, acceptedAt, replaced,
-      seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply, email, emailVerified)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
-    relDel: db.prepare('DELETE FROM relays WHERE key = ?'),
-    relMaxPos: db.prepare('SELECT COALESCE(MAX(pos), -1) AS n FROM relays WHERE listed = 1'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
     // blanked by the next packet that arrives. `excluded` is the row being
-    // inserted; `seen.at` is what is already there.
+    // inserted; `seen.label` is what is already there.
     // GREEDY, AND NOW ALSO REFUSING A DOWNGRADE. The old statement kept a
     // field when the caller had none; this one additionally keeps it when
     // the caller HAS one but is less entitled to be believed.
@@ -685,8 +737,11 @@ function open(rootDir, opts) {
     // all along — "WHITE is NOT a dimmer red. A contact we share no relay
     // with is not offline, they are UNSEEN" — and 0019 rests on the same
     // distinction. Two states could not hold it.
-    put: db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, seen, kind)
-      VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ? = '' THEN 'node' ELSE ? END)
+    //
+    // firstSeen is written once, by the insert; `relay` only ever goes from 0 to 1 here (a caller that knows the ID
+    // is a relay says so; one that does not leaves it).
+    put: db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, firstSeen, lastSeen, relay)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(publicKey) DO UPDATE SET
         label     = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
                          THEN excluded.label ELSE seen.label END,
@@ -695,63 +750,36 @@ function open(rootDir, opts) {
         labelAt   = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
                          THEN excluded.labelAt ELSE seen.labelAt END,
         present   = CASE WHEN excluded.present < 0 THEN seen.present ELSE excluded.present END,
-        seen      = excluded.seen,
-        kind      = CASE WHEN ? = '' THEN seen.kind ELSE excluded.kind END`),
+        firstSeen = CASE WHEN seen.firstSeen = 0 THEN excluded.firstSeen ELSE seen.firstSeen END,
+        lastSeen  = excluded.lastSeen,
+        relay     = MAX(seen.relay, excluded.relay)`),
+    // A ROW THE OWNER'S OWN ACT MAKES (keep, block, a name, a card) has never been SEEN — a contact added by pasting a
+    // key — so its dates are 0 and its presence unknown, which is the truth rather than a guess. set() then writes the
+    // fields it was given on it.
+    make: db.prepare('INSERT OR IGNORE INTO seen (publicKey) VALUES (?)'),
     del: db.prepare('DELETE FROM seen WHERE publicKey = ?'),
     count: db.prepare('SELECT COUNT(*) AS n FROM seen'),
-    // ── ONE EVICTION, AND THE MARK DECIDES WHO IS IN LINE (0021) ─────
+    // ── ONE SHEDDING, AND THE FLAGS DECIDE WHO IS IN LINE (0021, goal/G40.11) ─
     //
     //   Andy: "it's the chosen-mark that gives protection from eviction,
     //   if the memory overflows. the shedded rows will first be ignored,
     //   then held, once the memory is full with 'added' statuses no more
     //   can be chosen/added until eviction by blocking or ignoring...."
     //
-    // Unchosen first, then ignored and blocked, then held; last seen
-    // orders each tier. An added, unblocked row is not in the queue at all
-    // — that is the protection, and it is a WHERE, not a weight, so no
-    // amount of pressure reaches it. Blocking someone puts them back in
-    // line: "what's the point of storing ignored rows when all the space
-    // is used by chosen ones?"
-    //
-    // THE AGE EVICTION STOOD BESIDE THIS, and is gone (0021): "I don't see
-    // why the node should throw away memories when the 20 Megabyte cap is
-    // not exhausted yet." Age still orders the line; it no longer starts it.
-    shedCount: db.prepare(`SELECT COUNT(*) AS n FROM seen WHERE NOT (choice = 'added' AND blocked = 0)`),
+    // The box (v24): "lastSeen is the staleness: it orders shedding once the cap is reached, never age alone. Shedding
+    // takes unflagged rows first, then ignored or blocked, then held, oldest first in each; keep and mine never." A
+    // kept or owned row is not in the line at all — that is the protection, and it is a WHERE (seen_shed's own), not
+    // a weight, so no amount of pressure reaches it.
+    shedCount: db.prepare('SELECT COUNT(*) AS n FROM seen WHERE keep = 0 AND mine = 0'),
     overflow: db.prepare(`DELETE FROM seen WHERE publicKey IN (
-      SELECT publicKey FROM seen WHERE NOT (choice = 'added' AND blocked = 0)
-      ORDER BY CASE WHEN choice = 'held' AND blocked = 0 THEN 2
-                    WHEN choice = 'ignored' OR blocked = 1 THEN 1
-                    ELSE 0 END ASC,
-               seen ASC
+      SELECT publicKey FROM seen WHERE keep = 0 AND mine = 0
+      ORDER BY CASE WHEN ignored = 1 OR blocked = 1 THEN 1 WHEN held = 1 THEN 2 ELSE 0 END ASC, lastSeen ASC
       LIMIT ?)`),
-    // The mark alone. A row the mark creates has never been SEEN — a
-    // contact added by pasting a key — so its date is 0 and its presence
-    // unknown, which is the truth rather than a guess.
-    mark: db.prepare(`INSERT INTO seen (publicKey, present, seen, choice, blocked)
-      VALUES (?, -1, 0, ?, ?)
-      ON CONFLICT(publicKey) DO UPDATE SET choice = excluded.choice, blocked = excluded.blocked`),
-    unmarkBook: db.prepare(`UPDATE seen SET choice = '', blocked = 0
-      WHERE choice IN ('held', 'added') OR blocked = 1`),
-    chosen: db.prepare(`SELECT publicKey, choice, blocked FROM seen
-      WHERE choice <> '' OR blocked = 1`),
-    // WHO A SEARCH OF MEMORY READS (R39), in two halves.
-    //
-    // The chosen, all of them, through the partial index: the owner's own
-    // people are always compared ("chosen ones should always be
-    // included"), and their name may live only in the book.
-    //
-    // Everybody else, NEWEST FIRST AND CAPPED — Andy: "we'll run those
-    // searches down a newest-first key and cap at 1000 rows compared".
-    // `seen_when` is that key; a row with no name cannot match what a
-    // person types and is not read.
-    // The first clause is the partial index's own condition, repeated
-    // word for word: SQLite uses a partial index only when the query
-    // states its WHERE, and without it this scanned every row.
-    recallChosen: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
-      WHERE (choice <> '' OR blocked = 1) AND (choice IN ('held', 'added') OR blocked = 1)`),
-    recallRecent: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
-      WHERE label <> '' AND choice NOT IN ('held', 'added') AND blocked = 0
-      ORDER BY seen DESC LIMIT ?`),
+    // WHO A SEARCH READS (R39, goal/G40.11): the kept, the owned and the held, all of them ("the search lists kept and
+    // held rows only"), each flag through its own partial index. Nobody else is listed: a stranger is shown only once
+    // the network search has made it held.
+    listed: db.prepare('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1 ' +
+      'UNION SELECT * FROM seen WHERE held = 1'),
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
@@ -764,35 +792,51 @@ function open(rootDir, opts) {
     cacheBytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
       WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name IN ('seen', 'seen_routes'))`),
   };
+  // Every row with one flag true, newest first, through that flag's partial index (its WHERE is the statement's).
+  const byFlag = {};
+  SEEN_FLAGS.forEach(function (f) {
+    byFlag[f] = db.prepare('SELECT * FROM seen WHERE ' + f + ' = 1 ORDER BY lastSeen DESC');
+  });
+  // The fields set() may write, beside the flags: what the owner calls them and their card.
+  const SET_TEXT = ['myLabel', 'card', 'face'];
 
-  // A row is a node or a relay (goal/G30.7); a caller that says neither leaves the row as it is.
-  function kindOf(k) { return k === 'relay' || k === 'node' ? k : ''; }
+  // A ROW AS EVERY READER GETS IT: the flags as booleans, presence as null when nobody has said, so a caller cannot
+  // paint somebody red on the strength of never having heard.
   function row(r) {
     if (!r) return null;
-    return {
-      label: r.label, labelRank: r.labelRank, labelAt: r.labelAt,
-      // null rather than false when nobody has said, so a caller cannot
-      // paint somebody red on the strength of never having heard.
+    const out = {
+      publicKey: r.publicKey, label: r.label, labelRank: r.labelRank, labelAt: r.labelAt,
       present: r.present < 0 ? null : !!r.present,
-      seen: r.seen,
-      choice: r.choice || '',
-      blocked: !!r.blocked,
-      kind: r.kind || 'node',
+      myLabel: r.myLabel || '', card: r.card || '', face: r.face || '', firstSeen: r.firstSeen, lastSeen: r.lastSeen,
     };
-  }
-  function relayRow(r) {
-    if (!r) return null;
-    return {
-      key: r.key, url: r.url, label: r.label, listed: !!r.listed, pos: r.pos,
-      firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced,
-      seatLabel: r.seatLabel, seatClaimedAt: r.seatClaimedAt,
-      refusal: r.refusal, refusedAt: r.refusedAt,
-      faceName: r.faceName || '', faceEmail: r.faceEmail || '', faceReply: r.faceReply || '',
-      email: r.email || '', emailVerified: !!r.emailVerified,
-    };
+    SEEN_FLAGS.forEach(function (f) { out[f] = !!r[f]; });
+    return out;
   }
   function routeRow(r) {
     return { via: r.via, at: r.at, url: r.url, rank: r.rank, told: r.told };
+  }
+
+  // ── THE SHADOW STREAM'S SOURCE (goal/G40.11) ─────────────────────────
+  //
+  //   Andy, 2026-10-26: "yes." to "The stream: one job for the table, one changed row per update."
+  //
+  // Every write of a row hands the row, as it now reads, to whoever listens (server.js: the shadow job), when it
+  // reads differently from before the write. One row per call, as it changed; nothing held back or gathered. The cost,
+  // stated: one read before each write, and one job update for every row that changed — every presence word and every
+  // arrival moves lastSeen, so one update per arrival.
+  const listeners = [];
+  function changed(publicKey, before) {
+    if (!listeners.length) return;
+    const after = q.get.get(publicKey);
+    if (JSON.stringify(after || null) === JSON.stringify(before || null)) return;
+    const shown = after ? row(after) : { publicKey: publicKey, gone: true };
+    listeners.slice().forEach(function (fn) { try { fn(shown); } catch (e) { /* a listener's fault is its own */ } });
+  }
+  function writing(publicKey, fn) {
+    const before = listeners.length ? q.get.get(publicKey) : null;
+    const out = fn();
+    changed(publicKey, before);
+    return out;
   }
 
   const tq = {
@@ -895,6 +939,11 @@ function open(rootDir, opts) {
       bytes: function () { return tq.bytes.get().n; },
     },
 
+    // ── THE ONE TABLE, AS ITS READERS ASK IT (goal/G40.11) ────────────────
+    //
+    // seenPeers.js keeps the rules of what is learned and when a row goes, contacts.js and relayKeys.js the owner's
+    // acts on a row; this is where the rows live. A row comes out as row() above.
+    SEEN_FLAGS: SEEN_FLAGS,
     seen: {
       get: function (publicKey) { return row(q.get.get(String(publicKey || ''))); },
       // `present` is three-valued in both directions: true, false, or
@@ -903,12 +952,39 @@ function open(rootDir, opts) {
       // be able to mark somebody away by staying silent.
       put: function (publicKey, what) {
         const w = what || {};
+        const key = String(publicKey || '');
         const present = w.present === true ? 1 : (w.present === false ? 0 : -1);
-        q.put.run(String(publicKey || ''),
-          String(w.label || ''), Number(w.labelRank || 4), Number(w.labelAt || w.seen || 0),
-          present, Number(w.seen || 0), kindOf(w.kind), kindOf(w.kind), kindOf(w.kind));
-        return row(q.get.get(String(publicKey || '')));
+        const when = Number(w.seen || 0);
+        writing(key, function () {
+          q.put.run(key, String(w.label || ''), Number(w.labelRank || 4), Number(w.labelAt || w.seen || 0),
+            present, when, when, w.relay === true ? 1 : 0);
+        });
+        return row(q.get.get(key));
       },
+      // THE OWNER'S ACTS ON A ROW: any of the flags and myLabel or card, written as given, the row made when there is
+      // none. Fields not named are left alone. firstSeen, when given, is written only on a row that has none (a relay
+      // accepted is first known then). Answers the row as it now reads.
+      set: function (publicKey, fields) {
+        const key = String(publicKey || '').trim();
+        const f = fields || {};
+        if (!key) return null;
+        const cols = [];
+        const vals = [];
+        SEEN_FLAGS.forEach(function (k) { if (typeof f[k] === 'boolean') { cols.push(k + ' = ?'); vals.push(f[k] ? 1 : 0); } });
+        SET_TEXT.forEach(function (k) { if (typeof f[k] === 'string') { cols.push(k + ' = ?'); vals.push(f[k]); } });
+        if (typeof f.firstSeen === 'number' && f.firstSeen > 0) { cols.push('firstSeen = CASE WHEN firstSeen = 0 THEN ? ELSE firstSeen END'); vals.push(f.firstSeen); }
+        writing(key, function () {
+          q.make.run(key);
+          if (cols.length) db.prepare('UPDATE seen SET ' + cols.join(', ') + ' WHERE publicKey = ?').run(...vals, key);
+        });
+        return row(q.get.get(key));
+      },
+      // Every row with that flag, newest first (its partial index).
+      flagged: function (flag) {
+        return byFlag[flag] ? byFlag[flag].all().map(row) : [];
+      },
+      // The rows a search lists: kept, owned and held (see q.listed).
+      listed: function () { return q.listed.all().map(row); },
       // ── ROUTES ───────────────────────────────────────
       //
       // Best-ranked first, and capped: a peer on several relays is normal
@@ -929,56 +1005,31 @@ function open(rootDir, opts) {
         if (maxRoutes > 0) q.trimRoutes.run(key, key, maxRoutes);
         return true;
       },
+      dropRoute: function (publicKey, via, at) {
+        return q.dropRoute.run(String(publicKey || ''), String(via || ''), String(at || '')).changes > 0;
+      },
+      // Whose direct route a url is: { publicKey, url, ... } of that ID, or null (the pin's one lookup).
+      byUrl: function (url) {
+        const r = q.routeByUrl.get(String(url || ''));
+        return r ? Object.assign({ publicKey: r.publicKey }, routeRow(r)) : null;
+      },
       forget: function (publicKey) {
         // The routes go with the peer: a row in `seen_routes` for somebody
         // no longer in `seen` is unreachable by every reader here.
-        q.dropRoutes.run(String(publicKey || ''));
-        return q.del.run(String(publicKey || '')).changes > 0;
+        const key = String(publicKey || '');
+        q.dropRoutes.run(key);
+        return writing(key, function () { return q.del.run(key).changes > 0; });
       },
       size: function () { return q.count.get().n; },
-      // ── THE MARK (0021) ──────────────────────────────────────────
-      //
-      // One of '', 'ignored', 'held', 'added', with blocked beside it
-      // rather than in it — the same shape contacts.js keeps, where a
-      // block must not erase how somebody arrived.
-      mark: function (publicKey, choice, blocked) {
-        const key = String(publicKey || '').trim();
-        const c = CHOICES.indexOf(choice) === -1 ? '' : choice;
-        if (!key) return false;
-        q.mark.run(key, c, blocked ? 1 : 0);
-        return true;
-      },
-      // THE BOOK'S MARKS, WHOLE. Everything the book said last time is
-      // taken off and what it says now is put on, in one transaction, so
-      // a key that left the book loses its protection in the same instant.
-      // 'ignored' is not the book's to clear: the door wrote it.
-      markBook: function (marks) {
-        store.transaction(function () {
-          q.unmarkBook.run();
-          (marks || []).forEach(function (m) {
-            if (m && m.publicKey) q.mark.run(String(m.publicKey), CHOICES.indexOf(m.choice) === -1 ? '' : m.choice, m.blocked ? 1 : 0);
-          });
-        });
-      },
-      chosen: function () {
-        return q.chosen.all().map(function (r) {
-          return { publicKey: r.publicKey, choice: r.choice, blocked: !!r.blocked };
-        });
-      },
-      recall: function (strangerRows) {
-        const limit = Math.max(0, Math.floor(Number(strangerRows)));
-        const rows = q.recallChosen.all().concat(
-          isFinite(limit) ? q.recallRecent.all(limit) : []);
-        return rows.map(function (r) {
-          return {
-            publicKey: r.publicKey, label: r.label,
-            present: r.present < 0 ? null : !!r.present, seen: r.seen,
-            choice: r.choice || '', blocked: !!r.blocked,
-          };
-        });
+      // Every row write, as the row now reads ({publicKey, gone: true} when it went), to fn (the shadow stream).
+      // Answers a function that stops it.
+      onChange: function (fn) {
+        if (typeof fn !== 'function') return function () {};
+        listeners.push(fn);
+        return function () { const i = listeners.indexOf(fn); if (i !== -1) listeners.splice(i, 1); };
       },
       // Rows the sweep may still take. Zero, with the cache over its cap,
-      // is what "full" means: only added people are left.
+      // is what "full" means: only kept and owned rows are left.
       sheddable: function () { return q.shedCount.get().n; },
       // ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER HAS ──
       //
@@ -1329,46 +1380,33 @@ function open(rootDir, opts) {
       },
     },
 
-    // apiAuth/G1.3's tables, for apiAuth.js alone. A peers row is born by the first grant and goes with the last.
+    // apiAuth/G1.3's table, for apiAuth.js alone. The name a grant shows is its ID's row in seen (goal/G40.11): a
+    // grant given under a name writes it as myLabel when the row has none, and a relabel is that row's myLabel.
     auth: {
       has: function (key, p) { return !!q.aHas.get(String(key), String(p)); },
       paths: function (key) { return q.aPaths.all(String(key)).map(function (r) { return r.path; }); },
       peer: function (key) { return q.aPeer.all(String(key)).map(function (r) { return { key: r.key, label: r.label, path: r.path }; }); },
       all: function () { return q.aAll.iterate(); },
       knownPath: function (p) { return !!q.aKnownPath.get(String(p)); },
-      label: function (key) { const r = q.aPeerRow.get(String(key)); return r ? r.label : null; },
+      // The name for a key that holds a grant, '' when its row has none; null when it holds no grant.
+      label: function (key) {
+        if (!q.aGranted.get(String(key))) return null;
+        const r = row(q.get.get(String(key)));
+        return r ? (r.myLabel || r.label || '') : '';
+      },
       grant: function (key, p, label) {
-        db.exec('BEGIN');
-        try { q.aPeerPut.run(String(key), String(label)); q.aGrantPut.run(String(key), String(p)); db.exec('COMMIT'); }
-        catch (e) { db.exec('ROLLBACK'); throw e; }
+        store.transaction(function () {
+          q.aGrantPut.run(String(key), String(p));
+          const was = row(q.get.get(String(key)));
+          if (label && !(was && was.myLabel)) store.seen.set(String(key), { myLabel: String(label) });
+        });
       },
-      revoke: function (key, p) {
-        db.exec('BEGIN');
-        try {
-          const n = q.aGrantDel.run(String(key), String(p)).changes;
-          q.aPeerDelIfBare.run(String(key), String(key));
-          db.exec('COMMIT');
-          return n > 0;
-        } catch (e) { db.exec('ROLLBACK'); throw e; }
+      revoke: function (key, p) { return q.aGrantDel.run(String(key), String(p)).changes > 0; },
+      relabel: function (key, label) {
+        if (!q.aGranted.get(String(key))) return false;
+        store.seen.set(String(key), { myLabel: String(label) });
+        return true;
       },
-      relabel: function (key, label) { return q.aRelabel.run(String(label), String(key)).changes > 0; },
-    },
-
-    // goal/G19.15's table, for relayKeys.js alone. A row goes in and comes out as one plain object.
-    relays: {
-      all: function () { return q.relAll.all().map(relayRow); },
-      byKey: function (key) { return relayRow(q.relByKey.get(String(key || ''))); },
-      byUrl: function (url) { return relayRow(q.relByUrl.get(String(url || ''))); },
-      put: function (r) {
-        q.relPut.run(String(r.key), String(r.url), String(r.label || ''), r.listed ? 1 : 0, Number(r.pos) || 0,
-          String(r.firstSeen || ''), String(r.acceptedAt || ''), String(r.replaced || ''),
-          String(r.seatLabel || ''), String(r.seatClaimedAt || ''),
-          String(r.refusal || ''), String(r.refusedAt || ''),
-          String(r.faceName || ''), String(r.faceEmail || ''), String(r.faceReply || ''),
-          String(r.email || ''), r.emailVerified ? 1 : 0);
-      },
-      del: function (key) { return q.relDel.run(String(key || '')).changes > 0; },
-      nextPos: function () { return q.relMaxPos.get().n + 1; },
     },
 
     transaction: function (fn) {
@@ -1391,7 +1429,6 @@ module.exports = {
   open: open,
   MAX_DB_BYTES: MAX_DB_BYTES,
   MAX_ROUTES: MAX_ROUTES,
-  CHOICES: CHOICES,
   available: available,
   dbPath: dbPath,
 };

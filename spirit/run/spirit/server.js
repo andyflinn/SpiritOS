@@ -155,9 +155,18 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // peer verb has answered (below), the moment the node knows.
 let joinStepsJob = null;
 try { joinStepsJob = require('./joinStepsJob').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
-// THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, refreshed as join-steps is, and on a relay's report.
-let relayRowsJob = null;
-try { relayRowsJob = require('./relayRowsJob').create(ROOT_DIR, jobs); } catch (e) { relayRowsJob = null; }
+// THE ONE TABLE ON THE STREAM (goal/G40.11; Andy, 2026-10-26: "yes." to "one job for the table, one changed row per
+// update"): the permanent job 'shadow', published with each row of seen as it changed ({row}; {row: {publicKey, gone}}
+// when it went). It replaced the relays-whole job of goal/G40.10: a screen holds its rows and takes
+// the one that changed. The cost, stated: one update for every row written differently, so one per presence word and
+// per arrival (nodeStore's onChange).
+let shadowJob = null;
+try {
+  shadowJob = jobs.createJob('permanent', 'shadow', {});
+  require('./nodeStore').open(ROOT_DIR).seen.onChange(function (row) {
+    try { jobs.updateJob(shadowJob.id, { data: { row: row } }); } catch (e) { /* the next change publishes again */ }
+  });
+} catch (e) { shadowJob = null; }
 
 // `let presence` STOOD HERE. The node's held streams live inside peerRouter
 // since goal/G19.14 (peerPost.holdStreams): one door, and this file asks it.
@@ -912,7 +921,6 @@ const server = http.createServer((req, res) => {
         if (joinStepsJob && /^(relay|contact|peer)\./.test(String(verb))) {
           res.on('finish', function () {
             try { joinStepsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ }
-            try { if (relayRowsJob) relayRowsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ }
           });
         }
         let ran = null;
@@ -1025,41 +1033,8 @@ catch (e) {
   settings.problems.forEach(function (why) { console.warn('relay-state/node.json: ' + why); });
 }());
 
-// ── THE ROUTES A CONTACT ROW STILL HOLDS, MOVED ONCE (cycle R1) ──────
-//
-//   Andy: "the hints are removed from the users contacts."
-//
-// `routes` left the contact row with 0018, and a node that ran before
-// today has them sitting in contacts.json. Dropping them silently would
-// throw away the only routes such a node has for its foreign contacts —
-// exactly what 0018 said to wait for the store to avoid.
-//
-// AT HEARSAY, because nothing in the book recorded who said them. Any
-// better-sourced route outranks them the moment one arrives, which is the
-// honest standing for a claim with no provenance.
-//
-// IDEMPOTENT, so it needs no "have I done this" flag: a note is a merge,
-// and once `upsert` stops carrying `routes` the rows fall away on their
-// own. Silent, because a node with none — every node made from today —
-// should not be told about a migration that did nothing.
-try {
-  const held = contactBook.everyRouteHeld(ROOT_DIR);
-  if (held.length) {
-    const shadow = require('./hub').shadow(ROOT_DIR);
-    const seenPeersRanks = require('./seenPeers');
-    held.forEach(function (r) {
-      try { shadow.note(r.publicKey, { at: r.at, rank: seenPeersRanks.HEARSAY }); }
-      catch (e) { /* one row that will not take is not a reason to stop */ }
-    });
-  }
-} catch (e) { /* a book that cannot be read is not a reason to refuse to boot */ }
-
-// ── THE BOOK'S MARKS, ONCE AT BOOT (0021) ─────────────────────────────
-//
-// Every save marks the memory, but a book written before marks existed —
-// or edited by hand while the node was down — has not been saved since.
-// One pass, so a node's added people are protected from its first sweep.
-contactBook.syncMarks(ROOT_DIR);
+// THE BOOK'S ROUTES AND MARKS WERE MOVED HERE AT BOOT (cycle R1, 0021) until goal/G40.11: contacts.json is a set of
+// rows of the one table now, moved in by nodeStore on the first start, and a row's flags are its marks.
 
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
@@ -1209,27 +1184,13 @@ contactBook.syncMarks(ROOT_DIR);
     // them, and a question must not write somebody into the book.
     keepCard: function (toKey, cardText) {
       const book = require('./contacts');
-      // ── A CARD WE ASKED FOR GETS A ROW TO SIT ON ──────────────────
+      // ── A CARD WE ASKED FOR SITS ON THAT KEY'S ROW ──────────────
       //
-      // `setCard` refuses a card for a key it has no row for, which is
-      // right: a card must not be smuggled in beside an unverified one.
-      // But after cycle 10 R5 a node cannot POST to somebody whose card it does
-      // not hold — so with no row, asking for a card would achieve
-      // nothing and the first message to a new peer would be impossible.
-      //
-      // THE ROW IS MADE AT THE LOWEST RANK, `roll`, and that is the whole
-      // of it: seen, not known, not listened to. Nothing about the front
-      // door changes, nobody becomes a correspondent, and the To list
-      // (addressBook) still excludes them.
-      //
-      // WHY THIS IS NOT "a book that fills up with everyone who looked at
-      // you" — the case nodeCard.js warns about. That is somebody ASKING
-      // US, and it still writes nothing. This is us asking THEM: our own
-      // act, about a key we chose to look up.
-      if (!book.byPublicKey(ROOT_DIR, toKey)) {
-        book.upsert(ROOT_DIR, { publicKey: toKey, acquiredVia: book.ROLL });
-      }
-      return book.setCard(ROOT_DIR, toKey, cardText, 'reply');
+      // After cycle 10 R5 a node cannot POST to somebody whose card it does not hold, so the card goes on the row,
+      // made when there is none (goal/G40.11). Unflagged, and that is the whole of it: seen, not kept, not listened
+      // to. WHY THIS IS NOT "a book that fills up with everyone who looked at you": that is somebody ASKING US, and it
+      // still writes nothing. This is us asking THEM, our own act about a key we chose to look up.
+      return book.setCard(ROOT_DIR, toKey, cardText);
     },
     // ── WHAT A POST TO THAT KEY IS SEALED TO (cycle 10, R5) ──────────
     //
@@ -1501,8 +1462,6 @@ contactBook.syncMarks(ROOT_DIR);
     // on top of the sweep, never the only way a member is noticed.
     onRelayEvent: function (ev) {
       relayEvents.note(ev);
-      // A relay's report may have noted the owner's seat (relayKeys.ownerSeat): relay-rows says so if it changed.
-      if (ev && ev.kind === 'status' && relayRowsJob) { try { relayRowsJob.refresh('relay status'); } catch (e) { /* the next report refreshes it */ } }
       // A `kind: 'claim'` branch stood here and never fired: claims arrive
       // as `owner-event` (onOwnerEvent, below), not `relay-event`, since
       // R2 split the two. Adoption lives there now.
@@ -1592,22 +1551,8 @@ contactBook.syncMarks(ROOT_DIR);
       //
       //   Andy: "the (updated) public labels must be part of it."
       //
-      // `publicLabel` is what that person calls themselves in public, so
-      // a relay saying it has changed is a relay improving what this node
-      // knows — which is exactly what it may do. What it may NOT do is
-      // create the row, so this asks first and writes nothing if the
-      // person is a stranger; the cache above already kept it for them.
-      //
-      // `myLabel` is untouched: a name the owner typed is the owner's and
-      // no relay's business.
-      if (body.label) {
-        try {
-          var known = contactBook.byPublicKey(ROOT_DIR, body.key);
-          if (known && known.publicLabel !== body.label) {
-            contactBook.upsert(ROOT_DIR, { publicKey: body.key, publicLabel: body.label });
-          }
-        } catch (e) { /* the route landed; the name can wait */ }
-      }
+      // THEIR PUBLIC NAME went into the one table with the route above (goal/G40.11: the book is rows of it), so a
+      // relay improving it is that note; the owner's myLabel is untouched.
     },
 
     onOwnerEvent: function (ev) {
@@ -1684,7 +1629,7 @@ contactBook.syncMarks(ROOT_DIR);
   function proxyVerb(work) {
     return function (rq, rs) {
       readJsonBody(rq).then((body) => {
-        // Work may answer now or later (relay.search probes its relays).
+        // Work may answer now or later (relay.get reads what peerPost holds; a join waits for its relay).
         return Promise.resolve(work(body || {})).then(function (out) {
           rs.writeHead(out.status || (out.ok ? 200 : 400), { 'Content-Type': 'application/json; charset=utf-8' });
           // The work's own answer, without its status, which is the HTTP one.
@@ -1926,13 +1871,11 @@ contactBook.syncMarks(ROOT_DIR);
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
-    // relay.status is gone: a list is a search (puppets/G2). Both answer
-    // from what the node and its peerPost already hold, with no call to
-    // any relay (Andy's decision, goal/G22.4; hub.js relaySummary).
-    'search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b, { router: peerRouter }); }) },
+    // relay.status is gone: a list is a search (puppets/G2), and relay.search with it (goal/G40.11): contact.search
+    // lists the relays, one row each of the one table, and relay.get answers one, by its ID or its url, from what the
+    // node and its peerPost already hold, with no call to any relay (Andy's decision, goal/G22.4; hub.js relaySummary).
     'get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
-    // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by the url
-    // relay.search hands out. The list is node state and the node its only
+    // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by its url. The list is node state and the node its only
     // writer; there is no relay.add, because a successful relay.claim is
     // what adds one.
     //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
@@ -1940,7 +1883,7 @@ contactBook.syncMarks(ROOT_DIR);
     //   relay? yes."
     'remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b, { router: peerRouter }); }) },
     // relay.leave {key} (goal/G40.10; Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", "go"):
-    // this node gives up its seat on one relay; relay-rows publishes it, as after every relay verb.
+    // this node gives up its seat on one relay; the shadow stream publishes the row's seated, as every change.
     'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayLeave(b, { router: peerRouter }); }) },
     // relay.add {url, label} (goal/G28.1, Andy 2026-10-16): a relay goes on the node's list when its card answers.
     'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
@@ -1977,11 +1920,11 @@ contactBook.syncMarks(ROOT_DIR);
   // and hub.js dispatched it by hand beside a dispatch the door already
   // does. The if-chain is gone: an unknown verb is now refused by a
   // table that knows every verb this node answers.
-  const STANDING = { publicKey: '', acquiredVia: '', blocked: false, held: false };
+  const STANDING = { publicKey: '', keep: false, blocked: false, held: false };
   loopbackVerbs.mount('contact', path.join(__dirname, 'contact'), {
-    // The book, searched: peer.list is gone (puppets/G2). Never asks a
-    // relay; that is peer.search's job.
-    'search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
+    // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
+    // (puppets/G2); the network search it starts asks the relays.
+    'search': { request: { q: '', keep: '', mine: '', relay: '', seated: '', held: '', blocked: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
@@ -2026,7 +1969,7 @@ contactBook.syncMarks(ROOT_DIR);
     'post': { request: { to: '', text: '', via: '', patienceMs: 0, kind: '' }, reply: { ok: true, status: 0, hash: '', from: '', text: '', sig: '', receipt: false }, handler: function (rq, rs) {
       hub.handlePost(rq, rs, readJsonBody, { router: peerRouter });
     } },
-    'acquire': { request: { publicKey: '', publicLabel: '', url: '', via: '' }, reply: { publicKey: '', publicLabel: '', acquiredVia: '' }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
+    'acquire': { request: { publicKey: '', publicLabel: '', url: '' }, reply: { publicKey: '', publicLabel: '', keep: false }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
     // peer.search STOOD HERE: the network search is tier two of contact.search now (goal/G30.19, Andy: "interface
     // change/reduction approved.").
   }, { wire: true, by: 'hub.js' });

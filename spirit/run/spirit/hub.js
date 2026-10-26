@@ -266,41 +266,48 @@ function bytesHeldByPeer(rootDir) {
 // Module level and exported so a suite's fake node answers with exactly
 // what the node would, not a copy of it.
 //
-// THE LABEL IS JSON (goal/G29.6, contact.search changed by Andy's grant: "the changed verb is granted."): {name, owned,
-// blocked, held}. The name is the one the Contacts table always showed: the name I gave them or theirs, the key's
-// ending where two read alike or there is no name. The states are fields, never words in the name (Andy: "no, just a
-// star in the one column, that says it all."); owned is goal/G19.8's: a node whose signed card names this one its owner.
+// THE LABEL IS JSON (goal/G29.6, contact.search changed by Andy's grant: "the changed verb is granted."). Since
+// goal/G40.11 it is one row of the one table: {name, keep, mine, relay, held, blocked, seated, publicLabel, present,
+// url}. The name is the one the Contacts table always showed: the name I gave them or theirs. The flags are fields,
+// never words in the name (Andy: "no, just a star in the one column, that says it all."; box v24: "each boolean a mark
+// on its row in Contacts"). url is a relay's own address, its direct route; present is last-known, null when nobody
+// has said.
 function contactLabel(p) {
-  var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim();
+  var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim() ||
+    // A relay with no name of its own is called by its host, as the relay list always showed it.
+    (p.relay === true ? String(p.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '') : '');
   // No key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1): a row with no name says so.
   return JSON.stringify({
     name: name || '(no name)',
-    owned: p.owned === true, blocked: p.blocked === true, held: p.held === true,
-    // In the book, beside the shadow's and the network's rows in the one Contacts list (goal/G30.19); their own name
-    // beside mine, for a caller matching what they call themselves (the desk onboarding).
-    book: true, publicLabel: String(p.publicLabel || ''),
+    keep: p.keep === true, mine: p.mine === true, relay: p.relay === true, held: p.held === true,
+    blocked: p.blocked === true, seated: p.seated === true,
+    // Their own name beside mine, for a caller matching what they call themselves (the desk onboarding).
+    publicLabel: String(p.publicLabel || ''),
+    present: p.present === true ? true : p.present === false ? false : null,
+    url: String(p.url || ''),
   });
 }
 // RANKED WITH THE PROBABILITY MODULES (goal/G29.6; Andy: "so hub and relay will use probability search from now on."):
-// every person scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
-// (or '*') is everybody, in the book's order. owned, blocked and held are yes-filters beside q (Andy: "why would owned
-// not be a binary filter, owned or not?"). The answer is a probabilityBucket, cut in bytes to one plaintext.
+// every row scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
+// (or '*') is everybody, in the list's order. THE YES-FILTERS (goal/G40.11, box v24): keep, mine, relay, seated, held,
+// blocked, each beside q; a row passes only with every flag asked for. The answer is a probabilityBucket, cut in bytes
+// to one plaintext.
+var SEARCH_FLAGS = ['keep', 'mine', 'relay', 'seated', 'held', 'blocked'];
 var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 function searchPeople(people, q, filters) {
   var words = String(q == null ? '' : q).trim();
   if (/^\*+$/.test(words)) words = '';
   var f = filters || {};
+  var wanted = SEARCH_FLAGS.filter(function (k) { return f[k] === 'yes'; });
   var bucket = createProbabilityBucket(MAX_SEARCHED_PEOPLE);
   var seen = 0;
   var cut = false;
   for (var i = 0; i < (people || []).length; i += 1) {
     var p = people[i];
-    if (f.owned === 'yes' && p.owned !== true) continue;
-    if (f.blocked === 'yes' && p.blocked !== true) continue;
-    if (f.held === 'yes' && p.held !== true) continue;
+    if (wanted.some(function (k) { return p[k] !== true; })) continue;
     if (seen >= MAX_SEARCHED_PEOPLE) { cut = true; break; }
     seen += 1;
-    var score = words ? probabilityStringObjectMatch(words, { name: JSON.parse(contactLabel(p)).name, publicLabel: String(p.publicLabel || ''), myLabel: String(p.myLabel || '') }) : 0;
+    var score = words ? probabilityStringObjectMatch(words, { name: JSON.parse(contactLabel(p)).name, publicLabel: String(p.publicLabel || ''), myLabel: String(p.myLabel || ''), url: String(p.url || '') }) : 0;
     if (words && !(score > 0)) continue;
     bucket.seatFor(score, { key: p.publicKey, label: contactLabel(p) });
   }
@@ -312,10 +319,9 @@ function buildPeople(rootDir) {
 
   var myKey = auth.loadIdentity(rootDir).publicKey;
 
-  // The address book, not just the people this node listens to: somebody
-  // held is waiting to be accepted and somebody blocked has to stay
-  // visible to be unblocked. A row you cannot see is a decision you
-  // cannot reverse.
+  // THE OWNER'S LIST, not just the people this node listens to: the kept and owned, somebody held waiting to be
+  // accepted, and somebody blocked, who has to stay visible to be unblocked. A row you cannot see is a decision you
+  // cannot reverse. Relays are rows of it like people (goal/G40.11), each with its own address.
   var bytesHeld = bytesHeldByPeer(rootDir);
 
   var rows = contactBook.addressBook(rootDir)
@@ -332,27 +338,17 @@ function buildPeople(rootDir) {
         // show what is stored, not what is shown, or clearing the field
         // would look like clearing the name.
         myLabel: row.myLabel || '',
-        acquiredVia: contactBook.acquiredVia(row),
-        // `memberOf` and `missingSince` STOOD HERE: seats on relays this
-        // node owns, and when a key was first found on no roll. Both were
-        // read off rosters, which no relay may return (2026-09-19, see the
-        // note where reconcileMembers stood). A row says what this node
-        // knows about a person, not what a vanished list once said.
-        // One question the app asks about every row: may this be written
-        // to? Held and blocked both answer no, and they are drawn the
-        // same way — a × and no composer — because to the person looking
-        // at the list they are the same fact.
-        held: !contactBook.listens(row),
-        blocked: contactBook.isBlocked(row),
-        // Their signed card names this node as owner (goal/G19.8, contacts.setCard through ownerBadge.ownedBy).
-        owned: row.owned === true,
+        // The row's flags, as the table holds them (goal/G40.11).
+        keep: row.keep, mine: row.mine, relay: row.relay, held: row.held, blocked: row.blocked, seated: row.seated,
+        present: row.present,
+        url: row.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '',
         // Bytes this node is carrying for them, across every app that
         // keeps a file per peer. Always a number, 0 for somebody who has
         // cost nothing yet — an absent field would make the app decide
         // between "none" and "not asked", which are not the same answer.
         bytesHeld: bytesHeld[row.publicKey] || 0,
         // What they cost in attention. Computed from the sidecar
-        // (peerStats), never from a field on the row: a contactBook row is
+        // (peerStats), never from a field on the row: a row is
         // what a human decided, and a packet counter is not a decision.
         //
         // A missing sidecar summarises as zeros, and zeros are the true
@@ -381,9 +377,6 @@ function buildPeople(rootDir) {
   rows.sort(function (a, b) { return String(a.caption).localeCompare(String(b.caption)); });
   return rows;
 }
-
-// The peer search's one ranker, on the probability modules, shared with every relay (goal/G29.17).
-var peerRank = require('./peerRank');
 
 // handleMatches STOOD HERE: every roll row whose public label was a handle
 // somebody heard, exactly. Its one caller, peer.find, went on 2026-09-17,
@@ -687,7 +680,7 @@ function remember(rootDir, from, verdict, relayUrl) {
       // chosen/added". The packet is still heard — the verdict stands —
       // they simply are not added; the owner makes room, or does not.
       if (!shadow(rootDir).roomToAdd(key)) return false;
-      contactBook.acquire(rootDir, row, 'message');
+      contactBook.acquire(rootDir, row);
       return true;
     }
     if (verdict === 'hold') {
@@ -699,12 +692,12 @@ function remember(rootDir, from, verdict, relayUrl) {
     //   Andy: "ignoring means only: mark this row as "ignored"."
     //
     // The row was already remembered (noteSeen, before the floor); this
-    // only says what the door did with it. Never over somebody the book
-    // has marked: a held or blocked person also gets 'drop' from the
-    // door, and what the owner decided outranks what the door did.
+    // only says what the door did with it: ignored, "politely refused, no reason given, never shown" (box v24).
+    // Never over somebody the owner has decided about: a held or blocked person also gets 'drop' from the door, and
+    // what the owner decided outranks what the door did.
     if (verdict === 'drop') {
       var was = shadow(rootDir).get(key);
-      if (!was || (!was.choice && !was.blocked)) shadow(rootDir).mark(key, 'ignored', false);
+      if (!was || !(was.keep || was.mine || was.held || was.blocked)) shadow(rootDir).set(key, { ignored: true });
       return true;
     }
   } catch (e) {
@@ -930,28 +923,16 @@ function createHub(rootDir) {
             // A SEAT HELD IS A RELAY USED (goal/G16.3): a new seat, or a 409
             // that is this node's own key already sitting there, which is
             // the answer Natter also reads as success. Either way the relay
-            // goes on the node's own list, which the next relay.search reads.
+            // goes on the node's own list, which the next contact.search lists.
             var mineAlready = false;
             try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
             catch (e) { mineAlready = false; }
             if ((r.status >= 200 && r.status < 300) || mineAlready) {
               try { ownerBadge.addRelay(rootDir, url, '', learnedKey); }
               catch (e) { /* the claim stands; the list is written on the next claim */ }
-              // The seat is held again, so a refusal recorded on this relay's
-              // row no longer stands: the new invite brought it back (goal/G19.1).
-              try { relayKeys.clearRefusal(rootDir, learnedKey || url); }
-              catch (e) { /* the claim stands; the row is read again on the next probe */ }
-
               // A 409 FOR THIS NODE'S OWN KEY IS A SEAT HELD, and is written
-              // down exactly as a 2xx is (goal/G19.1), under the label the
-              // relay says this key already wears there.
-              var seatLabel = (body && body.name) || '';
-              if (mineAlready) {
-                try {
-                  var held = JSON.parse(marked);
-                  seatLabel = String((held.peer && held.peer.publicLabel) || '') || seatLabel;
-                } catch (e) { /* the asked-for label stands */ }
-              }
+              // down exactly as a 2xx is (goal/G19.1). The seat is held again, so a refusal no longer stands: the
+              // new invite brought it back, and seated says so (goal/G40.11).
 
               // ── WRITE THE SEAT DOWN, HERE, WHERE IT IS KNOWN ────────
               //
@@ -969,7 +950,7 @@ function createHub(rootDir) {
               // Before the stream, not after: a claim that worked is a
               // seat held whether or not connecting succeeds, and the next
               // boot must know that without asking.
-              try { relayKeys.seat(rootDir, url, seatLabel); }
+              try { relayKeys.seat(rootDir, url); }
               catch (e) { /* the claim stands; a boot can still backfill */ }
 
               if (router && probe) {
@@ -1394,61 +1375,29 @@ function createHub(rootDir) {
   // words are ranked by the probability modules, and owned, blocked and
   // held are yes-filters beside q (searchPeople).
   //
-  // ONE SEARCH IN TWO TIERS (goal/G30.19, the node interface change Andy approved: "interface change/reduction
-  // approved."). Tier one, at once: the book's matches and the shadow's (the peers this node has heard of, seenPeers),
-  // one row shape, a row's `book` saying which. Tier two: the same call starts the network search (walkRelays), whose
-  // rows stream as the 'peer-search' job and land in the shadow, so the next search starts from what this one learned.
+  // ONE SEARCH OVER THE ONE TABLE (goal/G40.11; Andy: "yes. those names." to contact.search covering relays too). Tier
+  // one, at once: the rows the owner's list holds (kept, owned, held, and blocked to be undone), people and relays
+  // alike, ranked by the words, with the yes-filters keep, mine, relay, seated, held, blocked (searchPeople). Nobody
+  // else: "the search lists kept and held rows only", and ignored never shows. Tier two: the same call starts the
+  // network search (walkRelays), whose rows stream as the 'peer-search' job and land in the table held — "what the
+  // network search finds is held" — so the next search lists them for the owner's yes.
   // ONE NETWORK SEARCH AT A TIME (Andy: "the node also only triggers a peer search if none is in flight."): a search
-  // while one is out is answered from the book and the shadow and starts nothing; nothing waits for it to return.
+  // while one is out is answered from the table and starts nothing; nothing waits for it to return.
   var networkOut = false;
   var networkJob = null;
   function contactSearch(body, deps) {
     var d = deps || {};
     var q = String((body && body.q) || '').trim();
-    var people = buildPeople(rootDir);
-    var r = searchPeople(people, q, body);
-    var self = auth.loadIdentity(rootDir);
-    var items = r.items;
-    var more = r.more;
-    var filtered = body && (body.owned === 'yes' || body.blocked === 'yes' || body.held === 'yes');
-    if (!filtered) {
-      var inBook = Object.create(null);
-      people.forEach(function (p) { inBook[p.publicKey] = true; });
-      // The shadow's strangers, matched and capped as a relay's members are (fromMemory, R39); the absent left out.
-      var memory = fromMemory(/^\*+$/.test(q) ? '' : q, inBook, self.publicKey, relayLabels());
-      if (memory.more) more = true;
-      items = items.concat(memory.rows
-        .filter(function (row) { return !inBook[row.publicKey]; })
-        .map(function (row) { return { key: row.publicKey, label: strangerLabel(row) }; }));
-    }
+    var r = searchPeople(buildPeople(rootDir), q, body);
     if (!networkOut && d.jobs) networkSearch(q, d);
     // No selfTail beside the rows: no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1: "drop selfTail and
     // tail from contact.search's answer.").
-    return { ok: true, status: 200, items: items, more: more };
+    return { ok: true, status: 200, items: r.items, more: r.more };
   }
 
-  // A row the book does not hold, from the shadow or a relay: what the list shows and what Add needs (its relay).
-  // Its name is what it calls itself, and no key's tail (Andy, 2026-10-24, goal/G40.1: "we don't show the fucking tail
-  // anywhere anymore.").
-  function strangerLabel(row) {
-    var said = String(row.publicLabel || '').trim();
-    return JSON.stringify({
-      name: said || '(no name)',
-      owned: false, blocked: false, held: false, book: false,
-      publicLabel: String(row.publicLabel || ''), present: row.present === true ? true : row.present === false ? false : undefined,
-      relay: row.relay || '', kind: row.kind || 'node',
-      // When the shadow last heard of them (0020); a row the network just found has none, being news.
-      seenAt: row.seenAt || undefined,
-    });
-  }
-  function relayLabels() {
-    var labels = Object.create(null);
-    ownerBadge.loadRelays(rootDir).forEach(function (x) { if (x && x.url) labels[x.url] = x.label || ''; });
-    return labels;
-  }
-
-  // TIER TWO: the walk, each row noted in the shadow and sent as one update of the 'peer-search' job, a contact as its
-  // book row. d.walk stands in for the relays in a suite; d.router is the live one.
+  // TIER TWO: the walk, each row noted in the table and held unless the owner already keeps it, and sent as one
+  // update of the 'peer-search' job, as the row the next search lists. d.walk stands in for the relays in a suite;
+  // d.router is the live one.
   function networkSearch(q, d) {
     networkOut = true;
     if (!networkJob) networkJob = d.jobs.createJob('permanent', 'peer-search', {});
@@ -1459,12 +1408,11 @@ function createHub(rootDir) {
         present: true,
         rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
       });
-      var b = contactBook.byPublicKey(rootDir, row.publicKey);
-      var label = b
-        ? JSON.stringify(Object.assign(JSON.parse(contactLabel({ publicKey: b.publicKey, publicLabel: b.publicLabel || '',
-          myLabel: b.myLabel || '', held: !contactBook.listens(b), blocked: contactBook.isBlocked(b), owned: b.owned === true })), { present: true }))
-        : strangerLabel(row);
-      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: label } } });
+      var was = shadow(rootDir).get(row.publicKey);
+      if (!(was && (was.keep || was.mine))) shadow(rootDir).set(row.publicKey, { held: true });
+      var listed = buildPeople(rootDir).filter(function (p) { return p.publicKey === row.publicKey; })[0];
+      if (!listed) return;
+      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, listed, { present: true })) } } });
     };
     var walk = typeof d.walk === 'function' ? d.walk : function (words, each) { return walkRelays(d.router, words, each); };
     var going = null;
@@ -1559,7 +1507,7 @@ function createHub(rootDir) {
         var heldLabel = String((body && body.publicLabel) || '');
         var heldBad = labelRefusal(heldLabel);
         if (heldBad) { fail(res, 400, heldBad); return; }
-        contactBook.hold(rootDir, { publicKey: publicKey, publicLabel: fieldRules.normalize(heldLabel) });
+        contactBook.noteLabel(rootDir, publicKey, fieldRules.normalize(heldLabel));
       }
       // What YOU call that key. Never uploaded, never seen by the peer,
       // and the reason contactBook keeps publicLabel separate: the mailbox's
@@ -1613,7 +1561,7 @@ function createHub(rootDir) {
       // under protection. Blocking never needs room — it gives some back.
       var before = contactBook.byPublicKey(rootDir, publicKey);
       var adds = action === 'accept' ||
-        (action === 'unblock' && before && contactBook.markOf(before).choice === 'added');
+        (action === 'unblock' && before && before.keep);
       if (adds && !shadow(rootDir).roomToAdd(publicKey)) {
         fail(res, 507, 'memory is full of the people you added');
         return;
@@ -1627,7 +1575,7 @@ function createHub(rootDir) {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         publicKey: row.publicKey,
-        acquiredVia: contactBook.acquiredVia(row),
+        keep: row.keep,
         blocked: contactBook.isBlocked(row),
         held: !contactBook.listens(row),
       }));
@@ -1727,8 +1675,6 @@ function createHub(rootDir) {
         // label they minted, now claimed on their own mailbox. Nothing
         // else is accepted here: a page cannot promote a stranger by
         // asking nicely.
-        var wanted = String((body && body.via) || 'handle');
-        var via = (wanted === 'invite') ? 'invite' : 'handle';
         // The same refusal as accept (0021): adding needs room.
         if (!shadow(rootDir).roomToAdd(publicKey)) {
           fail(res, 507, 'memory is full of the people you added');
@@ -1741,7 +1687,7 @@ function createHub(rootDir) {
           // would be worse than an unnamed row.
           publicLabel: fieldRules.normalize((body && body.publicLabel) || ''),
           relay: url,
-        }, via);
+        });
 
         // ── THE ROUTE THE SEARCH ALREADY KNEW ────────────────────────
         //
@@ -1789,7 +1735,7 @@ function createHub(rootDir) {
         res.end(JSON.stringify({
           publicKey: row.publicKey,
           publicLabel: row.publicLabel,
-          acquiredVia: contactBook.acquiredVia(row),
+          keep: row.keep,
         }));
       });
     }).catch(function () {
@@ -1845,7 +1791,7 @@ function createHub(rootDir) {
       if (!shadow(rootDir).roomToAdd(String(ev.key))) return null;
       return contactBook.acquire(rootDir, {
         publicKey: String(ev.key), publicLabel: String(ev.label || ''), relay: ev.relay || '',
-      }, contactBook.MEMBER);
+      });
     } catch (e) { return null; }
   }
 
@@ -2134,90 +2080,8 @@ function createHub(rootDir) {
     return sendPacket(router, relayUrl, toKey, made.text);
   }
 
-  // ── MEMORY IS ONE MORE SOURCE IN THE FAN-OUT (R39, 0021) ─────────────
-  //
-  //   Andy: "in fact if search fans out to all bound relays first, why not
-  //   to the memory also?" — "the relays result will take precedence until
-  //   timeout()" — "When the wait times out, memory fills in the people no
-  //   relay answered for, filtered exactly and prioritized exactly like
-  //   search results." — "chosen ones should always be included. it kind
-  //   of would look dumb if contacts couldn't list-search it's chosen
-  //   ones..."
-  //
-  // Called after the relays: a key any relay answered for is skipped, so a
-  // live row always wins and memory only fills in.
-  //
-  // THE SAME RANKING, NOT A SECOND ONE. Strangers go through peerRank —
-  // the match every relay runs (goal/G29.17), with its slot count — and the same
-  // absent drop the relay rows get above (`present === false`). "Exactly"
-  // was ruled with its cost in view: "everything could hide someone your
-  // looking for...."
-  //
-  // THE CHOSEN ARE NOT RATIONED. Anybody the book holds — added, held or
-  // blocked — who matches is returned whatever the slots and whatever
-  // their last-known presence, because they are the owner's own people.
-  // They are matched by the same function with room for all of them.
-  function fromMemory(q, found, myKey, labels) {
-    var S = shadow(rootDir);
-    var chosen = [];
-    var strangers = [];
-    var rows;
-    try { rows = S.recall(require('./nodeSettings').searchMemoryRows(rootDir)); } catch (e) { return { rows: [], more: false }; }
-    // THE BOOK, READ ONCE. byPublicKey reads and parses the file on every
-    // call, and this asks about every chosen row and every row returned —
-    // thousands of reads a search for a large book.
-    var bookRows = Object.create(null);
-    contactBook.load(rootDir).forEach(function (b) { if (b && b.publicKey) bookRows[b.publicKey] = b; });
-    rows.forEach(function (r) {
-      if (!r.publicKey || r.publicKey === myKey || found[r.publicKey]) return;
-      var book = (r.choice === 'added' || r.choice === 'held' || r.blocked)
-        ? (bookRows[r.publicKey] || null) : null;
-      // The book's public label first: it is what the owner's list shows,
-      // and a contact added by key may have a name only there.
-      var candidate = {
-        publicKey: r.publicKey,
-        publicLabel: (book && book.publicLabel) || r.label || '',
-        present: r.present, seen: r.seen,
-        via: null,
-      };
-      if (book) chosen.push(candidate);
-      else if (r.present !== false) strangers.push(candidate);
-    });
-
-    var mine = chosen.length ? peerRank.rank(chosen, q, chosen.length).rows : [];
-    var theirs = peerRank.rank(strangers, q, peerRank.SLOTS);
-
-    function shaped(c) {
-      var best = S.get(c.publicKey) || {};
-      // A RELAY'S OWN ADDRESS (goal/G30.7): its row's route is its url, the one route whose door is itself. A relay's
-      // key heard arriving through another relay has that route too, and the best-ranked one may be it.
-      if (best.kind === 'relay') {
-        var own = S.routes(c.publicKey).filter(function (r) { return r && r.at && r.at === r.url; })[0];
-        if (own) best = Object.assign({}, best, { at: own.at, url: own.url });
-      }
-      var row = bookRows[c.publicKey] || null;
-      return {
-        publicKey: c.publicKey,
-        publicLabel: c.publicLabel,
-        // A node or a relay (goal/G30.7, relays are peers): the Contacts list filters on it.
-        kind: best.kind || 'node',
-        atKey: best.at || '',
-        relay: best.url || '',
-        relayLabel: (best.url && labels[best.url]) || '',
-        // LAST-KNOWN, and said to be: null when nobody has said (0019).
-        present: c.present,
-        via: null,
-        viaPartner: false,
-        acquiredVia: row ? contactBook.acquiredVia(row) : null,
-        fromMemory: true,
-        seenAt: c.seen ? new Date(c.seen).toISOString() : null,
-      };
-    }
-    return {
-      rows: mine.map(shaped).concat(theirs.rows.map(shaped)),
-      more: theirs.more,
-    };
-  }
+  // fromMemory STOOD HERE (R39, 0021): the shadow's strangers, ranked beside the book. Gone with goal/G40.11: the
+  // search lists the kept and held rows of the one table, and a stranger the network finds is held.
 
   // THE NETWORK SEARCH (goal/G30.19: tier two of contact.search; it was the verb peer.search, deleted with Andy's
   // approval of the interface reduction). Every configured relay asked once; onRow(row) for each peer found, as it
@@ -2226,7 +2090,8 @@ function createHub(rootDir) {
     if (!router) return Promise.resolve();
     var myKey = auth.loadIdentity(rootDir).publicKey;
     var found = Object.create(null);
-    var labels = relayLabels();
+    var labels = Object.create(null);
+    ownerBadge.loadRelays(rootDir).forEach(function (x) { if (x && x.url) labels[x.url] = x.label || ''; });
     return Promise.all(ownerBadge.configuredUrls(rootDir).map(function (url) {
       // No pin means this node has never spoken to it; fetching a key from the box asked is how you get answered by
       // whoever is standing there.
@@ -2394,7 +2259,7 @@ function createHub(rootDir) {
         //   relay.record's list of relays folds into relay.search, and its
         //   series (from + limit) stops paging.
         //
-        // So a relay must be named (relay.search finds them), and the
+        // So a relay must be named (contact.search lists them, relay: yes), and the
         // question is a window: from, to. The answer is the NEWEST rows in
         // it that fit one answer, in time order, and `more` says older
         // rows in the window were left out. The caller narrows the window;
@@ -2436,7 +2301,7 @@ function createHub(rootDir) {
       .then(function (body) { statusFor(res, (body && body.name) || '', deps); });
   }
 
-  // ── relay.search / relay.get: HIS RELAYS, SEARCHED (puppets/G2) ──────
+  // ── relay.get: ONE OF HIS RELAYS (puppets/G2; the list is contact.search since goal/G40.11) ──
   //
   //   Andy, 2026-09-27, "go." on: "key = the relay's url, label = its name
   //   plus what's true of it, e.g. 'spirit-3 — yours, online', 'lab —
@@ -2454,15 +2319,15 @@ function createHub(rootDir) {
   // through peerPost.relayKey, cached 3 s). Now each row is built from
   // what this node already holds, and nothing is fetched:
   //
-  //   the row, its label, a refusal   the node's list (relayKeys.listed, node.db)
+  //   the row, its label              the node's list (relayKeys.listed, the relays kept)
   //   online (status 200)             peerPost holds a stream to it (router.relaysHeld)
   //   owned                           it sent this node the report a relay sends
   //                                   only to its owner's key, which it does the
   //                                   moment the owner's stream opens (router.relayStatus)
-  //   claimed                         owned, or a seat recorded at claim (relayKeys)
+  //   claimed                         owned, or seated (relayKeys)
   //   roll.relayKey                   the key pinned for it (relayKeys.pinned)
-  //   roll.myLabel, claimedLabel      the seat label recorded at claim
-  //   roll.ownerKey, roll.owner       this node's key and seat label when owned
+  //   roll.myLabel, claimedLabel      what that relay calls this node: its own name (relayKeys.seatLabel)
+  //   roll.ownerKey, roll.owner       this node's key and that name when owned
   //
   // The relay's own label (roll.relayLabel) is what its last card said, kept
   // by peerPost beside its services (labelOf, goal/G30.7), never fetched
@@ -2486,12 +2351,6 @@ function createHub(rootDir) {
       // asked here (goal/G22.4: the relay list asks no relay).
       row.services = router && typeof router.servicesOf === 'function' ? router.servicesOf(url) : { sendMail: false, face: false };
       row.claimed = row.owned || !!seated[url];
-      // A relay that refused this node holds no seat for it (goal/G19.1).
-      if (relay.refused) {
-        row.refused = relay.refused;
-        row.claimed = false;
-        row.owned = false;
-      }
       if (row.claimed) {
         var seatLabel = relayKeys.seatLabel(rootDir, url);
         row.roll = {
@@ -2503,10 +2362,10 @@ function createHub(rootDir) {
           myLabel: seatLabel,
         };
         row.claimedLabel = seatLabel;
-        // THE FACE THIS NODE HOLDS ON THAT RELAY (goal/G30.1), read from its row, so the info app shows it again after
-        // a restart (Andy, 2026-10-19). Empty when none was confirmed.
+        // THE FACE THIS NODE HOLDS ON THAT RELAY (goal/G30.1), the node's own fact on the relay's row (goal/G40.11), so
+        // the info app shows it again after a restart. The name alone: no email is kept.
         var face = relayKeys.faceOf(rootDir, url);
-        row.face = face ? { name: face.name, email: face.email } : { name: '', email: '' };
+        row.face = { name: face ? face.name : '', email: '' };
       } else {
         row.error = 'no row here';
       }
@@ -2514,60 +2373,8 @@ function createHub(rootDir) {
     });
     return Promise.resolve(ownerBadge.summarize(rows));
   }
-  // ONE RELAY AS A ROW, JSON, as every shared search answers (goal/G30.7): the list search (listSearch.js) parses each
-  // label as the row it paints. name is the list's label, or the host when it has none, never the whole url.
-  // text keeps the label as ruled (Andy, 2026-09-27: "label = its name plus what's true of it, e.g. 'spirit-3 — yours,
-  // online', 'lab — member, offline'"), inside the row now rather than as the whole label.
-  function relayRow(row) {
-    var who = row.refused ? 'refused this node' : (row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined'));
-    var name = row.label || String(row.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
-    var up = row.status === 200 ? 'online' : 'offline';
-    return { url: String(row.url || ''), name: name, text: name + ' — ' + who + ', ' + up, who: who, online: row.status === 200, owned: !!row.owned,
-      claimed: !!row.claimed, refused: !!row.refused, relayLabel: (row.roll && row.roll.relayLabel) || '',
-      // The relay's key, pinned at first contact (goal/G30.7): what the contact list matches a book row against.
-      relayKey: relayKeys.pinned(rootDir, row.url) || '' };
-  }
-
-  // ── RANKED, NOT FILTERED (goal/G19.17) ──────────────────────────────
-  //
-  //   Andy, in the item: "we should have put in the new search thinggie for
-  //   relay's" ; "add it."
-  //
-  // It matched its own way, where a '*'
-  // never spans a '/': a relay whose label is its url, as a claim lists
-  // one, was left out of Natter's list although relay.get found it. Now
-  // it ranks as the desk's items.search does (desk.js, ranked(), goal/G18.5):
-  // every listed relay is weighed with probabilityStringObjectMatch and
-  // seated in a probabilityBucket, which orders them and cuts the answer
-  // in bytes. No text (or only '*', what the page kernel asks) weighs
-  // every relay 0, and the bucket keeps the node's list order.
-  var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
-  var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
-  var RELAY_SEARCH_SCANNED = 1000;
-  var RELAY_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
-
-  function relaySearch(body, deps) {
-    return relaySummary(deps && deps.router).then(function (summary) {
-      var q = String((body && body.q) || '').trim();
-      var text = /^\*+$/.test(q) ? '' : q;
-      var bucket = createProbabilityBucket(RELAY_SEARCH_SCANNED);
-      var more = false;
-      for (var i = 0; i < summary.rows.length; i += 1) {
-        if (i >= RELAY_SEARCH_SCANNED) { more = true; break; }
-        var row = summary.rows[i];
-        var shown = relayRow(row);
-        var pair = { key: String(row.url), label: JSON.stringify(shown) };
-        // One pair too big for the answer alone is skipped and said by more.
-        if (Buffer.byteLength(JSON.stringify([pair]), 'utf8') > RELAY_SEARCH_ROOM) { more = true; continue; }
-        bucket.seatFor(text ? probabilityStringObjectMatch(text, { label: shown.name, url: pair.key }) : 0, pair);
-      }
-      var r = bucket.serialize(null, RELAY_SEARCH_ROOM);
-      // One fact about this node, never a row: it owns more than one relay
-      // and has to pick which one it is known by.
-      return { ok: true, status: 200, items: r.items, more: !!(r.more || more), mustPick: !!summary.mustPick,
-        name: String((body && body.name) || '') };
-    });
-  }
+  // relaySearch STOOD HERE (goal/G19.17): the relays ranked by the words. Gone with goal/G40.11 (Andy: "yes. those
+  // names."): contact.search covers relays too, a relay one row of the one table, and relay: 'yes' asks for them alone.
 
   // ── relay.remove: ONE RELAY OFF THIS NODE'S LIST (goal/G16.3) ────────
   //
@@ -2575,7 +2382,7 @@ function createHub(rootDir) {
   //   list relays and remove relay, with a successful claim adding its
   //   relay? yes."
   //
-  // The key is the url, the same key relay.search hands out. Refused when
+  // The key is the url (relay.get answers it). Refused when
   // it would leave no public relay (ownerBadge.canRemoveRelay), the rule
   // Natter's screen already obeyed.
   //
@@ -2652,11 +2459,9 @@ function createHub(rootDir) {
       if (!said.ok) return { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
       var label = String((said.peer && said.peer.publicLabel) || '');
       try { ownerBadge.addRelay(rootDir, url, '', said.relayPublicKey || ''); } catch (e) { /* the seat stands; listed on the next join */ }
-      try { relayKeys.clearRefusal(rootDir, said.relayPublicKey || url); } catch (e) { /* read again on the next probe */ }
-      try { relayKeys.seat(rootDir, url, label); } catch (e) { /* a boot can still backfill */ }
-      // THE VERIFIED EMAIL (goal/G30.1, box v28): what the relay's confirm answered, kept on that relay's row, where
-      // natterDetails reads "Add" or "Change email address" from.
-      if (said.email) { try { relayKeys.keepEmail(rootDir, url, said.email, said.emailVerified === true); } catch (e) { /* the relay holds it; the next change writes it here */ } }
+      // The seat, and with it any refusal gone (goal/G40.11: seated). NO EMAIL IS KEPT (box v24): "the email address
+      // holds no value to the personal node, it is injected only for seating" (Andy, 2026-10-26).
+      try { relayKeys.seat(rootDir, url); } catch (e) { /* a boot can still backfill */ }
       if (deps.probe) { try { router.startStreams(deps.probe); } catch (e) { /* the next boot connects */ } }
       joinAskedOf = '';
       // The relay's 200 is an email change on a seat already held, its 201 a new seat (goal/G30.1, box v31): passed
@@ -2748,15 +2553,15 @@ function createHub(rootDir) {
   //   Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", and "go".
   //
   // The removal of this node's own key, posted to that relay (removePeer, which a member may ask for itself); on the
-  // relay's yes the seat, the email and the face on that relay's row are cleared (relayKeys.leaveSeat) and the relay
-  // stays on the list, so a join can follow. A relay verb, so server.js refreshes relay-rows after it: every screen hears
+  // relay's yes the seat and the face name on that relay's row are cleared and the relay
+  // stays on the list, so a join can follow. The row's seated changing is on the shadow stream: every screen hears
   // the leaving. Refused for a relay this node owns: its owner's seat is made at every boot (goal/G30.7).
   function relayLeave(body, deps) {
     var url = ownerBadge.normalizeUrl(String((body && body.key) || ''));
     if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its key, its url' });
     if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
     var row = relayKeys.byUrl(rootDir, url);
-    if (!row || !row.seatClaimedAt) return Promise.resolve({ ok: false, status: 404, error: 'this node holds no seat on that relay' });
+    if (!row || !row.seated) return Promise.resolve({ ok: false, status: 404, error: 'this node holds no seat on that relay' });
     var reports = typeof deps.router.relayStatus === 'function' ? (deps.router.relayStatus() || {}) : {};
     if (reports[url]) return Promise.resolve({ ok: false, status: 409, error: 'you own this relay: its owner keeps his seat' });
     var me = auth.loadIdentity(rootDir);
@@ -2768,22 +2573,24 @@ function createHub(rootDir) {
       try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
-      relayKeys.leaveSeat(rootDir, row.url);
+      relayKeys.unseat(rootDir, row.url);
+      // The relay gave up the face it held for this seat too.
+      relayKeys.keepFace(rootDir, row.url, '');
       return { ok: true, status: 200, key: row.url };
     }, function (e) {
       return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
     });
   }
 
+  // THE KEY IS THE RELAY'S ID OR ITS URL (goal/G40.11): contact.search hands out the ID, a relay row the url beside it.
   function relayGet(body, deps) {
-    var key = String((body && body.key) || '');
-    if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
+    var asked = String((body && body.key) || '');
+    if (!asked) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
+    var byId = relayKeys.byKey(rootDir, asked);
+    var key = byId && byId.url ? byId.url : asked;
     return relaySummary(deps && deps.router).then(function (summary) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
-      // The email this node's join confirmed there (goal/G30.1), for natterDetails' email form.
-      var held = relayKeys.emailOf(rootDir, key);
-      row = Object.assign({}, row, { email: held.email, emailVerified: held.verified });
       var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
       return require('./limits').boundedGet({ ok: true, status: 200, key: key, relay: row,
         report: reports[key] || null });
@@ -2857,7 +2664,6 @@ function createHub(rootDir) {
     // peerOwnerPost (ownerPost.js) rather than decided twice.
     chooseRoute: chooseRoute,
     handleStatus: handleStatus,
-    relaySearch: relaySearch,
     relayRemove: relayRemove,
     relayLeave: relayLeave,
     relayAdd: relayAdd,

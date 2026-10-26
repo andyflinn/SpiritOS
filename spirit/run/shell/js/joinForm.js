@@ -6,12 +6,13 @@
 // [change-or-join] the SAME FUCKING FORM EVERYWHERE"): Join, Info and the relay details draw it by mount, each with its
 // relays; the relay details fix the dropdown to their one relay. None keeps a form of its own.
 //
-//   words(state)      -> { title, label, button, email } for where the node stands on a relay (seated, emailVerified).
-//   row(relays, opts) -> the form's markup: relays are relay rows (url, label, claimed or owned, email, emailVerified);
+//   words(state)      -> { title, label, button, email } for where the node stands on a relay (seated).
+//   row(relays, opts) -> the form's markup: relays are relay rows (url, label, claimed or owned);
 //                        opts.fixed, a url, gives the dropdown that one relay and fixes it; opts.picked the url picked.
 //   mount(box, opts)  -> draws the row into box and sends it: opts.relays, opts.pick ('seated': only relays with a seat;
-//                        else every relay listed), opts.fixed, opts.escape. It hears relay-rows itself and redraws when
-//                        its relays changed (goal/G40.10, box v21), keeping what is typed.
+//                        else every relay listed), opts.fixed, opts.escape. It hears the shadow stream itself and, when a
+//                        relay's row changed, reads its relays again and redraws if they changed (goal/G40.11), keeping
+//                        what is typed.
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
 
 (function () {
@@ -19,17 +20,17 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ONE CONTROL FOR JOIN, ADD AND CHANGE (goal/G30.1, box v41; Andy: "Join, Add AND Change email address MUST be one and
+  // ONE CONTROL FOR JOIN AND CHANGE (goal/G30.1, box v41; Andy: "Join, Add AND Change email address MUST be one and
   // the same control, a bit flexible..."). Its words follow where the node stands on that relay, so every caller asks
-  // here and none keeps words of its own: no seat, Join; a seat without a verified email, Add; verified, Change, with
-  // the address held in the field.
+  // here and none keeps words of its own: no seat, Join; a seat, Change. THE FIELD IS NEVER PREFILLED (goal/G40.11, box
+  // v24): the node keeps no email ("the email address holds no value to the personal node, it is injected only for
+  // seating", Andy, 2026-10-26), so there is none to show.
   function words(state) {
     var s = state || {};
     if (!s.seated) return { title: 'Join a relay', label: 'Your email', button: 'Join', email: '' };
-    if (!s.emailVerified) return { title: 'Add email address', label: 'Email address', button: 'Add', email: '' };
-    return { title: 'Change email address', label: 'Email address', button: 'Change', email: String(s.email || '') };
+    return { title: 'Change email address', label: 'Email address', button: 'Change', email: '' };
   }
-  function wordsFor(r) { return words({ seated: !!(r && (r.claimed || r.owned)), email: r && r.email, emailVerified: !!(r && r.emailVerified) }); }
+  function wordsFor(r) { return words({ seated: !!(r && (r.claimed || r.owned)) }); }
 
   // The relays the dropdown offers: the one fixed, else all given.
   function offered(relays, o) {
@@ -81,7 +82,7 @@
   }
 
   function rules() { return (window.spirit && window.spirit.fieldRules) || null; }
-  // The relays a place offers, out of relay-rows' rows: 'seated' only those with a seat, else every one listed.
+  // The relays a place offers, out of relay.status' rows: 'seated' only those with a seat, else every one listed.
   function picking(rows, pick) {
     var list = Array.isArray(rows) ? rows : [];
     return pick === 'seated' ? list.filter(function (r) { return r && (r.claimed || r.owned); }) : list;
@@ -104,22 +105,26 @@
     if (box._spJoinBound) return;
     box._spJoinBound = true;
     function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
-    // THE RELAYS ON THE STREAM (goal/G40.10, box v21): relay-rows, heard here; the form redraws only when its own
-    // relays changed, and lets go once its box has left the page.
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row changing
+    // (a seat taken or left anywhere) reads the relays again, and the form redraws only when its own relays changed. It
+    // lets go once its box has left the page.
     var heard = JSON.stringify(box._spJoin.relays);
     var stop = null;
     function take(job) {
-      if (!job || job.type !== 'relay-rows' || !job.data) return;
+      if (!job || job.type !== 'shadow' || !job.data || !job.data.row || job.data.row.relay !== true) return;
       if (!box.isConnected) { if (stop) stop(); return; }
-      var next = picking(job.data.rows, box._spJoin.pick);
-      var asJson = JSON.stringify(next);
-      if (asJson === heard) return;
-      heard = asJson;
-      box._spJoin.relays = next;
-      draw(box);
+      if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
+      window.spirit.relay.status('').then(function (r) {
+        var next = picking(r && r.body && r.body.rows, box._spJoin.pick);
+        var asJson = JSON.stringify(next);
+        if (asJson === heard) return;
+        heard = asJson;
+        box._spJoin.relays = next;
+        draw(box);
+      }, function () { /* the next change reads them again */ });
     }
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      stop = window.spirit.events.subscribe({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
+      stop = window.spirit.events.subscribe({ onUpdate: take });
     }
     // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.
     box.addEventListener('input', function (e) {

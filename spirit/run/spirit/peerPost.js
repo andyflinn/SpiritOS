@@ -399,7 +399,7 @@ function createPeerPost(opts) {
     persistOut(hash);
     noteOutcome(hash, slot, answer);
     if (slot.askedCard) keepCard(slot, answer);
-    if (slot.renameTo) keepRename(slot, answer);
+    seatedBy(slot, answer);
     if (slot.faceTo) keepFaceAnswer(slot, answer);
     slot.resolve(answer);
     pump();
@@ -473,35 +473,32 @@ function createPeerPost(opts) {
     };
   }
 
-  // ── A RENAME THE RELAY ACCEPTED, WRITTEN ON ITS ROW (goal/G19.1) ──────
+  // ── A RELAY THAT CARRIED A POST HOLDS THIS NODE (goal/G40.11) ─────────
   //
-  // No new verb: Info tells every relay the new name through this door,
-  // and when one says yes its seat takes the label it answered with — at
-  // the same door as the rejection, so the relay table stays this door's.
-  function keepRename(slot, answer) {
-    if (!answer || !answer.ok || typeof answer.text !== 'string') return;
-    var info = arrivals.envelopeOf(answer.text) || arrivals.relayWordOf(answer.text);
-    var said = info && info.body;
-    if (!said || said.ok !== true) return;
+  // Box v24: seated is "set by any post it carried or answered, cleared by a refusal as no member". A relay refuses
+  // to carry a non-member's post (not-a-sender, rejectedBy below), so an answer to a post it carried to somebody
+  // else is a seat. A post to the relay itself is not counted: a join or a card is answered for a stranger too.
+  // Node only, like the refusal: a relay's peerPost has no table.
+  function seatedBy(slot, answer) {
+    if (!presence || !answer || !answer.ok || !slot.relayUrl) return;
     try {
-      relayTable().renameSeat(rootDir, slot.toKey, String(said.label || slot.renameTo));
-    } catch (e) { /* the relay renamed; the row catches up on the next rename */ }
+      var relay = relayTable().byUrl(rootDir, plainUrl(slot.relayUrl));
+      if (relay && relay.key !== slot.toKey && !relay.seated) relayTable().setSeated(rootDir, relay.key, true);
+    } catch (e) { /* the post was answered; the next one writes the seat */ }
   }
 
   // ── A FACE NAME THE RELAY ACCEPTED, KEPT ON ITS ROW (goal/G30.1) ──────
   //
-  // relay.face posts {face: {name}} through this door like any post. When the relay says yes, the pair it
-  // confirmed and its answer WHOLE, as received (the opened text, the hash and the signature over them), go on that
-  // relay's row beside the seat. Andy, 2026-10-19: "the information belongs into relay-state somewhere, it's part
-  // of the node identity." Never rebuilt: the signature is the relay's own word and can be shown as proof.
+  // relay.face posts {face: {name}} through this door like any post. When the relay says yes, the name it confirmed
+  // goes on that relay's row as the node's own fact (Andy, 2026-10-26, goal/G40.11: "keep it, on the relay's row, as
+  // the node's own fact, like myLabel"). No email and no copy of the answer: nothing else of a seat is kept.
   function keepFaceAnswer(slot, answer) {
     if (!answer || !answer.ok || typeof answer.text !== 'string') return;
     var info = arrivals.envelopeOf(answer.text) || arrivals.relayWordOf(answer.text);
     var said = info && info.body;
     if (!said || said.ok !== true || !said.name) return;
     try {
-      relayTable().keepFace(rootDir, slot.relayUrl, String(said.name), String(said.email || ''),
-        JSON.stringify({ hash: answer.hash, from: answer.from, text: answer.text, sig: answer.sig || '' }));
+      relayTable().keepFace(rootDir, slot.relayUrl, String(said.name));
     } catch (e) { /* the relay confirmed; the row catches up when the pair is asked again */ }
   }
 
@@ -556,9 +553,14 @@ function createPeerPost(opts) {
   // in for lookup. Required here, node only: a relay's peerPost never asks.
   function relayTable() { return require('./relayKeys'); }
   function plainUrl(url) { return relayTable().normalizeUrl(url); }
+  // THE REFUSAL STANDS WHILE THE SEAT IS GONE (goal/G40.11: the refusal is not stored, seated is). What this process
+  // heard refused, on a relay this node is not seated on; a claim or a join seats it again, and the refusal is over.
   function refusalOf(relayUrl) {
     if (!presence) return null;
-    try { return relayTable().refusal(rootDir, plainUrl(relayUrl)); } catch (e) { return null; }
+    var u = plainUrl(relayUrl);
+    if (!refusedShown[u]) return null;
+    try { var relay = relayTable().byUrl(rootDir, u); return relay && relay.seated ? null : refusedShown[u]; }
+    catch (e) { return null; }
   }
   function refusedAnswer(refusal, hash) {
     return {
@@ -574,8 +576,12 @@ function createPeerPost(opts) {
     if (!meant || meant.code !== 'not-a-sender') return false;
     var u = plainUrl(relayUrl);
     var refusal = { code: meant.code, why: String((said && said.error) || ''), at: new Date().toISOString() };
-    try { relayTable().refuse(rootDir, u, meant.code); } catch (e) { /* still closed and refused below */ }
-    var kept = refusalOf(u) || refusal;
+    // A refusal as no member clears seated on that relay's row (box v24).
+    try {
+      var row = relayTable().byUrl(rootDir, u);
+      if (row && row.seated) relayTable().unseat(rootDir, u);
+    } catch (e) { /* still closed and refused below */ }
+    var kept = refusedShown[u] || refusal;
     var handle = streamHandles[u];
     if (handle) {
       delete streamHandles[u];
@@ -602,15 +608,6 @@ function createPeerPost(opts) {
     var said = null;
     try { said = JSON.parse(res.text); } catch (e) { said = null; }
     rejectedBy(relayUrl, res.status, said || {});
-  }
-
-  // A rename this node asks of a relay, read off what it sends: the label,
-  // or ''. Written to that relay's seat when the relay says yes (settle).
-  function renameAsked(text) {
-    if (!presence) return '';
-    var info = arrivals.envelopeOf(text) || arrivals.relayWordOf(text);
-    var rename = info && info.body && info.body.rename;
-    return rename && typeof rename.label === 'string' ? rename.label : '';
   }
 
   // Whether an outgoing text is a face application, and what it asked for, or null.
@@ -1114,7 +1111,6 @@ function createPeerPost(opts) {
         // (cycle 10, R3). Recorded here rather than re-derived at settle,
         // where the request is gone.
         askedCard: nodeCard.asks(text),
-        renameTo: renameAsked(text),
         faceTo: faceAsked(text),
         at: Date.now(),
         timer: null,

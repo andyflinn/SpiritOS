@@ -97,11 +97,9 @@ function nodeFor(name, relay) {
       const row = contacts.byPublicKey(home, toKey);
       return (row && contacts.sealKeyOf(row)) || '';
     },
-    keepCard: function (toKey, cardText) {               // server.js:1262-5
-      if (!contacts.byPublicKey(home, toKey)) {
-        contacts.upsert(home, { publicKey: toKey, acquiredVia: contacts.ROLL });
-      }
-      return contacts.setCard(home, toKey, cardText, 'reply');
+    // As server.js's keepCard since goal/G40.11: the card goes on that key's row of the one table, made when there is none.
+    keepCard: function (toKey, cardText) {
+      return contacts.setCard(home, toKey, cardText);
     },
   });
   relay.listen(id.publicKey, function (event, body) {
@@ -130,11 +128,8 @@ function nodeFor(name, relay) {
 // Plant a card the honest way — through the same keeper the code uses —
 // for the CONTROL nodes only, and never for the node under test.
 function plantCardOf(holder, subject) {
-  if (!contacts.byPublicKey(holder.home, subject.id.publicKey)) {
-    contacts.upsert(holder.home, { publicKey: subject.id.publicKey, acquiredVia: contacts.ROLL });
-  }
   return contacts.setCard(holder.home, subject.id.publicKey,
-    nodeCard.cardFrom(Object.assign({ name: subject.name }, subject.id)), 'reply');
+    nodeCard.cardFrom(Object.assign({ name: subject.name }, subject.id)));
 }
 
 module.exports = { fakeRelay: fakeRelay, nodeFor: nodeFor, plantCardOf: plantCardOf };

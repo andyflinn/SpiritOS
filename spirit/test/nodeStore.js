@@ -51,7 +51,7 @@ test.subHeading('A row survives the process, which is the whole point');
   const again = nodeStore.open(H);
   const got = again.seen.get(A);
   const route = again.seen.routes(A)[0];
-  if (got && got.label === 'ann' && got.seen === 1000 &&
+  if (got && got.label === 'ann' && got.lastSeen === 1000 &&
       route && route.at === 'RELAY-1' && route.via === 'MINE') {
     test.check('what was written before the store closed is there when it opens again');
   } else {
@@ -95,7 +95,7 @@ test.subHeading('Greedy is a property of the write, not a discipline of the call
   s.seen.put(A, { label: '', seen: 2000 });
 
   const kept = s.seen.get(A);
-  if (kept && kept.label === 'ann' && kept.seen === 2000) {
+  if (kept && kept.label === 'ann' && kept.lastSeen === 2000) {
     test.check('a blank field leaves what is there, and the sighting still moves');
   } else {
     test.fail('after a blank write: ' + JSON.stringify(kept));
@@ -150,8 +150,10 @@ test.subHeading('One eviction, and it is space (0021, superseding R4\'s age half
     s.seen.put('K' + String(n).padStart(4, '0'),
       { label: 'person-' + n, seen: 10000 + n });
   }
-  const shed = s.seen.sweepToBytes(40 * 1024);
-  if (shed > 0 && s.seen.bytes() <= 40 * 1024 && s.seen.size() > 0) {
+  // 72 KB: an empty store is 56 KB since goal/G40.11 (a page for each partial index of the one table), and 400 rows
+  // pass that.
+  const shed = s.seen.sweepToBytes(72 * 1024);
+  if (shed > 0 && s.seen.bytes() <= 72 * 1024 && s.seen.size() > 0) {
     test.check('the space bound holds the CACHE under its cap — ' +
       s.seen.size() + ' rows in ' + Math.round(s.seen.bytes() / 1024) + ' KB');
   } else {
@@ -281,7 +283,7 @@ test.subHeading('Rank first, recency second — a cheap claim cannot displace a 
   s.seen.put(A, { label: 'a partner says', labelRank: 4, seen: 300 });
 
   const held = s.seen.get(A);
-  if (held.label === 'the host says' && held.labelRank === 1 && held.seen === 300) {
+  if (held.label === 'the host says' && held.labelRank === 1 && held.lastSeen === 300) {
     test.check('a worse-sourced name cannot overwrite a better one, however late it arrives');
   } else {
     test.fail('after a downgrade attempt: ' + JSON.stringify(held));
@@ -420,7 +422,7 @@ test.subHeading('A node.db from this morning still opens (R29 migration)');
   const peer = migrated.seen.get('OLD-PEER');
   const moved = migrated.seen.routes('OLD-PEER')[0];
 
-  if (peer && peer.label === 'ollie' && peer.seen === 777) {
+  if (peer && peer.label === 'ollie' && peer.lastSeen === 777) {
     test.check('the peer row survives, with its name and its date');
   } else {
     test.fail('peer after migration: ' + JSON.stringify(peer));

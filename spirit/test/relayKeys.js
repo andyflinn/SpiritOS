@@ -19,18 +19,22 @@ const test = require('./testSupport.js');
 const relayKeys = require('../run/spirit/relayKeys');
 const world = require('./world');
 
-// The pins as they stand on disc, by url, read through a connection of
-// this suite's own (since goal/G19.15: node.db's relays table, keyed by
-// relay key).
+// The pins as they stand on disc, by url, read through a connection of this suite's own. Since goal/G40.11 a relay
+// is a row of node.db's one table, seen, flagged relay, and its url a direct route in seen_routes (via empty, at the
+// relay's own key): the route is the pin.
 function disc(home) {
   const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'relay-state', 'node.db'), { readOnly: true });
   try {
     const out = {};
-    db.prepare('SELECT * FROM relays').all().forEach(function (r) {
-      out[r.url] = { publicKey: r.key, firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced || undefined };
+    db.prepare("SELECT r.url AS url, s.publicKey AS key, s.firstSeen AS firstSeen, s.relay AS relay FROM seen_routes r JOIN seen s ON s.publicKey = r.publicKey WHERE r.via = '' AND r.at = r.publicKey AND r.url <> ''").all().forEach(function (r) {
+      out[r.url] = { publicKey: r.key, firstSeen: r.firstSeen, relay: r.relay === 1 };
     });
     return out;
   } finally { db.close(); }
+}
+function row(home, key) {
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'relay-state', 'node.db'), { readOnly: true });
+  try { return db.prepare('SELECT * FROM seen WHERE publicKey = ?').get(key) || null; } finally { db.close(); }
 }
 
 test.startTest('Relay keys — pinned on disk, and a change is never silent');
@@ -80,11 +84,10 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
 
   // The point of the whole module: this is on disc, not a variable. Read
   // through a connection of this test's own, so a passing check cannot be
-  // a cache answering. Since goal/G19.15 the disc is node.db's relays
-  // table, keyed by relay key, not relayKeys.json.
+  // a cache answering. Since goal/G40.11 the disc is the one table: the relay's row, its url a direct route.
   const onDisk = disc(home);
-  if (onDisk[URL_A] && onDisk[URL_A].publicKey === KEY_1 && onDisk[URL_A].firstSeen) {
-    test.check('and it is on disk, with when it was first accepted');
+  if (onDisk[URL_A] && onDisk[URL_A].publicKey === KEY_1 && onDisk[URL_A].relay === true) {
+    test.check('and it is on disk: a row flagged relay, its url a direct route');
   } else {
     test.fail('relays table: ' + JSON.stringify(onDisk));
   }
@@ -108,9 +111,7 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
     test.fail('the pin moved on its own: ' + relayKeys.pinned(home, URL_A).slice(-12));
   }
 
-  test.subHeading('An explicit accept resolves it, and says what it replaced');
-
-  const before = disc(home)[URL_A].firstSeen;
+  test.subHeading('An explicit accept resolves it, and the old key keeps its row');
 
   relayKeys.accept(home, URL_A, KEY_2);
   const after = disc(home)[URL_A];
@@ -121,18 +122,13 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
     test.fail('after re-accept: ' + JSON.stringify(after));
   }
 
-  if (after.replaced === KEY_1) {
-    test.check('and the record says which key it displaced');
+  // WHO THE OLD KEY WAS DOES NOT CHANGE because a box was replaced (goal/G40.11): its row stays, and only the address
+  // it answered at moves to the new key. ("replaced" and "acceptedAt" went with the relays table, box v24.)
+  const oldRow = row(home, KEY_1);
+  if (oldRow && oldRow.relay === 1 && !Object.keys(disc(home)).some(function (u) { return disc(home)[u].publicKey === KEY_1; })) {
+    test.check('and the displaced key keeps its row, with no address of its own any more');
   } else {
-    test.fail('replaced: ' + JSON.stringify(after.replaced));
-  }
-
-  // firstSeen is about the ADDRESS, not the key — how long this node has
-  // been using that URL at all, which a substitution does not reset.
-  if (after.firstSeen === before && after.acceptedAt !== before) {
-    test.check('firstSeen is the address and does not move; acceptedAt is the key and does');
-  } else {
-    test.fail('dates: firstSeen=' + after.firstSeen + ' acceptedAt=' + after.acceptedAt);
+    test.fail('the displaced key: ' + JSON.stringify({ row: oldRow, disc: disc(home) }));
   }
 
   test.subHeading('One relay is not another');
@@ -173,26 +169,13 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
     test.fail('set holds ' + Object.keys(keys).length + ': ' + JSON.stringify(Object.keys(keys).map(function (k) { return k.slice(-8); })));
   }
 
-  test.subHeading('Forgetting, and a file that cannot be read');
+  test.subHeading('A file that cannot be read');
 
-  if (relayKeys.forget(home, URL_B) && relayKeys.check(home, URL_B, KEY_1) === 'new') {
-    test.check('a forgotten relay is new again');
-  } else {
-    test.fail('forget did not take');
-  }
-
-  if (relayKeys.forget(home, 'https://never.example') === false) {
-    test.check('and forgetting one that was never there says so rather than throwing');
-  } else {
-    test.fail('forget invented a row');
-  }
-
-  // FAILS SAFE, and in the one direction that matters: a corrupt file
-  // reads as nothing pinned, so every relay looks new and has to be
-  // accepted again. The other direction — reading as a match — would
-  // trust a stranger because a file went bad. Since goal/G19.15 the file
-  // is only ever an old one being moved into node.db, and a bad one moves
-  // nothing.
+  // relayKeys.forget STOOD HERE until goal/G40.11; nothing in run/ called it, and a relay's row is the table's now.
+  //
+  // FAILS SAFE, and in the one direction that matters: a stray old file reads as nothing pinned, so every relay looks
+  // new and has to be accepted again. The other direction — reading as a match — would trust a stranger because a file
+  // went bad. Since goal/G40.11 relayKeys.json is not read at all.
   const broken = world.tmpHome('relaykeys-broken');
   fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(broken, 'relay-state', 'relayKeys.json'), '{ not json');

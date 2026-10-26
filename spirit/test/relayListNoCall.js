@@ -5,17 +5,18 @@
 //
 // ANDY'S DECISIONS (goal/G22.4):
 //   peerPost owns every contact with a relay; the hub never touches a relay or the relay library, it asks peerPost.
-//   1. The relay list (relay.get, relay.search) is a search over the relays peerPost already knows, from its
+//   1. The relay list (relay.get, and the search: contact.search {relay: 'yes'} since goal/G40.11, relay.search gone)
+//      is a search over the relays peerPost already knows, from its
 //      streams, with no call to any relay. A relay peerPost has never met shows as not joined.
 //   2. The relay address check (assertRelayUrl) moves out of relayRequest.js into a module of its own, since it
 //      sends nothing; the relay library then means only traffic on the wire.
 //
 // WHAT IS ASSERTED
-//   1. relay.search and relay.get answer with NOTHING reaching any relay: no router.relayKey, no router.post, no
+//   1. contact.search over the relays and relay.get answer with NOTHING reaching any relay: no router.relayKey, no router.post, no
 //      router.claim, and no http/https request or fetch in this process while they run.
 //   2. A relay with an open stream shows online; one this node owns (it holds the report a relay sends only to its
-//      owner) shows "yours" with this node's key as its owner; one seated shows "member"; the relay's key is the
-//      one pinned at the seat (offboard reads it as roll.relayKey).
+//      owner) shows owned with this node's key as its owner; one seated shows claimed; the relay's key is the one
+//      pinned (offboard reads it as roll.relayKey), and what it calls this node is this node's own name (goal/G40.11).
 //   3. A seated relay with no stream shows offline; a relay never met (no seat, no stream) shows "not joined".
 //   4. relayRequest.js no longer exports assertRelayUrl (or isLoopbackHost); spirit/run/spirit/relayUrl.js does, with
 //      the same rules: https anywhere, http only to loopback, anything else and a bad url refused.
@@ -87,11 +88,11 @@ test.startTest('goal/G22.4: the relay list asks no relay, and the address check 
 const root = freshRoot();
 const me = auth.loadIdentity(root);
 relayKeys.list(root, LIVE, 'live', 'RELAYKEY-live');
-relayKeys.seat(root, LIVE, 'me-on-live');
+relayKeys.seat(root, LIVE);
 relayKeys.list(root, MINE, 'mine', 'RELAYKEY-mine');
-relayKeys.seat(root, MINE, 'me-on-mine');
+relayKeys.seat(root, MINE);
 relayKeys.list(root, QUIET, 'quiet', 'RELAYKEY-quiet');
-relayKeys.seat(root, QUIET, 'me-on-quiet');
+relayKeys.seat(root, QUIET);
 relayKeys.list(root, STRANGER, 'stranger', 'RELAYKEY-stranger');
 
 const asked = [];
@@ -99,17 +100,17 @@ const deps = { router: fakeRouter(asked) };
 const hub = require('../run/spirit/hub.js').createHub(root);
 const restore = watchWire();
 
-function label(items, url) {
-  const hit = (items || []).filter(function (i) { return i.key === url; })[0];
-  // The label is the row as json since goal/G30.7; the ruled sentence is its text.
-  if (!hit) return '(absent)';
-  try { return JSON.parse(hit.label).text; } catch (e) { return hit.label; }
+// What relay.get says of a relay, in the ruled words: "<name> — yours|member|not joined, online|offline".
+function said(got) {
+  const r = got && got.relay;
+  if (!r) return '(absent)';
+  return r.label + ' — ' + (r.owned ? 'yours' : (r.claimed ? 'member' : 'not joined')) + ', ' + (r.status === 200 ? 'online' : 'offline');
 }
 
 Promise.resolve()
   .then(function () {
     return Promise.all([
-      Promise.resolve(hub.relaySearch({ q: '*', name: '' }, deps)).catch(function (e) { return { threw: String(e && e.message || e) }; }),
+      Promise.resolve().then(function () { return hub.contactSearch({ q: '*', relay: 'yes' }, deps); }).catch(function (e) { return { threw: String(e && e.message || e) }; }),
       Promise.all([LIVE, MINE, QUIET, STRANGER].map(function (u) {
         return Promise.resolve(hub.relayGet({ key: u }, deps)).catch(function (e) { return { threw: String(e && e.message || e) }; });
       })),
@@ -125,14 +126,16 @@ Promise.resolve()
     const gets = got[1];
 
     test.subHeading('1. nothing reaches a relay');
-    if (asked.length === 0) test.check('relay.search and relay.get asked peerPost nothing that reaches a relay');
+    if (asked.length === 0) test.check('the relay search and relay.get asked peerPost nothing that reaches a relay');
     else test.fail(OWED + 'the list asked the router: ' + JSON.stringify(asked));
     if (outward.length === 0) test.check('and no http, https or fetch left this process while they ran');
     else test.fail(OWED + 'requests left this process: ' + JSON.stringify(outward));
 
     test.subHeading('2. a relay with an open stream: online, its key and owner as the node knows them');
-    const items = search && search.items;
-    const l = { live: label(items, LIVE), mine: label(items, MINE), quiet: label(items, QUIET), stranger: label(items, STRANGER) };
+    const ids = ((search && search.items) || []).map(function (i) { return i.key; }).sort();
+    if (JSON.stringify(ids) === JSON.stringify(['RELAYKEY-live', 'RELAYKEY-mine', 'RELAYKEY-quiet', 'RELAYKEY-stranger'])) test.check('the search lists the four relays, each by its ID');
+    else test.fail('the search listed ' + JSON.stringify(search));
+    const l = { live: said(gets[0]), mine: said(gets[1]), quiet: said(gets[2]), stranger: said(gets[3]) };
     if (l.live === 'live — member, online') test.check('the seated relay with a stream reads "live — member, online"');
     else test.fail(OWED + 'the seated relay with a stream reads ' + JSON.stringify(l.live));
     if (l.mine === 'mine — yours, online') test.check('the owned relay reads "mine — yours, online"');
@@ -140,8 +143,8 @@ Promise.resolve()
     const gLive = gets[0] && gets[0].relay;
     const gMine = gets[1] && gets[1].relay;
     if (gLive && gLive.status === 200 && gLive.claimed === true && gLive.owned === false &&
-        gLive.roll && gLive.roll.relayKey === 'RELAYKEY-live' && gLive.roll.myLabel === 'me-on-live') {
-      test.check('relay.get on it: online, claimed, the pinned relay key and this node\'s seat label');
+        gLive.roll && gLive.roll.relayKey === 'RELAYKEY-live' && gLive.roll.myLabel === me.name) {
+      test.check('relay.get on it: online, claimed, the pinned relay key, and this node\'s own name as what that relay calls it');
     } else test.fail(OWED + 'relay.get on the live relay gave ' + JSON.stringify(gets[0]));
     if (gMine && gMine.owned === true && gMine.claimed === true && gMine.roll && gMine.roll.ownerKey === me.publicKey &&
         gMine.roll.relayKey === 'RELAYKEY-mine' && gets[1].report && gets[1].report.present === 3) {

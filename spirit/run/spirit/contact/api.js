@@ -5,7 +5,8 @@
 // It names no family of its own: the node maps it (goal/G32.3), answering this text to api {family}.
 module.exports = {
   verbs: {
-    search: { q: 'text?', owned: 'flag?', blocked: 'flag?', held: 'flag?' },
+    // The one table, people and relays (goal/G40.11): a yes-filter per flag.
+    search: { q: 'text?', keep: 'flag?', mine: 'flag?', relay: 'flag?', seated: 'flag?', held: 'flag?', blocked: 'flag?' },
     get: { key: 'key' },
     block: { publicKey: 'key', publicLabel: 'name?' },
     unblock: { publicKey: 'key' },

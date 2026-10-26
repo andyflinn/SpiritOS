@@ -14,10 +14,10 @@
 // this node its owner, goal/G19.8; "just a star in the one column, that says it all", and "if you want more info, put a
 // tooltip on the star"), presence (green or white), the name; then the configurable status column, its icons from
 // options.statuses [{status, iconKey}], the first the default (goal/G4.14).
-// THE FILTERS: one per state, owned (★), blocked and held, each shown only when the list holds any ("owned, blocked,
-// held, (if our list has any)"), each sent to contact.search as a yes-filter.
+// THE FILTERS: one per state, mine (★), blocked and held, each shown only when the list holds any ("owned, blocked,
+// held, (if our list has any)"), each sent to contact.search as a yes-filter (mine since goal/G40.11).
 //
-// Rows come from the node's contact.search {q, owned, blocked, held}, its label json {name, owned, blocked, held}; or
+// Rows come from the node's contact.search {q, mine, blocked, held, ...}, its label json {name, mine, blocked, held, ...}; or
 // from options.search(text, ask) -> {items: [{key, label}], more}, or options.contacts [{key, label}], a caller's own rows
 // (a label that is not json is a name). A row's name is the row's: a rename is published by the node (contact.rename,
 // shell.js) and the list asks again.
@@ -76,7 +76,7 @@
     // The current row (goal/G4.14: "the pane usually has a \"current\"") is the shared list's, drawn the same in every list
     // since goal/G29.9; the name is marked where the words match.
     function paint(row, mark) {
-      var star = row.owned ? '<span title="Your puppet: its card names this node as its owner.">' + ('⭐') + '</span>' : '';
+      var star = row.mine ? '<span title="Yours: a puppet whose card names this node as its owner, or a relay you own.">' + ('⭐') + '</span>' : '';
       var pt = presentTitle[row.key];
       var m = typeof mark === 'function' ? mark : escapeHtml;
       return '<td class="icon-cell">' + star + '</td>' +
@@ -141,7 +141,7 @@
         name: 'show',
         choices: function (all) {
           var out = [{ value: 'all', word: 'all' }];
-          if (any('owned')(all)) out.push({ value: 'owned', icon: '⭐', word: 'my puppets' });
+          if (any('mine')(all)) out.push({ value: 'mine', icon: '⭐', word: 'my puppets' });
           if (any('blocked')(all)) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
           if (any('held')(all)) out.push({ value: 'held', icon: '⌛', word: 'held' });
           if (any('relay')(all)) out.push({ value: 'relay', word: 'relays' });
@@ -149,7 +149,7 @@
         },
         test: function (row, value) { return !value || value === 'all' || (row && row[value] === true) ? 1 : 0; },
         // Drawn only when there is a kind to pick beside all.
-        when: function (all) { return ['owned', 'blocked', 'held', 'relay'].some(function (n) { return any(n)(all); }); },
+        when: function (all) { return ['mine', 'blocked', 'held', 'relay'].some(function (n) { return any(n)(all); }); },
       }],
       paint: paint,
       pick: function (row) { pick(row); },

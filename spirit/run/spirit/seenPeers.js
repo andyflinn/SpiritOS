@@ -161,9 +161,9 @@ function createSeenPeers(opts) {
   if (!store) throw new Error('seenPeers needs a store: pass rootDir or store');
   var rows = store.seen;
 
-  // THE ONE EVICTION, AS A QUERY. Unchosen first, then ignored and
-  // blocked, then held, oldest first within each; never an added row
-  // (0021). The order lives in nodeStore, beside the index that serves it.
+  // THE ONE SHEDDING, AS A QUERY. Unflagged first, then ignored and
+  // blocked, then held, oldest first within each; never a kept or owned row
+  // (0021, goal/G40.11). The order lives in nodeStore, beside the index that serves it.
   function sweep() {
     rows.sweepToBytes(maxBytes);
   }
@@ -222,8 +222,9 @@ function createSeenPeers(opts) {
     // goal/G2.9: the proof presenceNode publishes is persisted with its
     // own stamp); everybody else is stamped now.
     var now = (what && typeof what.seen === 'number' && what.seen > 0) ? what.seen : nowFn();
+    // A caller that knows the ID is a relay says so (relay: true); the flag never goes back to false here.
     rows.put(key, {
-      label: label, labelRank: rank, labelAt: now, kind: (what && what.kind) || '',
+      label: label, labelRank: rank, labelAt: now, relay: !!(what && what.relay === true),
       present: hasPresence ? present : undefined, seen: now,
     });
     // A ROUTE IS A SEPARATE ROW, because it is a separate thing: through
@@ -245,17 +246,12 @@ function createSeenPeers(opts) {
     var row = rows.get(key);
     if (!row) return null;
     var best = rows.routes(key)[0] || null;
-    return {
+    return Object.assign({}, row, {
       at: (best && best.at) || '',
       url: (best && best.url) || '',
       via: (best && best.via) || '',
-      label: row.label,
-      present: row.present,
-      seen: row.seen,
-      choice: row.choice,
-      blocked: row.blocked,
-      kind: row.kind || 'node',
-    };
+      seen: row.lastSeen,
+    });
   }
 
   // Every way this node knows to reach somebody, best-ranked first.
@@ -284,18 +280,12 @@ function createSeenPeers(opts) {
   // the contact book. Nothing in run/ calls it.
   function forget(publicKey) { rows.forget(String(publicKey || '').trim()); }
 
-  // ── THE MARK, AND THE ROOM IT NEEDS (0021) ───────────────────────────
+  // ── THE FLAGS, AND THE ROOM THEY NEED (0021, goal/G40.11) ──────────────
   //
-  // The book writes its marks through markBook on every save (contacts.js),
-  // and the door writes 'ignored' through mark. Neither is an interface:
-  // both are the node talking to its own memory.
-  function mark(publicKey, choice, blocked) { return rows.mark(publicKey, choice, blocked); }
-  function markBook(marks) { rows.markBook(marks); sweep(); }
-  function chosen() { return rows.chosen(); }
-  // Who a search of memory compares (R39): every chosen row, and the
-  // newest `strangerRows` of everybody else. Rows, not routes: the caller
-  // ranks first and asks `get` for the few that made the cut.
-  function recall(strangerRows) { return rows.recall(strangerRows); }
+  // The owner's acts (contacts.js, relayKeys.js) and the door's 'ignored' write a row's flags through set. Who a
+  // search reads is listed: the kept, the owned and the held ("the search lists kept and held rows only").
+  function set(publicKey, fields) { var r = rows.set(publicKey, fields); sweep(); return r; }
+  function listed() { return rows.listed(); }
 
   //   Andy: "once the memory is full with 'added' statuses no more can be
   //   chosen/added until eviction by blocking or ignoring...." — "it's
@@ -306,7 +296,7 @@ function createSeenPeers(opts) {
   // on added rows alone and nothing else is left to shed.
   function roomToAdd(publicKey) {
     var row = rows.get(String(publicKey || '').trim());
-    if (row && row.choice === 'added') return true;
+    if (row && (row.keep || row.mine)) return true;
     sweep();
     return rows.bytes() <= maxBytes;
   }
@@ -319,10 +309,8 @@ function createSeenPeers(opts) {
     size: size,
     forget: forget,
     reset: reset,
-    mark: mark,
-    markBook: markBook,
-    chosen: chosen,
-    recall: recall,
+    set: set,
+    listed: listed,
     roomToAdd: roomToAdd,
     maxBytes: maxBytes,
     bytes: function () { return rows.bytes(); },

@@ -158,9 +158,10 @@ test.subHeading('2. relay.search and relay.remove are claimed, and no relay.add 
   if (claimed.length >= 30) test.check(claimed.length + ' verbs read from server.js\'s claim blocks');
   else test.fail(OWED + 'only ' + claimed.length + ' verbs parsed: the claim shape moved and the checks below mean nothing');
 
-  // A CONTROL: relay.search is already built and must survive the move (its source is section 3's business).
-  if (claimed.indexOf('relay.search') !== -1) test.check('relay.search is still claimed, as it already was');
-  else test.fail(OWED + 'relay.search went missing: the verb he approved for listing relays must survive');
+  // A CONTROL: the relays are listed by contact.search since goal/G40.11 (Andy: "yes. those names."), and relay.search
+  // went; contact.search must be claimed and relay.search must not.
+  if (claimed.indexOf('contact.search') !== -1 && claimed.indexOf('relay.search') === -1) test.check('contact.search is claimed, the verb that lists relays, and relay.search is gone');
+  else test.fail(OWED + 'the verb that lists relays is missing, or relay.search survived goal/G40.11');
 
   // THE ONE VERB THIS ITEM ADDS.
   if (claimed.indexOf('relay.remove') !== -1) test.check('the node claims relay.remove, which he approved by name');
@@ -236,11 +237,12 @@ test.subHeading('6. the claim path writes the list, and no owner');
 
   // The node's own list writer is what a successful claim calls. Named here so a build that leaves Natter
   // writing the file through fs cannot pass section 1 by seeding alone.
-  // Since goal/G19.15 the node's own list is node.db's relays table: the claim lists through ownerBadge.addRelay,
-  // and ownerBadge writes through relayKeys, the table's only writer.
+  // Since goal/G40.11 the node's own list is the relays kept in node.db's one table, seen: the claim lists through
+  // ownerBadge.addRelay, and ownerBadge writes through relayKeys, which keeps a relay's row there.
   if (/ownerBadge\.addRelay\(/.test(hub) && /relayKeys\.list\(/.test(read(path.join(JS, 'ownerBadge.js'))) &&
-      /CREATE TABLE IF NOT EXISTS relays \(/.test(read(path.join(JS, 'nodeStore.js')))) {
-    test.check('the claim lists its relay through ownerBadge.addRelay, into node.db\'s relays table');
+      /keep: true/.test(read(path.join(JS, 'relayKeys.js'))) && /CREATE TABLE IF NOT EXISTS seen \(/.test(read(path.join(JS, 'nodeStore.js'))) &&
+      !/CREATE TABLE IF NOT EXISTS relays \(/.test(read(path.join(JS, 'nodeStore.js')))) {
+    test.check('the claim lists its relay through ownerBadge.addRelay, as a kept row of node.db\'s one table');
   } else {
     test.fail(OWED + 'the claim does not reach the node\'s own relays table: nothing writes the node\'s own list');
   }

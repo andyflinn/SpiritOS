@@ -8,10 +8,9 @@
 // the Join app hear it and draw only then; nothing asks the node for the steps on a shell message.
 //
 //   create(rootDir, jobs) -> { job, facts(), refresh(why) }
-//     facts(): seated (a relay row holds a seat), relayUrl (that relay, else the first listed), email and emailVerified
-//              (the email a confirmed join proved there, box v41), contact (the book holds
-//              anyone but this node and the relays it knows by key), face (the face name kept on that relay's row),
-//              faceUrl (https://<face>.<relay host>).
+//     facts(): seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the owner
+//              keeps anyone but this node and the relays it knows by key), face (the face name on that relay), faceUrl
+//              (https://<face>.<relay host>). No email: the node keeps none since goal/G40.11 (box v24).
 //     refresh(why): publishes the job when facts() changed, with why as its log line; answers whether it did.
 // server.js refreshes it after any relay, contact or peer verb, the verbs that can take a seat, add a contact or keep
 // a face.
@@ -21,19 +20,15 @@ const relayKeys = require('./relayKeys');
 const contactBook = require('./contacts');
 
 function facts(rootDir) {
-  const out = { seated: false, relayUrl: '', email: '', emailVerified: false, contact: false, face: '', faceUrl: '' };
+  const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' };
   let seated = [];
   try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
   out.seated = seated.length > 0;
   let listed = [];
   try { listed = require('./ownerBadge').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
   out.relayUrl = String(seated[0] || listed[0] || '');
+  // THE FACE NAME on that relay, the node's own fact on its row (goal/G40.11).
   if (out.seated) {
-    // The email a confirmed join code proved on that relay (box v41): step 1 is done only with it.
-    let held = null;
-    try { held = relayKeys.emailOf(rootDir, out.relayUrl); } catch (e) { held = null; }
-    out.emailVerified = !!(held && held.verified && held.email);
-    out.email = out.emailVerified ? String(held.email) : '';
     let kept = null;
     try { kept = relayKeys.faceOf(rootDir, out.relayUrl); } catch (e) { kept = null; }
     out.face = kept && kept.name ? String(kept.name) : '';

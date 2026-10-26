@@ -1,16 +1,16 @@
 // spirit/run/shell/js/contacts/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
-// (owned, blocked, held), label (the name, editable in a details dialog) and add (a button on a row the book does not
-// hold). It reads data.contacts of the faceless layer (shell/js/spiritData.js, goal/G30.16), which presence, renames, the
+// (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
+// and add (a button on a row the owner does not keep). It reads data.contacts of the faceless layer (shell/js/spiritData.js, goal/G30.16), which presence, renames, the
 // network search and every contact search keep, so a peer arriving repaints that peer's dot and a rename that peer's
 // label, and nothing else. rowElement.js does the shared work; this file says what a contact is.
 //
 // THE DISPATCH OF CONTACTS: one watch on data.contacts for every contact row on the page, and an index by key. A row
 // registers on create and leaves on destroy. A row found on the network joins every list through the tree.
 //
-// What a row offers depends on what it is (goal/G30.19): a row in the book open (Contact), block, unblock and remove
-// (contact.forget); a row found on the network add (peer.acquire, at the relay that found it); a relay open (Relay
-// Details). An action asks and paints nothing: the node's confirmed change on the stream repaints. The label's editor
+// What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
+// remove (contact.forget); a held row add (peer.acquire); a relay open (Relay Details). An action asks and paints
+// nothing: the node's confirmed change on the stream repaints. The label's editor
 // checks js/fieldRules.js (the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
@@ -30,10 +30,8 @@
   }
 
   function known(key) { var D = window.spirit.data; return (D && D.get('contacts/' + key)) || null; }
-  // A RELAY'S ROW FOLLOWS ITS OWN KEY (goal/G40.5). Its row is keyed by its url, the presence table by public keys, and
-  // the node marks a relay's own key present while it holds the stream to it. So a relay row reads that key: present
-  // while the stream is held, absent otherwise (a relay the node holds no stream to is not connected).
-  var relayRows = Object.create(null);   // relay key -> the url its row is keyed by
+  // A RELAY'S ROW IS KEYED BY ITS OWN ID (goal/G40.11: a row of the one table), and the node marks a relay's own key
+  // present while it holds the stream to it (goal/G40.5): its dot is its own key's, like anybody's.
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
   function dispatch(idx) {
     if (subscribed || !window.spirit.data) return;
@@ -42,9 +40,8 @@
       var key = String(path).slice('contacts/'.length);
       if (!key || !v) return;
       var changes = {};
-      ['present', 'name', 'owned', 'blocked', 'held', 'book'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
+      ['present', 'name', 'keep', 'mine', 'blocked', 'held'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
       idx.forKey(key).forEach(function (el) { el.apply(changes); });
-      if (relayRows[key] && 'present' in v) idx.forKey(relayRows[key]).forEach(function (el) { el.apply({ present: v.present === true }); });
     });
   }
   function index() {
@@ -55,11 +52,11 @@
   function create(row) {
     var r = row || {};
     var key = String(r.key || r.publicKey || '');
-    var relay = r.kind === 'relay' || r.relay === true;
-    var inBook = r.book !== false;
+    var relay = r.relay === true;
+    // Kept, owned or blocked: the owner has decided about them, and a block has to stay undoable. A held row waits for
+    // the yes, which is Add.
+    var inBook = r.keep === true || r.mine === true || r.blocked === true;
     var was = known(key) || {};
-    var relayKey = relay ? String(r.relayKey || '') : '';
-    if (relayKey) relayRows[relayKey] = key;
     var actions = relay ? [
       // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
       { name: 'open', label: 'Open', run: function (el) {
@@ -76,8 +73,7 @@
     ] : [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
-        var ask = { publicKey: el.key, via: 'handle', publicLabel: String(el.row.publicLabel || '') };
-        if (el.row.relay) ask.url = String(el.row.relay);
+        var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
         return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
@@ -85,9 +81,9 @@
       kind: 'contact',
       key: key,
       index: index(),
-      row: { key: key, name: r.name || '', owned: r.owned === true, blocked: r.blocked === true, held: r.held === true,
-        present: relayKey ? (known(relayKey) || {}).present === true : was.present !== undefined ? was.present : r.present, book: inBook, kind: relay ? 'relay' : (r.kind || 'node'),
-        relay: typeof r.relay === 'string' ? r.relay : '', url: r.url || '', publicLabel: r.publicLabel || '' },
+      row: { key: key, name: r.name || '', keep: r.keep === true, mine: r.mine === true, blocked: r.blocked === true,
+        held: r.held === true, seated: r.seated === true, relay: relay, book: inBook,
+        present: was.present !== undefined ? was.present : r.present, url: r.url || '', publicLabel: r.publicLabel || '' },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
         { name: 'presence', from: ['present'], paint: function (v) {
@@ -97,8 +93,8 @@
             : 'not known — no relay you are connected to mentions this key';
           return '<span title="' + esc(title) + '">' + dot + '</span>';
         } },
-        { name: 'status', from: ['owned', 'blocked', 'held'], paint: function (v) {
-          return v.blocked ? '❌' : v.held ? '⌛' : v.owned ? '⭐' : '';
+        { name: 'status', from: ['mine', 'blocked', 'held'], paint: function (v) {
+          return v.blocked ? '❌' : v.held ? '⌛' : v.mine ? '⭐' : '';
         } },
         { name: 'label', from: ['name'], rule: nameRules(), paint: function (v) { return esc(v.name); },
           // In a details dialog: checked here first, then asked; the rename on the stream repaints.
@@ -110,8 +106,8 @@
             return spirit.ready.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
               .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
-        { name: 'add', from: ['book', 'kind'], paint: function (v) {
-          return v.book === false && v.kind !== 'relay' ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
+        { name: 'add', from: ['book', 'relay'], paint: function (v) {
+          return v.book === false && v.relay !== true ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
         } },
       ],
       actions: actions,

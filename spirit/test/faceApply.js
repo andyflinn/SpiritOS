@@ -93,12 +93,16 @@ try {
   const { DatabaseSync } = require('node:sqlite');
   const file = fs.readdirSync(path.join(nodeHome, 'relay-state')).filter(function (f) { return /^node\.db$/.test(f); })[0];
   const db = new DatabaseSync(path.join(nodeHome, 'relay-state', file), { readOnly: true });
-  cols = db.prepare('PRAGMA table_info(relays)').all().map(function (c) { return c.name; });
+  // The relays table went into seen with goal/G40.11; a face would be columns of the relay's row there.
+  cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
   db.close();
   if (s && typeof s.close === 'function') s.close();
 } catch (e) { cols = ['threw ' + e.message]; }
-if (['faceName', 'faceEmail', 'faceReply'].every(function (c) { return cols.indexOf(c) !== -1; })) test.check('the node relays table has faceName, faceEmail and faceReply');
-else test.fail(OWED + 'the node relays table has ' + short(cols));
+// THE FACE NAME IS ANDY'S OPEN QUESTION ON goal/G40.11 (claude-windows asked: keep it on the relay's row as the node's
+// own fact, or drop the face lines). Nothing of a seat is kept until he answers, so the three face checks here stay red
+// rather than invent an answer.
+if (['faceName', 'faceEmail', 'faceReply'].every(function (c) { return cols.indexOf(c) !== -1; })) test.check('the relay\'s row has faceName, faceEmail and faceReply');
+else test.fail(OWED + '(open on goal/G40.11) the relay\'s row has ' + short(cols));
 
 test.subHeading('5. the node verb and the info app section');
 const server = code('spirit/server.js');
@@ -122,15 +126,16 @@ const keptHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-faceapply-keep-')
 let keptFace = null;
 try {
   relayKeysApi.accept(keptHome, 'https://relay.example', 'MCowBQYDK2VwAyEAfaceApplyKeptRelayKeyAAAAAAAAAAAAAAAAAA=');
+  // Open on goal/G40.11 (see above): keepFace and faceOf are gone until Andy answers.
   relayKeysApi.keepFace(keptHome, 'https://relay.example', 'harbour', 'ann@example.org', '{"text":"signed"}');
   keptFace = relayKeysApi.faceOf(keptHome, 'https://relay.example');
 } catch (e) { keptFace = { threw: e.message }; }
 try { fs.rmSync(keptHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
 if (keptFace && keptFace.name === 'harbour' && keptFace.email === 'ann@example.org') test.check('the node reads back the face it kept for a relay (relayKeys.faceOf), across a fresh open');
-else test.fail(OWED + 'relayKeys.faceOf answered ' + short(keptFace));
+else test.fail(OWED + '(open on goal/G40.11) relayKeys.faceOf answered ' + short(keptFace));
 const hubSrc = code('spirit/hub.js');
 if (/row\.face\s*=/.test(hubSrc) && /faceOf\(/.test(hubSrc)) test.check('each relay row the node answers carries its kept face (hub.js sets row.face from faceOf)');
-else test.fail(OWED + 'hub.js puts no kept face on the relay rows relay.get answers');
+else test.fail(OWED + '(open on goal/G40.11) hub.js puts no kept face on the relay rows relay.get answers');
 const info = code('shell/info/info.js');
 // Info's face form is the shell element faceForm since goal/G30.1 (box v39); Info draws it.
 const faceForm = code('shell/js/faceForm.js');

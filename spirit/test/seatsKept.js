@@ -3,7 +3,9 @@
 // spirit/test/seatsKept.js
 // goal/G19.1: seats kept on first connect; an evicted node told so in Natter.
 //
-// Asserts the item's SHAPE, item by item (Andy's record, v21):
+// Asserts the item's SHAPE, item by item (Andy's record, v21), as goal/G40.11 reshaped it: nothing of a seat is
+// stored but `seated` on the relay's row of the one table (box v24), so a refusal is "seated cleared by a refusal as
+// no member", what a relay calls this node is its own name, and an accepted rename writes nothing on the row.
 //   1. relayKeys.accept merges: the seat a claim wrote survives the pin the
 //      first stream writes, and the label reads back.
 //   2. a 409 re-claim of this node's own key seats as a 2xx does; a claim
@@ -44,16 +46,15 @@ function tmpHome() { return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seats-
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 20; i++) await settle(); }
 function show(v) { return JSON.stringify(v); }
-// The relay table is node.db's `relays`, keyed by relay key, read and
-// written only through relayKeys (goal/G19.15); a url is passed for lookup.
+// A relay is a row of node.db's one table, seen (goal/G40.11), read and written through relayKeys; a url is passed
+// for lookup.
 function rowOf(home, url) { return relayKeys.listed(home).filter(function (r) { return r && r.url === url; })[0] || null; }
-function keyRow(home, url) { return relayKeys.load(home)[relayKeys.normalizeUrl(url)] || null; }
-function table() { return typeof relayKeys.refusal === 'function' ? relayKeys : null; }
-function nodeRow(home, key) { return require('../run/spirit/nodeStore.js').open(home).relays.byKey(key); }
+function keyRow(home, url) { return relayKeys.byUrl(home, relayKeys.normalizeUrl(url)); }
+function nodeRow(home, key) { return require('../run/spirit/nodeStore.js').open(home).seen.get(key); }
 // A relay this node met at a claim: listed under its key, and seated.
-function seated(home, url, label, relayKey, seatLabel) {
+function seated(home, url, label, relayKey) {
   relayKeys.list(home, url, label, relayKey);
-  relayKeys.seat(home, url, seatLabel);
+  relayKeys.seat(home, url);
 }
 function signedKeyAnswer(rid, label) {
   return JSON.stringify({
@@ -72,9 +73,11 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   test.subHeading('1. accept merges: the seat survives the first stream\'s pin');
   {
     const home = tmpHome();
+    // What a relay calls this node is its own name (goal/G40.11): the node is jazz.
+    auth.saveIdentity(home, auth.generateIdentity('jazz'));
     const U = 'https://relay-one.example';
     const rid = auth.generateIdentity('relay-one');
-    seated(home, U, 'one', rid.publicKey, 'jazz');
+    seated(home, U, 'one', rid.publicKey);
     // The first stream pins through answerRelay, exactly as presenceNode's pinRelay does.
     const answerer = require('../run/spirit/answerRelay').createAnswerer({
       rootDir: home,
@@ -83,10 +86,10 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     });
     const key = await answerer.relayKey(U);
     const row = keyRow(home, U);
-    if (key === rid.publicKey && row && row.publicKey === rid.publicKey && row.seat && row.seat.label === 'jazz') {
-      test.check('the pin is written beside the seat, and the seat the claim wrote is still on the row');
+    if (key === rid.publicKey && row && row.key === rid.publicKey && row.seated === true) {
+      test.check('the pin is the relay\'s own row, and the seat the claim wrote is still on it');
     } else test.fail(OWED + 'after the first pin the row reads ' + show(row));
-    if (relayKeys.seatLabel(home, U) === 'jazz') test.check('so the label the claim recorded still reads back');
+    if (relayKeys.seatLabel(home, U) === 'jazz') test.check('so what the relay calls this node reads back: its own name');
     else test.fail(OWED + 'seatLabel after the first pin: ' + show(relayKeys.seatLabel(home, U)));
     // And what Natter's "You" row reads: the probe's myLabel and claimedLabel.
     const me = auth.generateIdentity('jazz');
@@ -95,12 +98,12 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     }, me.publicKey);
     const b = summary.rows[0] || {};
     if (b.claimed && b.claimedLabel === 'jazz' && b.roll && b.roll.myLabel === 'jazz') {
-      test.check('the probe reads the seat\'s label as myLabel and claimedLabel: no "You (unknown)"');
+      test.check('the probe reads the node\'s name as myLabel and claimedLabel: no "You (unknown)"');
     } else test.fail(OWED + 'probe row after the first pin: ' + show(b));
   }
 
   // ── 2 ─────────────────────────────────────────────────────────────
-  test.subHeading('2. a 409 re-claim of this node\'s own key seats; a claim that succeeds clears a refusal');
+  test.subHeading('2. a 409 re-claim of this node\'s own key seats; a claim that succeeds seats again after a refusal');
   {
     const home = tmpHome();
     const me = auth.generateIdentity('jazz');
@@ -133,20 +136,18 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     }
     const first = await claim('jazz');
     await settled();
-    if (first.status === 409 && relayKeys.seatLabel(home, U) === 'jazz') {
-      test.check('a 409 for this node\'s own key records the seat, label and all, as a 2xx does');
+    if (first.status === 409 && (keyRow(home, U) || {}).seated === true && relayKeys.seatLabel(home, U) === 'jazz') {
+      test.check('a 409 for this node\'s own key records the seat as a 2xx does');
     } else test.fail(OWED + 'after a 409 re-claim (status ' + first.status + ') the seat row reads ' + show(keyRow(home, U)));
-    if (table() && typeof table().refuse === 'function') {
-      table().refuse(home, rid.publicKey, 'not-a-sender', Date.parse('2026-10-12T10:00:00.000Z'));
-      if (table().refusal(home, U)) test.check('a refusal is written on the row by the relay\'s key, and read back by its url');
-      else test.fail(OWED + 'refuse by key wrote nothing: ' + show(keyRow(home, U)));
-      claimStatus = 201;
-      await claim('jazz');
-      await settled();
-      const after = table().refusal(home, U);
-      if (!after) test.check('a claim that succeeds (a new invite) clears the refusal on that relay\'s row');
-      else test.fail(OWED + 'the refusal survived a successful claim: ' + show(after));
-    } else test.fail(OWED + 'relayKeys has no refuse/refusal/clearRefusal on the keyed table');
+    // A refusal as no member clears seated (goal/G40.11), by the relay's key as by its url.
+    relayKeys.setSeated(home, rid.publicKey, false);
+    if ((keyRow(home, U) || {}).seated === false) test.check('a refusal clears seated on the row, by the relay\'s key, and it reads back by its url');
+    else test.fail(OWED + 'clearing seated by key wrote nothing: ' + show(keyRow(home, U)));
+    claimStatus = 201;
+    await claim('jazz');
+    await settled();
+    if ((keyRow(home, U) || {}).seated === true) test.check('a claim that succeeds (a new invite) seats that relay\'s row again');
+    else test.fail(OWED + 'the seat did not come back with a successful claim: ' + show(keyRow(home, U)));
     server.close();
   }
 
@@ -161,7 +162,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   const rA = auth.generateIdentity('a'), rB = auth.generateIdentity('b'), rC = auth.generateIdentity('c');
   const peer = auth.generateIdentity('peer');
   const relayIds = {}; relayIds[A] = rA; relayIds[B] = rB; relayIds[C] = rC;
-  [[A, 'a'], [B, 'b'], [C, 'c']].forEach(function (p) { seated(home, p[0], p[1], relayIds[p[0]].publicKey, 'jazz'); });
+  [[A, 'a'], [B, 'b'], [C, 'c']].forEach(function (p) { seated(home, p[0], p[1], relayIds[p[0]].publicKey); });
   const sealOf = {}; sealOf[peer.publicKey] = peer.sealPublicKey;
   [rA, rB, rC].forEach(function (r) { sealOf[r.publicKey] = r.sealPublicKey; });
 
@@ -224,14 +225,11 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   await settled();
   if (refused && !refused.ok && refused.code === 'not-a-sender') test.check('the post is answered not-a-sender');
   else test.fail(OWED + 'the post to the refusing relay answered ' + show(refused));
-  const recorded = table() && table().refusal ? table().refusal(home, A) : null;
-  const atMs = recorded ? Date.parse(recorded.at) : NaN;
-  if (recorded && recorded.code === 'not-a-sender' && atMs >= before - 1000 && atMs <= Date.now() + 1000) {
-    test.check('the refusal and its time are written on that relay\'s row in the relay table');
-  } else test.fail(OWED + 'the relay table holds for A: ' + show(recorded) + ' (listed row ' + show(rowOf(home, A)) + ')');
+  // NOT STORED (goal/G40.11, box v24: refusal and refusedAt went): the refusal clears seated on A's row, and only
+  // seated is written.
   const rowA = nodeRow(home, rA.publicKey);
-  if (rowA && rowA.refusal === 'not-a-sender' && rowA.refusedAt === (recorded && recorded.at)) {
-    test.check('both are two columns on node.db\'s relays row under A\'s key');
+  if (rowA && rowA.relay === true && rowA.seated === false && !('refusal' in rowA) && (keyRow(home, B) || {}).seated === true) {
+    test.check('the refusal clears seated on A\'s row of the one table, and nothing else is written; B still seated');
   } else test.fail(OWED + 'node.db row for A\'s key: ' + show(rowA));
   if (n.closed[A] === 1 && !n.closed[B] && !n.closed[C]) test.check('exactly that relay\'s stream is closed, and no other');
   else test.fail(OWED + 'streams closed: ' + show(n.closed));
@@ -249,7 +247,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   } else test.fail(OWED + 'post to B: ' + show(toB));
 
   const streamed = n.jobs.updates.filter(function (u) { return u && u.data && u.data.refused && u.data.refused[A]; }).pop();
-  if (streamed && streamed.data.refused[A].code === 'not-a-sender' && streamed.data.refused[A].at === (recorded && recorded.at)) {
+  const atMs = streamed ? Date.parse(streamed.data.refused[A].at) : NaN;
+  if (streamed && streamed.data.refused[A].code === 'not-a-sender' && atMs >= before - 1000 && atMs <= Date.now() + 1000) {
     test.check('the refusal is streamed to the shell on the relay-presence job (data.refused, by relay url)');
   } else test.fail(OWED + 'job updates carry no refusal for A: ' + show(n.jobs.updates.map(function (u) { return u && u.data && Object.keys(u.data); })));
 
@@ -261,9 +260,9 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const sig = auth.sign(asker.privateKey, auth.postMessage(asker.publicKey, me.publicKey, text));
     await n.P.onRequest(C, { from: asker.publicKey, to: me.publicKey, text: text, sig: sig });
     await settled();
-    const onC = table() && table().refusal ? table().refusal(home, C) : null;
-    if (onC && onC.code === 'not-a-sender' && n.closed[C] === 1 && !n.closed[B]) {
-      test.check('a reply refused not-a-sender writes C\'s row and closes C\'s stream, B untouched');
+    const onC = keyRow(home, C);
+    if (onC && onC.seated === false && n.closed[C] === 1 && !n.closed[B]) {
+      test.check('a reply refused not-a-sender clears seated on C\'s row and closes C\'s stream, B untouched');
     } else test.fail(OWED + 'after C refused a reply: row ' + show(onC) + ', closed ' + show(n.closed));
   }
 
@@ -273,8 +272,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const hS = tmpHome();
     auth.saveIdentity(hS, auth.generateIdentity('jazz'));
     const ids = {}; ids[D] = auth.generateIdentity('d'); ids[E] = auth.generateIdentity('e');
-    seated(hS, D, 'd', ids[D].publicKey, 'jazz');
-    seated(hS, E, 'e', ids[E].publicKey, 'jazz');
+    seated(hS, D, 'd', ids[D].publicKey);
+    seated(hS, E, 'e', ids[E].publicKey);
     function probeDE(url) { return Promise.resolve({ status: 200, text: signedKeyAnswer(ids[url], 'r') }); }
     function bootS() {
       const jobs = fakeJobs();
@@ -299,8 +298,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
       s.opts[D].onClose('refused: 403', { status: 403, code: 'not-a-sender', error: WHY });
       await settled();
     }
-    const onD = relayKeys.refusal ? relayKeys.refusal(hS, D) : null;
-    if (onD && onD.code === 'not-a-sender') test.check('a refused stream writes the refusal and its time on that relay\'s row');
+    const onD = keyRow(hS, D);
+    if (onD && onD.seated === false) test.check('a refused stream clears seated on that relay\'s row');
     else test.fail(OWED + 'after D refused the stream: row ' + show(onD));
     if (s.closed[D] === 1 && !s.closed[E]) test.check('exactly that stream is closed, so sseClient does not redial it; E\'s stream untouched');
     else test.fail(OWED + 'streams closed after a refused stream: ' + show(s.closed));
@@ -309,7 +308,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     else test.fail(OWED + 'no refusal for D streamed to the shell');
     s.opts[E].onClose('refused: 503', { status: 503, code: '', error: 'full' });
     await settled();
-    if (!s.closed[E] && !(relayKeys.refusal && relayKeys.refusal(hS, E))) test.check('a stream refused for another reason (503) is left to retry, and nothing is written');
+    if (!s.closed[E] && (keyRow(hS, E) || {}).seated === true) test.check('a stream refused for another reason (503) is left to retry, and nothing is written');
     else test.fail('a 503 on E closed it or wrote a refusal: ' + show(s.closed));
     const s2 = bootS();
     await s2.P.startStreams(probeDE);
@@ -339,7 +338,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     } else test.fail(OWED + 'sseClient onClose detail ' + show(detailSeen) + ', fetches ' + fetches);
   }
 
-  test.subHeading('4. a restart opens no stream to a relay whose row holds a refusal');
+  test.subHeading('4. a restart opens no stream to a relay whose row a refusal unseated');
   {
     const m = boot();
     await m.P.startStreams(keyProbe);
@@ -348,23 +347,21 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     else test.fail(OWED + 'streams opened after a restart: ' + show(m.opened));
     const summary = await ownerBadge.probe(home, keyProbe, me.publicKey);
     const ra = summary.rows.filter(function (r) { return r.url === A; })[0] || {};
-    if (summary.claimedUrls.indexOf(A) === -1 && ra.refused && ra.refused.code === 'not-a-sender' && !ra.claimed) {
-      test.check('the probe lists A with its refusal, not as claimed, and leaves it out of claimedUrls');
+    // The refusal itself is not stored (goal/G40.11), so after a restart A is a relay this node is not seated on.
+    if (summary.claimedUrls.indexOf(A) === -1 && !ra.claimed && summary.rows.some(function (r) { return r.url === A; })) {
+      test.check('the probe lists A, not as claimed, and leaves it out of claimedUrls');
     } else test.fail(OWED + 'probe of A: ' + show(ra) + ', claimedUrls ' + show(summary.claimedUrls));
   }
 
-  test.subHeading('6. an accepted rename writes the new label into that relay\'s seat row');
+  // goal/G40.11 (box v24: "the node pushes its row, the relay holds what it was given"): a rename is the node telling
+  // the relay its name, and nothing of it is written on the relay's row; what B calls this node stays its own name.
+  test.subHeading('6. an accepted rename writes nothing on the relay\'s row: the seat label is the node\'s own name');
   {
     const said = await n.P.post(B, rB.publicKey, JSON.stringify({ app: 'relay', v: 1, body: { rename: { label: 'jasmine' } } }));
     await settled();
-    if (said && said.ok && relayKeys.seatLabel(home, B) === 'jasmine') {
-      test.check('the relay said yes, and the seat on B\'s row now reads jasmine');
-    } else test.fail(OWED + 'after an accepted rename: answer ' + show(said && { ok: said.ok, text: said.text }) + ', seat label ' + show(relayKeys.seatLabel(home, B)));
-    renameAnswer = { ok: false, status: 409, error: 'name reserved by a live invite' };
-    await n.P.post(B, rB.publicKey, JSON.stringify({ app: 'relay', v: 1, body: { rename: { label: 'other' } } }));
-    await settled();
-    if (relayKeys.seatLabel(home, B) === 'jasmine') test.check('a refused rename writes nothing');
-    else test.fail(OWED + 'a refused rename moved the seat label to ' + show(relayKeys.seatLabel(home, B)));
+    if (said && said.ok && relayKeys.seatLabel(home, B) === 'jazz' && typeof relayKeys.renameSeat === 'undefined') {
+      test.check('the relay said yes, and B\'s row still calls this node by its own name, jazz; renameSeat is gone');
+    } else test.fail('after an accepted rename: answer ' + show(said && { ok: said.ok, text: said.text }) + ', seat label ' + show(relayKeys.seatLabel(home, B)));
   }
 
   // ── 5 ─────────────────────────────────────────────────────────────
@@ -410,7 +407,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const h2 = tmpHome();
     const ONLY = ownerBadge.KEPT_RELAY.url, OTHER = 'https://other.example';
     relayKeys.assertSeeds(h2, ownerBadge.SEED_RELAYS);
-    seated(h2, OTHER, 'o', rA.publicKey, 'jazz');
+    seated(h2, OTHER, 'o', rA.publicKey);
     const hub2 = require('../run/spirit/hub.js').createHub(h2);
     const kept = hub2.relayRemove({ key: ONLY });
     if (!kept.ok) test.check('relay.remove refuses the relay a node must keep: ' + kept.error);
@@ -421,10 +418,11 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     if (!held.ok && held.error === 'you must remove yourself from this relay before you can remove the relay from your contacts')
       test.check('relay.remove refuses a relay this node holds a seat on, with the sentence');
     else test.fail(OWED + 'removing a seated relay answered ' + show(held));
-    relayKeys.refuse(h2, OTHER, 'not-a-sender');
+    // A refusal clears seated (goal/G40.11), as peerPost's rejectedBy does.
+    relayKeys.unseat(h2, OTHER);
     const gone = hub2.relayRemove({ key: OTHER });
     const kr = keyRow(h2, OTHER);
-    if (gone.ok && kr && !kr.seat && kr.publicKey === rA.publicKey) test.check('a relay that refused this node comes off the list: the seat record goes (relayKeys.unseat), the pin stays');
+    if (gone.ok && kr && !kr.seated && !kr.keep && kr.key === rA.publicKey) test.check('a relay that refused this node comes off the list: not kept, not seated, the pin stays');
     else test.fail(OWED + 'after relay.remove: ' + show(gone) + ', relayKeys row ' + show(kr));
   }
 
@@ -456,7 +454,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   }
 
   // ── 9 ─────────────────────────────────────────────────────────────
-  test.subHeading('9. a node.db made before the refusal columns gains them, rows kept');
+  test.subHeading('9. a node.db with a relays table made before the refusal columns moves into the one table, seat kept');
   {
     const h3 = tmpHome();
     fs.mkdirSync(path.join(h3, 'relay-state'), { recursive: true });
@@ -468,12 +466,10 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     raw.prepare("INSERT INTO relays (key, url, label, listed, seatLabel, seatClaimedAt) VALUES (?, ?, 'old', 1, 'jazz', '2026-10-12T08:00:00.000Z')")
       .run('OLDKEY', 'https://old.example');
     raw.close();
-    const kept = relayKeys.seatLabel(h3, 'https://old.example');
-    const wrote = typeof relayKeys.refuse === 'function' && relayKeys.refuse(h3, 'OLDKEY', 'not-a-sender');
-    const back = typeof relayKeys.refusal === 'function' ? relayKeys.refusal(h3, 'OLDKEY') : null;
-    if (kept === 'jazz' && wrote && back && back.code === 'not-a-sender') {
-      test.check('the old row reads back and takes a refusal');
-    } else test.fail(OWED + 'old node.db: seat ' + show(kept) + ', refuse ' + show(wrote) + ', refusal ' + show(back));
+    const back = keyRow(h3, 'https://old.example');
+    if (back && back.key === 'OLDKEY' && back.keep === true && back.seated === true && back.myLabel === 'old') {
+      test.check('the old row reads back as a kept, seated relay under its label (nodeStore\'s move)');
+    } else test.fail(OWED + 'old node.db: ' + show(back));
   }
 
   // ── 8 ─────────────────────────────────────────────────────────────

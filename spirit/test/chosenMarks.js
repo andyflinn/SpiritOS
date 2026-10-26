@@ -1,7 +1,8 @@
 'use strict';
 
 // spirit/test/chosenMarks.js
-// CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38).
+// CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38). Since goal/G40.11 the marks are the one table's flags:
+// keep (was "added"), held, ignored, blocked; the book IS the table, so there is no separate save to mark from.
 //
 //   Andy: "ignoring means only: mark this row as "ignored"." — "it's the
 //   chosen-mark that gives protection from eviction, if the memory
@@ -10,8 +11,8 @@
 //   eviction by blocking or ignoring...." — "it's just reality."
 //
 // Four things: the order the sweep sheds in, and that it never reaches an
-// added row; that a full memory refuses the next add and blocking makes
-// room; that the book marks the memory on every save; and that the door
+// kept row; that a full memory refuses the next add and blocking makes
+// room; that the owner's acts are flags on the row; and that the door
 // marks a stranger it turned away.
 
 const os = require('os');
@@ -36,7 +37,7 @@ function key(prefix, n) { return prefix + '-' + String(n).padStart(4, '0'); }
 
 test.startTest('Choosing is a mark on what the machine remembers');
 
-test.subHeading('The sweep sheds in order, and never reaches an added row');
+test.subHeading('The sweep sheds in order, and never reaches a kept row');
 
 {
   const H = home('order');
@@ -46,13 +47,14 @@ test.subHeading('The sweep sheds in order, and never reaches an added row');
 
   // ADDED ARE THE OLDEST, on purpose: if age alone ordered the sweep they
   // would be the first to go. The mark has to beat the clock.
-  const tiers = [['ADDED', 'added', false], ['HELD', 'held', false],
-    ['IGNORED', 'ignored', false], ['BLOCKED', 'held', true], ['STRANGER', '', false]];
+  // BLOCKED rows are held as well: a block outranks the hold, so they go with the ignored, before the held.
+  const tiers = [['ADDED', { keep: true }], ['HELD', { held: true }],
+    ['IGNORED', { ignored: true }], ['BLOCKED', { held: true, blocked: true }], ['STRANGER', null]];
   tiers.forEach(function (t) {
     for (let n = 0; n < 60; n += 1) {
       c.tick(10);
       S.note(key(t[0], n), { at: 'R', url: 'https://relay.example', label: t[0].toLowerCase() + n });
-      if (t[1] || t[2]) S.mark(key(t[0], n), t[1], t[2]);
+      if (t[1]) S.set(key(t[0], n), t[1]);
     }
   });
 
@@ -85,9 +87,9 @@ test.subHeading('The sweep sheds in order, and never reaches an added row');
       (left('IGNORED') + left('BLOCKED')) + ', held ' + left('HELD'));
   }
   if (addedKept && left('HELD') === 0) {
-    test.check('and all 60 added people survived a squeeze that took everyone else, though they were the oldest');
+    test.check('and all 60 kept people survived a squeeze that took everyone else, though they were the oldest');
   } else {
-    test.fail('added left: ' + left('ADDED') + ', held left: ' + left('HELD'));
+    test.fail('kept left: ' + left('ADDED') + ', held left: ' + left('HELD'));
   }
 }
 
@@ -104,23 +106,24 @@ test.subHeading('A full memory refuses the next add; letting somebody go makes r
   while (S.roomToAdd(key('FRIEND', n)) && n < 5000) {
     c.tick(1);
     S.note(key('FRIEND', n), { at: 'R', url: 'https://relay.example', label: 'friend' + n });
-    S.mark(key('FRIEND', n), 'added', false);
+    S.set(key('FRIEND', n), { keep: true });
     n += 1;
   }
 
   if (n > 10 && n < 5000 && !S.roomToAdd('SOMEBODY-NEW')) {
-    test.check('after ' + n + ' added people the ' + (cap / 1024) + ' KB cap is spent, and the next add is refused');
+    test.check('after ' + n + ' kept people the ' + (cap / 1024) + ' KB cap is spent, and the next add is refused');
   } else {
     test.fail('added ' + n + ', room for one more: ' + S.roomToAdd('SOMEBODY-NEW'));
   }
   if (S.roomToAdd(key('FRIEND', 0))) {
-    test.check('somebody already added needs no room — re-adding them is not refused');
+    test.check('somebody already kept needs no room — re-adding them is not refused');
   } else {
     test.fail('an existing friend was refused');
   }
 
-  // "until eviction by blocking or ignoring": block a third of them.
-  for (let k = 0; k < Math.ceil(n / 3); k += 1) S.mark(key('FRIEND', k), 'added', true);
+  // "until eviction by blocking or ignoring": block a third of them. A block takes keep off (contacts.forget keeps the
+  // block), so the row is back in the line.
+  for (let k = 0; k < Math.ceil(n / 3); k += 1) S.set(key('FRIEND', k), { keep: false, blocked: true });
   if (S.roomToAdd('SOMEBODY-NEW') && S.get(key('FRIEND', 0)) === null) {
     test.check('blocking some hands their rows back to the sweep, and there is room again');
   } else {
@@ -128,27 +131,27 @@ test.subHeading('A full memory refuses the next add; letting somebody go makes r
   }
 }
 
-test.subHeading('The book marks the memory, every time it is saved');
+test.subHeading('The owner\'s acts are flags on the row');
 
 {
   const H = home('book');
   const store = nodeStore.open(H);
-  contactBook.acquire(H, { publicKey: 'KEY-ANN', publicLabel: 'ann' }, 'handle');
+  contactBook.acquire(H, { publicKey: 'KEY-ANN', publicLabel: 'ann' });
   contactBook.hold(H, { publicKey: 'KEY-BOB', publicLabel: 'bob' });
-  contactBook.acquire(H, { publicKey: 'KEY-CAT', publicLabel: 'cat' }, 'handle');
+  contactBook.acquire(H, { publicKey: 'KEY-CAT', publicLabel: 'cat' });
   contactBook.setBlocked(H, 'KEY-CAT', true);
 
   const ann = store.seen.get('KEY-ANN');
   const bob = store.seen.get('KEY-BOB');
   const cat = store.seen.get('KEY-CAT');
-  if (ann && ann.choice === 'added' && bob && bob.choice === 'held' && cat && cat.blocked) {
-    test.check('added, held and blocked in the book are added, held and blocked in the memory');
+  if (ann && ann.keep && !ann.held && bob && bob.held && !bob.keep && cat && cat.blocked && cat.keep) {
+    test.check('acquired is kept, held is held, and a block sits beside keep without erasing it');
   } else {
     test.fail('marks: ' + JSON.stringify({ ann: ann, bob: bob, cat: cat }));
   }
   // Marked without ever being seen: a pasted key has no date and no
   // presence, and the row says so rather than guessing.
-  if (ann && ann.seen === 0 && ann.present === null) {
+  if (ann && ann.lastSeen === 0 && ann.present === null) {
     test.check('a contact the node has never seen is marked with no date and no presence, not a guess');
   } else {
     test.fail('ann: ' + JSON.stringify(ann));
@@ -156,7 +159,7 @@ test.subHeading('The book marks the memory, every time it is saved');
 
   contactBook.forget(H, 'KEY-ANN');
   const after = store.seen.get('KEY-ANN');
-  if (after && after.choice === '' && !after.blocked) {
+  if (after && !after.keep && !after.held && !after.blocked) {
     test.check('forgetting somebody takes the mark off and leaves the memory — they are a stranger again, not erased');
   } else {
     test.fail('after forget: ' + JSON.stringify(after));
@@ -169,7 +172,7 @@ test.subHeading('The door marks a stranger it turned away, and nobody the owner 
   const H = home('door');
   hub.remember(H, 'KEY-STRANGER', 'drop', '');
   const s = hub.shadow(H).get('KEY-STRANGER');
-  if (s && s.choice === 'ignored') {
+  if (s && s.ignored === true && !s.keep && !s.held) {
     test.check('a stranger dropped under Ignore is remembered as ignored, not forgotten');
   } else {
     test.fail('stranger: ' + JSON.stringify(s));
@@ -180,7 +183,7 @@ test.subHeading('The door marks a stranger it turned away, and nobody the owner 
   contactBook.hold(H, { publicKey: 'KEY-WAITING', publicLabel: 'w' });
   hub.remember(H, 'KEY-WAITING', 'drop', '');
   const w = hub.shadow(H).get('KEY-WAITING');
-  if (w && w.choice === 'held') {
+  if (w && w.held === true && w.ignored === false) {
     test.check('and somebody the owner is holding stays held when the door turns them away');
   } else {
     test.fail('waiting: ' + JSON.stringify(w));
@@ -204,13 +207,14 @@ test.subHeading('Under Acquire, a full memory adds nobody');
       for (let k = 0; k < 1000; k += 1, n += 1) {
         store.seen.put(key('OWN', n), { label: 'own' + n, seen: n + 1 });
         store.seen.putRoute(key('OWN', n), { at: 'R', url: 'https://relay.example', told: n + 1 });
-        store.seen.mark(key('OWN', n), 'added', false);
+        store.seen.set(key('OWN', n), { keep: true });
       }
     });
   }
   const added = hub.remember(H, 'KEY-WRITER', 'admit', '');
-  if (!added && !contactBook.byPublicKey(H, 'KEY-WRITER') && n < 20000) {
-    test.check('with 1 MB spent on ' + n + ' added people, a stranger who writes is heard and not added');
+  const writer = contactBook.byPublicKey(H, 'KEY-WRITER');
+  if (!added && !(writer && writer.keep) && n < 20000) {
+    test.check('with 1 MB spent on ' + n + ' kept people, a stranger who writes is heard and not added');
   } else {
     test.fail('added=' + added + ' after ' + n);
   }
