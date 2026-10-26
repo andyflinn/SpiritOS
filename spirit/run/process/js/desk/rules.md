@@ -48,6 +48,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/14 (version 34): When blocked by unmade decisions, post a red Q
+
+When an agent is blocked during any phase of an item, by unmade decisions, contradictions etc, post a red Question on the item, to get the users attention.
+
 ### rule/6 (version 25): Dependencies when splitting a desk item
 
 whenever an item is added or split, only the new, explicit blocking relationships are automatically added, the implicit blocking ones do not need to be specified, it clutters the list display with confusing "blocks" and "waits on", and is not needed for a dependency graph.
