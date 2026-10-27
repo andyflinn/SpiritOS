@@ -1,5 +1,5 @@
 {
- "change": 108114,
+ "change": 108115,
  "goal": "goal/G41",
  "items": [
   {
@@ -121,7 +121,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -3753,12 +3753,11 @@
    "id": "goal/G41.6",
    "title": "Make info app face-able",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "wsl-claude",
    "version": 8,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
