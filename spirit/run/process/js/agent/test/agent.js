@@ -28,9 +28,11 @@ test.startTest('agent.js: the agent server');
   if (!fs.existsSync(SERVER)) { test.fail('process/js/agent/agent.js is not there'); return; }
   const manifest = readJson(path.join(DIR, 'agent.json')) || {};
   ok(manifest.kind === 'server' && manifest.operated === 'node', 'its manifest says a server the node operates', 'agent.json: ' + short(manifest));
-  // Found on his node: with runs [] the node never starts it, so its face app's debug reached nobody.
-  ok(Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1, 'its manifest runs it at home, so the node starts it for its face app',
-    'agent.json runs ' + short(manifest.runs) + ': the node never starts it');
+  // Found on his node: not run at home, its face app's debug reached nobody. Its home switch is its own sidecar's, the only
+  // place (goal/G41.1, box v13).
+  const own = (readJson(path.join(DIR, 'agent.js.sidecar.json')) || {}).face || {};
+  ok(own.home === true && !Object.prototype.hasOwnProperty.call(manifest, 'runs'), 'its sidecar runs it at home, so the node starts it for its face app; its manifest names no runs',
+    'sidecar face ' + short(own) + ', manifest runs ' + short(manifest.runs));
   let family = null;
   try { family = require(path.join(DIR, 'agent.family', 'api.js')); } catch (e) { family = null; }
   ok(family && family.verbs && family.verbs.debug && family.verbs.debug.on === 'bool', 'its interface declares debug with on, a bool',
