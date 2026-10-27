@@ -603,6 +603,9 @@ function serve(verbs, opts) {
     const k = String(key || '');
     const fam = String(family || '');
     if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
+    // A SUBSCRIBE IS A CONNECT (goal/G41.3, Q2): the cache forgets what it kept, and the publisher's bootstrap, which
+    // every subscribe is handed, pushes it whole again.
+    dataSet().forget();
     return s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
       return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {

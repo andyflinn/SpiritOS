@@ -706,7 +706,9 @@
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own
       // translator, which its type loads. A page without it still runs, uncached. Asked once the page is parsed, so a
       // page that loads it by tag keeps the one cache it made.
-      return parsed().then(function () { return requireOne('shell/js/spiritData.js'); }).then(null, function () { /* no cache served here */ });
+      // The file tree is cached too (Q2: "the file tree must be cached."): its translator comes with the cache.
+      return parsed().then(function () { return requireOne('shell/js/spiritData.js'); })
+        .then(function () { return requireOne('shell/js/files/data.js'); }).then(null, function () { /* no cache served here */ });
     }).then(function () { return self; });
     self.ready = started;
     return started;
