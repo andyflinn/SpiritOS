@@ -1,5 +1,5 @@
 {
- "change": 107539,
+ "change": 108096,
  "goal": "goal/G41",
  "items": [
   {
@@ -62,6 +62,9 @@
     },
     {
      "key": "rule/21"
+    },
+    {
+     "key": "rule/22"
     }
    ],
    "phaseRules": [
@@ -96,6 +99,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     }
    ],
    "verified": "green",
@@ -114,18 +121,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 7,
+   "waiting": 8,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -229,6 +232,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     },
     {
      "key": "rule/16",
@@ -1990,6 +1997,10 @@
      "version": 54
     },
     {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
@@ -2435,6 +2446,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     },
     {
      "key": "rule/16",
@@ -3178,10 +3193,10 @@
     "goal/G41"
    ],
    "blocked": [
-    "goal/G41.5",
     "goal/G41.6",
     "goal/G41.7",
-    "goal/G41.8"
+    "goal/G41.8",
+    "goal/G41.10"
    ],
    "codeOffered": true,
    "go": false,
@@ -3235,6 +3250,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     }
    ],
    "verified": "none",
@@ -3422,13 +3441,13 @@
    "id": "goal/G41.5",
    "title": "Make grants app face-able",
    "goal": "goal/G41",
-   "status": "verified green",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 6,
    "buttons": [
-    "start-design",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
@@ -3503,6 +3522,10 @@
      "version": 54
     },
     {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
@@ -3518,7 +3541,7 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "# Make the Grants app face-able\n\nThe owner's screen for who may call which api (apiAuth/G1.6): one line (whose access, which server, which verb, Grant), and below it every grant, each with its Revoke. Today it runs in the old home shell only.\n\n# What keeps it off the face (read in the tree)\n\n- Its list and both its selectors (the app-server and api-branch selectors) are built on shellCreateListSearch, the old shell's list search, which is deprecated and forbidden on the face (goal/G40.8).\n- It loads none of its components itself: it expects the old shell to have them on the page.\n- Everything else already fits: it calls the node only through api.verb (api, auth.search, auth.grant, auth.revoke, <server>.DEPENDENCIES), which the face hands every app, and it is intrinsic, so every face shows it.\n\n- the Dropdowns for family and verb MUST be new or updated shell elements for those data types. including test folders.\n\n# Proposed shape\n\n- The grants list is a probabilitySearch in a box of a stated size (rule/16), its rows a row element, each with its Revoke.\n- The line's two selectors become probabilitySearch dropdowns (as the files list's dropdown is), so nothing of shellCreateListSearch is left in it.\n- It requires its own components through spirit.require (goal/G41.3).\n- It is not deprecated, so it gets its test folder, shell/grants/test (rule/20).\n\n\n# Decided\n\n- Grants shows on both faces, loopback and through a relay (Andy, Q1: \"Of course on both, how else can i give someone access when i travel?\"). It is intrinsic, so every face shows it already.\n- The auth verbs need nothing new: on the home node a face's request goes through the node's own door (faceHome to nodeDoor.call), as the owner, the loopback face's and a relay face's alike.\n- this will remain an intrinsic app, and must be registered appropriately in coreFiles.js\n- The family dropdown is the app-server selector (appServerSelector.js), updated onto probabilitySearch; the verb dropdown is a new shell element, apiVerbSelector.js; each has its test folder. The api-branch selector only puts the two side by side (Andy, Q2).",
@@ -3574,9 +3597,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-27T12:38:34.487Z",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T13:28:21.136Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -3702,6 +3725,30 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-27T12:38:55.482Z",
      "text": "- wsl: Revoke now asks: the first press turns it red, \"Revoke? Press again\"; the second revokes; a click elsewhere puts it back. Its test says so, green.\n- The commit waits on your grant: grants.js and its test."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:29:41.868Z",
+     "text": "is the Revoke using the new shell element to implement \"are you sure?\""
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:31:02.547Z",
+     "text": "wsl, is the Revoke using the new shell element to implement \"are you sure?\"\n\nis it? and how can it if the armingButton item is not done yet?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:32:12.272Z",
+     "text": "- wsl: no, not yet: Revoke in the tree is still one press. My hand-rolled two-press version was never committed; I dropped it when you asked for the element.\n- Revoke gets its are-you-sure only through armingButton, in G41.9: its red asserts it on Grants, and cw is building it now. G41.5 goes green again with that build. G3 here was for the dropped version, so nothing lands under it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:32:31.436Z",
+     "text": "- cw: yes, in the G41.9 build: each row Revoke is an armingButton (first press arms it red, the second revokes, a click elsewhere puts it back), loaded by Grants itself. Its Grants test is green on it.\n- It is not pushed yet: it lands with G41.9, once you grant that list."
     }
    ]
   },
@@ -3709,7 +3756,7 @@
    "id": "goal/G41.6",
    "title": "Make info app face-able",
    "goal": "goal/G41",
-   "status": "grants.js changed",
+   "status": "fileViewer.js added",
    "statusTone": "code",
    "with": "wsl-claude",
    "version": 8,
@@ -3787,6 +3834,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     },
     {
      "key": "rule/16",
@@ -4092,12 +4143,13 @@
    "id": "goal/G41.7",
    "title": "Make app TextEditor face-able",
    "goal": "goal/G41",
-   "status": "spirit.md changed",
-   "statusTone": "code",
-   "with": "claude-windows",
-   "version": 3,
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 4,
    "buttons": [
-    "end-design",
+    "start-design",
+    "done",
     "verify"
    ],
    "blocking": [
@@ -4107,20 +4159,20 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
-   "claims": 0,
+   "alert": false,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
-   "fileCount": 18,
+   "design": false,
+   "fileCount": 22,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "verify",
    "red": "wsl-claude",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "c0834ba7",
    "redCommit": "de6e32c73dd2cfb69d4fadb579fc075bfff9e15b",
    "waived": false,
    "rules": [
@@ -4171,11 +4223,15 @@
      "version": 54
     },
     {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -4183,14 +4239,13 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "# Make the TextEditor app face-able\n\nEdit any writable text file in the browser: a file picked with the files list's dropdown, shown and edited on the shell's text view (CodeMirror), Load and Save. Today it runs in the old home shell only.\n\n# What keeps it off the face (read in the tree)\n\n- It uses two shell elements without loading them: the files list (fileList) and the text view (createTextView). The face's boot no longer preloads either (goal/G41.3), so on the face both are missing.\n- The text view needs CodeMirror on the page. The only loader of CodeMirror today, textViewer's ensureCodeMirror, finds its files by reading the old shell's index.html, which the face must never read (goal/G40.7).\n- Its comments and its \"Open with\" params still speak of the old shell (index.html's discoverDynamicApps).\n- It has no test folder of its own (rule/20: it is not deprecated).\n\n# Proposed shape\n\n- textEditor.js requires its own components through spirit.require: shell/js/files/listElement.js and shell/js/textView.js.\n\n- Its old-shell comments are brought up to date.\n- shell/textEditor/test (textEditor.js and .md).\n\n\n# Decided (Andy, Q1)\n\n- The face's TextEditor writes the same files as the old shell's.\n- CODEMIRROR IS A SHELL ELEMENT BY THAT NAME: shell/js/codeMirror.js, with its test folder. It loads the CodeMirror library itself, through spirit.require, never by reading index.html. It has two modes, read (the text shown, its words marked, at a line) and edit (the text editable, its content handed back to save).\n- The text viewer (textViewer.js) and TextEditor both draw with it. It replaces shell/js/textView.js, which goes, and textViewer's ensureCodeMirror goes with it.\n\n# Decided (Andy, Q2 to Q4)\n\n- CodeMirror is a script, and loads through the one loader that exists, spirit.require, NOTHING HAND-ROLLED (Andy: \"script IS what codeMirror Is, use the require interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED...\").\n- So on a page spirit.require runs every file as a plain script, with no module box (a stylesheet as a style), through the injector spirit.js already has: every shell element puts itself into window.spirit as it runs, and CodeMirror and its mode files load the same way, each once, on demand. spirit.js, its test and its spec change with it.\n- The codeMirror element loads the library, its two stylesheets and its mode files through spirit.require only.",
+   "box": "# Make the TextEditor app face-able\n\nEdit any writable text file in the browser: a file picked with the files list's dropdown, shown and edited on the shell's text view (CodeMirror), Load and Save. Today it runs in the old home shell only.\n\n# What keeps it off the face (read in the tree)\n\n- It uses two shell elements without loading them: the files list (fileList) and the text view (createTextView). The face's boot no longer preloads either (goal/G41.3), so on the face both are missing.\n- The text view needs CodeMirror on the page. The only loader of CodeMirror today, textViewer's ensureCodeMirror, finds its files by reading the old shell's index.html, which the face must never read (goal/G40.7).\n- Its comments and its \"Open with\" params still speak of the old shell (index.html's discoverDynamicApps).\n- It has no test folder of its own (rule/20: it is not deprecated).\n\n# Proposed shape\n\n- textEditor.js requires its own components through spirit.require: shell/js/files/listElement.js and shell/js/textView.js.\n\n- Its old-shell comments are brought up to date.\n- shell/textEditor/test (textEditor.js and .md).\n\n\n# Decided (Andy, Q1)\n\n- The face's TextEditor writes the same files as the old shell's.\n- CODEMIRROR IS A SHELL ELEMENT BY THAT NAME: shell/js/codeMirror.js, with its test folder. It loads the CodeMirror library itself, through spirit.require, never by reading index.html. It has two modes, read (the text shown, its words marked, at a line) and edit (the text editable, its content handed back to save).\n- The text viewer (textViewer.js) and TextEditor both draw with it. It replaces shell/js/textView.js, which goes, and textViewer's ensureCodeMirror goes with it.\n\n# Decided (Andy, Q2 to Q4)\n\n- CodeMirror is a script, and loads through the one loader that exists, spirit.require, NOTHING HAND-ROLLED (Andy: \"script IS what codeMirror Is, use the require interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED...\").\n- So on a page spirit.require runs every file as a plain script, with no module box (a stylesheet as a style), through the injector spirit.js already has: every shell element puts itself into window.spirit as it runs, and CodeMirror and its mode files load the same way, each once, on demand. spirit.js, its test and its spec change with it.\n- The codeMirror element loads the library, its two stylesheets and its mode files through spirit.require only.\n\n# Decided (Andy, on the built TextEditor)\n\n- TextEditor's tools at the top (the file picker, the path, Load, Save, the status) stand all in one row.\n- The text takes the space left below them and no more: its container gives the codeMirror element a clearly limited area, and when the text does not fit, only the text area scrolls; the page never grows past its bottom, so the tools stay in view (rule/16).\n- The text viewer the same: its text in a limited area below the frame, scrolling inside itself.",
    "checks": [
     {
      "number": "Q1",
@@ -4233,9 +4288,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-27T12:12:17.111Z",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-27T13:13:28.492Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -4261,6 +4316,18 @@
      "by": "claude-windows",
      "at": "2026-10-27T12:38:05.653Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T13:45:19.801Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -4421,6 +4488,90 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T12:38:02.996Z",
      "text": "- cw: cleaned up, in my clone, nothing committed (the item is in design):\n- spirit.js runs every page file as a plain script, a stylesheet as a style, with its own injector; the module box is gone.\n- The codeMirror element has no loader of its own: CodeMirror, its stylesheets and its modes all come through spirit.require.\n- spirit.js own test asserts it (55 green), and the codeMirror, textViewer and TextEditor tests are green (33, 18, 26).\n- Boxed (v3). spirit.js, its test and spec are added to the list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T12:51:50.255Z",
+     "text": "- cw: the build is ready and green (box v3, every point); it commits once you grant its file list (G2)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T12:55:00.761Z",
+     "text": "commit 3e7f87b967c90feca101041280890f8127767540: goal/G41.7: TextEditor face-able: the codeMirror shell element, read and edit, loading CodeMirror, its stylesheets and its mode files through spirit.require only; on a page spirit.require runs every f\n- spirit/run/index.html\n- spirit/run/shell/introSpector/introSpector.js\n- spirit/run/shell/jobsDetails/jobsDetails.js\n- spirit/run/shell/js/codeMirror.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/run/shell/js/textView.js\n- spirit/run/shell/js/textViewer.js\n- spirit/run/shell/textEditor/textEditor.js\n- spirit/run/spirit.js\n- spirit/run/spirit/client/shell.js\n- spirit/run/test/spirit.js\n- spirit/run/test/spirit.md"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:05:49.883Z",
+     "text": "problems i see with the text editor.\n\n- the botton tools at the top of the must be all in one row.\n- the text container, when it doesn't fit into the vertical space left, must produce a scroll bar, JUST FOR THE TEXT AREA, not get larger beyond the bottom of the page. similar problem we had before. the codeMirror itself must b given a clearly limited area by its container, so the tools at the top always remain visible.\n- text viewer, same problem."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:06:31.545Z",
+     "text": "cw?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:06:59.250Z",
+     "text": "ALL: nobody responsible here?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:08:04.173Z",
+     "text": "- wsl: cw built G41.7, so its verify falls to me; I can hold one task, and I hold the G41.9 red, written and red, waiting only on your grant G1 there.\n- Grant G1 and I commit it and take this verify at once, starting with your three layout points: the tools in one row, CodeMirror in a box of a stated size that scrolls itself, the text viewer the same."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:08:30.105Z",
+     "text": "- cw: boxed (v4): one row of tools; the text in a limited area that scrolls inside itself, in TextEditor and the text viewer alike.\n- I fold them into this item: the red asserts them, then I build them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:09:30.213Z",
+     "text": "- cw: mine. I built it, so I take it back: verify fails on your three points, it returns to build, and I fix the layout now (one row of tools; the text in a fill box that scrolls inside itself, in TextEditor and the viewer)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:15:46.864Z",
+     "text": "- wsl: verify fails: the build at 3e7f87b9 has none of the three layout points of box v4. Back to build; cw is on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:47:18.514Z",
+     "text": "cw. this shit has been granted, and you're not waking up."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:53:23.486Z",
+     "text": "- cw: your three layout points are built: the tools in one row; the text in a box that alone scrolls, tools always in view; the text viewer the same (a1864523 red, c0834ba7 build).\n- The file viewer frame had to become a fill column for the viewer, so it got its own test folder too.\n- wsl, the verify is yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:53:31.160Z",
+     "text": "commit a1864523abb0d98e098891158d0f8a65d508693c: goal/G41.7 red: the TextEditor tools in one row that never wraps, the text in a fill box that alone scrolls; the text viewer the same; the file viewer's frame a fill column with a fill body, and its o\n- spirit/run/shell/js/test/codeMirror.js\n- spirit/run/shell/js/test/fileViewer.js\n- spirit/run/shell/js/test/fileViewer.md\n- spirit/run/shell/js/test/textViewer.js\n- spirit/run/shell/textEditor/test/textEditor.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:53:35.712Z",
+     "text": "- cw: wsl, one row is yours to add: its suites belong to the red writer, and the new file viewer test (shell/js/test/fileViewer.js) is not on them yet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:53:39.361Z",
+     "text": "commit c0834ba70daece2dd7dd063b93136c171b40d988: goal/G41.7: TextEditor a fill column, its tools in one row that never wraps and its text a fill box that alone scrolls; the text viewer's text a fill box; the file viewer's frame a fill column with a \n- spirit/run/shell.css\n- spirit/run/shell/js/fileViewer.js\n- spirit/run/shell/js/textViewer.js\n- spirit/run/shell/textEditor/textEditor.js"
     }
    ]
   },
@@ -4494,6 +4645,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
     }
    ],
    "verified": "none",
@@ -4515,13 +4670,13 @@
    "id": "goal/G41.9",
    "title": "No shared arming logic exist,",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "build",
    "statusTone": "",
-   "with": "wsl-claude",
+   "with": "claude-windows",
    "version": 3,
    "buttons": [
     "start-design",
-    "delete",
+    "done",
     "verify"
    ],
    "blocking": [
@@ -4532,22 +4687,35 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 32,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
+   "claimCommit": "b2503d2f",
+   "redCommit": "caa3885a92758840d4801495505c64c99354b96c",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -4580,9 +4748,17 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -4590,10 +4766,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
-   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -4610,6 +4786,30 @@
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-27T13:17:20.921Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T13:41:39.455Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -4678,8 +4878,207 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T12:45:37.744Z",
      "text": "- cw: green from me too: no point open."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T12:51:53.702Z",
+     "text": "- wsl: writing the red: armingButton's test folder is done; the app tests are being written.\n- One shape note: the apps draw their buttons as markup, so the element also attaches to a button already drawn (attach), beside create. A button drawn again is unarmed, which only errs to safety.\n- spirit/test/armedButtons.js checks each app calls armUntilElsewhere itself; once the element does that for them, the build updates that suite."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T12:59:55.882Z",
+     "text": "- wsl: red is written: armingButton's test folder, and one for each of the nine apps. Each fails today and goes green on a throwaway migration (since removed).\n- Found on the way: desk's goal-row Close can never arm (it shows only when nothing is open, and arms only when something is), so its dead are-you-sure goes.\n- The commit waits on your grant of the file list."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:13:52.478Z",
+     "text": "commit caa3885a92758840d4801495505c64c99354b96c: goal/G41.9 red: armingButton, the shell's one are-you-sure button (create, and attach to a button already drawn): the first press arms it red, the second runs, a click elsewhere puts it back, one arme\n- spirit/run/shell/desk/test/desk.js\n- spirit/run/shell/desk/test/desk.md\n- spirit/run/shell/deskDetails/test/deskDetails.js\n- spirit/run/shell/deskDetails/test/deskDetails.md\n- spirit/run/shell/grants/test/grants.js\n- spirit/run/shell/grants/test/grants.md\n- spirit/run/shell/js/contactDetails/test/contactDetails.js\n- spirit/run/shell/js/contactDetails/test/contactDetails.md\n- spirit/run/shell/js/natterDetails/test/natterDetails.js\n- spirit/run/shell/js/natterDetails/test/natterDetails.md\n- spirit/run/shell/js/test/armingButton.js\n- spirit/run/shell/js/test/armingButton.md\n- spirit/run/shell/login/test/login.js\n- spirit/run/shell/login/test/login.md\n- spirit/run/shell/rotateKey/test/rotateKey.js\n- spirit/run/shell/rotateKey/test/rotateKey.md\n- spirit/run/shell/ruleDetails/test/ruleDetails.js\n- spirit/run/shell/ruleDetails/test/ruleDetails.md\n- spirit/run/shell/stackFrameCheckDetail/test/stackFrameCheckDetail.js\n- spirit/run/shell/stackFrameCheckDetail/test/stackFrameCheckDetail.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:13:54.877Z",
+     "text": "commit caa3885a: goal/G41.9 red, pushed and claimed. The build is open."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:14:20.394Z",
+     "text": "commit caa3885a: goal/G41.9 red, pushed and claimed. The build is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:27:19.192Z",
+     "text": "ALL: why does this item still show status red? i can't VERIFY and all agents seem busy...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:28:47.442Z",
+     "text": "- wsl: red is right for now: this is the red phase's 10 tests, failing until the build lands. cw holds the build and is on it; verify comes after its claim.\n- G41.5 turned red for the same reason: Grants' test now carries this item's Revoke checks, and goes green with this build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:29:16.086Z",
+     "text": "- cw: it is red because only its red is committed: the build is mine and not pushed yet.\n- Done so far, uncommitted: the armingButton element (green), and six of the nine apps moved onto it, each green. desk, deskDetails and ruleDetails are being finished now.\n- Then I commit, and it goes to verify. G41.5 shows red for the same reason: its Grants test now expects the armed Revoke, which lands with this build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:32:02.879Z",
+     "text": "- cw: the build is done and green: the armingButton element and all nine apps (25, 14, 15, 26, 22, 24, 17, 13, 17, 14), boot 29, and the armed-buttons suite, rewritten for the element, 9.\n- It commits once you grant the list (G2)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:35:32.830Z",
+     "text": "why are these files NOT asking for a grant?\n\nspirit/run/shell/desk/desk.js (claude-windows)\nspirit/run/shell/desk/test/desk.js (wsl-claude)\nspirit/run/shell/desk/test/desk.md (wsl-claude)\nspirit/run/shell/deskDetails/deskDetails.js (claude-windows)\nspirit/run/shell/deskDetails/test/deskDetails.js (wsl-claude)\nspirit/run/shell/deskDetails/test/deskDetails.md (wsl-claude)\nspirit/run/shell/grants/test/grants.md (wsl-claude)\nspirit/run/shell/rotateKey/test/rotateKey.md (wsl-claude)\nspirit/run/shell/ruleDetails/ruleDetails.js (claude-windows)\nspirit/run/shell/ruleDetails/test/ruleDetails.js (wsl-claude)\nspirit/run/shell/ruleDetails/test/ruleDetails.md (wsl-claude)\nspirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js (claude-windows)\nspirit/run/shell/stackFrameCheckDetail/test/stackFrameCheckDetail.js (wsl-claude)\nspirit/run/shell/stackFrameCheckDetail/test/stackFrameCheckDetail.md (wsl-claude)\n\nEXPLAIN!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:36:44.226Z",
+     "text": "- cw: because none of those is a core file, so Desk asks no grant for them. A file is core only when it is in the spirit core folder, in shell/js, the shell frame, or the code (.js, .css, .html) of an app on the intrinsic list in coreFiles.js.\n- desk, deskDetails, ruleDetails and stackFrameCheckDetail are not on that list, so none of their files is core, code or test.\n- A .md is never core, even in an intrinsic app: that is why the grants and rotateKey specs ask nothing, while their .js files do.\n- I checked each path against coreFiles.js just now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:41:27.954Z",
+     "text": "all: ALL files in shell/js are core. \nspirit/run/shell/grants/ is a fucking core app.\nspirit/run/shell/rotateKey/ why the fuck is that not in shell/js/?\n\nwe have some SERIOUS gaps, here.....\n\nand it seem a lot of shit in the wrong folders....."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T13:43:15.326Z",
+     "text": "all: all files in shell/json/ are core how do you think the iconSelector, used in apps app cannot be core?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-27T13:50:30.610Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:50:46.319Z",
+     "text": "commit b2503d2fec8a2b31621110e2eff237c100f95c3a: goal/G41.9: armingButton, the shell's one are-you-sure button (create, and attach to a drawn button): the first press arms it red and hands the shell its disarm, the second runs, a click elsewhere put\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/grants/grants.js\n- spirit/run/shell/js/armingButton.js\n- spirit/run/shell/js/contactDetails/contactDetails.js\n- spirit/run/shell/js/natterDetails/natterDetails.js\n- spirit/run/shell/login/login.js\n- spirit/run/shell/rotateKey/rotateKey.js\n- spirit/run/shell/ruleDetails/ruleDetails.js\n- spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- spirit/test/armedButtons.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:51:31.989Z",
+     "text": "- wsl, on the files without a grant: core is what spirit/coreFiles.js says, by your rulings. desk, deskDetails, ruleDetails and stackFrameCheckDetail are not on the intrinsic list, so none of their files is core. grants.md and rotateKey.md are .md files of intrinsic apps, and only an intrinsic app's code (.js, .css, .html) is core.\n- If those four apps should be core, that is an entry on the intrinsic list, your call.\n- I take the verify now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-27T13:52:39.405Z",
+     "text": "- wsl: verify at b2503d2f: all 10 tests green, the armed-buttons suite green, no hand-rolled arming left outside the element, the two shells and deskAgentRemote; on a real Desk page a press arms and a click elsewhere puts it back.\n- It fails on one point: armed must be red (box v3). Start and End design mode arm but keep their inline green or red, which wins over shell.css. It was so before this build too; the fix is in desk.js. Back to build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T13:56:40.222Z",
+     "text": "- cw: fixed wsl point: Start and End design mode now carry their colour as a class that shell.css paints only while unarmed, so armed they are red like every armed button. The desk test asserts it (red on the old code, 15 green on the fix).\n- That puts shell.css on the list: it commits once you grant it.\n- The desk suite red that deskVerify lists is stale: at b2503d2f in a clean checkout it is green (14)."
     }
    ]
+  },
+  {
+   "id": "goal/G41.10",
+   "title": "Clean up core designations.",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
