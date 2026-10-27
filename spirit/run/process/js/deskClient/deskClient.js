@@ -604,7 +604,12 @@ function handOver(to, t0) {
   }
   agentState = 'busy';
   const cut = lines.length < all.length;
-  return rulesOfWake(to, lines).then(function (rules) {
+  // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
+  // deskClient?". The lines are taken off the queue above, so an answer later than the node's wait (12 s) lost them: a
+  // new rule's text is asked of the desk, over the relay, and took 5 to 10 s each on 2026-10-27. The texts get the time
+  // the answer has left; one not back by then is handed on a later wake, its key already in the RULES line.
+  return within(rulesOfWake(to, lines), Math.max(0, t0 + LEAVE_BY_MS - SAY_MS - Date.now())).then(function (got) {
+    const rules = Array.isArray(got) ? got : rulesKeysOf(lines);
     rules.forEach(function (l) { if (Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true }), 'utf8') <= ANSWER_ROOM) lines.push(l); });
     const answer = cut ? { lines: lines, more: true } : { lines: lines };
     return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
@@ -617,6 +622,18 @@ function handOver(to, t0) {
 // this deskClient hands that version over ("RULE rule/n@v <type>: <label>: <text>"), asked of the desk then; after that
 // the key is enough. Kept for the life of this process.
 const rulesHanded = new Set();
+// The RULES lines alone, the keys of the phase rules for each item the lines name, asked of nobody.
+function rulesKeysOf(lines) {
+  const out = [];
+  lines.forEach(function (l) {
+    const m = /"id":"(goal\/G[0-9.]+)"/.exec(String(l));
+    const row = m ? dataSet.get('deskItems/' + m[1]) : null;
+    const rules = row && Array.isArray(row.phaseRules) ? row.phaseRules : [];
+    const said = rules.length ? 'RULES ' + m[1] + ': ' + rules.map(function (r) { return r.key + '@' + r.version; }).join(' ') : '';
+    if (said && out.indexOf(said) === -1) out.push(said);
+  });
+  return out;
+}
 function rulesOfWake(to, lines) {
   const ids = [];
   lines.forEach(function (l) {

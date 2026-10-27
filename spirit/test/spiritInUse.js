@@ -1071,9 +1071,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         // What the desk streams to this agent, by verb.
         try { const sl = ask && ask.body && ask.body.deskClient && ask.body.deskClient.streamListener; if (to === CWK && sl) out.streamed.push(JSON.parse(sl.json).verb || ''); } catch (e) { /* not a row */ }
         if (!caller) return;
+        // A SLOW RELAY FOR A RULE'S TEXT, as on 2026-10-27: the desk's answer to rule.get comes 15 s late.
+        const slow = !!(ask && ask.body && ask.body.desk && ask.body.desk['rule.get']);
         test.peerAnswer(client, (ask && ask.body) || {}, caller).then(function (r) {
           const made = packet.encode('api', r && r.body, { re: hash });
-          streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: to, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+          setTimeout(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: to, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); }, slow ? 15000 : 0);
         }, function () { /* the asker waits it out */ });
       });
     });
@@ -1099,9 +1101,18 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       await call('deskClient', 'setDesk', { key: DESKK }, OWNER);
       const next = async function () { const r = await call('deskClient', 'next', {}, OWNER); return (r.body && r.body.lines) || []; };
       await next();
-      // The control: his line on an item nobody holds wakes the agent today.
+      // A desk rule on the goal, so each wake about its items names it and hands its text once, asked of the desk.
+      const ruled = await D('rule.add', { type: 'desk', label: 'Read the news', text: 'Read the news of a wake.' });
+      if (ruled.key) { await D('rule.version', { key: ruled.key, text: 'Read the news of a wake.', status: 'active' }); await D('item.rules.add', { id: 'goal/G102', rule: ruled.key }); }
+      out.ruleKey = ruled.key || '';
+      // The desk says the rule's change in the group chat; that line wakes the agent first, and is drained here.
+      await sleep(1500);
+      await next();
+      // The control: his line on an item nobody holds wakes the agent today, its rule's text coming 15 s late.
       await D('chat.add', { id: 'goal/G102.2', text: 'control: a line on an item nobody holds' });
+      const t0 = Date.now();
       out.steps.control = await next();
+      out.controlMs = Date.now() - t0;
       // The world: goal/G102.1 is a code item, gone, its red held by the other agent; goal/G102.3 in its own design.
       await D('press', { id: 'goal/G102.1', what: 'code' });
       await D('press', { id: 'goal/G102', what: 'end-design' });
@@ -1165,6 +1176,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     else test.fail('the new current goal did not reach the agent: ' + short(wr.steps.current));
   }
   if (wr.up === true) {
+    if (wr.ruleKey && wr.controlMs < 12000 && woke(wr.steps.control, /control: a line/) && woke(wr.steps.control, new RegExp('RULES goal/G102\\.2: .*' + wr.ruleKey.replace('/', '\\/'))))
+      test.check('a wake never loses its lines to a slow rule: with the rule\'s text 15 s late, the lines and the rule\'s key arrive in ' + wr.controlMs + ' ms');
+    else test.fail('a slow rule cost the wake: ' + wr.controlMs + ' ms, lines ' + short(wr.steps.control) + ', rule ' + short(wr.ruleKey));
     if (wr.streamedAny > 0 && wr.statusStreamed === 0) test.check('a file\'s status goes to his page alone: none is streamed to an agent (' + wr.streamedAny + ' rows streamed to it, none a status)');
     else test.fail('file statuses streamed to the agent: ' + wr.statusStreamed + ' of ' + wr.streamedAny + ' rows');
   }
