@@ -120,7 +120,10 @@ const boxOne = mounted.filter(function (m) { return m.name === 'one'; })[0].box;
 const boxTwo = (mounted.filter(function (m) { return m.name === 'two'; })[0] || {}).box;
 ok(tc.selected() === 'two' && boxTwo && boxTwo !== boxOne, 'select shows that tab, mounted into its own box', 'selected ' + tc.selected());
 ok(hiddenNow(boxOne) && !hiddenNow(boxTwo), 'only the selected tab\'s box shows; the others are hidden', 'one hidden ' + hiddenNow(boxOne) + ', two hidden ' + hiddenNow(boxTwo));
-const m1 = marks(c1.innerHTML);
+// The row as it is now: drawn again on its own (its node's markup), or with the whole container. A browser reflects either
+// in the container's markup; this stub does not, so the row's own node is read when it was drawn on its own.
+const rowNow = function (c) { const r = c.part('tabs'); return r && r.innerHTML ? r.innerHTML : c.innerHTML; };
+const m1 = marks(rowNow(c1));
 ok(m1.two === 'true' && m1.one === 'false', 'the marks follow the selection', 'marks: ' + JSON.stringify(m1));
 tc.select('one');
 ok(tc.selected() === 'one' && mounted.filter(function (m) { return m.name === 'one'; }).length === 1 && !hiddenNow(boxOne) && hiddenNow(boxTwo),

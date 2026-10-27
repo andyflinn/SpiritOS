@@ -174,6 +174,17 @@ test.startTest('agent.js: the agent face app');
   w.stream(false); await settle();
   ok(!says(), 'the server off again: no DEBUG', 'title: ' + short(w.title()));
 
+  test.subHeading('it bootstraps its own components');
+  const w3 = world(null);
+  const required = [];
+  const def3 = load(w3);
+  global.window.spirit.elements = {};
+  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.elements.workBench = w3.workBench; return Promise.resolve(true); };
+  w3.api.ui.elements = global.window.spirit.elements;
+  def3.mount(box('app3'), w3.api); await settle();
+  ok(required.indexOf('shell/js/workBench.js') !== -1 && w3.created.length === 1, 'with no workBench on the page it loads shell/js/workBench.js through spirit.require, then builds one',
+    'required ' + short(required) + ', workbenches ' + w3.created.length);
+
   test.subHeading('with no config of its own');
   const w2 = world(null);
   const def2 = load(w2);

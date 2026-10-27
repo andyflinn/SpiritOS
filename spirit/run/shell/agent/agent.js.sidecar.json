@@ -1,0 +1,8 @@
+{
+  "face": {
+    "app": true,
+    "name": "Agent",
+    "icon": "🤖",
+    "description": "The face of the agent server: its settings on the left, the server's DEBUG state on the right."
+  }
+}

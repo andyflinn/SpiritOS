@@ -21,6 +21,8 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
+- It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
+  components."): with no workBench on the page, it loads `shell/js/workBench.js` through `spirit.require`, then builds.
 - The workBench has one tool on its left strip and one on its right.
 - The left tool keeps `relay-state/shell/agent/config.json`:
   - At mount it reads the file through `spirit.fs.loadFile`; with none, `showDebug` is false.

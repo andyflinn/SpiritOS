@@ -1,0 +1,6 @@
+{
+  "description": "Set the agent server's DEBUG state, the same one its DEBUG verb switches, kept in its config across restarts and streamed to its clients as { agent: { debug } }.",
+  "request": {
+    "on": false
+  }
+}
