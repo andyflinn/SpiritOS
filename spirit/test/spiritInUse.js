@@ -1248,8 +1248,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   // Every Desk system script, each with ./test/<name>.js and ./test/<name>.md, named by testModule.js (Andy: "desk system
   // scripts now have their own test folders: deskClient, desk, and the all the UI's with it, every script file a
   // corresponding test and doc script."): the desk server's folder, deskClient's, and every Desk UI.
+  // deskAgent and deskAgentRemote are deprecated and get no test folder (Andy, goal/G41: "deskAgent and deskAgentRemote
+  // are DEPRECATED!!!!!!!! NO test folder foer either of them").
   const DESK_PLACES = ['process/js/desk', 'process/js/deskClient', 'shell/desk', 'shell/deskDetails', 'shell/ruleDetails',
-    'shell/stackFrameCheckDetail', 'shell/deskAgentRemote'];
+    'shell/stackFrameCheckDetail'];
   const deskScripts = [];
   DESK_PLACES.forEach(function (place) {
     (function walk(dir) {
@@ -1265,7 +1267,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   fs.readdirSync(path.join(RUN, 'shell', 'shared', 'js')).forEach(function (n) { if (/^desk.*\.js$/.test(n)) deskScripts.push('shell/shared/js/' + n); });
   const deskPair = function (m) { const d = path.posix.dirname(m); const n = path.posix.basename(m, '.js'); return { js: d + '/test/' + n + '.js', md: d + '/test/' + n + '.md' }; };
   const deskUnpaired = deskScripts.filter(function (m) { const p = deskPair(m); return !fs.existsSync(path.join(RUN, p.js)) || !fs.existsSync(path.join(RUN, p.md)); });
-  if (deskScripts.length > 20 && !deskUnpaired.length) test.check('every Desk system script (' + deskScripts.length + ') has its pair beside it, ./test/<name>.js and ./test/<name>.md');
+  const deprecatedPaired = ['shell/deskAgentRemote/test', 'process/js/deskAgent/test'].filter(function (d) { return fs.existsSync(path.join(RUN, d)); });
+  if (!deprecatedPaired.length) test.check('deskAgent and deskAgentRemote, deprecated, have no test folder');
+  else test.fail('a deprecated Desk part has a test folder: ' + deprecatedPaired.join(', '));
+  if (deskScripts.length > 15 && !deskUnpaired.length) test.check('every Desk system script (' + deskScripts.length + ') has its pair beside it, ./test/<name>.js and ./test/<name>.md');
   else test.fail(deskUnpaired.length + ' of ' + deskScripts.length + ' Desk system scripts without their test pair: ' + deskUnpaired.join(', '));
   const deskTm = require(path.join(RUN, 'test', 'testModule.js'));
   const deskNotNamed = deskScripts.filter(function (m) { return !(deskTm.testsFor(m) || []).some(function (t) { return t.test === deskPair(m).js; }); });
