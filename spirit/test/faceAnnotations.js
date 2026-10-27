@@ -73,6 +73,43 @@ test.startTest('goal/G41.1: the face part is the one part, and it is streamed');
   eq(!d3 || d3.path !== 'shell/notes/readme.txt', true, 'a sidecar of a file that is no app script is no app-face', OWED + 'app-face for readme: ' + short(d3));
   jobs.cancelJob(watcher.id);
 
+  test.subHeading('A2b. the node\'s own sidecar, at the mirror in its state, heard and merged');
+  fs.mkdirSync(path.join(run, 'relay-state', 'shell', 'notes'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'relay-state', 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { app: false } }));
+  const watcher2 = jobs.startFsWatcherJob(run);
+  await sleep(1500);
+  fs.writeFileSync(path.join(run, 'relay-state', 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { app: false, icon: '🗒' } }));
+  let d4 = null;
+  for (let i = 0; i < 50; i++) { const j = faces()[0]; if (j && j.data && j.data.face && j.data.face.icon) { d4 = j.data; break; } await sleep(100); }
+  eq(!!d4 && d4.path === 'shell/notes/notes.js' && d4.face.app === false && d4.face.name === 'Notes' && d4.face.icon === '🗒', true,
+    'the node\'s own sidecar written: its app\'s face part streamed, the node\'s fields over the tracked ones', OWED + 'app-face: ' + short(d4));
+  jobs.cancelJob(watcher2.id);
+
+  test.subHeading('A4. a write lands in the node\'s state; a read is the tracked part with the node\'s over it');
+  const tag = 'zzMirror' + process.pid;
+  const made = [path.join(RUN, 'shell', tag), path.join(RUN, 'process', 'js', tag), path.join(RUN, 'relay-state', 'shell', tag), path.join(RUN, 'relay-state', 'process', tag)];
+  try {
+    [['shell/' + tag, made[0]], ['process/js/' + tag, made[1]]].forEach(function (a) {
+      fs.mkdirSync(a[1], { recursive: true });
+      fs.writeFileSync(path.join(a[1], tag + '.js'), '// a throwaway app\n');
+      fs.writeFileSync(path.join(a[1], tag + '.js.sidecar.json'), JSON.stringify({ face: { intrinsic: true, app: true, name: 'Shipped' } }));
+    });
+    const shellApp = 'shell/' + tag + '/' + tag + '.js';
+    const tracked = fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8');
+    const w = fsys.annotateFace(shellApp, { app: false, name: 'Mine', intrinsic: false });
+    eq(!!w && w.ok === true && fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === tracked, true, 'a write leaves the tracked sidecar beside the code as it is',
+      OWED + 'the write ' + short(w) + ', the tracked sidecar ' + (fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === tracked ? 'kept' : 'changed'));
+    let mine = null; try { mine = JSON.parse(fs.readFileSync(path.join(made[2], tag + '.js.sidecar.json'), 'utf8')); } catch (e) { mine = null; }
+    eq(!!mine && mine.face && mine.face.app === false && mine.face.name === 'Mine' && !('intrinsic' in mine.face), true,
+      'it lands at the mirror in the node\'s state, relay-state/shell/<app>/<app>.js.sidecar.json, without intrinsic', OWED + 'the node\'s sidecar: ' + short(mine));
+    const read1 = (fsys.getAnnotations(shellApp) || {}).face || {};
+    eq(read1.app === false && read1.name === 'Mine' && read1.intrinsic === true, true, 'a read is the tracked face part with the node\'s over it, intrinsic the tracked one\'s', OWED + 'read ' + short(read1));
+    const proc = 'process/js/' + tag + '/' + tag + '.js';
+    fsys.annotateFace(proc, { home: false });
+    let pmine = null; try { pmine = JSON.parse(fs.readFileSync(path.join(made[3], tag + '.js.sidecar.json'), 'utf8')); } catch (e) { pmine = null; }
+    eq(!!pmine && pmine.face && pmine.face.home === false, true, 'a server\'s lands in its own state folder, relay-state/process/<name>/<name>.js.sidecar.json', OWED + 'the server\'s: ' + short(pmine));
+  } finally { made.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* gone */ } }); }
+
   test.subHeading('A3. faceHome sends app-face jobs to the face');
   const fh = read('spirit/faceHome.js');
   const prio = (/function priorityOf\(job\) \{([\s\S]*?)\n  \}/.exec(fh) || [])[1] || '';

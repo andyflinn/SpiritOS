@@ -130,6 +130,29 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   jobs.cancelJob(watcher.id);
   stopAll();
 
+  // H4b (box v16): the node's own sidecar, in its state at relay-state/process/<name>/, over the tracked default.
+  test.subHeading('H4b. the node\'s own sidecar, in its state, decides over the tracked one');
+  const own = function (run, name, home) {
+    const dir = path.join(run, 'relay-state', 'process', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, name + '.js.sidecar.json'), JSON.stringify({ face: { home: home } }));
+  };
+  const n5 = plantNode(null);
+  own(n5, 'teller', false);
+  own(n5, 'quiet', true);
+  const b5 = boot(n5);
+  eq(typesOf(b5), 'core,quiet', 'at boot: teller, home by its tracked sidecar but off by the node\'s, does not run; quiet, on by the node\'s, does', OWED + 'booted ' + typesOf(b5));
+  stopAll();
+  const n6 = plantNode(null);
+  const watcher6 = jobs.startFsWatcherJob(n6);
+  boot(n6);
+  await sleep(1500);
+  own(n6, 'teller', false);
+  let off6 = 1; for (let i = 0; i < 60 && (off6 = running('teller').length); i++) await sleep(100);
+  eq(off6, 0, 'the node\'s own sidecar written off stops a server its tracked one runs', OWED + 'teller still running after the node\'s sidecar said off');
+  jobs.cancelJob(watcher6.id);
+  stopAll();
+
   test.subHeading('H5. the central list is gone');
   const settings = require('../run/spirit/nodeSettings.js');
   eq(typeof settings.serverSettings, 'undefined', 'nodeSettings serves no server settings', OWED + 'nodeSettings still exports serverSettings');
