@@ -438,7 +438,9 @@
       var mf = got[1] || {};
       // AN INTRINSIC APP SHOWS ON EVERY FACE (goal/G41.1, box v17: "minimal == intrinsic"), its face mark or not; what the
       // node's face part does not name, its manifest does (its icon a key into the icon table).
-      if (face && (face.app === true || face.intrinsic === true)) {
+      // AN APP NAMING A SERVER RIDES WITH IT (box v14): no row in Apps, no face mark of its own; it shows while its server
+      // runs (serverUp, as the desktop draws).
+      if (face && (face.app === true || face.intrinsic === true || (typeof mf.server === 'string' && mf.server !== ''))) {
         var glyphs = (window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
         var m = { name: String(face.name || mf.name || name), icon: String(face.icon || glyphs[mf.icon] || ''), description: String(face.description || mf.description || ''),
           server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
