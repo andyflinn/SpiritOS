@@ -1,5 +1,5 @@
 {
- "change": 105998,
+ "change": 106000,
  "goal": "goal/G41",
  "items": [
   {
@@ -93,16 +93,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1061,12 +1059,11 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 20,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
