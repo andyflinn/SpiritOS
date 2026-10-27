@@ -56,6 +56,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/24 (version 60): Answer the fucking Question.
+
+Whenever the user asks you a question, you answer the damn question short and precise and DON'T babble on about SHIT you were NOT asked.
+
 ### rule/23 (version 58): gaming test suites
 
 under NO circumstances will you implement imperfect code on purpose.
