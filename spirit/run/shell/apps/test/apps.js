@@ -116,6 +116,15 @@ test.startTest('apps.js: the Apps app');
   ok(rowOf('process/js/starter/starter.js') === 0, 'a process that is no server is no row', 'starter: ' + rowOf('process/js/starter/starter.js'));
   ok(rowOf('shell/notes.txt') === 0, 'a file that is no app is no row', 'notes.txt: ' + rowOf('shell/notes.txt'));
 
+  test.subHeading('a filter for installable apps only (box v15)');
+  const installable = (o.filters || []).filter(function (f) { return f.name === 'installable'; })[0];
+  ok(!!installable && (installable.choices || []).some(function (c) { return c.value === 'only'; }), 'the list has an installable filter, its choice only', 'filters: ' + short((o.filters || []).map(function (f) { return f.name; })));
+  if (installable) {
+    ok(installable.test({ path: 'shell/icons/icons.js' }, 'only') === 1, 'a shell app with a button passes', 'icons: ' + installable.test({ path: 'shell/icons/icons.js' }, 'only'));
+    ok(installable.test({ path: 'process/js/agent/agent.js' }, 'only') === 0, 'an intrinsic app does not: it has no button', 'the intrinsic server: ' + installable.test({ path: 'process/js/agent/agent.js' }, 'only'));
+    ok(installable.test({ path: 'process/js/agent/agent.js' }, 'all') === 1, 'with all, every row passes', 'all: ' + installable.test({ path: 'process/js/agent/agent.js' }, 'all'));
+  }
+
   test.subHeading('the installer column');
   const col = (o.columns || []).filter(function (c) { return c.field === 'installer'; })[0];
   ok(!!col, 'the list has an installer column', 'columns: ' + short((o.columns || []).map(function (c) { return c.field; })));

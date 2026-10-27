@@ -22,6 +22,9 @@ the same wherever it is used (the Apps list's column, the app's details panel). 
   - A press writes the whole face part with `home` turned over and every other field kept; the node then starts or
     stops the server.
   - It draws only what the stream says (rule/19): a press leaves the button as it was until the job changes.
+- **Every button listens** (box v15: "it's the buttons that have to listen, too"): the node streams an app's face part
+  as an `app-face` job (`{ path, face }`) whenever its sidecar changes. A button takes its own app's face part from it:
+  a shell app's turns on or off with `app`, and an app made intrinsic loses its button. Another app's is ignored.
 - **The button** says `Activate` while off and `Deactivate` while on, and carries `data-on`.
 - **A press stays its own**: the click does not reach the row or panel around it (a row's press opens its details).
 - **destroy** ends its stream subscription; nothing is drawn after it.

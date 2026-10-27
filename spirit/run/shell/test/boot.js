@@ -163,6 +163,9 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
     ok(/serverUp\(/.test(drawAt), 'the desktop draws an app only while its server is up', 'drawDesktop does not ask serverUp');
     ok(/function closePages\(/.test(boot) && /\.close\(\)/.test(boot) && /closePages\(/.test(readFaceAt), 'an app whose server stops or whose face mark goes has its open pages closed',
       'boot keeps no pages to close, or readFace does not close them');
+    // box v15: the node streams an app's face part when its sidecar changes, and the face follows it.
+    ok(/'app-face'/.test(boot) && /function followFace\(/.test(boot) && /readFace\(/.test((/function followFace\(job\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || ''),
+      'a face part streamed (an app-face job) has the face read that app again, so it comes or goes at once', 'boot does not follow app-face jobs');
   }
 
   test.subHeading('every face app loads alone');

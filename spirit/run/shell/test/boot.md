@@ -31,6 +31,7 @@ app loads its own components, as a tree, through spirit.require.
 - The app's icon is on the desktop while its face mark is on and, if it names a server, while a server job of that
   module (`process/js/<server>`) is running or pending on the stream.
 - When the server stops, or the face mark goes, the icon goes and every page of the app that is open is closed.
+- A face part streamed (an `app-face` job, box v15) has boot read that shell app again, so it comes or goes at once.
 
 ## Every face app loads alone
 

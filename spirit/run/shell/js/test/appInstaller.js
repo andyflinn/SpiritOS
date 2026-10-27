@@ -121,6 +121,21 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   const annotate = wn.writes.length;
   ok(annotate === 0, 'drawing writes nothing', 'writes on draw: ' + annotate);
 
+  test.subHeading('every button listens: a face part streamed redraws it (box v15)');
+  const wl = world({ [APP]: { face: { app: false, name: 'Icons' } } });
+  const hl = host();
+  wl.E.appInstaller.create(hl, { path: APP }); await settle();
+  const faceJob = function (p, face) { const j = { id: 'job-app-face', type: 'app-face', data: { path: p, face: face } }; wl.subs.slice().forEach(function (h) { if (h.onUpdate) h.onUpdate(j); }); };
+  ok(wl.subs.length > 0, 'a shell app\'s button listens to the stream too', 'it subscribed to nothing');
+  faceJob('shell/files/files.js', { app: true }); await settle();
+  ok(!onOf(hl), 'another app\'s face part leaves it as it was', 'turned on by another app\'s face');
+  faceJob(APP, { app: true, name: 'Icons' }); await settle();
+  ok(onOf(hl) && hl.button.text === 'Deactivate' && wl.writes.length === 0, 'its own face part streamed with app on turns it on, with no press', 'after its face streamed on: ' + short(hl.button && hl.button.text));
+  faceJob(APP, { app: false, name: 'Icons' }); await settle();
+  ok(!onOf(hl), 'and streamed off, off', 'after its face streamed off: on');
+  faceJob(APP, { app: true, intrinsic: true }); await settle();
+  ok(!hl.button && /always on/i.test(hl.text), 'made intrinsic on the stream, it loses its button', 'after intrinsic: ' + short(hl.innerHTML));
+
   test.subHeading('exempt: an intrinsic app and the Apps app get no button');
   const we = world({ 'shell/files/files.js': { face: { app: true, intrinsic: true } }, 'shell/apps/apps.js': { face: { app: true } } });
   const hi = host(); we.E.appInstaller.create(hi, { path: 'shell/files/files.js' }); await settle();

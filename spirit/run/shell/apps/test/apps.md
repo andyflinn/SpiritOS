@@ -12,6 +12,9 @@ each app's details panel. Each app is switched on and off by the app installer (
   - A shell app whose manifest names a `server` is no row: it goes with its server.
   - Under `process/js/` only a server is a row (its manifest's `kind` is `"server"`).
   - Every app's manifest is read once before the list is drawn, so the rows are decided by what the manifests say.
+- **A filter for installable apps only** (box v15): `installable`, its choices `all` and `only`; with `only` a row
+  passes when it has an installer button: not intrinsic (its face part), and not the Apps app. Every app's face part is
+  read once beside its manifest, before the list is drawn.
 - **The list has one column more**, `installer`: each row's cell holds the app installer for that app's script. The
   row's element mounts it into that cell and destroys it with the row.
 - **The details panel**, a page on the navigation:
