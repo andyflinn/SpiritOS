@@ -107,7 +107,8 @@ function pretendNode(self, peerApp, peerKey, grants) {
       { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
       if (b.verb === 'jobs.update') { if (b.app) node.pages.push(b.app); send({ ok: true }); return; }
       if (b.verb === 'auth.grant') { node.granted.push({ key: b.key, path: b.path }); send({ ok: true }); return; }
-      if (b.verb === 'auth.search') { send({ records: grants(), more: false }); return; }
+      // As apiAuth.js answers it (goal/G29.7): items {key, label}, the label {name, key, path} as JSON.
+      if (b.verb === 'auth.search') { send({ items: grants().map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify({ name: '', key: g.key, path: g.path }) }; }), more: false }); return; }
       if (b.verb !== 'peer.post' || b.to !== peerKey) { send({ ok: false }); return; }
       const hash = 'H' + Date.now() + Math.random();
       let ask = null;

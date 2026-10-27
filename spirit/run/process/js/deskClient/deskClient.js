@@ -407,6 +407,7 @@ function wakeOnHeld(row, change) {
 }
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
+  heardAt = Date.now();
   saveCacheSoon();
   // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] }; each row is taken
   // as a single row is, in order, its change the bundle's where it names none. A single row still comes as before.
@@ -961,8 +962,7 @@ const server = appServer.serve({
       const to = deskKey();
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
-      // A SUBSCRIBE DOES NOT EXPIRE (goal/G41.11). Andy: "subscribes over peerPost should NOT expire, at least not on the
-      // client-side". A quiet stream is no reason to subscribe again; the desk keeps its subscribers (js/appServer.js).
+      // A QUIET STREAM IS SUBSCRIBED AGAIN by the timer below (resubscribeQuiet), not here: a wait asks nothing for it.
       // Its first word makes it known to the desk, which then streams it the current goal whole (goal/G33.4).
       if (said !== 'listening') say(to, 'listening');
       // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
@@ -1112,11 +1112,27 @@ const server = appServer.serve({
 // desk, (re-use that verb) with the position number as argument": the newest change its cache heard (desk/change, kept
 // through a restart in cache.json), so the desk hands what changed after it. A desk other than the one it heard hands
 // all (since 0).
+// When the stream last brought a row, and when a subscribe was last asked (resubscribeQuiet, below).
+let heardAt = Date.now();
+let askedAt = Date.now();
 function subscribeDesk(key, fresh) {
   const since = fresh ? 0 : Number(dataSet.get('desk/change')) || 0;
+  askedAt = Date.now();
   return server.subscribe(key, 'desk', since).catch(function () { return false; });
 }
 (function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());
+// A QUIET STREAM IS SUBSCRIBED AGAIN, WITH ITS POSITION (goal/G41.12). Andy: "the client after getting nothing for a
+// while must resubscribe witha position real soon....", "resubscribe must ALSO FAIL SUPER-FAST, then wait for 10
+// soconds", and "just 10 SECONDS, NO POINT IN STAGGERING": QUIET_MS after the last row heard, and as long after the last
+// subscribe asked, it subscribes again with the newest change it heard; a subscribe that fails fast (appServer) is asked
+// again QUIET_MS later, every time the same. The desk hands what changed after the position, so nothing is lost.
+const QUIET_MS = 10000;
+setInterval(function resubscribeQuiet() {
+  const d = getSetting.get('desk');
+  const now = Date.now();
+  if (!d || !d.value || now - heardAt < QUIET_MS || now - askedAt < QUIET_MS) return;
+  subscribeDesk(d.value);
+}, 1000).unref();
 
 // THE CHECKOUT, WATCHED (goal/G33.11). Andy, in the box: "While its agent holds the red or the build of an item, the
 // agent's deskClient watches its checkout and reports each change to the item's status column only, never to the chat.

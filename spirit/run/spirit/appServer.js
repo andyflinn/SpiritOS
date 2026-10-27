@@ -442,28 +442,30 @@ function withStreamListener(verbs, stream, followed) {
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
 // the same row to every subscriber through its family's streamListener over peerPost (spirit.require with a key: no packet
-// built here); a row naming keys in to goes to those subscribers alone. In order per subscriber, no patience per attempt.
-// A SUBSCRIBE DOES NOT EXPIRE (goal/G41.11; Andy: "subscribes over peerPost should NOT expire"): a row a subscriber did
-// not take within waitMs stays first in its queue and is tried again waitMs later; past QUEUE_MAX rows the oldest go
-// (a store sheds past a cap), and its next subscribe hands it the bootstrap. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
+// built here); a row naming keys in to goes to those subscribers alone. In order per subscriber.
+// A DELIVERY FAILS FAST (goal/G41.12). Andy: "when desk pushed a message down the stream, i must fail FAST. and WAIT FOR
+// A re-subscribe", and "a FAST FAIL DOESN'^t CLOG THE SYSTEM": a row not taken within FAST_MS drops its subscriber and
+// its queue; it is sent nothing more until it subscribes again, with its position, and is handed what it missed then.
+// Past QUEUE_MAX queued rows the oldest go (a store sheds past a cap). NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
 // the server's subscribers are the keys the node grants it to (auth.search), each as the server's family; nothing else
 // persists.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows }
 const QUEUE_MAX = 1000;
+const FAST_MS = 3000;
 // A server family's interface, by the node's own naming of it (spirit.js: <name>/<name>.family/api.js).
 function familyPath(family) { return 'process/js/' + family + '/' + family + '.family/api.js'; }
 function deliverRow(key, q, row) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), over peerPost with no patience.
-  const sent = spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
+  const wait = Math.min(FAST_MS, publisher.waitMs);
+  const sent = spirit.require(familyPath(q.family), key, { waitMs: wait }).then(function (fam) {
     if (!fam || typeof fam.streamListener !== 'function') return 'away';
     return spirit.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
-  // A DELIVERY THAT NEVER ANSWERS HOLDS NOTHING (goal/G41.11; found live 2026-10-27: the stream to a client stalled for
-  // good and his "all:" line woke nobody): past waitMs it counts as not taken, so its row is tried again and the queue
-  // behind it moves; a late answer of it changes nothing.
+  // A DELIVERY THAT NEVER ANSWERS HOLDS NOTHING (found live 2026-10-27: the stream to a client stalled for good): past
+  // the fast wait it is away, whatever answers later.
   let timer = null;
-  const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve('away'); }, publisher.waitMs); });
+  const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve('away'); }, wait); });
   return Promise.race([sent, late]).then(function (said) { clearTimeout(timer); return said; });
 }
 function pumpTo(key) {
@@ -471,7 +473,8 @@ function pumpTo(key) {
   if (!q || q.busy || !q.rows.length) return;
   q.busy = true;
   deliverRow(key, q, q.rows[0]).then(function (said) {
-    if (said !== 'taken') { setTimeout(function () { q.busy = false; pumpTo(key); }, publisher.waitMs); return; }
+    // Away: dropped, its queue with it, until it subscribes again (a later subscribe is a new queue, kept).
+    if (said !== 'taken') { if (subscribers.get(key) === q) subscribers.delete(key); return; }
     q.busy = false;
     q.rows.shift();
     pumpTo(key);
@@ -543,7 +546,12 @@ function withPublisher(verbs, opts) {
 function subscribersFromGrants(name) {
   if (!publisher) return Promise.resolve(0);
   return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
-    const records = (r.body && Array.isArray(r.body.records)) ? r.body.records : [];
+    // auth.search answers the new search (goal/G29.7): items {key, label}, each label {name, key, path} as JSON. Read as
+    // records, as it once answered, it restored nobody, and after every restart the desk sent its clients nothing
+    // (found 2026-10-27, goal/G41.11: his "all:" lines woke nobody once the clients no longer subscribed again on a
+    // silence).
+    const items = (r.body && Array.isArray(r.body.items)) ? r.body.items : [];
+    const records = items.map(function (it) { try { return JSON.parse(it.label); } catch (e) { return null; } }).filter(Boolean);
     let n = 0;
     records.forEach(function (g) {
       const p = String(g.path || '');
@@ -642,13 +650,18 @@ function serve(verbs, opts) {
     // type it replaces (opts.stream.renews; left out, every type it wrote) keeps only what it wrote (spiritData
     // renew/renewed).
     dataSet().renew(opts && opts.stream && opts.stream.renews);
-    return s.follow(k).catch(function () { return false; }).then(function () {
+    // A SUBSCRIBE FAILS FAST TOO (goal/G41.12; Andy: "resubscribe must ALSO FAIL SUPER-FAST, then wait for 10 soconds"):
+    // not answered within FAST_MS it answers false, and the caller asks again later.
+    let timer = null;
+    const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve(false); }, FAST_MS); });
+    const asked = s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
-      return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {
+      return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: FAST_MS }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(at ? { family: name, since: at } : { family: name });
       }));
     }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
+    return Promise.race([asked, late]).then(function (ok) { clearTimeout(timer); return ok; });
   };
   // FOLLOW A SENDER'S STREAM (goal/G33.4): heard from now on, and granted the verb on this node. Answers whether the
   // node holds the grant (true when it did already).
