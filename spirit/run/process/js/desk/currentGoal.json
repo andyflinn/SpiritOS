@@ -1,5 +1,5 @@
 {
- "change": 106436,
+ "change": 106498,
  "goal": "goal/G41",
  "items": [
   {
@@ -16,7 +16,10 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.3",
+    "goal/G41.4"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -91,7 +94,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -1956,25 +1959,28 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "closed",
+   "status": "verified green",
    "statusTone": "",
    "with": "",
    "version": 20,
    "buttons": [
-    "reopen"
+    "end-design",
+    "close",
+    "delete",
+    "verify"
    ],
    "blocking": [
     "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
+   "design": true,
    "fileCount": 59,
    "green": true,
    "code": true,
@@ -2030,7 +2036,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": true,
    "full": false,
    "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, so no page can change them: the node's file gate refuses every core file. Today only join.js is core.\n- login.json and join.json are no manifests: they are code, the apps' own UI text (their steps), and stay beside their apps as they are, core with them (Andy, Q9: \"if they're code, just keep them, they are obviously NOT manifests.\"). Nothing of either app is deleted.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n",
@@ -2184,12 +2190,22 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-27T05:07:16.256Z",
+     "at": "2026-10-27T09:39:07.120Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-27T09:39:07.120Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -2680,6 +2696,294 @@
      "text": "- cw: nothing runs on 11111, the ollama agent's port. The one other agent node running is claude-windows-2 (port 45442, its own repo in lab/claude-windows-2).\n- Is that the node to kill?"
     }
    ]
+  },
+  {
+   "id": "goal/G41.4",
+   "title": "Create the Data Set for agent.db",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 7,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [
+    "goal/G41.5"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a jobs table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n\n- the the ID as key for all tables comes from the idea, that when i give an agent node-api's as tools, i may want to control access using the same grants-app as i use for peers. this has a bunch of holes, because, i'd have to put my \"personas\" OR \"jobs\" into the shadow roll....\n\n- every one of these tables will come with a left-edge icon that puts up a tab ,\n\n# keys (Andy, Q1 and Q2: \"they WILL need grants and i want keys that are separate from a label\", \"we'll put off the grant-problem, but not the keys.\")\n\n- every row of the three tables (providers, personas, jobs) has a key of its own, a peer's shape: a key pair the agent server makes when the row is created. The public half is the row's id; its label is a separate caption that may change.\n- the private half never leaves the agent server, nor does a provider's API key: a page sets one, and only sees whether it is set.\n- grants are put off: how a row's key is granted node verbs (the shadow roll, or the grants app reading the agent server) is decided when tools come.\n\n# out of scope for now\n\n- a conversation context. The primitive version sends a job's persona and job text fresh with each call. The direction for later (Andy): ONE context, persisted and maintained, for each persona (its direct chat) and for each job; each kept within a probabilityBucket-style limit by built-in shedding strategies, possibly in layers, an overall bucket over component buckets. The node's traffic log does not record model calls: they are plain web requests, not peer packets.",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Start with plain local ids for the three tables, and give personas keys of their own only when tools need grants?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T09:24:00.662Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Who acts under a grant and gets a key: each persona, each job, or both?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T09:25:08.670Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Reopen G41.1 to land the agent-app face fix, or carry it here once you end design?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T08:56:42.103Z",
+     "text": "let me verify a few assumptions i have developed: \n- whether i use unsloth, openAI or an anothropic API, the model NEVER knows about the last prompt, or it only knows about it because I feed it the chat history and context every single time?\n- if correct, does this mean that i could have two different personas/configurations taking turns in using the prompt interface of the model-provider in an intermingled fashion and each could have it's own train-of-context?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T08:57:11.853Z",
+     "text": "- cw: 1. Yes. The model keeps nothing between calls. Every request carries the whole conversation it should know: the system prompt, the message history, any files or tool results. It knows the last prompt only because the caller sends it again. That holds for the Anthropic and OpenAI chat APIs, and for a local model run through unsloth.\n- Two caveats, neither of them memory:\n  - Some providers can keep the history for you on their side (OpenAI's stored conversations, for example). That is still history sent back in, just held by them, under an id you pass.\n  - Prompt caching (Anthropic, OpenAI, a local KV cache) only makes a repeated prefix cheaper and faster; it changes nothing the model knows.\n- 2. Yes. Two personas can take turns on the same provider, the same key, even the same model, each with its own system prompt and its own history. As long as you never mix the two message lists, neither sees the other.\n- What they share is only the plumbing: rate limits and spend on the key, and on a local box the GPU and its memory.\n- That is how an agent app can run several agents on one model: each is just its own list of messages."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T08:58:38.893Z",
+     "text": "does it not also mean that i could have multiple model-providers open at the same time, and hand each completely unrelated tasks?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T08:59:02.247Z",
+     "text": "- cw: yes. Each call is self-contained, so nothing ties a task to one provider. You can have Anthropic, OpenAI and a local model working at the same moment, each on its own task with its own history, in parallel.\n- What it takes is only bookkeeping on your side: which history belongs to which task, which key or endpoint each uses, and the different request formats, which an adapter per provider hides.\n- The one real difference between them is the model itself: what each is good at, its context size, its price. You can even hand the same history from one provider to another mid-task, since it is just your list of messages."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:19:08.553Z",
+     "text": "tag? (i forgot), then feedback on the box so far."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:20:43.839Z",
+     "text": "- cw: tagged v-2026-10-27-10-20; the relays take it within about ten minutes.\n- Feedback on the box, one point each:\n- Providers: the API key must never leave the agent server. It streams its state to its pages, so the key column is write-only: a page sets it, and only ever sees set or not set. A provider also needs its API kind (Anthropic, OpenAI, or OpenAI-compatible for a local model) and a model name, beside the URL.\n- Personas: as written, the persona text is the system prompt, sent with every call. Fits.\n- Jobs: missing is what a job runs on, its persona and its provider. And its history: from your own question earlier, a job's train of context is its list of messages, kept here. That table, messages by job, will be the bulk of agent.db.\n- Size: a CodeMirror field can outgrow one packet, so the tables reach pages through bounded searches and per-row reads, never as one dump.\n- The left-edge icons: each opens its table as a tab in the middle pane. That is the workBench tool strip plus tabContainer, as built.\n- IDs: the holes you name are real. Personas and jobs are no peers, and putting them in the shadow roll muddles it. Grants only matter once an agent gets node verbs as tools, which no table here needs yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:23:19.124Z",
+     "text": "Q1: Start with plain local ids for the three tables, and give personas keys of their own only when tools need grants?\n\nwhy? the WILL need grants and i want keys that are separate from a label...\n\nexplain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:24:02.205Z",
+     "text": "- cw: my reason was only to put off the shadow-roll problem. If they will need grants, keys from the start are better: nothing to migrate later.\n- So each row gets a key of its own, the same shape as a peer's: a key pair the agent server makes when the row is created. The public half is the id; the label stays a separate, changeable caption, as a contact's does.\n- Why a key pair and not just a random id: to use node verbs under a grant, the agent must sign its requests as that key, as a peer does. So the agent server keeps the private half, and it never leaves it, like the API key.\n- The hole you named stays one decision: the grants app picks whom to grant from the shadow roll. Either agent keys get rows there, marked as agents, or the grants app also reads the agent server.\n- One more choice first: who acts, and so needs the key."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:24:43.655Z",
+     "text": "Q2: Who acts under a grant and gets a key: each persona, each job, or both?\n\nwe'll put off the grant-problem, but not the keys."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:25:18.871Z",
+     "text": "- cw: boxed: a key pair for every row of the three tables, the public half its id, the label separate; private halves and API keys never leave the agent server; grants put off.\n- Still open from my feedback: a job's persona and provider, and its history table. Shall I put them in the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:28:08.927Z",
+     "text": "why a history table? if at all, it's most certainly deferred, the node allready creates history for every api call, doesn't it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:29:02.836Z",
+     "text": "- cw: not for this. The node's traffic log records packets to and from peers. A call from the agent server to a model provider is a plain web request, and nothing records it today.\n- Why I named it: from your question about providers, the model remembers nothing, so a job that talks back and forth must send its whole conversation every call. That conversation has to live somewhere, and it is the job's.\n- But for a primitive version it can wait: a job that sends its persona and its job text fresh each time needs no history at all. Deferred, then: I box it as out of scope for now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:35:33.494Z",
+     "text": "new issue, the agent app-face doesn't show up in my Apps app, and i don't see it anymore......\n\nWhy I named it: from your question about providers, the model remembers nothing, so a job that talks back and forth must send its whole conversation every call. That conversation has to live somewhere, and it is the job's.\n\nwhat i likely will want: ONE context, persisted and maintained for either a persona OR a job. just one per agent (for direct chat) and one for every job. and i't like both to persist and potential reference built-in shedding strategies, to reliably keep those contexts with in a probabilityBucket style limit, possibly in layers, an overall-bucket, and component buckets...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:36:02.790Z",
+     "text": "- cw: the agent face app: my bug. Apps leaves it out on purpose: it names a server, so it rides with that server's button. But the face still waits for a face mark on it, and nothing can set one, since it has no row. So it never shows.\n- Fix: on the face an app that names a server shows while its server runs, with no face mark needed; that is how the server's button activates it (box v14). Red first in the boot test, then the fix, in G41.1's scope.\n- On your node: tick the agent server in Apps, and the agent app appears.\n- The contexts: noted, and boxed as the direction for later. One persisted context per persona (direct chat) and one per job, each kept within a probability-bucket limit by built-in shedding, possibly in layers, an overall bucket over component buckets."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:37:46.303Z",
+     "text": "Q3: Reopen G41.1 to land the agent-app face fix, or carry it here once you end design?\n\nyes.\n\njust pick an unused mark, the user can change it later?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:38:09.661Z",
+     "text": "- cw: by face mark I meant the on-the-face switch, not the icon. The icon is fine: until your node gives it one, it comes from its manifest (the thread glyph), and you can change it later.\n- The fix needs no mark at all: an app that names a server shows whenever its server runs.\n- Your yes: to reopening G41.1, or to carrying it here?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.5",
+   "title": "Make grants app face-able",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
