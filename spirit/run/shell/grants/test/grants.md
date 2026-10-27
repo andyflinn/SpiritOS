@@ -9,7 +9,8 @@ travel?").
 
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `shell/js/probabilitySearch.js`,
-  `shell/js/rowElement.js`, `shell/js/contacts/listElement.js` and `shell/js/apiBranchSelector.js`. It takes them from
+  `shell/js/rowElement.js`, `shell/js/contacts/listElement.js`, `shell/js/apiBranchSelector.js` and (goal/G41.9)
+  `shell/js/armingButton.js`. It takes them from
   `window.spirit.elements`, never from the old shell's `api.ui.elements`.
 - **Nothing of `shellCreateListSearch`** is left in it (deprecated and forbidden on the face, goal/G40.8).
 - **The grants list is a probabilitySearch pane** in a box of a stated size (`fill`, rule/16). Its columns are whose
@@ -18,7 +19,12 @@ travel?").
 - **Each row is a row element** (`rowElement.create`): it paints whose grant it is, the path, `deprecated` beside a path
   no server serves today (`apiTreeIndex.serves`; a report, never a prune), and its own Revoke, a row action
   (`data-action="revoke"`).
-- **Revoke asks the node** (`auth.revoke` with the row's key and path) and then reads the grants again: what the list
+- **Revoke asks "are you sure?"** (goal/G41.9; Andy: "the revoke buttons must ask: \"are you sure?\""): each row's
+  Revoke is an armingButton (`window.spirit.elements.armingButton`, by `attach` or `create`), loaded by the app itself
+  through `spirit.require('shell/js/armingButton.js')` and handed the app's api. The first press arms it, the second
+  runs it, a click elsewhere puts it back. Nothing of a hand-rolled confirm is in grants.js: no `data-armed`, no
+  `armUntilElsewhere`, no `armed` class.
+- **Revoke's run asks the node** (`auth.revoke` with the row's key and path) and then reads the grants again: what the list
   shows is only what the node answered (rule/19).
 - **The line**: whose access is the contacts list as a dropdown; the server and verb are the api-branch selector; Grant
   shows only once a contact and a server are chosen, else the line says which is missing; a server naming a bundle
@@ -30,4 +36,5 @@ travel?").
 - A component it uses not loaded by itself.
 - A row without its Revoke, or a dead grant not marked deprecated (or a live one marked).
 - A Revoke that changes the list without asking the node, or asks for the wrong key or path.
+- A Revoke that revokes on a single press, or arms by hand instead of through armingButton.
 - A chosen peer that does not narrow the list.

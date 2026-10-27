@@ -61,8 +61,13 @@ const GRANTS = [
 ];
 
 function world() {
-  const w = { lists: [], contacts: [], branches: [], required: [], calls: [], def: null };
+  const w = { lists: [], contacts: [], branches: [], required: [], calls: [], def: null, made: [] };
   const E = {
+    // The are-you-sure button (goal/G41.9): a recorder of every button made arming, by attach or create.
+    armingButton: {
+      attach: function (button, opts) { w.made.push({ how: 'attach', button: button, opts: opts || {} }); return button; },
+      create: function (opts) { const b = node('<button type="button">'); w.made.push({ how: 'create', button: b, opts: opts || {} }); return b; },
+    },
     probabilitySearch: { create: function (host, opts) { const l = { host: host, opts: opts, value: '', redrawn: 0, refreshed: 0,
       redraw: function () { l.redrawn += 1; }, refresh: function () { l.refreshed += 1; }, destroy: function () {} }; w.lists.push(l); return l; } },
     contactList: { create: function (host, opts) { const c = { host: host, opts: opts, list: { value: '', row: null } }; w.contacts.push(c); return c; } },
@@ -111,7 +116,8 @@ test.startTest('grants.js: the Grants app');
   if (!w.def) return;
 
   test.subHeading('it loads what it uses itself (goal/G41.3)');
-  ['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/apiBranchSelector.js'].forEach(function (p) {
+  ['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/apiBranchSelector.js',
+    'shell/js/armingButton.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
 
@@ -139,19 +145,36 @@ test.startTest('grants.js: the Grants app');
   const h2 = { name: node('td'), path: node('td'), revoke: node('td') };
   live.mount(h1); gone.mount(h2);
   ok(/Bob/.test(h1.name.innerHTML) && /fs\.search/.test(h1.path.innerHTML), 'a row paints whose grant it is and its path', 'painted ' + short(h1.name.innerHTML + ' | ' + h1.path.innerHTML));
-  ok(/data-action="revoke"/.test(h1.revoke.innerHTML) && /Revoke/.test(h1.revoke.innerHTML), 'a row has its own Revoke, a row action', 'revoke cell: ' + short(h1.revoke.innerHTML));
+  ok((/data-action="revoke"/.test(h1.revoke.innerHTML) && /Revoke/.test(h1.revoke.innerHTML)) || w.made.some(function (m) { return /Revoke/.test(m.opts.label || ''); }),
+    'a row has its own Revoke', 'revoke cell: ' + short(h1.revoke.innerHTML));
   ok(!/deprecated/.test(h1.path.innerHTML) && /deprecated/.test(h2.path.innerHTML), 'a grant no server serves today says deprecated; a live one does not', 'live ' + short(h1.path.innerHTML) + ' | gone ' + short(h2.path.innerHTML));
 
-  test.subHeading('Revoke asks the node, and the list is redrawn from its answer (rule/19)');
-  const before = w.calls.filter(function (c) { return c.name === 'auth.search'; }).length;
+  test.subHeading('Revoke asks "are you sure?": an armingButton, the shell\'s two presses (goal/G41.9)');
+  const code = SRC.replace(/\/\/.*$/gm, '');
+  ok(!/data-armed/.test(code) && !/armUntilElsewhere/.test(code) && !/classList\.(add|remove)\(\s*['"]armed['"]/.test(code),
+    'nothing of a hand-rolled confirm is in grants.js: no data-armed, no armUntilElsewhere, no armed class', 'grants.js arms by hand');
+  // A raw press on the drawn Revoke, as the list delivers it: it reaches the element, never the node by itself.
   const tr = node('<tr data-key="' + rows[0].key + '">');
   const btn = node('<button data-action="revoke">');
   btn.closest = function (sel) { return sel === '[data-action]' ? btn : sel === '[data-key]' ? tr : null; };
   list.host.fire('click', { target: btn });
   await settle();
-  const rv = w.calls.filter(function (c) { return c.name === 'auth.revoke'; })[0];
-  ok(rv && rv.args.key === 'K1' && rv.args.path === 'fs.search', 'a Revoke press asks auth.revoke for that key and path', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
-  ok(w.calls.filter(function (c) { return c.name === 'auth.search'; }).length > before, 'and reads the grants again, drawing only what the node answers', 'no auth.search after revoke');
+  ok(w.calls.filter(function (c) { return c.name === 'auth.revoke'; }).length === 0, 'a single press revokes nothing by the app\'s own hand', 'auth.revoke asked after one raw press');
+  const revokes = w.made.filter(function (m) { return typeof m.opts.run === 'function'; });
+  ok(revokes.length > 0, 'each row\'s Revoke is made an armingButton (attach or create)', 'armingButtons made: ' + w.made.length);
+  ok(revokes.length > 0 && revokes.every(function (m) { return m.opts.api === w.api; }), 'handed the app\'s api, so a click elsewhere disarms it', 'api handed: ' + short(revokes.map(function (m) { return !!m.opts.api; })));
+
+  test.subHeading('its run asks the node, and the list is redrawn from its answer (rule/19)');
+  // The run of the row's Revoke: the one that asks for this row's key.
+  let mine = null;
+  for (const m of revokes) {
+    const at = w.calls.length;
+    await Promise.resolve(m.opts.run()); await settle();
+    const asked = w.calls.slice(at).filter(function (c) { return c.name === 'auth.revoke'; })[0];
+    if (asked && asked.args.key === 'K1') { mine = { asked: asked, after: w.calls.slice(at) }; break; }
+  }
+  ok(mine && mine.asked.args.path === 'fs.search', 'the row\'s run asks auth.revoke for that key and path', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
+  ok(mine && mine.after.some(function (c) { return c.name === 'auth.search'; }), 'and reads the grants again, drawing only what the node answers', 'no auth.search after the revoke');
 
   test.subHeading('the line: whose access, the api branch, Grant');
   ok(w.contacts.length === 1 && w.contacts[0].opts.face === 'dropdown', 'whose access is the contacts list as a dropdown', 'contact lists: ' + short(w.contacts.map(function (c) { return c.opts.face; })));
