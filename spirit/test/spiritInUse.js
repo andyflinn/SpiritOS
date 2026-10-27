@@ -299,8 +299,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!/info-foot|info-key|infoCard\.publicKey|caption it wears/.test(infoCode)) test.check('Info\'s foot is gone: no key and no sentence about it');
   else test.fail('Info still draws its foot with the key');
   const joinFormCode = code('shell/js/joinForm.js');
-  const emailAt = infoCode.indexOf('info-email');
-  const faceAt = infoCode.indexOf('info-face"');
+  // Since goal/G41.6 the two form boxes are found by data-info, not by id.
+  const emailAt = infoCode.indexOf('data-info="email"');
+  const faceAt = infoCode.indexOf('data-info="face"');
   if (/function mount\(box, opts\)/.test(joinFormCode) && /<select/.test(joinFormCode) && /joinForm\.mount\(/.test(infoCode) && emailAt !== -1 && faceAt !== -1 && emailAt < faceAt)
     test.check('Info shows the email form above the face form: joinForm\'s general form, mount, with its own relay picker');
   else test.fail('Info has no email form above the face form' + (/function mount\(box, opts\)/.test(joinFormCode) ? '' : ', and joinForm has no general form with a picker'));
@@ -361,8 +362,13 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const joinFormNow = code('shell/js/joinForm.js');
   if (/emailProblem\(/.test(joinFormNow) && /clip\(/.test(joinFormNow) && !/type your email address/.test(joinFormNow)) test.check('the email form clips at the limit and says what is wrong with an address');
   else test.fail('the email form neither clips nor says what is wrong');
+  // Since goal/G41.6 Info's two fields are the elements changeMyLabel and changeMyDescription, which hold the field at
+  // its limit through fieldInput (refused before it lands) and count only what is left.
   const infoNow = code('shell/info/info.js');
-  if (/clip\(/.test(infoNow) && !/too many/.test(infoNow)) test.check('Info\'s name and description stop at their limit, and count only what is left');
+  const fieldEls = ['shell/js/changeMyLabel.js', 'shell/js/changeMyDescription.js'].map(code);
+  if (/changeMyLabel/.test(infoNow) && /changeMyDescription/.test(infoNow) && !/too many/.test(infoNow) &&
+    fieldEls.every(function (c) { return /fieldInput\.attach\(/.test(c) && /Math\.max\(0,/.test(c) && !/too many/.test(c); }))
+    test.check('Info\'s name and description stop at their limit, and count only what is left');
   else test.fail('Info still counts past the limit');
 
   // THE ONE TABLE ON THE STREAM (goal/G40.11 replaced box v21's relay-rows; Andy: "yes." to "one job for the table, one

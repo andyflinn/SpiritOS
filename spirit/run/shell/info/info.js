@@ -13,39 +13,18 @@
 // "More to come" is why this is its own app and not two fields bolted
 // onto another one.
 //
-// ── THE NAME IS THE LABEL, ON EVERY RELAY ────────────────────────────
+// ── THE NAME STAYS HERE ──────────────────────────────────────────────
 //
-//   Andy: "when I'm on the phone with a friend to connect, i have no idea
-//   which 'relay' contains which 'label' of mine. i want this app to
-//   distribute my label to ALL relays I'm a member of."
+// The relay table is dropped (goal/G41.6; Andy, 2026-10-27): no list of the relays and the name each calls this
+// node, no push of a saved name to every relay, no rename from here. A relay's name for this node is
+// Natter's to show and change, one relay at a time.
 //
-// THIS CORRECTS THE FIRST VERSION OF THIS FILE, which said the name here
-// was "only a caption" and "never travels to a relay". That was true of
-// the code and wrong as a product: a label was set per membership, on
-// Natter Details, one relay at a time, and nothing anywhere showed the
-// set of them together. A node on three relays could be called three
-// things and its owner would find out mid-phone-call, which is the one
-// moment it costs something.
+// ── TWO ELEMENTS, TWO FORMS, ONE BUTTON ──────────────────────────────
 //
-// R1 IS UNTOUCHED and worth restating so nobody reads this as its repeal:
-// a label is still a caption owned by a key, still stored once per
-// membership, and two relays may still legally disagree. What changed is
-// INTENT — this node keeps one label and tries to wear it everywhere —
-// and VISIBILITY: a relay that disagrees is now a marked row instead of
-// something nobody can see.
-//
-// So Save does two things in one gesture. The local write is the INTENT;
-// the posts are the attempt. They can come apart — a relay may be down
-// for days, or may refuse because a live invite reserves the name — and
-// when they do, the table below says which and pressing Save again tries
-// again. There is no background job renaming you on relays while you are
-// not looking.
-//
-// NOTHING IS WRITTEN TO NATTER, which could not be done from here anyway
-// (api.fs is scoped to this folder). It does not need to be:
-// natterCheckBinding already ADOPTS each relay's caption off the roll
-// on every probe, which is a mechanism that exists because its absence
-// once cost a live session — a successful rename looked like theft.
+// The name and the description are the shell elements changeMyLabel and changeMyDescription (goal/G41.6, Andy's Q1):
+// each holds its field rule, its check as typed, its byte limit and its save. Info reads node.card and sets each to
+// what the node stored. Below them the email form and the face form (joinForm, faceForm), over the relays this node
+// holds a seat on; then the Rotate key button.
 //
 // ── WHAT THIS SCREEN IS NOT ──────────────────────────────────────────
 //
@@ -64,343 +43,42 @@
 
 var infoApi = null;
 
-// What the node last told us, so a repaint after a save draws what was
-// STORED rather than what was typed: the node normalises what it keeps,
-// and a field that shows something else is a field lying about what
-// strangers are being told.
-var infoCard = null;
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.6; Andy: every app bootstraps its own components, "lazy-load, is
+// a tree...."): its two field elements and the two forms, through spirit.require.
+var infoParts = Promise.all(['shell/js/changeMyLabel.js', 'shell/js/changeMyDescription.js', 'shell/js/joinForm.js',
+  'shell/js/faceForm.js'].map(function (p) { return spirit.require(p); }));
 
-// ── EVERY RELAY THIS NODE HOLDS A ROW ON ─────────────────────────────
+// ── EVERY RELAY THIS NODE HOLDS A SEAT ON ────────────────────────────
 //
-// From `relay.status`, which probes every configured relay and answers a
-// row each: the url, whether this key holds a row there (`claimed`, which
-// `owned` implies), what that relay calls this key (`claimedLabel`, read
-// off the public roll by key, never by name), and the relay's own
-// public key on `roll.relayKey` — which is the address a rename is
-// posted to.
-//
-// Everything needed is in that ONE call. It is the same probe Natter
-// makes, and the reason nothing new had to go on the wire for any of
-// this.
+// From spirit.relay.status (the relay family's api.js, goal/G40.11): a row per relay this node lists, with whether
+// this key holds a row there (`claimed`, which `owned` implies) and the relay's own public key on `roll.relayKey`.
+// Only those rows are offered to the two forms: a relay this node merely LISTS has no seat to apply on.
 var infoRelays = [];
-
-// What the last Save got back from each relay, keyed by url:
-//   { ok: true, label }              renamed, or already that
-//   { ok: false, why: '…' }          refused, or never answered
-//
-// Kept separate from the rows rather than merged into them, because the
-// rows are what the RELAYS say and this is what HAPPENED. A row repainted
-// from a fresh probe must not quietly inherit the verdict of an older
-// attempt.
-var infoPushed = Object.create(null);
-
-// Is a push in flight? One at a time: a second Save while the first is
-// still landing would race two renames at the same relays and report
-// whichever finished last.
-var infoBusy = false;
-
-// The rule, from the copy the browser has (js/fieldRules.js). Same object
-// the node checks with, so the message beside the field and the message
-// from the verb cannot disagree — and the hop is saved when they would
-// have agreed anyway (Andy: "an input field should validate before taxing
-// the wire").
-function infoRule() {
-  return (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
-}
-
-function infoNameProblem(text) {
-  var rule = infoRule();
-  return rule ? rule.problem(text) : '';
-}
-
-function infoDescribeProblem(text) {
-  var rule = infoRule();
-  return rule ? rule.describeProblem(text) : '';
-}
-
-function infoRemaining(text) {
-  var rule = infoRule();
-  if (!rule) return null;
-  return rule.describeRemaining(text);
-}
-
-// A REFUSAL IS RED AND A CONFIRMATION IS NOT, and the shell has exactly
-// two classes for that: `.job-start-error` is the red one and
-// `.job-manifest-note` is fine print. Both collapse when empty (§1), so
-// clearing a message takes its space with it rather than leaving a row
-// held open for something nobody has written.
-function infoSay(id, text, isError) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = text || '';
-  el.className = isError ? 'job-start-error' : 'job-manifest-note';
-}
-
-// THE COUNTDOWN IS IN BYTES, because the cap is. An emoji costs four of
-// them and a letter costs one, so a counter that counted characters would
-// say there was room where the node refuses.
-function infoCount() {
-  var el = document.getElementById('info-description-count');
-  var box = document.getElementById('info-description');
-  if (!el || !box) return;
-  var left = infoRemaining(box.value);
-  if (left === null) { el.textContent = ''; return; }
-  // Only what is left: the field stops at its limit (infoHold), so it never goes past.
-  el.textContent = Math.max(0, left) + ' left';
-  el.className = 'job-manifest-note';
-}
-
-// A FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20; Andy: "keep counting the number of characters typed beyond the
-// limit, instead of just blocking input past the limit"): cut at fieldRules' byte limit as it is typed.
-function infoHold(field, maxBytes) {
-  var rule = infoRule();
-  if (!field || !rule) return;
-  var held = rule.clip(field.value, maxBytes);
-  if (held !== field.value) field.value = held;
-}
-
-function infoDraw() {
-  if (!infoCard) return;
-  var name = document.getElementById('info-name');
-  var description = document.getElementById('info-description');
-  if (name) name.value = infoCard.name;
-  if (description) description.value = infoCard.description;
-  infoCount();
-  infoDrawRelays();
-}
-
-// Which rows may be renamed: the ones this key actually holds a seat on,
-// and that told us the relay's key. A relay this node merely LISTS has no
-// row to rename, and one that did not answer has not said what its key is
-// — `censusFacts` returns nothing when the roll could not be read.
 function infoSeats() {
   return infoRelays.filter(function (row) {
     return row && (row.claimed || row.owned) && row.roll && row.roll.relayKey;
   });
 }
 
-// ── THE TABLE THAT IS THE WHOLE POINT ────────────────────────────────
-//
-//   Andy: "i have no idea which 'relay' contains which 'label' of mine."
-//
-// So it is a list of relays and what each one calls you, and a row that
-// disagrees with the name above is MARKED. Nothing else: the relay's own
-// caption is how a person knows which box this is, and every other fact
-// about a membership belongs to Natter's screen for it.
-function infoDrawRelays() {
-  var box = document.getElementById('info-relays');
-  if (!box) return;
-
-  var escape = infoApi && infoApi.escapeHtml
-    ? infoApi.escapeHtml
-    : function (s) { return String(s); };
-
-  if (!infoRelays.length) {
-    // Absent rather than an empty table (§1): a node on no relay has
-    // nothing to distribute to, and a heading over nothing is a thing to
-    // read and dismiss.
-    box.innerHTML = '';
-    infoDrawFace();
-    return;
-  }
-
-  var wanted = (infoCard && infoCard.name) || '';
-  box.innerHTML =
-    '<div class="label">What each relay calls you</div>' +
-    '<table class="jobs-table"><thead><tr>' +
-      '<th>Relay</th><th>Calls you</th><th></th>' +
-    '</tr></thead><tbody>' +
-    infoRelays.map(function (row) {
-      var seat = !!(row.claimed || row.owned);
-      var calls = seat ? (row.claimedLabel || '') : '';
-      var pushed = infoPushed[row.url];
-
-      // WHAT TO SAY IN THE LAST COLUMN, in the order a person needs it:
-      // what just happened to this relay, then whether it agrees, then
-      // why it is not in the conversation at all.
-      var note = '';
-      if (pushed && !pushed.ok) note = pushed.why;
-      else if (!seat) note = 'no seat here';
-      else if (!row.roll || !row.roll.relayKey) note = 'has not answered yet';
-      else if (wanted && calls && calls !== wanted) note = 'out of step';
-      else if (!calls) note = 'enrolled, but unnamed';
-
-      return '<tr>' +
-        '<td>' + escape(row.label || row.url) + '</td>' +
-        '<td>' + escape(calls || '—') + '</td>' +
-        '<td>' + escape(note) + '</td>' +
-        '</tr>';
-    }).join('') +
-    '</tbody></table>';
-  infoDrawFace();
-}
-
-// ── A FACE NAME, FOR ONE RELAY ───────────────────────────────────────
-//
-// The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
+// THE TWO FORMS, EACH THE SAME EVERYWHERE (goal/G40.10, box v19): the email form above the face form, each with its
+// own relay dropdown over the relays this node holds a seat on; the face form offers only those with a verified email.
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
-// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
-// the two forms, through spirit.require.
-var infoParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js'].map(function (p) { return spirit.require(p); }));
-function infoDrawFace() {
-  // THE TWO FORMS, EACH THE SAME EVERYWHERE (goal/G40.10, box v19): the email form above the face form, each with its own
-  // relay dropdown over the relays this node holds a seat on; the face form offers only those with a verified email.
+function infoDrawForms(container) {
   return infoParts.then(function () {
     var el = (window.spirit && window.spirit.elements) || {};
     var escape = infoApi && infoApi.escapeHtml;
-    if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), pick: 'seated', escape: escape });
-    if (el.faceForm) el.faceForm.mount(document.getElementById('info-face'), { relays: infoSeats(), reload: function () { return infoLoadRelays(); }, escape: escape });
+    if (el.joinForm) el.joinForm.mount(container.querySelector('[data-info="email"]'), { relays: infoSeats(), pick: 'seated', escape: escape });
+    if (el.faceForm) el.faceForm.mount(container.querySelector('[data-info="face"]'), { relays: infoSeats(), reload: function () { return infoLoadRelays(container); }, escape: escape });
   }, function () { /* a form missing is not drawn */ });
 }
 
-function infoLoad() {
-  return infoApi.verb('node.card', {}).then(function (r) {
-    if (!r || !r.body || !r.body.ok) {
-      infoSay('info-name-error', (r && r.body && r.body.error) || 'node.card did not answer', true);
-      return;
-    }
-    infoCard = r.body;
-    infoDraw();
-  });
-}
-
-// ASKED OF EVERY RELAY, which is one call: `relay.status` probes them all
-// and answers a row each. It reaches the network, so the screen is drawn
-// from the local card first and this fills the table when it lands — a
-// relay on another continent must not hold up a text box on this machine.
-//
-// A FAILURE HERE IS NOT AN ERROR ON THE NAME. It means the table cannot
-// be drawn yet, and saying so beside the field would blame the field.
-function infoLoadRelays() {
-// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
+// It reaches the network, so the fields are drawn from the local card first and this fills the forms when it lands:
+// a relay on another continent must not hold up a text box on this machine. A failure means no seat to offer.
+function infoLoadRelays(container) {
   return spirit.relay.status('').then(function (r) {
     var said = (r && r.body) || {};
     infoRelays = Array.isArray(said.rows) ? said.rows : [];
-    infoDrawRelays();
-  }).catch(function () {
-    infoRelays = [];
-    infoDrawRelays();
-  });
-}
-
-// ── ONE NAME, SENT EVERYWHERE ────────────────────────────────────────
-//
-// A rename is an ordinary packet addressed to the relay's own key — the
-// same call natterDetails made one relay at a time, and the same verb the
-// relay has always answered (relay.renameSelf). What is new here is only
-// that it is said to all of them at once.
-//
-// EVERY RELAY IS ASKED INDEPENDENTLY and one refusal costs the others
-// nothing. That is not politeness, it is the only workable rule: a relay
-// may be down for days, and an all-or-nothing save would mean nobody can
-// ever change their name while one box is offline.
-function infoPush(label) {
-  var seats = infoSeats();
-  if (!seats.length) return Promise.resolve(0);
-
-  return Promise.all(seats.map(function (row) {
-    return infoApi.peerPost('relay', row.roll.relayKey, { rename: { label: label } })
-      .then(function (r) {
-        var said = (r && r.body) || {};
-        if (r && r.ok && said.ok) {
-          infoPushed[row.url] = { ok: true, label: said.label };
-          return true;
-        }
-        // WHY, not just no. "name reserved by a live invite" and "that
-        // peer is not reachable right now" are different problems with
-        // different answers, and a row that said only "failed" would
-        // send somebody to the wrong one.
-        infoPushed[row.url] = {
-          ok: false,
-          why: said.error || (r && r.error) || 'no answer',
-        };
-        return false;
-      })
-      .catch(function (e) {
-        infoPushed[row.url] = { ok: false, why: String((e && e.message) || e) };
-        return false;
-      });
-  })).then(function (results) {
-    return results.filter(Boolean).length;
-  });
-}
-
-// SAVE IS ONE GESTURE AND TWO ACTS. The local write is the INTENT — what
-// this node means to be called, and what nodeCard answers to a stranger
-// — and the posts are the attempt. The local write goes FIRST and stands
-// even when every relay refuses: otherwise a node with one unreachable
-// relay could never record what it wants to be called.
-function infoSaveName() {
-  var box = document.getElementById('info-name');
-  if (!box || infoBusy) return Promise.resolve();
-
-  // ASKED HERE FIRST, and the wire is not troubled when the answer is
-  // already known. The node asks the same question of the same rule, so
-  // this is a courtesy and never the only check (js/fieldRules.js).
-  var bad = infoNameProblem(box.value);
-  if (bad) { infoSay('info-name-error', bad, true); return Promise.resolve(); }
-
-  infoBusy = true;
-  return infoApi.verb('node.setName', { name: box.value }).then(function (r) {
-    var said = (r && r.body) || {};
-    if (!said.ok) {
-      infoSay('info-name-error', said.error || 'could not save', true);
-      return null;
-    }
-    infoCard.name = said.name;
-    infoDraw();
-
-    var seats = infoSeats().length;
-    if (!seats) { infoSay('info-name-error', 'saved', false); return null; }
-
-    infoSay('info-name-error', 'saved — telling ' + seats + ' relay(s)…', false);
-    return infoPush(said.name).then(function (took) {
-      // RE-ASKED, NOT ASSUMED. The table must show what the RELAYS say,
-      // and this is the moment believing our own copy would be worst: a
-      // relay can refuse, and a row already painted with the new name
-      // would be showing a label nobody answers to.
-      return infoLoadRelays().then(function () {
-        infoSay('info-name-error',
-          took === seats
-            ? 'saved, and ' + seats + ' relay(s) agree'
-            : 'saved here — ' + (seats - took) + ' of ' + seats +
-              ' relay(s) did not take it',
-          took !== seats);
-      });
-    });
-  }).then(function () { infoBusy = false; })
-    .catch(function () { infoBusy = false; });
-}
-
-function infoSaveDescription() {
-  var box = document.getElementById('info-description');
-  if (!box) return;
-
-  var bad = infoDescribeProblem(box.value);
-  if (bad) { infoSay('info-description-error', bad, true); return; }
-
-  infoApi.verb('node.setDescription', { description: box.value }).then(function (r) {
-    var said = (r && r.body) || {};
-    if (!said.ok) {
-      infoSay('info-description-error', said.error || 'could not save', true);
-      return;
-    }
-    // WHAT WAS STORED, not what was typed: the field shows what strangers
-    // are told.
-    infoCard.description = said.description;
-    infoDraw();
-    infoSay('info-description-error', 'saved', false);
-  });
-}
-
-// Return saves, in both boxes. The button at the end of the row is the
-// same gesture (§3) — this is for the hand that never leaves the keyboard,
-// and it is what every other single-field form in the shell already does.
-function infoOnKey(event, save) {
-  if (event.key !== 'Enter') return;
-  event.preventDefault();
-  save();
+  }, function () { infoRelays = []; }).then(function () { return infoDrawForms(container); });
 }
 
 spirit.shell.activateApp({
@@ -408,114 +86,75 @@ spirit.shell.activateApp({
     infoApi = api;
 
     container.innerHTML =
-      '<div class="stat-tile wide">' +
+      '<div class="stat-tile wide stack">' +
         '<div class="label">What this node says about itself</div>' +
-        // The one thing worth saying before two boxes: these are answered
-        // to anybody who asks, which is not obvious from a form and is
-        // the whole reason to think before typing in one.
+        // The one thing worth saying before two boxes: these are answered to anybody who asks, which is not obvious
+        // from a form and is the whole reason to think before typing in one.
         '<div class="job-manifest-note">Anybody who asks this node is told these two ' +
           'things, whether or not you have ever met. Nothing else about this box is ' +
-          'answered to a stranger. Your name is also what every relay you are on is ' +
-          'asked to call you, so saving it here sends it to all of them.</div>' +
-
-        '<div class="start-job-form card">' +
-          '<label class="field-label grow">Name' +
-            '<input type="text" id="info-name" placeholder="what people see, everywhere">' +
-          '</label>' +
-          '<button type="button" id="info-name-save">Save</button>' +
-        '</div>' +
-        '<div id="info-name-error" class="job-start-error"></div>' +
-
-        '<div class="start-job-form card">' +
-          '<label class="field-label grow">Description' +
-            '<input type="text" id="info-description" ' +
-              'placeholder="a sentence somebody who has just found you would want to read">' +
-          '</label>' +
-          '<button type="button" id="info-description-save">Save</button>' +
-        '</div>' +
-        '<div id="info-description-count" class="job-manifest-note"></div>' +
-        '<div id="info-description-error" class="job-start-error"></div>' +
+          'answered to a stranger.</div>' +
+        '<div data-info="name"></div>' +
+        '<div data-info="description"></div>' +
+        '<div data-info="said" class="job-start-error"></div>' +
       '</div>' +
-
-      // ── AND WHO IS WEARING IT ───────────────────────────────────────
-      //
-      // Its own panel, below the form and never inside it: this is a
-      // READING, not a control (§3), and it answers a different question
-      // from the boxes above — not "what do I want to be called" but
-      // "what am I actually called, out there". Empty until the probe
-      // lands, and empty for good on a node that is on no relay, which is
-      // a panel that draws nothing rather than a heading over nothing.
-      '<div class="stat-tile wide" id="info-relays"></div>' +
-
       // ── A FACE NAME ON ONE RELAY (goal/G30.1) ──────────────────────
       //
       //   Andy, 2026-10-19: "for this a little section in the info-app will be enough." and "this UI section in info
       //   will have to address ONE relay specifically."
       //
-      // Drawn from the same relay rows as the table above, so it appears only when there is a seat to apply on.
       // The email form stands above it (goal/G40.10, box v15).
-      '<div class="stat-tile wide" id="info-email"></div>' +
-      '<div class="stat-tile wide" id="info-face"></div>' +
-
+      '<div class="stat-tile wide" data-info="email"></div>' +
+      '<div class="stat-tile wide" data-info="face"></div>' +
       // NO FOOT (goal/G40.10, box v15; Andy: "fine-print at the bottom. nobody read that shit, and it doesn't help
       // anybody."): no key is shown in any face app.
       // ── ROTATE THE CIPHER KEY (cycle-10/R13) ──────────────────────
       //
-      //   Andy: "the place would be the info app", "and from the info-app
-      //   it should invoke the rotate key dialog."
+      //   Andy: "the place would be the info app", "and from the info-app it should invoke the rotate key dialog."
       //
-      // A button that OPENS the dialog. The explanation and the two-press
-      // confirmation live there, never here, so nothing on this screen can
-      // rotate a key by itself.
+      // A button that OPENS the dialog. The explanation and the two-press confirmation live there, never here, so
+      // nothing on this screen can rotate a key by itself.
       '<div class="start-job-form card">' +
-        '<button type="button" id="info-rotate">Rotate this node\x27s cipher key</button>' +
+        '<button type="button" data-info="rotate">Rotate this node\x27s cipher key</button>' +
       '</div>';
 
-    document.getElementById('info-name-save')
-      .addEventListener('click', infoSaveName);
-    document.getElementById('info-description-save')
-      .addEventListener('click', infoSaveDescription);
-
-    var name = document.getElementById('info-name');
-    name.addEventListener('keydown', function (e) { infoOnKey(e, infoSaveName); });
-    name.addEventListener('input', function () { infoHold(name, (infoRule() || {}).MAX_BYTES || 64); });
-
-    var description = document.getElementById('info-description');
-    description.addEventListener('keydown', function (e) { infoOnKey(e, infoSaveDescription); });
-    // While the cursor is in the box, not after it leaves: the number is
-    // only useful to somebody deciding what to cut.
-    description.addEventListener('input', function () {
-      infoHold(description, (infoRule() || {}).DESCRIPTION_MAX_BYTES || 128);
-      infoCount();
+    container.querySelector('[data-info="rotate"]').addEventListener('click', function () {
+      infoApi.callDialog('shell/rotateKey', {});
     });
 
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; the table reads the relays
-    // again when a relay's row changed what it says of the relay (kept, seated, owned, blocked), and not for its
-    // presence, which the dots already show. The two forms hear it themselves.
+    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; the relays are read again
+    // when a relay's row changed what it says of the relay (kept, seated, owned, blocked), and not for its presence.
     var rowsHeard = Object.create(null);
     var rowsStop = null;
     var rowsTake = function (job) {
       var row = job && job.type === 'shadow' && job.data && job.data.row;
       if (!row || row.relay !== true) return;
-      if (!container.isConnected) { if (rowsStop) rowsStop(); return; }
+      if (container.isConnected === false) { if (rowsStop) rowsStop(); return; }
       var said = [row.keep, row.seated, row.mine, row.blocked, !!row.gone].join();
       if (rowsHeard[row.publicKey] === said) return;
       rowsHeard[row.publicKey] = said;
-      infoLoadRelays();
+      infoLoadRelays(container);
     };
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
       rowsStop = window.spirit.events.subscribe({ onUpdate: rowsTake });
     }
 
-    // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this
-    // disk and lands at once; the relay table is a probe of every
-    // configured mailbox and takes as long as the slowest of them. A
-    // screen that waited for the second to draw the first would open
-    // blank because a box in another country is slow.
-    infoLoad();
-    infoLoadRelays();
-    document.getElementById('info-rotate').addEventListener('click', function () {
-      infoApi.callDialog('shell/rotateKey', {});
+    // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this disk and lands at once; the relays are a
+    // probe of every configured mailbox and take as long as the slowest of them.
+    var fields = infoParts.then(function () {
+      var el = window.spirit.elements;
+      var name = el.changeMyLabel.create(container.querySelector('[data-info="name"]'), { api: api });
+      var description = el.changeMyDescription.create(container.querySelector('[data-info="description"]'), { api: api });
+      return Promise.resolve(api.verb('node.card', {})).then(function (r) {
+        var card = r && r.body;
+        var said = container.querySelector('[data-info="said"]');
+        if (!card || !card.ok) { if (said) said.textContent = (card && card.error) || 'node.card did not answer'; return; }
+        name.set(card.name);
+        description.set(card.description);
+      });
+    }, function () {
+      var said = container.querySelector('[data-info="said"]');
+      if (said) said.textContent = 'Info could not be loaded.';
     });
+    return Promise.all([fields, infoLoadRelays(container)]);
   },
 });

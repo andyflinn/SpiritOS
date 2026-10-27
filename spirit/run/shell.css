@@ -315,12 +315,13 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
    said so and wins on specificity with the same number; inside a
    panel nothing did, so a form sat flush under whatever it
    followed — a facts bubble, a heading, another form. */
+/* A row: each item 1em from the next, and 1em above the row (goal/G41.6, rule/1 and rule/2). */
 .start-job-form {
   display: flex;
-  gap: 12px;
+  gap: 1em;
   flex-wrap: wrap;
   align-items: flex-end;
-  margin-top: 12px;
+  margin-top: 1em;
 }
 
 /* Unless it opens the box it is in — then the box's padding is the
@@ -516,7 +517,7 @@ select option { background: var(--shell-pane); color: #eee; }
    can be (§3). Its size is still the open question §2 names — 12px
    mid-page — and it is shared with the Apps and Contacts notes, so
    it is not this sitting's to settle. */
-.job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 12px; }
+.job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 1em; }
 
 .job-manifest-note:empty { display: none; }
 
@@ -648,6 +649,7 @@ select option { background: var(--shell-pane); color: #eee; }
 .job-start-error {
   color: #ff8080;
   font-size: 13px;
+  margin-top: 1em;
 }
 
 .job-start-error:empty { display: none; }
@@ -803,15 +805,6 @@ details.stat-tile > summary {
 #rc-to-row { align-items: center; }
 #rc-to-row #rc-to-pick { flex: 1; width: auto; margin-bottom: 0; }
 #rc-peer-strip:empty { display: none; }
-
-/* Info's relay table, which is a panel that may have nothing to
-   say: a node on no relay has nothing to distribute a label to, and
-   a bordered empty box with 12px of padding is a thing to read and
-   dismiss (§1). It also sits empty for the moment between the
-   screen opening and relay.status answering, so this is what stops
-   the page jumping when the probe lands rather than only what
-   handles the never-enrolled case. */
-#info-relays:empty { display: none; }
 
 /* Contacts, Find someone: what the person on that row said about
    themselves, or why nothing came back.
@@ -1064,9 +1057,10 @@ details.stat-tile > summary {
    there the first block does bring its own — the rule that comment
    has always stated, and that the first pass at this quietly took
    away by writing `+ *` for both. */
+/* 1em since goal/G41.6 (rule/2, Andy: "every div/block carries with itself a leading vertical space of 1em"). */
 #app-content > .app-pane > * + *,
 .stack > * + *,
-.job-log-row > td > * { margin-top: 12px; }
+.job-log-row > td > * { margin-top: 1em; }
 
 /* .stack is any OTHER box that holds blocks. Both launchers write
    their whole page into a wrapper (#cv-body, #mv-body) so a later
