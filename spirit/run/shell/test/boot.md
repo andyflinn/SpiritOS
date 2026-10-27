@@ -36,6 +36,12 @@ app loads its own components, as a tree, through spirit.require.
 - When the server stops, or the face mark goes, the icon goes and every page of the app that is open is closed.
 - A face part streamed (an `app-face` job, box v15) has boot read that shell app again, so it comes or goes at once.
 
+## No icon table on the face (goal/G41.1, box v19-v20)
+
+- `spirit/client/iconIndex.js` (kernel's ICON table under another name) and `spirit/client/chatLog.js` are gone.
+- boot loads neither and names no icon table: a step's icon and a manifest's icon are drawn as the glyph they are.
+- Every app manifest names its icon as the glyph itself, never a key.
+
 ## Every face app loads alone
 
 - Every face app shipped to date (agent, apps, contacts, files, icons, info, mediaViewer: named by the test, since a face

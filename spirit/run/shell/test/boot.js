@@ -173,13 +173,32 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
       'an app that names a server shows with its server, no face mark needed', 'readFace shows an app naming a server only with a face mark nothing can set');
     // Andy: "the login-app should not show in face-loopback mode": login and Join are boot's own, never app icons.
     ok(/'shell\/login'/.test(readFaceAt), 'the login app is never an app icon: readFace skips it as it skips Join', 'readFace does not skip the login app');
-    ok(/face\.intrinsic === true/.test(readFaceAt) && /iconIndex/.test(readFaceAt) && /JOIN/.test(readFaceAt),
+    ok(/face\.intrinsic === true/.test(readFaceAt) && /mf\.icon/.test(readFaceAt) && /JOIN/.test(readFaceAt),
       'an intrinsic app shows on the face, named and iconed from its manifest when the node has no face part for it; Join stays boot\'s',
       'readFace shows only apps whose face part says app, so the intrinsic ones hide');
     // box v15: the node streams an app's face part when its sidecar changes, and the face follows it.
     ok(/'app-face'/.test(boot) && /function followFace\(/.test(boot) && /readFace\(/.test((/function followFace\(job\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || ''),
       'a face part streamed (an app-face job) has the face read that app again, so it comes or goes at once', 'boot does not follow app-face jobs');
   }
+
+  // THE ICON SET IS THE ONLY SOURCE OF ICONS ON THE FACE (goal/G41.1, box v19-v20; Andy: iconIndex.js "MUST BE DELETED,
+  // KILLED, ERADICATED"): iconIndex.js and chatLog.js are gone; boot loads neither and looks nothing up by key; every app
+  // manifest names its icon as the glyph itself.
+  test.subHeading('no icon table on the face');
+  const gone = ['spirit/client/iconIndex.js', 'spirit/client/chatLog.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); });
+  ok(!gone.length, 'spirit/client/iconIndex.js and chatLog.js are gone', 'still there: ' + gone.join(', '));
+  if (boot) {
+    ok(!/iconIndex|chatLog|\bICON\b/.test(boot), 'boot names neither, and no icon table', 'boot still names iconIndex, chatLog or ICON');
+  }
+  const keyed = [];
+  ['shell', 'process/js'].forEach(function (dir) {
+    let names = []; try { names = fs.readdirSync(path.join(RUN, dir)); } catch (e) { names = []; }
+    names.forEach(function (n) {
+      let m = null; try { m = JSON.parse(fs.readFileSync(path.join(RUN, dir, n, n + '.json'), 'utf8')); } catch (e) { m = null; }
+      if (m && typeof m.icon === 'string' && /^[A-Z_]+$/.test(m.icon)) keyed.push(dir + '/' + n + ':' + m.icon);
+    });
+  });
+  ok(!keyed.length, 'every app manifest names its icon as the glyph itself', keyed.length + ' manifests name a key: ' + short(keyed));
 
   test.subHeading('every face app loads alone');
   // THE FACE APPS SHIPPED TO DATE, named here: a face mark is each node's own state since goal/G41.1 (box v16-v17), so
