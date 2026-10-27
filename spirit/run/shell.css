@@ -471,6 +471,11 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
    button sets border:none and a border here would change the
    button's size the moment it armed — a control that grows under
    a finger already on its way down. */
+/* Desk's design-mode buttons loom in their own colour (Andy: "so it loooms over the proceedings"), but only while
+   unarmed: armed, they are red like every armed button (goal/G41.9). */
+#app-content button.desk-design-end:not([data-armed]) { background: #c00; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #600; }
+#app-content button.desk-design-start:not([data-armed]) { background: #1a7f37; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #0b4a1e; }
+
 #app-content button[data-armed],
 #app-content button.armed {
   background: #7a2222;

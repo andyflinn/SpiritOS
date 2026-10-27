@@ -43,9 +43,10 @@ module.exports = {
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
     'item.files': { id: 'id', under: 'text?' },
-    // One row a write (goal/G40.3): one path, never a list; no '..'. A path already there (add) or not there (remove) is
-    // refused, naming it. A suite is a spirit/test/ .js path, the red writer's.
-    'item.files.add': { id: 'id', path: 'text' },
+    // One row a write (goal/G40.3): one path; no '..'. A path already there (add) or not there (remove) is refused,
+    // naming it. A suite is a spirit/test/ .js path, the red writer's. goal/G41.11, for the desk only: item.files.add takes
+    // path or paths, a list cut at one answer (the server answers added and more).
+    'item.files.add': { id: 'id', path: 'text?', paths: 'list?' },
     'item.files.remove': { id: 'id', path: 'text' },
     'item.suites.add': { id: 'id', path: 'text' },
     'item.suites.remove': { id: 'id', path: 'text' },

@@ -18,6 +18,7 @@
 // takes nothing from the environment.
 //
 //   node deskAgentEar.js <port>                            wait: ask deskClient.next until lines come, print them, end
+//   node deskAgentEar.js <port> --read <key>               the same wait, naming the key of the wake last read
 //   node deskAgentEar.js <port> <verb> [json]              one read or write of Desk, through deskClient.desk
 //   node deskAgentEar.js <port> deskClient.<verb> [json]   one ask of its own deskClient (setDesk, history.search)
 //
@@ -27,16 +28,21 @@
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../../../spirit.js');
-const USAGE = 'usage: node deskAgentEar.js <port of your own node> [<desk verb> | deskClient.<verb>] [json]';
+const USAGE = 'usage: node deskAgentEar.js <port of your own node> [--read <key> | <desk verb> | deskClient.<verb>] [json]';
 const NODE_WAIT_MS = 20000;
 const PAUSE_MS = 250;
 
 const port = Number(process.argv[2]);
-const verb = String(process.argv[3] || '');
 if (!Number.isInteger(port) || port <= 0) { console.error(USAGE); process.exit(2); }
+// --read <key> (goal/G41.11): a wait, naming the wake the agent last read; no desk verb.
+const READ = process.argv[3] === '--read' ? String(process.argv[4] || '') : null;
+if (READ === '') { console.error(USAGE); process.exit(2); }
+const verb = READ === null ? String(process.argv[3] || '') : '';
 let args = {};
-try { args = JSON.parse(process.argv[4] || '{}'); } catch (e) { args = null; }
-if (!args || typeof args !== 'object' || Array.isArray(args)) { console.error('the json is not an object\n' + USAGE); process.exit(2); }
+if (READ === null) {
+  try { args = JSON.parse(process.argv[4] || '{}'); } catch (e) { args = null; }
+  if (!args || typeof args !== 'object' || Array.isArray(args)) { console.error('the json is not an object\n' + USAGE); process.exit(2); }
+}
 
 function end(code, text, bad) { (bad ? console.error : console.log)(text); process.exit(code); }
 
@@ -55,12 +61,18 @@ function ask(what, a) {
 }
 function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === false; }
 
-// THE WAIT. An answer with lines is printed and ends it; one without is asked again; a refusal ends it.
+// A WAKE IS DROPPED ONLY ONCE READ (goal/G41.11; Andy, goal/G41: "The desk ear must not successfully start listening if
+// there is a wake waiting", and of the read key: "good idea, make the red assert it"). deskClient answers a wake with
+// its key; the ear prints the lines and, last, the arm the agent runs next, naming that key:
+// "next: node deskAgentEar.js <port> --read <key>". Armed so, it asks next with { read: key } and deskClient drops that
+// wake; armed without it, or with an older key, deskClient hands the unread wake again at once, so no agent listens past
+// a wake it has not read. The key lives on the agent's command line, nowhere else.
 function wait() {
-  ask('next', {}).then(function (r) {
+  ask('next', READ ? { read: READ } : {}).then(function (r) {
     if (r.body && r.body.code === 'signed-off') end(1, 'deskAgentEar: this agent is signed off; the desk clears it, or your listen does', true);
     if (refusedBy(r) || !Array.isArray(r.body.lines)) end(1, 'deskAgentEar: ' + r.status + ' ' + JSON.stringify(r.body), true);
-    if (r.body.lines.length) end(0, r.body.lines.join('\n'));
+    const key = typeof r.body.key === 'string' ? r.body.key : '';
+    if (r.body.lines.length) end(0, r.body.lines.join('\n') + '\nnext: node deskAgentEar.js ' + port + (key ? ' --read ' + key : ''));
     setTimeout(wait, PAUSE_MS);
   });
 }

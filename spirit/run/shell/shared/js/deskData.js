@@ -1,4 +1,6 @@
-// spirit/run/shell/js/desk/data.js
+// spirit/run/shell/shared/js/deskData.js
+// A DESK COMPONENT'S SHARED PART, SO NOT IN shell/js (goal/G41.11). Andy: "shell/js/ is for core shell elements! ...
+// desk components can make their own shared stuff in spirit/run/shell/shared/js".
 // THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (shell/js/spiritData.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
@@ -10,7 +12,8 @@
 //   desk/current  the goal the stream last pushed whole;  desk/change  the newest change number heard
 // The rows come as jobs of module process/js/desk: in the page as the desk's publishes, in a server that follows the
 // desk's stream (deskClient) through appServer's streamListener (js/appServer.js), which hands each row in exactly so.
-// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim).
+// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); a
+// bundle of them (goal/G41.11) is taken row by row.
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
 (function (root) {
   var D = (root.spirit || {}).data;
@@ -83,7 +86,13 @@
       var files = (whole.files || []).filter(function (f) {
         return gone ? f.by + '|' + f.path !== gone : !(o.row && f.by === o.row.by && f.path === o.row.path);
       });
-      if (!o.removed && o.row) files.push({ path: String(o.row.path), by: String(o.row.by), core: o.row.core === true, grant: String(o.row.grant || '') });
+      // A FILE ADDED AFTER GO KEEPS ITS MARK (goal/G41.11): the desk marks it late: true (desk.js isLate), and the entry
+      // rebuilt here carries it, as item.files answers it.
+      if (!o.removed && o.row) {
+        var entry = { path: String(o.row.path), by: String(o.row.by), core: o.row.core === true, grant: String(o.row.grant || '') };
+        if (o.row.late === true) entry.late = true;
+        files.push(entry);
+      }
       // Core files first, then by path (desk.js item.files).
       files.sort(function (a, b) { return a.core !== b.core ? (a.core ? -1 : 1) : a.path < b.path ? -1 : a.path > b.path ? 1 : 0; });
       keep(id, { files: files, filesMore: false });
@@ -91,7 +100,10 @@
   }
   function published(o) {
     if (!o || typeof o !== 'object') return;
+    // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] } (desk.js
+    // bundled), and each row of it is taken as the single row it is.
     if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
+    if (Array.isArray(o.rows)) { o.rows.forEach(published); return; }
     if (o.table) { side(o); return; }
     var it = facts(o.item);
     if (!it) return;

@@ -287,6 +287,45 @@ function listRowVerb(verb, has, adding, suite) {
     },
   };
 }
+// A LIST OF PATHS IN ONE WRITE, FOR THE DESK ONLY (goal/G41.11). Andy: "agreed to publishing lists, FOR DESK ONLY, this
+// is NOT a general rule". item.files.add {id, paths: [...]} beside the one row's {id, path}: the caller's list in its
+// order, cut at one answer's room by a sized probability bucket (every path at probability 0, so the order stands);
+// what fits lands on the caller's list in one write, each path checked as the one row's is, and the answer says how
+// many landed (added) and whether the rest was cut (more), so the caller sends the rest again. Not a pattern for other
+// verbs: his ruling names the desk alone.
+function filesAddVerb(one) {
+  return {
+    request: { id: '', path: '' }, reply: { change: 0, added: 0, more: false },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x) || typeof x.id !== 'string') return false;
+      if (!Object.prototype.hasOwnProperty.call(x, 'paths')) return one.accepts(x);
+      return Object.keys(x).length === 2 && Array.isArray(x.paths) && x.paths.length > 0 &&
+        x.paths.every(function (p) { return typeof p === 'string' && p !== ''; });
+    },
+    handler: function (a, caller) {
+      if (!Array.isArray(a.paths)) return { change: one.handler(a, caller).change, added: 1, more: false };
+      const w = writerOf(caller);
+      const it = itemFor(walkState(), a);
+      const asked = a.paths.map(String).filter(function (p, i, all) { return all.indexOf(p) === i; });
+      const bucket = createProbabilityBucket(asked.length);
+      asked.forEach(function (p) { bucket.seatFor(0, p); });
+      const cut = bucket.serialize(null, ANSWER_ROOM);
+      const paths = cut.items;
+      if (!paths.length) throw tooLarge(Buffer.byteLength(JSON.stringify(asked.slice(0, 1)), 'utf8'), ANSWER_ROOM);
+      const mine = (it.files && Array.isArray(it.files[w.by])) ? it.files[w.by] : [];
+      const climbs = paths.filter(function (p) { return p.replace(/\\/g, '/').split('/').indexOf('..') !== -1; });
+      if (climbs.length) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + climbs.join(', '));
+      const there = paths.filter(function (p) { return mine.indexOf(p) !== -1; });
+      if (there.length) throw refusedWhy('bad-request', there.join(', ') + (there.length === 1 ? ' is' : ' are') + ' on the list of ' + it.id + ' already');
+      // goal/G40.13, as the one row's: each file's own test, and a shell file's ui rules, decided at the write.
+      const body = { id: it.id, paths: paths, by: w.by, key: w.key };
+      const tests = paths.map(ownProductTest).filter(function (t) { return !!t; });
+      if (tests.length) body.tests = tests;
+      if (paths.some(function (p) { return /^spirit\/run\/shell\//.test(p.replace(/\\/g, '/')); })) body.uiRules = autoAttachKeys('ui');
+      return { change: write('item.files.add', body).change, added: paths.length, more: !!cut.truncated };
+    },
+  };
+}
 function ruleRowVerb(verb, adding) {
   return {
     request: { id: '', rule: '' }, reply: { change: 0 },
@@ -580,7 +619,7 @@ function rowsOf(s, it) {
       const isCore = core.isCore(String(p)) === true;
       const grant = grantOf(it, String(p), isCore);
       out.push({ key: 'files|' + holder + '|' + p, table: 'files', id: [holder, String(p)], cols: [holder, String(p), i, String(s.agentKey[holder] || holder), isCore ? 1 : 0, grant],
-        out: function () { return { path: String(p), by: holder, core: isCore, grant: grant }; } });
+        out: function () { const o = { path: String(p), by: holder, core: isCore, grant: grant }; if (isLate(it, holder, p)) o.late = true; return o; } });
     });
   });
   Object.keys(it.claims || {}).forEach(function (label) {
@@ -1062,17 +1101,21 @@ function shownLine(s, l) {
 // HIS ANSWER TO A RED Q GOES TO ITS PLACER (goal/G41.2). Andy, in the item's box: "the desk allows each agent one red Q
 // at the time, per item. when the user's chat time starts with Q<number> the desk must direct that line to the agent who
 // posted the Q". A line starting Q<n>: on an item holding that Q is addressed to the key that placed it.
+// AN ADDRESS ONLY WITH PUNCTUATION AFTER IT (goal/G41.11). Andy: "an address is an agents nick, or all followed by any
+// punctuation ... so that a wake up is no accident". So "all" and a nick count only when punctuation (or a symbol)
+// follows at once: "wsl, look" and "all: ..." are addressed, "wsl is here" and "all agents seem busy" are not. The
+// space that goal/G21.1 allowed after a nick went with this ruling; do not bring it back.
 function addressOf(s, text, it) {
   const t = String(text);
   const q = /^\s*(Q\d+)\s*:/i.exec(t);
   const asked = q && it ? (it.checks || []).filter(function (c) { return c.kind === 'Q' && String(c.number).toUpperCase() === q[1].toUpperCase(); })[0] : null;
   const placer = asked ? placerOf(s, asked) : '';
   if (placer) return { to: [placer], q: asked.number };
-  if (/^\s*all(?=[\s\p{P}\p{S}])/iu.test(t)) {
+  if (/^\s*all(?=[\p{P}\p{S}])/iu.test(t)) {
     const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
     return { to: known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).included; }), all: true };
   }
-  const m = /^\s*([a-z0-9]{1,8})(?=[\s\p{P}\p{S}])/iu.exec(t);
+  const m = /^\s*([a-z0-9]{1,8})(?=[\p{P}\p{S}])/iu.exec(t);
   if (m) {
     const nick = m[1].toLowerCase();
     const key = Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === nick; })[0];
@@ -1247,8 +1290,9 @@ function apply(s, r, b, item, goalOf) {
       it.boxBy = String(r.by || ''); it.boxKey = madeBy(r); it.boxAt = String(r.at || '');
       // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9), by key since goal/G21.1: that is the one write of a hold.
       if (it.boxTakenBy && holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
-      // A written box ends a cap still offered (goal/G21.1): the cap was for this text.
-      it.capOffer = null;
+      // A written box ends a cap still offered (goal/G21.1): the cap was for this text. goal/G41.11: unless the write
+      // left it red, when the desk offers the cap anew (box.write's capOffer).
+      it.capOffer = Array.isArray(b.capOffer) ? b.capOffer.map(String) : null;
       return;
     case 'check.add': {
       const kind = String(b.kind);
@@ -1301,6 +1345,11 @@ function apply(s, r, b, item, goalOf) {
         } else if (b.cap === true) {
           it.capOffer = line.to.slice();
         }
+      } else if (r.by === 'desk' && Array.isArray(b.to)) {
+        // THE DESK'S AUTO-CAP LINE (goal/G41.11): addressed as his cap line is, its to the keys the cap is offered to,
+        // so each of them is woken and only they hear it.
+        line.to = b.to.map(String);
+        if (b.cap === true) it.capOffer = line.to.slice();
       } else if (r.by === 'andy') {
         // HIS "<nick>:" LINE AS IT WAS READ BEFORE goal/G21.1 (goal/G4.23), for the records written then, which carry no
         // address: the agent with that nick takes it under the label it writes with.
@@ -1557,10 +1606,19 @@ function apply(s, r, b, item, goalOf) {
       if (!it) return;
       if (!it.files) it.files = Object.create(null);
       const mine = (it.files[r.by] = it.files[r.by] || []);
-      if (mine.indexOf(String(b.path)) === -1) mine.push(String(b.path));
-      coreGrantAfter(it, r, String(b.path));
+      // A LIST IN ONE WRITE (goal/G41.11, for the desk only): paths, already cut at one payload by the verb; or one path.
+      const adds = (Array.isArray(b.paths) ? b.paths : [b.path]).map(String);
+      adds.forEach(function (p) {
+        if (mine.indexOf(p) === -1) mine.push(p);
+        // A FILE ADDED AFTER HIS GO IS MARKED LATE (goal/G41.11): allowed, and the item says so, as holder|path.
+        if (it.go === true) { if (!Array.isArray(it.lateFiles)) it.lateFiles = []; if (it.lateFiles.indexOf(r.by + '|' + p) === -1) it.lateFiles.push(r.by + '|' + p); }
+      });
+      adds.forEach(function (p) { coreGrantAfter(it, r, p); });
       // goal/G40.13: the file's own product test joins the suites, and a shell file's ui rules join the attached.
-      if (b.test) { if (!Array.isArray(it.suites)) it.suites = []; if (it.suites.indexOf(String(b.test)) === -1) it.suites.push(String(b.test)); }
+      (Array.isArray(b.tests) ? b.tests : b.test ? [b.test] : []).forEach(function (t) {
+        if (!Array.isArray(it.suites)) it.suites = [];
+        if (it.suites.indexOf(String(t)) === -1) it.suites.push(String(t));
+      });
       if (Array.isArray(b.uiRules)) {
         if (!Array.isArray(it.attached)) it.attached = [];
         b.uiRules.forEach(function (k) { if (it.attached.indexOf(String(k)) === -1) it.attached.push(String(k)); });
@@ -1571,6 +1629,7 @@ function apply(s, r, b, item, goalOf) {
       if (!it || !it.files || !Array.isArray(it.files[r.by])) return;
       it.files[r.by] = it.files[r.by].filter(function (p) { return p !== String(b.path); });
       if (!it.files[r.by].length) delete it.files[r.by];
+      if (Array.isArray(it.lateFiles)) it.lateFiles = it.lateFiles.filter(function (k) { return k !== r.by + '|' + String(b.path); });
       coreGrantAfter(it, r, '');
       return;
     }
@@ -1948,8 +2007,15 @@ function phaseRulesOf(s, it) {
 // AN OPEN RED QUESTION (goal/G6.8). Andy: "i want mechanical tracking of design-greens. Yes i want opens to light up my
 // list with ERROR icons." An item is design-green when none is open; his End design and a Go wait for green.
 function openQ(it) { return !!it && it.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open'; }); }
+// FILES KNOWN IN DESIGN (goal/G41.11): a code item with an empty file list is not green, so his End design and his Go
+// wait for it as they wait for an open red question. Why an item is not green, or '' when it is.
+function redWhy(it) {
+  if (openQ(it)) return 'carries an open red question; answer or close it first';
+  if (it && it.code === true && !filesOf(it).length) return 'is a code item with an empty file list; list its files first (item.files.add)';
+  return '';
+}
 function notGreen(s, ids) {
-  return ids.filter(function (id) { const m = s.items[id]; return m && !m.closed && !m.done && openQ(m); });
+  return ids.filter(function (id) { const m = s.items[id]; return m && !m.closed && !m.done && !!redWhy(m); });
 }
 
 // LIMBO (goal/G5.4). Andy (andy/NOFACE.md): "when 'go' was pressed/consumed on an item, and no agent is working on
@@ -1986,6 +2052,11 @@ function liveAgents(s) {
   return Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
 }
 
+// THE BOX MEASURED AS ITS ONE ANSWER (goal/G2.2 note 1: "orange at 50%, red at 75%"): its bytes, and whether it is red,
+// the one test the facts' full and the auto-cap of goal/G41.11 both read.
+function boxSize(box, version) { return Buffer.byteLength(JSON.stringify({ box: String(box), version: version }), 'utf8'); }
+function boxFull(box, version) { return boxSize(box, version) >= limits.ANSWER_MAX * 0.75; }
+function isLate(it, by, p) { return Array.isArray(it.lateFiles) && it.lateFiles.indexOf(by + '|' + String(p)) !== -1; }
 // THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by, core }, sorted by path
 // so the Details draws it the same way twice. core is coreFiles.isCore, never a second list of its own.
 function filesOf(it) {
@@ -1994,7 +2065,10 @@ function filesOf(it) {
   const out = [];
   Object.keys(held).forEach(function (by) {
     (Array.isArray(held[by]) ? held[by] : []).forEach(function (p) {
-      out.push({ path: String(p), by: by, core: core.isCore(String(p)) === true });
+      const e = { path: String(p), by: by, core: core.isCore(String(p)) === true };
+      // goal/G41.11: added after his Go; a file listed before it carries no mark.
+      if (isLate(it, by, p)) e.late = true;
+      out.push(e);
     });
   });
   return out.sort(function (a, b) { return a.path < b.path ? -1 : a.path > b.path ? 1 : (a.by < b.by ? -1 : 1); });
@@ -2025,8 +2099,8 @@ function facts(s, it) {
     // THE FILES TOUCHED (goal/G8.8) are item.files' own answer since goal/G32.2: a 142-file list in the facts made
     // every write to the item too large to come back. The facts say only how many.
     fileCount: filesOf(it).length,
-    // DESIGN-GREEN (goal/G6.8): no open red question on it.
-    green: !openQ(it),
+    // DESIGN-GREEN (goal/G6.8): no open red question on it; goal/G41.11: and a code item has a file listed (redWhy).
+    green: !redWhy(it),
     // goal/G5.7: the phase it is in, and who did each.
     code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
     // goal/G27.10: who created it, '' for an item from a session or before the creator was recorded.
@@ -2063,9 +2137,8 @@ function facts(s, it) {
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against limits.ANSWER_MAX: half from 50%, full from 75%;
   // nothing is refused below the answer limit, and the split is negotiated, never automated.
-  const boxBytes = Buffer.byteLength(JSON.stringify({ box: it.box, version: it.version }), 'utf8');
-  f.half = boxBytes >= limits.ANSWER_MAX * 0.5;
-  f.full = boxBytes >= limits.ANSWER_MAX * 0.75;
+  f.half = boxSize(it.box, it.version) >= limits.ANSWER_MAX * 0.5;
+  f.full = boxFull(it.box, it.version);
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
@@ -2221,8 +2294,9 @@ const CLIENT_WAIT_MS = 10000;
 function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
   const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
-  return rules.concat([S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
-    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
+  // goal/G41.11: handed as bundles of rows (bundled).
+  return bundled(rules.concat([S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
+    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); })), S.change);
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -2259,11 +2333,28 @@ function pushGoalWhole(gid) {
   const s = S;
   const g = s.goals[gid];
   if (!g) return;
-  [gid].concat(g.members).forEach(function (id) {
-    const it = s.items[id];
-    if (!it) return;
-    publishOne(rowPublish(s, id, 'goal.whole', s.change));
-  });
+  // goal/G41.11: as bundles of rows, not one publish a row.
+  bundled([gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
+    .map(function (id) { return rowPublish(s, id, 'goal.whole', s.change); }), s.change).forEach(publishOne);
+}
+// A LIST PUBLISHED AS BUNDLES, FOR THE DESK ONLY (goal/G41.11). Andy: "agreed to publishing lists, FOR DESK ONLY, this
+// is NOT a general rule". A list of rows the desk publishes together (a goal pushed whole, a subscriber's bootstrap)
+// goes out as { change, rows: [...] }, several rows a publish, each cut at one answer's room by a sized probability
+// bucket (every row at probability 0, so the list's order stands). A row too large to share a bundle goes alone, as it
+// went before; every row already fits one publish (box.write, largestPanel). Its readers take each row of rows as the
+// row it is.
+function bundled(rows, change) {
+  const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ change: change, rows: [] }), 'utf8');
+  const out = [];
+  let rest = rows.slice();
+  while (rest.length) {
+    const bucket = createProbabilityBucket(rest.length);
+    rest.forEach(function (row) { bucket.seatFor(0, row); });
+    const n = Math.max(1, bucket.serialize(null, room).items.length);
+    out.push({ change: change, rows: rest.slice(0, n) });
+    rest = rest.slice(n);
+  }
+  return out;
 }
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
 // every item where somebody holds something (signoff and his exclusion let go of what that agent held).
@@ -3166,7 +3257,12 @@ appServer.serve(withPlugins({
       // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
       if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refusedWhy('bad-request', 'a line starting OPEN is not box text: an open point is a Q check');
-      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+      // RED OFFERS THE CAP (goal/G41.11). Andy: "red should trigger an auto-cap". A write that leaves the box red (the
+      // facts' full, the dialog's red border) has the desk offer the cap itself, as his "cap" line does (addressOf):
+      // to every included agent with cap on, decided at the write and kept in it (capOffer). Below red, nothing.
+      const st0 = walkState();
+      const capOffer = boxFull(String(a.text), (Number(a.version) || 0) + 1) ? addressOf(st0, 'cap', null).to : null;
+      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }, capOffer ? { capOffer: capOffer } : {}), function (st, it) {
         // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
         // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
         // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
@@ -3175,7 +3271,13 @@ appServer.serve(withPlugins({
         if (it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
         if (a.version !== it.version) throw refused('box-moved');
       });
-      return { change: s.change, version: s.items[a.id].version };
+      const written = { change: s.change, version: s.items[a.id].version };
+      // AND WAKES THEM AS HIS LINE DOES (goal/G41.11): a desk line under the item, its record's to the very keys the cap
+      // is offered to (the shape of his addressed lines), so each of their deskClients wakes its agent.
+      if (capOffer && capOffer.length) {
+        write('chat.add', { id: a.id, text: 'the box is red: the cap is offered to the agents with cap on (box.take, then one write)', to: capOffer, cap: true, by: 'desk', key: '' });
+      }
+      return written;
     },
   },
   'check.add': {
@@ -3661,7 +3763,8 @@ appServer.serve(withPlugins({
   // ONE ROW A WRITE (goal/G40.3; the verbs Andy approved: "yes to the named verbs"): item.files.add and .remove take one
   // path of the writer's own list; item.suites.add and .remove one suite of the item's. Each refuses a path already
   // there or not there, naming it.
-  'item.files.add': listRowVerb('item.files.add', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, true),
+  // goal/G41.11: or a list of paths in one write (filesAddVerb).
+  'item.files.add': filesAddVerb(listRowVerb('item.files.add', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, true)),
   'item.files.remove': listRowVerb('item.files.remove', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, false),
   'item.suites.add': listRowVerb('item.suites.add', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, true, true),
   'item.suites.remove': listRowVerb('item.suites.remove', function (it, w, p) { return Array.isArray(it.suites) && it.suites.indexOf(p) !== -1; }, false, true),
@@ -3879,8 +3982,9 @@ function pressCheck(a) {
     // goal/G33.4: an item's own End design waits for its own green alone.
     const red = a.what === 'end-design' && !it.goal ? notGreen(st, [it.id])
       : (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
-    if (red.length) throw notOffered(red.join(', ') + (red.length === 1 ? ' carries' : ' carry') + ' an open red question; answer or close it first');
-    if (a.what === 'go' && openQ(it)) throw notOffered(it.id + ' carries an open red question; answer or close it first');
+    // goal/G41.11: each one named with its own why (redWhy): an open red question, or a code item's empty file list.
+    if (red.length) throw notOffered(red.map(function (id) { return id + ' ' + redWhy(st.items[id]); }).join('; '));
+    if (a.what === 'go' && redWhy(it)) throw notOffered(it.id + ' ' + redWhy(it));
     // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
     // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
     // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).

@@ -239,6 +239,50 @@ function fromKept(name, args) {
   }
   return null;
 }
+// A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
+// node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
+// them FIRST the cache"): the desk verb with kept, answered from the cache only and never asked of the desk, so a
+// lagging desk cannot stall it. A kept read of KEPT_READS the cache holds answers as the desk would; a kept item.get
+// carries beside the facts the current goal (current), its own agent (self) and whether the item's goal or the current
+// goal is in design (goalDesign, from their own kept facts), and one with no id answers current and self alone.
+// Anything else is refused not-kept, saying why.
+function keptRead(name, args) {
+  const notKept = function (why) { return { ok: false, code: 'not-kept', why: why }; };
+  if (KEPT_READS.indexOf(name) === -1) return notKept(name + ' is no kept read (' + KEPT_READS.join(', ') + ')');
+  const current = String(dataSet.get('desk/current') || '');
+  const id = String((args && args.id) || '');
+  if (name === 'item.get' && !id) return { item: '', current: current, self: SELF };
+  const got = fromKept(name, args);
+  if (!got) return notKept(name + ' of ' + (id || 'no item') + ' is not in the cache' + (current ? ' (only the current goal ' + current + ' is kept)' : ' (no goal pushed yet)'));
+  if (name !== 'item.get') return got;
+  const row = dataSet.get('deskItems/' + id) || {};
+  const goalRow = dataSet.get('deskItems/' + String(row.goal || id)) || {};
+  const currentRow = current ? (dataSet.get('deskItems/' + current) || {}) : {};
+  return Object.assign({}, got, { current: current, self: SELF, goalDesign: goalRow.design === true || currentRow.design === true });
+}
+// WHOLE FROM THE FIRST PUSH (goal/G41.11; the box: "the current goal's items' file lists and checks are kept whole from
+// the first push"): the push brings an item's facts, never its file list or its checks, so on the first push of an
+// item of the current goal both are read once, here, into the cache; the desk's side rows keep them current from then
+// on (the translator's side). Until then a kept read of them is refused not-kept, never guessed.
+const wholeAsked = new Set();
+function keepWhole(facts) {
+  const id = String((facts && facts.id) || '');
+  const current = String(dataSet.get('desk/current') || '');
+  const goal = facts && facts.goal === '' ? id : String((facts && facts.goal) || '');
+  if (!id || !current || goal !== current) return;
+  let to = '';
+  try { to = deskKey(); } catch (e) { return; }
+  const whole = dataSet.get('deskItem/' + id) || {};
+  ['item.files', 'item.checks'].forEach(function (verb) {
+    const part = verb === 'item.files' ? 'files' : 'checks';
+    const key = verb + ' ' + id;
+    if (Array.isArray(whole[part]) || wholeAsked.has(key)) return;
+    wholeAsked.add(key);
+    countedAsk(to, verb, { id: id }).answer.then(function (got) {
+      if (got && typeof got === 'object' && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(verb, { id: id }, got);
+    }, function () {}).then(function () { wholeAsked.delete(key); });
+  });
+}
 
 // ONE ROW OF THE DESK'S STREAM, as appServer hands it after it took it into spirit.data (onRow): if it is a line meant
 // for this agent, into what its next wait hands over; a row that holds a phase nobody holds may mean a job.
@@ -250,8 +294,26 @@ function fromKept(name, args) {
 // them, each once, in order. They are handed with the next wake (handOver) and wake nothing by themselves. A line or
 // change meant for the agent is handed as DESK (it is the agent's to act on); the rest as NEWS. Nothing is asked of
 // the desk.
+// NO CAP DROPS NEWS (goal/G41.11; Andy: "why would the deskClient let an agent do anything until the agent has received
+// those notices?"): what came while the agent was busy is all handed over, over as many waits as it takes (handOver).
+// The cap that dropped the oldest past 200 lines, handed or not, is gone.
+// EVERY STORE SHEDS PAST A CAP (Andy's standing rule), SO THIS ONE DOES, BUT ONLY OF NEWS NEVER HANDED: a line handed
+// and not yet read (unread: true, put back by `next`) is the agent's already and is never shed, or a lost answer
+// would lose it. Past NEWS_MAX_BYTES of news never handed, the oldest of it goes, and the next wake says how many went.
+// The cap is in bytes (lines differ in size) and far above what one goal's stream brings between two waits.
 const sinceWake = [];
-const SINCE_WAKE_MAX = 200;
+const NEWS_MAX_BYTES = 1024 * 1024;
+let newsShed = 0;
+function shedNews() {
+  let bytes = 0;
+  sinceWake.forEach(function (x) { if (!x.unread) bytes += Buffer.byteLength(x.text, 'utf8'); });
+  for (let i = 0; bytes > NEWS_MAX_BYTES && i < sinceWake.length;) {
+    if (sinceWake[i].unread) { i += 1; continue; }
+    bytes -= Buffer.byteLength(sinceWake[i].text, 'utf8');
+    sinceWake.splice(i, 1);
+    newsShed += 1;
+  }
+}
 function inView(goal) {
   const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
   return goal === 0 || (!!cur && goal === Number(cur[1]));
@@ -260,8 +322,7 @@ function lineKeyOf(id, l) { return String(id) + '#' + String(l.at) + '#' + Strin
 function news(key, text) {
   if (sinceWake.some(function (x) { return x.key === key; })) return;
   sinceWake.push({ key: key, text: text });
-  // Bounded while nobody waits: only the newest that could ever fill one answer are kept.
-  while (sinceWake.length > SINCE_WAKE_MAX) sinceWake.shift();
+  shedNews();
 }
 // Which state of a row is news: these fields, as the facts carry them.
 const STATE_FIELDS = ['status', 'phase', 'with', 'go', 'claims', 'verified', 'verifyRed', 'design', 'limbo'];
@@ -323,11 +384,18 @@ function wakeOnHeld(row, change) {
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
+  // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] }; each row is taken
+  // as a single row is, in order, its change the bundle's where it names none. A single row still comes as before.
+  if (Array.isArray(row.rows)) {
+    row.rows.forEach(function (r) { if (r && typeof r === 'object') streamed(r.change === undefined && row.change !== undefined ? Object.assign({ change: row.change }, r) : r); });
+    return;
+  }
   // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write. A wake reads its
   // rules from here and asks the desk for none.
   if (row.rule && row.row && typeof row.row === 'object') { dataSet.set('deskRules/' + String(row.rule), row.row); return; }
   wakeOnHeld(row, keepSinceWake(row));
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
+  if (facts && !row.removed) keepWhole(facts);
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
   // HIS PRESSES THAT OPEN OR MOVE WORK WAKE EVERY AGENT (goal/G41.2; Andy: "you didn't notice end-of design on the item,
@@ -343,12 +411,14 @@ function streamed(row) {
   // TAKE FIRST, THEN WAKE (goal/G27.12, reopened). Andy, 2026-10-17: "when an agent's deskClient takes a chat line for
   // him, all other deskClients should be refused a take, and thus NOT notify their agent." So his line is taken at the
   // desk (line.take, the desk's own rule of who may) before it is handed over; a take the desk refuses drops it, and its
-  // agent is not woken; a take that got no answer hands it over, so nothing is lost to a slow desk.
+  // agent is not woken.
+  // ONLY A TAKE THE DESK ANSWERED WAKES (goal/G41.11; one line, one agent): a take that got no answer (a lagging desk)
+  // wakes nobody, since another agent's take may have landed; the line still comes as NEWS with the next wake.
   let to = '';
   try { to = deskKey(); } catch (e) { return; }
   countedAsk(to, 'line.take', { id: line.take }).answer.then(function (got) {
-    if (outcomeOf(got) !== 'refused') hand();
-  }, hand);
+    if (outcomeOf(got) === 'answered') hand();
+  }, function () {});
 }
 
 const WAKING_PRESSES = ['go', 'go-all', 'end-design', 'reopen'];
@@ -453,6 +523,14 @@ function meantForAgent(row) {
   const m = /^commit ([0-9a-f]{7,40})\b/.exec(said);
   if (m) queuePull(m[1]);
   if (l.by === 'desk' && /^message delivered, /.test(said)) return null;
+  // THE DESK'S LINE ADDRESSED TO THE CAP AGENTS (goal/G41.11): when a box write turns it red the desk offers the cap in a
+  // line whose row names them (to), as his addressed lines do. It wakes this agent as its own with no take, and entitles
+  // it to answer there and take the box (mayChat).
+  if (l.by === 'desk' && Array.isArray(row.to) && row.to.length) {
+    if (row.to.indexOf(SELF_KEY) === -1) return null;
+    entitled[id] = true;
+    return { text: 'DESK desk chat.add ' + body, key: lineKeyOf(id, l) };
+  }
   if (held || (group && l.by === 'desk')) return { text: 'DESK ' + l.by + ' chat.add ' + body, key: lineKeyOf(id, l) };
   return null;
 }
@@ -589,31 +667,81 @@ function wakeWith(trigger) {
   waiting.push(trigger);
   wakers.splice(0).forEach(function (wake) { wake(); });
 }
+// NO LINE IS LOST (goal/G41.11; Andy: "desk and deskClient must work in concert"): a line leaves the queue only as it
+// goes into the answer. What does not fit stays queued, in its place, and owed makes the next wait hand it over at
+// once; a line too big for an answer on its own goes in pieces, its rest queued first for the next wait.
+// A WAKE IS DROPPED ONLY ONCE READ (goal/G41.11; Andy, goal/G41: "The desk ear must not successfully start listening if
+// there is a wake waiting", and of the read key: "good idea, make the red assert it"). Each answer with lines is a wake
+// with its key; what it held stays here (unread) until a later next names that key as read. A next that names no key,
+// or another (an older one, or an answer that never got through), has the unread wake put back first in the queue and
+// handed again at once, under the same key while it holds nothing new; anything that came since makes it a new wake.
+let owed = false;
+let unread = null;
+let again = null;
+let wakeCount = 0;
+function readWake(read) {
+  if (!unread) return;
+  const was = unread;
+  unread = null;
+  if (read && read === was.key) return;
+  waiting.unshift.apply(waiting, was.items.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger; }));
+  sinceWake.unshift.apply(sinceWake, was.items.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: true }; }));
+  // A rule's text it handed comes again too.
+  was.rules.forEach(function (tag) { rulesHanded.delete(tag); });
+  again = { key: was.key, texts: was.items.map(function (x) { return x.text; }).join('\n') };
+  owed = true;
+}
 function handOver(to, t0) {
   moveSince();
+  owed = false;
   const triggers = waiting.splice(0);
   // A trigger's own NEWS copy goes: it comes once, as the trigger.
   const items = sinceWake.splice(0).filter(function (x) { return !triggers.some(function (w) { return w.key && w.key === x.key; }); });
-  triggers.forEach(function (w) { items.push({ key: w.key || '', text: w.text }); });
-  const all = items.map(function (x) { return x.text; });
+  // News shed past the cap is said, never silent (NEWS_MAX_BYTES).
+  if (newsShed) { items.unshift({ key: '', text: 'NEWS ' + newsShed + ' older line(s) of news were shed past the news cap before they could be handed' }); newsShed = 0; }
+  triggers.forEach(function (w) { items.push({ key: w.key || '', text: w.text, trigger: w }); });
   const lines = [];
-  for (let i = all.length - 1; i >= 0; i--) {
-    let text = all[i];
+  let left = items.length;
+  let rest = null;
+  for (let i = items.length - 1; i >= 0; i--) {
+    let text = items[i].text;
     if (!lines.length) {
-      // One line too big for an answer on its own is cut to fit, never held back for ever.
+      // One line too big for an answer on its own is cut to fit, never held back for ever; its rest is queued.
+      const whole = text;
       while (text.length > 1 && Buffer.byteLength(JSON.stringify({ lines: [text], more: true }), 'utf8') > ANSWER_ROOM) text = text.slice(0, Math.floor(text.length / 2));
+      if (text.length < whole.length) rest = { key: '', text: whole.slice(text.length) };
     } else if (Buffer.byteLength(JSON.stringify({ lines: [text].concat(lines), more: true }), 'utf8') > ANSWER_ROOM) break;
     lines.unshift(text);
+    left = i;
   }
+  // What did not go back into the queue, oldest first, as it stood: triggers to the waiting, the rest to the news.
+  const back = items.slice(0, left);
+  if (rest) back.push(rest);
+  waiting.unshift.apply(waiting, back.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger; }));
+  sinceWake.unshift.apply(sinceWake, back.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: x.unread === true }; }));
+  owed = back.length > 0;
   agentState = 'busy';
-  const cut = lines.length < all.length;
+  const cut = owed;
+  // What this wake holds, unread until its key comes back: the piece that went, not the rest that stays.
+  // The line cut to fit is the newest, the last of them; its piece is handed again as news, its rest stays queued.
+  const sent = items.slice(left);
+  if (rest && sent.length) sent[sent.length - 1] = { key: '', text: lines[lines.length - 1] };
+  // The unread wake handed again keeps its key while it holds the same lines; anything else is a new wake.
+  const same = !!again && again.texts === sent.map(function (x) { return x.text; }).join('\n');
+  wakeCount += 1;
+  const flight = { key: same ? again.key : Date.now().toString(36) + '.' + wakeCount, items: sent, rules: [] };
+  again = null;
+  unread = flight;
+  const rulesBefore = new Set(rulesHanded);
   // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
   // deskClient?", and "the deskClient is already supposed to have every fucking applicable rule in it's cache". The
   // lines are taken off the queue above, so an answer later than the node's wait (12 s) lost them: a new rule's text was
   // asked of the desk, over the relay, at 5 to 10 s each on 2026-10-27. The rules come from the stream now (rulesOfWake).
   return rulesOfWake(to, lines).then(function (rules) {
-    rules.forEach(function (l) { if (Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true }), 'utf8') <= ANSWER_ROOM) lines.push(l); });
-    const answer = cut ? { lines: lines, more: true } : { lines: lines };
+    rulesHanded.forEach(function (tag) { if (!rulesBefore.has(tag)) flight.rules.push(tag); });
+    const room = function (l) { return Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true, key: flight.key }), 'utf8') <= ANSWER_ROOM; };
+    rules.forEach(function (l) { if (room(l)) lines.push(l); });
+    const answer = cut ? { lines: lines, more: true, key: flight.key } : { lines: lines, key: flight.key };
     return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
   });
 }
@@ -726,17 +854,26 @@ const server = appServer.serve({
   'desk': {
     // {name, json}: the desk verb's name and its arguments as JSON. The argument was verb until goal/G30.6, when calls
     // went flat on /api/spirit and a verb argument collided with the name of the call (Andy, 2026-10-20: "yes").
-    request: { name: '', json: '' }, reply: {},
+    // kept (goal/G41.11) may be left out: {name, json} is every other caller's ask, as before.
+    request: { name: '', json: '', kept: false }, reply: {},
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['name', 'json', 'kept'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.name === 'string' && typeof x.json === 'string' &&
+        (x.kept === undefined || typeof x.kept === 'boolean');
+    },
     handler: function (a, caller) {
       ownerOnly(caller);
       // A SIGNED-OFF AGENT WRITES NOTHING (goal/G27.12): the desk's signoff holds here too, not only on the desk's list (Andy 2026-10-16).
       if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
-      const to = deskKey();
       let args = null;
       try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
       // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
       if (!a.name) throw refused('bad-request', { why: 'desk needs the name of the desk verb to ask' });
       if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
+      // A KEPT READ (goal/G41.11; the commit check's interface): answered from the cache alone, never asked of the desk.
+      if (a.kept === true) return keptRead(a.name, args);
+      const to = deskKey();
       // CHAT IS GATED (goal/G27.6; Andy 2026-10-16): on an item this agent holds, or where it has taken a line, its chat may
       // be written; anywhere else it may only reply to lines it successfully took. If the desk cannot say, it is refused.
       // A READ OF THE HELD ITEM, FROM WHAT IS KEPT (goal/G33.3): nothing asked of the desk.
@@ -778,10 +915,19 @@ const server = appServer.serve({
   // THE AGENT WAITS HERE. What is waiting for it is handed over at once; else the desk is asked while the wait
   // lasts, and the wait ends with nothing inside the node's 12 s. The agent's listener asks again.
   'next': {
-    request: {}, reply: { lines: [''] },
+    // read (goal/G41.11): the key of the wake the agent last read; left out, no wake is read.
+    request: { read: '' }, reply: { lines: [''] },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      return Object.keys(x).every(function (k) { return k === 'read'; }) && (x.read === undefined || typeof x.read === 'string');
+    },
     handler: function (a, caller) {
       ownerOnly(caller);
       if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
+      // The unread wake is dropped once its key comes back, else handed again at once. A wait that names no key reads
+      // nothing: the wake is handed again (Andy, 2026-10-27: "don't even THINK of compromising product code for the
+      // convenience of a bunch of crappy tests that are NOT product, just let the fuckers fail").
+      readWake(a.read === undefined ? '' : String(a.read));
       // ONLY WHEN IDLE: the agent asks here when it waits, so it is idle; a line is handed over only then.
       agentState = 'idle';
       const to = deskKey();
@@ -826,7 +972,8 @@ const server = appServer.serve({
         });
       }
       function wait() {
-        if (waiting.length) return ending(function () { return handOver(to, t0); });
+        // What one answer could not hold comes with the next wait at once (owed, goal/G41.11).
+        if (waiting.length || (owed && sinceWake.length)) return ending(function () { return handOver(to, t0); });
         const now = Date.now();
         if (now >= deadline) return ending(function () { moveSince(); return { lines: [] }; });
         // NOTHING IS ASKED (goal/G33.4): the desk's stream brings what is meant for its agent; the time ends this, or a
@@ -897,6 +1044,20 @@ const server = appServer.serve({
       return { items: r.items, more: !!r.more };
     },
   },
+  // THE CACHE DUMP (goal/G41.11). Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/
+  // <fixedFileName>.json". Owner-only like every verb here: the whole cache, its spirit.data tree, as JSON, to
+  // cache.json in this server's own state folder and nowhere else; it takes no path, so a caller cannot name one. For
+  // looking, never for deciding.
+  'cache.dump': {
+    request: {}, reply: { file: '', bytes: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const text = JSON.stringify(dataSet.data);
+      try { fs.writeFileSync(path.join(STATE, 'cache.json'), text); }
+      catch (e) { throw refused('not-saved', { why: 'could not write cache.json: ' + ((e && e.message) || e) }); }
+      return { file: 'cache.json', bytes: Buffer.byteLength(text, 'utf8') };
+    },
+  },
 // What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.
 //
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
@@ -905,7 +1066,7 @@ const server = appServer.serve({
 }, {
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
-  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'js', 'desk', 'data.js'), onRow: streamed },
+  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed },
   dependencies: ['deskClient.streamListener'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },

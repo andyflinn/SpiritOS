@@ -31,6 +31,15 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - **No wake is lost**: a line leaves the queue only once its agent has it. What does not fit one answer stays for the
   next wait, which hands it over at once; nothing that comes while the agent is busy is dropped by a cap. Every one of
   250 lines that came while it was busy is handed over, over as many waits as it takes.
+- **A wake is dropped only once read** (Andy, goal/G41: "The desk ear must not successfully start listening if there
+  is a wake waiting", and of the read key: "good idea, make the red assert it"): `next` answers each wake with its
+  `key`. A wait that names no key, or an older one (`read`), gets the unread wake again at once, under the same key;
+  naming its key drops it, and the next wait hands only what came after, under a new key.
+- **The news cap sheds only news never handed**, by bytes (Andy's standing rule: every store sheds past a cap), and
+  the next wake says how many went; a line of a wake not yet read is never shed.
+- **A bundle is its rows**: a publish `{ change, rows: [...] }` is taken row by row, as each row alone would be.
+- **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
+  it names as its own (DESK), with no take, and entitles it to answer there and take the box.
 
 ## What its test must try to break
 
@@ -40,10 +49,11 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - A grant on an item the agent holds, placed by another, that does not wake it.
 - A take with no answer that wakes the agent.
 - Lines cut from an answer, or past a cap, that never come.
+- A wake dropped before its key comes back, or an unread wake not handed again at once.
 
 ## Not testable as written here
 
 - "An answer that does not get through" (the node's 12 s door or the listener giving up after deskClient answered)
-  cannot be seen from inside deskClient: its handler's answer has left. Holding a line until the agent has it needs
-  the agent to say what it got (an acknowledgement on its next wait); that is a protocol change to `next` and
-  `deskAgentEar.js`, to be named in the shape before it is built.
+  cannot be seen from inside deskClient: its handler's answer has left. What is tested is its stand-in: a wait that
+  names no key, or an older one. The listener's half (its arm, `--read <key>`, passed to `next` as `read`) is
+  `deskAgentEar.js`'s, tested beside it.

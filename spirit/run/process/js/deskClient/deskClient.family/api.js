@@ -7,12 +7,16 @@
 // here, in the same commit.
 module.exports = {
   verbs: {
+    // goal/G41.11: the whole cache to cache.json in its own state folder; it takes no path.
+    'cache.dump': {},
     // agent names the persona the desk lifts or gives the signoff for; the handler keeps one state, whoever is named.
     clearSignoff: { agent: 'text?' },
     // One ask of the desk: name the desk verb, json its arguments as a JSON object ('{}' when left out).
-    desk: { name: 'id', json: 'text?' },
+    // kept (goal/G41.11): true answers from deskClient's cache alone, never asking the desk, or refuses not-kept.
+    desk: { name: 'id', json: 'text?', kept: 'bool?' },
     'history.search': { text: 'text?' },
-    next: {},
+    // read (goal/G41.11): the key of the wake the agent last read; deskClient drops that wake only then.
+    next: { read: 'text?' },
     // The key of the node that runs the desk.
     setDesk: { key: 'key' },
     signoff: { agent: 'text?' },

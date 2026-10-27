@@ -252,5 +252,23 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await settle();
   const w4 = await next(w1.key);
   ok(has(w4, 'and then this') && !has(w4, 'read me first') && w4.key && w4.key !== w1.key, 'naming its key drops the wake: the next wait hands only what came after, under a new key', 'fourth wait: ' + short(w4));
+
+  test.subHeading('a bundle of rows is taken row by row');
+  await push({ change: change + 1, rows: [{ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: inside a bundle' } }] });
+  await settle();
+  const b1 = await next(w4.key);
+  ok(has(b1, 'inside a bundle'), 'a line inside a {change, rows} bundle wakes its agent as the same row alone would', 'answer: ' + short(b1));
+
+  test.subHeading('the desk\'s line addressed to the cap agents wakes them, with no take, and entitles them to the box');
+  const takesBefore = asksOf('line.take').length;
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'desk', text: 'the box of goal/G9.4 turned red; the cap is offered' } });
+  await settle();
+  const c1 = await next(b1.key);
+  ok(has(c1, 'DESK desk chat.add') && has(c1, 'the cap is offered') && asksOf('line.take').length === takesBefore, 'the desk\'s line whose to holds its key wakes it as its own, asking no take', 'answer: ' + short(c1) + ', takes ' + (asksOf('line.take').length - takesBefore));
+  const getsBefore = asksOf('item.get').length;
+  const boxTakes = asksOf('box.take').length;
+  let took = null;
+  try { took = await ask('box.take', { id: ITEM4 }); } catch (e) { took = { threw: e.refusal || e.message }; }
+  ok(asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore, 'and its box.take there passes the gate, entitled by that line', 'answer: ' + short(took));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });

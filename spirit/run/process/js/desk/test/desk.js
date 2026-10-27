@@ -112,7 +112,8 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     { goal: OTHER, items: OTHER_ITEMS.map(function (id) { return { id: id, title: 'Other ' + id, blocks: [OTHER.id] }; }) },
     { goal: GOAL, items: ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [GOAL.id] }; }) },
   ]);
-  const pipe = path.join(scratch, 'door.sock');
+  // A pipe on Windows is a \\.\pipe\ name, never a file path (appClient.pipePathFor, as the other suites do).
+  const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };

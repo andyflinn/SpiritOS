@@ -330,11 +330,11 @@ function deskDrawTabs() {
     // ON EVERY TAB, WHERE MUSINGS STOOD (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
     // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
     // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
-    '<button type="button" id="desk-end-design"' + (design ? '' : ' hidden') +
-      ' style="background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode</button>' +
+    // ITS COLOUR IS shell.css's, AND ONLY WHILE UNARMED (goal/G41.9, box v3: armed is red): an inline colour won over the
+    // shell's armed red.
+    '<button type="button" id="desk-end-design" class="desk-design-end"' + (design ? '' : ' hidden') + '>End design mode</button>' +
     // Its twin, in the same spot while design mode is off.
-    '<button type="button" id="desk-start-design"' + (!design ? '' : ' hidden') +
-      ' style="background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>' +
+    '<button type="button" id="desk-start-design" class="desk-design-start"' + (!design ? '' : ' hidden') + '>Start design mode</button>' +
     deskBubblesHtml();
   // NEITHER BY ACCIDENT (desk/G1.12): each an armingButton, made again after each draw.
   deskArming(document.getElementById('desk-end-design'), 'End design mode: sure?', deskEndDesign);
@@ -446,7 +446,7 @@ function deskOnPublished(obj) {
   // CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record, published or not, so reading the chat again on
   // every jump asked the desk once per row. A real gap is a reconnect, and the chat is read again then (deskLoad).
   // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
-  // drawn here, the rest is the dialog's and the kept items' (shell/js/desk/data.js).
+  // drawn here, the rest is the dialog's and the kept items' (shell/shared/js/deskData.js).
   if (obj.table) {
     if (obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
       if (deskGroup) {
@@ -517,7 +517,7 @@ var deskTeamElement = null;
 var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
 // deskClient keeps it in node; loaded once by the app, as the shared element is.
-var DESK_DATA = '/shell/js/desk/data.js';
+var DESK_DATA = '/shell/shared/js/deskData.js';
 function deskLoadData() {
   if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
   if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;

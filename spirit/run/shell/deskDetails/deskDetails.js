@@ -84,6 +84,8 @@ function ddArming() {
 }
 // The second press, as each button wrote before.
 function ddSecondPress(b) {
+  var qclear = b.getAttribute('data-qclear');
+  if (qclear) { ddWrite('chat.add', { id: ddId, text: qclear + ': clear' }); return; }
   var g = b.getAttribute('data-grant');
   if (g) {
     var sent = g === 'all' ? ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).map(function (c) { return c.number; }) : [g];
@@ -227,7 +229,10 @@ function ddButtonsHtml() {
   var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
     // DONE (n) (goal/G4.20 point 3). Andy: "when the done button appears it also shows number of claims [Done (2)]".
     var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
-    if (b !== 'done') return '<button type="button" id="dd-' + b + '">' + label + '</button>';
+    // START AND END DESIGN ASK ARE-YOU-SURE (goal/G41.11). Andy: "the start-design and end-design buttons in an item
+    // must ask: are-you-sure". Armed like Waive (ddArming); the second press is ddSecondPress's.
+    var design = b === 'start-design' || b === 'end-design';
+    if (b !== 'done') return '<button type="button" id="dd-' + b + '"' + (design ? ' data-arming="' + label + ': sure?"' : '') + '>' + label + '</button>';
     var warned = ddDoneWarned(f);
     var done = '<button type="button" id="dd-done"' + (warned ? ' data-arming="Done anyway: sure?" title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
       label + (warned ? ' ' + DD_WARN : '') + '</button>';
@@ -321,7 +326,8 @@ function ddIconsHtml() {
 function ddQsHtml() {
   var qs = ddChecks.filter(function (c) { return c.kind === 'Q' && c.state === 'open'; }).map(function (c) {
     return '<div><span data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</span> ' +
-      '<button type="button" data-qclear="' + ddEsc(c.number) + '" title="remove this red Q">remove</button></div>';
+      // THE REMOVE ASKS ARE-YOU-SURE (goal/G41.11). Andy: "the remove button for red Q's must ask: are-you-sure?".
+      '<button type="button" data-qclear="' + ddEsc(c.number) + '" data-arming="Remove: sure?" title="remove this red Q">remove</button></div>';
   }).join('');
   var cs = ddChecks.filter(function (c) { return c.kind === 'C'; }).map(function (c) {
     var done = c.state === 'passed';
@@ -810,7 +816,7 @@ function ddRename() {
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
 // one cache for deskClient and this page: spirit.data (shell/js/spiritData.js) with the desk's translator
-// (shell/js/desk/data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
+// (shell/shared/js/deskData.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.del('deskItem/' + id); }
@@ -878,8 +884,6 @@ spirit.shell.activateApp({
       }
       var ruleOff = attr('data-rule-remove');
       if (ruleOff) { ddWrite('item.rules.remove', { id: ddId, rule: ruleOff }); return; }
-      var qclear = attr('data-qclear');
-      if (qclear) { ddWrite('chat.add', { id: ddId, text: qclear + ': clear' }); return; }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
       // Leaving for another item: Desk opens it once this one is closed.
       var link = t && t.closest && t.closest('[data-open],[data-open-item]');
@@ -900,13 +904,21 @@ spirit.shell.activateApp({
       // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
       // should close, since it doesn't exist in the list anymore either." Only once the server took it.
       if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
-      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen' || id === 'dd-end-design' || id === 'dd-start-design') { ddPress(id.slice(3)); return; }
+      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
       // goal/G33.3: Verify presses at once, whatever the switch says.
       if (id === 'dd-verify') { ddPress('verify'); return; }
-      if (id === 'dd-rename') { ddRenaming = true; ddPaint(); return; }
+      // THE RENAME OPENS HOLDING THE TITLE (goal/G41.11). Andy: "the rename input field on goal/item detail panel MUST
+      // contain the current title when it's first displayed." Set once, here; a repaint keeps what he types (ddPaint).
+      if (id === 'dd-rename') {
+        ddRenaming = true;
+        ddPaint();
+        var nameBox = document.getElementById('dd-name');
+        if (nameBox) nameBox.value = (ddFacts && ddFacts.title) || '';
+        return;
+      }
       if (id === 'dd-name-save') { ddRename(); return; }
       if (id === 'dd-add') { ddAdd(); return; }
       if (id === 'dd-say-send') ddSay();

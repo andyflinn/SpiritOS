@@ -671,6 +671,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         out.removed = took(await call('item.rules.remove', { id: out.item2, rule: out.rc }, ANDY));
         out.itemRulesAfter = keysOf((await facts(out.item2)).rules);
         out.designRules = keysOf((await facts(out.item2)).phaseRules);
+        // A code item names its files before its design ends (goal/G41.11: a code item with no files is not green).
+        await call('item.files.add', { id: out.item2, path: 'spirit/test/spiritInUse.js' }, CW);
         await call('press', { id: g2, what: 'end-design' }, ANDY);
         if ((await facts(out.item2)).code !== true) await call('press', { id: out.item2, what: 'code' }, ANDY);
         await call('press', { id: out.item2, what: 'go' }, ANDY);
@@ -987,7 +989,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     const out = { asks: [] };
     try {
       vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), ctx, { filename: 'spiritData.js' });
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'desk', 'data.js'), 'utf8'), ctx, { filename: 'desk/data.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), ctx, { filename: 'deskData.js' });
       let dd = null; let hear = null;
       ctx.spirit.shell = { activateApp: function (x) { dd = x; } };
       vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js'), 'utf8'), ctx, { filename: 'deskDetails.js' });
@@ -1125,7 +1127,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         '--node', JSON.stringify({ name: 'claude-windows', publicKey: CWK })], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: env }));
       if (!await up('deskClient')) return { up: 'deskClient' };
       await call('deskClient', 'setDesk', { key: DESKK }, OWNER);
-      const next = async function () { const r = await call('deskClient', 'next', {}, OWNER); return (r.body && r.body.lines) || []; };
+      // It waits as the listener does (goal/G41.11): each wait names the key of the wake it last read (--read <key>).
+      let read = '';
+      const next = async function () { const r = await call('deskClient', 'next', read ? { read: read } : {}, OWNER); if (r.body && r.body.key) read = String(r.body.key); return (r.body && r.body.lines) || []; };
       await next();
       // A desk rule on the goal, so each wake about its items names it and hands its text once, asked of the desk.
       const ruled = await D('rule.add', { type: 'desk', label: 'Read the news', text: 'Read the news of a wake.' });
@@ -1141,6 +1145,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       out.controlMs = Date.now() - t0;
       // The world: goal/G102.1 is a code item, gone, its red held by the other agent; goal/G102.3 in its own design.
       await D('press', { id: 'goal/G102.1', what: 'code' });
+      // A code item names its files before its design ends (goal/G41.11: a code item with no files is not green).
+      await D('item.files.add', { id: 'goal/G102.1', path: 'spirit/test/spiritInUse.js' }, CW_AT_DESK);
       await D('press', { id: 'goal/G102', what: 'end-design' });
       await D('press', { id: 'goal/G102.1', what: 'go' });
       out.wslTook = await D('phase.take', { id: 'goal/G102.1', phase: 'red' }, WSL_AT_DESK);

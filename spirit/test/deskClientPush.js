@@ -397,9 +397,9 @@ async function main() {
   const family = /forNode|family\s*:\s*['"]desk['"]/.test(code);
   if (!handRolled && family) test.check('no hand-built {desk: {verb: args}} in deskClient.js, and it reaches the desk family by its interface');
   else test.fail(OWED + 'deskClient.js ' + (handRolled ? 'builds {desk: {...}} by hand' : 'builds no desk packet') + (family ? '' : ', and names no family interface'));
-  const translator = fs.readFileSync(path.join(RUN, 'shell', 'js', 'desk', 'data.js'), 'utf8');
-  if (!/\{\s*desk\s*:\s*\{/.test(translator) && !/new Map\(|Object\.create\(null\)/.test(translator)) test.check('the translator (shell/js/desk/data.js) builds no packet and keeps no cache of its own beside spirit.data');
-  else test.fail(OWED + 'shell/js/desk/data.js builds a desk packet or keeps a cache of its own');
+  const translator = fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8');
+  if (!/\{\s*desk\s*:\s*\{/.test(translator) && !/new Map\(|Object\.create\(null\)/.test(translator)) test.check('the translator (shell/shared/js/deskData.js) builds no packet and keeps no cache of its own beside spirit.data');
+  else test.fail(OWED + 'shell/shared/js/deskData.js builds a desk packet or keeps a cache of its own');
 
   // ── ONE PUBLISH (box v43, Andy: "the desk server publishes its changes to the browser with the same function that it
   // publishes its changes to the deskClients").
