@@ -25,6 +25,9 @@ var grGrants = [];      // every grant, {name, key, path}, as auth.search answer
 var grList = null;      // the shared list over them
 var grContact = null;
 var grBranch = null;
+var grSaid = null;      // where the page says what a press did
+var grBundle = null;    // the Grant-the-bundle slot on the line
+var grEls = {};         // key -> the row element drawing that grant
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
 // The owner's api tree, once per paint: what serves() judges against.
 function grLoadTree() {
@@ -34,7 +37,7 @@ function grLoadTree() {
   });
 }
 function grSay(text, isError) {
-  var out = document.getElementById('gr-said');
+  var out = grSaid;
   if (!out) return;
   out.textContent = text;
   out.className = isError ? 'job-refusal' : 'job-manifest-note';
@@ -67,21 +70,34 @@ function grRows() {
     return true;
   }).map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
 }
-function grPaint(row, mark) {
-  var m = typeof mark === 'function' ? mark : grEsc;
-  var gone = grTree && !window.spirit.apiTreeIndex.serves(grTree, row.path);
-  return '<td style="white-space:nowrap">' + m(row.name) + '</td>' +
-    '<td style="white-space:nowrap">' + m(row.path) +
-      // Deprecated is a REPORT: the server is away or the verb is gone,
-      // and the grant waits for the owner, intact (suspend/repair, G1.4).
-      (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '') + '</td>' +
-    '<td style="text-align:right"><button type="button" class="gr-revoke" data-peer="' + grEsc(row.peer) + '" data-path="' + grEsc(row.path) + '">Revoke</button></td>';
+// EACH GRANT A ROW ELEMENT (goal/G41.5): it paints whose grant it is, the path, and its own Revoke, a row action that asks
+// the node; the grants read again afterwards are what the list then shows (rule/19).
+function grElement(row, key) {
+  var el = window.spirit.elements.rowElement.create({
+    kind: 'grant',
+    key: key,
+    row: row,
+    fields: [
+      { name: 'name', paint: function (r) { return '<span style="white-space:nowrap">' + grEsc(r.name) + '</span>'; } },
+      { name: 'path', paint: function (r) {
+        var gone = grTree && !window.spirit.apiTreeIndex.serves(grTree, r.path);
+        return '<span style="white-space:nowrap">' + grEsc(r.path) + '</span>' +
+          // Deprecated is a REPORT: the server is away or the verb is gone,
+          // and the grant waits for the owner, intact (suspend/repair, G1.4).
+          (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '');
+      } },
+      { name: 'revoke', paint: function () { return '<button type="button" class="gr-revoke" data-action="revoke">Revoke</button>'; } },
+    ],
+    actions: [{ name: 'revoke', label: 'Revoke', run: function (e) { return grRevoke(e.row.peer, e.row.path); } }],
+  });
+  grEls[key] = el;
+  return el;
 }
 
 // The chosen server's bundle: its DEPENDENCIES (<server>.DEPENDENCIES on the flat apiDoor),
 // the way every owner question reaches a server.
 function grLoadBundle(server) {
-  var slot = document.getElementById('gr-bundle');
+  var slot = grBundle;
   if (!slot) return;
   if (!server) { slot.innerHTML = ''; return; }
   grApi.verb(server + '.DEPENDENCIES', {}).then(function (a) {
@@ -89,7 +105,7 @@ function grLoadBundle(server) {
     slot.innerHTML = paths.length
       ? '<button type="button" id="gr-grant-bundle" title="' + grEsc(server) + ' says a peer user needs: ' + grEsc(paths.join(', ')) + '">Grant the bundle</button>'
       : '';
-    var all = document.getElementById('gr-grant-bundle');
+    var all = slot.querySelector('#gr-grant-bundle');
     if (all) all.addEventListener('click', function () { grGrantMany(paths); });
   });
 }
@@ -150,32 +166,45 @@ function grRevoke(key, path) {
   });
 }
 
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
+// tree...."): through spirit.require, each element bringing its own. Nothing of the old shell's list search is left.
+var grParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js',
+  'shell/js/apiBranchSelector.js'].map(function (p) { return spirit.require(p); }));
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     grApi = api;
+    grEls = {};
+    // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (rule/16; as in Apps and Contacts).
     container.innerHTML =
-      '<div class="stat-tile wide">' +
+      '<div class="fill">' +
         '<div class="label">Who may call which api</div>' +
         '<div class="job-manifest-note">A member calls only what you have granted: a whole server, ' +
           'or one verb. Denial is the absence of a row, so an empty table means only you.</div>' +
         // THE LINE, nothing stacked: [whose access] [server] [verb] [Grant] [Grant the bundle].
-        '<div id="gr-line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em"></div>' +
-        '<div id="gr-said" class="job-manifest-note"></div>' +
-        '<div id="gr-list"></div>' +
+        '<div data-grants="line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em"></div>' +
+        '<div data-grants="said" class="job-manifest-note"></div>' +
+        '<div data-grants="list" class="fill"></div>' +
       '</div>';
+    var line = container.querySelector('[data-grants="line"]');
+    grSaid = container.querySelector('[data-grants="said"]');
+    var listHost = container.querySelector('[data-grants="list"]');
+    return grParts.then(function () { return grDraw(api, line, listHost); }, function () { listHost.textContent = 'Grants could not be loaded.'; });
+  },
+});
 
-    var line = document.getElementById('gr-line');
-    line.style.display = 'flex';
+function grDraw(api, line, listHost) {
+    var E = window.spirit.elements;
     // The contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js); its value is the picked key.
     var contactHost = document.createElement('span');
-    grContact = window.spirit.elements.contactList.create(contactHost, {
+    grContact = E.contactList.create(contactHost, {
       api: api,
       face: 'dropdown',
       placeholder: 'whose access…',
       all: 'all peers',
       pick: function () { grList.redraw(); grLine(); },
     }).list;
-    grBranch = api.ui.elements.createApiBranchSelector({ all: 'all servers' });
+    grBranch = E.createApiBranchSelector({ all: 'all servers' });
     var grant = document.createElement('button');
     grant.type = 'button';
     grant.id = 'gr-grant';
@@ -192,21 +221,23 @@ spirit.shell.activateApp({
       hint.hidden = !missing;
       hint.textContent = missing;
     }
-    var bundle = document.createElement('span');
-    bundle.id = 'gr-bundle';
+    grBundle = document.createElement('span');
+    grBundle.id = 'gr-bundle';
     line.appendChild(contactHost);
     line.appendChild(grBranch);
     line.appendChild(grant);
     line.appendChild(hint);
-    line.appendChild(bundle);
+    line.appendChild(grBundle);
 
-    var listHost = document.createElement('div');
-    document.getElementById('gr-list').appendChild(listHost);
-    // The shared list lives on window.spirit.elements, as Fallout reaches it; the shell hands apps the selectors.
-    grList = window.spirit.elements.shellCreateListSearch(listHost, {
-      mode: 'pane',
+    // THE GRANTS LIST, A PROBABILITYSEARCH PANE (goal/G41.5): the page's grants are its rows, each a row element.
+    grList = E.probabilitySearch.create(listHost, {
       rows: grRows,
-      paint: grPaint,
+      columns: [
+        { field: 'name', label: 'Whose', sort: 'text' },
+        { field: 'path', label: 'Path', sort: 'text' },
+        { field: 'revoke', label: '' },
+      ],
+      element: grElement,
       matched: function (row) { return { name: row.name, path: row.path.split('.').join(' ') }; },
       empty: 'No grant matches.',
     });
@@ -217,12 +248,15 @@ spirit.shell.activateApp({
       grLoadBundle(grBranch.server);
     });
     grant.addEventListener('click', function () { grGrant(grContact.value, grBranch.value); });
+    // A ROW'S OWN BUTTON (Revoke): the element's action, which asks the node.
     listHost.addEventListener('click', function (event) {
-      var b = event.target && event.target.closest ? event.target.closest('.gr-revoke') : null;
-      if (b) grRevoke(b.getAttribute('data-peer'), b.getAttribute('data-path'));
+      var t = event && event.target;
+      var b = t && typeof t.closest === 'function' ? t.closest('[data-action]') : null;
+      var tr = b && typeof b.closest === 'function' ? b.closest('[data-key]') : null;
+      var el = tr ? grEls[tr.getAttribute('data-key')] : null;
+      if (el) el.act(b.getAttribute('data-action'), {});
     });
 
     grLine();
-    grLoadTree().then(grLoadGrants);
-  },
-});
+    return grLoadTree().then(grLoadGrants);
+}

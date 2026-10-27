@@ -11,7 +11,8 @@
 // .value and fires one bubbling `change` when the value is set.
 
 (function () {
-  var escapeHtml = spirit.escapeHtml;
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
+  var parts = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null);
 
   // ── THE APPSERVER SELECTOR (apiAuth/G1.8) ──────────────────────────
   //
@@ -26,9 +27,9 @@
   //   every family the grant system sees (Andy, 2026-10-20: "the grant system
   //   looks at apiDoors whole damn table of families and verbs").
   //
-  // ON THE SHARED LIST (goal/G29.7): a dropdown of shellCreateListSearch, as the contact selector is, never a native
-  // select. options.all is what the field reads while nothing is chosen, and the dropdown's Clear sets it back
-  // (Grants: unchosen means every server).
+  // A PROBABILITYSEARCH DROPDOWN (goal/G41.5; the old shell's list search, forbidden on the face, goal/G40.8),
+  // never a native select. options.all is what the field reads while nothing is chosen, and the dropdown's None sets it
+  // back (Grants: unchosen means every server).
   //
   // root.value is the chosen server's name; root.tree the 'api' answer
   // it was painted from, so the api-branch selector (G1.9) can read one
@@ -47,21 +48,23 @@
 
     function rows() {
       var names = root.tree ? window.spirit.apiTreeIndex.servers(root.tree) : [];
-      var out = names.map(function (name) { return { key: name, name: name }; });
-      return out;
+      return names.map(function (name) { return { key: name, name: name }; });
     }
-    var list = window.spirit.elements.shellCreateListSearch(host, {
-      mode: 'dropdown',
-      placeholder: options.placeholder || 'choose a server…',
-      all: options.all,
-      rows: rows,
-      paint: function (row, mark) { return '<td style="white-space:nowrap">' + (typeof mark === 'function' ? mark(row.name) : escapeHtml(row.name)) + '</td>'; },
-      name: function (row) { return row.name; },
-      pick: function (row) {
-        root.value = row ? row.key || '' : '';
-        root.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      empty: 'No server matches.',
+    var list = { redraw: function () {} };
+    var made = parts.then(function () {
+      list = window.spirit.elements.probabilitySearch.create(host, {
+        face: 'dropdown',
+        placeholder: options.placeholder || 'choose a server…',
+        all: options.all,
+        rows: rows,
+        columns: [{ field: 'name' }],
+        name: function (row) { return row.name; },
+        pick: function (row, key) {
+          root.value = row ? String(key || row.key || '') : '';
+          root.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        empty: 'No server matches.',
+      });
     });
 
     // ANY PARTY'S TREE (goal/G30.5): options.tree, a function answering a promise of the tree, lists another party's
@@ -73,7 +76,8 @@
       list.redraw();
       // The node's own api answer, through the spirit object (goal/G32.2).
       var got = typeof fn === 'function' ? fn() : spirit.ready.then(function (s) { return s.tree(); });
-      return Promise.resolve(got).then(function (tree) {
+      return Promise.all([got, made]).then(function (both) {
+        var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
