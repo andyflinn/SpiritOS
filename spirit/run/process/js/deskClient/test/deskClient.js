@@ -46,12 +46,13 @@ const asksOf = function (verb) { return desk.asks.filter(function (a) { return a
 const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
 const D = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
 let served = null;
+let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
 const appServerStub = {
   get data() { return D; },
   serve: function (verbs, opts) {
     if (opts && opts.stream && opts.stream.translator) require(path.resolve(String(opts.stream.translator)));
     served = { verbs: verbs, opts: opts || {} };
-    return { subscribe: function () { return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
+    return { subscribe: function () { subscribes += 1; return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
   publish: function () {},
 };
@@ -72,7 +73,8 @@ Module._load = function (request, parent, isMain) {
   if (request === 'chokidar') return { watch: function () { const w = { on: function () { return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
-process.argv = [process.argv[0], FILE, JSON.stringify({ historyMax: 1000, resubscribeMs: 600000 }), '--state', STATE,
+// resubscribeMs 1: any silence at all would count as expired, so a client that still expires its subscribe shows it.
+process.argv = [process.argv[0], FILE, JSON.stringify({ historyMax: 1000, resubscribeMs: 1 }), '--state', STATE,
   '--node', JSON.stringify({ name: SELF, publicKey: SELF_KEY, ownerKey: '' })];
 
 // ── THE STREAM, FED BY HAND ──────────────────────────────────────────
@@ -270,5 +272,45 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   let took = null;
   try { took = await ask('box.take', { id: ITEM4 }); } catch (e) { took = { threw: e.refusal || e.message }; }
   ok(asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore, 'and its box.take there passes the gate, entitled by that line', 'answer: ' + short(took));
+
+  // ── THE FLOOD (Andy, goal/G41.11: "and we MUST look more precisely at performance again"; "deskClient keeps it's cache
+  // ... through new subscribes"; "subscribes over peerPost should NOT expire, at least not on the client-side") ──────
+  test.subHeading('a subscribe over peerPost does not expire on the client side');
+  let readKey = (w4 && w4.key) || '';
+  for (const k of [typeof c1 !== 'undefined' && c1 && c1.key, typeof b1 !== 'undefined' && b1 && b1.key]) if (k) readKey = k;
+  const subsBefore = subscribes;
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: after a silence' } });
+  await settle();
+  // Then quiet: nothing on the stream for longer than resubscribeMs.
+  await new Promise(function (r) { setTimeout(r, 30); });
+  const s1 = await next(readKey);
+  if (s1 && s1.key) readKey = s1.key;
+  ok(has(s1, 'after a silence') && subscribes === subsBefore, 'a wait after a silence hands its line and does not subscribe again', 'subscribes asked: ' + (subscribes - subsBefore) + ', answer ' + short(s1));
+
+  test.subHeading('a goal pushed whole again asks the desk nothing it already keeps');
+  const filesBefore = asksOf('item.files').length;
+  const checksBefore = asksOf('item.checks').length;
+  await push({ verb: 'goal.whole', goal: 9, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
+  await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
+  await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM4 }) });
+  await settle();
+  ok(asksOf('item.files').length === filesBefore && asksOf('item.checks').length === checksBefore, 'no item.files or item.checks is asked again for items whose lists the cache holds',
+    'asked again: item.files ' + (asksOf('item.files').length - filesBefore) + ', item.checks ' + (asksOf('item.checks').length - checksBefore));
+
+  test.subHeading('a waiting wake is handed at once, even while the desk is slow');
+  // As live on 2026-10-27: each ask of the desk took about 10 s, the node cut the wait at 12 s, the agent got a 504.
+  const slow = function (value) { return function () { return new Promise(function (r) { setTimeout(function () { r(value); }, 10500); }); }; };
+  desk.answers['work.open'] = slow({ items: [], more: false });
+  desk.answers['agent.state'] = slow({ ok: true });
+  // A row that may open a job (a phase nobody holds, with his Go), and a line for this agent.
+  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: ITEM4, phase: 'build', phaseWith: '', go: true, version: 7 }) });
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: while the desk is slow' } });
+  await settle();
+  const t5 = Date.now();
+  const s5 = await next(readKey);
+  const handedIn = Date.now() - t5;
+  ok(has(s5, 'while the desk is slow') && handedIn < 3000, 'the line is handed within 3 s, never held behind a slow job ask or a slow agent.state', 'handed in ' + handedIn + ' ms: ' + short(s5));
+  delete desk.answers['work.open'];
+  delete desk.answers['agent.state'];
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
