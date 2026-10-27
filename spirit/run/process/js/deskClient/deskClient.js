@@ -795,21 +795,26 @@ const server = appServer.serve({
       // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
       // line, with the rules recorded on its item at his Go; else the wait goes on as before.
       // Asked only when a job may have opened since the last ask (jobsMaybe): a quiet wait asks the desk nothing.
+      // NO WAKE IS LOST TO A SLOW ASK (goal/G41.2): the job ask gets the time the answer has left, and one not answered
+      // by then is asked again on the next wait (jobsMaybe stays up), so the agent's ask never outlives the node's wait.
+      // The job's rules are its facts' phaseRules, kept from the desk's push: nothing more is asked for them.
       function firstJob() {
         if (!jobsMaybe) return Promise.resolve('');
         jobsMaybe = false;
-        return countedAsk(to, 'work.open', {}).answer.then(function (got) {
+        const late = {};
+        const asked = countedAsk(to, 'work.open', {}).answer.then(function (got) {
           const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
           if (!jobs.length) return '';
           const j = jobs[0];
-          return countedAsk(to, 'item.get', { id: j.id }).answer.then(function (g) {
-            let fx = {};
-            try { fx = JSON.parse(g.item); } catch (e) { fx = {}; }
-            // THE RULES OF THE PHASE IT IS IN (goal/G40.12): its goal's and its own, each once (facts.phaseRules).
-            const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
-            return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
-          });
+          const fx = dataSet.get('deskItems/' + String(j.id)) || {};
+          // THE RULES OF THE PHASE IT IS IN (goal/G40.12): its goal's and its own, each once (facts.phaseRules).
+          const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
+          return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
         }).catch(function () { return ''; });
+        return within(asked, Math.max(0, t0 + LEAVE_BY_MS - SAY_MS - Date.now())).then(function (job) {
+          if (job === undefined) { jobsMaybe = true; return ''; }
+          return job;
+        });
       }
       // The wait ends, with lines or with none, only once every other agent is blocked here (goal/G3.9).
       function ending(answer) {
