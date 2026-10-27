@@ -245,7 +245,9 @@ function tableSearch(spec) {
 const boxVersionsOf = { all: function (g, i) { return db.prepare('SELECT version, creator, at, text FROM box WHERE goal = ? AND item = ? ORDER BY version DESC').all(g, i); } };
 // ONE ROW OF A LIST TABLE, ADDED OR REMOVED (goal/G40.3): {id, path}, one path a write. has(it, w, p) says whether the
 // row is there; an add refuses one already there and a remove one not there, naming it. A path never climbs (..). A
-// suite is a spirit/test/ .js path, and only the item's red writer, or Andy, writes its suites.
+// suite is a spirit/test/ .js path, or a product test, a .js in a test/ folder of the run tree (goal/G41.2: the verifier
+// runs those since goal/G40.13), and only the item's red writer, or Andy, writes its suites.
+const SUITE_PATH = /^spirit\/test\/[^/]+(\/[^/]+)*\.js$|^spirit\/run\/([^/]+\/)*test\/[^/]+\.js$/;
 function listRowVerb(verb, has, adding, suite) {
   return {
     request: { id: '', path: '' }, reply: { change: 0 },
@@ -257,7 +259,7 @@ function listRowVerb(verb, has, adding, suite) {
       const p = String(a.path);
       const it = itemFor(walkState(), a);
       if (p.replace(/\\/g, '/').split('/').indexOf('..') !== -1) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + p);
-      if (suite && (!/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p))) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path, not ' + JSON.stringify(p));
+      if (suite && !SUITE_PATH.test(p)) throw refusedWhy('bad-request', 'a suite is a spirit/test/ .js path or a product test (a .js in a test/ folder of spirit/run/), not ' + JSON.stringify(p));
       if (suite && w.by !== 'andy' && it.red !== w.by && !(it.phase === 'red' && it.phaseWith === w.by)) throw refusedWhy('not-offered', 'the suites of ' + it.id + ' are its red writer\'s to add or remove');
       const there = has(it, w, p);
       if (adding && there) throw refusedWhy('bad-request', p + ' is on the list of ' + it.id + ' already');
@@ -519,7 +521,11 @@ function coreGrantAfter(it, r, added) {
     granted.forEach(function (c) { c.state = 'voided'; c.at = r.at; });
   }
   if (it.checks.some(function (c) { return isCoreGrant(c) && c.state === 'open'; })) return;
-  it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: CORE_GRANT, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' });
+  // A CORE GRANT NAMES WHO ASKED FOR IT (goal/G41.2). Andy, in the item's box: "file-core grants reference the agent who
+  // requests them, when granted, the agent must be woken to notice". The agent whose list brought the core file is its
+  // placer, as a red Q's is, so its deskClient knows the grant is its own.
+  const asker = r.by && r.by !== 'andy' && r.by !== 'desk' ? { placedBy: String(r.by), placedKey: String(r.key || '') } : {};
+  it.checks.push(Object.assign({ number: nextCheckNumber(it, 'G'), kind: 'G', words: CORE_GRANT, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' }, asker));
 }
 function grantOf(it, p, core) {
   if (!core) return 'none';
@@ -1044,8 +1050,15 @@ function shownLine(s, l) {
 // HIS "ALL" (goal/G33.2, box v5-6, approved by Andy): "all" as the address at the start of his line wakes every agent:
 // it is addressed to every agent the desk knows and that is included, with no take, and "entitles them to a response":
 // each may answer it under the item (chat.add below).
-function addressOf(s, text) {
+// HIS ANSWER TO A RED Q GOES TO ITS PLACER (goal/G41.2). Andy, in the item's box: "the desk allows each agent one red Q
+// at the time, per item. when the user's chat time starts with Q<number> the desk must direct that line to the agent who
+// posted the Q". A line starting Q<n>: on an item holding that Q is addressed to the key that placed it.
+function addressOf(s, text, it) {
   const t = String(text);
+  const q = /^\s*(Q\d+)\s*:/i.exec(t);
+  const asked = q && it ? (it.checks || []).filter(function (c) { return c.kind === 'Q' && String(c.number).toUpperCase() === q[1].toUpperCase(); })[0] : null;
+  const placer = asked ? placerOf(s, asked) : '';
+  if (placer) return { to: [placer], q: asked.number };
   if (/^\s*all(?=[\s\p{P}\p{S}])/iu.test(t)) {
     const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
     return { to: known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).included; }), all: true };
@@ -2104,7 +2117,9 @@ function searchItems(a) {
   // its closed items ("Close makes item invisible"); an abandoned one stays invisible.
   const cur = s.current && s.items[s.current];
   const latest = !!(a.currentGoalOnly && !text && cur && cur.closed && s.goals[s.current] && !s.goals[s.current].abandoned);
-  const goals = Object.keys(s.goals).filter(function (gid) { return !a.currentGoalOnly || gid === s.current; });
+  // NO PLUGIN OR SPECIAL GOAL ON THE LIST (goal/G41.2; Andy: "plugin/special goals must never be show in the main list").
+  // A plugin reads its own goal's items by their ids (item.get), never through this search.
+  const goals = Object.keys(s.goals).filter(function (gid) { return (!a.currentGoalOnly || gid === s.current) && !PLUGIN_GOAL[gid] && !s.goals[gid].special; });
   goals.sort(function (x, y) { return x === s.current ? -1 : y === s.current ? 1 : 0; });
   goals.forEach(function (gid) {
     const ids = [gid].concat(a.goalsOnly ? [] : s.goals[gid].members);
@@ -2318,6 +2333,8 @@ function write(verb, a, check) {
   if (!now) { out.item = null; delete out.listed; delete out.key; }
   // THE SWITCH TRAVELS TO EVERY CLIENT (goal/G33.3): the verifier's answer is one desk fact, said with the publish.
   if (verb === 'verify.answer') out.verifier = { answer: s.verifyAnswer };
+  // WHICH PRESS IT WAS (goal/G41.2), so a client wakes its agent on his Go, his End design, a new current goal.
+  if (verb === 'press') out.what = String(body.what || '');
   // WHO WROTE IT (goal/G33.9, box v4): every row a write publishes names its writer, label and key, so a client tells a
   // change its own agent made from one made by Andy, another agent or the desk.
   const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); return o; };
@@ -3250,7 +3267,7 @@ appServer.serve(withPlugins({
       if (clear && !cleared.length) throw refusedWhy('bad-request', clear.number ? clear.number + ' is not an open red Q on ' + a.id : 'there is no open red Q on ' + a.id + ' to clear');
       // HIS LINE, ADDRESSED AT THE WRITE (goal/G21.1, addressOf): to whom, and whether it hands over the box or offers a cap.
       // A clear is addressed to nobody: its line is his action, for everyone; each Q's clear goes to its placer below.
-      const address = caller.owner === true && it0 && !clear ? addressOf(st0, a.text) : null;
+      const address = caller.owner === true && it0 && !clear ? addressOf(st0, a.text, it0) : null;
       const after = write('chat.add', Object.assign({}, a, address || {}, { by: w.by, key: w.key }));
       // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
       // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line

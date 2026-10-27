@@ -892,10 +892,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       if (!up) return { up: false };
       out.up = true;
       // A product test is a suite: a .js in a test/ folder of the run tree; a module, or a path that leaves the tree, is not.
-      out.product = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/test/rowElement.js' }, CW);
-      out.module = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/rowElement.js' }, CW);
-      out.leaves = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/test/../../x.js' }, CW);
-      out.old = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/spiritInUse.js' }, CW);
+      out.product = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/test/rowElement.js' }, ANDY);
+      out.module = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/rowElement.js' }, ANDY);
+      out.leaves = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/test/../../x.js' }, ANDY);
+      out.old = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/spiritInUse.js' }, ANDY);
       const s = await call('item.suites.search', { id: 'goal/G100.1', text: '' }, ANDY);
       out.suites = ((s.body && s.body.items) || []).map(function (i) { return i.key; }).sort();
       // The List: what it asks with Current Goal Only pressed off. Which goals are plugin goals, read one by one.

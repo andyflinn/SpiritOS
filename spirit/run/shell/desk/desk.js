@@ -443,18 +443,17 @@ function deskOnPublished(obj) {
   var rowKey = deskRowKeyOf(obj);
   if (change && deskRowChange[rowKey] && change < deskRowChange[rowKey]) return;
   if (change) deskRowChange[rowKey] = change;
-  var gap = deskLastChange && change > deskLastChange + 1;
   // THE BACKUP LINE FOLLOWS THE RECORD (the stale-backup-line finding): read again once per write the desk made, since
   // the backup copies desk.db after a change. Until goal/G33.4 it followed the page's own log line.
   if (change && change > deskLastChange) deskAskBackup();
   if (change > deskLastChange) deskLastChange = change;
-  // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A gap
-  // may have swallowed one, so the chat is read again with the List.
-  if (gap) deskAskGroup().then(deskDraw, function () { /* shown as it stands */ });
+  // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A JUMP IN
+  // CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record, published or not, so reading the chat again on
+  // every jump asked the desk once per row. A real gap is a reconnect, and the chat is read again then (deskLoad).
   // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
   // drawn here, the rest is the dialog's and the kept items' (shell/js/desk/data.js).
   if (obj.table) {
-    if (!gap && obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
+    if (obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
       if (deskGroup) {
         var at = -1;
         deskGroup.forEach(function (l, i) { if (deskSameLine(l, obj.row)) at = i; });
@@ -465,8 +464,9 @@ function deskOnPublished(obj) {
     }
     return;
   }
-  // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write.
-  if (gap || obj.verb === 'session.set') { if (deskSearchedAt !== change || !change) { deskSearchedAt = change; deskSearchItems(); } return; }
+  // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write. A jump in
+  // change numbers is no gap (goal/G41.2), so it no longer searches the List again.
+  if (obj.verb === 'session.set') { if (deskSearchedAt !== change || !change) { deskSearchedAt = change; deskSearchItems(); } return; }
   // ITS ONE ROW (goal/G33.4: every row a write changed is its own publish).
   var it = obj.item;
   if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }

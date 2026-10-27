@@ -327,6 +327,12 @@ function streamed(row) {
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
   if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
+  // HIS PRESSES THAT OPEN OR MOVE WORK WAKE EVERY AGENT (goal/G41.2; Andy: "you didn't notice end-of design on the item,
+  // and the go", and the box: "deskClient's must know at all times which is the current gloal, changes in \"current\"
+  // goal must be broadcast and knows instantly by all clients"): his Go, Go all, End design and Reopen on an item of the
+  // current goal, and his Make current on any goal.
+  const press = pressWake(row);
+  if (press) { wakeWith(press); return; }
   const line = meantForAgent(row);
   if (!line) return;
   const hand = function () { wakeWith(line); };
@@ -342,6 +348,18 @@ function streamed(row) {
   }, hand);
 }
 
+const WAKING_PRESSES = ['go', 'go-all', 'end-design', 'reopen'];
+function pressWake(row) {
+  if (String(row.verb || '') !== 'press' || row.by !== 'andy' || !row.item || !row.item.id) return null;
+  const what = String(row.what || '');
+  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  const current = what === 'make-current' || (!!cur && row.key && row.key.goal === Number(cur[1]));
+  if (!current || (what !== 'make-current' && WAKING_PRESSES.indexOf(what) === -1)) return null;
+  const key = 'press#' + String(row.change) + '#' + String(row.item.id) + '#' + what;
+  if (seenLines.has(key)) return null;
+  seenLines.add(key);
+  return { text: 'DESK andy press ' + JSON.stringify({ id: String(row.item.id), what: what }), key: key };
+}
 // WHAT IS MEANT FOR ITS AGENT (box v37: "without constantly waking agents to read irrelevant messages"). A new line of
 // the stream's chat rows:
 //   - Andy's line addressed to its own agent (a line addressed to others is never taken here); or addressed to nobody, on the item it holds, on an item nobody holds or in
@@ -389,14 +407,17 @@ function meantForAgent(row) {
     const f = dataSet.get('deskItems/' + String(row.id || ''));
     return row.row.by === 'andy' && heldByMe(f) ? { text: 'DESK andy box.write ' + JSON.stringify({ id: String(row.id), version: row.row.version }) } : null;
   }
-  // HIS CLEAR OF A RED Q THIS AGENT PLACED reaches it (goal/G21.2: "the agent that placed it is notified").
+  // HIS CLEAR OF A RED Q THIS AGENT PLACED reaches it (goal/G21.2: "the agent that placed it is notified"), AND HIS GRANT
+  // OF THE CORE FILES IT LISTED (goal/G41.2; Andy: "file-core grants reference the agent who requests them, when granted,
+  // the agent must be woken to notice"): the desk names the asker as the grant's placer.
   if (row.table === 'checks') {
     const c = row.row;
     const placed = SELF_KEY ? c.placedKey === SELF_KEY : c.placedBy === SELF;
     const seen = 'check#' + String(row.id) + '#' + String(c.number) + '#' + String(c.state);
-    if (!placed || c.state !== 'cleared' || seenLines.has(seen)) return null;
+    const wakes = c.state === 'cleared' || (c.kind === 'G' && c.state === 'granted');
+    if (!placed || !wakes || seenLines.has(seen)) return null;
     seenLines.add(seen);
-    return { text: 'DESK andy check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), state: 'cleared' }) };
+    return { text: 'DESK andy check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), state: String(c.state) }) };
   }
   if (row.table !== 'chat') return null;
   const l = row.row;

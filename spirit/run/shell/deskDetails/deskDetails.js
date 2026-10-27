@@ -534,9 +534,11 @@ function ddTake(obj) {
   var rowKey = ddRowKeyOf(obj);
   if (change && ddRowChange[rowKey] && change < ddRowChange[rowKey]) return;
   if (change) ddRowChange[rowKey] = change;
-  var gap = ddLastChange && change > ddLastChange + 1;
   if (change > ddLastChange) ddLastChange = change;
-  if (gap && ddId) { ddForget(ddId); ddLoad(); return; }
+  // A JUMP IN CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record it writes, published or not (a take,
+  // an agent's state, another goal's rows), so the numbers a page hears jump all the time. Reading the open item again
+  // on each jump re-asked the desk four times per row. A real gap in the stream is a reconnect, and the page forgets
+  // what it kept then (desk.js deskForgetKept).
   // ONE ROW AT A TIME (goal/G33.4): a side row of an item, {table, id, row}, or its List row, {item: <facts>}.
   if (obj.table) { if (obj.id === ddId && ddTakeRow(obj)) ddPaint(); return; }
   if (!obj.item || obj.item.id !== ddId) return;

@@ -58,13 +58,19 @@
   function errText(e) { return (e && e.message) || String(e); }
   function when(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
 
-  // Its goal's items, read from the desk server's own search; repainted when the stream names an item of its goal.
+  // Its goal's items, read by their ids: the goal's facts name them (blocked), each item's facts are its row. A plugin
+  // goal is on no List (goal/G41.2), so the desk's search does not find it. Repainted when the stream names an item of
+  // its goal.
   function readItems() {
     if (!ctx) return;
     var goal = ctx.goal;
-    Promise.resolve(ctx.ask('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false })).then(function (r) {
-      var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } })
-        .filter(function (x) { return x && x.goal === goal; });
+    var factsOf = function (id) {
+      return Promise.resolve(ctx.ask('item.get', { id: id })).then(function (r) { try { return JSON.parse(r && r.item); } catch (e) { return null; } }, function () { return null; });
+    };
+    factsOf(goal).then(function (g) {
+      return Promise.all(((g && g.blocked) || []).map(factsOf));
+    }).then(function (all) {
+      var rows = (all || []).filter(function (x) { return x && x.goal === goal; });
       var el = document.getElementById('sfc-items');
       if (!el) return;
       el.innerHTML = rows.length ? '<table class="jobs-table"><tbody>' + rows.map(function (x) {
