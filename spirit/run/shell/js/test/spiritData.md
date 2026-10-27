@@ -49,6 +49,15 @@ no page, so it runs in node, where `require` answers the api.
   - A single row too big for the room is left out and sets `more`.
   - It writes nothing to the tree and tells no watcher.
 
+- **The cache's life** (goal/G41.3, Q2):
+  - `forget()` empties every branch and every ready flag, and tells each type's watchers once with `(type, undefined)`.
+  - On a page every snapshot is a connect: the cache forgets first, then takes the partner's whole push. A row a search
+    seated is forgotten too.
+  - On a page a translator registered late is handed every job as it now stands, each once, and every rename heard, so
+    its branch is whole at once.
+  - In a process the cache has a byte cap (`cap()` reads it, `cap(n)` sets it). Past it the oldest writes go first,
+    each told as a delete, and a row written again is newest again. On a page `cap()` is `Infinity`: no cap (box v17).
+
 ## What its test must try to break
 
 - Keys with slashes.

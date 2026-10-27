@@ -175,4 +175,84 @@ ok(big.more === true && !big.items.some(function (i) { return i.key === 'notes/b
   'by default a row over the answer limit is left out, in bytes, the rest kept', 'big: ' + big.items.length + ' more ' + big.more);
 told.off();
 
+// ── THE CACHE'S LIFE (goal/G41.3, Q2) ────────────────────────────────────────────────────────────────────────────
+// A page's copy: the same file in a vm of its own, a browser by spirit.isBrowser, its stream a recorder of handlers.
+function pageCopy() {
+  const vm = require('vm');
+  const h = {};
+  const win = { spirit: { isBrowser: function () { return true; }, events: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
+  win.window = win;
+  vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  return { P: win.spirit.data, stream: h };
+}
+// A translator writing each job it is handed to jobs/<id>, and recording what it got.
+function recorder() {
+  const got = { jobs: [], renames: [] };
+  return { got: got, t: { onJob: function (job, d) { got.jobs.push(job); d.set('jobs/' + job.id, job.data); }, onRename: function (r) { got.renames.push(r); } } };
+}
+
+test.subHeading('forget: everything kept goes, and each type is told once');
+D.set('files/x', { size: 1 }); D.set('contacts/y', { name: 'y' }); D.ready('files', true);
+const forgot = heard('files');
+ok(typeof D.forget === 'function', 'forget is part of the api', 'there is no forget');
+if (typeof D.forget === 'function') {
+  D.forget();
+  ok(Object.keys(D.data).every(function (t) { return !Object.keys(D.data[t]).length; }) && D.ready('files') === false,
+    'every branch is empty and no type is ready', 'after forget: ' + JSON.stringify({ data: D.data, ready: D.ready('files') }));
+  ok(forgot.calls.length === 1 && forgot.calls[0][0] === 'files' && forgot.calls[0][1] === undefined, 'a type\'s watcher is told once, (type, undefined)',
+    'files watcher heard: ' + JSON.stringify(forgot.calls));
+}
+forgot.off();
+
+test.subHeading('on a page a snapshot is a connect: the cache forgets, and takes the partner\'s whole push');
+{
+  const { P, stream } = pageCopy();
+  const r = recorder();
+  P.translate(r.t);
+  stream.onSnapshot([{ id: 'a', data: { n: 1 } }, { id: 'b', data: { n: 1 } }]);
+  P.seat('contacts', [{ key: 'K', label: JSON.stringify({ name: 'k' }) }]);
+  stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
+  ok(P.get('jobs/a') && P.get('jobs/a').n === 2 && P.get('jobs/b') === undefined && P.get('contacts/K') === undefined,
+    'what the first connect brought or a search seated is gone, what the second pushed is there',
+    'after a second snapshot: ' + JSON.stringify(P.data));
+}
+
+test.subHeading('on a page a type loaded late is handed its data whole');
+{
+  const { P, stream } = pageCopy();
+  stream.onSnapshot([{ id: 'a', data: { n: 1 } }]);
+  stream.onUpdate({ id: 'a', data: { n: 2 } });
+  stream.onUpdate({ id: 'c', data: { n: 1 } });
+  stream.onContactRename({ key: 'K', label: 'kay' });
+  const r = recorder();
+  P.translate(r.t);
+  const ids = r.got.jobs.map(function (j) { return j.id + ':' + j.data.n; }).sort().join(',');
+  ok(ids === 'a:2,c:1', 'its translator is handed every job as it now stands, each once', 'the late translator got ' + ids);
+  ok(r.got.renames.length === 1 && r.got.renames[0].label === 'kay', 'and the renames heard', 'renames: ' + JSON.stringify(r.got.renames));
+  ok((P.get('jobs/a') || {}).n === 2 && (P.get('jobs/c') || {}).n === 1, 'so its branch is whole at once', 'jobs: ' + JSON.stringify(P.data.jobs));
+}
+
+test.subHeading('in a process the cache sheds oldest first past a byte cap; a page keeps everything');
+ok(typeof D.cap === 'function' && D.cap() > 0 && isFinite(D.cap()), 'in a process the cache has a cap, in bytes', 'the process cap is ' + (typeof D.cap === 'function' ? D.cap() : 'missing'));
+if (typeof D.cap === 'function') {
+  const was = D.cap();
+  D.forget();
+  D.cap(300);
+  const shed = heard('big');
+  for (let i = 1; i <= 10; i++) D.set('big/' + i, { body: 'x'.repeat(40) });
+  const kept = Object.keys(D.data.big || {});
+  const bytes = kept.reduce(function (n, k) { return n + Buffer.byteLength(k) + Buffer.byteLength(JSON.stringify(D.data.big[k])); }, 0);
+  ok(kept.length > 0 && kept.length < 10 && kept.indexOf('10') !== -1 && kept.indexOf('1') === -1 && bytes <= 300,
+    'past the cap the oldest writes go first, the newest stay, within the cap (' + kept.length + ' kept, ' + bytes + ' bytes)', 'kept: ' + kept.join(',') + ', ' + bytes + ' bytes');
+  ok(shed.calls.some(function (c) { return c[0] === 'big/1' && c[1] === undefined; }), 'a row shed is told as a delete', 'heard: ' + JSON.stringify(shed.calls.slice(0, 3)));
+  const oldest = kept[0];
+  D.set('big/' + oldest, { body: 'y' });
+  D.set('big/11', { body: 'x'.repeat(40) });
+  ok(D.get('big/' + oldest) && D.get('big/' + oldest).body === 'y', 'a row written again is newest again', 'big/' + oldest + ' is ' + JSON.stringify(D.get('big/' + oldest)));
+  shed.off();
+  D.cap(was);
+  const { P } = pageCopy();
+  ok(typeof P.cap === 'function' && P.cap() === Infinity, 'on a page there is no cap (box v17)', 'the page cap is ' + (typeof P.cap === 'function' ? P.cap() : 'missing'));
+}
+
 test.reportSuccessFailureCount();

@@ -471,6 +471,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
   if (isCache(cq.spirit.data)) test.check('on a page: once spirit.js has started, spirit.data is the cache, nothing else loading it');
   else test.fail('on a page spirit.js does not load the cache: spirit.data is ' + short(cq.spirit.data && Object.keys(cq.spirit.data)));
+  // The file tree is cached too (Q2: "the file tree must be cached."): its translator comes with the cache, so boot finds
+  // the face's apps in it with no part of its own.
+  if (JSON.stringify(cq.fetched).indexOf('shell/js/files/data.js') !== -1) test.check('on a page spirit.js loads the file tree\'s translator with the cache');
+  else test.fail('on a page spirit.js does not load the file tree\'s translator (shell/js/files/data.js) with the cache');
   const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
   else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));

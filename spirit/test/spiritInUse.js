@@ -265,6 +265,13 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (/relay-state\/shell\/join\//.test(joinApp) && !/setAppOverride/.test(joinApp)) test.check('Join keeps its own fact (face opened) in relay-state/shell/join/, not the old shell\'s preferences');
   else test.fail('Join still keeps its fact through the old shell\'s setAppOverride');
 
+  // A PROCESS'S CACHE ON A RECONNECT (goal/G41.3, Q2; throwaway, no test of appServer's own yet): a server that
+  // subscribes, again or first, forgets what its cache kept before the publisher's bootstrap pushes it whole.
+  test.subHeading('1f2. a process\'s cache forgets when it subscribes again');
+  const subscribeAt = /s\.subscribe = function \(key, family\) \{([\s\S]*?)\n  \};/.exec(code('spirit/appServer.js'));
+  if (subscribeAt && /dataSet\(\)\.forget\(\)/.test(subscribeAt[1])) test.check('appServer\'s subscribe forgets the server\'s cache before it asks the publisher, whose bootstrap then pushes it whole');
+  else test.fail('appServer\'s subscribe does not forget the server\'s cache before subscribing again');
+
   // INFO ON THE FACE (goal/G40.10, box v5; Andy: "port the info app to face.").
   test.subHeading('1g. Info on the face: a face app, everything it calls the face gives it');
   let infoMark = null;
