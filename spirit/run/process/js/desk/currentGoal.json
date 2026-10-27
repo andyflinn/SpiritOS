@@ -1,5 +1,5 @@
 {
- "change": 108107,
+ "change": 108108,
  "goal": "goal/G41",
  "items": [
   {
@@ -121,7 +121,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -4666,12 +4666,11 @@
    "id": "goal/G41.9",
    "title": "No shared arming logic exist,",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 3,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
