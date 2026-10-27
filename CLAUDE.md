@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+desk IS THE LAW!
+
 You are working in [andyflinn/SpiritOS](https://github.com/andyflinn/SpiritOS).
 
 **This file answers "how Claude delivers", and nothing else.** What is true about the system is in `AGENT.md`, how we work in `ANDYS_RULES_FOR_AGENTS.md`, how Andy says it in `DICTIONARY.md`. This file overrides none of them; it goes stale when Claude's role changes.
