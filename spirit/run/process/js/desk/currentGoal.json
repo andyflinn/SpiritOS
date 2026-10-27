@@ -1,5 +1,5 @@
 {
- "change": 108991,
+ "change": 108992,
  "goal": "goal/G41",
  "items": [
   {
@@ -136,7 +136,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -5381,12 +5381,11 @@
    "id": "goal/G41.11",
    "title": "FIX DESK ISSUES",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 12,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
