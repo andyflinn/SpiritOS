@@ -143,6 +143,9 @@ function world(o) {
   win.window = win;
   const F = fieldsStub(document);
   win.spirit = { elements: o.noFields ? {} : { deskDoorFields: F } };
+  // The one loader (spirit.require): what it was asked, each held until the test lets it answer.
+  win.required = [];
+  win.spirit.require = function (p) { return new Promise(function (resolve) { win.required.push({ path: String(p), resolve: resolve }); }); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const store = o.items || {};
@@ -297,16 +300,17 @@ test.startTest('stackFrameChecks.js: Desk\'s Stacks tab, the doors and their ite
   hear({ item: { id: 'goal/G3.1', goal: 'goal/G3' } }); hear({ table: 'chat', id: GOAL }); hear(null); hear({ item: '{broken' }); await settle();
   ok(w.n('stackFrameChecks.doors.search') === s && w.n('item.get') === g, 'another goal\'s row, a side row, a non-object, broken JSON: nothing read', 'read again');
 
-  test.subHeading('without the door fields on the page, it loads them once and draws the form when they come');
+  test.subHeading('without the door fields on the page, it loads them through spirit.require and draws the form when they come (goal/G41.11)');
   const wl = world({ items: ITEMS, noFields: true });
   wl.open(); await settle();
   const scripts = wl.document.body.children.filter(function (c) { return c.tagName === 'SCRIPT'; });
-  ok(/Loading the door's fields\./.test(wl.$('sfc-form').textContent) && scripts.length === 1 && scripts[0].src === '/shell/shared/js/deskDoorFields.js',
-    'it says it is loading them and puts /shell/shared/js/deskDoorFields.js on the page', short(scripts.map(function (x) { return x.src; })));
+  const asked = wl.win.required.filter(function (r) { return r.path === 'shell/shared/js/deskDoorFields.js'; });
+  ok(/Loading the door's fields\./.test(wl.$('sfc-form').textContent) && asked.length === 1 && scripts.length === 0,
+    'it says it is loading them, asks spirit.require for shell/shared/js/deskDoorFields.js, and puts no script tag on the page', 'required ' + short(wl.win.required.map(function (x) { return x.path; })) + ', scripts ' + scripts.length);
   wl.document.click(wl.$('sfc-form')); fire(wl.document, 'input', wl.$('sfc-form')); await settle();
   ok(wl.n('stackFrameChecks.make') === 0, 'before they load, nothing can be made, harmlessly', 'made');
   wl.win.spirit.elements.deskDoorFields = wl.F;
-  scripts[0].onload(); await settle();
+  if (asked[0]) asked[0].resolve({}); await settle();
   ok(!!wl.$('sfc-gate') && !!wl.$('sfc-make') && wl.F.calls.some(function (c) { return c[0] === 'check' && c[2] === 'sfc-make'; }), 'once loaded, the form is drawn and checked', short(wl.F.calls));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

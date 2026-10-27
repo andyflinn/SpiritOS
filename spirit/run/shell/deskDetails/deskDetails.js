@@ -132,6 +132,10 @@ function ddFrame() {
     '<div id="dd-upper" style="display:flex;gap:8px;height:30vh;overflow:hidden">' +
       '<div id="dd-icons" style="display:flex;flex-direction:column;gap:6px"></div>' +
       '<div style="flex:1;overflow:auto">' +
+        // ATTACH A RULE, ON TOP OF THE RULES (goal/G41.11; Andy: "the add-rule dropdown is at the bottom of a (sometimes
+        // LONG) list, and it must be on top"): a probability search of the rules as a dropdown; a pick attaches it. In
+        // the frame, so the search survives every repaint; it shows with the rules panel only.
+        '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
         '<div id="dd-panel"></div>' +
     // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
     // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
@@ -142,9 +146,6 @@ function ddFrame() {
       '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
-    // ATTACH A RULE (goal/G40.12, second set 3): a probability search of the rules as a dropdown; a pick attaches it.
-    // In the frame, as the add row is, so the search survives every repaint; it shows with the rules panel only.
-    '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
       '</div>' +
     '</div>' +
     // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
@@ -193,11 +194,7 @@ function ddHearVerifier(obj) {
 function ddLoadRunStatus() {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
   if (typeof have === 'function') return;
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DD_RUN_STATUS;
-  script.onload = function () { ddSet('dd-run', ddRunHtml()); };
-  document.body.appendChild(script);
+  ddNeed(DD_RUN_STATUS).then(function () { ddSet('dd-run', ddRunHtml()); }, function () { /* the run is not drawn */ });
 }
 
 // DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3). The box: "not verified (its suites red,
@@ -524,7 +521,7 @@ function ddPaint() {
   if (box) box.value = typed;
   ddSet('dd-icons', ddIconsHtml());
   // The chat search stands in the frame; it is made once the frame is drawn (ddMountChatFind), never again by a paint.
-  if (!ddChatFind) ddMountChatFind();
+  if (!ddChatFind || ddChatFindHost !== document.getElementById('dd-chat-find')) ddMountChatFind();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) ddSet('dd-panel', ddPanelHtml());
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
@@ -532,6 +529,8 @@ function ddPaint() {
   if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
   var ruleRow = document.getElementById('dd-rule-add-row');
   if (ruleRow && ruleRow.style) ruleRow.style.display = ddPanelSel === 'rules' ? '' : 'none';
+  // Whenever the rules panel shows, its dropdown is there: made for this frame if it has none yet.
+  if (ddPanelSel === 'rules') ddMountRulePick();
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
@@ -628,20 +627,17 @@ function ddLoadSuites(id) {
 // delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
 // add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
 var ddRuleNames = Object.create(null);
-var DD_SEARCH = '/shell/js/probabilitySearch.js';
+var DD_SEARCH = 'shell/js/probabilitySearch.js';
 var ddRulePick = null;
+var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
 // The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
 var DD_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
-// probabilitySearch.js, loaded once for the page however many asks wait on it.
-var ddSearchWaiting = null;
-function ddLoadSearch(done) {
-  if (ddSearchWaiting) { ddSearchWaiting.push(done); return; }
-  if (typeof document.createElement !== 'function' || !document.body) return;
-  ddSearchWaiting = [done];
-  var script = document.createElement('script');
-  script.src = DD_SEARCH;
-  script.onload = function () { var w = ddSearchWaiting; ddSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
-  document.body.appendChild(script);
+// EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of the add-rule dropdown: "Sometimes the dropdown
+// does NOT appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
+function ddNeed(p) {
+  var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
+  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
+  return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
 function ddLoadRuleNames() {
   return ddAsk('rules.search', { text: '', types: [], statuses: [] }).then(function (r) {
@@ -657,12 +653,18 @@ function ddRulesHtml() {
     return '<div>' + ddEsc(key) + ' ' + ddEsc(ddRuleNames[key] || '') + ' <button type="button" data-rule-remove="' + ddEsc(key) + '" title="take this rule off">delete</button></div>';
   }).join('') + (ddFacts && ddFacts.rulesMore ? '<div class="job-manifest-note">More rules than shown.</div>' : '');
 }
+// MADE EVERY TIME THE RULES PANEL SHOWS IN A FRAME THAT HAS NONE (goal/G41.11): the dropdown made for an earlier frame is
+// no dropdown in this one, so a new frame gets its own.
 function ddMountRulePick() {
   var el = document.getElementById('dd-rule-pick');
-  if (!el || ddRulePick) return;
+  if (!el) return;
+  if (ddRulePick && ddRulePickHost === el) return;
+  if (ddRulePick && typeof ddRulePick.destroy === 'function') ddRulePick.destroy();
+  ddRulePick = null;
+  ddRulePickHost = el;
   var make = function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-    if (!P || typeof P.create !== 'function' || ddRulePick) return;
+    if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
       api: ddApi, server: 'desk', verb: 'rules.search',
       // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
@@ -686,7 +688,7 @@ function ddMountRulePick() {
     ddRulePick.refresh();
   };
   if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
-  ddLoadSearch(make);
+  ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 function ddSuitesHtml() {
   if (ddSuites === null) return '<div class="job-manifest-note">Reading the suites.</div>';
@@ -703,13 +705,17 @@ function ddLoadFiles(id) {
 // THE CHAT SEARCH (goal/G18.5, on the probability search since goal/G40.12): chat.search for the item on screen; on a
 // goal (goal/G29.21) the scope is items, the goal's chat and its items' chats ranked together.
 var ddChatFind = null;
+var ddChatFindHost = null;   // as the rule dropdown: a frame drawn again is a new box, so it gets its own search
 function ddMountChatFind() {
   var el = document.getElementById('dd-chat-find');
   if (!el) return;
-  if (ddChatFind) { ddChatFind.refresh(); return; }
+  if (ddChatFind && ddChatFindHost === el) { ddChatFind.refresh(); return; }
+  if (ddChatFind && typeof ddChatFind.destroy === 'function') ddChatFind.destroy();
+  ddChatFind = null;
+  ddChatFindHost = el;
   var make = function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-    if (!P || typeof P.create !== 'function' || ddChatFind) return;
+    if (!P || typeof P.create !== 'function' || ddChatFindHost !== el || ddChatFind) return;
     ddChatFind = P.create(el, {
       api: ddApi, server: 'desk', verb: 'chat.search',
       args: function (text) { return { id: ddId, text: text, by: '', since: '', before: '', scope: ddFacts && ddFacts.goal === '' ? 'items' : '' }; },
@@ -722,7 +728,7 @@ function ddMountChatFind() {
     ddChatFind.refresh();
   };
   if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
-  ddLoadSearch(make);
+  ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 
 var ddSending = false;

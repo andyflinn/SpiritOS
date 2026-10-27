@@ -32,14 +32,10 @@ var sdParts = spirit.require('shell/js/armingButton.js');
 function sdEsc(s) { return sdApi && sdApi.escapeHtml ? sdApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function sdWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
 function sdElements() { return (typeof window !== 'undefined' && window.spirit && window.spirit.elements) || {}; }
-// A shared element, loaded once per page when it is not there yet.
+// A shared element, loaded once per page through the one loader (goal/G41.11; rule/21): spirit.require, no script tag.
 function sdNeed(name, done) {
   if (sdElements()[name]) { done(); return; }
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = SD_SHARED[name];
-  script.onload = done;
-  document.body.appendChild(script);
+  Promise.resolve(spirit.require(String(SD_SHARED[name]).replace(/^\/+/, ''))).then(function () { done(); }, function () { /* not drawn */ });
 }
 
 // The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6), as deskDetails asks.

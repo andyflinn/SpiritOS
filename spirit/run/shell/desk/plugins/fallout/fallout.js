@@ -107,14 +107,10 @@
     // The summary follows deskVerify too: each of its publishes counts again, through the same slot.
     if (typeof ctx.onPublished === 'function') ctx.onPublished(function () { summary(); }, 'deskVerify');
   }
-  // THE PROBABILITY SEARCH, LOADED ON DEMAND, as Desk loads its shared element (deskLoadSharedElement): once per page.
+  // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page.
   function withList(done) {
     if (win.spirit.elements && win.spirit.elements.probabilitySearch) { done(); return; }
-    if (typeof document.createElement !== 'function' || !document.body) return;
-    var script = document.createElement('script');
-    script.src = LIST_SCRIPT;
-    script.onload = done;
-    document.body.appendChild(script);
+    Promise.resolve(win.spirit.require(String(LIST_SCRIPT).replace(/^\/+/, ''))).then(function () { done(); }, function () { /* no list */ });
   }
 
   held.fallout = {

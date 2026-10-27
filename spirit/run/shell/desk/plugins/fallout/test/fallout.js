@@ -144,6 +144,9 @@ function world(withList, totals) {
   win.window = win;
   const list = listStub(totals || { red: 3, green: 7 });
   win.spirit = { elements: withList ? { probabilitySearch: { create: list.create } } : {} };
+  // The one loader (spirit.require): what it was asked, each held until the test lets it answer.
+  win.required = [];
+  win.spirit.require = function (p) { return new Promise(function (resolve) { win.required.push({ path: String(p), resolve: resolve }); }); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const ctx = { dialogs: [], streams: [], chats: [],
@@ -234,15 +237,16 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   w.document.click(row.querySelector('[data-fallout-tab="items"]'));
   ok(draws === 1, 'opened again on the same container, a press is heard once', 'tab row drawn ' + draws + ' times for one press');
 
-  test.subHeading('without the probability search on the page, it loads it once and mounts when it is there');
+  test.subHeading('without the probability search on the page, it loads it through spirit.require and mounts when it is there (goal/G41.11)');
   const wl = world(false);
   wl.win.spirit.deskPlugins.fallout.open(wl.container, wl.ctx); await settle();
   const scripts = wl.document.body.children.filter(function (c) { return c.tagName === 'SCRIPT'; });
-  ok(scripts.length === 1 && scripts[0].src === '/shell/js/probabilitySearch.js' && typeof scripts[0].onload === 'function', 'one script, /shell/js/probabilitySearch.js, is put on the page',
-    short(scripts.map(function (s) { return s.src; })));
+  const asked = wl.win.required.filter(function (r) { return r.path === 'shell/js/probabilitySearch.js'; });
+  ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for shell/js/probabilitySearch.js, and puts no script tag on the page',
+    'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
   wl.win.spirit.elements.probabilitySearch = { create: wl.list.create };
-  scripts[0].onload(); await settle();
+  if (asked[0]) asked[0].resolve({}); await settle();
   ok(wl.list.made.length === 1 && wl.list.made[0].host === wl.$('fallout-list') && wl.$('fallout-summary').textContent === '❌ 3 red of 10 tests now (30%).',
     'once it loads, the list is made and the summary counted', 'made ' + wl.list.made.length + ', summary ' + wl.$('fallout-summary').textContent);
 

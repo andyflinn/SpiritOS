@@ -518,12 +518,17 @@ var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
 // deskClient keeps it in node; loaded once by the app, as the shared element is.
 var DESK_DATA = '/shell/shared/js/deskData.js';
+// EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
+// dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
+// for the page and answers when it has run.
+function deskNeed(p) {
+  var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
+  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
+  return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
+}
 function deskLoadData() {
   if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DESK_DATA;
-  document.body.appendChild(script);
+  deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ });
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
@@ -537,20 +542,12 @@ var DESK_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
 function deskLoadRunStatus() {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
   if (typeof have === 'function') return;
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DESK_RUN_STATUS;
-  script.onload = function () { deskDraw(); };
-  document.body.appendChild(script);
+  deskNeed(DESK_RUN_STATUS).then(function () { deskDraw(); }, function () { /* the status word alone */ });
 }
 function deskLoadSharedElement(done) {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
   if (typeof have === 'function') { done(); return; }
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DESK_SHARED_ELEMENT;
-  script.onload = done;
-  document.body.appendChild(script);
+  deskNeed(DESK_SHARED_ELEMENT).then(done, function () { /* no shared rows */ });
 }
 function deskMakeElement(o) {
   var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
@@ -803,11 +800,7 @@ function deskOpenPlugin(app) {
   };
   if (held[name]) { open(); return; }
   el.textContent = 'Loading the ' + name + ' plugin…';
-  var script = document.createElement('script');
-  script.src = '/' + DESK_PLUGIN_UI + name + '/' + name + '.js';
-  script.onload = open;
-  script.onerror = function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
-  document.body.appendChild(script);
+  deskNeed(DESK_PLUGIN_UI + name + '/' + name + '.js').then(open, function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; });
 }
 // THE STATUS BOX (goal/G18.5, back with goal/G33.6): while the verifier runs this item, its run; otherwise the server's
 // status word, green when it says passed, red when rejected or red. Andy: "why do i no longer see the verifier run in
@@ -1069,11 +1062,7 @@ function deskMountChat(el, goal) {
   };
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskChat;
   if (typeof have === 'function') { mount(); return; }
-  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-  var script = document.createElement('script');
-  script.src = DESK_SHARED_CHAT;
-  script.onload = mount;
-  document.body.appendChild(script);
+  deskNeed(DESK_SHARED_CHAT).then(mount, function () { /* no chat here */ });
 }
 
 // Ending design mode is his decision, said in Team: an `answer` with the
@@ -1212,27 +1201,10 @@ function deskRuleElement(row, key) {
     ],
   });
 }
-// probabilitySearch.js and the rowElement it draws rule rows with, loaded once for the page however many asks wait.
+// probabilitySearch.js and the rowElement it draws rule rows with, through the one loader (it loads each once).
 var DESK_ROW_ELEMENT = '/shell/js/rowElement.js';
-var deskSearchWaiting = null;
 function deskLoadSearch(done) {
-  var have = function () { return window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch && window.spirit.elements.rowElement; };
-  if (have()) { done(); return; }
-  if (deskSearchWaiting) { deskSearchWaiting.push(done); return; }
-  if (typeof document.createElement !== 'function' || !document.body) return;
-  deskSearchWaiting = [done];
-  var left = 0;
-  var loaded = function () { left -= 1; if (left > 0) return; var w = deskSearchWaiting; deskSearchWaiting = null; w.forEach(function (fn) { fn(); }); };
-  [DESK_ROW_ELEMENT, DESK_SEARCH].forEach(function (src) {
-    var E = window.spirit && window.spirit.elements;
-    if (src === DESK_SEARCH ? (E && E.probabilitySearch) : (E && E.rowElement)) return;
-    left += 1;
-    var script = document.createElement('script');
-    script.src = src;
-    script.onload = loaded;
-    document.body.appendChild(script);
-  });
-  if (!left) { left = 1; loaded(); }
+  Promise.all([deskNeed(DESK_ROW_ELEMENT), deskNeed(DESK_SEARCH)]).then(function () { done(); }, function () { /* no search on this page */ });
 }
 function deskDrawRules() {
   var note = document.getElementById('desk-rule-error');

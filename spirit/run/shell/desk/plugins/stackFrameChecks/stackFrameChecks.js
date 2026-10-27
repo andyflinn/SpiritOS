@@ -42,14 +42,10 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function fields() { return (win.spirit.elements || {}).deskDoorFields || null; }
-  // The shared door fields, loaded once per page when they are not there yet.
+  // The shared door fields, loaded once per page through the one loader (goal/G41.11; rule/21): spirit.require.
   function needFields(done) {
     if (fields()) { done(); return; }
-    if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
-    var script = document.createElement('script');
-    script.src = FIELDS_SRC;
-    script.onload = done;
-    document.body.appendChild(script);
+    Promise.resolve(win.spirit.require(String(FIELDS_SRC).replace(/^\/+/, ''))).then(function () { done(); }, function () { /* no fields */ });
   }
   function say(id, text) {
     var el = document.getElementById(id);
