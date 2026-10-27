@@ -429,12 +429,18 @@
   function readFace(id) {
     var name = id.split('/').pop();
     var own = fileText(id + '/' + name + '.json').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }, function () { return {}; });
+    // Join is boot's own, drawn by its open step; never an app icon of its own.
+    if (id === JOIN) return Promise.resolve();
     return Promise.all([Promise.resolve(ask('fs.annotations', { path: id + '/' + name + '.js' })), own]).then(function (got) {
       var r = got[0];
       var face = (r && r.status === 200 && r.body && r.body.face) || null;
-      if (face && face.app === true) {
-        var m = { name: String(face.name || name), icon: String(face.icon || ''), description: String(face.description || ''),
-          server: typeof got[1].server === 'string' ? got[1].server : '' };
+      var mf = got[1] || {};
+      // AN INTRINSIC APP SHOWS ON EVERY FACE (goal/G41.1, box v17: "minimal == intrinsic"), its face mark or not; what the
+      // node's face part does not name, its manifest does (its icon a key into the icon table).
+      if (face && (face.app === true || face.intrinsic === true)) {
+        var glyphs = (window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
+        var m = { name: String(face.name || mf.name || name), icon: String(face.icon || glyphs[mf.icon] || ''), description: String(face.description || mf.description || ''),
+          server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
         if (apps[id]) apps[id].manifest = m;
         else apps[id] = { id: id, manifest: m, behavior: null };
       } else if (apps[id]) { delete apps[id]; closePages(id); }
