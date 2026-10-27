@@ -126,8 +126,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (!appsOnCore.length) test.check('no app script touches the kernel\'s object, so the face can open any of them (' + appScripts.length + ' read)');
   else test.fail('app scripts still on the kernel: ' + short(appsOnCore));
   const banned = (parts || []).filter(function (p) { return /listSearch\.js$|contactSelector\.js$|appHeader\.js$/.test(p); });
-  if (parts && !banned.length && !/shellCreateListSearch|listSearch/.test(code('shell/js/textView.js'))) test.check('listSearch, the contact selector and the header element are off the face\'s list of parts, and the text view builds on probabilitySearch, not listSearch');
-  else test.fail('listSearch on the face: parts ' + short(banned) + (/shellCreateListSearch|listSearch/.test(code('shell/js/textView.js')) ? ', the text view still on listSearch' : ''));
+  if (parts && !banned.length && !/shellCreateListSearch|listSearch/.test(code('shell/js/codeMirror.js'))) test.check('listSearch, the contact selector and the header element are off the face\'s list of parts, and the text view builds on probabilitySearch, not listSearch');
+  else test.fail('listSearch on the face: parts ' + short(banned) + (/shellCreateListSearch|listSearch/.test(code('shell/js/codeMirror.js')) ? ', the text view still on listSearch' : ''));
   const ps = code('shell/js/probabilitySearch.js');
   if (/['"]PageUp['"]/.test(ps) && /['"]PageDown['"]/.test(ps) && /ownerDocument\.addEventListener\(\s*['"]keydown['"]|document\.addEventListener\(\s*['"]keydown['"]/.test(ps)) test.check('the one list search takes up, down, home, end, page up and page down on the whole list, heard on the page, whether its field has focus or not');
   else test.fail('the list keys: page up/down ' + (/['"]PageDown['"]/.test(ps) ? 'handled' : 'missing') + ', heard on the page ' + (/document\.addEventListener\(\s*['"]keydown['"]/.test(ps) ? 'yes' : 'no, only on the search\'s own container'));
@@ -842,7 +842,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       out.before = await suitesOf('goal/G100.1');
       await call('item.files.add', { id: 'goal/G100.1', path: 'spirit/run/spirit.js' }, CW);
       out.withTest = await suitesOf('goal/G100.1');
-      await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/process/js/desk/desk.js' }, CW);
+      // A manifest: no script has a test of it (desk.js has its own since goal/G41.11, so it no longer stands for a file
+      // without one).
+      await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/process/js/desk/desk.json' }, CW);
       out.noTest = await suitesOf('goal/G100.2');
       out.noShellRules = keysOf((await facts('goal/G100.2')).rules);
       // 7. A shell file brings the auto-attach ui rules onto the item, and they ride on every take and wake.
@@ -866,7 +868,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   else {
     if (fr.withTest.indexOf('spirit/run/test/spirit.js') !== -1 && fr.before.indexOf('spirit/run/test/spirit.js') === -1 && !fr.noTest.some(function (p) { return /^spirit\/run\//.test(p); }))
       test.check('a file of the product tree with its own test brings that test into the item\'s list by itself; a file without one brings nothing');
-    else test.fail('tests by the file list: before ' + short(fr.before) + ', with spirit.js ' + short(fr.withTest) + ', with desk.js ' + short(fr.noTest));
+    else test.fail('tests by the file list: before ' + short(fr.before) + ', with spirit.js ' + short(fr.withTest) + ', with desk.json ' + short(fr.noTest));
     if (fr.ui && fr.noShellRules.indexOf(fr.ui) === -1 && fr.shellRules.indexOf(fr.ui) !== -1) test.check('a file in spirit/run/shell/ on the item attaches the auto-attach ui rules to it; a file elsewhere attaches none');
     else test.fail('ui rules by the file list: rule ' + short(fr.ui) + ', before the shell file ' + short(fr.noShellRules) + ', after ' + short(fr.shellRules));
     if (fr.ui && fr.designRules.indexOf(fr.ui) !== -1 && fr.redTake && fr.redRules.indexOf(fr.ui) !== -1) test.check('the ui rules attached to an item ride on every take and wake: in design and on the take of red alike');
@@ -1221,6 +1223,63 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const wrong = worthy ? Object.keys(cases).filter(function (p) { return worthy(p) !== cases[p]; }) : ['no statusWorthy'];
   if (usesWorthy && !wrong.length) test.check('the file watch sends a status only for files of the product tree, never for an editor\'s temporary copy');
   else test.fail('the file watch\'s status rule: ' + (usesWorthy ? '' : 'not used by the watch; ') + 'wrong for ' + short(wrong));
+
+  // FIX DESK ISSUES (goal/G41.11, box v10): Desk's own shared parts out of shell/js, and every Desk system script with its
+  // test pair. The behaviour this item asks of the desk, deskClient, the commit hook and the Desk screens is asserted in
+  // their own test folders (process/js/desk/test, process/js/deskClient/test, shell/desk/test, shell/deskDetails/test).
+  test.subHeading('1q. desk issues: shell/js holds core shell elements only, and every Desk system script has its test pair');
+  // shell/js is for core shell elements only (Andy): the desk data translator moves to shell/shared/js/deskData.js.
+  const deskDataOld = path.join(RUN, 'shell', 'js', 'desk', 'data.js');
+  const deskDataNew = path.join(RUN, 'shell', 'shared', 'js', 'deskData.js');
+  if (!fs.existsSync(deskDataOld) && fs.existsSync(deskDataNew) && !fs.existsSync(path.join(RUN, 'shell', 'js', 'desk')))
+    test.check('the desk data translator lives in shell/shared/js/deskData.js, and shell/js holds no desk folder');
+  else test.fail('the desk data translator: shell/js/desk/data.js ' + (fs.existsSync(deskDataOld) ? 'still there' : 'gone') + ', shell/shared/js/deskData.js ' + (fs.existsSync(deskDataNew) ? 'there' : 'missing'));
+  const loadersOfOld = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name.charAt(0) === '.') return;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(p);
+      if (/\.(js|html)$/.test(e.name) && /shell\/js\/desk\/data\.js/.test(fs.readFileSync(p, 'utf8').replace(/\/\/[^\n]*/g, ''))) loadersOfOld.push(path.relative(RUN, p).replace(/\\/g, '/'));
+    });
+  }(RUN));
+  if (!loadersOfOld.length) test.check('nothing in the run tree loads shell/js/desk/data.js any more');
+  else test.fail('still loading shell/js/desk/data.js: ' + loadersOfOld.join(', '));
+  // Every Desk system script, each with ./test/<name>.js and ./test/<name>.md, named by testModule.js (Andy: "desk system
+  // scripts now have their own test folders: deskClient, desk, and the all the UI's with it, every script file a
+  // corresponding test and doc script."): the desk server's folder, deskClient's, and every Desk UI.
+  const DESK_PLACES = ['process/js/desk', 'process/js/deskClient', 'shell/desk', 'shell/deskDetails', 'shell/ruleDetails',
+    'shell/stackFrameCheckDetail', 'shell/deskAgentRemote'];
+  const deskScripts = [];
+  DESK_PLACES.forEach(function (place) {
+    (function walk(dir) {
+      if (!fs.existsSync(dir)) return;
+      fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+        if (e.name === 'test' || e.name === 'node_modules' || e.name.charAt(0) === '.') return;
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) return walk(p);
+        if (/\.js$/.test(e.name)) deskScripts.push(path.relative(RUN, p).replace(/\\/g, '/'));
+      });
+    }(path.join(RUN, place)));
+  });
+  fs.readdirSync(path.join(RUN, 'shell', 'shared', 'js')).forEach(function (n) { if (/^desk.*\.js$/.test(n)) deskScripts.push('shell/shared/js/' + n); });
+  const deskPair = function (m) { const d = path.posix.dirname(m); const n = path.posix.basename(m, '.js'); return { js: d + '/test/' + n + '.js', md: d + '/test/' + n + '.md' }; };
+  const deskUnpaired = deskScripts.filter(function (m) { const p = deskPair(m); return !fs.existsSync(path.join(RUN, p.js)) || !fs.existsSync(path.join(RUN, p.md)); });
+  if (deskScripts.length > 20 && !deskUnpaired.length) test.check('every Desk system script (' + deskScripts.length + ') has its pair beside it, ./test/<name>.js and ./test/<name>.md');
+  else test.fail(deskUnpaired.length + ' of ' + deskScripts.length + ' Desk system scripts without their test pair: ' + deskUnpaired.join(', '));
+  const deskTm = require(path.join(RUN, 'test', 'testModule.js'));
+  const deskNotNamed = deskScripts.filter(function (m) { return !(deskTm.testsFor(m) || []).some(function (t) { return t.test === deskPair(m).js; }); });
+  if (!deskNotNamed.length) test.check('testModule.js names each of those tests for its script');
+  else test.fail('testModule.js does not name the own test of ' + deskNotNamed.length + ' Desk system scripts: ' + deskNotNamed.slice(0, 12).join(', ') + (deskNotNamed.length > 12 ? ', ...' : ''));
+  // A pair is a test: each runs, prints its result lines, and ends green.
+  const deskRan = deskUnpaired.length ? [] : deskScripts.map(function (m) {
+    const r = spawnSync(process.execPath, [path.join(RUN, deskPair(m).js)], { cwd: path.join(RUN, '..', '..'), encoding: 'utf8', timeout: 180000 });
+    const lines = String(r.stdout || '').split('\n').filter(function (l) { return /^\**\s*(SUCCESS|FAILURE) #/.test(l); });
+    return { m: m, ran: lines.length, red: lines.filter(function (l) { return /FAILURE #/.test(l); }).length };
+  });
+  const deskBad = deskRan.filter(function (x) { return !x.ran || x.red; });
+  if (!deskUnpaired.length && !deskBad.length) test.check('each Desk system script\'s test runs and is green');
+  else test.fail('Desk system tests not run green: ' + (deskUnpaired.length ? 'the missing pairs' : short(deskBad)));
 
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;

@@ -33,3 +33,20 @@ the arming deskDetails.js hand-rolled.
 
 - A button armed by the dialog itself rather than by armingButton; a first press that already writes; an armed
   wording lost; a grant or close sent on one press.
+
+## Requirements (goal/G41.11)
+
+Andy, in the box: "the remove button for red Q's must ask: are-you-sure?", "the start-design and end-design buttons in an
+item must ask: are-you-sure", "the rename input field on goal/item detail panel MUST contain the current title when it's
+first displayed."
+
+- **A red Q's remove** (the red Qs panel, `data-qclear`) is an armingButton: the first press arms it and sends nothing,
+  the second sends his clear (`chat.add` with `<Q>: clear`).
+- **Start design and End design** in the details panel (`dd-start-design`, `dd-end-design`) are armingButtons: the
+  first press arms, the second presses `start-design` / `end-design`.
+- **Rename** opens its field (`dd-name`) holding the current title of the goal or item; Save sends the title as edited.
+
+## What its test must try to break (goal/G41.11)
+
+- A red Q cleared, or design started or ended, on one press; the remove or a design button not made by armingButton.
+- A rename field that opens empty, on an item or a goal.

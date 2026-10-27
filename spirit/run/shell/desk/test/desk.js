@@ -260,5 +260,27 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   if (close) { wc.document.click(close); await settle(); }
   const sentClose = wc.presses();
   ok(!!close && sentClose.length === 1 && sentClose[0].args.what === 'close' && sentClose[0].args.id === 'goal/G8', 'one press closes a goal with nothing open', 'close button ' + !!close + ', sent ' + JSON.stringify(sentClose.map(function (s) { return s.args; })));
+
+  // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
+  // Found verifying goal/G41.9 on a real page: Start and End design mode armed, but kept their own inline green or red,
+  // which beats the shell's armed red (shell.css, #app-content button[data-armed]). Their colour moves to a class that
+  // shell.css paints only while the button is not armed.
+  test.subHeading('goal/G41.11: Start and End design mode turn the shell\'s red when armed');
+  const css = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const wd = deskWorld(Object.assign({}, goal, { design: true }), []);
+  await wd.mount();
+  [['desk-end-design', 'End design mode'], ['desk-start-design', 'Start design mode']].forEach(function (pair) {
+    const b = wd.document.getElementById(pair[0]);
+    const style = b ? String(b.getAttribute('style') || '') : '';
+    ok(!!b && !/background/i.test(style), pair[1] + ': no inline background, which would beat the armed red', pair[1] + ': ' + (b ? 'style="' + style + '"' : 'not drawn'));
+    const classes = b ? String(b.className || '').split(/\s+/).filter(Boolean) : [];
+    // A rule of shell.css naming one of its classes, only while not armed, that paints its background.
+    const painted = classes.filter(function (c) {
+      const re = new RegExp('[^{}]*\\.' + c.replace(/[-]/g, '\\-') + '[^{}]*:not\\(\\[data-armed\\]\\)[^{}]*\\{[^}]*background', 'i');
+      return re.test(css);
+    });
+    ok(painted.length > 0, pair[1] + ': its colour comes from a class shell.css paints only while unarmed (.' + painted[0] + ':not([data-armed]))',
+      pair[1] + ': classes ' + JSON.stringify(classes) + ', none painted by shell.css under :not([data-armed])');
+  });
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

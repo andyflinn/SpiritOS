@@ -255,5 +255,56 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1');
   w = await grants();
   await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }, 'Grant all');
+
+  // ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
+  // Andy, in the box: "the remove button for red Q's must ask: are-you-sure?", "the start-design and end-design buttons
+  // in an item must ask: are-you-sure", and "the rename input field on goal/item detail panel MUST contain the current
+  // title when it's first displayed." Each pressed through the dialog as he would.
+  test.subHeading('goal/G41.11: a red Q\'s remove asks are-you-sure');
+  // Any write of the dialog's, its red Q's clear (chat.add "Q1: clear") among them.
+  const anyWrite = function (g) { return g.asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set|chat\.add|item\.rename)$/.test(a.name); }); };
+  async function twoPressAny(g, find, want, what) {
+    const before = anyWrite(g).length;
+    const b = find();
+    if (!b) { test.fail(what + ': no such button in the dialog'); return; }
+    const byElement = g.made.some(function (m) { return m.button === b && m.opts && m.opts.api && typeof m.opts.api.armUntilElsewhere === 'function'; });
+    g.document.click(b); await settle();
+    const firstWrote = anyWrite(g).length - before;
+    const b1 = find();
+    const armed = !!(b1 && b1.hasAttribute('data-armed'));
+    g.document.click(b1 || b); await settle();
+    const sent = anyWrite(g).slice(before);
+    const good = byElement && armed && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
+    ok(good, what + ': an armingButton, armed on the first press with nothing sent, ' + want.name + ' on the second',
+      what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }));
+  }
+  const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
+  const withQ = async function () { const g = ddWorld(ITEM, QS); await g.open(); g.document.click(g.document.querySelector('[data-panel="qs"]')); await settle(); return g; };
+  w = await withQ();
+  await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove');
+
+  test.subHeading('goal/G41.11: the details panel\'s Start and End design ask are-you-sure');
+  const DESIGN = { id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], verified: 'none', blocked: [] };
+  w = ddWorld(DESIGN, []); await w.open();
+  await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design');
+  const OUT = { id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], verified: 'none', blocked: [] };
+  w = ddWorld(OUT, []); await w.open();
+  await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design');
+
+  test.subHeading('goal/G41.11: the rename field opens holding the current title');
+  for (const subject of [ITEM, GOAL]) {
+    const g = ddWorld(subject, []); await g.open();
+    const rename = g.document.getElementById('dd-rename');
+    if (rename) { g.document.click(rename); await settle(); }
+    const field = g.document.getElementById('dd-name');
+    ok(!!field && field.value === subject.title, (subject.goal === '' ? 'a goal' : 'an item') + ': Rename opens its field holding "' + subject.title + '"',
+      (subject.goal === '' ? 'a goal' : 'an item') + ': ' + (field ? 'the field holds "' + field.value + '"' : 'no rename field after Rename'));
+    // What it holds is what he edits: Save sends the title as it stands, so an untouched field renames nothing new.
+    const save = g.document.getElementById('dd-name-save');
+    if (field && save) { field.value = subject.title + ' renamed'; g.document.click(save); await settle(); }
+    const renamed = g.asked.filter(function (a) { return a.name === 'desk.item.rename'; }).pop();
+    ok(!!renamed && renamed.args.title === subject.title + ' renamed', (subject.goal === '' ? 'a goal' : 'an item') + ': Save sends the edited title',
+      (subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args));
+  }
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

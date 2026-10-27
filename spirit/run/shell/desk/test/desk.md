@@ -35,3 +35,14 @@ the arming desk.js hand-rolled.
 
 - A button armed by the page itself rather than by armingButton; a first press that already presses; an armed
   wording lost; the page's own row click pressing a Done the armingButton holds.
+
+## Requirements (goal/G41.11)
+
+- **Armed is red, also on the design buttons.** Start design mode and End design mode carry no inline background: an
+  inline colour beats the shell's armed red (`#app-content button[data-armed]`, shell.css), so armed they stayed green
+  or red (found verifying goal/G41.9 on a real page). Their colour comes from a class of each that shell.css paints only
+  while the button is not armed (`.<class>:not([data-armed])`).
+
+## What its test must try to break (goal/G41.11)
+
+- An inline `style` background left on either design button; a class whose colour shell.css paints armed or not.
