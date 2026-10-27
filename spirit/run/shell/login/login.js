@@ -12,6 +12,12 @@
   var shown = '';
   var steps = [];
 
+  // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require. Asked as the app
+  // loads, and again as Log out is drawn: the relay serves the face only its own parts before login, and a refused
+  // require is not kept, so once the face is linked home the second ask reaches the node.
+  function loginParts() { return spirit.require('shell/js/armingButton.js'); }
+  loginParts().then(null, function () {});
+
   function escape(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -70,22 +76,12 @@
       linkStep.innerHTML =
         '<div class="job-manifest-note">Logged in as ' + escape(h.facts.face) + '. ' + escape(how) + '</div>' +
         (h.facts.home ? '' : '<div class="start-job-form card"><button type="button" id="face-logout">Log out</button></div>');
-      // TWO PRESSES (goal/G30.15): the first arms it, a press anywhere else disarms it (the shell's armUntilElsewhere),
-      // the second logs out.
+      // TWO PRESSES (goal/G30.15). THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9): an armingButton, the first press arms
+      // it, a press anywhere else disarms it, the second logs out.
       var out = document.getElementById('face-logout');
-      if (out) out.addEventListener('click', function () {
-        if (out.getAttribute('data-armed') !== '1') {
-          out.setAttribute('data-armed', '1');
-          out.classList.add('armed');
-          out.textContent = 'Log out? Press again';
-          if (typeof api.armUntilElsewhere === 'function') api.armUntilElsewhere(function () {
-            out.removeAttribute('data-armed');
-            out.classList.remove('armed');
-            out.textContent = 'Log out';
-          });
-          return;
-        }
-        api.post('logout').then(function () { window.location.reload(); }, api.refresh);
+      if (out) loginParts().then(function () {
+        spirit.elements.armingButton.attach(out, { label: 'Log out', armedLabel: 'Log out? Press again', api: api,
+          run: function () { api.post('logout').then(function () { window.location.reload(); }, api.refresh); } });
       });
     }
   }

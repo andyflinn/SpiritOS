@@ -24,7 +24,6 @@ var ddFiles = [];            // item.files, its own answer since goal/G32.2: cor
 var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
-var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
 // GRANTS SENT, NOT YET PUSHED BACK (goal/G33.8, box v11; Andy: "i had to grant appServer.js twice"): a confirmed grant
 // shows granting… until the desk's pushed check row says granted; a refusal clears it. Never asked again (Andy's rule:
 // a client's change lands only via the desk's push).
@@ -67,7 +66,42 @@ function ddWrite(verb, args) {
   });
 }
 function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
-function ddDisarm() { ddArmed = ''; ddPaint(); }
+
+// THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button here is an armingButton
+// (shell/js/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
+// made one after each paint; it arms, says so, and hands the shell its disarm, and its second press is ddSecondPress.
+var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+function ddArming() {
+  return ddParts.then(function () {
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    var body = document.getElementById('dd-body');
+    if (!A || !body || typeof body.querySelectorAll !== 'function') return;
+    Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {
+      if (typeof b.armed === 'function') return;
+      A.attach(b, { label: b.textContent, armedLabel: b.getAttribute('data-arming'), run: function () { ddSecondPress(b); }, api: ddApi });
+    });
+  }, function () { /* no armingButton, no second press */ });
+}
+// The second press, as each button wrote before.
+function ddSecondPress(b) {
+  var g = b.getAttribute('data-grant');
+  if (g) {
+    var sent = g === 'all' ? ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).map(function (c) { return c.number; }) : [g];
+    sent.forEach(function (n) { ddPending[n] = true; });
+    ddPaint();
+    ddWrite('check.set', { id: ddId, check: g, state: 'granted' }).then(function (ok) {
+      if (ok) return;
+      sent.forEach(function (n) { delete ddPending[n]; });
+      ddPaint();
+    });
+    return;
+  }
+  // CLOSE LEAVES THE DIALOG TOO (desk/G3.8), only once the server took it.
+  if (b.id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+  // DELETE IS A VERB, NOT A PRESS (goal/G9.7), and it takes the item off the List, so the dialog goes with it.
+  if (b.id === 'dd-delete') { ddWrite('item.delete', { id: ddId }).then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+  ddPress(b.id.slice(3));
+}
 
 // ── THE FRAME, DRAWN ONCE PER OPEN ────────────────────────────────────
 //
@@ -195,9 +229,8 @@ function ddButtonsHtml() {
     var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
     if (b !== 'done') return '<button type="button" id="dd-' + b + '">' + label + '</button>';
     var warned = ddDoneWarned(f);
-    var armed = warned && ddArmed === 'dd-done';
-    var done = '<button type="button" id="dd-done"' + (armed ? ' data-armed="1"' : '') + (warned ? ' title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
-      (armed ? 'Done anyway: sure?' : label + (warned ? ' ' + DD_WARN : '')) + '</button>';
+    var done = '<button type="button" id="dd-done"' + (warned ? ' data-arming="Done anyway: sure?" title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
+      label + (warned ? ' ' + DD_WARN : '') + '</button>';
     if ((f.buttons || []).indexOf('verify') === -1) return done;
     verifyDrawn = true;
     return done + ddVerifyHtml(f);
@@ -208,28 +241,24 @@ function ddButtonsHtml() {
       '<button type="button" id="dd-name-save">Save</button>'
     : '<button type="button" id="dd-rename">Rename</button>';
   // THE GOAL'S ABANDON: "a red, arming-button ... with are-you-sure", "at the
-  // very right of the button row". The first press arms it, the second goes;
-  // it disarms the moment he clicks elsewhere (armedButtons.js, the shell's
-  // armUntilElsewhere), and data-armed has the shell paint it.
+  // very right of the button row". An armingButton (ddArming), as every
+  // are-you-sure below.
   // GO ALL ON THE GOAL (desk/G3.7). Andy: "the goal-detail panel could offer the
   // go-all button if there is any go-able items". Armed like the List's (G3.4).
   if (f.goal === '' && (f.buttons || []).indexOf('go-all') !== -1) {
-    html += '<button type="button" id="dd-go-all"' + (ddArmed === 'dd-go-all' ? ' data-armed="1"' : '') + '>' +
-      (ddArmed === 'dd-go-all' ? 'Go all: sure?' : 'Go all') + '</button>';
+    html += '<button type="button" id="dd-go-all" data-arming="Go all: sure?">Go all</button>';
   }
   // WAIVE (goal/G2.22). Andy: "there is no Waive in the G2.18 dialog" — the server has had the press since
   // goal/G5.7 and never had a button. Armed like Go all: the first click arms, the second lifts the phase rules on
   // this item, so one agent can carry it from red to verify.
   if ((f.buttons || []).indexOf('waive') !== -1) {
-    html += '<button type="button" id="dd-waive"' + (ddArmed === 'dd-waive' ? ' data-armed="1"' : '') + '>' +
-      (ddArmed === 'dd-waive' ? 'Waive: sure?' : 'Waive') + '</button>';
+    html += '<button type="button" id="dd-waive" data-arming="Waive: sure?">Waive</button>';
   }
   // DELETE (goal/G9.7). Andy: "the button bar of items will offer an arm-able [delete] while in design mode." The
   // server offers it only then (buttons), so the bar draws it from the facts and arms like Waive: the first click arms,
   // the second deletes. His decision that it closes rather than erases is the server's (goal/G9.7, goal/G4.24).
   if ((f.buttons || []).indexOf('delete') !== -1) {
-    html += '<button type="button" id="dd-delete"' + (ddArmed === 'dd-delete' ? ' data-armed="1"' : '') + '>' +
-      (ddArmed === 'dd-delete' ? 'Delete: sure?' : 'Delete') + '</button>';
+    html += '<button type="button" id="dd-delete" data-arming="Delete: sure?">Delete</button>';
   }
   // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
   // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
@@ -246,19 +275,17 @@ function ddButtonsHtml() {
   // VERIFY WHERE NO DONE IS SHOWN (a goal before its items are done): at the end of the row.
   if (!verifyDrawn && (f.buttons || []).indexOf('verify') !== -1) html += ddVerifyHtml(f);
   if (f.goal === '') {
-    html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
-      ' style="margin-left:auto;background:#b00020;color:#fff">' +
-      (ddArmed === 'dd-abandon' ? 'Sure? Abandon the goal' : 'Abandon') + '</button>';
+    html += '<button type="button" id="dd-abandon" data-arming="Sure? Abandon the goal"' +
+      ' style="margin-left:auto;background:#b00020;color:#fff">Abandon</button>';
   }
   if (early) {
     // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open; nothing open presses at
-    // once. On a non-goal item (an open code item) the existing "Close: sure?" arm stands (desk/G3.9).
+    // once. On a non-goal item (an open code item) the "Close: sure?" arm stands (desk/G3.9).
     var goalOpen = f.goal === '' && (f.blocked || []).length;
-    var label = ddArmed === 'dd-close'
-      ? (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?')
-      : 'Close';
-    html += '<button type="button" id="dd-close"' + (ddArmed === 'dd-close' ? ' data-armed="1"' : '') + ' style="margin-left:auto">' +
-      label + '</button>';
+    var asks = f.goal !== '' || goalOpen > 0;
+    html += '<button type="button" id="dd-close"' +
+      (asks ? ' data-arming="' + (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?') + '"' : '') +
+      ' style="margin-left:auto">Close</button>';
   }
   return html;
 }
@@ -307,9 +334,8 @@ function ddQsHtml() {
 function ddGrantsHtml(open) {
   // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". Armed like every grant; one write grants them all.
   var openCount = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open' && !ddPending[c.number]; }).length;
-  var armedAll = ddArmed === 'grant:all';
-  var all = open && openCount > 1 ? '<div><button type="button" data-grant="all"' + (armedAll ? ' data-armed="1"' : '') +
-    ' style="background:#c00;color:#fff">' + (armedAll ? 'Grant all ' + openCount + ': sure?' : 'Grant all ' + openCount) + '</button></div>' : '';
+  var all = open && openCount > 1 ? '<div><button type="button" data-grant="all" data-arming="Grant all ' + openCount + ': sure?"' +
+    ' style="background:#c00;color:#fff">Grant all ' + openCount + '</button></div>' : '';
   return all + ddChecks.map(function (c) {
     if (!open && c.kind === 'G' && c.state === 'granted') {
       return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
@@ -318,9 +344,8 @@ function ddGrantsHtml(open) {
       return '<div data-pending="' + ddEsc(c.number) + '"><button type="button" disabled style="background:#888;color:#fff">granting…</button> ' + ddEsc(c.words) + '</div>';
     }
     if (open && c.kind === 'G' && c.state === 'open') {
-      var armed = ddArmed === 'grant:' + c.number;
-      return '<div><button type="button" data-grant="' + ddEsc(c.number) + '"' + (armed ? ' data-armed="1"' : '') +
-        ' style="background:#c00;color:#fff">' + (armed ? 'Grant ' + ddEsc(c.number) + ': sure?' : 'Grant ' + ddEsc(c.number)) + '</button> ' + ddEsc(c.words) + '</div>';
+      return '<div><button type="button" data-grant="' + ddEsc(c.number) + '" data-arming="Grant ' + ddEsc(c.number) + ': sure?"' +
+        ' style="background:#c00;color:#fff">Grant ' + ddEsc(c.number) + '</button> ' + ddEsc(c.words) + '</div>';
     }
     return '';
   }).join('');
@@ -505,6 +530,7 @@ function ddPaint() {
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
   if (ddFacts && typeof ddApi.setScreenTitle === 'function') ddApi.setScreenTitle(ddId + ' — ' + (ddFacts.title || '') + (ddFacts.status ? ' (' + ddFacts.status + ')' : ''));
+  ddArming();
 }
 
 function ddValue(id) {
@@ -864,70 +890,22 @@ spirit.shell.activateApp({
         return;
       }
 
-      var grantEl = t && t.closest ? t.closest('[data-grant]') : null;
-      if (grantEl) {
-        var g = grantEl.getAttribute('data-grant');
-        if (ddArmed !== 'grant:' + g) {
-          ddArmed = 'grant:' + g;
-          ddPaint();
-          if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(ddDisarm);
-          return;
-        }
-        ddArmed = '';
-        var sent = g === 'all' ? ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open'; }).map(function (c) { return c.number; }) : [g];
-        sent.forEach(function (n) { ddPending[n] = true; });
-        ddPaint();
-        ddWrite('check.set', { id: ddId, check: g, state: 'granted' }).then(function (ok) {
-          if (ok) return;
-          sent.forEach(function (n) { delete ddPending[n]; });
-          ddPaint();
-        });
-        return;
-      }
       var question = t && t.closest ? t.closest('[data-question]') : null;
       if (question) { ddQuote(question.getAttribute('data-question')); return; }
       var check = t && t.getAttribute && t.getAttribute('data-check');
       if (check) { ddWrite('check.set', { id: ddId, check: check, state: 'passed' }); return; }
+      // goal/G41.9: an are-you-sure is its armingButton's (ddArming), never this listener's.
+      if (t && t.closest && t.closest('[data-arming]')) return;
       var id = t && t.id;
       // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
       // should close, since it doesn't exist in the list anymore either." Only once the server took it.
-      var f = ddFacts || {};
-      // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open; nothing open presses at
-      // once. On a non-goal item (an open code item) the existing early-close arm stands (desk/G3.9).
-      var armedClose = id === 'dd-close' && ddEarlyClose(f) && (f.goal !== '' || (f.blocked || []).length > 0);
-      if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
-      // goal/G33.3: Done not verified green arms first and says why; the second press sends it.
-      if (id === 'dd-done' && ddDoneWarned(f) && ddArmed !== 'dd-done') {
-        ddArmed = 'dd-done';
-        ddNote = ddDoneWhy(f);
-        ddPaint();
-        if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(function () { ddNote = ''; ddDisarm(); });
-        return;
-      }
-      if (id === 'dd-done') { ddArmed = ''; ddNote = ''; }
+      if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen' || id === 'dd-end-design' || id === 'dd-start-design') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
       // goal/G33.3: Verify presses at once, whatever the switch says.
       if (id === 'dd-verify') { ddPress('verify'); return; }
-      if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || id === 'dd-delete' || armedClose) {
-        if (ddArmed !== id) {
-          ddArmed = id;
-          ddPaint();
-          if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(ddDisarm);
-          return;
-        }
-        ddArmed = '';
-        if (armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
-        // DELETE IS A VERB, NOT A PRESS (goal/G9.7), and it takes the item off the List, so the dialog goes with it.
-        if (id === 'dd-delete') {
-          ddWrite('item.delete', { id: ddId }).then(function (taken) { if (taken) ddApi.closeDialog({}); });
-          return;
-        }
-        ddPress(id.slice(3));
-        return;
-      }
       if (id === 'dd-rename') { ddRenaming = true; ddPaint(); return; }
       if (id === 'dd-name-save') { ddRename(); return; }
       if (id === 'dd-add') { ddAdd(); return; }
@@ -983,7 +961,6 @@ spirit.shell.activateApp({
     ddChatMore = false;
     // The chat search reads the item on screen; its rows are asked again for it.
     ddMountChatFind();
-    ddArmed = '';
     ddPending = {};
     ddRowChange = {};
     ddRenaming = false;

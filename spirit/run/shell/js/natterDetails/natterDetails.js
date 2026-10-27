@@ -386,8 +386,8 @@ function ndRemoveHtml() {
 }
 
 // LEAVE THIS RELAY (goal/G40.10; Andy: "add the leave verb to node. and publish the \"leaving\""): only where this node
-// holds a seat and does not own the relay. Two presses, then relay.leave; the relay stays on the list for a later join,
-// and the shadow stream tells every screen, this one among them (goal/G40.11).
+// holds a seat and does not own the relay. Two presses (an armingButton), then relay.leave; the relay stays on the list
+// for a later join, and the shadow stream tells every screen, this one among them (goal/G40.11).
 function ndLeaveHtml() {
   if (!ndBadge || !ndBadge.claimed || ndBadge.owned) return '';
   return ndPanel('leave', '🚪', 'Leave this relay',
@@ -395,35 +395,23 @@ function ndLeaveHtml() {
     '<div class="job-manifest-note nd-leave-out">Leave gives up your seat on this relay, and the email and face name it holds for you. It stays on your list, so you can join again.</div>');
 }
 function ndLeave(button) {
-  if (button.getAttribute('data-armed') !== 'yes') {
-    button.setAttribute('data-armed', 'yes');
-    button.textContent = 'Press again to leave';
-    return;
-  }
-  button.removeAttribute('data-armed');
   button.disabled = true;
   if (!ndApi) return;
-  ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
+  return ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     var out = document.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; ndLoad(); return; }
     button.disabled = false;
-    button.textContent = 'Leave this relay';
     if (out) out.textContent = 'not left: ' + (said.error || 'no answer');
   });
 }
 
-// Two presses, then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node asks the same rule.
-function ndRemove(button) {
+// Two presses (an armingButton), then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node
+// asks the same rule.
+function ndRemove() {
   if (ndRemoveRefusal()) return;
-  if (button.getAttribute('data-armed') !== 'yes') {
-    button.setAttribute('data-armed', 'yes');
-    button.textContent = 'Press again to remove';
-    return;
-  }
-  button.removeAttribute('data-armed');
   if (!ndApi) return;
-  ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
+  return ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     if (said.ok) { ndApi.closeDialog(); return; }
     var out = document.querySelector('.nd-remove-out');
@@ -1023,7 +1011,7 @@ function ndSetRelayLabel(button) {
 // The relay's own config verb answers it: read with an empty ask (what is on file, what runs, what the box can give,
 // the roll), written with figures that apply at the next start, and restart:true asks for that start now. Each field
 // says the members its figure serves: the RAM left after the relay's own memory at rest, 16 streams a megabyte, three
-// streams a seat. Restart drops every stream on the box, so it takes two presses.
+// streams a seat. Restart drops every stream on the box, so it takes two presses (an armingButton).
 var ndAlloc = null;       // the config read's answer
 var ndAllocAsked = false;
 var ndAllocSaid = '';
@@ -1116,13 +1104,6 @@ function ndAllocSave(button) {
     panel.querySelector('.nd-alloc-out'));
 }
 function ndAllocRestart(button) {
-  if (button.getAttribute('data-armed') !== '1') {
-    button.setAttribute('data-armed', '1');
-    button.classList.add('armed');
-    button.textContent = 'Restart? Every stream drops';
-    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
-    return;
-  }
   // RESTART ONLY (goal/G30.15): no figures go with it, so nothing in the file is written over.
   ndAllocAsk({ restart: true }, button.closest('.natter-allocation').querySelector('.nd-alloc-out'));
 }
@@ -1320,20 +1301,28 @@ function ndSetTitle() {
   ndApi.setScreenTitle(name ? 'Relay Details for ' + name : 'Relay Details');
 }
 
-// ── PUTTING EVERY ARMED BUTTON BACK ──────────────────────────────────
+// ── THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9) ────────────────────
 //
 //   Andy: "whenever i click anywhere else on the screen the button must
 //   reset, back to its original state, and the whole are-you-sure
 //   procedure must be done from scratch."
 //
-// This screen arms in the DOM — `data-armed` plus a changed label — so
-// the disarm is simply a repaint: ndRender rebuilds every panel from
-// state, and `data-armed` is not state. Four buttons, one answer.
-//
-// HARMLESS TWICE, which the shell requires of a disarm hook: a repaint of
-// a screen that is already right paints the same thing.
-function ndDisarm() {
-  ndRender();
+// Restart, Revoke, Remove and Leave are armingButtons, attached after
+// every draw: the element arms, puts the button back the moment attention
+// moves and keeps one armed at a time. This screen says only what each
+// says, armed and not, and what its second press does.
+function ndArming(body) {
+  var E = window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+  if (!E) return;
+  var each = function (selector, fn) { Array.prototype.forEach.call(body.querySelectorAll(selector), fn); };
+  var attach = function (button, armedLabel, run) {
+    E.attach(button, { label: button.textContent, armedLabel: armedLabel, run: function () { return run(button); }, api: ndApi });
+  };
+  each('.nd-alloc-restart', function (b) { attach(b, 'Restart? Every stream drops', ndAllocRestart); });
+  // Two presses about the SAME name: the armed text names the invite.
+  each('.nd-inv-revoke', function (b) { attach(b, 'Revoke ' + (b.getAttribute('data-invite-label') || '') + '?', ndRevoke); });
+  each('.nd-remove', function (b) { attach(b, 'Press again to remove', ndRemove); });
+  each('.nd-leave', function (b) { attach(b, 'Press again to leave', ndLeave); });
 }
 
 function ndRender() {
@@ -1370,6 +1359,7 @@ function ndRender() {
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.
   ndMountForms(body);
+  ndArming(body);
 }
 
 // THE TWO FORMS, THE SAME EVERYWHERE (goal/G40.10, box v19; Andy: "on the relays detail page the picker CAN be shown as
@@ -1521,16 +1511,10 @@ function ndRevoke(button) {
   var label = button.getAttribute('data-invite-label') || '';
   if (!label) return;
 
-  // Two presses about the SAME name, the way Remove was armed before it.
+  // Two presses about the SAME name (an armingButton, ndArming).
   // Revoking is not destructive of anything a person cannot redo — the
   // owner can mint again — but it breaks a phone call that has already
   // happened, so it is worth a second of thought.
-  if (button.getAttribute('data-armed') !== label) {
-    button.setAttribute('data-armed', label);
-    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
-    button.textContent = 'Revoke ' + label + '?';
-    return;
-  }
 
   // ── THE FIRST VERB THROUGH THE LOOPBACK CLIENT LAYER ───────────────
   //
@@ -1552,13 +1536,11 @@ function ndRevoke(button) {
   if (!relayKey) {
     out.className = 'job-manifest-note nd-inv-revoke-out is-error';
     out.textContent = 'this relay has not answered yet';
-    button.removeAttribute('data-armed');
-    button.textContent = 'Revoke';
     return;
   }
 
   button.disabled = true;
-  ndApi.peerPost('relay', relayKey, { revoke: { label: label } }).then(function (r) {
+  return ndApi.peerPost('relay', relayKey, { revoke: { label: label } }).then(function (r) {
     // THE ANSWER IS A BODY, decoded by the layer from the envelope the
     // relay replied in. No JSON.parse here, and no second opinion about
     // what an empty envelope means.
@@ -1568,8 +1550,6 @@ function ndRevoke(button) {
     if (!ok) {
       out.textContent = (said && said.error) || r.error || ('HTTP ' + r.status);
       button.disabled = false;
-      button.removeAttribute('data-armed');
-      button.textContent = 'Revoke';
       return;
     }
     // ZERO IS NOT A FAILURE. It means the expiry swept them first, which
@@ -1744,17 +1724,14 @@ var ndPage = ({
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
 
-      var revokeBtn = target.closest('.nd-inv-revoke');
-      if (revokeBtn) { ndRevoke(revokeBtn); return; }
-
+      // Revoke, Restart, Remove and Leave are not here: each is an
+      // armingButton (ndArming).
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
 
       // Memory and disc (goal/G30.15).
       var allocSave = target.closest('.nd-alloc-save');
       if (allocSave) { ndAllocSave(allocSave); return; }
-      var allocRestart = target.closest('.nd-alloc-restart');
-      if (allocRestart) { ndAllocRestart(allocRestart); return; }
 
 
 
@@ -1767,12 +1744,6 @@ var ndPage = ({
 
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
-
-      var removeBtn = target.closest('.nd-remove');
-      if (removeBtn) { ndRemove(removeBtn); return; }
-
-      var leaveBtn = target.closest('.nd-leave');
-      if (leaveBtn) { ndLeave(leaveBtn); return; }
 
     });
 
@@ -1850,6 +1821,8 @@ var ndPage = ({
 });
 // The join form it draws with, it loads itself (goal/G41.3), through spirit.require.
 if (window.spirit && window.spirit.require) window.spirit.require('shell/js/joinForm.js');
+// And the armingButton its are-you-sure buttons are (goal/G41.9), the same way.
+if (window.spirit && window.spirit.require) window.spirit.require('shell/js/armingButton.js');
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
 // shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).

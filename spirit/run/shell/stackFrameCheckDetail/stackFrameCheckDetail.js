@@ -23,10 +23,11 @@ var sdDoor = null;       // the door as the plugin last read it
 var sdRun = null;        // its last runState
 var sdTicker = null;     // the elapsed-time tick while its run is under way
 var sdTicks = 0;
-var sdArmed = '';        // the armed button's id
-var sdChat = null;       // the mounted chat of its item
+var sdChat = null;      // the mounted chat of its item
 var SD_PRE = 'sfcd-';
 var SD_SHARED = { deskDoorFields: '/shell/shared/js/deskDoorFields.js', createDeskChat: '/shell/shared/js/deskChat.js' };
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require.
+var sdParts = spirit.require('shell/js/armingButton.js');
 
 function sdEsc(s) { return sdApi && sdApi.escapeHtml ? sdApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function sdWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
@@ -59,19 +60,24 @@ function sdErr(e) { return (e && e.message) || String(e); }
 // Every block a leading 1em; each button 1em after itself (the desk's UI rules).
 function sdFrame() {
   var F = sdElements().deskDoorFields;
-  var armed = sdArmed === 'sfcd-remove';
   sdBody.innerHTML =
     '<div class="stat-tile wide" style="margin-top:1em"><div class="label" id="sfcd-head">Door ' + sdEsc(sdId) + '</div>' +
       '<div class="start-job-form card" style="margin-top:1em">' + (F ? F.html(SD_PRE) : '<div class="job-manifest-note">Loading the door\'s fields.</div>') +
         '<div style="margin-top:1em"><button type="button" id="sfcd-save" style="margin-right:1em">Save</button>' +
         '<button type="button" id="sfcd-run" style="margin-right:1em">Run</button>' +
-        '<button type="button" id="sfcd-remove" data-armed="' + (armed ? '1' : '') + '" style="margin-right:1em">' + (armed ? 'Remove: sure?' : 'Remove') + '</button></div>' +
+        '<button type="button" id="sfcd-remove" style="margin-right:1em">Remove</button></div>' +
         '<div class="job-manifest-note" style="margin-top:1em">Run checks this one door at once, here; its verdict also goes to deskVerify as a record. ' +
           'Remove strikes the door from the list and deletes its item.</div></div>' +
       '<div id="sfcd-note" class="job-start-error" style="margin-top:1em"></div>' +
       '<div id="sfcd-state" style="margin-top:1em"></div>' +
     '</div>' +
     '<div id="sfcd-chat"></div>';
+  // REMOVE ASKS FIRST (D7). THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9): an armingButton, armed by its first press,
+  // disarmed by a click anywhere else, and its second press removes.
+  var b = document.getElementById('sfcd-remove');
+  if (b) sdParts.then(function () {
+    sdElements().armingButton.attach(b, { label: 'Remove', armedLabel: 'Remove: sure?', api: sdApi, run: sdRemove });
+  });
 }
 function sdFill() {
   var F = sdElements().deskDoorFields;
@@ -81,14 +87,6 @@ function sdFill() {
   F.fill(SD_PRE, sdDoor);
   F.check(SD_PRE, 'sfcd-save');
 }
-function sdDrawRemove() {
-  var b = document.getElementById('sfcd-remove');
-  if (!b) return;
-  var armed = sdArmed === 'sfcd-remove';
-  b.textContent = armed ? 'Remove: sure?' : 'Remove';
-  if (b.setAttribute) b.setAttribute('data-armed', armed ? '1' : '');
-}
-function sdDisarm() { sdArmed = ''; sdDrawRemove(); }
 
 // ── ITS RUN ──────────────────────────────────────────────────────────
 function sdStopTicking() { if (sdTicker) { clearTimeout(sdTicker); sdTicker = null; } }
@@ -213,21 +211,8 @@ spirit.shell.activateApp({
     container.addEventListener('click', function (event) {
       var t = event && event.target;
       var id = t && t.id;
-      if (id === 'sfcd-save') { sdDisarm(); sdSave(); return; }
-      if (id === 'sfcd-run') { sdDisarm(); sdRunIt(); return; }
-      if (id === 'sfcd-remove') {
-        // ARMED (D7, and his rule for every armed button, armedButtons.js): the first press arms and asks, a click
-        // anywhere else disarms, the second press removes.
-        if (sdArmed !== id) {
-          sdArmed = id;
-          sdDrawRemove();
-          if (typeof api.armUntilElsewhere === 'function') api.armUntilElsewhere(sdDisarm);
-          return;
-        }
-        sdArmed = '';
-        sdDrawRemove();
-        sdRemove();
-      }
+      if (id === 'sfcd-save') { sdSave(); return; }
+      if (id === 'sfcd-run') { sdRunIt(); return; }
     });
     container.addEventListener('input', function (event) {
       var t = event && event.target;
@@ -253,7 +238,6 @@ spirit.shell.activateApp({
     sdId = String((params && params.id) || '');
     sdDoor = null;
     sdRun = null;
-    sdArmed = '';
     sdTicks = 0;
     sdStopTicking();
     if (sdChat && typeof sdChat.destroy === 'function') sdChat.destroy();

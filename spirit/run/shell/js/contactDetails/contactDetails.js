@@ -31,8 +31,6 @@ var cdApi = null;
 var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as buildPeople hands it over
 var cdChanged = false; // has anything happened that the table must repaint for?
-var cdBlockArmed = false;
-var cdForgetArmed = false;
 
 // Through the shell (AGENT.md, Comms). The verb is the argument; this app
 // no longer knows an address.
@@ -119,24 +117,37 @@ function cdTitle() {
 // cannot influence decisions." A contact that went stale is simply stale:
 // "email addresses change, contacts go stale. Deal with it."
 
-// ── PUTTING THE SCREEN BACK ──────────────────────────────────────────
-//
-//   Andy: "whenever i click anywhere else on the screen the button must
-//   reset, back to its original state, and the whole are-you-sure
-//   procedure must be done from scratch."
-//
-// Handed to the shell at the moment either button arms. It calls this on
-// the next click anywhere that is not the one being handled — so an armed
-// Block or Forget cannot survive a person's attention moving.
-//
-// HARMLESS TWICE, which the shell requires: the confirming press runs the
-// handler first, which clears the flag itself, and this then repaints a
-// screen that is already right.
-function cdDisarm() {
-  if (!cdBlockArmed && !cdForgetArmed) return;
-  cdBlockArmed = false;
-  cdForgetArmed = false;
-  cdRender();
+// THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9): Block and Forget are armingButtons, attached after every draw. The
+// element arms, puts the button back the moment attention moves (Andy: "whenever i click anywhere else on the screen
+// the button must reset, back to its original state, and the whole are-you-sure procedure must be done from scratch"),
+// and keeps one armed at a time; this screen says only what each says and what its second press does.
+function cdArming(id, label, armedLabel, run) {
+  var button = document.getElementById(id);
+  var E = window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+  if (!button || !E) return;
+  E.attach(button, { label: label, armedLabel: armedLabel, run: run, api: cdApi });
+}
+
+// Two presses. Blocking is the one decision here that stops mail
+// arriving, and the button sits at the end of a row you may have
+// been tabbing along.
+function cdBlock() {
+  return cdPeerAction('block');
+}
+
+// THE SCREEN GOES WITH THE ROW. Every other action here repaints
+// the person; this one removed them, so there is nobody left to
+// paint and staying would be a screen about a contact that is not
+// one. Back to the book, which is where the change is visible.
+// Off every relay this node owns first, and the forget only if
+// each of them answered — removed, or "no such peer".
+function cdForget() {
+  return cdReleaseSeats().then(function (released) {
+    if (!released) { cdRender(); return; }
+    return cdPeerAction('forget').then(function (ok) {
+      if (ok) { cdChanged = true; cdApi.closeDialog(); }
+    });
+  });
 }
 
 function cdRender() {
@@ -186,13 +197,7 @@ function cdRender() {
     if (cdPerson.held) {
       buttons += '<button type="button" class="cancel-btn" id="cd-accept">Accept</button>';
     }
-    // `data-armed` is what the shell's red is keyed on. This screen keeps
-    // the arming in a variable rather than on the element — it repaints
-    // after every decision, so an attribute set on a button would go with
-    // it — and the attribute is written back out on the way through.
-    buttons += '<button type="button" class="cancel-btn" id="cd-block"' +
-      (cdBlockArmed ? ' data-armed="yes"' : '') + '>' +
-      (cdBlockArmed ? 'Block — press again' : 'Block') + '</button>';
+    buttons += '<button type="button" class="cancel-btn" id="cd-block">Block</button>';
   }
 
   // ── AND FORGETTING, WHICH IS OFFERED TO EVERYBODY ─────────────────
@@ -217,10 +222,7 @@ function cdRender() {
   // key from every relay this node owns — it no longer knows in advance
   // whether they hold a seat (the seats were a roster's, and no relay
   // returns one), so it acts, and "no such peer" is simply the answer.
-  buttons += '<button type="button" class="cancel-btn" id="cd-forget"' +
-    (cdForgetArmed ? ' data-armed="yes"' : '') + '>' +
-    (cdForgetArmed ? 'Forget, and remove any seat on relays you own — press again' : 'Forget') +
-    '</button>';
+  buttons += '<button type="button" class="cancel-btn" id="cd-forget">Forget</button>';
 
   var handle = cdPerson.publicLabel || '';
   var caption = handle ? 'Change My Label for ' + cdEscapeHtml(handle) : 'Change My Label';
@@ -242,6 +244,9 @@ function cdRender() {
     '</div>' +
     '<div class="job-manifest-note" id="cd-status">' +
       cdEscapeHtml(cdMessage) + '</div>';
+
+  cdArming('cd-block', 'Block', 'Block — press again', cdBlock);
+  cdArming('cd-forget', 'Forget', 'Forget, and remove any seat on relays you own — press again', cdForget);
 }
 
 // Everything this screen decides is a hub verb. Nothing is written to
@@ -357,51 +362,9 @@ var cdPage = ({
     // a handler bound to a button would go with it.
     document.getElementById('cd-body').addEventListener('click', function (event) {
       var id = event.target && event.target.id;
-      if (id === 'cd-accept') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('accept'); return; }
-      if (id === 'cd-unblock') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('unblock'); return; }
-      if (id === 'cd-forget') {
-        if (!cdForgetArmed) {
-          // ONE LOADED BUTTON AT A TIME. Two on a screen is the same
-          // trap twice, and the shell cannot do this part: the click
-          // that arms this one is the click it is told to ignore, so
-          // the other button's disarm never fires. The pairing is this
-          // screen's own knowledge.
-          cdBlockArmed = false;
-          cdForgetArmed = true;
-          if (cdApi.armUntilElsewhere) cdApi.armUntilElsewhere(cdDisarm);
-          cdRender();
-          return;
-        }
-        cdForgetArmed = false;
-        // THE SCREEN GOES WITH THE ROW. Every other action here repaints
-        // the person; this one removed them, so there is nobody left to
-        // paint and staying would be a screen about a contact that is not
-        // one. Back to the book, which is where the change is visible.
-        // Off every relay this node owns first, and the forget only if
-        // each of them answered — removed, or "no such peer".
-        cdReleaseSeats().then(function (released) {
-          if (!released) { cdRender(); return; }
-          return cdPeerAction('forget').then(function (ok) {
-            if (ok) { cdChanged = true; cdApi.closeDialog(); }
-          });
-        });
-        return;
-      }
-      if (id === 'cd-block') {
-        cdForgetArmed = false;
-        // Two presses. Blocking is the one decision here that stops mail
-        // arriving, and the button sits at the end of a row you may have
-        // been tabbing along.
-        if (!cdBlockArmed) {
-          cdForgetArmed = false;   // see the note on Forget, above
-          cdBlockArmed = true;
-          if (cdApi.armUntilElsewhere) cdApi.armUntilElsewhere(cdDisarm);
-          cdRender();
-          return;
-        }
-        cdBlockArmed = false;
-        cdPeerAction('block');
-      }
+      // Block and Forget are not here: each is an armingButton (cdArming).
+      if (id === 'cd-accept') { cdPeerAction('accept'); return; }
+      if (id === 'cd-unblock') { cdPeerAction('unblock'); return; }
     });
 
     document.getElementById('cd-body').addEventListener('change', function (event) {
@@ -426,16 +389,18 @@ var cdPage = ({
   // The shell can promise that open() runs; it cannot know what is stale
   // inside. A half-armed Block is the example: two presses must mean two
   // presses about the SAME person, so arming it for bert and then
-  // opening carol has to disarm.
+  // opening carol has to disarm — and it does, because the load redraws
+  // the buttons and attaches new ones.
   open: function (params) {
     cdKey = (params && params.key) || '';
     cdPerson = null;
     cdChanged = false;
-    cdBlockArmed = false;
     cdLoad();
   },
 
 });
+// The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.require.
+if (window.spirit && window.spirit.require) window.spirit.require('shell/js/armingButton.js');
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
 // shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { key }; its
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).

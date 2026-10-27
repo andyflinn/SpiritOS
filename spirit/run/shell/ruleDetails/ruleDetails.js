@@ -17,8 +17,11 @@ var rdKey = '';
 var rdRule = null;           // the rule as the server last said it
 var rdChat = [];
 var rdChatMore = false;
-var rdArmed = '';            // the id of the armed button, pressed once
 var rdNote = '';
+
+// THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): Activate and Delete are armingButtons
+// (shell/js/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
+var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
 
@@ -38,16 +41,16 @@ function rdWrite(verb, args) {
     return false;
   });
 }
-function rdDisarm() { rdArmed = ''; rdPaint(); }
 
-// ── THE FRAME, DRAWN ONCE PER OPEN: the inputs are never repainted, so his typing survives every paint.
+// ── THE FRAME, DRAWN ONCE PER OPEN: the inputs are never repainted, so his typing survives every paint. The buttons are
+// drawn with it too, so an armed one stays armed through a paint; only Auto-attach's mark changes (rdPaint).
 function rdFrame() {
   var el = document.getElementById('rd-body');
   if (!el) return;
   el.innerHTML =
     '<div id="rd-bars" style="padding-bottom:2px">' +
       '<div id="rd-head" style="font-size:1.25em;font-weight:bold"></div>' +
-      '<div class="start-job-form card" id="rd-buttons"></div>' +
+      '<div class="start-job-form card" id="rd-buttons">' + rdButtonsHtml() + '</div>' +
     '</div>' +
     '<div class="start-job-form card"><label class="field-label grow">Rule' +
       '<textarea id="rd-text" rows="12" placeholder="the rule, as it should read"></textarea></label></div>' +
@@ -57,6 +60,14 @@ function rdFrame() {
     '<div id="rd-error" class="job-start-error"></div>' +
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="rd-chat"></div></div>';
   rdHeader();
+  rdParts.then(function () {
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    if (!A) return;
+    [['rd-activate', 'Activate', 'active'], ['rd-delete', 'Delete', 'deleted']].forEach(function (b) {
+      var button = document.getElementById(b[0]);
+      if (button) A.attach(button, { label: b[1], armedLabel: b[1] + ': sure?', run: function () { rdVersion(b[2]); }, api: rdApi });
+    });
+  }, function () { /* no armingButton, no second press */ });
 }
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #rd-bars moves into the app header, which sticks it
 // under the titlebar, and takes its id. As deskDetails' ddHeader.
@@ -77,17 +88,21 @@ function rdHeadHtml() {
     ' <span class="job-manifest-note">' + rdEsc(rdRule.type || '') + ', ' + rdEsc(rdRule.status || '') + (rdRule.autoAttach ? ', auto-attached to new goals' : '') + '</span>';
 }
 function rdButtonsHtml() {
-  var armedButton = function (id, label, sure) {
-    return '<button type="button" id="' + id + '"' + (rdArmed === id ? ' data-armed="1"' : '') + '>' + (rdArmed === id ? sure : label) + '</button>';
-  };
   // AUTO-ATTACH (goal/G40.12, box v7, first set 4): a toggle, as the item's Code✓ is; on, the rule is attached to every
   // goal made from then on. A press is one version of the rule with it changed (Q1, Andy: "rule.version? carries the
   // full rule.").
-  var auto = !!(rdRule && rdRule.autoAttach);
   return '<button type="button" id="rd-version">Version</button>' +
-    armedButton('rd-activate', 'Activate', 'Activate: sure?') +
-    armedButton('rd-delete', 'Delete', 'Delete: sure?') +
-    '<button type="button" id="rd-auto" aria-pressed="' + (auto ? 'true' : 'false') + '" title="attach this rule to every goal made from now on">Auto-attach' + (auto ? ' ✓' : '') + '</button>';
+    '<button type="button" id="rd-activate">Activate</button>' +
+    '<button type="button" id="rd-delete">Delete</button>' +
+    '<button type="button" id="rd-auto" aria-pressed="false" title="attach this rule to every goal made from now on">Auto-attach</button>';
+}
+// Auto-attach's mark, as the rule says it now.
+function rdAutoPaint() {
+  var b = document.getElementById('rd-auto');
+  if (!b) return;
+  var auto = !!(rdRule && rdRule.autoAttach);
+  b.textContent = 'Auto-attach' + (auto ? ' ✓' : '');
+  if (b.setAttribute) b.setAttribute('aria-pressed', auto ? 'true' : 'false');
 }
 
 // CHAT LINES AS deskDetails DRAWS THEM (goal/G6.2): every line a bubble, left-aligned, 1em apart; line breaks kept,
@@ -125,10 +140,10 @@ function rdChatHtml() {
 }
 
 function rdSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
-// Repaints everything but the two textboxes.
+// Repaints everything but the two textboxes and the buttons.
 function rdPaint() {
   rdSet('rd-head', rdHeadHtml());
-  rdSet('rd-buttons', rdButtonsHtml());
+  rdAutoPaint();
   rdSet('rd-chat', rdChatHtml());
   var err = document.getElementById('rd-error');
   if (err) err.textContent = rdNote;
@@ -200,17 +215,6 @@ spirit.shell.activateApp({
       var id = event.target && event.target.id;
       if (id === 'rd-version') { rdVersion(rdRule ? rdRule.status : ''); return; }
       if (id === 'rd-auto') { if (rdRule) rdVersion(rdRule.status, !rdRule.autoAttach); return; }
-      if (id === 'rd-activate' || id === 'rd-delete') {
-        if (rdArmed !== id) {
-          rdArmed = id;
-          rdPaint();
-          if (typeof rdApi.armUntilElsewhere === 'function') rdApi.armUntilElsewhere(rdDisarm);
-          return;
-        }
-        rdArmed = '';
-        rdVersion(id === 'rd-activate' ? 'active' : 'deleted');
-        return;
-      }
       if (id === 'rd-say-send') rdSay();
     });
     // HIS DRAFT, SAVED AS HE GOES (rule.draft; rule.get reads it back) until his Version.
@@ -235,7 +239,6 @@ spirit.shell.activateApp({
     rdRule = null;
     rdChat = [];
     rdChatMore = false;
-    rdArmed = '';
     rdNote = '';
     rdFrame();
     rdPaint();

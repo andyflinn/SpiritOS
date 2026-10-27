@@ -331,15 +331,14 @@ function deskDrawTabs() {
     // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
     // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
     '<button type="button" id="desk-end-design"' + (design ? '' : ' hidden') +
-      (deskArmed === 'desk-end-design' ? ' data-armed="1"' : '') +
-      ' style="background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode' +
-      (deskArmed === 'desk-end-design' ? ': sure?' : '') + '</button>' +
+      ' style="background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode</button>' +
     // Its twin, in the same spot while design mode is off.
     '<button type="button" id="desk-start-design"' + (!design ? '' : ' hidden') +
-      (deskArmed === 'desk-start-design' ? ' data-armed="1"' : '') +
-      ' style="background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode' +
-      (deskArmed === 'desk-start-design' ? ': sure?' : '') + '</button>' +
+      ' style="background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>' +
     deskBubblesHtml();
+  // NEITHER BY ACCIDENT (desk/G1.12): each an armingButton, made again after each draw.
+  deskArming(document.getElementById('desk-end-design'), 'End design mode: sure?', deskEndDesign);
+  deskArming(document.getElementById('desk-start-design'), 'Start design mode: sure?', deskStartDesign);
 }
 
 // THE AGENT TABS INSIDE TEAM STOOD HERE (desk/G1 D2, goal/G2.4) and went with goal/G3.12: one tab per agent, a
@@ -637,8 +636,8 @@ var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete', 'end-design
 var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">⚔️</span>';
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
-// THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too, and asks "are you sure?" first
-// while any of its items is open (deskGoalCloseClick, below).
+// THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too. It shows only once nothing under
+// the goal is open (deskNextPress), so it presses at once (goal/G41.9): an are-you-sure there could never fire.
 function deskInRow(row, what) {
   if (DESK_NOT_IN_ROW.indexOf(what) !== -1) return false;
   if (what === 'close' && row.status !== 'done' && !(row.goal === '')) return false;
@@ -663,26 +662,23 @@ function deskNextPress(row) {
   return stepped.length ? stepped[0] : (offered[0] || '');
 }
 function deskRowPresses(row) {
-  var goal = row.goal === '';
   var next = deskNextPress(row);
   return (next ? [next] : []).map(function (what) {
-    // goal/G6.6: the Close on a goal row with open items is armed with "are you sure? N open"; the shell paints
-    // data-armed red. A click on the armed button sends the press.
-    var armed = goal && what === 'close' && deskArmed === 'desk-goal-close-' + row.id;
-    var open = goal && what === 'close' ? (row.blocked || []).length : 0;
-    var label = armed ? 'are you sure? ' + open + ' open' : (DESK_PRESS_LABEL[what] || what);
+    var label = DESK_PRESS_LABEL[what] || what;
     var title = '';
-    // goal/G33.3: Done not verified green: the mark, and once armed the why in its own words.
+    // goal/G33.3: Done not verified green: the mark, and once armed the why in its own words. data-arming is what its
+    // armingButton says armed (deskArmRow).
+    var arming = '';
     if (what === 'done' && deskWarnOnDone(row)) {
-      armed = deskArmed === 'desk-done-' + row.id;
       title = deskWarnWhy(row);
-      label = armed ? 'Done anyway? ' + title : 'Done ' + DESK_WARN;
+      label = 'Done ' + DESK_WARN;
+      arming = 'Done anyway? ' + title;
     }
     // goal/G33.6: no Verify shows the verifier's busy state (Andy: "please don't show verifier-busy an any verify
     // button, i can check that for myself").
     // data-action: the List (probabilitySearch) leaves a press inside a row to its owner, this page, and opens nothing.
     return '<button type="button" data-action="press" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
-      (armed ? ' data-armed="1"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
+      (arming ? ' data-arming="' + deskEsc(arming) + '"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
 }
 // THE CELLS OF A ROW, each its own part, so the row's own element paints and repaints them one by one (goal/G27.9;
@@ -862,10 +858,25 @@ var deskListIndex = null;
 function deskListElement(row, key) {
   var E = window.spirit.elements;
   deskListIndex = deskListIndex || E.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
-  return E.rowElement.create({
+  var el = E.rowElement.create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
     fields: DESK_LIST_FIELDS.map(function (name, i) { return { name: name, paint: function (r) { return deskRowCellParts(r)[i] || ''; } }; }),
   });
+  // goal/G41.9: a press its row draws as an are-you-sure is made an armingButton after each paint of the row.
+  var hosts = null;
+  var mount = el.mount;
+  var apply = el.apply;
+  el.mount = function (h) { hosts = h; var out = mount.apply(el, arguments); deskArmRow(hosts); return out; };
+  el.apply = function () { var out = apply.apply(el, arguments); deskArmRow(hosts); return out; };
+  return el;
+}
+function deskArmRow(hosts) {
+  var cell = hosts && hosts.yours;
+  var b = cell && typeof cell.querySelector === 'function' ? cell.querySelector('[data-arming]') : null;
+  if (!b) return;
+  var id = b.getAttribute('data-id');
+  var what = b.getAttribute('data-press');
+  deskArming(b, b.getAttribute('data-arming'), function () { deskPress(id, what); });
 }
 function deskListFilter(values) {
   var v = values || {};
@@ -1069,44 +1080,28 @@ function deskMountChat(el, goal) {
 // fixed words, which Desk reads back (deskDesignOn) and the agents obey.
 // NEITHER BY ACCIDENT (desk/G1.12). Andy: "re-arm both design on and off,
 // neither should be an accident." The first press arms the button and asks
-// "sure?"; only a second press fires it. HIS HARD RULE FOR EVERY ARMED
-// BUTTON (armedButtons.js, AGENT.md): it disarms the moment he clicks
-// anywhere else, through the shell's one mechanism, and it carries
-// data-armed so the shell paints it red.
-var deskArmed = '';
-function deskDisarm() { deskArmed = ''; deskDrawTabs(); deskDrawGoAll(); deskDraw(); }
-// goal/G6.6: a goal's Close in the List, asking "are you sure?" while any of its items is open; nothing open sends
-// at once. The arm pattern paints the button red (armedButtons.js) and clicking again sends.
-function deskIsGoal(id) { return deskItems.some(function (r) { return r.id === id && r.goal === ''; }); }
-function deskGoalCloseClick(gid) {
-  var row = deskItems.filter(function (r) { return r.id === gid; })[0];
-  var open = row ? (row.blocked || []).length : 0;
-  var armId = 'desk-goal-close-' + gid;
-  if (open === 0) { deskDisarm(); deskPress(gid, 'close'); return; }
-  if (deskArmed === armId) { deskArmed = ''; deskDraw(); deskPress(gid, 'close'); return; }
-  deskArmed = armId;
-  deskDraw();
-  if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
-}
-function deskArmOrFire(id, fire) {
-  if (deskArmed === id) { deskDisarm(); fire(); return; }
-  deskArmed = id;
-  deskDrawTabs();
-  deskDrawGoAll();
-  if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
+// "sure?"; only a second press fires it.
+// THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
+// armingButton (shell/js/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
+// disarm, so it disarms the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
+var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+function deskArming(button, armedLabel, run) {
+  if (!button) return;
+  deskParts.then(function () {
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    if (!A || typeof button.armed === 'function') return;
+    A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run, api: deskApi });
+  }, function () { /* no armingButton, no second press */ });
 }
 // GO ALL (desk/G3.4). Andy: "i should have a go-all button for fixing rounds",
 // "the go all should be on the right side of the button bar in list", "and be the
 // armed-type". Shown while the goal's buttons offer it; the server decides which
-// items it goes.
+// items it goes. Drawn once, at mount, and made an armingButton there.
 function deskDrawGoAll() {
   var b = document.getElementById('desk-go-all');
   if (!b) return;
   var g = deskGoalRow();
-  var armed = deskArmed === 'desk-go-all';
   b.hidden = !(deskTab === 'list' && g && (g.buttons || []).indexOf('go-all') !== -1);
-  b.textContent = armed ? 'Go all: sure?' : 'Go all';
-  if (b.setAttribute) b.setAttribute('data-armed', armed ? '1' : '');
 }
 function deskGoAll() { var g = deskGoalRow(); if (g) deskPress(g.id, 'go-all'); }
 // A PRESS ON THE GOAL, NOT A LINE (desk/G2.6): design mode is the server's.
@@ -1738,10 +1733,7 @@ spirit.shell.activateApp({
     }
     document.getElementById('desk-tabs').addEventListener('click', function (e) {
       var el = clicked(e, 'data-tab');
-      if (!el) return;
-      if (el.id === 'desk-end-design') deskArmOrFire(el.id, deskEndDesign);
-      else if (el.id === 'desk-start-design') deskArmOrFire(el.id, deskStartDesign);
-      else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
+      if (el && el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
     // THE INNER TABS UNDER APPS (goal/G22.3): one listener on their row, which is redrawn.
     document.getElementById('desk-app-tabs').addEventListener('click', function (e) {
@@ -1755,22 +1747,9 @@ spirit.shell.activateApp({
       var press = t && t.closest && t.closest('[data-press]');
       if (press) {
         if (e.stopPropagation) e.stopPropagation();
-        var what = press.getAttribute('data-press');
-        var id = press.getAttribute('data-id');
-        // goal/G6.6: Close on a goal with open items asks "are you sure?" first; nothing open sends at once.
-        if (what === 'close' && deskIsGoal(id)) { deskGoalCloseClick(id); return; }
-        // goal/G33.3: Done not verified green arms first; the second press sends it.
-        if (what === 'done') {
-          var r = deskItems.filter(function (x) { return x.id === id; })[0];
-          if (r && deskWarnOnDone(r) && deskArmed !== 'desk-done-' + id) {
-            deskArmed = 'desk-done-' + id;
-            deskDraw();
-            if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
-            return;
-          }
-          if (deskArmed === 'desk-done-' + id) deskArmed = '';
-        }
-        deskPress(id, what);
+        // goal/G41.9: an are-you-sure (Done not verified green, goal/G33.3) is its armingButton's, never this listener's.
+        if (press.hasAttribute && press.hasAttribute('data-arming')) return;
+        deskPress(press.getAttribute('data-id'), press.getAttribute('data-press'));
         return;
       }
       var link = t && t.closest && t.closest('[data-open]');
@@ -1824,7 +1803,7 @@ spirit.shell.activateApp({
         return;
       }
     });
-    document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
+    deskArming(document.getElementById('desk-go-all'), 'Go all: sure?', deskGoAll);
     document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {

@@ -27,7 +27,6 @@ var grContact = null;
 var grBranch = null;
 var grSaid = null;      // where the page says what a press did
 var grBundle = null;    // the Grant-the-bundle slot on the line
-var grEls = {};         // key -> the row element drawing that grant
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
 // The owner's api tree, once per paint: what serves() judges against.
 function grLoadTree() {
@@ -71,7 +70,7 @@ function grRows() {
   }).map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
 }
 // EACH GRANT A ROW ELEMENT (goal/G41.5): it paints whose grant it is, the path, and its own Revoke, a row action that asks
-// the node; the grants read again afterwards are what the list then shows (rule/19).
+// the node once he is sure; the grants read again afterwards are what the list then shows (rule/19).
 function grElement(row, key) {
   var el = window.spirit.elements.rowElement.create({
     kind: 'grant',
@@ -90,7 +89,15 @@ function grElement(row, key) {
     ],
     actions: [{ name: 'revoke', label: 'Revoke', run: function (e) { return grRevoke(e.row.peer, e.row.path); } }],
   });
-  grEls[key] = el;
+  // REVOKE ASKS "ARE YOU SURE?" (goal/G41.9). THE ARE-YOU-SURE IS THE SHELL'S: the drawn Revoke made an armingButton as
+  // the row mounts, its second press the element's action.
+  var mount = el.mount;
+  el.mount = function (hosts) {
+    mount(hosts);
+    var b = hosts && hosts.revoke ? hosts.revoke.querySelector('[data-action="revoke"]') : null;
+    if (b) window.spirit.elements.armingButton.attach(b, { label: 'Revoke', api: grApi, run: function () { return el.act('revoke', {}); } });
+    return el;
+  };
   return el;
 }
 
@@ -169,12 +176,11 @@ function grRevoke(key, path) {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
 // tree...."): through spirit.require, each element bringing its own. Nothing of the old shell's list search is left.
 var grParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js',
-  'shell/js/apiBranchSelector.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/apiBranchSelector.js', 'shell/js/armingButton.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     grApi = api;
-    grEls = {};
     // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (rule/16; as in Apps and Contacts).
     container.innerHTML =
       '<div class="fill">' +
@@ -248,14 +254,6 @@ function grDraw(api, line, listHost) {
       grLoadBundle(grBranch.server);
     });
     grant.addEventListener('click', function () { grGrant(grContact.value, grBranch.value); });
-    // A ROW'S OWN BUTTON (Revoke): the element's action, which asks the node.
-    listHost.addEventListener('click', function (event) {
-      var t = event && event.target;
-      var b = t && typeof t.closest === 'function' ? t.closest('[data-action]') : null;
-      var tr = b && typeof b.closest === 'function' ? b.closest('[data-key]') : null;
-      var el = tr ? grEls[tr.getAttribute('data-key')] : null;
-      if (el) el.act(b.getAttribute('data-action'), {});
-    });
 
     grLine();
     return grLoadTree().then(grLoadGrants);

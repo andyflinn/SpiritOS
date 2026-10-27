@@ -109,14 +109,22 @@ apps.forEach(function (name) {
   if (!/armUntilElsewhere/.test(code)) missing.push(name);
 });
 
-// FLOOR LOWERED FROM 3 TO 2 ON 2026-09-25: relayChat was one of the
-// three and left the repo. Lowering a count when the reason is known is
-// ordinary; what must not happen is the floor staying at 3 and somebody
-// later "fixing" it by arming a button that did not need it.
-if (arming.length >= 2) {
-  test.check('found ' + arming.length + ' apps with two-press buttons: ' + arming.join(', '));
+// ONE ELEMENT ARMS NOW (goal/G41.9; Andy: "create shell-element \"armingButton\""): every app's two-press button
+// is an armingButton, which asks the shell for the disarm and marks data-armed itself, so no app arms by hand.
+// deskAgentRemote is the one exception, left as it is (Andy, 2026-10-27: "add the deskAgentRemote exception to the
+// box."), and it still has to meet every check below.
+const ELEMENT = path.join(RUN_DIR, 'shell', 'js', 'armingButton.js');
+const element = fs.existsSync(ELEMENT) ? codeOf(ELEMENT) : '';
+if (/armUntilElsewhere/.test(element) && /data-armed/.test(element)) {
+  test.check('the armingButton element asks the shell for the disarm and marks data-armed');
 } else {
-  test.fail('only ' + arming.length + ' apps matched — the arming shapes moved: ' + arming.join(', '));
+  test.fail('shell/js/armingButton.js is missing, or arms without the shell or without data-armed');
+}
+const byHand = arming.filter(function (name) { return name !== 'deskAgentRemote'; });
+if (byHand.length === 0) {
+  test.check('no app arms a button by hand: ' + (arming.length ? 'only ' + arming.join(', ') + ', the exception' : 'none'));
+} else {
+  test.fail(byHand.join(', ') + ' still arm a button by hand instead of through armingButton');
 }
 
 if (missing.length === 0) {

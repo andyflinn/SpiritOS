@@ -11,17 +11,17 @@
 // The explanation comes first, because pressing a red button twice only
 // protects someone who knows what they are agreeing to. The button is the
 // shell's two-press one: red when armed, and disarmed the moment attention
-// moves (armUntilElsewhere), so a confirmation can never land on a question
-// he has forgotten being asked.
+// moves, so a confirmation can never land on a question he has forgotten
+// being asked.
 
 var rkApi = null;
-var rkArmed = false;
 var rkBusy = false;
 var rkResult = null;
 
-function rkEsc(s) { return rkApi.escapeHtml(String(s == null ? '' : s)); }
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require.
+var rkParts = spirit.require('shell/js/armingButton.js');
 
-function rkDisarm() { rkArmed = false; rkDraw(); }
+function rkEsc(s) { return rkApi.escapeHtml(String(s == null ? '' : s)); }
 
 function rkDraw() {
   var el = document.getElementById('rk-body');
@@ -46,9 +46,14 @@ function rkDraw() {
       ? '<div class="stat-tile wide"><div class="label">Rotated</div><div>This node\'s card is now number ' +
           rkEsc(rkResult.at) + ', handed to ' + rkEsc(rkResult.relays) + ' relay(s).</div></div>'
       : '<div class="start-job-form card"><button type="button" id="rk-rotate"' +
-          (rkArmed ? ' data-armed="yes"' : '') + (rkBusy ? ' disabled' : '') + '>' +
-          (rkArmed ? 'Rotate the key: press again' : 'Rotate the key') + '</button></div>') +
+          (rkBusy ? ' disabled' : '') + '>Rotate the key</button></div>') +
     '<div class="job-start-error">' + (failed ? rkEsc(rkResult.error || 'refused') : '') + '</div>';
+  // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9): an armingButton; its second press rotates.
+  var b = document.getElementById('rk-rotate');
+  if (b) rkParts.then(function () {
+    window.spirit.elements.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again',
+      api: rkApi, run: rkRotate });
+  });
 }
 
 function rkRotate() {
@@ -69,24 +74,12 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     rkApi = api;
     container.innerHTML = '<div id="rk-body" class="stack"></div>';
-    // Delegated, because the body is repainted when the button arms.
-    document.getElementById('rk-body').addEventListener('click', function (event) {
-      if (!event.target || event.target.id !== 'rk-rotate' || rkBusy) return;
-      if (!rkArmed) {
-        rkArmed = true;
-        rkApi.armUntilElsewhere(rkDisarm);
-        rkDraw();
-        return;
-      }
-      rkArmed = false;
-      rkRotate();
-    });
+    return rkParts;
   },
 
-  // Every open starts disarmed and without an old result: two presses must
-  // mean two presses in THIS visit.
+  // Every open starts disarmed (the button is drawn anew) and without an old
+  // result: two presses must mean two presses in THIS visit.
   open: function () {
-    rkArmed = false;
     rkBusy = false;
     rkResult = null;
     rkDraw();
