@@ -173,7 +173,6 @@
     jobs: 'shell/jobs',
     'app-manager': 'shell/apps',
     files: 'shell/files',
-    'group-manager': 'shell/group-manager',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -2743,7 +2742,7 @@
   // its move, alongside its APP_ID_RENAMES entry.
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
-  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info', 'introSpector', 'join', 'icons'];
+  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'contacts', 'info', 'introSpector', 'join', 'icons'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

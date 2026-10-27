@@ -249,12 +249,6 @@
           render: function () {},
         });
 
-        // ---- Groups app ----
-        // Moved to app/group-manager/group-manager.js + its manifest
-        // (CLEANUP-PLAN). Intrinsic, so it is declared at boot from that
-        // manifest and reached through the Spirit group, exactly as it
-        // was when it registered here hidden.
-
         // ---- Spirit app (launcher/grouping template) ----
         // Hosts a sub-view of the machine-introspection apps (Stats,
         // Processes, Jobs, Apps, Groups) — hidden from the real desktop
@@ -282,7 +276,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/group-manager', 'shell/contacts']
+            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/contacts']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

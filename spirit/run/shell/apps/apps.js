@@ -49,6 +49,8 @@ function appsInstallable(path) {
 // appServer and 2) appServers"): a shell app naming a server goes with its server; under process/js only a server.
 function appsIsRow(path) {
   if (!appsIsApp(path)) return false;
+  // Login and Join are boot's own components (goal/G41.3), never apps: no row, no button.
+  if (/^shell\/(login|join)\//.test(String(path))) return false;
   var m = appsManifests[path] || {};
   return String(path).indexOf('shell/') === 0 ? !m.server : m.kind === 'server';
 }

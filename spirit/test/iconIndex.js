@@ -347,7 +347,6 @@ test.subHeading('An icon is picked from the pool, never typed');
   // one is exactly the regression.
   [
     ['shell/apps/apps.js', 'the Apps panel'],
-    ['shell/group-manager/group-manager.js', 'the Groups panel'],
   ].forEach(function (pair) {
     const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
     const typedIn = src.match(/<input[^>]*id="[a-z-]*icon[a-z-]*"/g) || [];
@@ -366,7 +365,6 @@ test.subHeading('An icon is picked from the pool, never typed');
   // setAppOverride, which no app-scoped api can express).
   [
     ['shell/apps/apps.js', 'the Apps panel'],
-    ['shell/group-manager/group-manager.js', 'the Groups panel'],
   ].forEach(function (pair) {
     const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
     if (src.indexOf('spirit.shell.ui') === -1 && /\bui\.elements\.createIconSelector/.test(src)) {

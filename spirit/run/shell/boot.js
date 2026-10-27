@@ -429,8 +429,9 @@
   function readFace(id) {
     var name = id.split('/').pop();
     var own = fileText(id + '/' + name + '.json').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }, function () { return {}; });
-    // Join is boot's own, drawn by its open step; never an app icon of its own.
-    if (id === JOIN) return Promise.resolve();
+    // Join and the login app are boot's own: Join drawn by its open step, login only off loopback; never app icons
+    // (Andy: "the login-app should not show in face-loopback mode").
+    if (id === JOIN || id === 'shell/login') return Promise.resolve();
     return Promise.all([Promise.resolve(ask('fs.annotations', { path: id + '/' + name + '.js' })), own]).then(function (got) {
       var r = got[0];
       var face = (r && r.status === 200 && r.body && r.body.face) || null;

@@ -25,7 +25,7 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // node starting servers (js/jobs.js), and every face part the node hands out (js/fileSystem.js).
 const INTRINSIC = [
   'process/js/fileServer',
-  'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/group-manager', 'shell/icons', 'shell/info',
+  'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
   'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats',
 ];
 // An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
