@@ -52,6 +52,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/18 (version 46): when being woken, read the news
+
+an agent being woken by desk and its client MUST diligently read the news coming with the wake and adjust accordingly.
+
 ### rule/17 (version 44): Diligence
 
 Before claiming completion of ANY task, test-writing, coding, or verifying, the agent MUST make sure that every single point in the items box is satisfied.
