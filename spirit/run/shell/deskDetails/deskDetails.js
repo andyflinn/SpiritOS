@@ -509,6 +509,45 @@ function ddChatHtml() {
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
   return ddChat.slice().reverse().map(ddBubble).join('') + older;
 }
+// THE CHAT IS NEVER DRAWN AGAIN WHOLE BY A PAINT (goal/G41.11; Andy: "in ALL the chats, new lines are no added, THE WHOLE
+// FUCKING THING IS REDRAWN, killing my attempted copies"): each bubble shown is kept by its line; a new line goes on top,
+// a changed one replaces only its own bubble, a line gone takes its bubble with it. A new frame draws it once, whole.
+var ddChatShown = { host: null, items: [], more: false };
+function ddChatKey(l) { return String(l.at) + '|' + String(l.key || l.by); }
+function ddChatSync() {
+  var host = document.getElementById('dd-chat');
+  if (!host) return;
+  var want = ddChat.slice().reverse().map(function (l) { return { k: ddChatKey(l), h: ddBubble(l) }; });
+  var whole = host !== ddChatShown.host || !want.length || !ddChatShown.items.length || ddChatMore !== ddChatShown.more;
+  if (whole) {
+    host.innerHTML = ddChatHtml();
+    var kids = host.children || [];
+    ddChatShown = { host: host, more: ddChatMore, items: want.length ? want.map(function (w, i) { return { k: w.k, h: w.h, node: kids[i] }; }) : [] };
+    return;
+  }
+  var drawn = Object.create(null);
+  ddChatShown.items.forEach(function (d) { drawn[d.k] = d; });
+  var wanted = Object.create(null);
+  want.forEach(function (w) { wanted[w.k] = true; });
+  ddChatShown.items.forEach(function (d) { if (!wanted[d.k] && d.node && d.node.parentNode === host) host.removeChild(d.node); });
+  // The note under the lines, when older lines are left out, stays the last child.
+  var foot = ddChatMore ? host.lastChild : null;
+  var next = [];
+  // From the oldest up: a kept bubble stays where it is; a changed one is replaced in place; a new one goes in just
+  // above the bubble under it (or above the note, or last).
+  for (var i = want.length - 1; i >= 0; i--) {
+    var w = want[i];
+    var d = drawn[w.k];
+    if (d && d.h === w.h) { next.unshift(d); continue; }
+    var hold = document.createElement('div');
+    hold.innerHTML = w.h;
+    var node = hold.firstChild;
+    if (d && d.node && d.node.parentNode === host) host.replaceChild(node, d.node);
+    else host.insertBefore(node, next.length ? next[0].node : foot);
+    next.unshift({ k: w.k, h: w.h, node: node });
+  }
+  ddChatShown = { host: host, more: ddChatMore, items: next };
+}
 
 function ddSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
 
@@ -531,7 +570,7 @@ function ddPaint() {
   if (ruleRow && ruleRow.style) ruleRow.style.display = ddPanelSel === 'rules' ? '' : 'none';
   // Whenever the rules panel shows, its dropdown is there: made for this frame if it has none yet.
   if (ddPanelSel === 'rules') ddMountRulePick();
-  ddSet('dd-chat', ddChatHtml());
+  ddChatSync();
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
   if (ddFacts && typeof ddApi.setScreenTitle === 'function') ddApi.setScreenTitle(ddId + ' — ' + (ddFacts.title || '') + (ddFacts.status ? ' (' + ddFacts.status + ')' : ''));

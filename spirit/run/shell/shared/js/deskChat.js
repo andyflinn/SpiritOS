@@ -41,19 +41,36 @@
       '<div id="' + key + '-error" class="job-start-error"></div>' +
       '<div class="stat-tile wide" style="margin-top:1em"><div class="label">' + esc(o.title || ('Chat of ' + target)) + ', newest first</div>' +
         '<div id="' + key + '-log"></div></div>';
+    // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2): his black on white, everybody else's filled.
+    function bubbleHtml(l) {
+      var mine = l.by === 'andy';
+      var look = mine
+        ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
+        : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
+      return '<div' + look + '><b>' + esc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' + time(l.at) + '</span> ' + lineHtml(l.text) + '</div>';
+    }
+    function bubble(l) {
+      var hold = document.createElement('div');
+      hold.innerHTML = bubbleHtml(l);
+      return hold.firstChild;
+    }
+    // THE WHOLE LOG IS DRAWN ONLY WHEN IT IS READ (goal/G41.11; Andy: "in ALL the chats, new lines are no added, THE WHOLE
+    // FUCKING THING IS REDRAWN, killing my attempted copies"): on the first read, and on a gap in the changes.
     function draw() {
       var log = document.getElementById(key + '-log');
       if (!log) return;
       if (lines === null) { log.innerHTML = '<div class="job-manifest-note">This chat has not been read yet.</div>'; return; }
       if (!lines.length) { log.innerHTML = '<div class="job-manifest-note">Nothing said yet under ' + esc(target) + '.</div>'; return; }
-      // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2): his black on white, everybody else's filled.
-      log.innerHTML = lines.slice().reverse().map(function (l) {
-        var mine = l.by === 'andy';
-        var look = mine
-          ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
-          : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-        return '<div' + look + '><b>' + esc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' + time(l.at) + '</span> ' + lineHtml(l.text) + '</div>';
-      }).join('');
+      log.innerHTML = lines.slice().reverse().map(bubbleHtml).join('');
+    }
+    // A NEW LINE GOES ON TOP, a changed one replaces its own bubble; every other bubble shown stays as it is.
+    function place(at, added) {
+      var log = document.getElementById(key + '-log');
+      if (!log) return;
+      if (lines.length === 1 && added) { draw(); return; }
+      if (added) { log.insertBefore(bubble(lines[at]), log.firstChild); return; }
+      var old = log.children ? log.children[lines.length - 1 - at] : null;
+      if (old) log.replaceChild(bubble(lines[at]), old); else draw();
     }
     function same(a, b) { return a.by === b.by && a.at === b.at && a.text === b.text; }
     function read() {
@@ -94,8 +111,7 @@
         if (obj.table !== 'chat' || obj.id !== target || !obj.row || obj.removed || lines === null) return;
         var at = -1;
         lines.forEach(function (l, i) { if (same(l, obj.row)) at = i; });
-        if (at === -1) lines.push(obj.row); else lines[at] = obj.row;
-        draw();
+        if (at === -1) { lines.push(obj.row); place(lines.length - 1, true); } else { lines[at] = obj.row; place(at, false); }
       });
     }
     draw();

@@ -567,8 +567,7 @@ function deskMountElements() {
   deskTeamElement = deskMakeElement({
     wants: function (obj) { return !!(obj && obj.table === 'chat' && obj.id === DESK_GROUP); },
     paint: function () {
-      var team = document.getElementById('desk-team');
-      if (team) team.innerHTML = deskGroupChat();
+      deskTeamSync();
       if (deskTab === 'team') deskMarkTeamSeen();
     },
   });
@@ -1010,15 +1009,52 @@ function deskChatLogHtml(lines, unread, empty) {
   // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
   // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
   // vertically be 1em space." His bubble black on white; everybody else's a filled bubble with the shell's radius.
-  return lines.slice().reverse().map(function (l) {
-    var mine = l.by === 'andy';
-    var look = mine
-      ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
-      : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-    // goal/G21.1: the writer's name, which the desk looked up by the line's key; its label where none is set.
-    return '<div' + look + '><b>' + deskEsc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' +
-      deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
-  }).join('');
+  return lines.slice().reverse().map(deskBubbleHtml).join('');
+}
+function deskBubbleHtml(l) {
+  var mine = l.by === 'andy';
+  var look = mine
+    ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
+    : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
+  // goal/G21.1: the writer's name, which the desk looked up by the line's key; its label where none is set.
+  return '<div' + look + '><b>' + deskEsc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' +
+    deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
+}
+// TEAM IS NEVER DRAWN AGAIN WHOLE BY A PAINT (goal/G41.11; Andy: "in ALL the chats, new lines are no added, THE WHOLE
+// FUCKING THING IS REDRAWN, killing my attempted copies"): each bubble shown is kept by its line; a new line goes on top,
+// a changed one replaces only its own bubble, a line gone takes its bubble with it. A new frame draws it once, whole.
+var deskTeamShown = { host: null, items: [] };
+function deskTeamSync() {
+  var host = document.getElementById('desk-team');
+  if (!host) return;
+  var lines = deskGroup;
+  var want = lines && lines.length ? lines.slice().reverse().map(function (l) { return { k: String(l.at) + '|' + String(l.key || l.by), h: deskBubbleHtml(l) }; }) : [];
+  if (host !== deskTeamShown.host || !want.length || !deskTeamShown.items.length) {
+    host.innerHTML = deskGroupChat();
+    var kids = host.children || [];
+    deskTeamShown = { host: host, items: want.map(function (w, i) { return { k: w.k, h: w.h, node: kids[i] }; }) };
+    return;
+  }
+  var drawn = Object.create(null);
+  deskTeamShown.items.forEach(function (d) { drawn[d.k] = d; });
+  var wanted = Object.create(null);
+  want.forEach(function (w) { wanted[w.k] = true; });
+  deskTeamShown.items.forEach(function (d) { if (!wanted[d.k] && d.node && d.node.parentNode === host) host.removeChild(d.node); });
+  var next = [];
+  // From the oldest up: a kept bubble stays where it is; a changed one is replaced in place; a new one goes in just
+  // above the bubble under it (or last).
+  for (var i = want.length - 1; i >= 0; i--) {
+    var w = want[i];
+    var d = drawn[w.k];
+    if (d && d.h === w.h) { next.unshift(d); continue; }
+    var hold = document.createElement('div');
+    hold.innerHTML = w.h;
+    var node = hold.firstChild;
+    if (d && d.node && d.node.parentNode === host) host.replaceChild(node, d.node);
+    else host.insertBefore(node, next.length ? next[0].node : null);
+    next.unshift({ k: w.k, h: w.h, node: node });
+  }
+  deskTeamShown = { host: host, items: next };
 }
 // His line under All: one chat.add on the group chat's goal, and no packet to
 // anybody. The line is drawn when the server publishes it, like everybody's.
@@ -1121,8 +1157,7 @@ function deskDraw() {
   if (!el) return;
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
-  var team = document.getElementById('desk-team');
-  if (team) team.innerHTML = deskGroupChat();
+  deskTeamSync();
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
   // A chat on screen is being seen as it arrives.
