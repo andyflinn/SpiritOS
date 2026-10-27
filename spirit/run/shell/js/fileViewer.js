@@ -125,9 +125,11 @@
   function create(host, opts) {
     var o = opts || {};
     var path = String(o.path || '');
-    host.innerHTML = '<div class="stack">' +
+    // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its body slot a fill box, so a viewer's
+    // text or media takes what the stat bubble and the notes leave it and scrolls inside itself.
+    host.innerHTML = '<div class="stack fill">' +
       '<div data-part="stat"></div><div data-part="owner-app"></div><div data-part="open-with" class="open-with"></div>' +
-      '<div data-part="body"></div><div data-part="notes"></div></div>';
+      '<div data-part="body" class="fill"></div><div data-part="notes"></div></div>';
     function slot(name) { return host.querySelector('[data-part="' + name + '"]'); }
     fStatViewer(slot('stat'), path);
     annotationManager(slot('notes'), path);

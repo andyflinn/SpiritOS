@@ -47,14 +47,19 @@ spirit.shell.activateApp({
   mount: function (container, api, params) {
     var initialPath = (params && params.path) || 'shell/textEditor/notes.txt';
     textEditorPath = initialPath;
+    // THE PAGE IS A FILL COLUMN (rule/16; Andy, on G41.7: "the botton tools at the top of the must be all in one row",
+    // and the text "must produce a scroll bar, JUST FOR THE TEXT AREA ... so the tools at the top always remain
+    // visible"): the tools in one row that never wraps, and below them the text in a fill box, scrolling inside itself.
     container.innerHTML =
-      '<div class="stat-tile wide">' +
-        '<span id="editor-picker"></span> <span id="editor-path" class="file-path">' + api.escapeHtml(initialPath) + '</span> ' +
-        '<button type="button" id="editor-load">Load</button>' +
-        '<button type="button" id="editor-save">Save</button>' +
-        '<span id="editor-status"></span>' +
-      '</div>' +
-      '<div id="editor-content" class="text-view"></div>';
+      '<div class="fill">' +
+        '<div class="start-job-form" data-editor="tools" style="flex-wrap:nowrap;align-items:center;white-space:nowrap">' +
+          '<span id="editor-picker"></span><span id="editor-path" class="file-path">' + api.escapeHtml(initialPath) + '</span>' +
+          '<button type="button" id="editor-load">Load</button>' +
+          '<button type="button" id="editor-save">Save</button>' +
+          '<span id="editor-status"></span>' +
+        '</div>' +
+        '<div id="editor-content" class="text-view fill"></div>' +
+      '</div>';
 
     var statusEl = document.getElementById('editor-status');
     document.getElementById('editor-load').addEventListener('click', function () {

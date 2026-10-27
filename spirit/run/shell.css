@@ -247,6 +247,9 @@ html, body {
    marked as the shared list marks one. */
 .text-view { margin-top: 1em; border-radius: 10px; overflow: hidden; }
 .text-view .CodeMirror { height: auto; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+/* A text view in a fill box (goal/G41.7, rule/16; Andy: "the codeMirror itself must b given a clearly limited area by
+   its container"): CodeMirror takes exactly the box, and only the text scrolls. */
+.text-view.fill > .CodeMirror { flex: 1 1 0; min-height: 0; height: auto; }
 /* THE ONE MATCH COLOUR (goal/G29.11; Andy, 2026-10-18: "i do like to have the same color for the text highlights
    as the score bar has, try a pastel blue (in the color scheme?)"): the list's marks, the viewer's marks and the
    rank bar (shell/shared/js/listSearch.js) all take it. */

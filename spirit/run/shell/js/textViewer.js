@@ -64,7 +64,9 @@
     var path = String(o.path || '');
     var frame = E.fileViewer.create(host, { path: path, launcherId: o.launcherId });
     var body = frame.slot('body');
-    body.innerHTML = '<div data-part="job"></div><div class="text-view"></div>';
+    // THE TEXT IN A FILL BOX (rule/16; Andy, on G41.7: the text viewer "same problem"): it takes what the frame's body
+    // leaves it and scrolls inside itself, never growing the page past its bottom.
+    body.innerHTML = '<div data-part="job"></div><div class="text-view fill"></div>';
     jobForm(body.querySelector('[data-part="job"]'), path);
     var view = body.querySelector('.text-view');
     return E.fileViewer.read(path).then(function (r) {
