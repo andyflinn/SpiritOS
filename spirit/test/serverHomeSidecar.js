@@ -180,9 +180,13 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   });
   eq(marked.join(','), '', 'no manifest names intrinsic', OWED + 'manifests naming intrinsic: ' + marked.join(', '));
   const core = require('../run/spirit/coreFiles.js');
-  const LIST = ['process/js/fileServer', 'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/group-manager', 'shell/icons', 'shell/info',
+  const LIST = ['process/js/fileServer', 'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
     'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats'];
-  eq(JSON.stringify((core.INTRINSIC || []).slice().sort()), JSON.stringify(LIST.slice().sort()), 'coreFiles.js holds INTRINSIC, the coded list: today\'s fifteen', OWED + 'INTRINSIC: ' + short(core.INTRINSIC));
+  eq(JSON.stringify((core.INTRINSIC || []).slice().sort()), JSON.stringify(LIST.slice().sort()), 'coreFiles.js holds INTRINSIC, the coded list: today\'s fourteen', OWED + 'INTRINSIC: ' + short(core.INTRINSIC));
+  // THE GROUPS APP IS GONE (Andy: "let's delete the groups legacy app, it is dead now"): its folder and every reference.
+  const groupsLeft = ['index.html', 'spirit/client/shell.js', 'spirit/coreFiles.js'].filter(function (p) { return /group-manager/.test(read(p)); });
+  eq(!fs.existsSync(path.join(RUN, 'shell', 'group-manager')) && !groupsLeft.length, true, 'the groups app (shell/group-manager) is gone, and nothing names it',
+    OWED + 'shell/group-manager ' + (fs.existsSync(path.join(RUN, 'shell', 'group-manager')) ? 'still there' : 'gone') + ', named in ' + groupsLeft.join(', '));
   eq(core.isCore('spirit/run/shell/apps/apps.js') === true && core.isCore('spirit/run/shell/agent/agent.js') === false, true,
     'the commit check asks it: an intrinsic app\'s code is core, another app\'s is not', OWED + 'isCore apps ' + core.isCore('spirit/run/shell/apps/apps.js') + ', agent ' + core.isCore('spirit/run/shell/agent/agent.js'));
 

@@ -29,7 +29,8 @@ app loads its own components, as a tree, through spirit.require.
 
 - boot reads the `server` a face app's manifest names, beside its face mark.
 - An intrinsic app shows on every face (box v17, "minimal == intrinsic"), its face mark or not: with no face part of the
-  node's, it takes its name and icon from its manifest (the icon a key into the icon table). Join stays boot's own.
+  node's, it takes its name and icon from its manifest (the icon a key into the icon table). Join and the login app stay
+  boot's own: never app icons.
 - The app's icon is on the desktop while its face mark is on and, if it names a server, while a server job of that
   module (`process/js/<server>`) is running or pending on the stream.
 - When the server stops, or the face mark goes, the icon goes and every page of the app that is open is closed.

@@ -166,6 +166,8 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
     // box v17: a node shows its intrinsic apps (Andy: "minimal == intrinsic"; found on his face: "the face shall does not
     // let me see even the intrinsic apps."): one with no face part of the node's is named and iconed from its manifest;
     // Join stays boot's own, drawn by its open step.
+    // Andy: "the login-app should not show in face-loopback mode": login and Join are boot's own, never app icons.
+    ok(/'shell\/login'/.test(readFaceAt), 'the login app is never an app icon: readFace skips it as it skips Join', 'readFace does not skip the login app');
     ok(/face\.intrinsic === true/.test(readFaceAt) && /iconIndex/.test(readFaceAt) && /JOIN/.test(readFaceAt),
       'an intrinsic app shows on the face, named and iconed from its manifest when the node has no face part for it; Join stays boot\'s',
       'readFace shows only apps whose face part says app, so the intrinsic ones hide');

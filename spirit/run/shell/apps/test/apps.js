@@ -54,12 +54,16 @@ const FILES = {
   'process/js/agent/agent.js': {}, 'process/js/agent/agent.json': {},
   'process/js/starter/starter.js': {}, 'process/js/starter/starter.json': {},
   'shell/notes.txt': {},
+  'shell/login/login.js': {}, 'shell/login/login.json': {},
+  'shell/join/join.js': {}, 'shell/join/join.json': {},
 };
 const MANIFESTS = {
   'shell/icons/icons.json': { name: 'Icons', runs: ['home'] },
   'shell/agent/agent.json': { name: 'Agent', server: 'agent', runs: ['home'] },
   'process/js/agent/agent.json': { label: 'Agent server', kind: 'server', operated: 'node' },
   'process/js/starter/starter.json': { label: 'Starter' },
+  'shell/login/login.json': { name: 'Log in' },
+  'shell/join/join.json': { name: 'Join' },
 };
 
 function world() {
@@ -114,6 +118,7 @@ test.startTest('apps.js: the Apps app');
   ok(rowOf('shell/agent/agent.js') === 0, 'a shell app naming a server is no row: it goes with its server', 'the agent face app: ' + rowOf('shell/agent/agent.js'));
   ok(rowOf('process/js/agent/agent.js') === 1, 'an appServer is a row', 'the agent server: ' + rowOf('process/js/agent/agent.js'));
   ok(rowOf('process/js/starter/starter.js') === 0, 'a process that is no server is no row', 'starter: ' + rowOf('process/js/starter/starter.js'));
+  ok(rowOf('shell/login/login.js') === 0 && rowOf('shell/join/join.js') === 0, 'login and Join are boot\'s own components, no rows', 'login ' + rowOf('shell/login/login.js') + ', join ' + rowOf('shell/join/join.js'));
   ok(rowOf('shell/notes.txt') === 0, 'a file that is no app is no row', 'notes.txt: ' + rowOf('shell/notes.txt'));
 
   test.subHeading('a filter for installable apps only (box v15)');
