@@ -45,65 +45,65 @@ test.startTest('goal/G41.1: the face part is the one part, and it is streamed');
   const viewer = read('shell/js/fileViewer.js');
   eq(/a && a\.client/.test(viewer), false, 'the file viewer reads no client part', OWED + 'fileViewer.js still reads the client part');
 
-  test.subHeading('A2. an app\'s sidecar written, its face part is published');
+  // box v16 and v17: a node's sidecars are its own state, at the mirror of its app's path; none beside the code counts,
+  // and intrinsic comes from the coded list (coreFiles.js INTRINSIC), never from a sidecar.
+  test.subHeading('A2. a node\'s own sidecar written, its app\'s face part is published');
   const run = path.join(scratch, 'spirit', 'run');
-  [['shell', 'notes'], ['process/js', 'helper']].forEach(function (a) {
+  [['shell', 'notes'], ['shell', 'apps'], ['process/js', 'helper']].forEach(function (a) {
     const dir = path.join(run, a[0], a[1]);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, a[1] + '.js'), '// an app\n');
   });
-  fs.writeFileSync(path.join(run, 'shell', 'notes', 'readme.txt'), 'not an app\n');
+  ['shell/notes', 'shell/apps', 'process/helper'].forEach(function (d) { fs.mkdirSync(path.join(run, 'relay-state', d), { recursive: true }); });
+  const mirror = function (d, name) { return path.join(run, 'relay-state', d, name + '.sidecar.json'); };
   const watcher = jobs.startFsWatcherJob(run);
   await sleep(1500);
   const faces = function () { return jobs.listJobs().filter(function (j) { return j.type === 'app-face'; }); };
-  const lastFace = async function (p) {
-    for (let i = 0; i < 50; i++) { const j = faces()[0]; if (j && j.data && j.data.path === p) return j.data; await sleep(100); }
+  const lastFace = async function (p, has) {
+    for (let i = 0; i < 50; i++) { const j = faces()[0]; if (j && j.data && j.data.path === p && (!has || has(j.data.face || {}))) return j.data; await sleep(100); }
     const j = faces()[0]; return j && j.data;
   };
-  fs.writeFileSync(path.join(run, 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { app: true, name: 'Notes' } }));
+  fs.writeFileSync(mirror('shell/notes', 'notes.js'), JSON.stringify({ face: { app: true, name: 'Notes', intrinsic: true } }));
   const d1 = await lastFace('shell/notes/notes.js');
-  eq(!!d1 && d1.path === 'shell/notes/notes.js' && d1.face && d1.face.app === true && d1.face.name === 'Notes', true,
-    'a shell app\'s sidecar written: an app-face job with its script\'s path and its face part', OWED + 'app-face: ' + short(d1));
-  fs.writeFileSync(path.join(run, 'process', 'js', 'helper', 'helper.js.sidecar.json'), JSON.stringify({ face: { home: false } }));
+  eq(!!d1 && d1.face && d1.face.app === true && d1.face.name === 'Notes' && d1.face.intrinsic === false, true,
+    'a shell app\'s own sidecar written: an app-face job with its script\'s path and face part, intrinsic false as the list says, whatever the file says',
+    OWED + 'app-face: ' + short(d1));
+  fs.writeFileSync(mirror('shell/apps', 'apps.js'), JSON.stringify({ face: { app: true } }));
+  const d1b = await lastFace('shell/apps/apps.js');
+  eq(!!d1b && d1b.face && d1b.face.intrinsic === true, true, 'an app on the list streams intrinsic true', OWED + 'app-face: ' + short(d1b));
+  fs.writeFileSync(mirror('process/helper', 'helper.js'), JSON.stringify({ face: { home: false } }));
   const d2 = await lastFace('process/js/helper/helper.js');
-  eq(!!d2 && d2.path === 'process/js/helper/helper.js' && d2.face && d2.face.home === false, true, 'an appServer\'s too', OWED + 'app-face: ' + short(d2));
-  fs.writeFileSync(path.join(run, 'shell', 'notes', 'readme.txt.sidecar.json'), JSON.stringify({ face: { app: true } }));
+  eq(!!d2 && d2.face && d2.face.home === false, true, 'an appServer\'s own sidecar, in relay-state/process/<name>/, too', OWED + 'app-face: ' + short(d2));
+  fs.writeFileSync(path.join(run, 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { name: 'Beside' } }));
+  fs.writeFileSync(mirror('shell/notes', 'readme.txt'), JSON.stringify({ face: { app: true } }));
   await sleep(1500);
-  const d3 = (faces()[0] || {}).data;
-  eq(!d3 || d3.path !== 'shell/notes/readme.txt', true, 'a sidecar of a file that is no app script is no app-face', OWED + 'app-face for readme: ' + short(d3));
+  const d3 = (faces()[0] || {}).data || {};
+  eq(d3.path !== 'shell/notes/readme.txt' && !(d3.face && d3.face.name === 'Beside'), true, 'a sidecar beside the code, or of a file that is no app script, is no app-face',
+    OWED + 'app-face: ' + short(d3));
   jobs.cancelJob(watcher.id);
 
-  test.subHeading('A2b. the node\'s own sidecar, at the mirror in its state, heard and merged');
-  fs.mkdirSync(path.join(run, 'relay-state', 'shell', 'notes'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'relay-state', 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { app: false } }));
-  const watcher2 = jobs.startFsWatcherJob(run);
-  await sleep(1500);
-  fs.writeFileSync(path.join(run, 'relay-state', 'shell', 'notes', 'notes.js.sidecar.json'), JSON.stringify({ face: { app: false, icon: '🗒' } }));
-  let d4 = null;
-  for (let i = 0; i < 50; i++) { const j = faces()[0]; if (j && j.data && j.data.face && j.data.face.icon) { d4 = j.data; break; } await sleep(100); }
-  eq(!!d4 && d4.path === 'shell/notes/notes.js' && d4.face.app === false && d4.face.name === 'Notes' && d4.face.icon === '🗒', true,
-    'the node\'s own sidecar written: its app\'s face part streamed, the node\'s fields over the tracked ones', OWED + 'app-face: ' + short(d4));
-  jobs.cancelJob(watcher2.id);
-
-  test.subHeading('A4. a write lands in the node\'s state; a read is the tracked part with the node\'s over it');
+  test.subHeading('A4. a write lands in the node\'s state; a read is that, intrinsic from the list');
   const tag = 'zzMirror' + process.pid;
   const made = [path.join(RUN, 'shell', tag), path.join(RUN, 'process', 'js', tag), path.join(RUN, 'relay-state', 'shell', tag), path.join(RUN, 'relay-state', 'process', tag)];
   try {
     [['shell/' + tag, made[0]], ['process/js/' + tag, made[1]]].forEach(function (a) {
       fs.mkdirSync(a[1], { recursive: true });
       fs.writeFileSync(path.join(a[1], tag + '.js'), '// a throwaway app\n');
-      fs.writeFileSync(path.join(a[1], tag + '.js.sidecar.json'), JSON.stringify({ face: { intrinsic: true, app: true, name: 'Shipped' } }));
+      fs.writeFileSync(path.join(a[1], tag + '.js.sidecar.json'), JSON.stringify({ face: { intrinsic: true, app: true, name: 'Beside' } }));
     });
     const shellApp = 'shell/' + tag + '/' + tag + '.js';
-    const tracked = fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8');
-    const w = fsys.annotateFace(shellApp, { app: false, name: 'Mine', intrinsic: false });
-    eq(!!w && w.ok === true && fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === tracked, true, 'a write leaves the tracked sidecar beside the code as it is',
-      OWED + 'the write ' + short(w) + ', the tracked sidecar ' + (fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === tracked ? 'kept' : 'changed'));
+    const beside = fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8');
+    const w = fsys.annotateFace(shellApp, { app: false, name: 'Mine', intrinsic: true });
+    eq(!!w && w.ok === true && fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === beside, true, 'a write leaves any sidecar beside the code alone',
+      OWED + 'the write ' + short(w) + ', the sidecar beside the code ' + (fs.readFileSync(path.join(made[0], tag + '.js.sidecar.json'), 'utf8') === beside ? 'kept' : 'changed'));
     let mine = null; try { mine = JSON.parse(fs.readFileSync(path.join(made[2], tag + '.js.sidecar.json'), 'utf8')); } catch (e) { mine = null; }
     eq(!!mine && mine.face && mine.face.app === false && mine.face.name === 'Mine' && !('intrinsic' in mine.face), true,
       'it lands at the mirror in the node\'s state, relay-state/shell/<app>/<app>.js.sidecar.json, without intrinsic', OWED + 'the node\'s sidecar: ' + short(mine));
     const read1 = (fsys.getAnnotations(shellApp) || {}).face || {};
-    eq(read1.app === false && read1.name === 'Mine' && read1.intrinsic === true, true, 'a read is the tracked face part with the node\'s over it, intrinsic the tracked one\'s', OWED + 'read ' + short(read1));
+    eq(read1.app === false && read1.name === 'Mine' && read1.intrinsic === false, true, 'a read is the node\'s face part, intrinsic the list\'s (false for an app not on it)',
+      OWED + 'read ' + short(read1));
+    const listed = (fsys.getAnnotations('shell/apps/apps.js') || {}).face || {};
+    eq(listed.intrinsic, true, 'and true for an app on it', OWED + 'shell/apps read ' + short(listed));
     const proc = 'process/js/' + tag + '/' + tag + '.js';
     fsys.annotateFace(proc, { home: false });
     let pmine = null; try { pmine = JSON.parse(fs.readFileSync(path.join(made[3], tag + '.js.sidecar.json'), 'utf8')); } catch (e) { pmine = null; }

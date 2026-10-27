@@ -47,15 +47,19 @@ const TELLER = [
   'setInterval(function () {}, 1000);',
 ].join('\n') + '\n';
 
-// A node's run folder of its own, with three servers: 'quiet', whose manifest still says runs home but whose sidecar says
-// nothing; 'teller', whose sidecar says home; 'core', intrinsic by its manifest.
+// A node's run folder of its own, with three servers: 'quiet', whose manifest still says runs home and whose sidecar beside
+// its code says home too, both counting for nothing; 'teller', whose node's own sidecar says home; 'fileServer', intrinsic
+// by the coded list (box v17), its manifest saying nothing of it.
 let homes = 0;
+// THE NODE'S OWN SIDECAR, at the mirror in its state (box v16): relay-state/process/<name>/<name>.js.sidecar.json.
 function sidecar(run, name, home) {
-  fs.writeFileSync(path.join(run, 'process', 'js', name, name + '.js.sidecar.json'), JSON.stringify({ face: { home: home } }));
+  const dir = path.join(run, 'relay-state', 'process', name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name + '.js.sidecar.json'), JSON.stringify({ face: { home: home } }));
 }
 function plantNode(settings) {
   const run = path.join(scratch, 'node' + (++homes), 'spirit', 'run');
-  [['quiet', { runs: ['home'] }], ['teller', {}], ['core', { intrinsic: true }]].forEach(function (s) {
+  [['quiet', { runs: ['home'] }], ['teller', {}], ['fileServer', {}]].forEach(function (s) {
     const dir = path.join(run, 'process', 'js', s[0]);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, s[0] + '.json'), JSON.stringify(Object.assign({
@@ -64,8 +68,8 @@ function plantNode(settings) {
     }, s[1])));
     fs.writeFileSync(path.join(dir, s[0] + '.js'), TELLER);
   });
+  fs.writeFileSync(path.join(run, 'process', 'js', 'quiet', 'quiet.js.sidecar.json'), JSON.stringify({ face: { home: true, intrinsic: true } }));
   sidecar(run, 'teller', true);
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   auth.saveIdentity(run, auth.generateIdentity('serverhome' + homes));
   if (settings) fs.writeFileSync(path.join(run, 'relay-state', 'node.json'), JSON.stringify(settings));
   return run;
@@ -93,14 +97,14 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   test.subHeading('H1. at boot, the sidecar decides');
   const n1 = plantNode(null);
   const b1 = boot(n1);
-  eq(typesOf(b1), 'core,teller', 'the sidecar\'s home true starts teller, the intrinsic core starts, and quiet, home only in its manifest, does not',
+  eq(typesOf(b1), 'fileServer,teller', 'the sidecar\'s home true starts teller, the intrinsic core starts, and quiet, home only in its manifest, does not',
     OWED + 'booted ' + typesOf(b1));
   stopAll();
 
   test.subHeading('H2. node.json\'s servers section counts for nothing');
   const n2 = plantNode({ servers: { quiet: { runs: ['home'] }, teller: { runs: [], chores: 'from node.json' } } });
   const b2 = boot(n2);
-  eq(typesOf(b2), 'core,teller', 'neither its runs on nor its runs off moves a server', OWED + 'booted ' + typesOf(b2));
+  eq(typesOf(b2), 'fileServer,teller', 'neither its runs on nor its runs off moves a server', OWED + 'booted ' + typesOf(b2));
   const v2 = await valuesOf(n2, 'teller');
   eq(v2 && v2.chores, '', 'nor does its argument value: teller is handed its manifest\'s default', OWED + 'teller was handed ' + short(v2));
   stopAll();
@@ -141,7 +145,7 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   own(n5, 'teller', false);
   own(n5, 'quiet', true);
   const b5 = boot(n5);
-  eq(typesOf(b5), 'core,quiet', 'at boot: teller, home by its tracked sidecar but off by the node\'s, does not run; quiet, on by the node\'s, does', OWED + 'booted ' + typesOf(b5));
+  eq(typesOf(b5), 'fileServer,quiet', 'at boot: teller, home by its tracked sidecar but off by the node\'s, does not run; quiet, on by the node\'s, does', OWED + 'booted ' + typesOf(b5));
   stopAll();
   const n6 = plantNode(null);
   const watcher6 = jobs.startFsWatcherJob(n6);
@@ -160,15 +164,27 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   eq(/serverSettings|\.servers\b/.test(jobsCode), false, 'jobs.js and nodeSettings.js read no servers section', OWED + 'a servers section is still read');
   eq(fs.existsSync(path.join(__dirname, 'nodeServerSettings.js')), false, 'the suite of the central list (goal/G33.9) is gone', OWED + 'spirit/test/nodeServerSettings.js is still there');
 
-  test.subHeading('H6. the tree: each server says it in its own sidecar');
+  test.subHeading('H6. the tree: no app sidecar tracked, intrinsic a coded list');
   const base = path.join(RUN, 'process', 'js');
   const named = fs.readdirSync(base).filter(function (n) { const m = readJson(path.join(base, n, n + '.json')); return m && Object.prototype.hasOwnProperty.call(m, 'runs'); });
   eq(named.join(','), '', 'no process/js manifest names runs', OWED + 'manifests naming runs: ' + named.join(', '));
-  const HOME = ['agent', 'backup', 'chatClerver', 'desk', 'deskVerify', 'fileServer'];
-  // As git ships them: a node's own choice is a local edit of its sidecar (goal/G41.1), so the defaults are git's.
-  const shipped = function (p) { try { return JSON.parse(require('child_process').execFileSync('git', ['show', 'HEAD:' + p], { cwd: RUN, encoding: 'utf8' })); } catch (e) { return null; } };
-  const said = HOME.filter(function (n) { const s = shipped('spirit/run/process/js/' + n + '/' + n + '.js.sidecar.json'); return s && s.face && s.face.home === true; });
-  eq(said.join(','), HOME.join(','), 'the servers that ran at home say home: true in their sidecars', OWED + 'saying home: ' + said.join(', '));
+  // NO SIDECAR IS TRACKED, AND INTRINSIC IS CODED (box v17; Andy: "why would we track app sidecars?", "so i would agree
+  // on a \"coded\" intrinsic list."): a node's sidecars are its own state; the one list is coreFiles.js's.
+  const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell', 'process/js'], { cwd: RUN, encoding: 'utf8' })
+    .split('\n').filter(function (p) { return /\.js\.sidecar\.json$/.test(p); });
+  eq(tracked.join(','), '', 'no app sidecar is tracked', OWED + 'tracked sidecars: ' + tracked.join(', '));
+  const marked = [];
+  ['shell', 'process/js'].forEach(function (dir) {
+    let names = []; try { names = fs.readdirSync(path.join(RUN, dir)); } catch (e) { names = []; }
+    names.forEach(function (n) { const m = readJson(path.join(RUN, dir, n, n + '.json')); if (m && Object.prototype.hasOwnProperty.call(m, 'intrinsic')) marked.push(dir + '/' + n); });
+  });
+  eq(marked.join(','), '', 'no manifest names intrinsic', OWED + 'manifests naming intrinsic: ' + marked.join(', '));
+  const core = require('../run/spirit/coreFiles.js');
+  const LIST = ['process/js/fileServer', 'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/group-manager', 'shell/icons', 'shell/info',
+    'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats'];
+  eq(JSON.stringify((core.INTRINSIC || []).slice().sort()), JSON.stringify(LIST.slice().sort()), 'coreFiles.js holds INTRINSIC, the coded list: today\'s fifteen', OWED + 'INTRINSIC: ' + short(core.INTRINSIC));
+  eq(core.isCore('spirit/run/shell/apps/apps.js') === true && core.isCore('spirit/run/shell/agent/agent.js') === false, true,
+    'the commit check asks it: an intrinsic app\'s code is core, another app\'s is not', OWED + 'isCore apps ' + core.isCore('spirit/run/shell/apps/apps.js') + ', agent ' + core.isCore('spirit/run/shell/agent/agent.js'));
 
   test.subHeading('H7. the Apps app writes it, the text viewer reads it');
   const apps = read('shell/apps/apps.js');
