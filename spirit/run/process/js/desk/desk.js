@@ -123,6 +123,15 @@ function clearOf(text) {
 }
 // Who placed a Q, by key: the record's key, else (a record from before keys) the key its label wrote with.
 function placerOf(s, c) { return c.placedKey || (c.placedBy && s.agentKey[c.placedBy]) || ''; }
+// AN AGENT STAYS WITH ITS OPEN RED Q (goal/G41.2). Andy: "when i repond to a red Q, the agent must enter remain with the
+// red Q and me, until it is resolved, so that you won't go of making red Q decisions without me", and on resolving it:
+// "if you feel a Q answered usefully, then fucking remove the Q with an appropriate remark". The writer's own open Q on
+// the item, or null: while there is one, nothing of the writer's lands on the item (phase.may) and its phase is not done.
+function ownOpenQ(s, it, w) {
+  return (it.checks || []).filter(function (c) {
+    return c.kind === 'Q' && c.state === 'open' && (w.key ? placerOf(s, c) === w.key : c.placedBy === w.by);
+  })[0] || null;
+}
 // The room chat.search fills (goal/G3.11): half an answer. An agent's deskClient packs the desk's answer once more
 // as text, where every quote and backslash gains one byte, so at most the answer doubles; half the room is what
 // still arrives in one piece. Andy: "what's the problem with having to be brief?", "none of this joing shit."
@@ -2337,7 +2346,11 @@ function write(verb, a, check) {
   if (verb === 'press') out.what = String(body.what || '');
   // WHO WROTE IT (goal/G33.9, box v4): every row a write publishes names its writer, label and key, so a client tells a
   // change its own agent made from one made by Andy, another agent or the desk.
-  const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); return o; };
+  // A FILE'S STATUS GOES TO HIS PAGE ALONE (goal/G41.2). Andy: "the file changes causing status updates, should not
+  // stream via peerPost. because they're changing not persistent state.... file changes are only there so the user can
+  // \"watch-water-boil\"", and "since you can target agents, can you target the UI alone as well?". A row addressed to
+  // no subscriber reaches none of them (appServer.publish), and his page still hears it on its own node.
+  const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); if (verb === 'item.status') o.to = []; return o; };
   publishOne(byWriter(out));
   shownGoals.forEach(function (g) {
     goalIds(s, g).forEach(function (id) {
@@ -3353,6 +3366,8 @@ appServer.serve(withPlugins({
       if (claimed) body.commit = claimed;
       const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
+        const q = ownOpenQ(st, it, w);
+        if (q) throw refusedWhy('not-offered', q.number + ' of ' + w.by + ' is open on ' + it.id + ': a red Q is resolved with Andy before the phase is done');
         // A RED FINISHES ONLY ONCE ITS RED CLAIM, WITH ITS SUITES, IS ON RECORD (goal/G33.11).
         if (a.phase === 'red' && !(it.redCommit && Array.isArray(it.suites) && it.suites.length)) throw refusedWhy('not-offered', 'the red of ' + it.id + ' finishes once its suite rows are added (item.suites.add) and a red claim is on record: claim {id, phase: red, commit}');
       }).change;
@@ -3385,6 +3400,8 @@ appServer.serve(withPlugins({
       const st = walkState();
       const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
+      const q = ownOpenQ(st, it, w);
+      if (q) return { allowed: false, why: 'red Q: ' + q.number + ' of ' + w.by + ' is open on ' + it.id + '; it is resolved with Andy before anything lands' };
       // NO COMMIT IN DESIGN (goal/G40.12, box v7, first set 2: "No commit lands while the current goal, or the item the
       // agent is on, is in design mode, granted or not.").
       const gd = st.goals[it.goal ? it.id : it.goalId];

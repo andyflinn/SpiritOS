@@ -934,6 +934,16 @@ function ignored(root, rel) {
 // the node's fs-watcher job uses it (js/jobs.js), on the whole checkout; the status word is the path and what happened
 // to it, which the desk keeps as the file's name and that word.
 const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
+// ONLY FILES OF THE PRODUCT TREE (goal/G41.2; Andy: "updates only for files in the product tree."): each status is a
+// message through the relay to the desk, and the desk sends it on to every agent, all of it through each node's one
+// message at a time. So a file outside spirit/run/ says nothing, and nor does an editor's temporary copy inside it (a
+// .tmp copy, a sed scratch file, a swap or backup file), which is no file of the product.
+function statusWorthy(rel) {
+  const p = String(rel || '');
+  if (p.indexOf('spirit/run/') !== 0) return false;
+  const name = p.split('/').pop();
+  return !/\.tmp\.\d+\.[0-9a-f]+$|^sed[A-Za-z0-9]{6}$|\.sw[op]$|~$/.test(name);
+}
 function watchCheckout(root) {
   try {
     const skip = function (full) {
@@ -943,6 +953,7 @@ function watchCheckout(root) {
     require('chokidar').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
       if (!WHAT[event] || !full) return;
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
+      if (!statusWorthy(rel)) return;
       const id = heldPhase();
       if (!id) return;
       ignored(root, rel).then(function (skipped) {

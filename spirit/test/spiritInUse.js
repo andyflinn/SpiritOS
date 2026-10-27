@@ -908,6 +908,14 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         if (f && (f.plugin || f.special)) out.plugins.push(f.id);
       }
       out.took = took;
+      // AN AGENT STAYS WITH ITS OPEN RED Q (Andy, goal/G41.2): while it is open nothing of the agent's lands on the item;
+      // his clear lifts it.
+      await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
+      out.mayBefore = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body || {};
+      await call('check.add', { id: 'goal/G100.1', kind: 'Q', words: 'Which port does it use?', test: '' }, CW);
+      out.mayOpenQ = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body || {};
+      await call('chat.add', { id: 'goal/G100.1', text: 'Q1: clear' }, ANDY);
+      out.mayCleared = (await call('phase.may', { id: 'goal/G100.1' }, CW)).body || {};
     } finally { kid.kill(); }
     return out;
   }());
@@ -921,6 +929,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     const shown = fx.listed.filter(function (f) { return f.plugin || fx.plugins.indexOf(f.id) !== -1; }).map(function (f) { return f.id; });
     if (fx.plugins.length && !shown.length) test.check('no plugin or special goal is on the List, Current Goal Only pressed off or not (' + fx.plugins.length + ' of them in the desk)');
     else test.fail('plugin or special goals on the List: ' + short(shown) + ' (the desk holds ' + short(fx.plugins) + ')');
+    if (fx.mayBefore.allowed === true && fx.mayOpenQ.allowed === false && /red Q/.test(String(fx.mayOpenQ.why)) && fx.mayCleared.allowed === true)
+      test.check('an agent stays with its open red Q: nothing of its own lands on the item until the Q is resolved, and his clear lifts it');
+    else test.fail('the open red Q does not hold the agent: before ' + short(fx.mayBefore) + ', open ' + short(fx.mayOpenQ) + ', cleared ' + short(fx.mayCleared));
   }
   // AN ITEM READ ONCE IS KEPT (the box: "the desk UI does NOT properly cache box content"). The details page on a window
   // of its own, with the page's own mirror (spiritData) and the desk's translator, fed the desk's rows as the page hears
@@ -1019,7 +1030,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const wakeRun = await (async function () {
     const os = require('os');
     const http = require('http');
-    const out = { steps: {} };
+    const out = { steps: {}, streamed: [] };
     const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inuse-wakes-'));
     const tree = path.join(scratch, 'run');
     fs.mkdirSync(tree);
@@ -1057,6 +1068,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
         const to = String(b.to || '');
         const caller = to === CWK ? { key: DESKK, label: 'andy' } : to === DESKK ? CW_AT_DESK : null;
+        // What the desk streams to this agent, by verb.
+        try { const sl = ask && ask.body && ask.body.deskClient && ask.body.deskClient.streamListener; if (to === CWK && sl) out.streamed.push(JSON.parse(sl.json).verb || ''); } catch (e) { /* not a row */ }
         if (!caller) return;
         test.peerAnswer(client, (ask && ask.body) || {}, caller).then(function (r) {
           const made = packet.encode('api', r && r.body, { re: hash });
@@ -1120,6 +1133,11 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
       // His change of the current goal.
       await D('press', { id: 'goal/G101', what: 'make-current' });
       out.steps.current = await next();
+      // A file's status, from the other agent's build: to his page alone, never streamed to an agent.
+      await D('item.status', { id: 'goal/G102.1', word: 'spirit/run/spirit.js changed', tone: 'code' }, WSL_AT_DESK);
+      await sleep(1500);
+      out.statusStreamed = out.streamed.filter(function (v) { return v === 'item.status'; }).length;
+      out.streamedAny = out.streamed.length;
       out.up = true;
     } finally {
       kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
@@ -1146,6 +1164,22 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     if (woke(wr.steps.current, /goal\/G101\b/)) test.check('a change of the current goal reaches the agent at once, naming the new goal');
     else test.fail('the new current goal did not reach the agent: ' + short(wr.steps.current));
   }
+  if (wr.up === true) {
+    if (wr.streamedAny > 0 && wr.statusStreamed === 0) test.check('a file\'s status goes to his page alone: none is streamed to an agent (' + wr.streamedAny + ' rows streamed to it, none a status)');
+    else test.fail('file statuses streamed to the agent: ' + wr.statusStreamed + ' of ' + wr.streamedAny + ' rows');
+  }
+  // STATUS ONLY FOR FILES OF THE PRODUCT TREE (Andy, Q1: "updates only for files in the product tree."): the file watch's
+  // own rule, lifted out of deskClient and asked.
+  const dcCode = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
+  const worthySrc = (dcCode.match(/function statusWorthy\(rel\) \{[\s\S]*?\n\}/) || [''])[0];
+  let worthy = null;
+  try { worthy = worthySrc ? new Function(worthySrc + '\nreturn statusWorthy;')() : null; } catch (e) { worthy = null; }
+  const usesWorthy = /if \(!statusWorthy\(rel\)\) return;/.test(dcCode);
+  const cases = { 'spirit/run/process/js/desk/desk.js': true, 'spirit/run/shell/js/test/workBench.md': true, 'spirit/test/spiritInUse.js': false, 'README.md': false,
+    'spirit/run/process/js/desk/desk.js.tmp.29056.aa92e27501c2': false, 'spirit/run/shell/seduyyhVn': false, 'spirit/run/shell/x.js~': false, 'spirit/run/shell/.x.js.swp': false };
+  const wrong = worthy ? Object.keys(cases).filter(function (p) { return worthy(p) !== cases[p]; }) : ['no statusWorthy'];
+  if (usesWorthy && !wrong.length) test.check('the file watch sends a status only for files of the product tree, never for an editor\'s temporary copy');
+  else test.fail('the file watch\'s status rule: ' + (usesWorthy ? '' : 'not used by the watch; ') + 'wrong for ' + short(wrong));
 
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
