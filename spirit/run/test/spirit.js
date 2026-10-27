@@ -412,11 +412,13 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   vm.runInContext(SOURCE, vm.createContext(faceWindow), { filename: 'spirit.js' });
   let booted = null;
   try { await faceWindow.spirit.booted; booted = true; } catch (e) { booted = e && e.code; }
-  const seal = fs.readFileSync(path.join(RUN, 'face', 'seal.js'), 'utf8');
-  const shellSrc = fs.readFileSync(path.join(RUN, 'face', 'shell.js'), 'utf8');
-  if (booted === true && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && shellSrc.indexOf("spirit.require('face/seal.js')") !== -1)
-    test.check('on a face page spirit.js gets face/shell.js alone and runs it, spirit.booted answering; the seal waits for the link, which requires it');
-  else test.fail('the face boot: ' + short([booted, injected.length]));
+  // goal/G41.3: face/ moved into shell/, face/shell.js became shell/boot.js and face/seal.js shell/seal.js.
+  const readRun = function (p) { try { return fs.readFileSync(path.join(RUN, p), 'utf8'); } catch (e) { return null; } };
+  const seal = readRun('shell/seal.js');
+  const shellSrc = readRun('shell/boot.js');
+  if (booted === true && shellSrc && seal && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && shellSrc.indexOf("spirit.require('shell/seal.js')") !== -1)
+    test.check('on a face page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for the link, which requires it');
+  else test.fail('the face boot: ' + short([booted, injected.length, shellSrc ? 'shell/boot.js there' : 'no shell/boot.js', seal ? 'shell/seal.js there' : 'no shell/seal.js']));
 
   // ── 7. THE ONE LOADER, THE SAME IN NODE AND ON A PAGE ────────────────
   test.subHeading('7. spirit.require(path, key): the one loader, the same in node and on a page');
@@ -440,6 +442,38 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).verb === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo)
     test.check('on a page: with a key, the peer\'s family through the home node\'s peer.post, not its own node\'s');
   else test.fail('on a page: a peer\'s family answered ' + short(ppa));
+
+  // ── 7a. spirit.require DE-DUPES, AS NODE'S require DOES (goal/G41.3) ──
+  // Andy: "spirit.js require() require implementation MUST, like a node.js require, de-dupe the require, it a script was
+  // already loaded". A path required twice is fetched and run once, every caller getting the same answer; a script the
+  // boot already loaded counts as required.
+  test.subHeading('7a. spirit.require de-dupes: a path is fetched and run once, a script the boot loaded counts as required');
+  const fetchesOf = function (w, p) { return w.fetched.filter(function (f) { return String(f.url).replace(/^\/+/, '') === p; }).length; };
+  const dq = page();
+  const twice = await Promise.all([dq.spirit.require(COMPONENT), dq.spirit.require(COMPONENT)]);
+  const third = await dq.spirit.require(COMPONENT);
+  if (fetchesOf(dq, COMPONENT) === 1 && twice[0] === twice[1] && twice[1] === third && twice[0])
+    test.check('on a page: ' + COMPONENT + ' required three times, two at once, is fetched once, and every caller gets the same answer');
+  else test.fail('on a page the require is not de-duped: ' + fetchesOf(dq, COMPONENT) + ' fetches, same answer ' + (twice[0] === twice[1] && twice[1] === third));
+  let bootAgain = null;
+  const beforeBoot = injected.length;
+  try { bootAgain = await faceWindow.spirit.require('shell/boot.js'); } catch (e) { bootAgain = e; }
+  const refusedAgain = !bootAgain || bootAgain instanceof Error || (typeof bootAgain === 'object' && (bootAgain.code || bootAgain.ok === false));
+  if (injected.length === beforeBoot && !refusedAgain) test.check('on a face: requiring shell/boot.js after the boot loaded it runs nothing again, and answers');
+  else test.fail('on a face: shell/boot.js, already booted, was run again or refused: ' + short([injected.length - beforeBoot, bootAgain && bootAgain.code]));
+
+  // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
+  // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
+  // cache is shell/js/spiritData.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
+  test.subHeading('7b. spirit.js loads the cache itself, on a page and in a process');
+  const isCache = function (d) { return !!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'; };
+  const cq = page();
+  try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
+  if (isCache(cq.spirit.data)) test.check('on a page: once spirit.js has started, spirit.data is the cache, nothing else loading it');
+  else test.fail('on a page spirit.js does not load the cache: spirit.data is ' + short(cq.spirit.data && Object.keys(cq.spirit.data)));
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
+  if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
+  else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));
 
   // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
   test.subHeading('8. a module that does not load spirit.js first goes red');

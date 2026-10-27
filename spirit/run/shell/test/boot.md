@@ -1,0 +1,37 @@
+# shell/boot.js
+
+The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
+same names. spirit.js loads it on a face page. It boots only itself and the home and Join components it needs; every face
+app loads its own components, as a tree, through spirit.require.
+
+## Where it lives, and what moved with it
+
+- `shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `shell/seal.js`,
+  `shell/face.css`, `shell/favicon.svg`, `shell/login/login.js` and `shell/login/login.json` are there instead.
+- spirit.js loads `shell/boot.js` on a face page (its FACE list).
+- face.html, which stays at the run root, links `/shell/face.css` and `/shell/favicon.svg`.
+- boot names its parts by their new paths: the seal as `shell/seal.js`, the login app under `shell/login/`; no old
+  `face/` path is left in its code. (The relay's routes `/face/allowed`, `/face/call`, `/face/file`, `/face/stream` and
+  `/face/api` are routes, not files, and stay.)
+
+## What it loads
+
+- Only what it runs itself (Andy: "shell boot.js will ONLY boot itself and the neccessary home and join components as
+  the stand. that's the only pre-load allowed."): the paths of components in its code are spirit.js's own libraries, the
+  shell's sheet, the seal, the login app, the Join app and the navigation it draws apps in. No other shell/js element,
+  and no other app's file. (This reads "the home and join components" as the login app, the navigation, and Join with
+  its steps.)
+- Login and Join are its two mandatory components, hard-coded by path; boot disregards their sidecars.
+- Both are core whole, manifest and sidecar included, as are boot, the seal, the sheet and the icon, so no page can
+  change them.
+
+## Every face app loads alone
+
+- Every app with a face mark (`face.app` in its sidecar) mounts with nothing on the page but a `spirit.require` that
+  serves files from the run tree, de-duped, and an empty set of elements: what it needs it asks for, and what it asks
+  for loads what it needs. Mounting it throws nothing, and nothing it starts fails for a component it did not load.
+
+## What its test must try to break
+
+- A component an app uses without asking for it.
+- An old face/ path left in boot, spirit.js or face.html.
