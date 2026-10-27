@@ -1,5 +1,5 @@
 {
- "change": 106645,
+ "change": 106866,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.1",
     "goal/G41.4"
    ],
    "codeOffered": false,
@@ -129,15 +128,13 @@
    "id": "goal/G41.1",
    "title": "Create \"agent\" skeleton",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 20,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -146,21 +143,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 98,
+   "fileCount": 116,
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "6a78e415",
-   "redCommit": "ef2da8cb",
+   "claimCommit": "83189be8",
+   "redCommit": "55c74e98",
    "waived": true,
    "rules": [
     {
@@ -204,10 +201,6 @@
     {
      "key": "rule/12",
      "version": 29
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     }
    ],
    "verified": "green",
@@ -220,7 +213,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "- create \"agent\" appServer skeleton, maintaining the agent.db SQLite database, this appServer maintains all state, broadcast that state to its clients.\n\n- create \"agent\" face-app skeleton based on the proposed and deferred new chatter interface, 3-panes, left, middle, right, with vertical icon-tool-strips along the windows left and right edges\n\n- create \"shell/js/workBench.js\" element skeleton, the top level visual container, taking 100% of the app-space below the face-shells titlebar\n\n- create \"shell/js/tabContainer\" element skeleton, an element with one row for tabs at the top, displaying the tab content in the remaining vertical space.\n\n- create a test/ folder for both \"agent\" components, face-app and appServer, as well as a test/ folder for both new shell elements, these four test/ folders will the ONLY test containers for this app.\n\n- this is the hello-word item for this goal.\n\n# DECIDED\n\nThe agent app\n- The workBench lays out the agent face app: three panes, a vertical tool strip on each side; the app loads on the face, on loopback and through a relay.\n- No agents talk to each other in this app (Q1): each agent is the only agent and user of its node (goal/G3.1); a break of it is a red Q.\n- Left tool: relay-state/shell/agent/config.json, whether the title bar shows the server's DEBUG state; the title shows the bug icon while it is on and the server is in DEBUG.\n- Right tool: the agent server's DEBUG state. The app requires the agent family through spirit and calls debug {on} (Q3, Q5); the server keeps it in relay-state/process/agent/config.json across restarts, the one its built-in DEBUG verb switches (Q4); the page reads it only from the stream, from the moment it opens.\n- The move into shell/ and the loading tree are goal/G41.3's (Q5 there).\n\nWhere an app runs and shows\n- A node's sidecars are its own state, at the mirror of its app's path: relay-state/shell/<app>/<app>.js.sidecar.json, relay-state/process/<name>/<name>.js.sidecar.json. Out of git; no sidecar beside the code is tracked or counts.\n- Every fs.annotate writes the face part there, the node's door as the face link (Q10, Q11: no compatibility with the old shell; its client part is gone).\n- Intrinsic is a coded list, INTRINSIC in spirit/run/spirit/coreFiles.js, the development team's, changed under Andy's grant. The commit check, the node starting servers and every face part ask it; no manifest or sidecar says it.\n- A new node runs and shows its intrinsic apps only (minimal == intrinsic); each node ticks the rest once.\n- A server runs while it is intrinsic or its node's sidecar says home: true. relay-state/node.json's servers section and the manifests' runs are gone (Q6, Q7: no central list).\n- The node starts or stops a server, and streams an app's face part (an app-face job), as its sidecar changes; every appServer's status reaches the face too.\n\nThe face and the Apps app\n- shell/js/appInstaller.js: one activate/deactivate button, one state wherever drawn; it proposes and draws only what the node answers or the stream says (rule/19). A shell app's button switches its face mark; a server's its home, and with it every app that names that server. Intrinsic apps and Apps itself have no button.\n- Apps lists standalone shell apps and appServers only, with an installer column, an installable-only filter, and a details panel with no checkbox (intrinsic said in words).\n- The face (shell/boot.js) shows an app while its face mark is on or it is intrinsic, and, if it names a server, while that server runs (goal/G27.16); otherwise its icon goes and its open pages close. An intrinsic app with no face part takes its name and icon from its manifest; Join stays boot's.\n- Only the new face shell is served; the old home shell is not kept compatible.\n\n- ONE SOURCE OF ICONS ON THE FACE (Andy, 2026-10-27): the icon set, the node's relay-state/shell/icons/iconSet.json, else the system set shell/json/iconSet.json, is the icon selector's set and the only source of icons on the face. No ICON key table on the face: every manifest and Join's steps carry glyphs, and spirit/client/iconIndex.js (a copy of kernel's ICON table) is no part of it.\n\n- spirit/client/iconIndex.js is deleted (Andy, 2026-10-27). Its table goes back into kernel.js, for the old shell alone. On the face and in the shared elements every icon is a glyph: the manifests, Join's steps and marks, the selectors' and desk pages' lookups; a lookup by word asks the icon set.\n\n# FILES\n\n- process/js/agent/ (agent.js, agent.json, agent.family/api.js), shell/agent/ (agent.js, agent.json), shell/js/workBench.js, shell/js/tabContainer.js, shell/js/appInstaller.js, shell/apps/apps.js, shell/boot.js, shell/js/textViewer.js, shell/js/fileViewer.js\n- spirit/run/spirit/: coreFiles.js, fileSystem.js, jobs.js, faceHome.js, server.js, kernel.js, introSpector.js, nodeSettings.js; every app manifest (runs and intrinsic gone)\n\n# TESTS\n\n- product tests: process/js/agent/test, shell/agent/test, shell/js/test (workBench, tabContainer, appInstaller), shell/apps/test, shell/test/boot\n- suites: spirit/test/serverHomeSidecar.js, spirit/test/faceAnnotations.js\n\n# OPEN\n\n- Intrinsic apps built for the old shell only (Grants, Group Manager, introSpector, Jobs, Relay Monitor, Rotate Key, Stats) now show on the face and may not open there.\n- The tag: every node and relay that takes it runs and shows only its intrinsic apps until ticked.",
@@ -526,9 +519,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-27T09:53:12.234Z",
+     "at": "2026-10-27T10:37:45.832Z",
      "made": "desk"
     },
     {
@@ -552,6 +545,30 @@
      "by": "claude-windows",
      "at": "2026-10-27T10:15:51.871Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "Right split: test folders for Join, desk and deskDetails only; index.html, old shell, kernel.js and the two selectors deprecated?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T10:40:54.194Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T10:42:02.164Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -1774,6 +1791,84 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-27T10:33:32.372Z",
      "text": "don't fix deskAgentRemote.js\n\nI'll end design and you can go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:34:00.288Z",
+     "text": "- cw: taking it, red first: the ten files, deskAgentRemote.js left as it is, the manifests, and the comments."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:34:51.643Z",
+     "text": "- cw: red phase taken. By rule/20 every changed script gets its own test folder: a test of this item's requirement for it, and a .md describing the change.\n- Eight have none yet: Join, iconSelector, contactSelector, desk, deskDetails, kernel, the old shell, index.html. Boot has one.\n- The small ones get behaviour tests (Join draws its glyphs, the selector matches by word, kernel answers its table). The big old-shell ones get tests of the icon requirement only, and their .md says so, not of all they do."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T10:35:43.272Z",
+     "text": "cw: red phase taken. By rule/20 every changed script gets its own test folder: a test of this item's requirement for it, and a .md describing the change.\n\nONLY NON-deprecated scripts get a test folder, the other need no test/ folder"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:36:22.709Z",
+     "text": "- cw: understood. My reading of the eight:\n- not deprecated, so a test folder each: Join, desk, deskDetails (boot has one);\n- deprecated, no test folder: index.html, the old shell, kernel.js, iconSelector and contactSelector. Only the old shell hands the two selectors out, and only the old chatter still uses one.\n- Join's red is written; I go on with desk and deskDetails."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T10:38:32.364Z",
+     "text": "Q19: Right split: test folders for Join, desk and deskDetails only; index.html, old shell, kernel.js and the two selectors deprecated?\n\ncorrect."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T10:39:26.238Z",
+     "text": "Q19: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-27T10:39:26.254Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:40:28.251Z",
+     "text": "- cw: the red is written and fails where it should: Join (draws its glyphs), desk and deskDetails (glyphs written in, no table), boot (neither file, no key in any manifest).\n- The list holds the build's files too, deskAgentRemote.js not among them, so one grant covers both. Grant it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:47:38.251Z",
+     "text": "- cw: red and build both written and green, nothing committed: the grant (G11) is open.\n- Done:\n  - kernel.js holds the ICON table again, for the old shell alone;\n  - index.html and boot load neither deleted file;\n  - all 24 manifest icons and Join's steps are glyphs;\n  - Join, desk, deskDetails, the two selectors and chatter draw glyphs written in;\n  - the old shell draws a glyph as it is;\n  - the iconIndex suite is gone, and deskAgentRemote.js is untouched.\n- Green: Join 8, desk 7, deskDetails 4, boot 29, Apps 24, installer 25, agent 29 and 18, spirit.js 53, the node suites 20 and 14, the throwaway 140.\n- Grant, and both land?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T10:48:41.084Z",
+     "text": "all the grant have been granted a long time ago, does the desk not tell you? that would be a bug i'll note....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:51:10.584Z",
+     "text": "- cw: landed: red 55c74e98, build 83189be8, pushed; red and build phases done.\n- On the grants: you are right, G11 stood granted, and Desk never told me. My listener heard it open, never its grant. So a grant press does not wake the agent who asked: worth noting as the bug.\n- Your node shows icons again after a restart on this: glyphs on the face, kernel's table in the old shell."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:51:52.762Z",
+     "text": "- cw: landed: red 55c74e98, build 83189be8, pushed; red and build phases done.\n- On the grants: you are right, G11 stood granted, and Desk never told me. My listener heard it open, never its grant. So a grant press does not reach the agent who asked: worth noting as the bug. Also, just now the desk answered nothing for about a minute (504s).\n- Your node shows icons again after a restart on this: glyphs on the face, kernel's table in the old shell."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T10:52:40.313Z",
+     "text": "- cw: verified at 83189be8 on a clean tree: its twelve suites green. Your Done."
     }
    ]
   },
