@@ -2,6 +2,10 @@
 
 ## ui
 
+### rule/1 (version 52): Horizonal Spacing in UI Rows
+
+horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
+
 ### rule/2 (version 51): Vertical spacing of block elements
 
 vertical spacing: every div/block carries with itself a leading vertical space of 1em. Exceptions to this rule will be specified.
@@ -23,10 +27,6 @@ The node still checks every value; the input check spares the wire and says why 
 ### rule/8 (version 18): Shell and Application Elements
 
 Shell and application elements, should bring their subscriptions with them, so that they're automatically subscribed to the events that update them
-
-### rule/1 (version 11): Horizonal Spacing in UI Rows
-
-horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
 
 ## code
 
