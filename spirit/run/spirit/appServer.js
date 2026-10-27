@@ -458,7 +458,9 @@ function familyPath(family) { return 'process/js/' + family + '/' + family + '.f
 function deliverRow(key, q, row) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), over peerPost with no patience.
   const wait = Math.min(FAST_MS, publisher.waitMs);
-  const sent = spirit.require(familyPath(q.family), key, { waitMs: wait }).then(function (fam) {
+  // The binding keeps the publisher's own wait (spirit.js keeps a peer family's first wait for every later ask); the
+  // fast fail is the race below alone.
+  const sent = spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
     if (!fam || typeof fam.streamListener !== 'function') return 'away';
     return spirit.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
@@ -656,7 +658,9 @@ function serve(verbs, opts) {
     const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve(false); }, FAST_MS); });
     const asked = s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
-      return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: FAST_MS }).then(function (p) {
+      // The binding keeps its own wait (spirit.js binds a peer's family once, with the first wait it is given, for every
+      // later ask of it); the fast fail is the race below alone.
+      return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(at ? { family: name, since: at } : { family: name });
       }));
