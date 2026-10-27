@@ -1,5 +1,5 @@
 {
- "change": 105642,
+ "change": 105998,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,8 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.1",
-    "goal/G41.3"
+    "goal/G41.1"
    ],
    "codeOffered": false,
    "go": false,
@@ -101,7 +100,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -129,12 +130,13 @@
    "id": "goal/G41.1",
    "title": "Create \"agent\" skelleton",
    "goal": "goal/G41",
-   "status": "agent.js changed",
-   "statusTone": "code",
-   "with": "claude-windows",
+   "status": "waiting for deskVerify",
+   "statusTone": "",
+   "with": "",
    "version": 11,
    "buttons": [
     "start-design",
+    "done",
     "verify"
    ],
    "blocking": [
@@ -145,19 +147,19 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
    "fileCount": 15,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "a54b460f",
    "redCommit": "ef2da8cb",
    "waived": true,
    "rules": [
@@ -211,7 +213,6 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 1,
    "half": false,
    "full": false,
@@ -280,9 +281,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-27T02:50:24.802Z",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T04:02:45.177Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -600,6 +601,24 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T02:59:53.796Z",
      "text": "- cw: make it fail a test, not only break a rule. Three ideas, the first is the strongest:\n- 1. Each component is tested alone. A general product test loads every face component by itself, with nothing on the page but spirit.js and a spirit.require that serves files. If it works, it loads its own tree; if it needs something it did not ask for, it fails. A missing require can no longer hide behind the shell having loaded it.\n- 2. The face shell's list is tested too: a test beside face/shell.js fails when its list names anything but the spirit libraries, contacts and files.\n- 3. A code rule, auto-attached, so it rides on every build: a component loads what it uses, and nothing loads parts for others.\n- 1 and 2 catch it in the red; 3 reminds the builder before.\n- Q: all three, in this item?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:04:08.360Z",
+     "text": "commit a54b460f984dd3a5b3572a5b11c60f6a01cebb9a: goal/G41.1 build: the agent server (agent.db, its DEBUG state kept across restarts and streamed, agent.debug), the agent face app on one workBench, bootstrapping its own components (left: this app's o\n- spirit/run/process/js/agent/agent.family/api.js\n- spirit/run/process/js/agent/agent.family/debug.json\n- spirit/run/process/js/agent/agent.js\n- spirit/run/process/js/agent/agent.json\n- spirit/run/shell/agent/agent.js\n- spirit/run/shell/agent/agent.js.sidecar.json\n- spirit/run/shell/agent/agent.json\n- spirit/run/shell/agent/test/agent.js\n- spirit/run/shell/agent/test/agent.md\n- spirit/run/shell/js/tabContainer.js\n- spirit/run/shell/js/test/tabContainer.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:04:41.942Z",
+     "text": "commit a54b460f: goal/G41.1 build: the agent server, the agent face app on one workBench bootstrapping its own components, and the workBench and tabContainer elements\n- its four product tests green: the server 17, the face app 25, workBench 30, tabContainer 20\n- build claimed and done; verify is open"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:13:26.823Z",
+     "text": "- cw: verified: the four suites green, the agent server 17, the face app 25, workBench 30, tabContainer 20; every point of the box met, the loading tree having moved to G41.3. Done is yours."
     }
    ]
   },
@@ -1042,14 +1061,13 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 19,
+   "version": 20,
    "buttons": [
-    "start-design",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -1059,22 +1077,29 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 59,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
+   "claimCommit": "20d0b569",
+   "redCommit": "8d0cb63e",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -1095,9 +1120,13 @@
     {
      "key": "rule/19",
      "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -1110,7 +1139,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, manifest and sidecar included, so no page can change them: the node's file gate refuses every core file. Today only join.js is core; join.json and its sidecar are not.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n",
+   "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, so no page can change them: the node's file gate refuses every core file. Today only join.js is core.\n- login.json and join.json are no manifests: they are code, the apps' own UI text (their steps), and stay beside their apps as they are, core with them (Andy, Q9: \"if they're code, just keep them, they are obviously NOT manifests.\"). Nothing of either app is deleted.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n",
    "checks": [
     {
      "number": "Q1",
@@ -1181,6 +1210,90 @@
      "by": "claude-windows",
      "at": "2026-10-27T03:58:17.142Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-27T04:42:11.502Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "With the manifests deleted, do Join's steps go into shell/js/joinSteps.js, which boot and Join both load, and login's steps into shell/login/login.js, which boot reads them from?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T04:19:43.982Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Delete only Join's sidecar (login has none) and keep the two manifests, login.json and join.json, which hold the steps boot reads?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T04:24:45.943Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "So Join's steps are hard-coded in shell/js/joinSteps.js, which boot and Join share, login's in shell/login/login.js, and join.json, login.json and Join's sidecar are deleted?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T04:26:27.884Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-27T05:04:44.217Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Shall I write the red for the three missing cache points and build them in this item, before the claim?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T04:58:08.947Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T05:07:16.256Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -1431,6 +1544,240 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-27T03:59:39.063Z",
      "text": "grants will be given. I'll end design for this item and give it a go. lets see if you'll notice....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:00:24.068Z",
+     "text": "- cw: taking the red. To take it I released G41.1's build; its work stays staged in my clone, and I take it back to land it the moment you grant its list.\n- Files: the item's product tests, as the box places them: shell/test/boot.js and boot.md, shell/test/seal.js and seal.md, the de-dupe in spirit/run/test/spirit.js, the relay's addresses in spirit/run/spirit/test/relayServer.js and .md, and a general test over shell/ for a face app loading alone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:01:22.080Z",
+     "text": "- cw: noticed: your End design and Go woke me, and the red was mine already. Writing it now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:06:37.647Z",
+     "text": "damn i screwed up our sequence decision, by accidentally clicking go here instead of the agent-skeleton item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:07:53.314Z",
+     "text": "or the desk should have directed you back to the skeleton agent item... don't know yet...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-27T04:07:53.321Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:10:26.379Z",
+     "text": "- cw: the red is written, all red today for its own reasons, the older checks green:\n- shell/test/boot.js and .md: where boot lives and what moved with it, spirit.js and face.html on the new paths, boot naming only its own components (login and Join hard-coded, no sidecar read), login and Join core whole, and every face app loading alone. Today agent and info load alone; apps, contacts, files, icons and mediaViewer fail on an element they never asked for. The rig is proven fair: mediaViewer, given its tree, loads alone in a scratch copy.\n- shell/test/seal.js and .md: the seal at shell/seal.js, round-tripping with the node's seal. It passes against the moved file in a scratch copy.\n- spirit/run/spirit/test/relayServer.js and .md: the relay serves exactly the new shell/ addresses, from shell/, none under /face/.\n- spirit/run/test/spirit.js: the boot by its new paths, spirit.require de-duped (one fetch for three requires) and a booted script counting as required, and the cache loaded by spirit.js on a page and in a process.\n- The commit waits on your grant of the list: three core files, the relay's test pair and spirit.js's test."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:11:13.937Z",
+     "text": "- cw: no harm done; the sequence held. The agent skeleton landed first: G41.1's build is pushed (a54b460f) and in verify. Here only the red is written, tests and nothing of the move, and even that waits on your grant (G1).\n- On the desk directing me: the block is that mechanism. Had this item been blocked by G41.1, its Go would not have been offered, nor its red to me. The block could not be set, since G41.1 was already running.\n- Next, as you wish: I can verify G41.1 first, holding this red until you grant, or finish this red first."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-27T04:12:58.772Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:13:19.644Z",
+     "text": "commit 8d0cb63e8b5cd524662e43df9295f48ec89b4aeb: goal/G41.3 red: face/ moves into shell/ (boot, the seal, the relay's addresses), boot loads only its own components and every face app loads alone, spirit.require de-dupes, spirit.js loads the cache i\n- spirit/run/shell/test/boot.js\n- spirit/run/shell/test/boot.md\n- spirit/run/shell/test/seal.js\n- spirit/run/shell/test/seal.md\n- spirit/run/spirit/test/relayServer.js\n- spirit/run/spirit/test/relayServer.md\n- spirit/run/test/spirit.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:13:51.420Z",
+     "text": "- cw: taking the build. Files: face/ moved into shell/ (boot, seal, sheet, icon, login), spirit.js, face.html, coreFiles.js, relayServer.js, and the face apps and the shared elements they use, each to load its own tree.\n- relayServer.js is the bones: your grant of the list is the review, before anything lands."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:16:04.266Z",
+     "text": "- cw: one clash, flagged once: your ruling in G30.21 says a manifest is never core, and coreFiles.js asks that first. This box makes login and Join core whole, manifest included, so I put the two apps before that rule, as its one exception. Your newer word decides; say if you meant otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:17:07.728Z",
+     "text": "delete the manifests of join and login."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:18:18.581Z",
+     "text": "- cw: you are right: the manifest clash should have been a red Q, not a chat line, and I nearly decided the next point alone. Stopped; red Q below.\n- The point: the two manifests hold the step lists. Join's four steps (Join, Find someone, the face, Open your face) are read by boot and by the Join app; login's two (Log in, Your home node) by boot and by the login app. Deleting the manifests means the lists move into code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:19:14.064Z",
+     "text": "Q7: With the manifests deleted, do Join's steps go into shell/js/joinSteps.js, which boot and Join both load, and login's steps into shell/login/login.js, which boot reads them from?\n\ndelete the manifests (sidecars), since boot won't read them anyway?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:19:42.086Z",
+     "text": "- cw: two different files, checked: login has no sidecar at all; Join's sidecar (join.js.sidecar.json) holds only {face: {intrinsic: true}}, and boot never reads it. The manifests are login.json and join.json: they hold the steps, and boot does read those. Q7 taken down for a sharper one below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:21:10.136Z",
+     "text": "Q8: Delete only Join's sidecar (login has none) and keep the two manifests, login.json and join.json, which hold the steps boot reads?\n\nbut aren't  login.json and join.json supposed to be in relay-state/ somwhere?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:22:02.387Z",
+     "text": "- cw: not by the rule as it stands (G40.8): relay-state/ holds an app's state, what changes as it runs, out of git; Join already keeps its fact there (relay-state/shell/join/state.json, face opened).\n- login.json and join.json are no state: they are the apps' own text, the step names and words, the same on every node, shipped in git with the code. So they stay beside their apps, or move into the code itself, as Q7 asked.\n- Q8 stays open: delete Join's sidecar only, and keep the two manifests?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:24:14.707Z",
+     "text": "so they are not manifests, they're actually state.....\n\nso they are what usually is hard-coded in an app: just text to go with the UI. that would make them code, no?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:24:43.070Z",
+     "text": "- cw: yes, code: the words that go with the UI, the same on every node, hard-coded in the app as any label is. Nothing about them changes as a node runs, so they are no state either. Q8 taken down for the one placement question below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:25:43.914Z",
+     "text": "Q9: So Join's steps are hard-coded in shell/js/joinSteps.js, which boot and Join share, login's in shell/login/login.js, and join.json, login.json and Join's sidecar are deleted?\n\nwhat i meant: if they're code, just keep them, they are obviously NOT manifests."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:26:25.849Z",
+     "text": "- cw: Q9 answered, removed. Boxed: login.json and join.json are code, kept beside their apps as they are, core with them; nothing deleted. Back to the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:26:31.006Z",
+     "text": "if something is a manifest is determined not by the json extension."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:28:33.381Z",
+     "text": "- cw: agreed. The core check takes a manifest by its place, the app folder's own <name>.json, and login.json and join.json sit in that place by chance.\n- So login and Join are asked first: everything in their folders is core, the .json files with the code, and the manifest rule never reaches them.\n- Back to the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:51:14.503Z",
+     "text": "commit 721f4e9bc3426ee64810a27b3737b55be559a0e6: goal/G41.3: deskClient cuts a search answer it ranks from its kept rows to what appServer lets leave (ANSWER_MAX), not PLAINTEXT_MAX: a commit check looking up each of 49 files had the whole list come\n- spirit/run/process/js/deskClient/deskClient.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:52:36.847Z",
+     "text": "- cw: the build is done and waits on your grant of the list (30 core files). relayServer.js is among them, the bones: your grant is its review.\n- What it does: face/ is in shell/; boot loads only spirit's libraries, the sheet, the navigation and Join's steps; every face app, Join, Info and the elements they draw with load their own tree through spirit.require. A detail page loads when it is first opened.\n- One fix in spirit.js beyond the box: on the home shell index.html loads the cache by tag, and spirit.js now loads it too, so it could run twice. A script the page loaded by tag now counts as required, and the cache is asked once the page is parsed: one cache.\n- Folded in, not core, pushed: deskClient let a search answer grow past what a server may send, so the commit check failed on this 49-file list. It is cut to the limit now.\n- Green: boot 18, spirit.js 52, seal 7, relayServer 5, both contacts elements, spiritInUse 138; the older face suites are as red as before, no worse.\n- Grant the list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:55:50.837Z",
+     "text": "commit 464724236ec2d37e0e622f83c7b06e76b5c31748: goal/G41.3 build: face/ is in shell/ (boot.js, the seal, the sheet, the icon, login), boot loads only its own parts (spirit's libraries, the sheet, the navigation, Join's steps), and every face app, J\n- spirit/run/face.html\n- spirit/run/shell/apps/apps.js\n- spirit/run/shell/boot.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/face.css\n- spirit/run/shell/favicon.svg\n- spirit/run/shell/files/files.js\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/info/info.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/js/contacts/rowElement.js\n- spirit/run/shell/js/contacts/test/listElement.js\n- spirit/run/shell/js/contacts/test/listElement.md\n- spirit/run/shell/js/contacts/test/rowElement.js\n- spirit/run/shell/js/contacts/test/rowElement.md\n- spirit/run/shell/js/files/listElement.js\n- spirit/run/shell/js/files/rowElement.js\n- spirit/run/shell/js/icons/listElement.js\n- spirit/run/shell/js/icons/rowElement.js\n- spirit/run/shell/js/mediaViewer.js\n- spirit/run/shell/js/natterDetails/natterDetails.js\n- spirit/run/shell/js/textViewer.js\n- spirit/run/shell/login/login.js\n- spirit/run/shell/login/login.json\n- spirit/run/shell/mediaViewer/mediaViewer.js\n- spirit/run/shell/seal.js\n- spirit/run/shell/test/boot.js\n- spirit/run/shell/test/boot.md\n- spirit/run/spirit.js\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/faceHome.js\n- spirit/run/spirit/relayServer.js\n- spirit/test/appsApp.js\n- spirit/test/contactSearchTiers.js\n- spirit/test/faceFixes.js\n- spirit/test/faceKeys.js\n- spirit/test/faceLogin.js\n- spirit/test/faceSealed.js\n- spirit/test/filesViewers.js\n- spirit/test/fsOwnerUnlimited.js\n- spirit/test/listElements.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:56:31.142Z",
+     "text": "- cw: granted list committed and pushed. The build is not claimed: reading the box again, my red missed three cache points.\n- Missing: a process cache that sheds oldest past a byte cap; forgetting on reconnect, with the partner pushing every type whole; a type loaded late handed its data whole when it subscribes.\n- None is built, and no test asserts them. The rest of the box holds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T04:57:46.101Z",
+     "text": "Q10: Shall I write the red for the three missing cache points and build them in this item, before the claim?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T04:58:06.752Z",
+     "text": "- cw: taking it: the red for the three cache points first, then their build, both in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:28:20.650Z",
+     "text": "commit 6a714d45ae3b081ba8a28d1faaf284587e0c2b0c: goal/G41.3 red: the cache's life: forget empties it and tells each type once; on a page a snapshot is a connect (forget, then the whole push) and a translator loaded late is handed its data whole; in \n- spirit/run/shell/js/test/spiritData.js\n- spirit/run/shell/js/test/spiritData.md\n- spirit/run/test/spirit.js\n- spirit/test/spiritInUse.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:28:23.375Z",
+     "text": "commit 20d0b5693d5117538afe497477c3d0d2556f3836: goal/G41.3 build: the cache's life: spiritData forgets on a connect (a page's snapshot, a process's subscribe) and takes the partner's whole push; a translator loaded late on a page is handed every jo\n- spirit/run/shell/js/spiritData.js\n- spirit/run/spirit.js\n- spirit/run/spirit/appServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:28:58.863Z",
+     "text": "- cw: built and claimed at 20d0b569, every point of the box met.\n- The three cache points: a connect forgets and the partner pushes whole (a page on each snapshot, a process when it subscribes); a type loaded late is handed every job as it stands and every rename; a process cache sheds its oldest writes past 4 MiB, a number you may want to change.\n- Also: spirit.js loads the file tree with the cache. Without it, the face would have shown no apps once boot stopped preloading.\n- Green: spiritData 60, spirit.js 53, boot 18, spiritInUse 139; the stream suites are no worse than before.\n- The box has the relays run the new code the same day: update the relays and your node now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:30:49.347Z",
+     "text": "- cw: verified at 20d0b569: its seven suites green, and the throwaway 139. Every box point is met but one: the relays and your node still run the old code.\n- Update the relays and your node now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T05:42:29.270Z",
+     "text": "my node is updated.\n\ntag?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:43:11.092Z",
+     "text": "- cw: a tag now releases everything since v-2026-10-25-22-54: G40.10 to G40.13, G41.1 (the agent), G41.2 (desk fixes) and G41.3 (face/ into shell/, the loading tree, the cache's life). It is pushed and public, and every relay restarts onto it within about ten minutes.\n- On the relays: the face is served from shell/ now, and the old face/ addresses are gone. A relay and a home node on different sides of this tag may not load the face.\n- Not known to work: no face has loaded in a real browser since this build. The loading tree and the cache are proven only in node rigs; an app missing an element would show up only there.\n- My recommendation: not yet. Open your face once on your updated node (Files, Contacts, Info, Join) and say what you see; then I tag at once.\n- Tag now anyway, or after your look?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T05:46:53.355Z",
+     "text": "tag now"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T05:47:22.320Z",
+     "text": "- cw: tagged v-2026-10-27-06-47 on origin/master (20d0b569) and pushed. The relays take it within about ten minutes; a relay host can take it at once with its update script.\n- My node runs the build already. Restart the ollama agent's node too?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T05:48:41.734Z",
+     "text": "no kill that node. i'll delete its repo shortly.... it will be replaced with this goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T05:49:19.553Z",
+     "text": "all relays updated."
     }
    ]
   }
