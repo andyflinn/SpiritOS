@@ -7,13 +7,16 @@
 //
 //   The left tool keeps this app's own state, relay-state/shell/agent/config.json: { showDebug }, whether the window's
 //   title bar shows the agent server's DEBUG state (Andy, under G41.1).
-//   The right tool sets the server's DEBUG state: it proposes the change, agent.debug {on}, and draws only what the
+//   The right tool sets the server's DEBUG state: it requires the server's interface through spirit and calls its
+//   debug {on} (Andy, Q5: "the app is supposed to require it's components, then use them."), and draws only what the
 //   server's stream says (rule/19: "the ui must propose all state changes to the server and only draw changes contained
 //   in the servers update/change stream"), the state arriving as { agent: { debug } } on the server's job.
-//   The title says DEBUG while showDebug is true and the server's DEBUG state is on.
+//   The title shows the bug while showDebug is true and the server's DEBUG state is on.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
+  var AGENT = 'process/js/agent/agent.family/api.js';
   var NAME = 'Agent';
+  var BUG = '🐞';
 
   spirit.shell.activateApp({
     mount: function (container, api) {
@@ -21,7 +24,7 @@
       var showDebug = false;
       var debug = false;
       var serverBox = null;
-      function title() { if (api && typeof api.setScreenTitle === 'function') api.setScreenTitle(NAME + (showDebug && debug ? ' · DEBUG' : '')); }
+      function title() { if (api && typeof api.setScreenTitle === 'function') api.setScreenTitle(NAME + (showDebug && debug ? ' ' + BUG : '')); }
       function drawServer() {
         var box = serverBox && serverBox.querySelector('input');
         if (box) box.checked = debug;
@@ -56,18 +59,22 @@
           box.innerHTML = '<label><input type="checkbox"' + (debug ? ' checked' : '') + '> DEBUG on the agent server</label>';
           box.addEventListener('change', function (e) {
             var on = !!(e && e.target && e.target.checked);
-            // Proposed to the server; the box shows what the stream then says, not this click.
-            Promise.resolve(api.verb('agent.debug', { on: on })).then(drawServer, drawServer);
+            // Proposed to the server through its interface; the box shows what the stream then says, not this click.
+            drawServer();
+            Promise.resolve(spirit.require(AGENT)).then(function (agent) { return agent.debug({ on: on }); }).then(drawServer, drawServer);
           });
         } }],
       });
       }
 
-      // THE SERVER'S STATE, from its stream: its job's app, { agent: { debug } }.
+      // THE SERVER'S STATE, from its stream: its job's app, { agent: { debug } }. Read from the job that changed, or from
+      // the whole set when none did (what a new reader is handed at once), so the state is there as the app opens.
+      function stateOf(job) { var app = job && job.app; return app && app.agent && typeof app.agent.debug === 'boolean' ? app.agent.debug : null; }
       api.onJobs(function (all, job) {
-        var app = job && job.app;
-        if (!app || !app.agent || typeof app.agent.debug !== 'boolean') return;
-        debug = app.agent.debug;
+        var now = stateOf(job);
+        if (now === null) Object.keys(all || {}).forEach(function (id) { var s = stateOf(all[id]); if (s !== null) now = s; });
+        if (now === null) return;
+        debug = now;
         drawServer();
         title();
       });
