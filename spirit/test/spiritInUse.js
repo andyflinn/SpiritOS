@@ -868,6 +868,285 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   if (askVerifierFn && !/if \(!deskVerifier\) return;/.test(askVerifierFn)) test.check('the Verifier tab opens at any time: a first ask that finds the verifier busy still draws the tab');
   else test.fail('the Verifier tab is drawn only if the verifier answers the first ask, so it does not open while a run keeps it busy');
 
+  // DESK FIXES (goal/G41.2, box v2). The slow hop is found first, by measuring (Andy: "Q: yes."): it gets its check once
+  // it is known. These are the fixes the box names.
+  test.subHeading('1p. desk fixes: product tests as suites, no plugin goal on the List, an item read once is kept');
+  const fixRun = await (async function () {
+    const os = require('os');
+    const appClient = require('../run/spirit/appClient.js');
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inuse-deskfix-'));
+    const state = path.join(scratch, 'state');
+    test.seedDesk(state, [{ goal: { id: 'goal/G100', title: 'Fixes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] }]);
+    const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
+    const client = appClient.createAppClient({ rootDir: scratch });
+    client.register('desk', pipe);
+    const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAspiritInUseFixOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+    const CW = { key: 'MCowBQYDK2VwAyEAspiritInUseFixCWAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+    const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { refused: e && (e.code || e.message) }; }); };
+    const took = function (r) { return r && r.status === 200 && r.body && r.body.ok !== false; };
+    const kid = spawn(process.execPath, [path.join(RUN, 'process', 'js', 'desk', 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    const out = {};
+    try {
+      let up = false;
+      for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+      if (!up) return { up: false };
+      out.up = true;
+      // A product test is a suite: a .js in a test/ folder of the run tree; a module, or a path that leaves the tree, is not.
+      out.product = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/test/rowElement.js' }, CW);
+      out.module = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/shell/js/rowElement.js' }, CW);
+      out.leaves = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/run/test/../../x.js' }, CW);
+      out.old = await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/spiritInUse.js' }, CW);
+      const s = await call('item.suites.search', { id: 'goal/G100.1', text: '' }, ANDY);
+      out.suites = ((s.body && s.body.items) || []).map(function (i) { return i.key; }).sort();
+      // The List: what it asks with Current Goal Only pressed off. Which goals are plugin goals, read one by one.
+      const all = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY);
+      out.listed = ((all.body && all.body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
+      out.plugins = [];
+      for (let n = 1; n <= 130; n++) {
+        const g = await call('item.get', { id: 'goal/G' + n }, ANDY);
+        let f = null; try { f = JSON.parse(g.body && g.body.item); } catch (e) { f = null; }
+        if (f && (f.plugin || f.special)) out.plugins.push(f.id);
+      }
+      out.took = took;
+    } finally { kid.kill(); }
+    return out;
+  }());
+  const fx = fixRun;
+  if (!fx.up) test.fail('the scratch desk for the fixes did not start');
+  else {
+    const tookIt = function (r) { return r && r.status === 200 && r.body && r.body.ok !== false; };
+    if (tookIt(fx.product) && !tookIt(fx.module) && !tookIt(fx.leaves) && tookIt(fx.old) && fx.suites.indexOf('spirit/run/shell/js/test/rowElement.js') !== -1)
+      test.check('item.suites.add takes a product test, a .js in a test/ folder of the run tree, beside a spirit/test/ suite; a module or a path that leaves the tree is refused');
+    else test.fail('product tests as suites: product ' + short(fx.product.body) + ', module ' + short(fx.module.body) + ', leaving ' + short(fx.leaves.body) + ', suites ' + short(fx.suites));
+    const shown = fx.listed.filter(function (f) { return f.plugin || fx.plugins.indexOf(f.id) !== -1; }).map(function (f) { return f.id; });
+    if (fx.plugins.length && !shown.length) test.check('no plugin or special goal is on the List, Current Goal Only pressed off or not (' + fx.plugins.length + ' of them in the desk)');
+    else test.fail('plugin or special goals on the List: ' + short(shown) + ' (the desk holds ' + short(fx.plugins) + ')');
+  }
+  // AN ITEM READ ONCE IS KEPT (the box: "the desk UI does NOT properly cache box content"). The details page on a window
+  // of its own, with the page's own mirror (spiritData) and the desk's translator, fed the desk's rows as the page hears
+  // them: a row whose change number jumps (the desk numbers every record, published or not) is no gap and costs no ask;
+  // a box row keeps the box current; an item opened again is not read again.
+  const keptRun = await (async function () {
+    const vm = require('vm');
+    const ctx = { console: console, setTimeout: setTimeout, clearTimeout: clearTimeout, setImmediate: setImmediate, Promise: Promise, JSON: JSON };
+    const byId = {};
+    function el(tag) {
+      let html = '';
+      const e = { tagName: String(tag || 'div').toUpperCase(), value: '', checked: false, textContent: '', className: '', style: {}, dataset: {}, children: [], listeners: {}, parentNode: null, hidden: false, attrs: {}, id: '',
+        appendChild: function (c) { e.children.push(c); c.parentNode = e; return c; }, insertBefore: function (c) { return e.appendChild(c); },
+        removeChild: function (c) { e.children = e.children.filter(function (x) { return x !== c; }); return c; }, replaceChildren: function () { e.children = []; }, remove: function () {},
+        addEventListener: function (t, fn) { (e.listeners[t] = e.listeners[t] || []).push(fn); }, removeEventListener: function () {}, dispatchEvent: function () { return true; },
+        setAttribute: function (k, v) { e.attrs[k] = String(v); }, getAttribute: function (k) { return e.attrs[k] === undefined ? null : e.attrs[k]; }, removeAttribute: function (k) { delete e.attrs[k]; },
+        closest: function () { return null; }, contains: function () { return false; }, querySelectorAll: function () { return []; }, querySelector: function () { return null; },
+        focus: function () {}, select: function () {}, blur: function () {}, scrollIntoView: function () {} };
+      e.classList = { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } };
+      Object.defineProperty(e, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
+      return e;
+    }
+    ctx.document = { getElementById: function (id) { if (!byId[id]) { byId[id] = el('div'); byId[id].id = id; } return byId[id]; }, createElement: el,
+      addEventListener: function () {}, removeEventListener: function () {}, body: el('body'), head: el('head') };
+    ctx.window = ctx; ctx.window.spirit = {};
+    ctx.spirit = ctx.window.spirit;
+    vm.createContext(ctx);
+    const out = { asks: [] };
+    try {
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), ctx, { filename: 'spiritData.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'desk', 'data.js'), 'utf8'), ctx, { filename: 'desk/data.js' });
+      let dd = null; let hear = null;
+      ctx.spirit.shell = { activateApp: function (x) { dd = x; } };
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js'), 'utf8'), ctx, { filename: 'deskDetails.js' });
+      const fact = function (id, title) { return { id: id, title: title, goal: 'goal/G100', status: '', with: '', buttons: [], blocking: [], blocked: [], names: {}, files: [], rules: [], phaseRules: [] }; };
+      const boxes = { 'goal/G100.1': 'box of one', 'goal/G100.2': 'box of two' };
+      dd.mount(el('div'), {
+        escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
+        verb: function (name, args) {
+          out.asks.push(name + ' ' + String((args && args.id) || ''));
+          const v = String(name).replace(/^desk\./, ''); const id = String((args && args.id) || '');
+          const answer = v === 'item.get' ? { item: JSON.stringify(fact(id, id)), version: 1, change: 1 }
+            : v === 'item.box' ? { box: boxes[id] || '', version: 1 } : v === 'item.checks' ? { checks: [] } : v === 'item.chat' ? { chat: [], chatMore: false }
+            : v === 'item.files' ? { files: [], filesMore: false } : {};
+          if (ctx.spirit.deskData && typeof ctx.spirit.deskData.took === 'function') ctx.spirit.deskData.took(v, args, answer);
+          return Promise.resolve({ status: 200, body: answer });
+        },
+        onPublished: function (fn, server) { if (server === 'desk') hear = fn; }, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+        fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+      });
+      // What the page hears of the desk: each row to its mirror's translator and to the open dialog alike.
+      const row = function (o) { if (ctx.spirit.deskData) ctx.spirit.deskData.published(o); if (hear) hear(o); };
+      const settledHere = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
+      row({ change: 10, verb: 'goal.whole', item: fact('goal/G100', 'Fixes') });
+      row({ change: 11, verb: 'goal.whole', item: fact('goal/G100.1', 'One') });
+      row({ change: 12, verb: 'goal.whole', item: fact('goal/G100.2', 'Two') });
+      await dd.open({ id: 'goal/G100.1' }); await settledHere();
+      out.firstOpen = out.asks.length;
+      out.firstBox = out.asks.filter(function (a) { return a === 'desk.item.box goal/G100.1'; }).length;
+      out.firstShown = Object.keys(byId).some(function (k) { return byId[k].innerHTML.indexOf('box of one') !== -1; });
+      // Rows whose change numbers jump, as the desk's do: another item's chat line, a List row, a check of another item.
+      row({ change: 57, table: 'chat', id: 'goal/G100.2', row: { at: '2026-10-27T01:00:00Z', by: 'andy', key: '', text: 'a line elsewhere' } });
+      row({ change: 83, item: fact('goal/G100.2', 'Two, renamed') });
+      row({ change: 140, table: 'checks', id: 'goal/G100.2', row: { number: 'Q1', kind: 'Q', words: 'Which?', state: 'open' } });
+      await settledHere();
+      out.afterJumps = out.asks.length;
+      // A box row of the open item: shown, no ask.
+      row({ change: 171, table: 'box', id: 'goal/G100.1', row: { text: 'the box rewritten', version: 2 } });
+      await settledHere();
+      out.afterBoxRow = out.asks.length;
+      out.boxShown = Object.keys(byId).some(function (k) { return byId[k].innerHTML.indexOf('the box rewritten') !== -1 || byId[k].value === 'the box rewritten'; });
+      // Another item, then the first again: the first is not read again, and shows its newest box.
+      await dd.open({ id: 'goal/G100.2' }); await settledHere();
+      const before = out.asks.length;
+      await dd.open({ id: 'goal/G100.1' }); await settledHere();
+      out.reopenAsks = out.asks.slice(before).filter(function (a) { return /goal\/G100\.1$/.test(a) && !/item\.get/.test(a); });
+      out.reopenShown = Object.keys(byId).some(function (k) { return byId[k].innerHTML.indexOf('the box rewritten') !== -1 || byId[k].value === 'the box rewritten'; });
+    } catch (e) { out.threw = e && e.stack || String(e); }
+    return out;
+  }());
+  const kr = keptRun;
+  if (kr.threw) test.fail('the details page on its own window threw: ' + short(kr.threw));
+  else if (!kr.firstShown) test.fail('the world: the details page on its own window did not draw the box it read');
+  else {
+    if (kr.firstBox === 1 && kr.afterJumps === kr.firstOpen) test.check('rows whose change numbers jump, as the desk numbers every record, cost the details no ask (' + kr.firstOpen + ' asks to open, none after)');
+    else test.fail('rows with jumping change numbers made the details ask again: ' + kr.firstOpen + ' asks to open, ' + kr.afterJumps + ' after three rows');
+    if (kr.afterBoxRow === kr.afterJumps && kr.boxShown) test.check('a box row of the open item shows its new box, with no ask');
+    else test.fail('a box row: asks ' + kr.afterJumps + ' -> ' + kr.afterBoxRow + ', shown ' + kr.boxShown);
+    if (!kr.reopenAsks.length && kr.reopenShown) test.check('an item opened again is not read again: its kept box, the newest, is shown');
+    else test.fail('opening the item again read it again: ' + short(kr.reopenAsks) + ', the newest box shown ' + kr.reopenShown);
+  }
+  // WHAT REACHES AN AGENT. A real desk and a real deskClient, started from a scratch copy of the run tree whose
+  // environment.json names a pretend node: every peer.post goes by its `to`, the desk's stream into deskClient as the
+  // desk's call, deskClient's asks into the desk as the agent's own. (A desk or deskClient started from the checkout
+  // would post through the live node its environment.json names.) What deskClient hands its agent is what next answers.
+  const wakeRun = await (async function () {
+    const os = require('os');
+    const http = require('http');
+    const out = { steps: {} };
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inuse-wakes-'));
+    const tree = path.join(scratch, 'run');
+    fs.mkdirSync(tree);
+    const tar = spawnSync('tar', ['--exclude=./relay-state', '-cf', '-', '.'], { cwd: RUN, maxBuffer: 1 << 28 });
+    spawnSync('tar', ['-xf', '-'], { cwd: tree, input: tar.stdout, maxBuffer: 1 << 28 });
+    fs.mkdirSync(path.join(tree, 'relay-state'), { recursive: true });
+    const appClient = require(path.join(tree, 'spirit', 'appClient.js'));
+    const packet = require(path.join(tree, 'spirit', 'client', 'packet.js'));
+    const CWK = 'MCowBQYDK2VwAyEAspiritInUseWakeCWAAAAAAAAAAAAAAAAAAAAA=';
+    const WSLK = 'MCowBQYDK2VwAyEAspiritInUseWakeWSLAAAAAAAAAAAAAAAAAAAA=';
+    const DESKK = 'MCowBQYDK2VwAyEAspiritInUseWakeDeskAAAAAAAAAAAAAAAAAAA=';
+    const ANDY = { owner: true, key: DESKK, label: 'andy' };
+    const CW_AT_DESK = { key: CWK, label: 'claude-windows' };
+    const WSL_AT_DESK = { key: WSLK, label: 'wsl-claude' };
+    const OWNER = { owner: true, key: CWK, label: 'claude-windows' };
+    const client = appClient.createAppClient({ rootDir: scratch });
+    const win = process.platform === 'win32';
+    const deskPipe = win ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'desk.sock');
+    const clientPipe = win ? appClient.pipePathFor(scratch, 'deskClient', 'win32', 'process') : path.join(scratch, 'dc.sock');
+    client.register('desk', deskPipe);
+    client.register('deskClient', clientPipe);
+    const call = function (app, verb, args, caller) { const q = {}; q[verb] = args; const b = {}; b[app] = q; return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
+    const streams = [];
+    const node = http.createServer(function (req, res) {
+      let raw = '';
+      req.on('data', function (c) { raw += c; });
+      req.on('end', function () {
+        let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+        if (b.verb === 'events.subscribe') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.write(': open\n\n'); streams.push(res); return; }
+        const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; }
+        if (b.verb === 'contact.get') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, key: b.key, person: { publicKey: b.key, blocked: true } })); return; }
+        if (b.verb !== 'peer.post') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
+        const hash = 'H' + Date.now() + Math.random();
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, hash: hash }));
+        let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
+        const to = String(b.to || '');
+        const caller = to === CWK ? { key: DESKK, label: 'andy' } : to === DESKK ? CW_AT_DESK : null;
+        if (!caller) return;
+        test.peerAnswer(client, (ask && ask.body) || {}, caller).then(function (r) {
+          const made = packet.encode('api', r && r.body, { re: hash });
+          streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: to, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
+        }, function () { /* the asker waits it out */ });
+      });
+    });
+    await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
+    fs.writeFileSync(path.join(tree, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.address().port }));
+    const deskState = path.join(scratch, 'desk-state'); const clientState = path.join(scratch, 'client-state');
+    fs.mkdirSync(clientState, { recursive: true });
+    // The goal written last is current: goal/G102, its first item held by the other agent, its second nobody's.
+    test.seedDesk(deskState, [{ goal: { id: 'goal/G101', title: 'Next goal' }, items: [{ id: 'goal/G101.1', title: 'X', blocks: ['goal/G101'] }] },
+      { goal: { id: 'goal/G102', title: 'Wakes' }, items: [{ id: 'goal/G102.1', title: 'Held by wsl', blocks: ['goal/G102'] }, { id: 'goal/G102.2', title: 'Grant', blocks: ['goal/G102'] }, { id: 'goal/G102.3', title: 'Designed', blocks: ['goal/G102'] }] }]);
+    const env = Object.assign({}, process.env, { SPIRIT_JOB_ID: 'wake-job' });
+    const kids = [];
+    const up = async function (app) { for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body[app] && r.body[app].ok !== false) return true; } catch (e) { /* not yet */ } } return false; };
+    try {
+      kids.push(spawn(process.execPath, [path.join(tree, 'process', 'js', 'desk', 'desk.js'), '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: env }));
+      if (!await up('desk')) return { up: 'desk' };
+      const D = function (v, a, who) { return call('desk', v, a, who || ANDY).then(function (r) { return r.body || {}; }); };
+      await D('profile.set', { agent: CWK, name: 'claude-windows', nick: 'cw' });
+      await D('profile.set', { agent: WSLK, name: 'wsl-claude', nick: 'wsl' });
+      kids.push(spawn(process.execPath, [path.join(tree, 'process', 'js', 'deskClient', 'deskClient.js'), JSON.stringify({ historyMax: 50 }), '--pipe', clientPipe, '--state', clientState,
+        '--node', JSON.stringify({ name: 'claude-windows', publicKey: CWK })], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: env }));
+      if (!await up('deskClient')) return { up: 'deskClient' };
+      await call('deskClient', 'setDesk', { key: DESKK }, OWNER);
+      const next = async function () { const r = await call('deskClient', 'next', {}, OWNER); return (r.body && r.body.lines) || []; };
+      await next();
+      // The control: his line on an item nobody holds wakes the agent today.
+      await D('chat.add', { id: 'goal/G102.2', text: 'control: a line on an item nobody holds' });
+      out.steps.control = await next();
+      // The world: goal/G102.1 is a code item, gone, its red held by the other agent; goal/G102.3 in its own design.
+      await D('press', { id: 'goal/G102.1', what: 'code' });
+      await D('press', { id: 'goal/G102', what: 'end-design' });
+      await D('press', { id: 'goal/G102.1', what: 'go' });
+      out.wslTook = await D('phase.take', { id: 'goal/G102.1', phase: 'red' }, WSL_AT_DESK);
+      await D('press', { id: 'goal/G102.3', what: 'start-design' });
+      await next();
+      // His plain line on the item the other agent holds is not this agent's (a guard).
+      await D('chat.add', { id: 'goal/G102.1', text: 'a plain line for wsl' });
+      out.steps.plain = await next();
+      // His answer to the Q this agent placed there, Q<n>: first, is this agent's.
+      out.qAdd = await D('check.add', { id: 'goal/G102.1', kind: 'Q', words: 'Which file holds it?', test: '' }, CW_AT_DESK);
+      await next();
+      await D('chat.add', { id: 'goal/G102.1', text: 'Q1: the desk does.' });
+      out.steps.qAnswer = await next();
+      // His grant of the core files this agent put on the list.
+      await D('item.files.add', { id: 'goal/G102.2', path: 'spirit/run/spirit.js' }, CW_AT_DESK);
+      const ck = await D('item.checks.search', { id: 'goal/G102.2', text: '' });
+      const g = ((ck.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }).filter(function (c) { return c.kind === 'G'; })[0];
+      out.grantCheck = g ? g.number : '';
+      await next();
+      if (g) await D('check.set', { id: 'goal/G102.2', check: g.number, state: 'granted' });
+      out.steps.grant = await next();
+      // His End design on an item, and his Go.
+      await D('press', { id: 'goal/G102.3', what: 'end-design' });
+      out.steps.endDesign = await next();
+      await D('press', { id: 'goal/G102.2', what: 'go' });
+      out.steps.go = await next();
+      // His change of the current goal.
+      await D('press', { id: 'goal/G101', what: 'make-current' });
+      out.steps.current = await next();
+      out.up = true;
+    } finally {
+      kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
+      streams.forEach(function (s) { try { s.end(); } catch (e) { /* gone */ } });
+      try { node.close(); } catch (e) { /* closed */ }
+    }
+    return out;
+  }());
+  const wr = wakeRun;
+  const woke = function (lines, re) { return (lines || []).some(function (l) { return re.test(String(l)); }); };
+  if (wr.up !== true) test.fail('the world: the ' + wr.up + ' of the wake rig did not start');
+  else if (!woke(wr.steps.control, /control: a line on an item nobody holds/)) test.fail('the world: the control, his line on an item nobody holds, did not wake the agent: ' + short(wr.steps.control));
+  else {
+    if (!woke(wr.steps.plain, /a plain line for wsl/)) test.check('a guard: his plain line on an item another agent holds does not wake this agent');
+    else test.fail('his plain line on the other agent\'s item woke this agent');
+    if (woke(wr.steps.qAnswer, /Q1: the desk does\./)) test.check('his line starting Q1: reaches the agent that placed Q1, on an item another agent holds');
+    else test.fail('his answer to my Q1 did not reach me: ' + short(wr.steps.qAnswer) + ' (Q placed: ' + short(wr.qAdd) + ')');
+    if (wr.grantCheck && woke(wr.steps.grant, new RegExp(wr.grantCheck + '[\\s\\S]*granted|granted[\\s\\S]*' + wr.grantCheck))) test.check('his grant wakes the agent that put the core files on the list');
+    else test.fail('his grant did not wake the agent that asked for it: ' + short(wr.steps.grant) + ' (check ' + short(wr.grantCheck) + ')');
+    if (woke(wr.steps.endDesign, /end-design/)) test.check('his End design on an item wakes the agent');
+    else test.fail('his End design did not wake the agent: ' + short(wr.steps.endDesign));
+    if (woke(wr.steps.go, /"what":"go"|press go|\bgo\b.*goal\/G102\.2|goal\/G102\.2.*\bgo\b/)) test.check('his Go wakes the agent');
+    else test.fail('his Go did not wake the agent: ' + short(wr.steps.go));
+    if (woke(wr.steps.current, /goal\/G101\b/)) test.check('a change of the current goal reaches the agent at once, naming the new goal');
+    else test.fail('the new current goal did not reach the agent: ' + short(wr.steps.current));
+  }
+
   test.subHeading('2. a real node writes its port, runs its servers, and a process in its home reaches it through spirit.js');
   const home = setupRelayFakes('spiritInUse').andy;
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
