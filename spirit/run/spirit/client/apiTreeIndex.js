@@ -10,7 +10,7 @@
 //   answer (Andy: "the boot continues. and the failure is logged. and
 //   that server will not be part of the apiTree").
 //
-// Nothing here touches the DOM, the iconIndex.js shape: the widget built
+// Nothing here touches the DOM: the widget built
 // on it (createAppServerSelector, shell/js/appServerSelector.js) is a thin painter over these
 // arrays, so the deciding can be asserted in node rather than only
 // looked at. apiAuth/G1.9 extends this file with the verb list of one

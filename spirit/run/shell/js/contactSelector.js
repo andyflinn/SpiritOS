@@ -13,7 +13,7 @@
 // THE COLUMNS (the item's box): fixed, always, ★ (the contact is my puppet: an owned contact, its signed card naming
 // this node its owner, goal/G19.8; "just a star in the one column, that says it all", and "if you want more info, put a
 // tooltip on the star"), presence (green or white), the name; then the configurable status column, its icons from
-// options.statuses [{status, iconKey}], the first the default (goal/G4.14).
+// options.statuses [{status, glyph}], the first the default (goal/G4.14); the glyph itself (goal/G41.1, no icon table).
 // THE FILTERS: one per state, mine (★), blocked and held, each shown only when the list holds any ("owned, blocked,
 // held, (if our list has any)"), each sent to contact.search as a yes-filter (mine since goal/G40.11).
 //
@@ -67,9 +67,8 @@
       var want = Object.prototype.hasOwnProperty.call(statusOf, row.key) ? statusOf[row.key]
         : (typeof options.status === 'function' ? options.status(row) : undefined);
       var pair = statuses.filter(function (s) { return s && s.status === want; })[0] || statuses[0];
-      // A status names its glyph by key: the one icon table, the icon module's (goal/G40.7).
-      var ICON = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
-      return (pair && pair.iconKey && ICON[pair.iconKey]) || '';
+      // A status names its glyph itself (goal/G41.1: no icon table).
+      return (pair && pair.glyph) || '';
     }
     function presenceGlyph(key) { return presentOf[key] === true ? ('🟢') : ('⚪'); }
 

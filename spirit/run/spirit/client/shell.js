@@ -618,7 +618,7 @@
         var step = openStep(app);
         if (!step) return;
         app.name = step.name;
-        app.icon = spirit.core.const.ICON[step.icon] || app.icon;
+        app.icon = spirit.core.const.ICON[step.icon] || step.icon || app.icon; // a glyph as it is (goal/G41.1)
         desktopEl.appendChild(buildAppIcon(id));
         return;
       }
@@ -1302,9 +1302,8 @@
       // than data or a promise, which is a threshold worth naming: it
       // means the shell ships controls, and the next asks will be a file
       // picker and a peer picker. The rule that keeps it honest is the
-      // one createIconSelector follows — the deciding is done in an
-      // isomorphic module (js/iconIndex.js) that node can drive, and what
-      // lives here is only the painting.
+      // one createIconSelector follows — the deciding is done in its own
+      // element, and what lives here is only the painting.
       ui: {
         elements: {
           createIconSelector: shellElements.createIconSelector,
@@ -2671,7 +2670,8 @@
     apps[id] = {
       id: id,
       name: manifest.name,
-      icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
+      // A manifest names its icon as the glyph itself (goal/G41.1); an old key still answers through ICON.
+      icon: spirit.core.const.ICON[manifest.icon] || manifest.icon || spirit.core.const.ICON.FILE,
       intrinsic: !!manifest.intrinsic,
       // Where it runs (goal/G30.20): ['home'], ['home', 'face'] or [].
       runs: Array.isArray(manifest.runs) ? manifest.runs : [],

@@ -30,7 +30,9 @@ function joinEl() {
   var w = window.spirit.elements || {};
   return { joinForm: w && window.spirit.elements.joinForm, contactList: w && window.spirit.elements.contactList, faceForm: w && window.spirit.elements.faceForm };
 }
-function joinIcon(name) { var t = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {}; return t[name] || ''; }
+// ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
+var JOIN_DONE = '☑️';
+var JOIN_OPEN = '⬜';
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
 // The steps' names, icons and words, read once from this app's own manifest.
 // Asked once, as it loads (goal/G40.8: spirit.fs answers when it has it, where the kernel's read waited in place).
@@ -64,12 +66,12 @@ function joinDraw() {
     var open = !done[i] && !reached;
     if (s.until === joinHanded.open) reached = true;
     return '<li class="stat-tile wide">' +
-      '<div class="label">' + (done[i] ? joinIcon('CHECKED') : joinIcon('UNCHECKED')) + ' ' + joinIcon(s.icon) + ' ' + joinEsc(s.name) +
+      '<div class="label">' + (done[i] ? JOIN_DONE : JOIN_OPEN) + ' ' + joinEsc(s.icon || '') + ' ' + joinEsc(s.name) +
         (s.optional ? ' <span class="job-manifest-note">(optional)</span>' : '') + '</div>' +
       (open ? '<div class="job-manifest-note">' + joinEsc(s.text || '') + '</div><div id="join-step-' + i + '"></div>' : '') +
       '</li>';
   }).join('') + '</ol>' +
-  (joinHanded.open ? '' : '<div class="job-manifest-note">' + joinIcon('CHECKED') + ' Every step is done.</div>');
+  (joinHanded.open ? '' : '<div class="job-manifest-note">' + JOIN_DONE + ' Every step is done.</div>');
   list.forEach(function (s, i) {
     var box = document.getElementById('join-step-' + i);
     if (box) joinForm(s, box);

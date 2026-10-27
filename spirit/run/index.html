@@ -51,41 +51,8 @@
          move a relay's value except by asking the relay. -->
     <script src="/spirit/lever.js"></script>
     <!-- One peer, one file, named by the peer's whole public key. Stays up
-         in js/ because hub.js and peerStats.js name files with it too.
-         js/client/chatLog.js reads it at load, so it comes first. -->
+         in js/ because hub.js and peerStats.js name files with it too. -->
     <script src="/spirit/peerFile.js"></script>
-    <!-- How a conversation is filed on this node. Relay Chat holds the
-         files through its own scoped api.fs; this only decides names,
-         shapes and merging.
-
-         Browser-only, so js/client/. It exports to node as well, but no
-         node module requires it — that half is there so the merging can be
-         asserted in a test instead of only looked at, which is not the
-         same thing as being isomorphic.
-
-         Relay Chat was its only reader, and Andy: "chatLog.js actually
-         belongs in run/shell/relayChat/". THAT HAPPENED ON 2026-09-25 —
-         the app left for its own repo and chatLog.js went with it, which
-         is the same judgement carried to its end rather than a new one.
-
-         THIS CORRECTS THE NOTE THAT STOOD HERE, which said it sits on loan
-         and goes when Relay Chat goes. Relay Chat is not going — it is
-         parked because it grows into a conversational surface over shell
-         functions ("/contact gets a dropdown showing contact labels", same
-         for invites and files). Andy: "the modularization of chat might be
-         via elements it borrows from shell or generic, client packets."
-
-         Under that, this file is not homeless and not on loan. It is a
-         DECIDING module with no painting — names, shapes, merging, driven
-         from node by a test — which is the same shape as iconIndex.js and
-         exactly what api.ui.elements' rule asks for (see shell.js, above
-         createIconSelector). An app borrowing the shell's controls is the
-         direction of travel, so a deciding module sitting beside the shell
-         is the pattern rather than the exception.
-
-         What is still true: no app owns a second file, because an app is
-         one script. That is not what would need building. -->
-    <script src="/spirit/client/chatLog.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spirit.limits,
          so the size a page refuses is the size the relay refuses. -->
     <script src="/spirit/limits.js"></script>
@@ -105,16 +72,9 @@
          them. The directory is the statement — a file in js/ is one a
          relay may end up loading. -->
     <script src="/spirit/client/packet.js"></script>
-    <!-- The ICON table read the other way round — one line per glyph,
-         carrying every name it is keyed under. What the icon selector
-         chooses from. Browser-only like chatLog.js above: the node export
-         is so the grouping and the filtering can be asserted rather than
-         only looked at, not because anything in the node reads it. -->
-    <script src="/spirit/client/iconIndex.js"></script>
     <!-- The owner's api tree read for choosing (apiAuth/G1.8): the names
          of the servers in a jobs.api 'api' answer, a failed branch left
-         out. What the appServer selector chooses from; same two-sided
-         shape as iconIndex.js above. -->
+         out. What the appServer selector chooses from. -->
     <script src="/spirit/client/apiTreeIndex.js"></script>
     <!-- The shell's look is one sheet, shell.css, which the face loads too (goal/G30.9). -->
     <link rel="stylesheet" href="/shell.css" />

@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Job",
   "description": "One job from the Job Monitor: its status, its console and its data, with Cancel or Delete where the rule allows.",
-  "icon": "RUN",
+  "icon": "🏃‍♂️",
   "hidden": true,
   "type": "dialog",
   "owner": "system"

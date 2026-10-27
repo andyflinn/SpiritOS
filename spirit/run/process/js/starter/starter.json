@@ -1,7 +1,7 @@
 {
   "name": "Starter",
   "description": "The smallest app a node can serve. Copy this folder to begin.",
-  "icon": "START",
+  "icon": "🔵",
   "hidden": false,
   "owner": "system",
 

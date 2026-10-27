@@ -2,7 +2,7 @@
   "runs": [],
   "name": "Stack-frame door",
   "description": "One door of the stack-frame checks: its gate and endpoint to edit, its own run and verdict, and the chat of its item.",
-  "icon": "LOCKED",
+  "icon": "🔒",
   "hidden": true,
   "server": "desk",
   "type": "dialog",

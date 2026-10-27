@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Desk item",
   "description": "One row of Andy's desk: what it is, its thread, and the inputs that fit its kind.",
-  "icon": "THREAD",
+  "icon": "🧵",
   "hidden": true,
   "server": "desk",
   "type": "dialog",

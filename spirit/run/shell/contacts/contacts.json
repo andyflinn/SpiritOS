@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Contacts",
   "description": "The people this node knows: what you call them, how each key got here, and who is waiting or refused.",
-  "icon": "ROLODEX",
+  "icon": "📇",
   "hidden": false,
   "owner": "system"
 }

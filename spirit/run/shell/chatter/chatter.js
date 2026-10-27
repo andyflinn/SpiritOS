@@ -524,7 +524,7 @@ spirit.shell.activateApp({
     chPane = api.ui.elements.createContactSelector({
       face: 'pane', search: chPeersSearch,
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
-      statuses: [{ status: 'none' }, { status: 'unanswered', iconKey: 'WAITING' }],
+      statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
     });
     chPane.addEventListener('change', function () { if (chPane.value) chOpen(chPane.value); });
     left.appendChild(chPane);

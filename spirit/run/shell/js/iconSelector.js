@@ -6,7 +6,7 @@
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spirit.iconIndex, window.spirit.apiTreeIndex)
+// has (spirit, document, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 
@@ -33,9 +33,8 @@
   //
   // The value is the GLYPH, not the key, because the one consumer today
   // is setAppOverride, which stores a literal glyph in
-  // preferences.appOverrides. Anything that ever writes a MANIFEST needs
-  // a key instead (kernel.js resolves manifest icons through ICON[...]) —
-  // that is what iconIndex.keyFor is for.
+  // preferences.appOverrides. A manifest names its icon as the glyph too
+  // (goal/G41.1: no icon table on the face).
   //
   // The root element is the control: it carries .value, it fires a
   // bubbling `change` when a row is picked, and the caller may set an id
@@ -43,7 +42,13 @@
   // working with no change to its handler.
   function createIconSelector(excludeGlyphs, options) {
     options = options || {};
-    var iconIndex = window.spirit.iconIndex;
+    // A ROW ANSWERS A WORD when any of its keywords holds it, or the word is the glyph (goal/G41.1: its own match, the
+    // icon set's keywords; no icon table).
+    function matches(c, text) {
+      var w = String(text || '').trim().toLowerCase();
+      if (!w) return true;
+      return c.glyph === w || c.keys.some(function (k) { return String(k).toLowerCase().indexOf(w) !== -1; });
+    }
     // WHAT IT OFFERS IS THE SYSTEM SET (goal/G40.8; Andy: "if you want a table for the icon-selector, it should go into
     // spirit/run/shell/json/icons.json"): shell/json/iconSet.json, each glyph with the keywords it is found by, read once
     // as it is made, the rows drawn when it is there.
@@ -86,7 +91,7 @@
     }
 
     function paintRows() {
-      visible = choices.filter(function (c) { return iconIndex.matches(c, filter.value); });
+      visible = choices.filter(function (c) { return matches(c, filter.value); });
       rows.innerHTML = visible.map(function (c, i) {
         return '<button type="button" class="icon-selector-row' +
           (i === activeIndex ? ' is-active' : '') +

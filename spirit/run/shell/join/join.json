@@ -2,13 +2,13 @@
   "runs": ["home"],
   "name": "Join",
   "description": "From joining a relay to opening your face: the steps a new node takes, one list.",
-  "icon": "EMAIL",
+  "icon": "✉️",
   "hidden": true,
   "owner": "system",
   "steps": [
-    { "until": "email", "name": "Join", "icon": "EMAIL", "text": "Join a relay with your email, or add your email to the relay you are on." },
-    { "until": "contact", "name": "Find someone", "icon": "SEARCH", "optional": true, "text": "Find someone on the network and add them. You can skip this." },
-    { "until": "face", "name": "Configure your node's remote control", "icon": "KEY", "text": "Ask the relay for a name, your face, so you can reach this node from anywhere." },
-    { "until": "opened", "name": "Open your face", "icon": "GLOBE", "text": "Open your face in a browser, on your phone or anywhere." }
+    { "until": "email", "name": "Join", "icon": "✉️", "text": "Join a relay with your email, or add your email to the relay you are on." },
+    { "until": "contact", "name": "Find someone", "icon": "🔍", "optional": true, "text": "Find someone on the network and add them. You can skip this." },
+    { "until": "face", "name": "Configure your node's remote control", "icon": "🔑", "text": "Ask the relay for a name, your face, so you can reach this node from anywhere." },
+    { "until": "opened", "name": "Open your face", "icon": "🌐", "text": "Open your face in a browser, on your phone or anywhere." }
   ]
 }

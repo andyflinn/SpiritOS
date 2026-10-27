@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Text Editor",
   "description": "Edit any writable-root text file directly in the browser.",
-  "icon": "EDIT",
+  "icon": "✏️",
   "hidden": false,
   "handlesExtensions": [".txt", ".json"],
   "owner": "system"

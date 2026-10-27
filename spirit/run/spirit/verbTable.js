@@ -47,8 +47,7 @@
 //
 // The alternative — modules self-registering when required — makes load
 // order load-bearing and invisible, which this tree has already been
-// bitten by (index.html carries a comment about chatLog.js needing
-// peerFile.js first). And `handlePost`'s deps, peerRouter and presence,
+// bitten by. And `handlePost`'s deps, peerRouter and presence,
 // are built at the FOOT of server.js: a module claiming at require time
 // would be claiming before the things it needs exist. That is the same
 // shape as the ReferenceError that killed the node on its first mint.

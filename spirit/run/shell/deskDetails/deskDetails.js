@@ -273,22 +273,21 @@ function ddButtonsHtml() {
 // their icon is pressed. A blinking icon (dd-blink) is read from the checks: an open red Q, an open grant.
 var ddPanelSel = 'box';
 var DD_PANELS = [
-  { key: 'box', icon: 'PAGE', title: 'the box' },
+  { key: 'box', icon: '📃', title: 'the box' },
   // goal/G33.11: the suites attached to the item, read only, informational for now.
-  { key: 'suites', icon: 'CHECKED', title: 'the suites attached to this item' },
-  { key: 'qs', icon: 'NO', title: 'red Qs and checks' },
-  { key: 'blocks', icon: 'PLUNGER', title: 'blocks' },
-  { key: 'files', icon: 'OPENFOLDER', title: 'files and grants' },
+  { key: 'suites', icon: '☑️', title: 'the suites attached to this item' },
+  { key: 'qs', icon: '❌', title: 'red Qs and checks' },
+  { key: 'blocks', icon: '🪠', title: 'blocks' },
+  { key: 'files', icon: '📂', title: 'files and grants' },
   // goal/G40.12, second set 2: "the icons strip to the left of a goal has an icon for the list of attached rules".
-  { key: 'rules', icon: 'BOOK', title: 'the rules attached' },
+  { key: 'rules', icon: '📖', title: 'the rules attached' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 function ddIconsHtml() {
-  var ICON = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
   var blink = { qs: ddWaits('Q'), files: ddWaits('G') };
   return DD_PANELS.map(function (p) {
     var cls = (p.key === ddPanelSel ? 'dd-icon dd-icon-on' : 'dd-icon') + (blink[p.key] ? ' dd-blink' : '');
-    return '<button type="button" data-panel="' + p.key + '" class="' + cls + '" title="' + ddEsc(p.title) + '">' + ICON[p.icon] + '</button>';
+    return '<button type="button" data-panel="' + p.key + '" class="' + cls + '" title="' + ddEsc(p.title) + '">' + p.icon + '</button>';
   }).join('');
 }
 // The red Qs open on this item, each with his remove (his clear, "Q1: clear", desk clearOf), and the checks (C) to press.

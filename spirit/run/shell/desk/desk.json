@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Desk",
   "description": "Andy's desk for talking to the agents: the board as a table, each row its own thread.",
-  "icon": "THREAD",
+  "icon": "🧵",
   "hidden": false,
   "server": "desk",
   "owner": "system",

@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "chatter",
   "description": "Chat with your peers, one chat at a time, over this node's chatClerver.",
-  "icon": "CHAT",
+  "icon": "💬",
   "hidden": false,
   "server": "chatClerver",
   "owner": "system"

@@ -51,13 +51,9 @@ var deskItems = [];
 // The search bar and its two toggles. Andy: "When Desk opens: [Current Goal Only]
 // on, [Goals Only] off". "The server does the searching AND the filtering."
 var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false };
-// THE ROW'S ICON (desk/G1.11): ERROR wherever Andy blocks ("the ERROR for
-// anything i NEED to deal with", "wherever i block"), CODE on any other item.
-// From the kernel's own set; a Desk mounted without it draws none.
-function deskIcon(name) {
-  var set = (window.spirit && window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
-  return set[name] || '';
-}
+// THE ROW'S ICON (desk/G1.11): ❌ wherever Andy blocks ("the ERROR for
+// anything i NEED to deal with", "wherever i block"), 💻 on any other item.
+// ICONS ARE GLYPHS (goal/G41.1): written as they are, from no icon table.
 var deskError = '';
 // THE LEGACY AGENTS-PACKET LOG WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."): the page
 // no longer records arrivals of the agents app's era nor reads them back; the desk server knows the agents by their keys
@@ -638,7 +634,7 @@ function deskWarnWhy(row) {
 // list. only in the detals." It was drawn in every row of a goal in design mode until then, which was G9.7's miss.
 // goal/G33.4: an item's own End design is its Details' alone.
 var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete', 'end-design'];
-var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">' + deskIcon('SWORD') + '</span>';
+var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">⚔️</span>';
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
 // THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too, and asks "are you sure?" first
@@ -707,7 +703,7 @@ function deskRowCells(row, presses) {
     // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
     // where i need to navigate to."
     '<td>' + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
-    '<td>' + (goal ? '<span title="a goal">' + deskIcon('FOLDER') + '</span>' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
+    '<td>' + (goal ? '<span title="a goal">📁</span>' : (Number(row.asks) > 0 ? '❌' : '💻')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span>' + (row.alert ? ' ' + DESK_ALERT : '') + '</td>' +
     '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
@@ -1167,7 +1163,7 @@ function deskDraw() {
 // The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
 var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
-var DESK_RULE_ICON = { proposed: 'EDIT', active: 'LOCK', deleted: 'DEAD' };
+var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
 var deskRulesNote = '';
 var deskRulesList = null;
 var DESK_SEARCH = '/shell/js/probabilitySearch.js';
@@ -1214,7 +1210,7 @@ function deskRuleElement(row, key) {
     kind: 'rule', key: key, index: deskRuleIndex,
     row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
     fields: [
-      { name: 'status', paint: function (v) { return '<span title="' + deskEsc(v.status) + '">' + deskIcon(DESK_RULE_ICON[v.status] || '') + '</span>'; } },
+      { name: 'status', paint: function (v) { return '<span title="' + deskEsc(v.status) + '">' + (DESK_RULE_ICON[v.status] || '') + '</span>'; } },
       { name: 'label', paint: function (v) { return deskEsc(v.label); } },
       { name: 'type', paint: function (v) { return deskEsc(v.type); } },
       { name: 'key', paint: function (v) { return deskEsc(v.key); } },

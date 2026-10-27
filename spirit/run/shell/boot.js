@@ -381,10 +381,8 @@
     'spirit/probabilityBucket.js',
     'spirit/lever.js',
     'spirit/peerFile.js',
-    'spirit/client/chatLog.js',
     'spirit/limits.js',
     'spirit/client/packet.js',
-    'spirit/client/iconIndex.js',
     'spirit/client/apiTreeIndex.js',
     'shell.css',
     'shell/js/joinSteps.js',
@@ -441,8 +439,7 @@
       // AN APP NAMING A SERVER RIDES WITH IT (box v14): no row in Apps, no face mark of its own; it shows while its server
       // runs (serverUp, as the desktop draws).
       if (face && (face.app === true || face.intrinsic === true || (typeof mf.server === 'string' && mf.server !== ''))) {
-        var glyphs = (window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {};
-        var m = { name: String(face.name || mf.name || name), icon: String(face.icon || glyphs[mf.icon] || ''), description: String(face.description || mf.description || ''),
+        var m = { name: String(face.name || mf.name || name), icon: String(face.icon || mf.icon || ''), description: String(face.description || mf.description || ''),
           server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
         if (apps[id]) apps[id].manifest = m;
         else apps[id] = { id: id, manifest: m, behavior: null };
@@ -676,7 +673,7 @@
     if (step && !(state && state.home)) icon(step.icon, step.name, openLogin);
     // At home, Join beside the apps while a step is open, as its open step (goal/G40.10).
     var js = state && state.home ? joinOpenStep() : null;
-    if (js) icon(((window.spirit.iconIndex && window.spirit.iconIndex.ICON) || {})[js.icon] || '', js.name, function () { openApp(JOIN, null); });
+    if (js) icon(String(js.icon || ''), js.name, function () { openApp(JOIN, null); });
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
       if (m.hidden || m.type === 'dialog') return;

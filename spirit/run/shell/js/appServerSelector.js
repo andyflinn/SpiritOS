@@ -6,7 +6,7 @@
 //   which the shell hands to apps at mount as api.ui.elements.
 //
 // Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spirit.iconIndex, window.spirit.apiTreeIndex)
+// has (spirit, document, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 
