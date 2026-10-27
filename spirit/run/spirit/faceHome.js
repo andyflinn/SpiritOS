@@ -307,7 +307,17 @@ function createFaceHome(opts) {
     // did not update its relay dropdowns"): the shadow job, so the forms, Info and Contacts on the face redraw as at home.
     if (job.type === 'shadow') return FACE_PRIORITY.presence;
     if (/^process\/js\/[^/]+$/.test(String(job.module || '')) && job.app && typeof job.app === 'object') return FACE_PRIORITY.app;
+    // EVERY APPSERVER'S STATUS (goal/G41.1, box v14: "the node streams each appServer's status to the face shell"), so
+    // the face shows an app only while its server runs (goal/G27.16): a server job of a process/js module, slim.
+    if (job.kind === 'server' && /^process\/js\/[^/]+$/.test(String(job.module || ''))) return FACE_PRIORITY.app;
     return 0;
+  }
+  // What a face is sent of a job: a server publishing no app object goes as its status alone, never its log.
+  function faceView(job) {
+    if (job && job.kind === 'server' && !(job.app && typeof job.app === 'object')) {
+      return { id: job.id, kind: job.kind, module: job.module, type: job.type, status: job.status };
+    }
+    return job;
   }
 
   function toFaces(priority, event) {
@@ -334,7 +344,7 @@ function createFaceHome(opts) {
       return;
     }
     const p = priorityOf(job);
-    if (p) toFaces(p, { event: 'job-updated', data: job });
+    if (p) toFaces(p, { event: 'job-updated', data: faceView(job) });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
   // shell does, and no packets (a face asks its home node, it is posted nothing). A job as it changes; a contact renamed
@@ -377,7 +387,7 @@ function createFaceHome(opts) {
     Object.keys(now).forEach(function (key) {
       face.queue.push(FACE_PRIORITY.presence, { event: 'presence', data: { key: key, present: now[key].present === true, at: now[key].at } });
     });
-    all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
+    all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: faceView(j) }); });
     // NO SNAPSHOT OF THE SHADOW JOB: it holds the one row that changed last, not the table; a face opened reads its
     // relays and contacts as it draws, and hears every change after (goal/G40.11).
   }

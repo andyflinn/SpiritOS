@@ -25,6 +25,26 @@ function appsIsApp(path) {
   var D = window.spirit.data;
   return !!m && !!D && !!D.get('files/' + path.replace(/\.js$/, '.json'));
 }
+// EVERY APP'S MANIFEST, read once before the list is drawn (goal/G41.1, box v14), by its script's path.
+var appsManifests = {};
+function appsReadManifests() {
+  var D = window.spirit.data;
+  var paths = D ? Object.keys(D.branch('files')).filter(appsIsApp) : [];
+  return spirit.ready.then(function (s) {
+    return Promise.all(paths.map(function (p) {
+      return Promise.resolve(s.fs.loadFile(p.replace(/\.js$/, '.json'))).then(function (t) {
+        try { appsManifests[p] = JSON.parse(t || '{}') || {}; } catch (e) { appsManifests[p] = {}; }
+      }, function () { appsManifests[p] = {}; });
+    }));
+  });
+}
+// TWO TYPES OF ROW ONLY (box v14: "the apps app only lists two types of apps: 1 ) shell apps that don't depend on an
+// appServer and 2) appServers"): a shell app naming a server goes with its server; under process/js only a server.
+function appsIsRow(path) {
+  if (!appsIsApp(path)) return false;
+  var m = appsManifests[path] || {};
+  return String(path).indexOf('shell/') === 0 ? !m.server : m.kind === 'server';
+}
 
 // AN APP'S PANEL IS A PAGE (goal/G40.8: back is the same for everything, the frame's): pushed on the navigation, the
 // app's folder the title; no back row of its own.
@@ -50,15 +70,14 @@ function appsPanelDraw(host, api, path) {
     var home = manifest.intrinsic === true || (isProcess ? face.home === true : Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
     var canWrite = appsOnFace();
     var dis = canWrite ? '' : ' disabled';
+    // NO CHECKMARK (box v14: the panel "will see all it's checkmarks go, because intrinsic is decided by the development
+    // team"): the app installer switches it, and the intrinsic mark, set by hand in the sidecar, is only said.
     panel.innerHTML =
       '<div class="panel-heading">' + appsEsc(path) + '</div>' +
-      '<div class="job-manifest-note">' + (m[1] === 'shell' ? 'shell app' : 'process') + ' · at home: ' + (home ? 'runs' : 'does not run') +
-        ' · on the face: ' + (face.app === true ? 'shown' : 'not shown') + '</div>' +
-      '<label class="field-label"><input type="checkbox" data-face="shown"' + (face.app === true ? ' checked' : '') + dis + '> on the face</label>' +
-      // A SERVER'S HOME SWITCH (goal/G41.1): the node starts or stops it as its sidecar changes.
-      (isProcess ? '<label class="field-label"><input type="checkbox" data-face="home"' + (face.home === true ? ' checked' : '') + dis + '> runs at home</label>' : '') +
-      // THE INTRINSIC MARK: only this one makes the app's code core (js/coreFiles.js).
-      '<label class="field-label"><input type="checkbox" data-face="intrinsic"' + (face.intrinsic === true ? ' checked' : '') + dis + '> intrinsic (its code is core)</label>' +
+      '<div class="job-manifest-note">' + (m[1] === 'shell' ? 'shell app' : 'appServer') + ' · at home: ' + (home ? 'runs' : 'does not run') +
+        (isProcess ? '' : ' · on the face: ' + (face.app === true ? 'shown' : 'not shown')) +
+        ' · intrinsic: ' + (face.intrinsic === true ? 'yes, its code is core' : 'no') + '</div>' +
+      '<div data-apps="installer"></div>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
       // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (shell/js/icons/listElement.js).
       '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em">' + appsEsc(face.icon || '') + '</span> <span data-apps="icon-pick"></span>' +
@@ -66,15 +85,17 @@ function appsPanelDraw(host, api, path) {
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
       (canWrite ? '' : '<div class="job-manifest-note">The face part is written from the face.</div>') +
       '<div data-apps="said" class="job-manifest-note"></div>';
+    var installerBox = panel.querySelector('[data-apps="installer"]');
+    if (installerBox) window.spirit.elements.appInstaller.create(installerBox, { path: path });
     if (!canWrite) return;
     // NO SAVE BUTTON (Andy: "why would there be a save button when the face can re-write annotations as soon as a field
     // changes?"): every change writes the whole face part at once.
     function save() {
       var said = panel.querySelector('[data-apps="said"]');
       var v = function (k) { return panel.querySelector('[data-face="' + k + '"]'); };
-      // Wholesale, as every sidecar part is written: what the panel shows is the whole face part.
-      var payload = { app: !!v('shown').checked, intrinsic: !!v('intrinsic').checked, name: v('name').value, icon: v('icon').value, description: v('description').value };
-      if (isProcess) payload.home = !!v('home').checked;
+      // Wholesale, as every sidecar part is written: the face part as read, the three edited fields over it, so the
+      // installer's switch and the intrinsic mark stay as they are.
+      var payload = Object.assign({}, face, { name: v('name').value, icon: v('icon').value, description: v('description').value });
       spirit.ready.then(function (s) { return s.fs.annotate({ path: path, payload: payload }); }).then(function () {
         said.textContent = 'saved';
         if (m[1] === 'shell') spirit.shell.faceApp(id);
@@ -104,14 +125,14 @@ function appsPanelDraw(host, api, path) {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
 var appsParts = Promise.all(['shell/js/files/data.js', 'shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
-  'shell/js/icons/listElement.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
     container.innerHTML = '<div data-apps="list" class="fill"></div>';
     var listHost = container.querySelector('[data-apps="list"]');
-    return appsParts.then(function () { appsDraw(listHost, api); }, function () { listHost.textContent = 'Apps could not be loaded.'; });
+    return appsParts.then(appsReadManifests).then(function () { appsDraw(listHost, api); }, function () { listHost.textContent = 'Apps could not be loaded.'; });
   },
 
   render: function () {},
@@ -127,13 +148,15 @@ function appsDraw(listHost, api) {
       columns: [
         { field: 'name', from: 'path', label: 'App', sort: 'path' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
+        // THE APP INSTALLER, one per row (box v14: "the apps list has one new column, containing the appInstaller.js element").
+        { field: 'installer', label: '' },
       ],
-      element: function (row, key) { return E.fileElement.create(Object.assign({ path: key }, row)); },
+      element: function (row, key) { return appsRowElement(E, row, key); },
       matched: function (row) { return { path: String(row.path || '') }; },
       filters: [
         { name: 'type', choices: [{ value: 'all', word: 'all' }, { value: 'shell', word: 'shell' }, { value: 'process', word: 'process' }],
           test: function (row, v) {
-            if (!appsIsApp(row.path)) return 0;
+            if (!appsIsRow(row.path)) return 0;
             if (!v || v === 'all') return 1;
             return (v === 'shell') === (String(row.path).indexOf('shell/') === 0) ? 1 : 0;
           } },
@@ -143,4 +166,21 @@ function appsDraw(listHost, api) {
     });
     appsList.sort('name', 'asc');
     appsList.refresh();
+}
+
+// THE FILE ROW, WITH THE APP INSTALLER IN ITS OWN CELL: mounted with the row, destroyed with it.
+function appsRowElement(E, row, key) {
+  var el = E.fileElement.create(Object.assign({ path: key }, row));
+  var installer = null;
+  var mount = el.mount;
+  var destroy = el.destroy;
+  el.fields = el.fields.concat(['installer']);
+  el.mount = function (hosts) {
+    mount.call(el, hosts);
+    if (installer) installer.destroy();
+    installer = hosts && hosts.installer ? E.appInstaller.create(hosts.installer, { path: key }) : null;
+    return el;
+  };
+  el.destroy = function () { if (installer) { installer.destroy(); installer = null; } destroy.call(el); };
+  return el;
 }

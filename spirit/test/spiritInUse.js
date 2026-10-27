@@ -267,6 +267,13 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
 
   // A PROCESS'S CACHE ON A RECONNECT (goal/G41.3, Q2; throwaway, no test of appServer's own yet): a server that
   // subscribes, again or first, forgets what its cache kept before the publisher's bootstrap pushes it whole.
+  // EVERY APPSERVER'S STATUS REACHES THE FACE (goal/G41.1, box v14; throwaway, faceHome has no test of its own yet).
+  test.subHeading('1f1. the node streams each appServer\'s status to the face');
+  const faceHomeStatus = code('spirit/faceHome.js');
+  if (/job\.kind === 'server' && \/\^process\\\/js\\\//.test(faceHomeStatus) && /function faceView\(job\)/.test(faceHomeStatus) && /data: faceView\(job\)/.test(faceHomeStatus))
+    test.check('faceHome sends every process/js server job to the face, its status alone when it publishes no app object');
+  else test.fail('faceHome does not send every appServer\'s status to the face');
+
   test.subHeading('1f2. a process\'s cache forgets when it subscribes again');
   const subscribeAt = /s\.subscribe = function \(key, family\) \{([\s\S]*?)\n  \};/.exec(code('spirit/appServer.js'));
   if (subscribeAt && /dataSet\(\)\.forget\(\)/.test(subscribeAt[1])) test.check('appServer\'s subscribe forgets the server\'s cache before it asks the publisher, whose bootstrap then pushes it whole');

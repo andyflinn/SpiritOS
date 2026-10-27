@@ -425,17 +425,47 @@
   // The face's apps, each icon drawn as its face part arrives; nothing waits for the rest. An app whose face part is
   // written again (the Apps app tells the face, spirit.shell.faceApp) is read again, so it comes or goes; one already
   // open stays until closed.
+  // THE SERVER IT NEEDS, from its manifest beside the face part (goal/G27.16, on the face since goal/G41.1).
   function readFace(id) {
     var name = id.split('/').pop();
-    return Promise.resolve(ask('fs.annotations', { path: id + '/' + name + '.js' })).then(function (r) {
+    var own = fileText(id + '/' + name + '.json').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }, function () { return {}; });
+    return Promise.all([Promise.resolve(ask('fs.annotations', { path: id + '/' + name + '.js' })), own]).then(function (got) {
+      var r = got[0];
       var face = (r && r.status === 200 && r.body && r.body.face) || null;
       if (face && face.app === true) {
-        var m = { name: String(face.name || name), icon: String(face.icon || ''), description: String(face.description || '') };
+        var m = { name: String(face.name || name), icon: String(face.icon || ''), description: String(face.description || ''),
+          server: typeof got[1].server === 'string' ? got[1].server : '' };
         if (apps[id]) apps[id].manifest = m;
         else apps[id] = { id: id, manifest: m, behavior: null };
-      } else if (apps[id]) delete apps[id];
+      } else if (apps[id]) { delete apps[id]; closePages(id); }
       hand();
     }, function () { /* no answer: the app is not shown */ });
+  }
+  // AN APP SHOWS ONLY WHILE ITS SERVER RUNS (goal/G27.16; on the face since goal/G41.1, box v14): an app naming a server
+  // shows while a server job of that module is running or pending (between restarts); one naming none always shows.
+  function serverUp(app) {
+    var s = app && app.manifest && app.manifest.server;
+    if (!s) return true;
+    var module = 'process/js/' + s;
+    return Object.keys(jobsById).some(function (k) {
+      var j = jobsById[k];
+      return !!j && j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending');
+    });
+  }
+  // THE PAGES OF AN APP THAT ARE OPEN, so a stopped server or a face mark gone closes them.
+  var pagesOf = {};
+  function closePages(id) {
+    (pagesOf[id] || []).forEach(function (p) { try { p.close(); } catch (e) { /* closed already */ } });
+    delete pagesOf[id];
+  }
+  // A SERVER STARTED OR STOPPED: the desktop drawn again, and the open pages of every app whose server went closed.
+  var serversShown = '';
+  function followServers() {
+    var now = Object.keys(apps).filter(function (id) { return serverUp(apps[id]); }).sort().join(',');
+    if (now === serversShown) return;
+    serversShown = now;
+    Object.keys(apps).forEach(function (id) { if (!serverUp(apps[id])) closePages(id); });
+    hand();
   }
   function listApps() {
     var D = window.spirit.data;
@@ -583,12 +613,13 @@
       if (!app.behavior) throw new Error(id + ' did not activate');
       if (!navigation()) throw new Error('the face has not loaded its navigation yet');
       var m = app.manifest || {};
-      window.spirit.elements.navigation.push({ title: m.name || id, mount: function (box, page) {
+      var handle = window.spirit.elements.navigation.push({ title: m.name || id, mount: function (box, page) {
         app.behavior.mount(box, page.api);
         if (typeof app.behavior.open === 'function') app.behavior.open(params);
         if (typeof app.behavior.render === 'function') app.behavior.render();
         if (id === JOIN) handJoin();
       } });
+      if (handle && typeof handle.close === 'function') (pagesOf[id] = pagesOf[id] || []).push(handle);
     }).catch(function (e) { say(String(e.message || e)); });
   }
   function loginOpen() { return !!(loginPane && !loginPane.hidden); }
@@ -634,6 +665,7 @@
     Object.keys(apps).forEach(function (id) {
       var m = apps[id].manifest || {};
       if (m.hidden || m.type === 'dialog') return;
+      if (!serverUp(apps[id])) return;
       // The face part holds the glyph itself (goal/G30.21: icons as themselves).
       var glyph = String(m.icon || '');
       icon(glyph, m.name || id, function () { openApp(id, null); });
@@ -720,6 +752,8 @@
       link.loaded = true;
       openStream(false);
       listApps();
+      // The servers' jobs as they change: an app comes or goes with its server (goal/G27.16).
+      events({ onSnapshot: followServers, onUpdate: followServers, onDelete: followServers });
       if (home) startJoin();
       // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).
       joinFromLink();

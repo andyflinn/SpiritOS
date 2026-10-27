@@ -142,14 +142,18 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   const named = fs.readdirSync(base).filter(function (n) { const m = readJson(path.join(base, n, n + '.json')); return m && Object.prototype.hasOwnProperty.call(m, 'runs'); });
   eq(named.join(','), '', 'no process/js manifest names runs', OWED + 'manifests naming runs: ' + named.join(', '));
   const HOME = ['agent', 'backup', 'chatClerver', 'desk', 'deskVerify', 'fileServer'];
-  const said = HOME.filter(function (n) { const s = readJson(path.join(base, n, n + '.js.sidecar.json')); return s && s.face && s.face.home === true; });
+  // As git ships them: a node's own choice is a local edit of its sidecar (goal/G41.1), so the defaults are git's.
+  const shipped = function (p) { try { return JSON.parse(require('child_process').execFileSync('git', ['show', 'HEAD:' + p], { cwd: RUN, encoding: 'utf8' })); } catch (e) { return null; } };
+  const said = HOME.filter(function (n) { const s = shipped('spirit/run/process/js/' + n + '/' + n + '.js.sidecar.json'); return s && s.face && s.face.home === true; });
   eq(said.join(','), HOME.join(','), 'the servers that ran at home say home: true in their sidecars', OWED + 'saying home: ' + said.join(', '));
 
   test.subHeading('H7. the Apps app writes it, the text viewer reads it');
   const apps = read('shell/apps/apps.js');
-  // A shell app still says where it runs in its manifest (goal/G30.20); only a server's switch moved.
-  eq(/data-face="home"/.test(apps) && /home\s*[:=]\s*!!v\('home'\)/.test(apps) && /face\.home === true/.test(apps), true,
-    'the Apps app shows a process\'s home switch as a checkbox, reads it from the face part and writes it there', OWED + 'apps.js has no home checkbox in the face part');
+  // A shell app still says where it runs in its manifest (goal/G30.20); only a server's switch moved. Since box v14 the
+  // switch is the app installer's button, no checkbox (its own test holds the rest: shell/js/test/appInstaller.js).
+  const installer = read('shell/js/appInstaller.js');
+  eq(/appInstaller\.create\(/.test(apps) && /face\.home === true/.test(apps) && /isServer \? 'home' : 'app'/.test(installer), true,
+    'the Apps app switches a server through the app installer, which writes home into its face part; it reads it from there', OWED + 'the Apps app has no installer writing home');
   const viewer = read('shell/js/textViewer.js');
   eq(!/manifest\.runs/.test(viewer) && /\.home === true/.test(viewer), true, 'the text viewer\'s Start reads the sidecar\'s home, not the manifest\'s runs',
     OWED + 'textViewer.js still reads manifest.runs');
