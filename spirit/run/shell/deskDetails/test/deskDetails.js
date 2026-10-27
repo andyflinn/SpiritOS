@@ -306,5 +306,41 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     ok(!!renamed && renamed.args.title === subject.title + ' renamed', (subject.goal === '' ? 'a goal' : 'an item') + ': Save sends the edited title',
       (subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args));
   }
+  test.subHeading('goal/G41.11: the add-rule dropdown stands on top of the rules, and is always there');
+  // Andy, on G41.11: "1. the add-rule dropdown is at the bottom of a (sometimes LONG) list, and it must be on top",
+  // "2. Sometimes the dropdown does NOT appear at ALL!"
+  const RULED = Object.assign({}, ITEM, { id: 'goal/G9.5', rules: Array.from({ length: 12 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) });
+  const walk = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walk(c, out); }); return out; };
+  const shown = function (n) { for (let p = n; p; p = p.parentNode) { if (p.hidden || (p.style && p.style.display === 'none')) return false; } return true; };
+  const inPage = function (w, n) { return walk(w.document.root, []).indexOf(n) !== -1; };
+  // A search that writes down where it was made; on the page, as spirit.require brings it, never preloaded.
+  const ruleWorld = function () {
+    const r = ddWorld(RULED, []);
+    r.searches = [];
+    const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
+    delete r.win.spirit.elements.probabilitySearch;
+    const req = r.win.spirit.require;
+    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make; return req(p); };
+    return r;
+  };
+  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
+  const rulesIcon = function (r) { return r.document.querySelector('[data-panel="rules"]'); };
+  const rw = ruleWorld(); await rw.open();
+  if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
+  const pick = rulePick(rw);
+  const firstRule = rw.document.querySelector('[data-rule-remove]');
+  const order = walk(rw.document.root, []);
+  ok(!!pick && inPage(rw, pick.host) && shown(pick.host), 'pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require',
+    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch/.test(x); }) }));
+  ok(!!pick && !!firstRule && order.indexOf(pick.host) !== -1 && order.indexOf(pick.host) < order.indexOf(firstRule), 'it stands on top of the list of rules (12 rules attached), not below it',
+    'dropdown at ' + (pick ? order.indexOf(pick.host) : 'none') + ', first rule at ' + order.indexOf(firstRule));
+  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
+  ok(!scriptTags.length, 'no hand-rolled script tag loads the search', scriptTags.length + ' script tag(s) for probabilitySearch');
+  // Away to the box and back: the dropdown is there again, every time the panel opens.
+  const boxIcon = rw.document.querySelector('[data-panel="box"]');
+  if (boxIcon) { rw.document.click(boxIcon); await settle(); }
+  if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
+  const again = rulePick(rw);
+  ok(!!again && inPage(rw, again.host) && shown(again.host), 'away from the rules and back, the dropdown is shown again', 'after reopening: ' + JSON.stringify({ made: rw.searches.length, shown: !!again && shown(again.host) }));
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
