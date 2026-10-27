@@ -56,6 +56,12 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/23 (version 58): gaming test suites
+
+under NO circumstances will you implement imperfect code on purpose.
+- not for passing faulty tests
+- not for ANYTHING.
+
 ### rule/22 (version 56): No Agent touches the desks verifier
 
 No Agent touches the desks verifier. the may only use the verifier on their own FUCKING node.
