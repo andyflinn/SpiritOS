@@ -73,6 +73,11 @@ test.startTest('deskAgentEar.js: the agent\'s Desk listener');
   const d = ear(['45441', '--read', 'w-18'], { next: [{ lines: [] }, { lines: [] }, { lines: ['DESK a third'], key: 'w-19' }] });
   const dn = d.asks.filter(function (x) { return x.verb === 'next'; });
   ok(d.code === 0 && dn.length === 3 && dn.every(function (x) { return x.args && x.args.read === 'w-18'; }), 'it asks again while the answer is empty, naming the same key each time', 'asks ' + short(dn) + ', exit ' + d.code);
+  // A door that timed out (504, app-did-not-answer) handed nothing: the ear waits again with the same key, never ends.
+  const t = ear(['45441', '--read', 'w-19'], { next: [{ ok: false, code: 'app-did-not-answer', error: 'the app server did not answer in time' }, { lines: ['DESK after the timeout'], key: 'w-20' }] });
+  const tn = t.asks.filter(function (x) { return x.verb === 'next'; });
+  ok(t.code === 0 && tn.length === 2 && tn.every(function (x) { return x.args && x.args.read === 'w-19'; }) && /after the timeout/.test(t.out),
+    'a door that timed out is asked again with the same key, and the wake that follows is printed', 'exit ' + t.code + ', asks ' + short(tn) + ', err ' + short(t.err));
   const e = ear(['45441'], { next: [{ ok: false, code: 'signed-off', error: 'this agent is signed off' }] });
   ok(e.code === 1 && /signed off/.test(e.err), 'a signed-off agent is told so, exit 1', 'exit ' + e.code + ', err ' + short(e.err));
 

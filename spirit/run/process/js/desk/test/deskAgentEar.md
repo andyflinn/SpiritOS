@@ -22,6 +22,7 @@ there is a wake waiting", and of the read key: "good idea, make the red assert i
   `{}`. deskClient drops a wake only when its key comes back, so an ear armed without the key, or with an older one,
   gets the unread wake again at once and prints it: no agent listens past a wake it has not read.
 - **An empty answer is asked again**; a refusal ends it, exit 1, the reason printed (a signed-off agent says so).
+- **A door that timed out is no refusal** (goal/G41.11): its node's door gave up on a wait (`app-did-not-answer`, 504) while deskClient held it; nothing was handed and the unread wake stays queued, so the ear asks again with the same key instead of ending.
 - One ask of the desk or of deskClient prints the answer as it came.
 
 ## What its test must try to break

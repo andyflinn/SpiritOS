@@ -67,8 +67,13 @@ function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === fals
 // "next: node deskAgentEar.js <port> --read <key>". Armed so, it asks next with { read: key } and deskClient drops that
 // wake; armed without it, or with an older key, deskClient hands the unread wake again at once, so no agent listens past
 // a wake it has not read. The key lives on the agent's command line, nowhere else.
+// A DOOR THAT TIMED OUT IS NO REFUSAL (goal/G41.11): its node's door gave up on a wait (504, app-did-not-answer) while
+// deskClient still held it. Nothing was handed, and whatever is unread stays queued under its key, so the ear simply
+// waits again instead of ending; only a real refusal ends it.
+function timedOut(r) { return !!(r && r.body && r.body.code === 'app-did-not-answer'); }
 function wait() {
   ask('next', READ ? { read: READ } : {}).then(function (r) {
+    if (timedOut(r)) { setTimeout(wait, PAUSE_MS); return; }
     if (r.body && r.body.code === 'signed-off') end(1, 'deskAgentEar: this agent is signed off; the desk clears it, or your listen does', true);
     if (refusedBy(r) || !Array.isArray(r.body.lines)) end(1, 'deskAgentEar: ' + r.status + ' ' + JSON.stringify(r.body), true);
     const key = typeof r.body.key === 'string' ? r.body.key : '';

@@ -435,13 +435,15 @@ function withStreamListener(verbs, stream, followed) {
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
 // the same row to every subscriber through its family's streamListener over peerPost (spirit.require with a key: no packet
-// built here); a row naming keys in to goes to those subscribers alone. One attempt per row, in order per subscriber,
-// no patience: one that does not answer within waitMs is away, its queued rows dropped, and it is sent nothing more until
-// it subscribes again. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
+// built here); a row naming keys in to goes to those subscribers alone. In order per subscriber, no patience per attempt.
+// A SUBSCRIBE DOES NOT EXPIRE (goal/G41.11; Andy: "subscribes over peerPost should NOT expire"): a row a subscriber did
+// not take within waitMs stays first in its queue and is tried again waitMs later; past QUEUE_MAX rows the oldest go
+// (a store sheds past a cap), and its next subscribe hands it the bootstrap. NO LIST BEYOND THE GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start
 // the server's subscribers are the keys the node grants it to (auth.search), each as the server's family; nothing else
 // persists.
 let publisher = null;
-const subscribers = new Map();   // key -> { family, busy, rows, away }
+const subscribers = new Map();   // key -> { family, busy, rows }
+const QUEUE_MAX = 1000;
 // A server family's interface, by the node's own naming of it (spirit.js: <name>/<name>.family/api.js).
 function familyPath(family) { return 'process/js/' + family + '/' + family + '.family/api.js'; }
 function deliverRow(key, q, row) {
@@ -453,18 +455,21 @@ function deliverRow(key, q, row) {
 }
 function pumpTo(key) {
   const q = subscribers.get(key);
-  if (!q || q.busy || q.away || !q.rows.length) return;
+  if (!q || q.busy || !q.rows.length) return;
   q.busy = true;
-  deliverRow(key, q, q.rows.shift()).then(function (said) {
+  deliverRow(key, q, q.rows[0]).then(function (said) {
+    if (said !== 'taken') { setTimeout(function () { q.busy = false; pumpTo(key); }, publisher.waitMs); return; }
     q.busy = false;
-    if (said !== 'taken') { q.rows = []; q.away = true; return; }
+    q.rows.shift();
     pumpTo(key);
   });
 }
 function sendTo(key, row) {
   const q = subscribers.get(key);
-  if (!q || q.away) return;
+  if (!q) return;
   q.rows.push(row);
+  // The row in flight (first, while busy) stays; the oldest of the rest go.
+  if (q.rows.length > QUEUE_MAX) q.rows.splice(q.busy ? 1 : 0, q.rows.length - QUEUE_MAX);
   pumpTo(key);
 }
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
@@ -480,7 +485,7 @@ function publish(row) {
 // that subscribes again says it may have lost what it had: its subscription starts afresh, the bootstrap first.
 function subscribe(key, family) {
   const k = String(key || '');
-  subscribers.set(k, { family: family, busy: false, rows: [], away: false });
+  subscribers.set(k, { family: family, busy: false, rows: [] });
   let rows = [];
   try { rows = (publisher.bootstrap && publisher.bootstrap(k)) || []; } catch (e) { rows = []; }
   rows.forEach(function (row) { sendTo(k, row); });
@@ -519,7 +524,7 @@ function subscribersFromGrants(name) {
     records.forEach(function (g) {
       const p = String(g.path || '');
       if (!g.key || (p !== name && p !== name + '.subscribe') || subscribers.has(String(g.key))) return;
-      // Each handed the bootstrap set, as a new subscriber is; one that does not answer is away at once.
+      // Each handed the bootstrap set, as a new subscriber is; one that does not answer is tried again, as any is.
       subscribe(String(g.key), publisher.family);
       n += 1;
     });
@@ -603,9 +608,10 @@ function serve(verbs, opts) {
     const k = String(key || '');
     const fam = String(family || '');
     if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
-    // A SUBSCRIBE IS A CONNECT (goal/G41.3, Q2): the cache forgets what it kept, and the publisher's bootstrap, which
-    // every subscribe is handed, pushes it whole again.
-    dataSet().forget();
+    // THE CACHE IS KEPT THROUGH A SUBSCRIBE (goal/G41.11, Q5). Andy: "deskClient keeps it's cache (all clients using
+    // spirit-client services, that's where the fix belongs) through new subscribes", and YES to: "May a subscribe keep
+    // the old cache until the new push lands, then replace it whole". Nothing is forgotten here: each row of the
+    // bootstrap, which every subscribe is handed, replaces whole the row it names as it lands.
     return s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
       return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {

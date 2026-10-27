@@ -75,9 +75,6 @@ const SELF_KEY = String(NODE.publicKey || '');
 // The asker is answered inside the node's 12 s; the desk is waited for as long as a held post may take to land
 // and be answered (the node holds a busy post for PATIENCE_MS, peer.post's own patienceMs).
 const HOLD_MS = 10000;
-// How long a silent stream is trusted before a wait subscribes again (goal/G33.8); the manifest value resubscribeMs.
-const RESUBSCRIBE_MS = Number(values.resubscribeMs) > 0 ? Number(values.resubscribeMs) : 60000;
-let heardAt = Date.now();
 const PATIENCE_MS = 60000;
 const WAIT_MS = PATIENCE_MS + 30000;
 const ANSWER_ROOM = limits.ANSWER_MAX - 512;
@@ -198,6 +195,34 @@ let jobsMaybe = true;
 
 // The data set: the server's spirit.data, which appServer fills from the stream through the desk's translator (box v41).
 const dataSet = appServer.data;
+// THE CACHE OUTLIVES A RESTART (goal/G41.11). Andy: "the client/receiver of a pushed peerPost stream must assume, no
+// disconnect ever happened, because it's NOT a real stream, just a sequece of inromation dumps.... and deskClient in
+// particular, may recover it's cache from it's dumpFile....", "...after a restart". The cache is written to cache.json in
+// this server's own state folder a moment after the stream brings anything (whole, through a temporary file, so a kill
+// leaves the last good one), and read back into spirit.data at the start, before it subscribes.
+const CACHE_FILE = path.join(STATE, 'cache.json');
+const CACHE_SAVE_MS = 2000;
+let cacheSaving = null;
+function saveCache() {
+  const text = JSON.stringify(dataSet.data);
+  fs.writeFileSync(CACHE_FILE + '.tmp', text);
+  fs.renameSync(CACHE_FILE + '.tmp', CACHE_FILE);
+  return Buffer.byteLength(text, 'utf8');
+}
+function saveCacheSoon() {
+  if (cacheSaving || !STATE) return;
+  cacheSaving = setTimeout(function () { cacheSaving = null; try { saveCache(); } catch (e) { /* the next row saves again */ } }, CACHE_SAVE_MS);
+}
+(function restoreCache() {
+  let kept = null;
+  if (!STATE) return;
+  try { kept = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')); } catch (e) { return; }
+  if (!kept || typeof kept !== 'object') return;
+  Object.keys(kept).forEach(function (type) {
+    const b = kept[type];
+    if (b && typeof b === 'object') Object.keys(b).forEach(function (k) { dataSet.set(type + '/' + k, b[k]); });
+  });
+}());
 const KEPT_READS = ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'];
 // Known by its key (goal/G3.9: Andy may relabel an agent), by its name only where the row names no key.
 function heldByMe(row) {
@@ -383,7 +408,7 @@ function wakeOnHeld(row, change) {
 }
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
-  heardAt = Date.now();
+  saveCacheSoon();
   // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] }; each row is taken
   // as a single row is, in order, its change the bundle's where it names none. A single row still comes as before.
   if (Array.isArray(row.rows)) {
@@ -933,10 +958,8 @@ const server = appServer.serve({
       const to = deskKey();
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
-      // A STREAM SILENT FOR LONG MAY HAVE DROPPED IT (goal/G33.8, box v8: the desk "stops sending to a client that has
-      // disappeared (unreachable) until that client subscribes again"): a wait after RESUBSCRIBE_MS of silence subscribes
-      // again, behind the wait, asking nothing else.
-      if (Date.now() - heardAt > RESUBSCRIBE_MS) { heardAt = Date.now(); subscribeDesk(to); }
+      // A SUBSCRIBE DOES NOT EXPIRE (goal/G41.11). Andy: "subscribes over peerPost should NOT expire, at least not on the
+      // client-side". A quiet stream is no reason to subscribe again; the desk keeps its subscribers (js/appServer.js).
       // Its first word makes it known to the desk, which then streams it the current goal whole (goal/G33.4).
       if (said !== 'listening') say(to, 'listening');
       // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
@@ -1046,16 +1069,16 @@ const server = appServer.serve({
   },
   // THE CACHE DUMP (goal/G41.11). Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/
   // <fixedFileName>.json". Owner-only like every verb here: the whole cache, its spirit.data tree, as JSON, to
-  // cache.json in this server's own state folder and nowhere else; it takes no path, so a caller cannot name one. For
-  // looking, never for deciding.
+  // cache.json in this server's own state folder and nowhere else; it takes no path, so a caller cannot name one. The
+  // same file the cache is saved to and restored from at a restart (saveCache).
   'cache.dump': {
     request: {}, reply: { file: '', bytes: 0 },
     handler: function (a, caller) {
       ownerOnly(caller);
-      const text = JSON.stringify(dataSet.data);
-      try { fs.writeFileSync(path.join(STATE, 'cache.json'), text); }
+      let bytes = 0;
+      try { bytes = saveCache(); }
       catch (e) { throw refused('not-saved', { why: 'could not write cache.json: ' + ((e && e.message) || e) }); }
-      return { file: 'cache.json', bytes: Buffer.byteLength(text, 'utf8') };
+      return { file: 'cache.json', bytes: bytes };
     },
   },
 // What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.

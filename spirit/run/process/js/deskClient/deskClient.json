@@ -4,7 +4,6 @@
   "kind": "server",
   "operated": "node",
   "args": [
-    { "name": "historyMax", "default": 1000 },
-    { "name": "resubscribeMs", "default": 60000 }
+    { "name": "historyMax", "default": 1000 }
   ]
 }
