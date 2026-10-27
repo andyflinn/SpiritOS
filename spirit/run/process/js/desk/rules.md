@@ -56,6 +56,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/21 (version 54): always look for existing code.
+
+always look for existing code in the tree when facing a design, test or implementation issue. if you don't find existing code, raise a red question to address the issue.
+
 ### rule/18 (version 46): when being woken, read the news
 
 an agent being woken by desk and its client MUST diligently read the news coming with the wake and adjust accordingly.
