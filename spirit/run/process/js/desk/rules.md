@@ -2,6 +2,11 @@
 
 ## ui
 
+### rule/2 (version 51): Vertical spacing of block elements
+
+vertical spacing: every div/block carries with itself a leading vertical space of 1em. Exceptions to this rule will be specified.
+
+
 ### rule/19 (version 48): a ui only updates state via the server.
 
 any user interface page can only update it's state via the server. the ui must propose all state changes to the server and only draw changes contained in the servers update/change stream.
@@ -18,11 +23,6 @@ The node still checks every value; the input check spares the wire and says why 
 ### rule/8 (version 18): Shell and Application Elements
 
 Shell and application elements, should bring their subscriptions with them, so that they're automatically subscribed to the events that update them
-
-### rule/2 (version 12): Vertical spacing of block elements
-
-vertical spacing: every div/block carries with itself a leading vertical space of 1em. Exceptions to this rule will be specified.
-
 
 ### rule/1 (version 11): Horizonal Spacing in UI Rows
 
