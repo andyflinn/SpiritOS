@@ -56,6 +56,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/22 (version 56): No Agent touches the desks verifier
+
+No Agent touches the desks verifier. the may only use the verifier on their own FUCKING node.
+
 ### rule/21 (version 54): always look for existing code.
 
 always look for existing code in the tree when facing a design, test or implementation issue. if you don't find existing code, raise a red question to address the issue.
