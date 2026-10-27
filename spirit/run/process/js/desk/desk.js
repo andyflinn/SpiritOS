@@ -2291,12 +2291,44 @@ const CLIENT_WAIT_MS = 10000;
 // in it's cache", as goal/G40.12's box has it: "The desk client caches ... the desk pushes them only when an attachment
 // changes, so a wake carries no rule text it already holds." So a subscriber is handed every active rule first, each as
 // the publish its writes make ({rule, row}), and from then on hears each rule write; it never asks for a rule's text.
-function deskBootstrap() {
+function deskBootstrap(key, since) {
   if (!S || !S.current || !S.goals[S.current]) return [];
   const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
+  const ids = [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; });
   // goal/G41.11: handed as bundles of rows (bundled).
-  return bundled(rules.concat([S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
-    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); })), S.change);
+  return bundled(rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }), since > 0 ? changedSince(S, ids, String(key || ''), since) : []), S.change);
+}
+// WHAT CHANGED AFTER THE POSITION A SUBSCRIBER HOLDS (goal/G41.11). Andy: "(if it restarts or similar) it calls the
+// "subscribe/(connect)" verb do desk, (re-use that verb) with the position number as argument". Every side row of these
+// items whose change is after since, as the side row its write published, oldest first; his line addressed to others
+// only to them (to). Every table keeps the change that wrote each row; the box keeps none, so an item whose own row
+// changed after since hands its box too (a box write changes the item's version). A row deleted since is no row any more
+// and is not handed.
+const CHANGED_SINCE = {
+  chat: db.prepare('SELECT seq AS k, change FROM chat WHERE goal = ? AND item = ? AND change > ?'),
+  checks: db.prepare('SELECT number AS k, change FROM checks WHERE goal = ? AND item = ? AND change > ?'),
+  files: db.prepare('SELECT holder || \'|\' || path AS k, change FROM files WHERE goal = ? AND item = ? AND change > ?'),
+  claims: db.prepare('SELECT claimer AS k, change FROM claims WHERE goal = ? AND item = ? AND change > ?'),
+  suites: db.prepare('SELECT path AS k, change FROM suites WHERE goal = ? AND item = ? AND change > ?'),
+  items: db.prepare('SELECT change FROM items WHERE goal = ? AND item = ? AND change > ?'),
+};
+function changedSince(s, ids, key, since) {
+  const out = [];
+  ids.forEach(function (id) {
+    const it = s.items[id];
+    const k = numbersOf(id);
+    if (!it || !k) return;
+    const at = new Map();
+    Object.keys(CHANGED_SINCE).forEach(function (table) {
+      CHANGED_SINCE[table].all(k[0], k[1], since).forEach(function (row) { at.set(table === 'items' ? 'box' : table + '|' + row.k, Number(row.change)); });
+    });
+    rowsOf(s, it).forEach(function (x) {
+      if (x.table === 'items' || !at.has(x.key)) return;
+      if (Array.isArray(x.to) && x.to.indexOf(key) === -1) return;
+      out.push(sidePublish(s, id, { table: x.table, key: x.key, x: x, removed: false }, at.get(x.key)));
+    });
+  });
+  return out.sort(function (a, b) { return a.change - b.change; });
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -3951,7 +3983,7 @@ appServer.serve(withPlugins({
 // themselves are unchanged, so nothing on the wire moved.
 // goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
 // no opts.stream: the desk follows no stream (box v42).
-{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function (key) { return deskBootstrap(key); }, waitMs: CLIENT_WAIT_MS }, codes: {
+{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function (key, since) { return deskBootstrap(key, since); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

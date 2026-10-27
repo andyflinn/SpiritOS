@@ -22,7 +22,9 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
-const PIPE = path.join(TMP, 'door.sock');
+// A pipe on Windows is a \\.\pipe\ name, never a file path (appClient.pipePathFor, as the other suites do), named once
+// the stand-in for spirit.js is in place, since appClient brings spirit.js with it.
+let PIPE = path.join(TMP, 'door.sock');
 const PUBLISHER = 'KEY-DESK';   // the key the client follows: its publisher's
 const SELF = 'KEY-CLIENT';      // the key the publisher sees subscribing: the client's
 // One call on the pipe, as the node makes it: {verb: args}, the caller's key in a header.
@@ -71,11 +73,13 @@ const fake = {
 const realLoad = Module._load;
 Module._load = function (request, parent) {
   // spirit.js is the stand-in for every module that requires it: the real one would write its own require onto it.
-  if (/(^|\/)spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
+  // Either slash: on Windows a module may name it by a path.join, backslashes and all.
+  if (/(^|[\\/])spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-process.argv = [process.argv[0], path.join(TMP, 'desk.js'), '--pipe', PIPE];
+if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, 'desk', 'win32', 'process');
+process.argv =[process.argv[0], path.join(TMP, 'desk.js'), '--pipe', PIPE];
 
 // What the publisher's bootstrap holds now: the goal whole, its items' facts.
 let bootstrap = [];

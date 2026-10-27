@@ -411,9 +411,16 @@ function withStreamListener(verbs, stream, followed) {
       let row = null;
       try { row = JSON.parse(String(a.json)); } catch (e) { row = null; }
       if (!isPlain(row)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a row is one JSON object' } });
-      // Into the data set first, as the page takes a publish; then the server's own word on it.
-      D.take({ module: moduleName, data: {}, app: row });
-      return Promise.resolve(onRow(row, String(caller.key))).then(function () { return { heard: true }; });
+      // THE PUSH HAS LANDED (goal/G41.11, Q5): what it did not write again goes (spiritData renewed); the end is no row.
+      if (row.bootstrapped === true) { D.renewed(); return { heard: true }; }
+      // Into the data set first, as the page takes a publish; then the server's own word on it. Its writes are noted
+      // (noting), so a push being renewed keeps what they wrote.
+      let said = null;
+      D.noting(function () {
+        D.take({ module: moduleName, data: {}, app: row });
+        said = onRow(row, String(caller.key));
+      });
+      return Promise.resolve(said).then(function () { return { heard: true }; });
     },
   };
   return all;
@@ -483,12 +490,18 @@ function publish(row) {
 // EVERY SUBSCRIBE IS HANDED THE BOOTSTRAP (goal/G33.2, box v3; found live: a deskClient restarted while the desk still
 // counted it subscribed was sent nothing to start from, so it never knew its current goal and handed no news). A client
 // that subscribes again says it may have lost what it had: its subscription starts afresh, the bootstrap first.
-function subscribe(key, family) {
+// THE POSITION IT HOLDS (goal/G41.11; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do desk,
+// (re-use that verb) with the position number as argument"): since, the newest change it heard, goes to the bootstrap,
+// which hands it what changed after it as well; 0, or left out, hands no more than the bootstrap ever did.
+function subscribe(key, family, since) {
   const k = String(key || '');
   subscribers.set(k, { family: family, busy: false, rows: [] });
   let rows = [];
-  try { rows = (publisher.bootstrap && publisher.bootstrap(k)) || []; } catch (e) { rows = []; }
+  try { rows = (publisher.bootstrap && publisher.bootstrap(k, Number(since) > 0 ? Number(since) : 0)) || []; } catch (e) { rows = []; }
   rows.forEach(function (row) { sendTo(k, row); });
+  // ITS END IS SAID (goal/G41.11, Q5): the subscriber replaces its cache whole once the push has landed, so the push
+  // says where it ends, in the same queue, after its last row.
+  sendTo(k, { bootstrapped: true });
   return true;
 }
 function withPublisher(verbs, opts) {
@@ -497,11 +510,16 @@ function withPublisher(verbs, opts) {
   const all = Object.assign({}, verbs);
   const refusedNoKey = function () { return Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'a subscriber is a peer\'s key' } }); };
   all.subscribe = {
-    request: { family: '' }, reply: { subscribed: true },
+    request: { family: '', since: 0 }, reply: { subscribed: true },
+    // since is the caller's to leave out.
+    accepts: function (x) {
+      return isPlain(x) && typeof x.family === 'string' && (x.since === undefined || typeof x.since === 'number') &&
+        Object.keys(x).every(function (k) { return k === 'family' || k === 'since'; });
+    },
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
       if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its streamListener\'s' } });
-      subscribe(caller.key, String(a.family));
+      subscribe(caller.key, String(a.family), a.since);
       return { subscribed: true };
     },
   };
@@ -604,19 +622,25 @@ function serve(verbs, opts) {
   // heard from that key (follow, which also grants the key this server's streamListener on its own node), then the
   // publisher is asked to subscribe this server, as this server's family, over peerPost through the publisher's family
   // interface. Answers whether the publisher took it. Asked again whenever this server thinks it may have been dropped.
-  s.subscribe = function (key, family) {
+  // since (goal/G41.11): the position its data set holds, the newest change it heard; the publisher hands what changed
+  // after it besides its bootstrap. Left out, or 0, it is not sent.
+  s.subscribe = function (key, family, since) {
     const k = String(key || '');
+    const at = Number(since) > 0 ? Number(since) : 0;
     const fam = String(family || '');
     if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
     // THE CACHE IS KEPT THROUGH A SUBSCRIBE (goal/G41.11, Q5). Andy: "deskClient keeps it's cache (all clients using
     // spirit-client services, that's where the fix belongs) through new subscribes", and YES to: "May a subscribe keep
     // the old cache until the new push lands, then replace it whole". Nothing is forgotten here: each row of the
-    // bootstrap, which every subscribe is handed, replaces whole the row it names as it lands.
+    // bootstrap, which every subscribe is handed, writes the rows it names, and once its end lands (bootstrapped) every
+    // type it replaces (opts.stream.renews; left out, every type it wrote) keeps only what it wrote (spiritData
+    // renew/renewed).
+    dataSet().renew(opts && opts.stream && opts.stream.renews);
     return s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
       return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
-        return p.subscribe({ family: name });
+        return p.subscribe(at ? { family: name, since: at } : { family: name });
       }));
     }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
   };

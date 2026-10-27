@@ -78,8 +78,6 @@ const HOLD_MS = 10000;
 const PATIENCE_MS = 60000;
 const WAIT_MS = PATIENCE_MS + 30000;
 const ANSWER_ROOM = limits.ANSWER_MAX - 512;
-// A hand-over waits this long for "working" to reach the desk, never past the node's 12 s.
-const SAY_MS = 3000;
 const LEAVE_BY_MS = 11000;
 const BIG = Number.MAX_SAFE_INTEGER;
 
@@ -201,7 +199,8 @@ const dataSet = appServer.data;
 // this server's own state folder a moment after the stream brings anything (whole, through a temporary file, so a kill
 // leaves the last good one), and read back into spirit.data at the start, before it subscribes.
 const CACHE_FILE = path.join(STATE, 'cache.json');
-const CACHE_SAVE_MS = 2000;
+// Andy: "on every update the deskClient receives, it saves the cache, (10ms?)".
+const CACHE_SAVE_MS = 10;
 let cacheSaving = null;
 function saveCache() {
   const text = JSON.stringify(dataSet.data);
@@ -767,7 +766,10 @@ function handOver(to, t0) {
     const room = function (l) { return Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true, key: flight.key }), 'utf8') <= ANSWER_ROOM; };
     rules.forEach(function (l) { if (room(l)) lines.push(l); });
     const answer = cut ? { lines: lines, more: true, key: flight.key } : { lines: lines, key: flight.key };
-    return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
+    // "working" is said behind the answer, never waited for: a slow desk holds no wake (goal/G41.11). One that does not
+    // land is said again on the next change (say).
+    say(to, 'working');
+    return answer;
   });
 }
 
@@ -931,9 +933,10 @@ const server = appServer.serve({
     handler: function (a, caller) {
       ownerOnly(caller);
       if (!a.key) throw refused('bad-request', { why: 'setDesk needs the key of the node that runs the desk' });
+      const was = getSetting.get('desk');
       putSetting.run('desk', a.key);
       // IT SUBSCRIBES TO THE DESK'S STREAM (goal/G33.8, box v8: "A client subscribes; the desk only publishes").
-      subscribeDesk(a.key);
+      subscribeDesk(a.key, !(was && was.value === a.key));
       return { set: true };
     },
   },
@@ -982,7 +985,7 @@ const server = appServer.serve({
           const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
           return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
         }).catch(function () { return ''; });
-        return within(asked, Math.max(0, t0 + LEAVE_BY_MS - SAY_MS - Date.now())).then(function (job) {
+        return within(asked, Math.max(0, t0 + LEAVE_BY_MS - Date.now())).then(function (job) {
           if (job === undefined) { jobsMaybe = true; return ''; }
           return job;
         });
@@ -1011,8 +1014,10 @@ const server = appServer.serve({
       }
       // A JOB WAKES IT TOO (goal/G33.7, found live at G33.7's Go: "the agent was not woken"): a row the stream brought
       // that may open a job (jobsMaybe) has work.open asked at once, mid-wait as at its start, and a job ends the wait.
+      // A WAKE WAITING GOES FIRST (goal/G41.11; Andy: "we MUST look more precisely at performance again"): no job ask
+      // stands before it, however slow the desk; jobsMaybe stays up, so the job is asked on the next wait.
       function jobOrWait() {
-        if (!jobsMaybe) return wait();
+        if (!jobsMaybe || waiting.length || (owed && sinceWake.length)) return wait();
         return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
           // A wake already waiting (a line, its own item's change) goes on without a job; with one, the job comes last.
           if (!job) return wait();
@@ -1089,7 +1094,9 @@ const server = appServer.serve({
 }, {
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
-  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed },
+  // renews (goal/G41.11): what the desk's push replaces whole, its items' facts and its rules; the position (desk) and
+  // the parts read (deskItem) stay.
+  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, renews: ['deskItems', 'deskRules'] },
   dependencies: ['deskClient.streamListener'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
@@ -1101,7 +1108,14 @@ const server = appServer.serve({
 
 // SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (js/appServer.js server.subscribe): the desk setDesk
 // named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
-function subscribeDesk(key) { return server.subscribe(key, 'desk').catch(function () { return false; }); }
+// WITH THE POSITION IT HOLDS (goal/G41.11). Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
+// desk, (re-use that verb) with the position number as argument": the newest change its cache heard (desk/change, kept
+// through a restart in cache.json), so the desk hands what changed after it. A desk other than the one it heard hands
+// all (since 0).
+function subscribeDesk(key, fresh) {
+  const since = fresh ? 0 : Number(dataSet.get('desk/change')) || 0;
+  return server.subscribe(key, 'desk', since).catch(function () { return false; });
+}
 (function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());
 
 // THE CHECKOUT, WATCHED (goal/G33.11). Andy, in the box: "While its agent holds the red or the build of an item, the
