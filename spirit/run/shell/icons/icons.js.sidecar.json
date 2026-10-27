@@ -1,9 +1,0 @@
-{
-  "face": {
-    "app": true,
-    "intrinsic": true,
-    "name": "Icons",
-    "icon": "😄",
-    "description": "The icons this node's face uses, each found by its keywords: add one, change its keywords, or remove it."
-  }
-}

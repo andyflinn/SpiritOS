@@ -5,6 +5,5 @@
   "icon": "KEY",
   "hidden": true,
   "type": "dialog",
-  "intrinsic": true,
   "owner": "system"
 }

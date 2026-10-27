@@ -10,7 +10,8 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - `shell/agent/agent.js`, the app.
 - `shell/agent/agent.json`, its manifest, naming its server, `agent`.
-- `shell/agent/agent.js.sidecar.json`, its face mark: `face.app` true, with its name, icon and description.
+- No sidecar beside its code: whether a node shows it on the face is that node's own state
+  (`relay-state/shell/agent/agent.js.sidecar.json`, goal/G41.1, box v16-v17).
 
 ## Its state
 

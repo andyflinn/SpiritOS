@@ -1,9 +1,0 @@
-{
-  "face": {
-    "app": true,
-    "name": "Info",
-    "icon": "ℹ️",
-    "description": "What this node says about itself: one name, sent to every relay you are on, and the sentence it answers to anybody who asks.",
-    "intrinsic": true
-  }
-}

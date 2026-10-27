@@ -6,6 +6,5 @@
   "hidden": true,
   "server": "desk",
   "type": "dialog",
-  "intrinsic": false,
   "owner": "system"
 }

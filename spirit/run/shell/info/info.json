@@ -4,6 +4,5 @@
   "description": "What this node says about itself: one name, sent to every relay you are on, and the sentence it answers to anybody who asks.",
   "icon": "INFO",
   "hidden": false,
-  "intrinsic": true,
   "owner": "system"
 }

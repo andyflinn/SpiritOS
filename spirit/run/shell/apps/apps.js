@@ -74,7 +74,8 @@ function appsPanelDraw(host, api, path) {
     // WHERE IT RUNS AT HOME: a shell app's manifest says so (goal/G30.20); a server's own sidecar, its face part's home, the
     // only place (goal/G41.1, box v13), switched here.
     var isProcess = m[1] === 'process/js';
-    var home = manifest.intrinsic === true || (isProcess ? face.home === true : Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
+    // Intrinsic is the coded list's, on the face part the node hands out (goal/G41.1, box v17).
+    var home = face.intrinsic === true || (isProcess ? face.home === true : Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
     var canWrite = appsOnFace();
     var dis = canWrite ? '' : ' disabled';
     // NO CHECKMARK (box v14: the panel "will see all it's checkmarks go, because intrinsic is decided by the development

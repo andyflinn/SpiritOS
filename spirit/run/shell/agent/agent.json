@@ -5,6 +5,5 @@
   "icon": "THREAD",
   "hidden": false,
   "server": "agent",
-  "intrinsic": false,
   "owner": "system"
 }

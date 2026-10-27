@@ -146,9 +146,9 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
   }
   const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
   const mustCore = ['shell/boot.js', 'shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/login/login.js', 'shell/login/login.json',
-    'shell/join/join.js', 'shell/join/join.json', 'shell/join/join.js.sidecar.json'];
+    'shell/join/join.js', 'shell/join/join.json'];
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
-  ok(!notCore.length, 'boot, the seal, the sheet, the icon, and the login and Join apps whole, sidecars included, are core', 'not core: ' + notCore.join(', '));
+  ok(!notCore.length, 'boot, the seal, the sheet, the icon, and the login and Join apps whole are core', 'not core: ' + notCore.join(', '));
 
   // AN APP SHOWS ONLY WHILE ITS SERVER RUNS, ON THE FACE TOO (goal/G27.16; goal/G41.1, box v14): boot reads the server a
   // face app's manifest names, shows the app only while a server job of that module runs or is pending, and when the
@@ -169,13 +169,11 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
   }
 
   test.subHeading('every face app loads alone');
-  const apps = fs.readdirSync(path.join(RUN, 'shell'), { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; })
-    .filter(function (a) {
-      let side = null;
-      try { side = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', a, a + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
-      return !!(side && side.face && side.face.app === true) && fs.existsSync(path.join(RUN, 'shell', a, a + '.js'));
-    });
-  ok(apps.length > 0, apps.length + ' face apps found by their face mark: ' + apps.join(', '), 'no face app found');
+  // THE FACE APPS SHIPPED TO DATE, named here: a face mark is each node's own state since goal/G41.1 (box v16-v17), so
+  // the tree no longer says which apps a face shows.
+  const FACE_APPS = ['agent', 'apps', 'contacts', 'files', 'icons', 'info', 'mediaViewer'];
+  const apps = FACE_APPS.filter(function (a) { return fs.existsSync(path.join(RUN, 'shell', a, a + '.js')); });
+  ok(apps.length === FACE_APPS.length, apps.length + ' face apps: ' + apps.join(', '), 'face apps missing: ' + FACE_APPS.filter(function (a) { return apps.indexOf(a) === -1; }).join(', '));
   for (const a of apps) {
     const r = await loadAlone(a);
     ok(r.mounted, a + ' loads alone: it asks for what it uses' + (r.required.length ? ' (' + r.required.filter(function (p, i, all) { return all.indexOf(p) === i; }).join(', ') + ')' : ''),

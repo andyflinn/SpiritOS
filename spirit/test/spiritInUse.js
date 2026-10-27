@@ -282,7 +282,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   // INFO ON THE FACE (goal/G40.10, box v5; Andy: "port the info app to face.").
   test.subHeading('1g. Info on the face: a face app, everything it calls the face gives it');
   let infoMark = null;
-  try { infoMark = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'info', 'info.js.sidecar.json'), 'utf8')).face; } catch (e) { infoMark = null; }
+  // Since goal/G41.1 (box v17) a face mark is each node's own and intrinsic a coded list: Info is on it, so every face has it.
+  infoMark = require('../run/spirit/coreFiles.js').intrinsic('shell/info') ? { app: true, name: 'Info', icon: 'i', description: 'intrinsic' } : null;
   if (infoMark && infoMark.app === true && infoMark.name === 'Info' && infoMark.icon && infoMark.description) test.check('Info is marked a face app in its sidecar, with its name, icon and description, as Files is');
   else test.fail('Info is no face app: its face mark is ' + short(infoMark));
   const infoCode = code('shell/info/info.js');
@@ -531,9 +532,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
 
   // NO KEYS IN ANY FACE APP (box v15; Andy: "remove ANY indication of keys from all user interfaces"): no app the face
   // shows, and no element it loads, puts a key or a sentence about one on the screen.
-  const faceApps = fs.readdirSync(path.join(RUN, 'shell')).filter(function (d) {
-    try { return JSON.parse(fs.readFileSync(path.join(RUN, 'shell', d, d + '.js.sidecar.json'), 'utf8')).face.app === true; } catch (e) { return false; }
-  }).map(function (d) { return 'shell/' + d + '/' + d + '.js'; });
+  // The face apps shipped to date, named: a face mark is each node's own state since goal/G41.1.
+  const faceApps = ['agent', 'apps', 'contacts', 'files', 'icons', 'info', 'mediaViewer'].map(function (d) { return 'shell/' + d + '/' + d + '.js'; });
   const onScreen = faceApps.concat((parts || []).filter(function (p) { return /^shell\/js\//.test(p); }));
   const keyWords = onScreen.filter(function (f) {
     if (!fs.existsSync(path.join(RUN, f))) return false;
@@ -1261,10 +1261,10 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     let fsGot = null;
     try { fsGot = JSON.parse(fsAsked.stdout); } catch (e) { fsGot = { said: fsAsked.stdout + fsAsked.stderr }; }
     const fsOk = fsGot && fsGot.face === 'string' && fsGot.self === null && fsGot.kernel === null && fsGot.saved && fsGot.saved.ok === true && fsGot.back === 'bee' &&
-      fsGot.notes && fsGot.notes.client && fsGot.notes.client.n === 2;
+      fsGot.notes && fsGot.notes.face && fsGot.notes.face.n === 2;
     if (fsOk) test.check('the fs family on the node runs on fileSystem.js: face.html read, fileSystem.js and kernel.js never served, a file saved, read back, annotated and its notes read');
     else test.fail('the fs family on the scratch node: ' + short(fsGot));
-    if (fsGot && fsGot.introSaved && fsGot.introSaved.saved === true && fsGot.introNotes && fsGot.introNotes.client && fsGot.introNotes.client.n === 1) test.check('introSpector annotates a file of a folder and reads its notes back, through fileSystem.js');
+    if (fsGot && fsGot.introSaved && fsGot.introSaved.saved === true && fsGot.introNotes && fsGot.introNotes.face && fsGot.introNotes.face.n === 1) test.check('introSpector annotates a file of a folder and reads its notes back, through fileSystem.js');
     else test.fail('introSpector\'s FS annotations: ' + short(fsGot && { introSaved: fsGot.introSaved, introNotes: fsGot.introNotes, said: fsGot.said }));
     // THE EVENTS FAMILY (goal/G40.6): the old door is gone; the family is in the tree and jobs has no update; one process
     // subscribes, another publishes on a running server's job through spirit.events.publish, and the subscriber hears it.

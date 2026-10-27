@@ -243,3 +243,7 @@ spirit/run/relay-state/process/deskAgent/connection.json
 
 #
 #
+# APP SIDECARS ARE NODE STATE (goal/G41.1, box v16-v17): a node keeps its own at the mirror under relay-state/, and none
+# beside the code is tracked or counts.
+spirit/run/shell/*/*.js.sidecar.json
+spirit/run/process/js/*/*.js.sidecar.json

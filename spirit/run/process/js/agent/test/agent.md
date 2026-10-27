@@ -11,8 +11,8 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - `process/js/agent/agent.js`, the server, started by the node.
 - `process/js/agent/agent.json`, its manifest: a server (`kind: "server"`) the node operates (`operated: "node"`). It
   names no `runs`.
-- `process/js/agent/agent.js.sidecar.json`, its sidecar: `face.home` true, so the node runs it at home for its face app
-  (goal/G41.1, box v13: a server's home switch is its own sidecar's, the only place).
+- No sidecar beside its code, and its manifest names neither `runs` nor `intrinsic`: whether a node runs it is that
+  node's own state, `relay-state/process/agent/agent.js.sidecar.json` (`face.home`, goal/G41.1, box v16-v17).
 - `process/js/agent/agent.family/api.js`, its interface: the verb `debug` with `on`, a `bool`.
 - `process/js/agent/agent.family/debug.json`, the verb's description and request.
 

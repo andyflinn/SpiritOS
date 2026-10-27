@@ -5,7 +5,6 @@
   "icon": "THREAD",
   "hidden": false,
   "server": "desk",
-  "intrinsic": false,
   "owner": "system",
   "listens": [
     "agents"

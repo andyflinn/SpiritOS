@@ -63,7 +63,8 @@
       // an intrinsic one) can be started; any other says so. The switch is the Apps app's checkbox.
       // A sidecar is never served as a file: its annotations are asked for.
       Promise.resolve(sp().ready).then(function (s) { return s.fs.getAnnotations(path); }).then(null, function () { return null; }).then(function (side) {
-        var included = manifest.intrinsic === true || !!(side && side.face && side.face.home === true);
+        // Intrinsic is the coded list's, on the face part the node hands out (goal/G41.1, box v17).
+        var included = !!(side && side.face && (side.face.intrinsic === true || side.face.home === true));
         start.style.display = included ? '' : 'none';
         if (!included) note.textContent = 'Not run on this node: its sidecar does not say home (the Apps app switches it).';
       });

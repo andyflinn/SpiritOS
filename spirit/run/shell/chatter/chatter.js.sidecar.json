@@ -1,9 +1,0 @@
-{
-  "face": {
-    "app": false,
-    "intrinsic": false,
-    "name": "chatter",
-    "icon": "💬",
-    "description": "Chat with your peers, one chat at a time, over this node's chatClerver."
-  }
-}

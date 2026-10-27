@@ -241,12 +241,19 @@ function deleteFile(filePath) {
   }
 }
 
-// Per-file annotation interface: one sidecar JSON file colocated with the
-// target (<file>.sidecar.json). ITS ONE WRITTEN PART IS THE FACE PART (goal/G41.1, box v15; Andy: "the loopback door
-// MUST NOT be compatible with the old shell."): every caller's fs.annotate writes it, the face link's and the door's
-// alike, so the old shell's client part is gone. Nothing server-side can verify which app is really asking.
+// Per-file annotation interface: one sidecar JSON file per annotated file. ITS ONE WRITTEN PART IS THE FACE PART
+// (goal/G41.1, box v15; Andy: "the loopback door MUST NOT be compatible with the old shell."): every caller's fs.annotate
+// writes it, the face link's and the door's alike. Nothing server-side can verify which app is really asking.
+// A NODE'S SIDECARS ARE ITS STATE (box v16 and v17; Andy: "because of desk we MUST run different configurations", "why
+// would we track app sidecars?"): the sidecar lives at the mirror of its file's path in the node's state, out of git,
+// this node's alone: shell/<app>/<app>.js -> relay-state/shell/<app>/<app>.js.sidecar.json, process/js/<name>/<file> ->
+// relay-state/process/<name>/<file>.sidecar.json (the server's own state folder), anything else -> relay-state/<path>.
+// None beside the code counts.
 function sidecarPathFor(filePath) {
-  return filePath + SIDECAR_SUFFIX;
+  const p = canonicalPath(filePath) || String(filePath || '');
+  const proc = /^process\/js\/([^/]+)\/(.+)$/.exec(p);
+  if (proc) return 'relay-state/process/' + proc[1] + '/' + proc[2] + SIDECAR_SUFFIX;
+  return 'relay-state/' + p + SIDECAR_SUFFIX;
 }
 
 function readSidecar(filePath) {
@@ -271,7 +278,10 @@ function writeBucket(bucket, filePath, payload) {
   }
   if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
   const sidecar = readSidecar(filePath);
-  sidecar[bucket] = payload;
+  // INTRINSIC IS NO NODE'S TO WRITE: the coded list says it (js/coreFiles.js), so it is never kept in a sidecar.
+  const part = Object.assign({}, payload || {});
+  if (bucket === 'face') delete part.intrinsic;
+  sidecar[bucket] = part;
   const resolvedSidecar = fsPath(ROOT_DIR, sidecarPathFor(filePath));
   fs.mkdirSync(path.dirname(resolvedSidecar), { recursive: true });
   fs.writeFileSync(resolvedSidecar, JSON.stringify(sidecar, null, 2), 'utf8');
@@ -284,9 +294,12 @@ function annotateFace(filePath, payload) {
   return writeBucket('face', filePath, payload);
 }
 
+// The node's sidecar, all its parts ({} if none), its face part carrying intrinsic from the coded list.
 function getAnnotations(filePath) {
   if (!fileServable(filePath)) return {};
-  return readSidecar(filePath); // {} if none — all its parts, whole
+  const sidecar = readSidecar(filePath);
+  const face = Object.assign({}, sidecar.face || {}, { intrinsic: require('./coreFiles').intrinsic(canonicalPath(filePath) || '') });
+  return Object.assign({}, sidecar, { face: face });
 }
 
 // Directories no tool should ever need to see: dependency trees and VCS

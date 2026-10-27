@@ -10,25 +10,30 @@
 //
 //   Andy, 2026-10-04: "the scope still has a grant-lock on core files.", and asked which: "basicall run/js and
 //   intrinsics". So a file is core when it lies under spirit/run/spirit/ or spirit/run/shell/js/, is the shell's frame, or
-//   is a code file (.js, .css, .html) of an app or server whose face annotation says intrinsic (goal/G30.21, below). A
+//   is a code file (.js, .css, .html) of an app or server on the coded INTRINSIC list (goal/G41.1, below). A
 //   commit touching one needs his grant on the item, inside an agent's scope or not (commitCheck.js).
 //
 // isCore(repoPath, repoRoot): repoPath is relative to the repo, '/'-separated; repoRoot is where the manifests are read
 // (the clone the commit is made in), by default the checkout holding this file.
 
-const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
-// THE INTRINSIC MARK IS THE FACE ANNOTATION'S (goal/G30.21; Andy: "only face-annotations intrinsic mark count the code
-// files in that app or process as intrinsic."): the face part of <dir>/<name>/<name>.js.sidecar.json says intrinsic: true.
-// The .json's intrinsic is the home shell's and counts for nothing here. Read every time, so a mark the face writes
-// counts at once.
-function isIntrinsic(root, dir, name) {
-  let side = null;
-  try { side = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'run', dir, name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
-  return !!(side && side.face && side.face.intrinsic === true);
+// INTRINSIC IS A CODED LIST (goal/G41.1, box v17; Andy: "the user doesn't decide intrinsic, our development team does. so
+// i would agree on a \"coded\" intrinsic list."): the app folders whose code is core, which every node runs and shows.
+// Changed here only, under his grant; no sidecar or manifest says it. Every reader asks it: the commit check below, the
+// node starting servers (js/jobs.js), and every face part the node hands out (js/fileSystem.js).
+const INTRINSIC = [
+  'process/js/fileServer',
+  'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/group-manager', 'shell/icons', 'shell/info',
+  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats',
+];
+// An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
+function intrinsic(folder) {
+  const m = /^(shell\/[^/]+|process\/js\/[^/]+)(\/|$)/.exec(String(folder || '').replace(/\\/g, '/').replace(/^spirit\/run\//, ''));
+  return !!m && INTRINSIC.indexOf(m[1]) !== -1;
 }
+function isIntrinsic(root, dir, name) { return intrinsic(dir + '/' + name); }
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
 const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css'];
@@ -60,4 +65,4 @@ function isCore(repoPath, repoRoot) {
   return !!(app && /\.(js|css|html)$/.test(p) && isIntrinsic(repoRoot || DEFAULT_ROOT, app[1], app[2]));
 }
 
-module.exports = { isCore: isCore };
+module.exports = { isCore: isCore, INTRINSIC: INTRINSIC, intrinsic: intrinsic };

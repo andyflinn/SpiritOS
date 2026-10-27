@@ -22,8 +22,8 @@ app loads its own components, as a tree, through spirit.require.
   and no other app's file. (This reads "the home and join components" as the login app, the navigation, and Join with
   its steps.)
 - Login and Join are its two mandatory components, hard-coded by path; boot disregards their sidecars.
-- Both are core whole, manifest and sidecar included, as are boot, the seal, the sheet and the icon, so no page can
-  change them.
+- Both are core whole, as are boot, the seal, the sheet and the icon, so no page can change them. (A sidecar is a node's
+  own state since goal/G41.1, box v16-v17, beside no code.)
 
 ## An app shows only while its server runs (goal/G27.16; goal/G41.1, box v14)
 
@@ -35,7 +35,8 @@ app loads its own components, as a tree, through spirit.require.
 
 ## Every face app loads alone
 
-- Every app with a face mark (`face.app` in its sidecar) mounts with nothing on the page but a `spirit.require` that
+- Every face app shipped to date (agent, apps, contacts, files, icons, info, mediaViewer: named by the test, since a face
+  mark is each node's own state) mounts with nothing on the page but a `spirit.require` that
   serves files from the run tree, de-duped, and an empty set of elements: what it needs it asks for, and what it asks
   for loads what it needs. The loader is spirit.js's: what a component requires while it runs is waited for before its
   own require answers, so an app that awaits its components has their whole tree. Mounting it throws nothing, and nothing it starts fails for a component it did not load.

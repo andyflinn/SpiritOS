@@ -5,6 +5,5 @@
   "icon": "RUN",
   "hidden": true,
   "type": "dialog",
-  "intrinsic": true,
   "owner": "system"
 }

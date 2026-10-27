@@ -119,9 +119,8 @@ test.startTest('agent.js: the agent face app');
   if (!fs.existsSync(FILE)) { test.fail('shell/agent/agent.js is not there'); return; }
   const manifest = readJson(path.join(DIR, 'agent.json')) || {};
   ok(manifest.server === 'agent', 'its manifest names its server, agent', 'agent.json: ' + short(manifest));
-  const side = (readJson(path.join(DIR, 'agent.js.sidecar.json')) || {}).face || {};
-  ok(side.app === true && side.name && side.icon && side.description, 'its sidecar marks it a face app, with its name, icon and description',
-    'face mark: ' + short(side));
+  // Its face mark is each node's own (goal/G41.1, box v16-v17): no sidecar beside its code, and none tracked.
+  ok(!fs.existsSync(path.join(DIR, 'agent.js.sidecar.json')), 'no sidecar beside its code: whether a node shows it is that node\'s own state', 'shell/agent/agent.js.sidecar.json is there');
 
   test.subHeading('it mounts one workBench into a box of the whole app area');
   const w = world(JSON.stringify({ showDebug: true }));

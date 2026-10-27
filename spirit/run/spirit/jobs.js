@@ -222,15 +222,18 @@ module.exports = function installJobs(port) {
     const publishFace = function (rel, full, op) {
       let side = null;
       if (op !== 'deleteFile') { try { side = JSON.parse(fs.readFileSync(full, 'utf8')); } catch (e) { side = null; } }
-      updateJob(faces.id, { data: { path: rel.replace(/\.sidecar\.json$/, ''), face: (side && side.face && typeof side.face === 'object') ? side.face : {} } });
+      const script = scriptOfSidecar(rel);
+      const face = Object.assign({}, (side && side.face && typeof side.face === 'object') ? side.face : {}, { intrinsic: require('./coreFiles').intrinsic(script) });
+      updateJob(faces.id, { data: { path: script, face: face } });
     };
     const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
     const ignored = function (full) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
       if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
-      // A server's sidecar is never served, but it is its home switch: heard here, kept out of the tree (goal/G41.1).
-      if (APP_SIDECAR.test(rel)) return false;
+      // A NODE'S OWN SIDECARS ARE HEARD (goal/G41.1): the folders of the node's state down to them, and the sidecars,
+      // never served and kept out of the tree.
+      if (APP_SIDECAR.test(rel) || STATE_DIR.test(rel)) return false;
       return !fileSystem.fileServable(rel);
     };
     const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
@@ -239,6 +242,7 @@ module.exports = function installJobs(port) {
       const rel = full ? relOf(full) : '';
       if (!op || !rel || rel.indexOf('..') === 0) return;
       if (APP_SIDECAR.test(rel)) { publishFace(rel, full, op); if (SIDECAR.test(rel)) followHome(rootDir, rel); return; }
+      if (STATE_DIR.test(rel) && !fileSystem.fileServable(rel)) return;
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
         if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
@@ -439,11 +443,13 @@ module.exports = function installJobs(port) {
   // spawned. No central list says it: relay-state/node.json's servers section, and the manifest's runs, are gone.
   function runsHome(root, name) {
     try {
-      const m = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
-      if (m.intrinsic === true) return true;
+      JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
     } catch (e) { return false; }
+    // AN INTRINSIC SERVER ALWAYS RUNS, by the coded list (goal/G41.1, box v17); any other by the node's own sidecar, in
+    // its state folder (box v16): relay-state/process/<name>/<name>.js.sidecar.json.
+    if (require('./coreFiles').intrinsic('process/js/' + name)) return true;
     let side = null;
-    try { side = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
+    try { side = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'process', name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
     return !!(side && side.face && side.face.home === true);
   }
   // A script under <root>/process/js/<name>/, read as {root, name}; null for
@@ -553,9 +559,15 @@ module.exports = function installJobs(port) {
   }
   // A SIDECAR WRITTEN STARTS OR STOPS ITS SERVER (goal/G41.1, box v13: "the node starts or stops the server when that
   // sidecar changes"): heard by the fs watcher, on the node startNodeServers was handed.
-  const SIDECAR = /^process\/js\/([^/]+)\/\1\.js\.sidecar\.json$/;
-  // Any app's sidecar, a shell app's or a server's: never served, but heard, its face part streamed (goal/G41.1).
-  const APP_SIDECAR = /^(shell|process\/js)\/([^/]+)\/\2\.js\.sidecar\.json$/;
+  // A NODE'S OWN SIDECARS, in its state (goal/G41.1, box v16): a server's, a shell app's or either's, and the folders down
+  // to them; the app's script is the mirror's path back.
+  const SIDECAR = /^relay-state\/process\/([^/]+)\/\1\.js\.sidecar\.json$/;
+  const APP_SIDECAR = /^relay-state\/(shell|process)\/([^/]+)\/\2\.js\.sidecar\.json$/;
+  const STATE_DIR = /^relay-state(\/(shell|process)(\/[^/]+)?)?$/;
+  function scriptOfSidecar(rel) {
+    const m = APP_SIDECAR.exec(rel);
+    return m ? (m[1] === 'shell' ? 'shell/' : 'process/js/') + m[2] + '/' + m[2] + '.js' : '';
+  }
   function followHome(rootDir, rel) {
     const m = SIDECAR.exec(rel);
     if (!m || !serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;

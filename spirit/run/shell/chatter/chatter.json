@@ -5,6 +5,5 @@
   "icon": "CHAT",
   "hidden": false,
   "server": "chatClerver",
-  "intrinsic": false,
   "owner": "system"
 }
