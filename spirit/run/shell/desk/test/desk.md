@@ -52,3 +52,10 @@ the arming desk.js hand-rolled.
 
 - An inline `style` background left on either design button; a class whose colour shell.css paints armed or not.
 - A Team line drawn again by a new line, or by a repaint of the page around it.
+
+## goal/G41.11: every list in a box of a stated size (rule/16)
+
+Andy: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere in desk?"
+Every probabilitySearch list of the Desk page, the List (items.search) and the Rules list (rules.search), is mounted in a
+box of class fill, and every box between it and the app's own box is fill too: no stat-tile, no box only as tall as its
+content. A dropdown stands inline, as every dropdown in the tree does, and is not asked.

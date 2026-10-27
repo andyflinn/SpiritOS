@@ -368,5 +368,16 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const afterOther = shownNow();
   ok(afterOther.length === 3 && afterOther[0] === afterLine[0] && afterOther[1] === before[0] && afterOther[2] === before[1],
     'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
+  test.subHeading('goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off');
+  // Andy: "the rules list is NOT placed properly in a size-limited container". The upper half is fixed at 30vh with its
+  // overflow hidden; what bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
+  const rf = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }), []);
+  await rf.open();
+  const icon = rf.document.querySelector('[data-panel="rules"]');
+  if (icon) { rf.document.click(icon); await settle(); }
+  const firstRuleRow = rf.document.querySelector('[data-rule-remove]');
+  let bound = null;
+  for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
+  ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

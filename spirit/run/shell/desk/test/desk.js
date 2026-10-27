@@ -311,5 +311,26 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const tOther = teamLines();
   ok(tOther.length === 3 && tOther[0] === tAfter[0] && tOther[1] === tBefore[0] && tOther[2] === tBefore[1],
     'a change that is no Team line (a new List row) leaves every Team line as it was', 'drawn again by a List row');
+  test.subHeading('goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)');
+  // Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
+  // in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that
+  // fills its app, as the Apps and Icons face apps do; never in a stat-tile or a box only as tall as its content. A list
+  // drawn as a dropdown stands inline, as every dropdown in the tree does (Grants, Icons), and is not asked here.
+  const wf = deskWorld(goal, [item]);
+  const panes = [];
+  const realCreate = wf.win.spirit.elements.probabilitySearch.create;
+  wf.win.spirit.elements.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  await wf.mount();
+  const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
+  const rulesTab = wf.document.querySelector('[data-tab="rules"]');
+  if (rulesTab) { wf.document.click(rulesTab); await settle(); }
+  const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
+  const notFill = function (host) { const out = []; for (let n = host; n && n !== mountBox; n = n.parentNode) { if (!isFill(n)) out.push((n.id ? '#' + n.id : n.tagName || n.tag) + (n.className ? '.' + n.className : '')); } return out; };
+  [['the List', 'items.search'], ['the Rules list', 'rules.search']].forEach(function (want) {
+    const made = panes.filter(function (x) { return x.o.verb === want[1]; })[0];
+    if (!made) { test.fail(want[0] + ': no list made'); return; }
+    const gaps = notFill(made.host);
+    ok(isFill(made.host) && !gaps.length, want[0] + ' stands in a fill box, and every box up to the app is fill too', want[0] + ': not fill: ' + gaps.join(' < '));
+  });
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

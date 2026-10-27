@@ -55,3 +55,8 @@ first displayed."
 - A red Q cleared, or design started or ended, on one press; the remove or a design button not made by armingButton.
 - A rename field that opens empty, on an item or a goal.
 - A chat line drawn again by a new line or by a repaint that is no chat line.
+
+## goal/G41.11: the rules panel scrolls inside its own box
+
+The upper half is fixed at 30vh with its overflow hidden; the box that bounds the rules panel scrolls (overflow auto), so
+a long list of rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.

@@ -36,3 +36,8 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog, `ctx.c
 - A suite's path taken as a suite name; the outcome filter lost.
 - Items shown at first; a tab press heard twice after a second open.
 - A list made before its script loaded, or never after.
+
+## goal/G41.11: the Reds list in a box of a stated size (rule/16)
+
+The Reds list, a probabilitySearch, is mounted in a box of class fill, every box up to the plugin's own box fill too, and
+none of them a stat-tile.

@@ -255,5 +255,16 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   let threw = null;
   try { wn.win.spirit.deskPlugins.fallout.open(wn.container, { verb: wn.ctx.verb }); await settle(); wn.list.made[0].opts.details({ suite: 'a', title: 'b' }); } catch (e) { threw = e; }
   ok(!threw && wn.list.made.length === 1, 'no chat, no stream, no dialog: it opens and its details do nothing', 'threw ' + short(threw && threw.message));
+
+  test.subHeading('goal/G41.11: its Reds list stands in a box of a stated size (rule/16)');
+  // rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that fills its
+  // app; never in a stat-tile or a box only as tall as its content. The plugin's box is the one Desk hands it.
+  const wfill = world(true);
+  wfill.win.spirit.deskPlugins.fallout.open(wfill.container, wfill.ctx); await settle();
+  const host = wfill.list.made.length ? wfill.list.made[0].host : null;
+  const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
+  const gaps = [];
+  for (let n = host; n && n !== wfill.container; n = n.parentNode) { if (!isFill(n) || / stat-tile /.test(' ' + String(n.className || '') + ' ')) gaps.push((n.id ? '#' + n.id : n.tagName || '') + (n.className ? '.' + n.className : '')); }
+  ok(!!host && !gaps.length, 'the Reds list stands in a fill box, every box up to the plugin\'s own is fill, none a stat-tile', 'not fill: ' + (host ? gaps.join(' < ') : 'no list made'));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
