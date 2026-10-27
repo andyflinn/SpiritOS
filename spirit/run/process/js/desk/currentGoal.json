@@ -1,5 +1,5 @@
 {
- "change": 106433,
+ "change": 106436,
  "goal": "goal/G41",
  "items": [
   {
@@ -75,7 +75,7 @@
      "version": 48
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -91,7 +91,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -126,12 +126,11 @@
    "id": "goal/G41.1",
    "title": "Create \"agent\" skeleton",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
