@@ -13,7 +13,7 @@
 //   - With the home node offline the face keeps its shell and shows the small red not connected mark.
 //   - After this item the face shell is no longer waiting for plumbing.
 // NAMED HERE where the box names none:
-//   - face/seal.js: window.faceSeal (and module.exports) { supported, newKey, seal, open }, byte for byte the node's
+//   - shell/seal.js: window.faceSeal (and module.exports) { supported, newKey, seal, open }, byte for byte the node's
 //     seal.js: what one seals the other opens.
 //   - A sealed face request is { sealed: 1, e, n, c, k } (k the face's key), sealed from k to the home node's key; the
 //     answer is ndjson, each line sealed from the home node to k: first { status, type }, then the body in pieces,
@@ -43,7 +43,7 @@ test.startTest('goal/G30.11: the sealed link, and the face loading from its home
 
 const seal = require('../run/spirit/seal');
 let faceSeal = null;
-try { faceSeal = require('../run/face/seal.js'); } catch (e) { faceSeal = null; }
+try { faceSeal = require('../run/shell/seal.js'); } catch (e) { faceSeal = null; }
 const sealMade = !!(faceSeal && typeof faceSeal.seal === 'function' && typeof faceSeal.open === 'function');
 
 // The relay and bert, as in faceHome.js.
@@ -140,7 +140,7 @@ async function opened(face, key) {
 }
 
 const done = (async function () {
-  test.subHeading('1. face/seal.js is the node\'s seal, in WebCrypto');
+  test.subHeading('1. shell/seal.js is the node\'s seal, in WebCrypto');
   let both = null;
   try {
     const key = await faceSeal.newKey();
@@ -152,8 +152,8 @@ const done = (async function () {
     both = { node: nodeRead && nodeRead.text, face: faceRead && faceRead.text, wrong: wrongPair, ok: await faceSeal.supported() };
   } catch (e) { both = { threw: e.message }; }
   if (sealMade && both && both.node === 'hello node' && both.face === 'hello face' && both.wrong === null && both.ok === true)
-    test.check('what face/seal.js seals the node\'s seal.js opens, and back; sealed for another pair it does not open');
-  else test.fail(OWED + 'face/seal.js answered ' + short(both));
+    test.check('what shell/seal.js seals the node\'s seal.js opens, and back; sealed for another pair it does not open');
+  else test.fail(OWED + 'shell/seal.js answered ' + short(both));
 
   test.subHeading('2. a sealed request, answered sealed, a large file in pieces');
   let card = null;
@@ -204,15 +204,15 @@ const done = (async function () {
     test.check('face-open carries the face\'s key, and every line of the stream is sealed to it');
   else test.fail(OWED + 'the stream was ' + short(stream));
   const server = code('spirit/relayServer.js');
-  if (/searchParams\.get\('key'\)/.test(server) && /'\/face\/seal\.js'/.test(server))
-    test.check('relayServer hands ?key= to faceOpen, and serves face/seal.js beside face.html');
-  else test.fail(OWED + 'relayServer reads no key on /face/stream, or does not serve face/seal.js');
+  if (/searchParams\.get\('key'\)/.test(server) && /'\/shell\/seal\.js'/.test(server))
+    test.check('relayServer hands ?key= to faceOpen, and serves shell/seal.js beside face.html');
+  else test.fail(OWED + 'relayServer reads no key on /face/stream, or does not serve shell/seal.js');
 
   test.subHeading('4. the face shell, by its code');
-  const shell = code('face/shell.js');
+  const shell = code('shell/boot.js');
   const kernel = code('spirit/kernel.js');
   const html = raw('face.html');
-  const login = raw('face/login/login.js') + raw('face/login/login.json');
+  const login = raw('shell/login/login.js') + raw('shell/login/login.json');
   const checks = {
     kernelHook: /spirit\.transport/.test(kernel) && /spirit\.transport[\s\S]{0,200}ask/.test(kernel) && /spirit\.transport[\s\S]{0,300}events/.test(kernel),
     transport: /spirit\.transport\s*=/.test(shell),

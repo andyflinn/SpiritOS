@@ -95,12 +95,24 @@ function appsPanelDraw(host, api, path) {
   }, function (e) { panel.textContent = 'could not read ' + path + ': ' + ((e && e.message) || e); });
 }
 
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
+// through spirit.require, each element bringing its own.
+var appsParts = Promise.all(['shell/js/files/data.js', 'shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
+  'shell/js/icons/listElement.js'].map(function (p) { return spirit.require(p); }));
+
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var E = window.spirit.elements;
     // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
     container.innerHTML = '<div data-apps="list" class="fill"></div>';
     var listHost = container.querySelector('[data-apps="list"]');
+    return appsParts.then(function () { appsDraw(listHost, api); }, function () { listHost.textContent = 'Apps could not be loaded.'; });
+  },
+
+  render: function () {},
+});
+
+function appsDraw(listHost, api) {
+    var E = window.spirit.elements;
     appsList = E.probabilitySearch.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
       data: 'files',
@@ -125,7 +137,4 @@ spirit.shell.activateApp({
     });
     appsList.sort('name', 'asc');
     appsList.refresh();
-  },
-
-  render: function () {},
-});
+}

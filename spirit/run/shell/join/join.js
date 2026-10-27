@@ -22,7 +22,10 @@ var joinRelays = [];       // the relays this node lists, as spirit.relay.status
 var joinShown = '';       // what the list was last drawn from
 var joinWaiting = false;  // handed something new while he was typing
 
-// The shell elements this app is made of, as index.html hands them out.
+// The shell elements this app is made of. WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own
+// components, "lazy-load, is a tree...."): through spirit.require, and the steps are drawn again once they are in.
+var joinParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/js/contacts/listElement.js'].map(function (p) { return spirit.require(p); }));
+joinParts.then(function () { joinShown = ''; joinShow(); }, function () { /* a form missing leaves its step without one */ });
 function joinEl() {
   var w = window.spirit.elements || {};
   return { joinForm: w && window.spirit.elements.joinForm, contactList: w && window.spirit.elements.contactList, faceForm: w && window.spirit.elements.faceForm };

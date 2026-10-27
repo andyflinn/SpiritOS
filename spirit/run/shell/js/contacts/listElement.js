@@ -23,6 +23,8 @@
 //     opts.onAdded(row)   after an Add
 //     opts.empty                              the words when nothing matches
 (function () {
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/contacts/data.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, held, or relay.
   function is(kind) {

@@ -46,9 +46,9 @@ const done = (async function () {
   if (!/WRITABLE_ROOT_NAMES|'media'|'published'/.test(kern)) test.check('the core names no user folder: media/ and published/ have no special status');
   else test.fail(OWED + 'kernel.js still names media/ or published/');
   const core = require('../run/spirit/coreFiles.js');
-  if (core.isCore('spirit/run/face/shell.js') && core.isCore('spirit/run/face/login/login.js') && core.isCore('spirit/run/face.html'))
+  if (core.isCore('spirit/run/shell/boot.js') && core.isCore('spirit/run/shell/login/login.js') && core.isCore('spirit/run/face.html'))
     test.check('the face folder and face.html are core');
-  else test.fail(OWED + 'coreFiles: face/shell.js ' + core.isCore('spirit/run/face/shell.js') + ', face.html ' + core.isCore('spirit/run/face.html'));
+  else test.fail(OWED + 'coreFiles: shell/boot.js ' + core.isCore('spirit/run/shell/boot.js') + ', face.html ' + core.isCore('spirit/run/face.html'));
   if (core.isCore('spirit/run/shell/contacts/contacts.js') && !core.isCore('spirit/run/shell/contacts/contacts.json'))
     test.check('a manifest is never core, an intrinsic app\'s included');
   else test.fail(OWED + 'coreFiles: contacts.js ' + core.isCore('spirit/run/shell/contacts/contacts.js') + ', contacts.json ' + core.isCore('spirit/run/shell/contacts/contacts.json'));
@@ -102,9 +102,9 @@ const done = (async function () {
   });
   if (!shipped.length) test.check('Contacts, Files, Media Viewer and Apps ship with their face part set; no .json says face');
   else test.fail(OWED + 'not shipped as face apps: ' + shipped.join(', '));
-  const faceShell = code('face/shell.js');
+  const faceShell = code('shell/boot.js');
   if (/'fs\.annotations'/.test(faceShell) && !/runs\.indexOf\('face'\)/.test(faceShell)) test.check('the face reads each app\'s face part (fs.annotations), not its .json');
-  else test.fail(OWED + 'face/shell.js does not find its apps by fs.annotations');
+  else test.fail(OWED + 'shell/boot.js does not find its apps by fs.annotations');
 
   test.subHeading('4. the Apps app');
   const apps = code('shell/apps/apps.js');
@@ -131,7 +131,7 @@ const done = (async function () {
       && /iconList/.test(iconsList) && /iconList\.create\(/.test(code('shell/apps/apps.js')) && /iconList\.create\(/.test(code('shell/icons/icons.js')))
     test.check('shell/js/icons/ has its row and list, loaded by index.html; Apps\' icon field and the Icons app draw that list');
   else test.fail(OWED + 'the icons elements are missing, not loaded, or not drawn by Apps and Icons');
-  const keyed = ['face/shell.js', 'shell/js/contacts/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/files/rowElement.js',
+  const keyed = ['shell/boot.js', 'shell/js/contacts/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/files/rowElement.js',
     'shell/js/textViewer.js', 'shell/contacts/contacts.js'].filter(function (f) { return /const\.ICON|ICON\[|ICON\.[A-Z]/.test(code(f)); });
   const keyParts = ['contacts', 'files', 'mediaViewer', 'apps', 'icons'].filter(function (n) {
     const s2 = json('shell/' + n + '/' + n + '.js.sidecar.json');
@@ -203,16 +203,16 @@ const done = (async function () {
   if (pieceAnswer === 0 && ran.length === 1 && ran[0].verb === 'fs.save' && ran[0].bytes === 30000)
     test.check('the node runs nothing on the first piece, and the whole fs.save once the last is in (30000 bytes)');
   else test.fail('OWED by goal/G33.1: pieces ran ' + JSON.stringify(ran).slice(0, 200) + ' (after the first: ' + pieceAnswer + ')');
-  const faceShellNow = code('face/shell.js');
+  const faceShellNow = code('shell/boot.js');
   // A second declaration of the same name replaces the first without a word: the piece sender, named post, took the
   // place of post(verb, body), sent the face's state check to /face/call and showed Andy the login screen (G33.1).
   // The shell's own scope is its top level, two spaces in; a helper inside a function is that function's own.
   const declared = (faceShellNow.match(/^ {2}function\s+\w+\s*\(/gm) || []).map(function (d) { return d.replace(/^\s*function\s+|\s*\($/g, ''); });
   const twice = declared.filter(function (n, i) { return declared.indexOf(n) !== i; });
-  if (!twice.length) test.check('face/shell.js declares every function name of its own scope once');
-  else test.fail('OWED by goal/G33.1: face/shell.js declares twice: ' + twice.join(', '));
+  if (!twice.length) test.check('shell/boot.js declares every function name of its own scope once');
+  else test.fail('OWED by goal/G33.1: shell/boot.js declares twice: ' + twice.join(', '));
   if (/piece/.test(faceShellNow) && /BODY_MAX|PIECE_MAX|piece.*max/i.test(faceShellNow)) test.check('the face shell sends a request larger than one trip in pieces');
-  else test.fail('OWED by goal/G33.1: face/shell.js sends every request whole');
+  else test.fail('OWED by goal/G33.1: shell/boot.js sends every request whole');
 }());
 
 done.then(function () { test.reportSuccessFailureCount(); process.exit(0); },

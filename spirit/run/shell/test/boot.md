@@ -29,7 +29,8 @@ app loads its own components, as a tree, through spirit.require.
 
 - Every app with a face mark (`face.app` in its sidecar) mounts with nothing on the page but a `spirit.require` that
   serves files from the run tree, de-duped, and an empty set of elements: what it needs it asks for, and what it asks
-  for loads what it needs. Mounting it throws nothing, and nothing it starts fails for a component it did not load.
+  for loads what it needs. The loader is spirit.js's: what a component requires while it runs is waited for before its
+  own require answers, so an app that awaits its components has their whole tree. Mounting it throws nothing, and nothing it starts fails for a component it did not load.
 
 ## What its test must try to break
 

@@ -1,4 +1,4 @@
-// spirit/run/face/login/login.js
+// spirit/run/shell/login/login.js (goal/G41.3: moved from face/login/)
 // THE FACE'S LOGIN APP (goal/G30.9), the counterpart of the node's Join app, drawn as Join draws: every step a bullet,
 // done ones ticked, the open one expanded with its form. It draws what the shell hands it (onSteps: the facts, the
 // open step, the done steps) and decides nothing. One field, Log in: it takes the member's verified email or the token
@@ -94,7 +94,7 @@
     mount: function (container, shellApi) {
       pane = container;
       api = shellApi;
-      fetch('/face/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); })
+      fetch('/shell/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); })
         .then(function (m) { steps = (m && m.steps) || []; shown = ''; api.refresh(); });
     },
     onSteps: function (h) { if (pane && steps.length) draw(h); },

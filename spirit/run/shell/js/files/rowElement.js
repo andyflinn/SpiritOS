@@ -11,6 +11,8 @@
 // fs.annotations, once.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.

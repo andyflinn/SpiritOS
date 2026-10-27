@@ -9,6 +9,8 @@
 // the same files index.html names, in its order, once.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/fileViewer.js', 'shell/js/textView.js'].forEach(function (p) { window.spirit.require(p); });
   var codeMirror = null;
 
   function sp() { return window.spirit || {}; }

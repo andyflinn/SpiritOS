@@ -15,6 +15,8 @@
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/icons/rowElement.js', 'shell/js/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
   // The owner's own set, out of git; the system set until he has one (goal/G40.8, shell/icons/icons.js says why).
   var SET = 'relay-state/shell/icons/iconSet.json';
   var SYSTEM_SET = 'shell/json/iconSet.json';

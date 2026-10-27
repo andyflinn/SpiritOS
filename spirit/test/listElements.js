@@ -85,7 +85,9 @@ const manifests = [];
 ['shell', 'process/js'].forEach(function (dir) {
   let names = [];
   try { names = fs.readdirSync(path.join(RUN, dir)); } catch (e) { names = []; }
-  names.forEach(function (n) { if (exists(dir + '/' + n + '/' + n + '.json')) manifests.push(dir + '/' + n); });
+  // Login's .json is no manifest but its code (goal/G41.3, Q9; Andy: "if something is a manifest is determined not by the
+  // json extension."): boot runs it, nothing reads where it runs.
+  names.forEach(function (n) { if (exists(dir + '/' + n + '/' + n + '.json') && dir + '/' + n !== 'shell/login') manifests.push(dir + '/' + n); });
 });
 const runsOf = function (m) { try { return JSON.parse(raw(m + '/' + m.split('/').pop() + '.json')).runs; } catch (e) { return null; } };
 const noRuns = manifests.filter(function (m) { return !Array.isArray(runsOf(m)); });
@@ -95,11 +97,11 @@ const faced = ['shell/contacts', 'shell/files', 'shell/mediaViewer'].filter(func
 if (manifests.length > 10 && !noRuns.length && faced.length === 3) test.check('every manifest says where it runs; Contacts, Files and Media Viewer at home and on the face');
 else test.fail(OWED + 'no runs in ' + noRuns.join(', ') + '; home and face: ' + faced.join(', '));
 const listGone = ['spirit/includeList.js', 'process/js/desk/onboard.js', 'process/js/desk/offboard.js'].filter(exists);
-const verbsLeft = ['spirit/server.js', 'spirit/jobs.js', 'spirit/client/shell.js', 'face/shell.js', 'shell/js/textViewer.js']
+const verbsLeft = ['spirit/server.js', 'spirit/jobs.js', 'spirit/client/shell.js', 'shell/boot.js', 'shell/js/textViewer.js']
   .filter(function (f) { return /searchModules|setModules|includeList/.test(code(f)); });
 if (!listGone.length && !verbsLeft.length) test.check('the include list is gone: its file, its reader, config.setModules and config.searchModules, onboarding and offboarding');
 else test.fail(OWED + 'still there: ' + listGone.concat(verbsLeft).join(', '));
-const faceCode = code('face/shell.js');
+const faceCode = code('shell/boot.js');
 if (/watch\('files'/.test(faceCode) && /'fs\.annotations'/.test(faceCode) && /runs/.test(code('spirit/client/shell.js')) && /runs/.test(code('spirit/jobs.js')))
   test.check('both shells find their apps in data.files and read runs; the node starts what says home');
 else test.fail(OWED + 'the face does not read data.files, or a shell or the node does not read runs');

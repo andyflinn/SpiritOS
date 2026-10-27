@@ -1,4 +1,4 @@
-// spirit/run/face/shell.js
+// spirit/run/shell/boot.js (goal/G41.3: face/shell.js moved into shell/ as the boot)
 // THE NEW SHELL IN THE MAKING (goal/G30.9): the lazy-load shell face.html boots, on a member's face and on the home
 // node alike (Andy: "this is going to be the new shell, that works equally on both the home-node AND the face"). It
 // has the shell's look and feel: the desktop of app icons, the app screen under a title bar with Back and Home.
@@ -370,6 +370,9 @@
   // scripts but the old shell, spirit.js (inline in this page, first), kernel.js and CodeMirror (loaded when an app
   // needs it). A part added to the face is added here. Not on it, by rule (goal/G40.8): listSearch.js ("list search is
   // deprecated, and forbidden in face"), the contact selector built on it, and the deprecated header element.
+  // ONLY WHAT BOOT RUNS ITSELF (goal/G41.3; Andy: boot preloads only the home and Join components, every app bootstraps
+  // its own): spirit's libraries, the sheet, the navigation every app is a page on, and Join's steps, which boot works
+  // out. Every other element is loaded by the app that draws with it, through spirit.require; the cache by spirit.js.
   var FACE_PARTS = [
     'spirit/ownerBadge.js',
     'spirit/fieldRules.js',
@@ -384,41 +387,15 @@
     'spirit/client/iconIndex.js',
     'spirit/client/apiTreeIndex.js',
     'shell.css',
-    'shell/js/textView.js',
-    'shell/js/iconSelector.js',
-    'shell/js/contactLabel.js',
-    'shell/js/joinForm.js',
-    'shell/js/faceForm.js',
     'shell/js/joinSteps.js',
-    'shell/shared/js/progressBar.js',
-    'shell/js/appServerSelector.js',
-    'shell/js/apiBranchSelector.js',
-    'shell/js/spiritData.js',
-    'shell/js/rowElement.js',
-    'shell/js/probabilitySearch.js',
-    'shell/js/fileViewer.js',
-    'shell/js/textViewer.js',
-    'shell/js/mediaViewer.js',
-    'shell/js/files/data.js',
-    'shell/js/files/rowElement.js',
-    'shell/js/files/listElement.js',
-    'shell/js/contacts/data.js',
-    'shell/js/contacts/rowElement.js',
-    'shell/js/contacts/listElement.js',
-    'shell/js/icons/rowElement.js',
-    'shell/js/icons/listElement.js',
-    'shell/js/fieldInput.js',
-    // The navigation and the two detail pages on it (goal/G40.8).
     'shell/js/navigationWrapper.js',
-    'shell/js/contactDetails/contactDetails.js',
-    'shell/js/natterDetails/natterDetails.js',
   ];
   function loadParts() {
     return FACE_PARTS.reduce(function (chain, p) {
       return chain.then(function () { return fileText(p); }).then(function (text) { inject(p, text); }, function () { /* one part missing is said by the app that needs it */ });
     }, Promise.resolve()).then(function () {
       // The face's green stays last, over the home node's sheets.
-      var green = document.querySelector('link[href="/face/face.css"]');
+      var green = document.querySelector('link[href="/shell/face.css"]');
       if (green) document.head.appendChild(green);
     });
   }
@@ -684,7 +661,7 @@
     container.hidden = false;
     if (login) { if (!loginMounted) mountLogin(); return; }
     var s = document.createElement('script');
-    s.src = '/face/login/login.js';
+    s.src = '/shell/login/login.js';
     document.body.appendChild(s);
   }
   function mountLogin() {
@@ -704,7 +681,7 @@
       ? Promise.resolve()
       // The home node's keys, from faceHome itself (goal/G30.10): node.card carries no seal key. The seal is loaded now,
       // logged in and linking (goal/G40.6), by the one loader.
-      : spirit.require('face/seal.js').then(function () { return call({ keys: 1 }); }).then(function (r) {
+      : spirit.require('shell/seal.js').then(function () { return call({ keys: 1 }); }).then(function (r) {
           var keys = null;
           try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
           if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
@@ -808,7 +785,7 @@
   }
   var fromLink = (window.location.search || '').length > 1;
   if (fromLink) { try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the token is spent */ } }
-  fetch('/face/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (m) {
+  fetch('/shell/login/login.json', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (m) {
     manifest = m || {};
     steps = Array.isArray(manifest.steps) ? manifest.steps : [];
     return refresh();

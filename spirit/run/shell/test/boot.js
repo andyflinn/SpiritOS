@@ -67,6 +67,7 @@ async function loadAlone(app) {
   const required = [];
   const elements = {};
   const ran = {};
+  let collecting = null;
   const ctx = { console: { log: function () {}, warn: function () {}, error: function () {} }, setTimeout: setTimeout, clearTimeout: clearTimeout,
     setInterval: function () { return 0; }, clearInterval: function () {}, setImmediate: setImmediate, Promise: Promise, JSON: JSON, Math: Math, Date: Date,
     TextEncoder: TextEncoder, TextDecoder: TextDecoder, URL: URL, URLSearchParams: URLSearchParams, Uint8Array: Uint8Array, Buffer: Buffer,
@@ -77,16 +78,22 @@ async function loadAlone(app) {
   const spirit = {
     elements: elements,
     shell: { activateApp: function (d) { def = d; } },
-    // THE ONE LOADER, de-duped as node's require is: a path is read from the run tree and run once.
+    // THE ONE LOADER, as spirit.js has it: de-duped as node's require is (a path is read from the run tree and run
+    // once), and a tree: what a component requires while it runs is waited for before its own require answers.
     require: function (p) {
       const rel = String(p || '').replace(/^\/+/, '');
       required.push(rel);
-      if (ran[rel]) return ran[rel];
+      if (ran[rel]) { if (collecting) collecting.push(ran[rel]); return ran[rel]; }
       ran[rel] = new Promise(function (resolve, reject) {
         const text = read(rel);
         if (text == null) { reject(Object.assign(new Error('not-found: ' + rel), { code: 'not-found' })); return; }
-        try { vm.runInContext(text, ctx, { filename: rel }); resolve(true); } catch (e) { reject(e); }
+        const outer = collecting;
+        const tree = collecting = [];
+        try { vm.runInContext(text, ctx, { filename: rel }); } catch (e) { collecting = outer; reject(e); return; }
+        collecting = outer;
+        Promise.all(tree).then(function () { resolve(true); }, reject);
       });
+      if (collecting) collecting.push(ran[rel]);
       return ran[rel];
     },
   };

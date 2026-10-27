@@ -138,16 +138,16 @@ const done = (async function () {
 
   test.subHeading('4. the wiring, the screens and the files');
   const srv = code('spirit/run/spirit/server.js');
-  const shell = code('spirit/run/face/shell.js');
+  const shell = code('spirit/run/shell/boot.js');
   const rs = code('spirit/run/spirit/relayServer.js');
   const nd = code('spirit/run/shell/natterDetails/natterDetails.js');
   const cs = code('spirit/run/shell/js/contacts/listElement.js');
   const ct = code('spirit/run/shell/contacts/contacts.js');
-  const login = code('spirit/run/face/login/login.js');
+  const login = code('spirit/run/shell/login/login.js');
   const checks = {
     ownerEventsWired: /faceHome\.ownerEvent\(/.test(srv),
     faceOnRelayEvent: /onRelayEvent/.test(shell) && /'relay-event'/.test(shell),
-    favicon: /🤓/.test(raw('spirit/run/face/favicon.svg')) && /favicon\.svg/.test(raw('spirit/run/face.html')) && /'\/face\/favicon\.svg'/.test(rs),
+    favicon: /🤓/.test(raw('spirit/run/shell/favicon.svg')) && /favicon\.svg/.test(raw('spirit/run/face.html')) && /'\/shell\/favicon\.svg'/.test(rs),
     tabTitle: /document\.title\s*=/.test(shell),
     atRestAtBoot: /\.atRest\(/.test(rs) && /memoryUsage\(\)\.rss/.test(rs),
     statusParts: /capacity/.test(code('spirit/run/spirit/relayStatus.js')) && /capacity/.test(nd) && /members a megabyte|members per megabyte|membersPerMB/.test(nd),

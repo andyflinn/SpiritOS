@@ -66,6 +66,10 @@ function iconsPanelDraw(host, page, api, row, glyph) {
   });
 }
 
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
+// through spirit.require, each element bringing its own.
+var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js'].map(function (p) { return spirit.require(p); }));
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var E = window.spirit.elements;
@@ -79,12 +83,15 @@ spirit.shell.activateApp({
         '</div>' +
         '<div data-icons="pane" class="fill"></div>' +
       '</div>';
-    window.spirit.elements.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
-    iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
-      api: api,
-      face: 'pane',
-      details: function (row, glyph) { iconsPanel(api, row, glyph); },
-    });
+    var drawn = iconsParts.then(function () {
+      E = window.spirit.elements;
+      E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
+      iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
+        api: api,
+        face: 'pane',
+        details: function (row, glyph) { iconsPanel(api, row, glyph); },
+      });
+    }, function () { container.querySelector('[data-icons="pane"]').textContent = 'Icons could not be loaded.'; });
     container.querySelector('[data-icons="add"]').addEventListener('click', function () {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
@@ -104,6 +111,7 @@ spirit.shell.activateApp({
         set[glyph] = words;
       }, said);
     });
+    return drawn;
   },
 
   render: function () {},

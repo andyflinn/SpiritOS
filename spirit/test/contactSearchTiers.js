@@ -163,9 +163,9 @@ const done = (async function () {
   const gotRename = out.some(function (e) { return e.event === 'contact.rename' && e.data && e.data.key === ann && e.data.caption === 'Annie'; });
   if (gotRow && gotRename) test.check('the face stream carries a peer-search row and a contact.rename');
   else test.fail(OWED + 'face stream: row ' + gotRow + ', rename ' + gotRename + ' in ' + short(out));
-  const faceShell = code('face/shell.js');
+  const faceShell = code('shell/boot.js');
   if (/contact\.rename/.test(faceShell) && /onContactRename/.test(faceShell)) test.check('the face shell hands contact.rename to onContactRename');
-  else test.fail(OWED + 'face/shell.js does not deliver contact.rename');
+  else test.fail(OWED + 'shell/boot.js does not deliver contact.rename');
 
   // ── 5. The shell: one list fed twice, Add on a network row ─────────────────────────────────────────────────────────
   test.subHeading('5. a network row lands in data.contacts; Add; the list is a view of the tree');

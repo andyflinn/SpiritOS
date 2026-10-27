@@ -7,6 +7,10 @@
 
 var filesList = null;
 var filesShown = null;                 // the media viewer open, dropped when another file or the list is shown
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
+// through spirit.require, each element bringing its own.
+var filesParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/textViewer.js', 'shell/js/mediaViewer.js', 'shell/js/fileViewer.js']
+  .map(function (p) { return spirit.require(p); }));
 
 // A FILE OPENED IS A PAGE (goal/G40.8: back is the same for everything, the frame's): pushed on the navigation, the
 // file's name the title, its viewer the whole page; no back row of its own. Popped, its media viewer is let go.
@@ -30,12 +34,14 @@ spirit.shell.activateApp({
     // Its list box takes the whole of its pane (goal/G40.8: space granted top-down).
     container.innerHTML = '<div data-files="list" class="fill"></div>';
     var listHost = container.querySelector('[data-files="list"]');
-    filesList = window.spirit.elements.fileList.create(listHost, {
-      api: api,
-      face: 'pane',
-      // A file found by its contents opens at that line with the words marked (goal/G29.11).
-      pick: function (row, key) { filesShow(key, row.line > 0 ? filesList.words() : '', row.line || 0); },
-    });
+    return filesParts.then(function () {
+      filesList = window.spirit.elements.fileList.create(listHost, {
+        api: api,
+        face: 'pane',
+        // A file found by its contents opens at that line with the words marked (goal/G29.11).
+        pick: function (row, key) { filesShow(key, row.line > 0 ? filesList.words() : '', row.line || 0); },
+      });
+    }, function () { listHost.textContent = 'Files could not be loaded.'; });
   },
 
   render: function () {},

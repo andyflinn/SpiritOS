@@ -22,6 +22,9 @@ window.spirit.fieldRules = { normalize: function (t) { return String(t || '').tr
   problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
 window.spirit.elements = { contactDetails: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
   natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } } };
+// The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
+const required = [];
+window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
 load(path.join(JS, 'spiritData.js'));
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
@@ -64,6 +67,11 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const opens = asked.splice(-2);
   if (opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[1].verb === 'natterDetails' && opens[1].body.url === 'wss://r.example') test.check('open: a contact\'s details by key, a relay\'s by its url');
   else test.fail('opens: ' + JSON.stringify(opens));
+  const pages = required.slice(-2).join(',');
+  if (pages === 'shell/js/contactDetails/contactDetails.js,shell/js/natterDetails/natterDetails.js') test.check('open loads the page it opens first, through spirit.require');
+  else test.fail('open required: ' + pages);
+  if (required[0] === 'shell/js/rowElement.js') test.check('the row loads the shared row element it is built on itself, through spirit.require');
+  else test.fail('as it loaded, the row required: ' + JSON.stringify(required.slice(0, 1)));
   const before = asked.length;
   const none = await held.act('block');
   if (none === null && asked.length === before) test.check('an action the row does not offer asks nothing');

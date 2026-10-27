@@ -239,13 +239,18 @@ function infoDrawRelays() {
 //
 // The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
+// the two forms, through spirit.require.
+var infoParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js'].map(function (p) { return spirit.require(p); }));
 function infoDrawFace() {
   // THE TWO FORMS, EACH THE SAME EVERYWHERE (goal/G40.10, box v19): the email form above the face form, each with its own
   // relay dropdown over the relays this node holds a seat on; the face form offers only those with a verified email.
-  var el = (window.spirit && window.spirit.elements) || {};
-  var escape = infoApi && infoApi.escapeHtml;
-  if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), pick: 'seated', escape: escape });
-  if (el.faceForm) el.faceForm.mount(document.getElementById('info-face'), { relays: infoSeats(), reload: function () { return infoLoadRelays(); }, escape: escape });
+  return infoParts.then(function () {
+    var el = (window.spirit && window.spirit.elements) || {};
+    var escape = infoApi && infoApi.escapeHtml;
+    if (el.joinForm) el.joinForm.mount(document.getElementById('info-email'), { relays: infoSeats(), pick: 'seated', escape: escape });
+    if (el.faceForm) el.faceForm.mount(document.getElementById('info-face'), { relays: infoSeats(), reload: function () { return infoLoadRelays(); }, escape: escape });
+  }, function () { /* a form missing is not drawn */ });
 }
 
 function infoLoad() {

@@ -5,6 +5,8 @@
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   var icons = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }

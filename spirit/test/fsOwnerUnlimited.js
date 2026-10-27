@@ -173,7 +173,7 @@ function waitForBoot(port) {
 
   // ── 4. THE FACE'S SAVE IN PARTS ──────────────────────────────────────
   // The shape, named by the builder under the item: {upload: {id, n, of, size, path, bytes}}, each part sealed on its own
-  // and sent as its own call (face/shell.js uploadSave, UPLOAD_PART bytes a part); the home node appends each part to
+  // and sent as its own call (shell/boot.js uploadSave, UPLOAD_PART bytes a part); the home node appends each part to
   // os.tmpdir()/spirit-upload-<id>, answers 202 to each but the last, and on the last checks the size, copies the work
   // file to the target through o.saveFrom, then deletes it. Driven here on faceHome itself, its clock handed in.
   test.subHeading('4. the face\'s save in parts, streamed to a work file in the system temp folder');
@@ -245,7 +245,7 @@ function waitForBoot(port) {
   // Each part fits one trip once sealed: the face seals it as one request, which the relay takes up to BODY_MAX.
   const seal = require('../run/spirit/seal');
   const sealedPart = JSON.stringify(Object.assign(seal.seal(me.sealPublicKey, me.publicKey, me.publicKey, JSON.stringify({ upload: { id: 'x'.repeat(24), n: 99, of: 100, size: 99999999, path: 'shell/icons/iconSet.json', bytes: Buffer.alloc(PART, 255).toString('base64') } })), { k: me.publicKey }));
-  const faceShell = code('face/shell.js');
+  const faceShell = code('shell/boot.js');
   if (Buffer.byteLength(sealedPart) < BODY_MAX && /var UPLOAD_PART = 8192;/.test(faceShell) && /String\(verb\) === 'fs\.save'[\s\S]{0,200}uploadSave\(args\)/.test(faceShell))
     test.check('the face sends an fs.save larger than one part in parts of ' + PART + ' bytes, each ' + Buffer.byteLength(sealedPart) + ' bytes sealed, inside one trip (' + BODY_MAX + ')');
   else test.fail(OWED + 'a sealed part is ' + Buffer.byteLength(sealedPart) + ' bytes against ' + BODY_MAX + ', or the face does not send fs.save in parts');

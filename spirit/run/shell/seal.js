@@ -1,4 +1,4 @@
-// spirit/run/face/seal.js
+// spirit/run/shell/seal.js (goal/G41.3: moved from face/seal.js unchanged)
 // THE NODE'S SEAL, IN THE BROWSER (goal/G30.11). Andy's box: "The seal is the node's own (X25519, HKDF-SHA256,
 // AES-256-GCM), done in the browser with WebCrypto." Byte for byte js/seal.js: ephemeral-static X25519, HKDF-SHA256
 // salted with the ephemeral and the recipient's keys and bound to the pair (from, to) under the label, AES-256-GCM with

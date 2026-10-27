@@ -16,6 +16,8 @@
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) ['shell/js/files/data.js', 'shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fileViewer.js'].forEach(function (p) { window.spirit.require(p); });
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;

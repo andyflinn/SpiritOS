@@ -24,7 +24,7 @@
 //   - relayServer.js: a request whose Host is a face is answered by the face, before the 404: GET / is face.html (with
 //     ?<token> it logs in and sets the cookie spirit_face), POST /face/api { verb: login | state | logout }; GET
 //     /face/allowed?domain=<host> answers 200 for a face it serves, for Caddy's on-demand certificate.
-//   - spirit/run/face.html, spirit/run/face/shell.js, spirit/run/face/login/login.json (steps: login, plumbing) and
+//   - spirit/run/face.html, spirit/run/shell/boot.js, spirit/run/shell/login/login.json (steps: login, plumbing) and
 //     login.js (onSteps), bash/face-setup.
 // rule/11: through testSupport only; its own scratch folders.
 
@@ -156,15 +156,15 @@ if (/faceAt\(/.test(server) && /\/face\/api/.test(server) && /\/face\/allowed/.t
   test.check('relayServer answers a face host before its 404: face.html, the token link setting the HttpOnly cookie spirit_face, /face/api, and /face/allowed for Caddy');
 else test.fail(OWED + 'relayServer has no door for faces');
 let loginManifest = null;
-try { loginManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'face', 'login', 'login.json'), 'utf8')); } catch (e) { loginManifest = null; }
-const loginApp = code('face/login/login.js');
+try { loginManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'login', 'login.json'), 'utf8')); } catch (e) { loginManifest = null; }
+const loginApp = code('shell/login/login.js');
 const faceHtml = code('face.html');
-const faceShell = code('face/shell.js');
+const faceShell = code('shell/boot.js');
 if (loginManifest && Array.isArray(loginManifest.steps) && loginManifest.steps.map(function (s) { return s.until; }).join(',') === 'login,link'
     && /onSteps:/.test(loginApp) && /home node/i.test(loginApp) && /Log in/.test(loginApp) && (loginApp.match(/<input/g) || []).length === 1)
   test.check('the login app is a steps app (login, then the link to the home node): one field, Log in, and after login it says how the home node is reached');
 else test.fail(OWED + 'the login app: manifest ' + short(loginManifest) + ', or its field, words or onSteps');
-if (/face\/shell\.js/.test(faceHtml) && /\.onSteps\(/.test(faceShell) && /'state'/.test(faceShell) && /get\('app'\)|location\.search/.test(faceShell))
+if (/spirit\.js/.test(faceHtml) && /var FACE = \['shell\/boot\.js'\]/.test(code('spirit.js')) && /\.onSteps\(/.test(faceShell) && /'state'/.test(faceShell) && /get\('app'\)|location\.search/.test(faceShell))
   test.check('face.html boots the face shell, which asks the relay where the user stands and hands it to the login app');
 else test.fail(OWED + 'face.html or the face shell is missing, or the shell decides nothing');
 const setup = (function () { try { return fs.readFileSync(path.join(ROOT, 'bash', 'face-setup'), 'utf8'); } catch (e) { return ''; } }());
@@ -174,13 +174,13 @@ else test.fail(OWED + 'bash/face-setup is missing, or writes no face.json or on-
 
 test.subHeading('5. the face looks and feels like the shell, in green (box v14)');
 // NAMED HERE: the shell's styles leave index.html for spirit/run/shell.css, its blues as variables on :root
-// (--shell-*); the face loads the same sheet (/face/shell.css) and spirit/run/face/face.css, which sets those
+// (--shell-*); the face loads the same sheet (/face/shell.css) and spirit/run/shell/face.css, which sets those
 // variables green. face.html has the shell's skeleton; the face shell opens the login app at once when logged out;
 // the login app draws its steps as Join does.
 const rawFile = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } };
 const index = rawFile('index.html');
 const sheet = rawFile('shell.css');
-const faceSheet = rawFile('face/face.css');
+const faceSheet = rawFile('shell/face.css');
 const rootVars = ((/:root\s*\{([^}]*)\}/.exec(sheet) || [])[1] || '');
 const outsideRoot = sheet.replace(/:root\s*\{[^}]*\}/, '');
 if (sheet.length > 10000 && /#desktop\s*\{/.test(sheet) && /<link rel="stylesheet" href="\/shell\.css"/.test(index) && !/#desktop\s*\{/.test(index)
@@ -190,16 +190,16 @@ else test.fail(OWED + 'the shell\'s styles are not one shared sheet with its blu
 const faceVars = ((/:root\s*\{([^}]*)\}/.exec(faceSheet) || [])[1] || '');
 const varNames = (rootVars.match(/--shell-[a-z0-9-]+/g) || []);
 // /shell.css is one path the node serves as it is and the relay serves too, so face.html works on both (box v16).
-if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('spirit/relayServer.js')) && /'\/face\/face\.css'/.test(code('spirit/relayServer.js')))
+if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('spirit/relayServer.js')) && /'\/shell\/face\.css'/.test(code('spirit/relayServer.js')))
   test.check('face.css sets every --shell-* variable green, and the relay serves both sheets to the face');
 else test.fail(OWED + 'face.css does not set every shell variable, or the relay does not serve the sheets: ' + short(varNames));
 const fh = rawFile('face.html');
-if (/href="\/shell\.css"/.test(fh) && /href="\/face\/face\.css"/.test(fh) && /id="desktop"/.test(fh) && /id="app-container"/.test(fh) && /id="app-header"/.test(fh)
+if (/href="\/shell\.css"/.test(fh) && /href="\/shell\/face\.css"/.test(fh) && /id="desktop"/.test(fh) && /id="app-container"/.test(fh) && /id="app-header"/.test(fh)
     && /id="app-close"/.test(fh) && /id="app-home"/.test(fh) && /id="app-title"/.test(fh) && /id="app-content"/.test(fh) && !/<style/.test(fh))
   test.check('face.html is the shell\'s skeleton (desktop, title bar with Back and Home, app screen) on the shared sheets, with no style of its own');
 else test.fail(OWED + 'face.html is not the shell\'s skeleton on the shared sheets');
-const fs2 = code('face/shell.js');
-const la = code('face/login/login.js');
+const fs2 = code('shell/boot.js');
+const la = code('shell/login/login.js');
 if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|loggedIn === false/.test(fs2) && /openLogin\(\)/.test(fs2)
     && /join-steps/.test(la) && /stat-tile wide/.test(la) && /start-job-form card/.test(la) && /field-label/.test(la))
   test.check('the face shell opens the login app at once when logged out, and the login app draws its steps as Join does');

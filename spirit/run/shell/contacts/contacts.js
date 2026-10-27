@@ -250,6 +250,10 @@ function contactsPaintUnknown() {
 // CONTACTS' PRESENCE SUBSCRIPTION STOOD HERE (contactsWatchPresence): contactElement holds the one subscription for
 // every contact row on the page (goal/G30.18).
 
+// WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
+// through spirit.require, the list bringing its own.
+var contactsParts = spirit.require('shell/js/contacts/listElement.js');
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     contactsApi = api;
@@ -369,11 +373,14 @@ spirit.shell.activateApp({
 
     // THE ONE LIST (goal/G30.19). A row opens the person (contactsDetails) or the relay (natterDetails) by its element's
     // open; a dialog that changed something asks the list again.
-    contactsList = window.spirit.elements.contactList.create(document.getElementById('contacts-book'), {
-      api: contactsApi,
-      say: contactsStatus,
-      empty: 'Nobody matches: the network is searched as you type.',
-    });
+    var book = document.getElementById('contacts-book');
+    return contactsParts.then(function () {
+      contactsList = window.spirit.elements.contactList.create(book, {
+        api: contactsApi,
+        say: contactsStatus,
+        empty: 'Nobody matches: the network is searched as you type.',
+      });
+    }, function () { book.textContent = 'The contacts list could not be loaded.'; });
   },
 
   render: function () {},

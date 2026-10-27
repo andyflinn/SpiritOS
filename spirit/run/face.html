@@ -4,7 +4,7 @@
      the home node at /face.html alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
      the app screen) on the shell's one sheet, /shell.css, with the face's green after it. Logged out, the desktop is
      empty but for the login app, which opens at once. Logged in, everything else comes from the home node over the
-     sealed link (goal/G30.11; face/seal.js is the node's seal in WebCrypto, face/shell.js says the rest); the not
+     sealed link (goal/G30.11; shell/seal.js is the node's seal in WebCrypto, shell/boot.js says the rest); the not
      connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device).
      IT HOLDS spirit.js ALONE (goal/G40.6): data-spirit="face" says what this page is, and spirit.js, inline and first,
      loads the face shell itself; the seal comes once the face links to its home node. -->
@@ -14,9 +14,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- spirit.js -->
   <title>Face</title>
-  <link rel="icon" type="image/svg+xml" href="/face/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/shell/favicon.svg" />
   <link rel="stylesheet" href="/shell.css" />
-  <link rel="stylesheet" href="/face/face.css" />
+  <link rel="stylesheet" href="/shell/face.css" />
 </head>
 <body>
   <div id="face-banner" hidden></div>

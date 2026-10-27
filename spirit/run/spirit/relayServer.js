@@ -417,16 +417,18 @@ function isRelayPublicPath(method, pathname) {
 // The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
 // home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
 // relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
-// The face shell's files are served from spirit/run/face/ alone. Nothing reaches the home node yet: that is the
+// The face shell's files are served from spirit/run/shell/ alone (goal/G41.3; face/ until then). Nothing reaches the home node yet: that is the
 // plumbing, the next item.
 //
 // /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
 // fetches a certificate for that name on demand (bash/face-setup).
-const FACE_DIR = path.join(__dirname, '..', 'face');
+// goal/G41.3: face/ moved into shell/ (face/shell.js is shell/boot.js), so the face's files come from there, at their
+// new addresses; the old /face/<file> addresses are gone (the routes /face/allowed, call, file, stream and api stay).
+const FACE_DIR = path.join(__dirname, '..', 'shell');
 // /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
 // (goal/G30.9, box v16); face.css turns its colours green.
 // face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
-const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/seal.js': 'seal.js', '/face/favicon.svg': 'favicon.svg', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+const FACE_FILES = { '/shell.css': '../shell.css', '/shell/face.css': 'face.css', '/shell/boot.js': 'boot.js', '/shell/seal.js': 'seal.js', '/shell/favicon.svg': 'favicon.svg', '/shell/login/login.js': 'login/login.js', '/shell/login/login.json': 'login/login.json' };
 const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));

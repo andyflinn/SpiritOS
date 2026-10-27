@@ -22,7 +22,7 @@
 // A request { get: path } is a file, served by the node's own GET (serveFile, the gate the browser's GET passes);
 // any other is { verb, ...args } through call (nodeDoor.call, the puppeteer's door).
 
-// THE SEALED LINK (goal/G30.11). A face that can seal (face/seal.js, the node's own seal in WebCrypto) makes one key for
+// THE SEALED LINK (goal/G30.11). A face that can seal (shell/seal.js, the node's own seal in WebCrypto) makes one key for
 // its session and sends each request as { sealed: 1, e, n, c, k }, sealed from its key k to this node's key; the answer
 // is ndjson, each line sealed from this node to k: first { status, type }, then the body in pieces of FACE_PIECE bytes,
 // each piece's text its bytes in base64. Its stream is sealed to k line by line, k handed over by face-open. A face

@@ -30,6 +30,9 @@ window.spirit.elements = {
   contactDetails: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
   natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } },
 };
+// The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
+const required = [];
+window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
 let onUpdate = null; let unsubscribed = 0;
 window.spirit.events = { subscribe: function (h) { onUpdate = h.onUpdate; return function () { unsubscribed += 1; }; } };
 load(path.join(JS, 'spiritData.js'));
@@ -42,6 +45,11 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
 
 (async function () {
   test.startTest('contacts/listElement.js: the contacts list');
+
+  test.subHeading('it loads what it uses');
+  const own = ['shell/js/contacts/data.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'];
+  if (own.every(function (p) { return required.indexOf(p) !== -1; })) test.check('loading, it requires its data, its row and the search element through spirit.require');
+  else test.fail('as it loaded, the list required: ' + JSON.stringify(required));
 
   test.subHeading('the show filter: all, then each kind the list holds');
   const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };

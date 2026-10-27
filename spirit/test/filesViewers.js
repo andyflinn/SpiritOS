@@ -50,7 +50,7 @@ const done = (async function () {
   if (/fileList\.create\(/.test(code('shell/files/files.js')) && /probabilitySearch\.create\(/.test(filesApp) && /fileElement\.create\(/.test(filesApp) && !/createFileSelector/.test(filesApp) && /'fs\.search'|verb: 'search'/.test(filesApp))
     test.check('Files lists through probabilitySearch over fs.search with fileElement rows');
   else test.fail(OWED + 'Files still uses the file selector, or not the list-tool with file rows');
-  const face = code('face/shell.js');
+  const face = code('shell/boot.js');
   // The face's apps are the home node's data: the manifests in data.files whose runs names face (goal/G30.20), no list
   // in the relay's file.
   if (!/FIRST_APPS/.test(face) && /watch\('files'/.test(face) && /spirit\.transport = \{[^}]*file:/.test(face))

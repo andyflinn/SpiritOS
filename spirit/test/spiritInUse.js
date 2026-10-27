@@ -99,24 +99,24 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
 
   // THE FACE WITHOUT kernel.js (goal/G40.7; Andy: "i just want to get rid of kernel.js in all of the face right now").
   test.subHeading('1b. the face loads no kernel.js, reads no index.html, and puts nothing on window but spirit');
-  const faceShell = code('face/shell.js');
+  const faceShell = code('shell/boot.js');
   const listAt = /var FACE_PARTS = (\[[^\]]*\])/.exec(faceShell);
   let parts = null;
   try { parts = listAt ? JSON.parse(listAt[1].replace(/'/g, '"').replace(/,\s*\]/, ']')) : null; } catch (e) { parts = null; }
   if (parts && parts.length && parts.indexOf('spirit/kernel.js') === -1 && !/index\.html/.test(faceShell)) test.check('the face shell fetches its own list of ' + parts.length + ' parts from home (FACE_PARTS), kernel.js not among them, and reads no index.html');
-  else test.fail('the face\'s parts: ' + (parts ? 'kernel.js on the list or index.html read' : 'no FACE_PARTS list in face/shell.js') + (/index\.html/.test(faceShell) ? ', still reads index.html' : ''));
+  else test.fail('the face\'s parts: ' + (parts ? 'kernel.js on the list or index.html read' : 'no FACE_PARTS list in shell/boot.js') + (/index\.html/.test(faceShell) ? ', still reads index.html' : ''));
   const missing = (parts || []).filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
   if (parts && !missing.length) test.check('every part on the face\'s list is there');
   else test.fail('parts not there: ' + short(missing));
   const FACE_APPS = ['shell/contacts/contacts.js', 'shell/files/files.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/mediaViewer/mediaViewer.js'];
-  const faceLoads = ['face/shell.js', 'face/seal.js', 'face/login/login.js'].concat(FACE_APPS, (parts || []).filter(function (p) { return /\.js$/.test(p); }));
+  const faceLoads = ['shell/boot.js', 'shell/seal.js', 'shell/login/login.js'].concat(FACE_APPS, (parts || []).filter(function (p) { return /\.js$/.test(p); }));
   // The kernel's object, by any name: spirit.core, window.spirit.core, a core() helper over it (a file's own core flag,
   // v.core or cmd.core, is a field of the row, not the kernel).
   const onCore = faceLoads.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /spirit\.core\b|\bcore\(\)|spirit\s*&&\s*spirit\.core/.test(code(f)); });
   if (parts && !onCore.length) test.check('nothing the face loads touches the kernel\'s object: its shell, seal, login, apps and ' + parts.length + ' parts (' + faceLoads.length + ' files read)');
   else test.fail('still on the kernel, on a face: ' + short(onCore));
   const onWindow = all.filter(function (f) { return /\bfaceSeal\b|\bfaceShell\b/.test(code(f)); });
-  if (!onWindow.length && /\.seal\s*=/.test(code('face/seal.js')) && /spirit\.shell\b/.test(code('face/login/login.js'))) test.check('no window.faceSeal and no window.faceShell: the seal is spirit.seal, and the login app hands itself to spirit.shell');
+  if (!onWindow.length && /\.seal\s*=/.test(code('shell/seal.js')) && /spirit\.shell\b/.test(code('shell/login/login.js'))) test.check('no window.faceSeal and no window.faceShell: the seal is spirit.seal, and the login app hands itself to spirit.shell');
   else test.fail('the face\'s globals: ' + short(onWindow));
 
   // FACE BUGS (goal/G40.8): the box's requirements, each as it can be read off the code.
@@ -147,7 +147,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     /data-apps="list" class="fill"/.test(code('shell/apps/apps.js'));
   if (!/container\.style\./.test(ps) && filled) test.check('space is granted top-down: the list search sets no size on its box; Files and Icons size the boxes they hand it (shell.css .fill)');
   else test.fail('top-down space: the list search ' + (/container\.style\./.test(ps) ? 'still sizes its box' : 'sizes nothing') + ', Files and Icons ' + (filled ? 'size their boxes' : 'hand it unsized boxes'));
-  const faceCss = fs.readFileSync(path.join(RUN, 'face', 'face.css'), 'utf8');
+  const faceCss = fs.readFileSync(path.join(RUN, 'shell', 'face.css'), 'utf8');
   if (/THE CONTAINED APP/.test(faceCss) && /overflow:\s*hidden/.test(faceCss) && /100vh|100dvh|height:\s*100%/.test(faceCss)) test.check('the face is a contained app: the window is the screen, nothing but a list or a viewer scrolls (face.css)');
   else test.fail('the face sets no contained layout in face.css');
   const relayApi = fs.readFileSync(path.join(RUN, 'spirit', 'relay', 'api.js'), 'utf8');
@@ -194,7 +194,9 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const DETAILS = ['shell/js/contactDetails/contactDetails.js', 'shell/js/natterDetails/natterDetails.js'];
   const detailsThere = DETAILS.filter(function (f) { return fs.existsSync(path.join(RUN, f)) && /navigation\.push\(/.test(code(f)); });
   const appsGone = !fs.existsSync(path.join(RUN, 'shell', 'contactsDetails')) && !fs.existsSync(path.join(RUN, 'shell', 'natterDetails'));
-  if (detailsThere.length === 2 && appsGone && DETAILS.every(function (f) { return (parts || []).indexOf(f) !== -1; })) test.check('contactsDetails and natterDetails are no apps any more: two shell elements in shell/js/, each pushing its page through the wrapper, on the face\'s parts');
+  // Since goal/G41.3 the row that opens them loads them, never boot.
+  const rowCode = code('shell/js/contacts/rowElement.js');
+  if (detailsThere.length === 2 && appsGone && DETAILS.every(function (f) { return (parts || []).indexOf(f) === -1 && rowCode.indexOf(f) !== -1; })) test.check('contactsDetails and natterDetails are no apps any more: two shell elements in shell/js/, each pushing its page through the wrapper, loaded by the row that opens them');
   else test.fail('the details: elements ' + short(detailsThere) + ', the old app folders ' + (appsGone ? 'gone' : 'still there'));
   // The face's detail pages and their face callers: no result handed back or read, nothing opening them as apps. The
   // Desk's own details run in the old shell only, which is not touched.
@@ -273,7 +275,8 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
   const faceApi = (faceShell.match(/function apiFor\(page\) \{[\s\S]*?\n  \}/) || [''])[0];
   const infoCalls = (infoCode.match(/infoApi\.(\w+)/g) || []).map(function (s) { return s.slice(8); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
   const missingApi = infoCalls.filter(function (n) { return !new RegExp('\\b' + n + ':').test(faceApi); });
-  if (infoCalls.length && !missingApi.length && /spirit\.relay\.status\(/.test(infoCode) && (parts || []).indexOf('shell/js/faceForm.js') !== -1 && (parts || []).indexOf('spirit/fieldRules.js') !== -1)
+  // Since goal/G41.3 Info loads the face form itself, never boot.
+  if (infoCalls.length && !missingApi.length && /spirit\.relay\.status\(/.test(infoCode) && /spirit\.require\(p\)/.test(infoCode) && infoCode.indexOf('shell/js/faceForm.js') !== -1 && (parts || []).indexOf('spirit/fieldRules.js') !== -1)
     test.check('everything Info calls the face gives it: ' + infoCalls.join(', ') + ', spirit.relay.status, the face form and the field rules');
   else test.fail('Info calls what the face does not give it: ' + short(missingApi));
   // INFO'S FIXES (box v15): the foot gone, key and sentence; the email form in Info, above the face form, with its own
@@ -1284,7 +1287,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     // The face from the node itself (goal/G40.10): face.html with spirit.js filled in, no kernel.js on it, and the face
     // shell served beside it.
     const facePage = await fetch('http://127.0.0.1:' + port + '/face.html').then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-    const faceJs = await fetch('http://127.0.0.1:' + port + '/face/shell.js').then(function (r) { return r.status; }, function () { return 0; });
+    const faceJs = await fetch('http://127.0.0.1:' + port + '/shell/boot.js').then(function (r) { return r.status; }, function () { return 0; });
     if (facePage.status === 200 && /THE ONE INSTANCE/.test(facePage.text) && !/<!-- spirit\.js -->/.test(facePage.text) && !/kernel\.js/.test(facePage.text.replace(/\/\/[^\n]*/g, '')) && faceJs === 200)
       test.check('the node serves its own face: /face.html with spirit.js filled in and no kernel.js, and the face shell beside it');
     else test.fail('the face from the node: ' + facePage.status + ', shell ' + faceJs + (/<!-- spirit\.js -->/.test(facePage.text) ? ', spirit.js not filled in' : ''));

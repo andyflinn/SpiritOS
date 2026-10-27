@@ -1848,6 +1848,8 @@ var ndPage = ({
   },
 
 });
+// The join form it draws with, it loads itself (goal/G41.3), through spirit.require.
+if (window.spirit && window.spirit.require) window.spirit.require('shell/js/joinForm.js');
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
 // shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).

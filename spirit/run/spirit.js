@@ -357,16 +357,41 @@
     new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-component/' + p)(m, m.exports);
     return m.exports;
   }
+  // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation
+  // MUST, like a node.js require, de-dupe the require, it a script was already loaded", and "lazy-load, is a tree....".
+  // A path required twice is fetched and run once, every caller getting the same answer; a script the boot loaded counts
+  // as required. What a component requires while it runs is its tree: its own require answers once those have.
+  var requiredOnce = Object.create(null);
+  var collecting = null;
+  function loadedByTag(p) {
+    try { return !!(typeof document !== 'undefined' && document.querySelector && document.querySelector('script[src="/' + p + '"]')); } catch (e) { return false; }
+  }
+  // The page's own tags have all run once it is parsed.
+  function parsed() {
+    if (typeof document === 'undefined' || document.readyState !== 'loading') return Promise.resolve();
+    return new Promise(function (resolve) { document.addEventListener('DOMContentLoaded', function () { resolve(); }, { once: true }); });
+  }
   function requireOne(path, key, how) {
     var p = String(path || '').replace(/^\/+/, '');
     var fam = interfaceName(p);
     if (fam && key) return bindPeer(key, fam, how);
     if (fam) return bindOwn(fam);
-    if (isNode()) return new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); });
-    return get(p).then(function (r) {
+    if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
+    // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
+    if (!isNode() && loadedByTag(p)) { requiredOnce[p] = Promise.resolve({}); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
+    var answer = isNode() ? new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); }) : get(p).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
-      return runComponent(text(r.bytes), p);
+      var outer = collecting;
+      var tree = collecting = [];
+      var exports;
+      try { exports = runComponent(text(r.bytes), p); } finally { collecting = outer; }
+      return Promise.all(tree).then(function () { return exports; });
     });
+    requiredOnce[p] = answer;
+    // A refused require is not kept: it may be asked again.
+    answer.then(null, function () { if (requiredOnce[p] === answer) delete requiredOnce[p]; });
+    if (collecting) collecting.push(answer);
+    return answer;
   }
 
   // THE MIME TYPES (goal/G40.1), the spirit object's own table. Andy: "MIME types can easily be added to spirit.js", and
@@ -657,7 +682,11 @@
         return { ok: false, code: 'not-posted', error: 'the node stream could not open: ' + ((e && e.message) || e) };
       });
     };
+    // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2), in a process as on a page: spirit.data, filled by each type's
+    // translator, which its type loads; a process follows a stream only through appServer's streamListener.
+    // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
     module.exports = self;
+    requireOne('shell/js/spiritData.js').then(null, function () { /* a run tree without the cache runs uncached */ });
     return;
   }
 
@@ -673,6 +702,11 @@
     if (started) return started;
     started = tree().then(function (names) {
       return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
+    }).then(function () {
+      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own
+      // translator, which its type loads. A page without it still runs, uncached. Asked once the page is parsed, so a
+      // page that loads it by tag keeps the one cache it made.
+      return parsed().then(function () { return requireOne('shell/js/spiritData.js'); }).then(null, function () { /* no cache served here */ });
     }).then(function () { return self; });
     self.ready = started;
     return started;
@@ -683,7 +717,7 @@
   // holds spirit.js alone; spirit.js gets the face shell once the page's body is there, and spirit.booted answers when it
   // runs. The seal is not loaded here: a face needs it only once it is logged in and links to its home node, and the
   // home node itself never does.
-  var FACE = ['face/shell.js'];
+  var FACE = ['shell/boot.js'];
   function inject(p, src) {
     var el = root.document.createElement('script');
     el.textContent = src + '\n//# sourceURL=' + p;
@@ -694,6 +728,8 @@
       return chain.then(function () { return get(p); }).then(function (r) {
         if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
         inject(p, text(r.bytes));
+        // What the boot loaded counts as required (goal/G41.3): requiring it again runs nothing.
+        requiredOnce[p] = Promise.resolve({});
       });
     }, Promise.resolve());
   }

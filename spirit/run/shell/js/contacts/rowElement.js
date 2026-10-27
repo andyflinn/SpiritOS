@@ -15,6 +15,8 @@
 // once.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  if (window.spirit.require) window.spirit.require('shell/js/rowElement.js');
   var contacts = null;
   var subscribed = false;
 
@@ -59,13 +61,14 @@
     function bookOf(v) { return v.keep === true || v.mine === true || v.blocked === true; }
     var relayActions = [
       // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
+      // The page loads when it is first opened (goal/G41.3), through spirit.require.
       { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.elements.natterDetails.open({ url: String(el.row.url || el.key) });
+        return window.spirit.require('shell/js/natterDetails/natterDetails.js').then(function () { return window.spirit.elements.natterDetails.open({ url: String(el.row.url || el.key) }); });
       } },
     ];
     var bookActions = [
       { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.elements.contactDetails.open({ key: el.key });
+        return window.spirit.require('shell/js/contactDetails/contactDetails.js').then(function () { return window.spirit.elements.contactDetails.open({ key: el.key }); });
       } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
       { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
