@@ -45,8 +45,13 @@ first displayed."
 - **Start design and End design** in the details panel (`dd-start-design`, `dd-end-design`) are armingButtons: the
   first press arms, the second presses `start-design` / `end-design`.
 - **Rename** opens its field (`dd-name`) holding the current title of the goal or item; Save sends the title as edited.
+- **The chat keeps what it shows** (Andy: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS
+  REDRAWN, killing my attempted copies"): a new line from the stream is put in at the top (newest first), and every line
+  already shown stays the same element, through that line and through any other repaint (a check, a status), so a
+  selection survives. The whole chat is drawn again only when the panel reloads (a dropped update, another subject).
 
 ## What its test must try to break (goal/G41.11)
 
 - A red Q cleared, or design started or ended, on one press; the remove or a design button not made by armingButton.
 - A rename field that opens empty, on an item or a goal.
+- A chat line drawn again by a new line or by a repaint that is no chat line.

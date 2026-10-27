@@ -342,5 +342,31 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
   const again = rulePick(rw);
   ok(!!again && inPage(rw, again.host) && shown(again.host), 'away from the rules and back, the dropdown is shown again', 'after reopening: ' + JSON.stringify({ made: rw.searches.length, shown: !!again && shown(again.host) }));
+  test.subHeading('goal/G41.11: a new chat line is put in on top; the lines shown stay as they are');
+  // Andy, on G41.11: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing my attempted
+  // copies". A line already shown is the same element after a new line comes and after any other repaint.
+  const CHATTY = Object.assign({}, ITEM, { id: 'goal/G9.6' });
+  const L1 = { by: 'andy', at: '2026-10-27T10:00:00.000Z', text: 'the first line' };
+  const L2 = { by: 'claude-windows', at: '2026-10-27T10:01:00.000Z', text: 'the second line' };
+  const L3 = { by: 'wsl-claude', at: '2026-10-27T10:02:00.000Z', text: 'the third line' };
+  const cw = ddWorld(CHATTY, []);
+  let heard = null;
+  cw.api.onPublished = function (fn, from) { if (from === 'desk' || !heard) heard = fn; return function () {}; };
+  const verbBefore = cw.api.verb;
+  cw.api.verb = function (name, args) { if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(name, args); };
+  await cw.open();
+  const log = function () { return cw.document.getElementById('dd-chat'); };
+  const shownNow = function () { return (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); };
+  const before = shownNow();
+  ok(before.length === 2 && /second/.test(before[0].textContent), 'it opens with the two lines, newest first', 'shown: ' + JSON.stringify(before.map(function (b) { return b.textContent; })));
+  if (heard) { heard({ change: 50, table: 'chat', id: CHATTY.id, row: L3 }); await settle(); }
+  const afterLine = shownNow();
+  ok(afterLine.length === 3 && /third/.test(afterLine[0].textContent), 'a new line on the stream is put in on top', 'shown: ' + JSON.stringify(afterLine.map(function (b) { return b.textContent; })));
+  ok(afterLine.length === 3 && afterLine[1] === before[0] && afterLine[2] === before[1], 'the two lines already shown are the same elements as before: not drawn again',
+    'drawn again: ' + JSON.stringify({ second: afterLine[1] === before[0], first: afterLine[2] === before[1] }));
+  if (heard) { heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
+  const afterOther = shownNow();
+  ok(afterOther.length === 3 && afterOther[0] === afterLine[0] && afterOther[1] === before[0] && afterOther[2] === before[1],
+    'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

@@ -196,7 +196,13 @@ test.startTest('deskChat.js: an item\'s chat, one copy for every page');
   ok(say.value === '' && w.document.getElementById('desk-chat-goal-G9-1-error').textContent === '', 'kept: the box and the error line are emptied', JSON.stringify(say.value));
 
   test.subHeading('the stream: its own lines join, a take replaces, a gap reads again');
+  // A NEW LINE IS ADDED, THE LINES SHOWN STAY (Andy, goal/G41.11: "in ALL the chats, new lines are no added, THE WHOLE
+  // FUCKING THING IS REDRAWN, killing my attempted copies"): the elements of the lines already shown are the same ones.
+  const before = w.document.getElementById('desk-chat-goal-G9-1-log').children.slice();
   s.push({ change: 10, table: 'chat', id: 'goal/G9.1', row: { by: 'cw', at: '2026-10-27T10:02:00.000Z', text: 'third' } }); await settle();
+  const after = w.document.getElementById('desk-chat-goal-G9-1-log').children;
+  ok(before.length === 2 && after.length === 3 && after[1] === before[0] && after[2] === before[1], 'a new line is put in on top, and the lines already shown are left as they are (the same elements), so a selection survives',
+    'lines before ' + before.length + ', after ' + after.length + ', kept: ' + JSON.stringify([after[1] === before[0], after[2] === before[1]]));
   let shown = w.document.getElementById('desk-chat-goal-G9-1-log').children.map(function (b) { return b.textContent; });
   ok(shown.length === 3 && /third/.test(shown[0]), 'a chat row of its id joins the log, newest first', short(shown));
   s.push({ change: 11, table: 'chat', id: 'goal/G9.1', row: { by: 'cw', name: 'cw', at: L2.at, text: 'second' } }); await settle();

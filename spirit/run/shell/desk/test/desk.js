@@ -282,5 +282,34 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     ok(painted.length > 0, pair[1] + ': its colour comes from a class shell.css paints only while unarmed (.' + painted[0] + ':not([data-armed]))',
       pair[1] + ': classes ' + JSON.stringify(classes) + ', none painted by shell.css under :not([data-armed])');
   });
+  test.subHeading('goal/G41.11: Team puts a new line in on top; the lines shown stay as they are');
+  // Andy, on G41.11: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing my attempted
+  // copies". A line already shown in Team is the same element after a new line comes and after any other repaint.
+  const T1 = { by: 'andy', at: '2026-10-27T10:00:00.000Z', text: 'the first line' };
+  const T2 = { by: 'claude-windows', at: '2026-10-27T10:01:00.000Z', text: 'the second line' };
+  const T3 = { by: 'wsl-claude', at: '2026-10-27T10:02:00.000Z', text: 'the third line' };
+  const wt = deskWorld(goal, []);
+  const hearers = [];
+  wt.api.onPublished = function (fn) { hearers.push(fn); return function () {}; };
+  const verbT = wt.api.verb;
+  wt.api.verb = function (name, args) { if (name === 'desk.item.chat' && args && args.id === 'goal/G0') return Promise.resolve({ status: 200, body: { ok: true, chat: [T1, T2] } }); return verbT(name, args); };
+  // The page's own element for its Team chat, as the page has it (shell/shared/js/deskElement.js).
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskElement.js'), 'utf8'), wt.win, { filename: 'deskElement.js' });
+  await wt.mount();
+  const heardBy = async function (obj) { hearers.slice().forEach(function (fn) { fn(obj); }); await settle(); };
+  const team = function () { return wt.document.getElementById('desk-team'); };
+  const teamLines = function () { return (team() ? team().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); };
+  const tBefore = teamLines();
+  ok(tBefore.length === 2 && /second/.test(tBefore[0].textContent), 'Team opens with the two lines, newest first', 'shown: ' + JSON.stringify(tBefore.map(function (b) { return b.textContent; })));
+  await heardBy({ change: 50, table: 'chat', id: 'goal/G0', row: T3 });
+  const tAfter = teamLines();
+  ok(tAfter.length === 3 && /third/.test(tAfter[0].textContent), 'a new line on the stream is put in on top', 'shown: ' + JSON.stringify(tAfter.map(function (b) { return b.textContent; })));
+  ok(tAfter.length === 3 && tAfter[1] === tBefore[0] && tAfter[2] === tBefore[1], 'the two lines already shown are the same elements as before: not drawn again',
+    'drawn again: ' + JSON.stringify({ second: tAfter[1] === tBefore[0], first: tAfter[2] === tBefore[1] }));
+  // Another change: a new item on the List, which redraws the page around Team.
+  await heardBy({ change: 51, item: { id: 'goal/G9.7', goal: 'goal/G9', title: 'A new item', status: 'open', verified: 'none', blocked: [], buttons: [] } });
+  const tOther = teamLines();
+  ok(tOther.length === 3 && tOther[0] === tAfter[0] && tOther[1] === tBefore[0] && tOther[2] === tBefore[1],
+    'a change that is no Team line (a new List row) leaves every Team line as it was', 'drawn again by a List row');
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
