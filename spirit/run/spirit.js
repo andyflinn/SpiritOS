@@ -347,15 +347,11 @@
   // page and in node. path is from the run root. A path in the node's own naming of an interface,
   // <name>/<name>.family/api.js (a server's) or spirit/<name>/api.js (a node family's), binds that family: on the
   // instance as spirit.<name> from this VM's node, or with a key as that peer's family (how, in node, is peerPost's
-  // waiting). Any other path is a component, its module.exports: in node required, on a page got and run.
+  // waiting). Any other path is a component: in node required, answering its module.exports; on a page got and run as a
+  // plain script (a stylesheet put on as a style), answering an empty object.
   function interfaceName(p) {
     var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
-  }
-  function runComponent(source, p) {
-    var m = { exports: {} };
-    new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-component/' + p)(m, m.exports);
-    return m.exports;
   }
   // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation
   // MUST, like a node.js require, de-dupe the require, it a script was already loaded", and "lazy-load, is a tree....".
@@ -383,9 +379,12 @@
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
       var tree = collecting = [];
-      var exports;
-      try { exports = runComponent(text(r.bytes), p); } finally { collecting = outer; }
-      return Promise.all(tree).then(function () { return exports; });
+      // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require
+      // interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): every shell element puts itself into
+      // window.spirit as it runs, so none is handed a module box, and a file written for both node and a page
+      // (CodeMirror's) takes its page branch. A stylesheet goes on the page as a style. The answer is an empty object.
+      try { inject(p, text(r.bytes)); } finally { collecting = outer; }
+      return Promise.all(tree).then(function () { return {}; });
     });
     requiredOnce[p] = answer;
     // A refused require is not kept: it may be asked again.
@@ -721,6 +720,12 @@
   // home node itself never does.
   var FACE = ['shell/boot.js'];
   function inject(p, src) {
+    if (/\.css$/.test(p)) {
+      var style = root.document.createElement('style');
+      style.textContent = src;
+      root.document.head.appendChild(style);
+      return;
+    }
     var el = root.document.createElement('script');
     el.textContent = src + '\n//# sourceURL=' + p;
     root.document.body.appendChild(el);

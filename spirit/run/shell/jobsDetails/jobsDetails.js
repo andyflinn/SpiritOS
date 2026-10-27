@@ -152,11 +152,15 @@ spirit.shell.activateApp({
           '<div id="jd-extract" style="height:33vh;overflow:auto"></div></div>' +
       '</div>';
 
-    var make = api.ui && api.ui.elements && api.ui.elements.createTextView;
+    // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded by this app.
     var extract = document.getElementById('jd-extract');
-    if (typeof make === 'function' && extract) {
-      jdView = make(extract, { text: '', readOnly: true, path: 'event.json' });
-      if (jdView && jdView.cm && typeof jdView.cm.setSize === 'function') jdView.cm.setSize('100%', '100%');
+    if (extract) {
+      Promise.resolve(spirit.require('shell/js/codeMirror.js')).then(function () {
+        return window.spirit.elements.codeMirror.create(extract, { mode: 'read', text: '', path: 'event.json' });
+      }).then(function (view) {
+        jdView = view;
+        if (jdView && jdView.cm && typeof jdView.cm.setSize === 'function') jdView.cm.setSize('100%', '100%');
+      }, function () { /* the Extract box stays empty */ });
     }
 
     // The shell's live jobs, once for the pane's life. Every job's events are heard; the screen repaints when the

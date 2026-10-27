@@ -1,17 +1,15 @@
 // spirit/run/shell/js/textViewer.js
-// A TEXT FILE, SHOWN (goal/G30.16), on fileViewer: read-only in CodeMirror (shell/js/textView.js), the search words
-// marked and the first in view. Editing stays the handler's (the textEditor app, through Open with). A process
+// A TEXT FILE, SHOWN (goal/G30.16), on fileViewer: in the codeMirror element's read mode (shell/js/codeMirror.js,
+// goal/G41.7), the search words marked and the first in view. Editing stays the handler's (the textEditor app, through Open with). A process
 // script with a manifest also gets its job form: Start Job, and the switch to include or exclude it on this node.
 //
 //   textViewer.create(host, { path, words, line, launcherId })
 //
-// CODEMIRROR LOADS WHEN FIRST NEEDED. At home index.html has loaded it already; on a face it is read through the link,
-// the same files index.html names, in its order, once.
+// CODEMIRROR IS THE ELEMENT'S TO LOAD (goal/G41.7): this viewer reads nothing of index.html and loads no library itself.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['shell/js/fileViewer.js', 'shell/js/textView.js'].forEach(function (p) { window.spirit.require(p); });
-  var codeMirror = null;
+  if (window.spirit.require) ['shell/js/fileViewer.js', 'shell/js/codeMirror.js'].forEach(function (p) { window.spirit.require(p); });
 
   function sp() { return window.spirit || {}; }
   function esc(s) {
@@ -20,25 +18,6 @@
   }
   function text(r) { return new TextDecoder().decode(r.bytes); }
 
-  function ensureCodeMirror() {
-    if (window.CodeMirror) return Promise.resolve();
-    if (codeMirror) return codeMirror;
-    var read = E.fileViewer.read;
-    codeMirror = read('index.html').then(function (r) {
-      var doc = new DOMParser().parseFromString(text(r), 'text/html');
-      var parts = Array.prototype.map.call(doc.querySelectorAll('link[rel="stylesheet"][href], script[src]'), function (el) {
-        return String(el.getAttribute('href') || el.getAttribute('src') || '').replace(/^\/+/, '');
-      }).filter(function (p) { return p.indexOf('shell/node_modules/codemirror/') === 0; });
-      return parts.reduce(function (chain, p) {
-        return chain.then(function () { return read(p); }).then(function (f) {
-          var el = document.createElement(/\.css$/.test(p) ? 'style' : 'script');
-          el.textContent = text(f) + (/\.css$/.test(p) ? '' : '\n//# sourceURL=' + p);
-          (/\.css$/.test(p) ? document.head : document.body).appendChild(el);
-        });
-      }, Promise.resolve());
-    });
-    return codeMirror;
-  }
 
   // A process script with a manifest: its job form (moved from index.html, now asking only asynchronously).
   function jobForm(host, path) {
@@ -88,11 +67,9 @@
     body.innerHTML = '<div data-part="job"></div><div class="text-view"></div>';
     jobForm(body.querySelector('[data-part="job"]'), path);
     var view = body.querySelector('.text-view');
-    return Promise.all([ensureCodeMirror(), E.fileViewer.read(path)]).then(function (got) {
-      var r = got[1];
-      E.createTextView(view, { text: r.status === 200 ? text(r) : '(could not load file)', words: o.words || '', line: o.line || 0, readOnly: true, path: path });
-      return frame;
-    }, function (e) { view.textContent = '(could not load file: ' + ((e && e.message) || e) + ')'; return frame; });
+    return E.fileViewer.read(path).then(function (r) {
+      return E.codeMirror.create(view, { mode: 'read', text: r.status === 200 ? text(r) : '(could not load file)', words: o.words || '', line: o.line || 0, path: path });
+    }).then(function () { return frame; }, function (e) { view.textContent = '(could not load file: ' + ((e && e.message) || e) + ')'; return frame; });
   }
 
   E.textViewer = { create: create };

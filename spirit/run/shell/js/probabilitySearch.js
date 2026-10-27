@@ -491,7 +491,7 @@
 
   // THE ONE MARKING RULE, moved here from listSearch.js (goal/G40.8) (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
   // place each word stands, partial words included, case ignored, as [from, to) index pairs in order. The list marks its
-  // rows with it, and the text view (shell/js/textView.js) marks a file's text with it, so the two never drift apart.
+  // rows with it, and the codeMirror element (shell/js/codeMirror.js) marks a file's text with it, so the two never drift apart.
   function matchRanges(text, words) {
     var s = String(text == null ? '' : text);
     var ws = String(words || '').split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });

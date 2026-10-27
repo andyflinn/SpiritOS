@@ -86,7 +86,7 @@ The one async function that loads every other component, the same on a page and 
 
 | path | in node | on a page |
 |---|---|---|
-| a component | required from the run root, its `module.exports` | got by `get`, run, its `module.exports`; `not-found` when it is not there |
+| a component | required from the run root, its `module.exports` | got by `get` and run as a plain script, with no module box, so a file written for both node and a page takes its page branch and puts itself on the page (every shell element does; CodeMirror and its mode files too, goal/G41.7); a stylesheet is put on the page as a style; answers an empty object; `not-found` when it is not there |
 | an interface: `<name>/<name>.family/api.js` or `spirit/<name>/api.js` | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
 | an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `peer.post` |
 

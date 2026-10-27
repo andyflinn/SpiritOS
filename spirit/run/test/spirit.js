@@ -23,6 +23,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 const RUN = path.join(__dirname, '..');
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
+const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 async function refusedWith(promise) { try { await promise; return 'answered'; } catch (e) { return e && e.code; } }
 
@@ -192,6 +193,17 @@ function page() {
     TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL, setTimeout: setTimeout,
   };
   window.window = window;
+  // A page's document: a script appended runs in the page at once, as a browser runs it, an error in it the page's
+  // own; a style appended is kept.
+  window.styles = [];
+  window.document = {
+    readyState: 'complete',
+    documentElement: { getAttribute: function () { return null; } },
+    querySelector: function () { return null; },
+    createElement: function (t) { return { tagName: String(t).toUpperCase(), textContent: '' }; },
+    head: { appendChild: function (el) { window.styles.push(el.textContent); return el; } },
+    body: { appendChild: function (el) { try { vm.runInContext(el.textContent, ctx); } catch (e) { window.scriptError = e; } return el; } },
+  };
   const ctx = vm.createContext(window);
   vm.runInContext(SOURCE, ctx, { filename: 'spirit.js' });
   window.fetched = fetched;
@@ -428,10 +440,26 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const missing = await refusedWith(s.require('spirit/noSuchComponent.js'));
   if (missing && missing !== 'answered') test.check('in node: a component that is not there refuses (' + missing + ')');
   else test.fail('in node: a missing component answered');
-  const onPage = await wq.spirit.require(COMPONENT);
-  if (onPage && typeof onPage.assertRelayUrl === 'function' && JSON.stringify(Object.keys(onPage).sort()) === JSON.stringify(Object.keys(inNode).sort()))
-    test.check('on a page: the same require, ' + COMPONENT + ', answers the same exports as in node');
-  else test.fail('on a page, ' + COMPONENT + ' answered ' + short(onPage && Object.keys(onPage)));
+  // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require interfaces
+  // that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): no module box, so a file written for both takes its page
+  // branch and puts itself on the page, as every shell element does; a stylesheet is put on as a style.
+  const onPage = await wq.spirit.require(PAGE_COMPONENT);
+  if (onPage && Object.keys(onPage).length === 0 && wq.spirit.fieldRules && typeof wq.spirit.fieldRules.problem === 'function' && !wq.scriptError)
+    test.check('on a page: ' + PAGE_COMPONENT + ' runs as a plain script, puts itself on window.spirit, and the require answers an empty object');
+  else test.fail('on a page, ' + PAGE_COMPONENT + ' answered ' + short(onPage) + ', fieldRules ' + short(!!wq.spirit.fieldRules) + ', error ' + short(wq.scriptError && wq.scriptError.message));
+  // A CodeMirror mode file, written for both node and a page: given no module box it finds CodeMirror on the page (here
+  // a stand-in, the library itself needs a real browser) and defines its mode on it.
+  const boxed = page();
+  const defined = [];
+  boxed.CodeMirror = { defineMode: function (name) { defined.push(name); }, defineMIME: function () {}, registerHelper: function () {}, resolveMode: function () { return {}; } };
+  await boxed.spirit.require('shell/node_modules/codemirror/mode/css/css.js');
+  if (defined.indexOf('css') !== -1 && !boxed.scriptError)
+    test.check('on a page: a CodeMirror mode file, required, runs as the page script it is, finds CodeMirror and defines its mode');
+  else test.fail('on a page a CodeMirror mode file did not run as a script: ' + short([defined, boxed.scriptError && boxed.scriptError.message]));
+  const sheet = await wq.spirit.require('shell/node_modules/codemirror/lib/codemirror.css');
+  if (sheet && wq.styles.length === 1 && /\.CodeMirror/.test(wq.styles[0]))
+    test.check('on a page: a stylesheet required is put on the page as a style');
+  else test.fail('on a page a stylesheet was not put on as a style: ' + wq.styles.length + ' styles');
   if (await refusedWith(wq.spirit.require('spirit/noSuchComponent.js')) === 'not-found') test.check('on a page: a component that is not there refuses not-found');
   else test.fail('on a page: a missing component did not refuse not-found');
   const pf = await wq.spirit.require('process/js/demo/demo.family/api.js');
@@ -450,11 +478,11 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   test.subHeading('7a. spirit.require de-dupes: a path is fetched and run once, a script the boot loaded counts as required');
   const fetchesOf = function (w, p) { return w.fetched.filter(function (f) { return String(f.url).replace(/^\/+/, '') === p; }).length; };
   const dq = page();
-  const twice = await Promise.all([dq.spirit.require(COMPONENT), dq.spirit.require(COMPONENT)]);
-  const third = await dq.spirit.require(COMPONENT);
-  if (fetchesOf(dq, COMPONENT) === 1 && twice[0] === twice[1] && twice[1] === third && twice[0])
-    test.check('on a page: ' + COMPONENT + ' required three times, two at once, is fetched once, and every caller gets the same answer');
-  else test.fail('on a page the require is not de-duped: ' + fetchesOf(dq, COMPONENT) + ' fetches, same answer ' + (twice[0] === twice[1] && twice[1] === third));
+  const twice = await Promise.all([dq.spirit.require(PAGE_COMPONENT), dq.spirit.require(PAGE_COMPONENT)]);
+  const third = await dq.spirit.require(PAGE_COMPONENT);
+  if (fetchesOf(dq, PAGE_COMPONENT) === 1 && twice[0] === twice[1] && twice[1] === third && twice[0])
+    test.check('on a page: ' + PAGE_COMPONENT + ' required three times, two at once, is fetched once, and every caller gets the same answer');
+  else test.fail('on a page the require is not de-duped: ' + fetchesOf(dq, PAGE_COMPONENT) + ' fetches, same answer ' + (twice[0] === twice[1] && twice[1] === third));
   let bootAgain = null;
   const beforeBoot = injected.length;
   try { bootAgain = await faceWindow.spirit.require('shell/boot.js'); } catch (e) { bootAgain = e; }

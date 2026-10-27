@@ -154,7 +154,10 @@ spirit.shell.activateApp({
         branch.load(function () { return isTreeOf(isParty); });
       },
     });
-    isReply = window.spirit.elements.createTextView(document.getElementById('is-reply'), { text: '', readOnly: true, path: 'reply.json' });
+    // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded by this app itself.
+    Promise.resolve(spirit.require('shell/js/codeMirror.js')).then(function () {
+      return window.spirit.elements.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' });
+    }).then(function (view) { isReply = view; }, function () { /* the reply stays unshown */ });
 
     // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
     branch.addEventListener('tree', function () {
