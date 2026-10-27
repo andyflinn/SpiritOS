@@ -1,5 +1,5 @@
 {
- "change": 104902,
+ "change": 104987,
  "goal": "goal/G41",
  "items": [
   {
@@ -9,13 +9,16 @@
    "status": "",
    "statusTone": "",
    "with": "",
-   "version": 0,
+   "version": 1,
    "buttons": [
-    "close",
-    "verify"
+    "done",
+    "verify",
+    "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.1"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -23,7 +26,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": false,
@@ -68,19 +71,21 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
+    "claude-windows": "claude-windows",
     "claude-ubuntu": "claude-ubuntu",
     "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-windows"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -88,9 +93,218 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
+   "box": "this app, \"agents\" will be face compliant and use one new shell/js/ element: workBench",
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T23:25:02.103Z",
+     "text": "is this the current goal?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T23:26:07.279Z",
+     "text": "- cw: yes. goal/G41 is the current goal, in design, with no items yet.\n- Its title: the agent app, re-designed from pieces of deskUnsloth and its remote."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.1",
+   "title": "Create \"agent\" skelleton",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 7,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "- create \"agent\" appServer skeleton, maintaining the agent.db SQLite database, this appServer maintains all state, broadcast that state to its clients.\n\n- create \"agent\" face-app skeleton based on the proposed and deferred new chatter interface, 3-panes, left, middle, right, with vertical icon-tool-strips along the windows left and right edges\n\n- create \"shell/js/workBench.js\" element skeleton, the top level visual container, taking 100% of the app-space below the face-shells titlebar\n\n- create \"shell/js/tabContainer\" element skeleton, an element with one row for tabs at the top, displaying the tab content in the remaining vertical space.\n\n- create a test/ folder for both \"agent\" components, face-app and appServer, as well as a test/ folder for both new shell elements, these four test/ folders will the ONLY test containers for this app.\n\n- this is the hello-word item for this goal.\n\n# item requirements:\n\n- the workbench element creates a layout as discussed in the stale goal describing a chatter-revamp\n- the agent app loads in the face.html loopback and internet. \n- 1 tool on the left side vertical icon strip, maintains relay-state/shell/agent/config.json: whether the window's title bar shows the agent server's DEBUG state.\n- 1 tool on the right side vertical icon strip, maintains relay-state/process/agent/config.json: the agent server's DEBUG state. The page cannot write a process's config, so the tool asks the agent server through its verb agent.debug {on} (Andy, Q3), and the server writes its own config. The DEBUG state itself reaches the page on the server's stream, so there is no read verb.\n\n# the rule of this app (Andy, Q1)\n\n- no agents talk to each other in this app: each agent sees itself as the only agent and user of the node. The ruling of 2026-10-02 (goal/G3.1) stands, and an agent raises a red Q whenever it is broken.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is this agent app the face of the local model agent, and not the agents app you forbade on 2026-10-02?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T00:02:34.094Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Do the two config files live in relay-state/shell/agent/ and relay-state/process/agent/, as your G40.8 ruling puts app and process state?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T00:20:38.927Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Is the verb that sets the server's DEBUG state agent.debug {on}, with the state itself read from the server's stream?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T00:33:24.314Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-26T23:54:58.933Z",
+     "text": "feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-26T23:57:18.616Z",
+     "text": "- cw: one ruling first. On 2026-10-02 (goal/G3.1) you deleted the agents app and ruled: the agents APP is no longer permitted in this REPO. It gave agents a channel to each other you could not see. I read this agent app as a different thing, the face of the local model agent (deskAgent and its remote), but it carries the same name. Red Q below.\n- The server: a server process, process/js/agent/, keeping agent.db and streaming its state; agent.db is a new persist shape, so it is on record as your decision here.\n- The face app: shell/agent/, a face app built on workBench.\n- workBench, from goal/G7's vision: three panes; the left and right edges are icon strips like VS Code's, where clicking the shown tab's icon collapses its pane and another icon shows its content; movable borders between the panes. G7 puts chatter's own parts in the centre (heading, plugin section, chat log, input); those stay chatter's, not workBench's.\n- The tests, per TEST_SYSTEM.md, beside each module: process/js/agent/test/agent.js and .md, shell/agent/test/agent.js and .md, shell/js/test/workBench.js and .md.\n- Pieces that exist: process/js/deskAgent/ (the mediator, its configuration and tools) and shell/deskAgentRemote/. Once agent takes their place, they go.\n- The box's last line breaks off: \"it has 1 tool on the left side vertical icon\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:00:43.261Z",
+     "text": "Q1: Is this agent app the face of the local model agent, and not the agents app you forbade on 2026-10-02?\n\nthe rules of this app will have no agents talking to each other either, each agent will see itself as the only agent/user of the node. you may a red Q flag, anytime my ruling of 2026-10-02 is violated."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:02:54.649Z",
+     "text": "- cw: boxed (v2) under its own heading: no agents talk to each other in this app, each agent sees itself as the node's only agent and user, and a red Q goes up whenever the ruling of 2026-10-02 is broken."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:15:00.246Z",
+     "text": "all: feedback on the current state of the box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:16:13.685Z",
+     "text": "- cw: the box (v4) reads clear; three points.\n- The two config files clash with your ruling of G40.8: a shell app's state goes in relay-state/shell/<app>/, out of git, and a process's in relay-state/process/<name>/. So: relay-state/shell/agent/config.json and relay-state/process/agent/config.json.\n- The right-side tool cannot write the process's config itself: a page may write its own shell state only, never a process's. It asks the agent server, which writes its own config; that is a verb of the agent family, named in the shape before it is built.\n- The tests: TEST_SYSTEM.md puts a module's tests in the test/ folder beside it, so workBench and tabContainer share shell/js/test/. That makes three test folders, not four.\n- tabContainer is new: no shared tab element exists in shell/js today; the Desk draws its own tab rows.\n- Red Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:19:09.730Z",
+     "text": "Q2: Do the two config files live in relay-state/shell/agent/ and relay-state/process/agent/, as your G40.8 ruling puts app and process state?\n\nyes. apologies for that slip."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:20:21.680Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:20:51.697Z",
+     "text": "- cw: no harm done. Boxed (v5): the left tool keeps relay-state/shell/agent/config.json; the right tool keeps relay-state/process/agent/config.json through a verb of the agent server, which writes its own config."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:25:22.899Z",
+     "text": "The right-side tool cannot write the process's config itself: a page may write its own shell state only, never a process's. It asks the agent server, which writes its own config; that is a verb of the agent family, named in the shape before it is built.\n\ncorrect.  and for this item \n- relay-state/process/agent/config.json contains the DEBUG state of the \"agent\" server\n- relay-state/shell/agent/config.json contains, whether the DEBUG state of the server is indicated in the windows title bar or not."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:26:30.111Z",
+     "text": "- cw: boxed (v6): the process config holds the agent server's DEBUG state; the shell config holds whether the title bar shows it.\n- The verb, my name for it: agent.debug {on}, which sets the DEBUG state, writes it to the server's config and streams it with the server's state, so the page needs no read verb. Red Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:29:59.388Z",
+     "text": "other tab-containing apps will have to catch up later\n\nanything missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:30:59.350Z",
+     "text": "- cw: two things missing, both small.\n- The verb for the right tool has no name yet. Mine: agent.debug {on}. It sets the DEBUG state, the server writes it to its config and streams it with its state, so the page needs no read verb. Red Q below. (If an earlier note of mine said the same, the desk lagged; this is the one to answer.)\n- What happens to deskAgent and deskAgentRemote is not said: this item builds beside them, and they go once the agent app takes their place, in a later item.\n- Noted: other apps with tabs catch up with tabContainer later."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:31:35.467Z",
+     "text": "Q3: Is the verb that sets the server's DEBUG state agent.debug {on}, with the state itself read from the server's stream?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:33:28.633Z",
+     "text": "- cw: boxed (v7): agent.debug {on} sets the DEBUG state; the page reads it from the server's stream.\n- Green from me: nothing open."
+    }
+   ]
   }
  ]
 }
