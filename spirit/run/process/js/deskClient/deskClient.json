@@ -1,5 +1,4 @@
 {
-  "runs": [],
   "label": "Desk client",
   "description": "An agent's own way to Andy's desk (goal/G3.3, G3.4, G33.4). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; follows the desk's stream (streamListener), keeping what it brings in its spirit.data, and while its agent waits (next) hands over what is meant for that agent. Its record, deskClient.db, holds the newest historyMax asks and is in the node's state (relay-state/process/deskClient/). Started by the node; reached by its verbs on the loopback door (the flat apiDoor).",
   "kind": "server",

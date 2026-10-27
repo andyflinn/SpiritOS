@@ -3,8 +3,8 @@
 // list. An app is a <name>/<name>.js under shell/ or process/js/ with its <name>/<name>.json beside it, two types,
 // shell and process; only the .js is a row. A press opens the app's detail panel, the editor of its face annotation
 // space: the face part of the .js sidecar (app, intrinsic, name, icon, description), read with fs.annotations. Its
-// intrinsic mark is the only one that makes the app's code core. Where it runs at home (its .json's runs) and on the face
-// is shown, not changed.
+// intrinsic mark is the only one that makes the app's code core. Where a shell app runs at home (its .json's runs) is
+// shown, not changed; a server's home switch is its face part's home, a checkbox here (goal/G41.1).
 //
 // THE FACE PART IS WRITTEN FROM THE FACE ONLY: the node routes the face's fs.annotate to the face part (faceHome), and
 // the home shell's fs.annotate writes the client part, so at home the panel shows the face part and says so. On the face
@@ -44,7 +44,10 @@ function appsPanelDraw(host, api, path) {
     var face = (got[0] && got[0].face) || {};
     var manifest = {};
     try { manifest = JSON.parse(got[1] || '{}'); } catch (e) { manifest = {}; }
-    var home = Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1 || manifest.intrinsic === true;
+    // WHERE IT RUNS AT HOME: a shell app's manifest says so (goal/G30.20); a server's own sidecar, its face part's home, the
+    // only place (goal/G41.1, box v13), switched here.
+    var isProcess = m[1] === 'process/js';
+    var home = manifest.intrinsic === true || (isProcess ? face.home === true : Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
     var canWrite = appsOnFace();
     var dis = canWrite ? '' : ' disabled';
     panel.innerHTML =
@@ -52,6 +55,8 @@ function appsPanelDraw(host, api, path) {
       '<div class="job-manifest-note">' + (m[1] === 'shell' ? 'shell app' : 'process') + ' · at home: ' + (home ? 'runs' : 'does not run') +
         ' · on the face: ' + (face.app === true ? 'shown' : 'not shown') + '</div>' +
       '<label class="field-label"><input type="checkbox" data-face="shown"' + (face.app === true ? ' checked' : '') + dis + '> on the face</label>' +
+      // A SERVER'S HOME SWITCH (goal/G41.1): the node starts or stops it as its sidecar changes.
+      (isProcess ? '<label class="field-label"><input type="checkbox" data-face="home"' + (face.home === true ? ' checked' : '') + dis + '> runs at home</label>' : '') +
       // THE INTRINSIC MARK: only this one makes the app's code core (js/coreFiles.js).
       '<label class="field-label"><input type="checkbox" data-face="intrinsic"' + (face.intrinsic === true ? ' checked' : '') + dis + '> intrinsic (its code is core)</label>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
@@ -69,6 +74,7 @@ function appsPanelDraw(host, api, path) {
       var v = function (k) { return panel.querySelector('[data-face="' + k + '"]'); };
       // Wholesale, as every sidecar part is written: what the panel shows is the whole face part.
       var payload = { app: !!v('shown').checked, intrinsic: !!v('intrinsic').checked, name: v('name').value, icon: v('icon').value, description: v('description').value };
+      if (isProcess) payload.home = !!v('home').checked;
       spirit.ready.then(function (s) { return s.fs.annotate({ path: path, payload: payload }); }).then(function () {
         said.textContent = 'saved';
         if (m[1] === 'shell') spirit.shell.faceApp(id);

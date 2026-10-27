@@ -59,12 +59,14 @@
         '</div><div data-job="note" class="job-manifest-note"></div></div>';
       var start = host.querySelector('[data-job="start"]');
       var note = host.querySelector('[data-job="note"]');
-      // WHERE IT RUNS IS ITS MANIFEST'S (goal/G30.20): a server whose runs names 'home' (or an intrinsic one) can be
-      // started; any other says so. The include switch that stood here is deleted with the include list: runs is edited
-      // in the manifest's text.
-      var included = manifest.intrinsic === true || (Array.isArray(manifest.runs) && manifest.runs.indexOf('home') !== -1);
-      start.style.display = included ? '' : 'none';
-      if (!included) note.textContent = 'Not run on this node: the runs in its manifest does not name home.';
+      // WHERE IT RUNS IS ITS OWN SIDECAR'S (goal/G41.1, box v13): a server whose sidecar's face part says home true (or
+      // an intrinsic one) can be started; any other says so. The switch is the Apps app's checkbox.
+      // A sidecar is never served as a file: its annotations are asked for.
+      Promise.resolve(sp().ready).then(function (s) { return s.fs.getAnnotations(path); }).then(null, function () { return null; }).then(function (side) {
+        var included = manifest.intrinsic === true || !!(side && side.face && side.face.home === true);
+        start.style.display = included ? '' : 'none';
+        if (!included) note.textContent = 'Not run on this node: its sidecar does not say home (the Apps app switches it).';
+      });
       start.addEventListener('click', function () {
         var values = {};
         Array.prototype.forEach.call(host.querySelectorAll('[data-arg-name]'), function (input) {

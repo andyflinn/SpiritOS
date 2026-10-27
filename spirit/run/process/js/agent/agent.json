@@ -1,5 +1,4 @@
 {
-  "runs": ["home"],
   "label": "Agent server",
   "description": "The server behind the agent face app (goal/G41.1): keeps the app's state in agent.db, in the node's state (relay-state/process/agent/), and streams it to its clients. In this item: its DEBUG state, kept in config.json there across restarts.",
   "kind": "server",

@@ -220,6 +220,8 @@ module.exports = function installJobs(port) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
       if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
+      // A server's sidecar is never served, but it is its home switch: heard here, kept out of the tree (goal/G41.1).
+      if (SIDECAR.test(rel)) return false;
       return !fileSystem.fileServable(rel);
     };
     const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
@@ -227,6 +229,7 @@ module.exports = function installJobs(port) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
       if (!op || !rel || rel.indexOf('..') === 0) return;
+      if (SIDECAR.test(rel)) { followHome(rootDir, rel); return; }
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
         if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
@@ -416,25 +419,22 @@ module.exports = function installJobs(port) {
     const file = path.resolve(cwd || process.cwd(), script).replace(/\.js$/, '.json');
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
   }
-  // ── ONLY WHAT ITS MANIFEST SAYS RUNS AT HOME RUNS (goal/G30.20) ──────
+  // ── A SERVER RUNS AT HOME BY ITS OWN SIDECAR (goal/G41.1, box v13) ──────
   //
-  // A script under <root>/process/js/<name>/ belongs to the process <name>,
-  // and runs only if its manifest's runs names 'home' (or it is intrinsic):
-  // a process that does not never runs, so Jobs never shows it. Refused by
-  // name, process-not-included, before anything is spawned. The include list
-  // that said this before (slim/G1.3) is deleted; the manifest is the one place.
-  // A NODE'S OWN SETTING OVERRIDES IT (goal/G33.9). The box: "A per-node setting overrides the server manifest's default
-  // for that node only; with none set, the manifest's default stands", and "The same mechanism covers which servers a
-  // node runs". relay-state/node.json's servers entry (js/nodeSettings.js), by the server's name: its runs, when it
-  // names one, is this node's. An intrinsic server runs whatever it says.
+  // Andy: "that clash comes from unauthorized decisions from agents to move the FUCKING manifest shit to a central
+  // list", and the box: "a server's home switch is home: true in its own sidecar, beside its .js
+  // (process/js/<name>/<name>.js.sidecar.json), the only place". A script under <root>/process/js/<name>/ belongs to the
+  // process <name>, and runs only if the face part of its sidecar says home: true (or its manifest says intrinsic): a
+  // process that does not never runs, so Jobs never shows it. Refused by name, process-not-included, before anything is
+  // spawned. No central list says it: relay-state/node.json's servers section, and the manifest's runs, are gone.
   function runsHome(root, name) {
     try {
       const m = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
       if (m.intrinsic === true) return true;
-      const own = require('./nodeSettings').serverSettings(root, name);
-      const runs = Array.isArray(own.runs) ? own.runs : m.runs;
-      return Array.isArray(runs) && runs.indexOf('home') !== -1;
     } catch (e) { return false; }
+    let side = null;
+    try { side = JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
+    return !!(side && side.face && side.face.home === true);
   }
   // A script under <root>/process/js/<name>/, read as {root, name}; null for
   // anything else. The one reading of a script's path, for where it runs and
@@ -480,72 +480,80 @@ module.exports = function installJobs(port) {
   // registered with `client` (appClient) so 'api' and calls reach it. Only
   // process/js gets this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!",
   // "you want the support, move to precess/js").
+  // ONE SERVER STARTED, ITS JOB KEPT BY NAME (goal/G41.1): at boot for every server that runs at home, and again whenever
+  // its sidecar is written to say so (followHome, below). The node it runs on is the one startNodeServers was handed.
+  const nodeServers = new Map();   // name -> its server job
+  let serverHost = null;            // { rootDir, client }, from startNodeServers
+  function startNodeServer(rootDir, client, name) {
+    const base = path.join(rootDir, 'process', 'js');
+    const script = path.join(base, name, name + '.js');
+    const m = manifestOf(script);
+    if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return null;
+    // ITS ARGUMENTS ARE ITS MANIFEST'S DEFAULTS: no central list overrides them (goal/G41.1, box v13).
+    const values = {};
+    (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
+    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, 'process');
+    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): relay-state/process/<name>/,
+    // handed over as --state, so a process never works out its own folder.
+    const state = path.join(rootDir, 'relay-state', 'process', name);
+    try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
+    if (process.platform !== 'win32') {
+      try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
+    }
+    const job = startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir)), { type: m.label || name, operated: 'node' });
+    nodeServers.set(name, job);
+    if (client && typeof client.register === 'function') client.register(name, pipe);
+    return job;
+  }
+  // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
+  // to know whose node it runs on gets --node {name, publicKey, ownerKey}.
+  // It never opens identity.json, which holds the private keys; nothing
+  // private is ever in a server's arguments.
+  // The node's identity exists, named by the machine name at the least,
+  // from relayAuth's first load (goal/G22.5), so --node is always handed
+  // over.
+  //
+  // THE OWNER'S PUBLIC KEY RIDES ALONG (goal/G19.10). Andy, 2026-10-12:
+  // "The appServer have a definite need/use for all 3: the node/puppets
+  // key, the owners public key, and the nodes port: if they are not
+  // allowed to read the files, they should have that stuff passted with
+  // the spirit object that comes with the appServers passed interface."
+  // ownerKey is owner.json's key as loadOwner reads it, or '' when the
+  // node owns itself or nobody owns it: no owner to ask (puppetMode's
+  // puppetIn rule, compared here against the key read above). appServer
+  // puts the three on spirit.core.node.const.
+  // Read as a server starts: a server learns a changed owner when the node
+  // starts it again.
+  function nodeArgOf(rootDir) {
+    const me = require('./relayAuth').loadIdentity(rootDir);
+    const owner = require('./relayAuth').loadOwner(rootDir, function () {});
+    return ['--node', JSON.stringify({
+      name: String(me.name || ''), publicKey: String(me.publicKey),
+      ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
+    })];
+  }
   function startNodeServers(rootDir, client) {
     const base = path.join(rootDir, 'process', 'js');
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
-    // A SETTING THE MANIFEST DOES NOT NAME is ignored, and named once in the node log here, at the start (goal/G33.9:
-    // "so a typo shows"): a server this node has no process/js manifest for, or a value that is neither runs nor one
-    // of its manifest's arguments.
-    const own = require('./nodeSettings').load(rootDir).servers;
-    Object.keys(own).forEach(function (name) {
-      const m = manifestOf(path.join(base, name, name + '.js'));
-      if (!m) { console.error('node.json: servers.' + name + ' names no server under process/js; ignored'); return; }
-      const known = ['runs'].concat((m.args || []).map(function (a) { return a && a.name; }));
-      Object.keys(own[name] || {}).forEach(function (k) {
-        if (known.indexOf(k) === -1) console.error('node.json: servers.' + name + '.' + k + ' is not a setting of ' + name + '; ignored');
-      });
-    });
-    // ONLY WHAT RUNS AT HOME (goal/G30.20): its manifest's runs says so.
-    names = names.filter(function (name) { return runsHome(rootDir, name); });
-    const pipePathFor = require('./appClient').pipePathFor;
-    // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
-    // to know whose node it runs on gets --node {name, publicKey, ownerKey}.
-    // It never opens identity.json, which holds the private keys; nothing
-    // private is ever in a server's arguments.
-    // The node's identity exists, named by the machine name at the least,
-    // from relayAuth's first load (goal/G22.5), so --node is always handed
-    // over.
-    //
-    // THE OWNER'S PUBLIC KEY RIDES ALONG (goal/G19.10). Andy, 2026-10-12:
-    // "The appServer have a definite need/use for all 3: the node/puppets
-    // key, the owners public key, and the nodes port: if they are not
-    // allowed to read the files, they should have that stuff passted with
-    // the spirit object that comes with the appServers passed interface."
-    // ownerKey is owner.json's key as loadOwner reads it, or '' when the
-    // node owns itself or nobody owns it: no owner to ask (puppetMode's
-    // puppetIn rule, compared here against the key read above). appServer
-    // puts the three on spirit.core.node.const.
-    // Read once, at the start: a server learns a changed owner when the node
-    // starts it again.
-    const me = require('./relayAuth').loadIdentity(rootDir);
-    const owner = require('./relayAuth').loadOwner(rootDir, function () {});
-    const nodeArg = ['--node', JSON.stringify({
-      name: String(me.name || ''), publicKey: String(me.publicKey),
-      ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
-    })];
-    const started = [];
-    names.forEach(function (name) {
-      const script = path.join(base, name, name + '.js');
-      const m = manifestOf(script);
-      if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return;
-      const values = {};
-      (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-      // This node's value for an argument the manifest names (goal/G33.9), over the manifest's default.
-      const mine = require('./nodeSettings').serverSettings(rootDir, name);
-      (m.args || []).forEach(function (a) { if (a && a.name && Object.prototype.hasOwnProperty.call(mine, a.name)) values[a.name] = mine[a.name]; });
-      const pipe = pipePathFor(rootDir, name, process.platform, 'process');
-      // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): relay-state/process/<name>/,
-      // handed over as --state, so a process never works out its own folder.
-      const state = path.join(rootDir, 'relay-state', 'process', name);
-      try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
-      if (process.platform !== 'win32') {
-        try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
-      }
-      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArg), { type: m.label || name, operated: 'node' }));
-      if (client && typeof client.register === 'function') client.register(name, pipe);
-    });
-    return started;
+    serverHost = { rootDir: rootDir, client: client };
+    // ONLY WHAT RUNS AT HOME: its sidecar says so (goal/G41.1).
+    return names.filter(function (name) { return runsHome(rootDir, name); })
+      .map(function (name) { return startNodeServer(rootDir, client, name); }).filter(Boolean);
+  }
+  // A SIDECAR WRITTEN STARTS OR STOPS ITS SERVER (goal/G41.1, box v13: "the node starts or stops the server when that
+  // sidecar changes"): heard by the fs watcher, on the node startNodeServers was handed.
+  const SIDECAR = /^process\/js\/([^/]+)\/\1\.js\.sidecar\.json$/;
+  function followHome(rootDir, rel) {
+    const m = SIDECAR.exec(rel);
+    if (!m || !serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
+    const name = m[1];
+    const job = nodeServers.get(name);
+    const now = job && getJob(job.id);
+    const live = !!now && !TERMINAL_STATUSES.has(now.status);
+    const want = runsHome(rootDir, name);
+    if (want && !live) startNodeServer(rootDir, serverHost.client, name);
+    else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
   }
 
   function startStatsJob(options) {

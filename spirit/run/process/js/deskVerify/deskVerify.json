@@ -1,5 +1,4 @@
 {
-  "runs": ["home"],
   "label": "Verifier's dataset",
   "description": "A runner that knows nothing of the desk (goal/G33.3): handed a run (run {suites, commit}), it answers taken or busy, runs the suites one at a time and keeps each suite's outcome; it reports to no one. Keeps verify.db: a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), beside a red its failure text, capped (goal/G21.3), and a row per run with each suite's outcome, the commit and the dirty mark. Both are read with search (goal/G21.3), which is how the desk reads a run's outcome. Records the Stacks plugin's door verdicts (door.record), and keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). On its idle hour, an hour with no run handed to it, it runs the chores its manifest names. Started by the node; reached by its verbs on the loopback door (the flat apiDoor).",
   "kind": "server",
