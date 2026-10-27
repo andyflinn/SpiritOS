@@ -689,7 +689,9 @@ function mayChat(to, verb, args) {
 // best first, cut in bytes to one answer (probabilityBucket), so a row an earlier search brought is found again
 // without the desk holding it in its answer. With no words the desk's answer is passed on as it came. Kept in memory
 // for the life of this process, as the desk's pushes are.
-const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
+// ONE ANSWER IS WHAT appServer LETS LEAVE (goal/G41.3, found landing it): limits.ANSWER_MAX, measured on the whole body.
+// PLAINTEXT_MAX let the kept rows of 49 lookups come back at once, 8436 bytes, refused app-answer-too-large.
+const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 const searchKept = new Map();
 function searchCached(name, args, got) {
   if (!/(^|\.)search$/.test(String(name)) || !got || got.ok === false || !Array.isArray(got.items)) return got;
