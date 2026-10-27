@@ -1,5 +1,5 @@
 {
- "change": 108108,
+ "change": 108114,
  "goal": "goal/G41",
  "items": [
   {
@@ -3195,7 +3195,6 @@
     "goal/G41"
    ],
    "blocked": [
-    "goal/G41.6",
     "goal/G41.8",
     "goal/G41.10"
    ],
@@ -3754,14 +3753,13 @@
    "id": "goal/G41.6",
    "title": "Make info app face-able",
    "goal": "goal/G41",
-   "status": "fileViewer.js added",
-   "statusTone": "code",
+   "status": "done",
+   "statusTone": "",
    "with": "wsl-claude",
    "version": 8,
    "buttons": [
-    "start-design",
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
@@ -3770,7 +3768,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -3842,7 +3840,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
