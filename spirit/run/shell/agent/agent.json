@@ -2,7 +2,7 @@
   "runs": ["home"],
   "name": "Agent",
   "description": "The face of the agent server (goal/G41.1): one workBench; on the left this app's own settings, on the right the server's DEBUG state.",
-  "icon": "🧵",
+  "icon": "🤖",
   "hidden": false,
   "server": "agent",
   "owner": "system"
