@@ -1,5 +1,5 @@
 {
- "change": 108100,
+ "change": 108107,
  "goal": "goal/G41",
  "items": [
   {
@@ -128,7 +128,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3195,7 +3197,6 @@
    "blocked": [
     "goal/G41.6",
     "goal/G41.8",
-    "goal/G41.9",
     "goal/G41.10"
    ],
    "codeOffered": true,
@@ -4665,14 +4666,13 @@
    "id": "goal/G41.9",
    "title": "No shared arming logic exist,",
    "goal": "goal/G41",
-   "status": "build",
+   "status": "done",
    "statusTone": "",
    "with": "claude-windows",
    "version": 3,
    "buttons": [
-    "start-design",
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
