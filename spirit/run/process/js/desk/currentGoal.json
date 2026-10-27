@@ -1,5 +1,5 @@
 {
- "change": 108099,
+ "change": 108100,
  "goal": "goal/G41",
  "items": [
   {
@@ -121,7 +121,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
@@ -4140,12 +4140,11 @@
    "id": "goal/G41.7",
    "title": "Make app TextEditor face-able",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 4,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
