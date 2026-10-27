@@ -1,5 +1,5 @@
 {
- "change": 108096,
+ "change": 108098,
  "goal": "goal/G41",
  "items": [
   {
@@ -121,7 +121,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 8,
+   "waiting": 7,
    "excluded": [
     "ollama agent node"
    ],
@@ -3196,6 +3196,7 @@
     "goal/G41.6",
     "goal/G41.7",
     "goal/G41.8",
+    "goal/G41.9",
     "goal/G41.10"
    ],
    "codeOffered": true,
@@ -3441,20 +3442,17 @@
    "id": "goal/G41.5",
    "title": "Make grants app face-able",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 6,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
     "goal/G41.4"
    ],
-   "blocked": [
-    "goal/G41.9"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -4680,7 +4678,7 @@
     "verify"
    ],
    "blocking": [
-    "goal/G41.5"
+    "goal/G41.4"
    ],
    "blocked": [],
    "codeOffered": true,
