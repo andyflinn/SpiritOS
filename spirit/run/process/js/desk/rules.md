@@ -2,6 +2,10 @@
 
 ## ui
 
+### rule/19 (version 48): a ui only updates state via the server.
+
+any user interface page can only update it's state via the server. the ui must propose all state changes to the server and only draw changes contained in the servers update/change stream.
+
 ### rule/16 (version 42): A list gets a box of a stated size
 
 Every probabilitySearch (shell/js/probabilitySearch.js, and the lists made on it) is mounted in a box that states its size: class fill (shell.css), inside a pane that fills its app, the way the Apps and Icons face apps do. Never in a stat-tile or another box that is only as tall as its content.
