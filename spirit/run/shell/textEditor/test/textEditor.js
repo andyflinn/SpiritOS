@@ -106,6 +106,14 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   ok(!!v && v.args.mode === 'edit', 'its text is drawn by codeMirror.create in edit mode', 'views: ' + short(w.views.map(function (x) { return x.args; })));
   if (v) ok(v.args.text === 'my notes' && v.args.path === 'shell/textEditor/notes.txt' && !v.args.words && !v.args.line, 'handed the file\'s text and path, no words, no line', 'args: ' + short(v.args));
   ok(v && v.host === byId['editor-content'], 'into the page\'s content box', 'host: ' + short(v && v.host && v.host.tag));
+
+  test.subHeading('the tools in one row, the text in a limited area (rule/16; Andy, on G41.7)');
+  const page = /container.innerHTML =([\s\S]*?);\r?\n/.exec(SRC);
+  const markup = page ? page[1] : '';
+  ok(/^\s*'<div class="fill">'/.test(markup), 'the page is one fill column', 'markup: ' + short(markup));
+  ok(/data-editor="tools"[^>]*flex-wrap:nowrap/.test(markup) && /editor-picker[\s\S]*editor-path[\s\S]*editor-load[\s\S]*editor-save[\s\S]*editor-status/.test(markup),
+    'the picker, the path, Load, Save and the status stand in one row that never wraps', 'markup: ' + short(markup));
+  ok(byId['editor-content'] && /class="text-view fill"/.test(byId['editor-content'].tag), 'the text box is a fill box: it takes what the row leaves, and only the text scrolls', 'text box: ' + short(byId['editor-content'] && byId['editor-content'].tag));
   ok(byId['editor-path'] && byId['editor-path'].textContent === 'shell/textEditor/notes.txt' && status() === 'loaded', 'the path is shown, the status says loaded', 'path ' + short(byId['editor-path'] && byId['editor-path'].textContent) + ', status ' + short(status()));
   ok(w.reached.length === 0, 'nothing of api.ui.elements is reached', 'reached: ' + short(w.reached));
 

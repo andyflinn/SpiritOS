@@ -115,6 +115,7 @@ test.startTest('textViewer.js: a text file, shown with the codeMirror element');
     ok(v.args.text === 'alpha beta' && v.args.words === 'beta' && v.args.path === 'notes.md', 'handed the file\'s text, the words and the path', 'args: ' + short(v.args));
     const textBox = f && f.slots.body.querySelector('.text-view');
     ok(!!textBox && v.host === textBox, 'into the text box in the frame\'s body slot', 'host: ' + short(v.host && v.host.tag));
+    ok(!!textBox && /class="text-view fill"/.test(textBox.attrs || ''), 'the text box is a fill box, so only the text scrolls (rule/16; Andy, on G41.7)', 'text box: ' + short(textBox && textBox.attrs));
   }
   ok(!a.w.oldView && a.w.read.indexOf('index.html') === -1, 'no old text view made, no index.html read', 'old view ' + short(!!a.w.oldView) + ', read ' + short(a.w.read));
 
