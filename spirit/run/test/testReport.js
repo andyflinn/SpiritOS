@@ -48,8 +48,15 @@ function record(title, outcome, failure) {
   const name = RECORD.split('.')[0];
   const verb = RECORD.split('.')[1];
   try {
-    require(path.join(__dirname, '..', 'spirit.js'));
-    family = family || globalThis.spirit.require('process/js/' + name + '/' + name + '.family/api.js');
+    // THE TEST'S OWN SPIRIT OBJECT STAYS THE GLOBAL (goal/G41.11; found: under the verifier the deskClient suite went 19
+    // red: spirit.js, loaded here, writes itself onto the global object it finds, so it wrote over the stand-in the suite
+    // runs on). The real one is loaded for the record alone, onto no object of the test's, and whatever the test had set
+    // is put back.
+    const own = globalThis.spirit;
+    globalThis.spirit = undefined;
+    let real = null;
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; }
+    family = family || real.require('process/js/' + name + '/' + name + '.family/api.js');
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ });
   } catch (e) { /* a test whose verifier cannot be reached still reports on its lines */ }
 }

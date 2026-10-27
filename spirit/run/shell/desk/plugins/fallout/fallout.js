@@ -123,7 +123,8 @@
           'Items will hold the work they cause.</div></div>' +
         '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Now</div><div id="fallout-summary" class="job-manifest-note">Counting.</div></div>' +
         '<div id="fallout-tabs" style="margin-top:1em"></div>' +
-        '<div id="fallout-pane-reds"><div id="fallout-list" class="stat-tile wide" style="margin-top:1em"></div></div>' +
+        // THE REDS LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): a fill box in a fill pane, no stat-tile.
+        '<div id="fallout-pane-reds" class="fill"><div id="fallout-list" class="fill" style="margin-top:1em"></div></div>' +
         '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>' +
         // THE GOAL CHAT AT THE BOTTOM (Andy, 2026-10-17: "add the goal chat at the bottom."), below both inner tabs.
         '<div id="fallout-chat"></div>';

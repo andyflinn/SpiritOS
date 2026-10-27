@@ -746,6 +746,8 @@ function deskNotePlugins(rows) {
       var el = document.createElement('div');
       el.id = 'desk-app-' + app.name;
       el.setAttribute('data-app', 'app:' + app.name);
+      // A plugin's box fills the Apps pane (rule/16), so a list it mounts can fill it in turn.
+      el.className = 'fill';
       el.hidden = deskTab !== 'app:' + app.name;
       if (typeof panes.appendChild === 'function') panes.appendChild(el);
     }
@@ -1645,12 +1647,14 @@ spirit.shell.activateApp({
         '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
-      '<div id="desk-root">' +
+      // EVERY LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): the List and the Rules list each in a fill box, and
+      // every box up to the app a fill box too, as the Apps and Icons face apps do.
+      '<div id="desk-root" class="fill">' +
         // THE SEARCH BAR TOPS THE LIST (desk/G2.6). Andy: "all list displays in
         // the UI now must be topped by a search input bar", "The server does the
         // searching AND the filtering", "When Desk opens: [Current Goal Only] on,
         // [Goals Only] off". Outside the repainted table, so typing survives.
-        '<div data-pane="list"><div id="desk-backup"></div>' +
+        '<div data-pane="list" class="fill"><div id="desk-backup"></div>' +
           // ADD GOAL, DIRECTLY ABOVE THE SEARCH, WHILE GOALS ONLY IS ON (goal/G9.11). Andy: "a new bubble will appear
           // directly above the search bubble for the list: \"Add Goal\" [Title String, subject to label rules]
           // [add-button]", and "The new goal will automatically become the current goal." Shown by deskDrawToggles.
@@ -1661,12 +1665,12 @@ spirit.shell.activateApp({
           // same. That is part of the whole probability search frame work"): shell/js/probabilitySearch.js in its pane
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
-          '<div id="desk-top"><div id="desk-list-error"></div><div id="desk-list"></div></div></div>' +
+          '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
         // APPS (goal/G22.3): its inner tab row, then one inner pane per special goal. Team's pane is the Team tab's, moved
         // whole; a plugin's pane is made inside #desk-app-panes when its goal is found (deskNotePlugins).
-        '<div data-pane="apps" hidden>' +
+        '<div data-pane="apps" class="fill" hidden>' +
           '<div id="desk-app-tabs" style="margin-top:1em"></div>' +
-          '<div id="desk-app-panes" style="margin-top:1em">' +
+          '<div id="desk-app-panes" class="fill" style="margin-top:1em">' +
             '<div data-app="team">' +
               '<div id="desk-session"></div>' +
               '<div class="start-job-form card"><label class="field-label grow">Say' +
@@ -1679,7 +1683,7 @@ spirit.shell.activateApp({
           '</div>' +
         '</div>' +
         // THE RULES TAB (goal/G6.5): the new bubble, the search bubble, the list. #desk-rules takes every click and input.
-        '<div data-pane="rules" hidden><div id="desk-rules">' +
+        '<div data-pane="rules" class="fill" hidden><div id="desk-rules" class="fill">' +
           '<div class="start-job-form card">' +
             '<label class="field-label">Type<select id="desk-rule-type">' +
               DESK_RULE_TYPES.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('') + '</select></label>' +
@@ -1689,7 +1693,7 @@ spirit.shell.activateApp({
             '<label class="field-label"><input type="checkbox" id="desk-rule-auto"> auto-attach to new goals</label>' +
             '<button type="button" id="desk-rule-add">New</button></div>' +
           '<div id="desk-rule-error" class="job-start-error"></div>' +
-          '<div id="desk-rule-list"></div>' +
+          '<div id="desk-rule-list" class="fill"></div>' +
         '</div></div>' +
         // THE VERIFIER TAB'S PANE (goal/G8.11): #desk-verifier takes the whole body and every click in it.
         '<div data-pane="verifier" hidden><div id="desk-verifier"></div></div>' +

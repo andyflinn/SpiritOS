@@ -455,10 +455,16 @@ const QUEUE_MAX = 1000;
 function familyPath(family) { return 'process/js/' + family + '/' + family + '.family/api.js'; }
 function deliverRow(key, q, row) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), over peerPost with no patience.
-  return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
+  const sent = spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
     if (!fam || typeof fam.streamListener !== 'function') return 'away';
     return spirit.outcome(fam.streamListener({ json: JSON.stringify(row) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
+  // A DELIVERY THAT NEVER ANSWERS HOLDS NOTHING (goal/G41.11; found live 2026-10-27: the stream to a client stalled for
+  // good and his "all:" line woke nobody): past waitMs it counts as not taken, so its row is tried again and the queue
+  // behind it moves; a late answer of it changes nothing.
+  let timer = null;
+  const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve('away'); }, publisher.waitMs); });
+  return Promise.race([sent, late]).then(function (said) { clearTimeout(timer); return said; });
 }
 function pumpTo(key) {
   const q = subscribers.get(key);
