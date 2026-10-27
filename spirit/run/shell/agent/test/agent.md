@@ -28,15 +28,22 @@ No agents talk to each other through it: each agent sees itself as the only agen
   - At mount it reads the file through `spirit.fs.loadFile`; with none, `showDebug` is false.
   - It draws one checkbox, checked when `showDebug` is true.
   - Changing the checkbox saves the file through `spirit.fs.saveFile`, with the new `showDebug`.
-- The right tool sets the agent server's DEBUG state:
-  - It draws one checkbox, and changing it calls `api.verb('agent.debug', { on })` with the checkbox's state.
-  - The checkbox follows the server's state as it arrives on the stream (`api.onJobs`): a job whose app is
-    `{ agent: { debug } }`.
-- The title bar (`api.setScreenTitle`) says DEBUG while `showDebug` is true and the server's DEBUG state is on, and does
-  not say it otherwise. It follows both as they change.
+- The right tool sets the agent server's DEBUG state (Andy, Q5: "the app is supposed to require it's components, then use
+  them."):
+  - It draws one checkbox. Changing it requires the agent server's interface through spirit
+    (`spirit.require('process/js/agent/agent.family/api.js')`), then calls its `debug({ on })` with the checkbox's
+    state. Nothing goes out any other way: no `api.verb`.
+  - The checkbox shows only what the server's stream says (rule/19), never the click itself: after the call it shows the
+    state last streamed.
+  - It follows the server's state on the stream (`api.onJobs`): a job whose app is `{ agent: { debug } }`, read from
+    the whole set of jobs as well as from the one that changed, so the state is there from the moment the app opens.
+- The title bar (`api.setScreenTitle`) shows the bug icon 🐞 while `showDebug` is true and the server's DEBUG state is on,
+  and does not show it otherwise. It follows both as they change.
 
 ## What its test must try to break
 
-- A title that says DEBUG with only one of the two on.
-- A checkbox that does not follow the stream.
+- A title that shows the bug with only one of the two on.
+- A checkbox that does not follow the stream, or follows the click instead.
+- A state streamed before the app opened, handed as the whole set with no single job.
+- A call that goes out as a raw verb instead of through the agent's interface.
 - A config saved anywhere but the app's own state folder.

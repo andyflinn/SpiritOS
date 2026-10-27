@@ -14,6 +14,8 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'agent.js');
 const CONFIG = 'relay-state/shell/agent/config.json';
+const AGENT_FAMILY = 'process/js/agent/agent.family/api.js';
+const BUG = '🐞';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -91,13 +93,19 @@ function world(configText) {
     ui: { elements: {} },
   };
   w.api.ui.elements.workBench = w.workBench;
+  // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
+  w.calls = []; w.required = [];
+  w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
   w.stream = function (debug) { const job = { id: 'job-agent', app: { agent: { debug: debug } } }; const all = { 'job-agent': job }; w.onJobs.forEach(function (fn) { fn(all, job, { visible: true }); }); };
+  // What the shell hands a new reader at once: the whole set of jobs, and no single job that changed.
+  w.snapshot = function (debug) { const all = { 'job-agent': { id: 'job-agent', app: { agent: { debug: debug } } } }; w.onJobs.forEach(function (fn) { fn(all, null, { visible: true }); }); };
   w.title = function () { return w.titles.length ? w.titles[w.titles.length - 1] : ''; };
   return w;
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); } } };
+  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); },
+    require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); } } };
   global.spirit = global.window.spirit;
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -151,28 +159,44 @@ test.startTest('agent.js: the agent face app');
   const rb = box('right'); R[0].mount(rb); await settle();
   ok(rb.inputs.length === 1 && /type="checkbox"/.test(rb.inputs[0].tag), 'it draws one checkbox', 'inputs: ' + rb.inputs.length);
   change(rb, true); await settle();
-  const asked = w.verbs.filter(function (v) { return v.name === 'agent.debug'; }).pop();
-  ok(asked && asked.args && asked.args.on === true, 'ticking it calls agent.debug {on: true}', 'verbs: ' + short(w.verbs));
+  const asked = w.calls[w.calls.length - 1];
+  ok(w.required.indexOf(AGENT_FAMILY) !== -1 && asked && asked.on === true, 'ticking it requires the agent server\'s interface through spirit and calls its debug {on: true}',
+    'required ' + short(w.required) + ', debug calls ' + short(w.calls));
+  ok(!w.verbs.length, 'nothing goes out as a raw verb', 'api.verb calls: ' + short(w.verbs));
+  ok(!isOn(rb), 'until the stream says so, the checkbox shows the state last streamed, not the click', 'after the tick, with nothing streamed: checked');
   change(rb, false); await settle();
-  const asked2 = w.verbs.filter(function (v) { return v.name === 'agent.debug'; }).pop();
-  ok(asked2 && asked2.args && asked2.args.on === false, 'unticking it calls agent.debug {on: false}', 'verbs: ' + short(w.verbs));
+  const asked2 = w.calls[w.calls.length - 1];
+  ok(asked2 && asked2.on === false, 'unticking it calls debug {on: false}', 'debug calls: ' + short(w.calls));
   ok(w.onJobs.length > 0, 'it listens to the stream', 'no onJobs');
   w.stream(true); await settle();
   ok(isOn(rb), 'the checkbox follows the server\'s state on the stream: on', 'after the stream said on: unchecked');
   w.stream(false); await settle();
   ok(!isOn(rb), 'and off', 'after the stream said off: checked');
 
-  test.subHeading('the title bar says DEBUG only with both on');
-  const says = function () { return /DEBUG/.test(w.title()); };
-  ok(!says(), 'showDebug on, the server off: no DEBUG in the title', 'title: ' + short(w.title()));
+  test.subHeading('the title bar shows the bug only with both on');
+  const says = function () { return w.title().indexOf(BUG) !== -1; };
+  ok(!says(), 'showDebug on, the server off: no bug in the title', 'title: ' + short(w.title()));
   w.stream(true); await settle();
-  ok(says(), 'showDebug on, the server on: the title says DEBUG', 'title: ' + short(w.title()));
+  ok(says(), 'showDebug on, the server on: the title shows the bug ' + BUG, 'title: ' + short(w.title()));
   change(lb, false); await settle();
-  ok(!says(), 'showDebug off, the server on: no DEBUG', 'title: ' + short(w.title()));
+  ok(!says(), 'showDebug off, the server on: no bug', 'title: ' + short(w.title()));
   change(lb, true); await settle();
-  ok(says(), 'showDebug on again: DEBUG again', 'title: ' + short(w.title()));
+  ok(says(), 'showDebug on again: the bug again', 'title: ' + short(w.title()));
   w.stream(false); await settle();
-  ok(!says(), 'the server off again: no DEBUG', 'title: ' + short(w.title()));
+  ok(!says(), 'the server off again: no bug', 'title: ' + short(w.title()));
+
+  test.subHeading('the state streamed before it opened is there at once');
+  const w4 = world(JSON.stringify({ showDebug: true }));
+  const def4 = load(w4);
+  def4.mount(box('app4'), w4.api); await settle();
+  w4.snapshot(true); await settle();
+  const R4 = ((w4.created[0] || {}).opts || {}).right || [];
+  const L4 = ((w4.created[0] || {}).opts || {}).left || [];
+  const rb4 = box('right4'); if (R4[0]) R4[0].mount(rb4);
+  if (L4[0]) L4[0].mount(box('left4'));
+  await settle();
+  ok(isOn(rb4), 'handed the whole set of jobs with no single one, the right checkbox shows the server on', 'right checkbox: ' + (rb4.inputs[0] ? rb4.inputs[0].checked : 'none'));
+  ok(w4.title().indexOf(BUG) !== -1, 'and the title shows the bug', 'title: ' + short(w4.title()));
 
   test.subHeading('it bootstraps its own components');
   const w3 = world(null);
@@ -193,6 +217,6 @@ test.startTest('agent.js: the agent face app');
   const lb2 = box('left2'); if (L2[0]) L2[0].mount(lb2); await settle();
   ok(L2.length === 1 && !isOn(lb2), 'with no config file, showDebug is false: the checkbox is unchecked', 'checkbox: ' + (lb2.inputs[0] ? lb2.inputs[0].checked : 'none'));
   w2.stream(true); await settle();
-  ok(!/DEBUG/.test(w2.title()), 'and the title does not say DEBUG, the server on or not', 'title: ' + short(w2.title()));
+  ok(w2.title().indexOf(BUG) === -1, 'and the title shows no bug, the server on or not', 'title: ' + short(w2.title()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
