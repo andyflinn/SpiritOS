@@ -90,7 +90,8 @@ const verb = function (name) { return served.verbs[name]; };
 function call(name, args, caller) { return Promise.resolve().then(function () { return verb(name).handler(args || {}, caller || OWNER); }); }
 function ask(name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}) }); }
 // One wait, as the agent's listener asks it: its lines, or a refusal's code.
-function next() { return call('next', {}).then(function (r) { return r; }, function (e) { return { refused: e.refusal || e.message }; }); }
+// read: the key of the last wake the agent read (goal/G41.11: "the next arm must name it"), or none.
+function next(read) { return call('next', read ? { read: read } : {}).then(function (r) { return r; }, function (e) { return { refused: e.refusal || e.message }; }); }
 const has = function (r, s) { return !!(r && Array.isArray(r.lines) && r.lines.some(function (l) { return String(l).indexOf(s) !== -1; })); };
 
 test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G41.11)');
@@ -227,11 +228,29 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
     r.lines.forEach(function (l) { got.push(String(l)); });
     if (!r.more) break;
     rounds += 1;
-    r = await next();
+    // Each wait names the wake just read, so deskClient may drop it and hand on the rest.
+    r = await next(r.key);
   }
   const missing = sent.filter(function (s) { return !got.some(function (l) { return l.indexOf(s) !== -1; }); });
   ok(got.some(function (l) { return l.indexOf('the trigger') !== -1; }), 'the line meant for it is handed over', 'got ' + got.length + ' lines');
   ok(firstMore, 'more than one answer holds: the first says more', 'first answer had no more');
   ok(missing.length === 0, 'every one of the 250 lines that came while it was busy is handed over, over as many waits as it takes: none dropped by a cap, none cut and lost', missing.length + ' of 250 never handed over (first missing: ' + short(missing[0]) + ')');
+  // Whatever the last wait handed is read: its key comes back, so the queue is clear for what follows.
+  if (r && r.key) await next(r.key);
+
+  test.subHeading('a wake is dropped only once read: the next wait names its key (Andy, goal/G41: "make the red assert it")');
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: read me first' } });
+  await settle();
+  const w1 = await next();
+  ok(has(w1, 'read me first') && typeof (w1 && w1.key) === 'string' && w1.key.length > 0, 'a wake carries its key', 'wake: ' + short(w1));
+  const t2 = Date.now();
+  const w2 = await next();
+  ok(has(w2, 'read me first') && w2.key === w1.key && Date.now() - t2 < 3000, 'a wait that names no key gets the unread wake again at once, under the same key', 'second wait: ' + short(w2) + ' after ' + (Date.now() - t2) + ' ms');
+  const w3 = await next('an older key');
+  ok(has(w3, 'read me first') && w3.key === w1.key, 'a wait that names an older key gets the unread wake again', 'third wait: ' + short(w3));
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: and then this' } });
+  await settle();
+  const w4 = await next(w1.key);
+  ok(has(w4, 'and then this') && !has(w4, 'read me first') && w4.key && w4.key !== w1.key, 'naming its key drops the wake: the next wait hands only what came after, under a new key', 'fourth wait: ' + short(w4));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
