@@ -2214,10 +2214,15 @@ function publishOne(o) {
 // (box v8: "for the desk that may be no more than the bare goal row"). The desk never acts as a client of its clients
 // and keeps nothing from them; it follows no stream itself (box v42).
 const CLIENT_WAIT_MS = 10000;
+// THE RULES COME WITH IT (goal/G41.2). Andy: "the deskClient is already supposed to have every fucking applicable rule
+// in it's cache", as goal/G40.12's box has it: "The desk client caches ... the desk pushes them only when an attachment
+// changes, so a wake carries no rule text it already holds." So a subscriber is handed every active rule first, each as
+// the publish its writes make ({rule, row}), and from then on hears each rule write; it never asks for a rule's text.
 function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
-  return [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
-    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); });
+  const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
+  return rules.concat([S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; })
+    .map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {

@@ -1073,6 +1073,7 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
         if (!caller) return;
         // A SLOW RELAY FOR A RULE'S TEXT, as on 2026-10-27: the desk's answer to rule.get comes 15 s late.
         const slow = !!(ask && ask.body && ask.body.desk && ask.body.desk['rule.get']);
+        if (slow) out.ruleGets = (out.ruleGets || 0) + 1;
         test.peerAnswer(client, (ask && ask.body) || {}, caller).then(function (r) {
           const made = packet.encode('api', r && r.body, { re: hash });
           setTimeout(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: to, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); }, slow ? 15000 : 0);
@@ -1176,9 +1177,12 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     else test.fail('the new current goal did not reach the agent: ' + short(wr.steps.current));
   }
   if (wr.up === true) {
-    if (wr.ruleKey && wr.controlMs < 12000 && woke(wr.steps.control, /control: a line/) && woke(wr.steps.control, new RegExp('RULES goal/G102\\.2: .*' + wr.ruleKey.replace('/', '\\/'))))
-      test.check('a wake never loses its lines to a slow rule: with the rule\'s text 15 s late, the lines and the rule\'s key arrive in ' + wr.controlMs + ' ms');
-    else test.fail('a slow rule cost the wake: ' + wr.controlMs + ' ms, lines ' + short(wr.steps.control) + ', rule ' + short(wr.ruleKey));
+    // The rules come from deskClient's cache (Andy: "the deskClient is already supposed to have every fucking applicable
+    // rule in it's cache"): a wake asks the desk for no rule, and so never waits on the relay for one.
+    if (wr.ruleKey && !wr.ruleGets && wr.controlMs < 12000 && woke(wr.steps.control, /control: a line/) &&
+      woke(wr.steps.control, new RegExp('RULES goal/G102\\.2: .*' + wr.ruleKey.replace('/', '\\/'))) && woke(wr.steps.control, new RegExp('^RULE ' + wr.ruleKey.replace('/', '\\/') + '@\\d+ desk: Read the news: Read the news of a wake\\.')))
+      test.check('a wake carries its rules from deskClient\'s cache: the rule\'s key and its text, no rule asked of the desk, in ' + wr.controlMs + ' ms');
+    else test.fail('the wake\'s rules: ' + wr.controlMs + ' ms, ' + (wr.ruleGets || 0) + ' rule.get asked, lines ' + short(wr.steps.control) + ', rule ' + short(wr.ruleKey));
     if (wr.streamedAny > 0 && wr.statusStreamed === 0) test.check('a file\'s status goes to his page alone: none is streamed to an agent (' + wr.streamedAny + ' rows streamed to it, none a status)');
     else test.fail('file statuses streamed to the agent: ' + wr.statusStreamed + ' of ' + wr.streamedAny + ' rows');
   }

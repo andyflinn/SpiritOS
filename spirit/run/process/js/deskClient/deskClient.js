@@ -323,6 +323,9 @@ function wakeOnHeld(row, change) {
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
+  // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write. A wake reads its
+  // rules from here and asks the desk for none.
+  if (row.rule && row.row && typeof row.row === 'object') { dataSet.set('deskRules/' + String(row.rule), row.row); return; }
   wakeOnHeld(row, keepSinceWake(row));
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
@@ -605,11 +608,10 @@ function handOver(to, t0) {
   agentState = 'busy';
   const cut = lines.length < all.length;
   // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
-  // deskClient?". The lines are taken off the queue above, so an answer later than the node's wait (12 s) lost them: a
-  // new rule's text is asked of the desk, over the relay, and took 5 to 10 s each on 2026-10-27. The texts get the time
-  // the answer has left; one not back by then is handed on a later wake, its key already in the RULES line.
-  return within(rulesOfWake(to, lines), Math.max(0, t0 + LEAVE_BY_MS - SAY_MS - Date.now())).then(function (got) {
-    const rules = Array.isArray(got) ? got : rulesKeysOf(lines);
+  // deskClient?", and "the deskClient is already supposed to have every fucking applicable rule in it's cache". The
+  // lines are taken off the queue above, so an answer later than the node's wait (12 s) lost them: a new rule's text was
+  // asked of the desk, over the relay, at 5 to 10 s each on 2026-10-27. The rules come from the stream now (rulesOfWake).
+  return rulesOfWake(to, lines).then(function (rules) {
     rules.forEach(function (l) { if (Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true }), 'utf8') <= ANSWER_ROOM) lines.push(l); });
     const answer = cut ? { lines: lines, more: true } : { lines: lines };
     return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return answer; });
@@ -619,21 +621,9 @@ function handOver(to, t0) {
 // THE RULES WITH EVERY WAKE (goal/G40.12, box v7, second set 4-6 and 8): a wake names, for each item its lines are about,
 // the rules of the phase that item is in, its goal's and its own, each once (the facts' phaseRules, kept from the desk's
 // push, so nothing is asked of the desk for them): "RULES <id>: rule/n@v ...". A rule's text comes once, the first time
-// this deskClient hands that version over ("RULE rule/n@v <type>: <label>: <text>"), asked of the desk then; after that
+// this deskClient hands that version over ("RULE rule/n@v <type>: <label>: <text>"), from the rules the stream brought (goal/G41.2); after that
 // the key is enough. Kept for the life of this process.
 const rulesHanded = new Set();
-// The RULES lines alone, the keys of the phase rules for each item the lines name, asked of nobody.
-function rulesKeysOf(lines) {
-  const out = [];
-  lines.forEach(function (l) {
-    const m = /"id":"(goal\/G[0-9.]+)"/.exec(String(l));
-    const row = m ? dataSet.get('deskItems/' + m[1]) : null;
-    const rules = row && Array.isArray(row.phaseRules) ? row.phaseRules : [];
-    const said = rules.length ? 'RULES ' + m[1] + ': ' + rules.map(function (r) { return r.key + '@' + r.version; }).join(' ') : '';
-    if (said && out.indexOf(said) === -1) out.push(said);
-  });
-  return out;
-}
 function rulesOfWake(to, lines) {
   const ids = [];
   lines.forEach(function (l) {
@@ -653,13 +643,15 @@ function rulesOfWake(to, lines) {
       texts.push({ tag: tag, key: r.key });
     });
   });
-  return Promise.all(texts.map(function (t) {
-    return askDesk(to, 'rule.get', { key: t.key }).then(function (g) {
-      if (!g || g.ok === false || !g.text) return '';
-      rulesHanded.add(t.tag);
-      return 'RULE ' + t.tag + ' ' + g.type + ': ' + g.label + ': ' + String(g.text).replace(/\s+$/, '');
-    }, function () { return ''; });
-  })).then(function (said) { return out.concat(said.filter(Boolean)); }, function () { return out; });
+  // From the rules the stream brought (goal/G41.2): nothing is asked of the desk. A rule not kept yet is named by its key
+  // alone, and its text comes on a later wake once its row has arrived.
+  const said = texts.map(function (t) {
+    const g = dataSet.get('deskRules/' + t.key);
+    if (!g || !g.text) return '';
+    rulesHanded.add(t.tag);
+    return 'RULE ' + t.tag + ' ' + g.type + ': ' + g.label + ': ' + String(g.text).replace(/\s+$/, '');
+  });
+  return Promise.resolve(out.concat(said.filter(Boolean)));
 }
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
