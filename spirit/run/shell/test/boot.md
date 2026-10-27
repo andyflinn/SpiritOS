@@ -25,6 +25,13 @@ app loads its own components, as a tree, through spirit.require.
 - Both are core whole, manifest and sidecar included, as are boot, the seal, the sheet and the icon, so no page can
   change them.
 
+## An app shows only while its server runs (goal/G27.16; goal/G41.1, box v14)
+
+- boot reads the `server` a face app's manifest names, beside its face mark.
+- The app's icon is on the desktop while its face mark is on and, if it names a server, while a server job of that
+  module (`process/js/<server>`) is running or pending on the stream.
+- When the server stops, or the face mark goes, the icon goes and every page of the app that is open is closed.
+
 ## Every face app loads alone
 
 - Every app with a face mark (`face.app` in its sidecar) mounts with nothing on the page but a `spirit.require` that
@@ -35,4 +42,5 @@ app loads its own components, as a tree, through spirit.require.
 ## What its test must try to break
 
 - A component an app uses without asking for it.
+- An app whose server stopped left on the desktop, or its page left open.
 - An old face/ path left in boot, spirit.js or face.html.

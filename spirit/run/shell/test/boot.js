@@ -150,6 +150,21 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
   ok(!notCore.length, 'boot, the seal, the sheet, the icon, and the login and Join apps whole, sidecars included, are core', 'not core: ' + notCore.join(', '));
 
+  // AN APP SHOWS ONLY WHILE ITS SERVER RUNS, ON THE FACE TOO (goal/G27.16; goal/G41.1, box v14): boot reads the server a
+  // face app's manifest names, shows the app only while a server job of that module runs or is pending, and when the
+  // server stops, or the app's face mark goes, takes its icon down and closes a page of it that is open.
+  test.subHeading('an app shows only while its server runs (G27.16)');
+  if (boot) {
+    const readFaceAt = (/function readFace\(id\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || '';
+    ok(/\.json'/.test(readFaceAt) && /\.server\b/.test(readFaceAt), 'a face app\'s manifest is read for the server it names', 'readFace reads no manifest server');
+    ok(/function serverUp\(/.test(boot) && /'process\/js\/' \+/.test(boot) && /'running'/.test(boot) && /'pending'/.test(boot),
+      'a server is up while a server job of its module runs or is pending', 'boot has no serverUp over its server jobs');
+    const drawAt = (/function drawDesktop\(\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || '';
+    ok(/serverUp\(/.test(drawAt), 'the desktop draws an app only while its server is up', 'drawDesktop does not ask serverUp');
+    ok(/function closePages\(/.test(boot) && /\.close\(\)/.test(boot) && /closePages\(/.test(readFaceAt), 'an app whose server stops or whose face mark goes has its open pages closed',
+      'boot keeps no pages to close, or readFace does not close them');
+  }
+
   test.subHeading('every face app loads alone');
   const apps = fs.readdirSync(path.join(RUN, 'shell'), { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; })
     .filter(function (a) {
