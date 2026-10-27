@@ -1,5 +1,5 @@
 {
- "change": 104987,
+ "change": 105110,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.1"
+    "goal/G41.1",
+    "goal/G41.2"
    ],
    "codeOffered": false,
    "go": false,
@@ -79,7 +80,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -114,13 +115,12 @@
    "id": "goal/G41.1",
    "title": "Create \"agent\" skelleton",
    "goal": "goal/G41",
-   "status": "running",
-   "statusTone": "",
-   "with": "",
-   "version": 7,
+   "status": "tabContainer.js changed",
+   "statusTone": "code",
+   "with": "claude-windows",
+   "version": 8,
    "buttons": [
     "start-design",
-    "delete",
     "verify"
    ],
    "blocking": [
@@ -130,23 +130,27 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 0,
+   "fileCount": 4,
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "creator": "andy",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -159,6 +163,10 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -171,10 +179,11 @@
    "names": {
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- create \"agent\" appServer skeleton, maintaining the agent.db SQLite database, this appServer maintains all state, broadcast that state to its clients.\n\n- create \"agent\" face-app skeleton based on the proposed and deferred new chatter interface, 3-panes, left, middle, right, with vertical icon-tool-strips along the windows left and right edges\n\n- create \"shell/js/workBench.js\" element skeleton, the top level visual container, taking 100% of the app-space below the face-shells titlebar\n\n- create \"shell/js/tabContainer\" element skeleton, an element with one row for tabs at the top, displaying the tab content in the remaining vertical space.\n\n- create a test/ folder for both \"agent\" components, face-app and appServer, as well as a test/ folder for both new shell elements, these four test/ folders will the ONLY test containers for this app.\n\n- this is the hello-word item for this goal.\n\n# item requirements:\n\n- the workbench element creates a layout as discussed in the stale goal describing a chatter-revamp\n- the agent app loads in the face.html loopback and internet. \n- 1 tool on the left side vertical icon strip, maintains relay-state/shell/agent/config.json: whether the window's title bar shows the agent server's DEBUG state.\n- 1 tool on the right side vertical icon strip, maintains relay-state/process/agent/config.json: the agent server's DEBUG state. The page cannot write a process's config, so the tool asks the agent server through its verb agent.debug {on} (Andy, Q3), and the server writes its own config. The DEBUG state itself reaches the page on the server's stream, so there is no read verb.\n\n# the rule of this app (Andy, Q1)\n\n- no agents talk to each other in this app: each agent sees itself as the only agent and user of the node. The ruling of 2026-10-02 (goal/G3.1) stands, and an agent raises a red Q whenever it is broken.\n",
+   "box": "- create \"agent\" appServer skeleton, maintaining the agent.db SQLite database, this appServer maintains all state, broadcast that state to its clients.\n\n- create \"agent\" face-app skeleton based on the proposed and deferred new chatter interface, 3-panes, left, middle, right, with vertical icon-tool-strips along the windows left and right edges\n\n- create \"shell/js/workBench.js\" element skeleton, the top level visual container, taking 100% of the app-space below the face-shells titlebar\n\n- create \"shell/js/tabContainer\" element skeleton, an element with one row for tabs at the top, displaying the tab content in the remaining vertical space.\n\n- create a test/ folder for both \"agent\" components, face-app and appServer, as well as a test/ folder for both new shell elements, these four test/ folders will the ONLY test containers for this app.\n\n- this is the hello-word item for this goal.\n\n# item requirements:\n\n- the workbench element creates a layout as discussed in the stale goal describing a chatter-revamp\n- the agent app loads in the face.html loopback and internet. \n- 1 tool on the left side vertical icon strip, maintains relay-state/shell/agent/config.json: whether the window's title bar shows the agent server's DEBUG state.\n- 1 tool on the right side vertical icon strip, maintains relay-state/process/agent/config.json: the agent server's DEBUG state. The page cannot write a process's config, so the tool asks the agent server through its verb agent.debug {on} (Andy, Q3), and the server writes its own config. The DEBUG state itself reaches the page on the server's stream, so there is no read verb. agent.debug maintains the existing debug state of the agent server, the one its built-in DEBUG verb switches, not a second one; the server keeps it in its config and persists it across restarts (Andy, Q4).\n\n# the rule of this app (Andy, Q1)\n\n- no agents talk to each other in this app: each agent sees itself as the only agent and user of the node. The ruling of 2026-10-02 (goal/G3.1) stands, and an agent raises a red Q whenever it is broken.\n",
    "checks": [
     {
      "number": "Q1",
@@ -211,6 +220,28 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Shall the agent server use the DEBUG verb every server already has, keeping its state in its config and on its stream, instead of a new agent.debug?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T00:40:57.540Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T00:49:49.059Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -303,6 +334,189 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T00:33:28.633Z",
      "text": "- cw: boxed (v7): agent.debug {on} sets the DEBUG state; the page reads it from the server's stream.\n- Green from me: nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:35:12.259Z",
+     "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:36:03.156Z",
+     "text": "- cw: taking the red. Its files, the four test folders the box names and nothing else:\n- process/js/agent/test/agent.js and agent.md\n- shell/agent/test/agent.js and agent.md\n- shell/js/test/workBench.js and workBench.md\n- shell/js/test/tabContainer.js and tabContainer.md\n- (all under spirit/run/)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:37:10.344Z",
+     "text": "- cw: found while writing the red: every server already has a DEBUG verb. appServer gives it to each server by itself, DEBUG {on}, and it switches spirit.debug for that process. So agent.debug {on}, which you approved in Q3, would be a second verb for the same switch.\n- What the built-in one lacks for this item: it keeps nothing (a restart forgets it) and it streams nothing.\n- My recommendation: no new verb. The agent server uses the DEBUG verb it already has; it keeps the state in relay-state/process/agent/config.json, reads it back at start, and streams it with its state.\n- Red Q below; the server's test waits on it, the other three do not."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:38:19.392Z",
+     "text": "Q4: Shall the agent server use the DEBUG verb every server already has, keeping its state in its config and on its stream, instead of a new agent.debug?\n\nthe agent verb  will simply maintain the existing debug state of the agent server"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:39:16.507Z",
+     "text": ".. and the agent persists that state across server restarts."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:41:02.022Z",
+     "text": "- cw: boxed (v8): agent.debug maintains the existing debug state of the agent server, not a second one, kept in its config and persisted across restarts. Writing the server's test to that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:49:10.336Z",
+     "text": "you need grants"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-27T00:49:10.340Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:49:39.531Z",
+     "text": "- cw: the red is written: four test pairs, each beside its module, all red today, all green against a throwaway sketch in my scratch copy.\n- workBench and tabContainer sit in shell/js/test/, which is core, so the commit waits on your grant of the list: the four files of those two tests. The other four, under process/js/agent/test/ and shell/agent/test/, need none.\n- Grant the list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:50:21.537Z",
+     "text": "?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T00:53:15.171Z",
+     "text": "granted a long time ago. we'll address minor desk issues in an adhoc item next"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:56:43.718Z",
+     "text": "commit ef2da8cb91cf5513d96d77dab930b9321bc7cd6a: goal/G41.1 red: the agent server, the agent face app, workBench and tabContainer, each a test pair beside its module\n- spirit/run/process/js/agent/test/agent.js\n- spirit/run/process/js/agent/test/agent.md\n- spirit/run/shell/agent/test/agent.js\n- spirit/run/shell/agent/test/agent.md\n- spirit/run/shell/js/test/tabContainer.js\n- spirit/run/shell/js/test/tabContainer.md\n- spirit/run/shell/js/test/workBench.js\n- spirit/run/shell/js/test/workBench.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T00:57:31.713Z",
+     "text": "- cw: sorry, I missed your grant in the lag. The red is pushed at ef2da8cb.\n- But it cannot be claimed: item.suites.add takes spirit/test/ paths only and refuses the four product tests, and a red claim needs at least one suite row. So the red stays open with me.\n- One for your quick desk item: item.suites.add takes a product test, a .js in a test/ folder of the run tree, as G40.13 already lets the verifier run them."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.2",
+   "title": "Desk Fixes",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 2,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 0,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "BUGS\n- the desk UI does NOT properly cache box content, and obviousy does not comply with the client-caching rules.\n- the desk allows each agent one red Q at the time, per item. when the user's chat time starts with Q<number> the desk must direct that line to the agent who posted the Q\n- file-core grants reference the agent who requests them, when granted, the agent must be woken to notice....\n- this is a pattern. do other desk posts and presses fail to report to all or specific agents?\n- the desk is SLOW. what happended, likely something in desk.... and deskClient's must know at all times which is the current gloal, changes in \"current\" goal must be broadcast and knows instantly by all clients.\n- claude-windows: item.suites.add takes a product test, a .js in a test/ folder of the run tree, as G40.13 already lets the verifier run them.\n- plugin/special goals must never be show in the main list.\n\nORDER (Andy, yes)\n- First the slow hop is found, from the time deskClient keeps per ask, before any of the fixes.\n",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T01:03:56.315Z",
+     "text": "feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T01:06:06.591Z",
+     "text": "- cw: checked against the code at the current master; five of the seven are confirmed.\n- Box caching: confirmed. The details clear the box on every open and ask the desk again; the stream only updates the box of the item that is open. So nothing is kept per item.\n- Q routing: confirmed. Your line wakes an agent only when it holds the item, when nobody holds it, or when the line is addressed to it. A line starting with Q3: is not sent to the agent who placed Q3.\n- Grants: confirmed, and it is why I missed yours. A check change (a grant, a cleared Q) reaches an agent only as news, which wakes nobody.\n- The pattern: yes. Checks and presses on an item an agent does not hold arrive as news only. Only chat lines, and the status of the agent's own phase, wake it.\n- Slow: measured from my side only: about 10 s per small question, frequent 504s, and the relay giving up after 5 s. My node and its deskClient are idle, so the time goes beyond them. deskClient keeps a time per ask in its history, so the item can find the slow hop first.\n- Plugin goals: the desk's List rule takes no notice of plugin goals; they are kept off only as the current goal.\n- Current goal: not checked yet.\n- Q: shall the item start by finding the slow hop, before the fixes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T01:08:07.596Z",
+     "text": "Q: yes.\n\ngreen otherwise?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T01:09:09.269Z",
+     "text": "my guess is: during the last desk overhaul the search reverted to not being bounded by the current goal...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T01:09:30.790Z",
+     "text": "- cw: boxed: the slow hop first, then the fixes.\n- Green otherwise. The current goal reaches each deskClient on the desk's stream already; whether every change of it arrives at once is for the red to prove, not a design question."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T01:11:39.494Z",
+     "text": "my GUESS: when we last updated go probabilitySearch, the chance throw out this: the search must by default be bounded/restricted to the current goal."
     }
    ]
   }
