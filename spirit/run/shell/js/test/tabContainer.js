@@ -1,0 +1,143 @@
+'use strict';
+
+// spirit/run/shell/js/test/tabContainer.js
+// The tests of shell/js/tabContainer.js, and of no other module (spec: ./tabContainer.md; goal/G41.1). The browser file
+// runs in node on a window of its own; the container is a stub that keeps a node per id it draws and hears its
+// listeners, and a box made by document.createElement is a stub node too.
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const test = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'testReport.js'));
+
+const FILE = path.join(__dirname, '..', 'tabContainer.js');
+
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+
+// ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
+function node(id) {
+  const n = { id: id || '', hidden: false, hiddenAttr: false, style: {}, innerHTML: '', children: [], className: '',
+    appendChild: function (c) { n.children.push(c); c.parent = n; return c; },
+    setAttribute: function (k, v) { if (k === 'hidden') n.hidden = true; n['attr_' + k] = String(v); },
+    removeAttribute: function (k) { if (k === 'hidden') { n.hidden = false; n.hiddenAttr = false; } delete n['attr_' + k]; },
+    getAttribute: function (k) { return n['attr_' + k] == null ? null : n['attr_' + k]; },
+    addEventListener: function () {}, removeEventListener: function () {},
+    querySelector: function () { return null; }, closest: function () { return null; } };
+  return n;
+}
+global.document = { createElement: function () { return node(''); }, addEventListener: function () {}, removeEventListener: function () {} };
+function container() {
+  const nodes = {}; const heard = {}; let html = ''; let listeners = 0;
+  const c = {
+    nodes: nodes, style: {}, className: '',
+    get innerHTML() { return html; },
+    set innerHTML(v) {
+      html = String(v);
+      const re = /<[^>]*\bid="([^"]+)"[^>]*>/g; let m;
+      while ((m = re.exec(html))) { const n = nodes[m[1]] = nodes[m[1]] || node(m[1]); n.hiddenAttr = /\shidden(\s|>|=|\/)/.test(m[0]); }
+    },
+    querySelector: function (sel) { return sel.charAt(0) === '#' ? nodes[sel.slice(1)] || null : null; },
+    addEventListener: function (type, fn) { (heard[type] = heard[type] || []).push(fn); listeners += 1; },
+    removeEventListener: function (type, fn) { const l = heard[type] || []; const i = l.indexOf(fn); if (i !== -1) { l.splice(i, 1); listeners -= 1; } },
+    appendChild: function (ch) { return ch; },
+    listenerCount: function () { return listeners; },
+    heardTypes: function () { return Object.keys(heard).filter(function (t) { return heard[t].length; }); },
+    perType: function () { return Object.keys(heard).every(function (t) { return heard[t].length <= 1; }); },
+    fire: function (type, e) { (heard[type] || []).slice().forEach(function (fn) { fn(e); }); },
+    part: function (name) { const k = Object.keys(nodes).filter(function (id) { return id.slice(-name.length) === name; })[0]; return k ? nodes[k] : null; },
+    order: function () { const out = []; const re = /\bid="([^"]+)"/g; let m; while ((m = re.exec(html))) out.push(m[1]); return out; },
+  };
+  return c;
+}
+function clickOn(name) {
+  const button = { getAttribute: function (k) { return k === 'data-tab' ? name : null; }, dataset: { tab: name } };
+  return { target: { closest: function (sel) { return /data-tab|button/.test(sel) ? button : null; }, getAttribute: button.getAttribute, dataset: button.dataset },
+    preventDefault: function () {}, stopPropagation: function () {} };
+}
+const hiddenNow = function (n) { return !!n && (n.hidden === true || n.hiddenAttr === true || n.style.display === 'none'); };
+// What the row says is selected: the aria-selected of each button, by its tab.
+function marks(html) {
+  const out = {}; const re = /<button[^>]*>/g; let m;
+  while ((m = re.exec(html))) {
+    const tab = /data-tab="([^"]*)"/.exec(m[0]); const sel = /aria-selected="([^"]*)"/.exec(m[0]);
+    if (tab) out[tab[1]] = sel ? sel[1] : null;
+  }
+  return out;
+}
+
+test.startTest('tabContainer.js: a row of tabs, the content below');
+
+if (!fs.existsSync(FILE)) {
+  test.fail('shell/js/tabContainer.js is not there');
+  test.reportSuccessFailureCount();
+  process.exit(0);
+}
+global.window = { spirit: { elements: {} } };
+let loadError = null;
+try { vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE }); } catch (e) { loadError = e; }
+const T = window.spirit.elements.tabContainer;
+ok(!loadError && T && typeof T.create === 'function', 'it loads on window.spirit.elements.tabContainer with create',
+  'loading: ' + (loadError ? loadError.message : 'no window.spirit.elements.tabContainer.create'));
+if (!T || typeof T.create !== 'function') { test.reportSuccessFailureCount(); process.exit(0); }
+
+const mounted = [];
+function tab(name) { return { name: name, label: 'L' + name, mount: function (box) { mounted.push({ name: name, box: box }); } }; }
+
+test.subHeading('the row and the content, in a box it does not size');
+const c1 = container();
+const tc = T.create(c1, { tabs: [tab('one'), tab('two'), tab('three')] });
+const ids = c1.order();
+const iTabs = ids.findIndex(function (id) { return /tabs$/.test(id); });
+const iContent = ids.findIndex(function (id) { return /content$/.test(id); });
+ok(iTabs !== -1 && iContent > iTabs, 'it draws the row of tabs, then the content area', 'parts: ' + JSON.stringify(ids));
+ok(iTabs !== -1 && iContent !== -1 && ids[iTabs].replace(/tabs$/, '') === ids[iContent].replace(/content$/, '') && ids[iTabs] !== 'tabs',
+  'both ids start with the same prefix of its own element', 'ids: ' + JSON.stringify(ids));
+const c1b = container(); T.create(c1b, { tabs: [tab('second')] });
+ok(c1b.order()[0] !== ids[0], 'two tab containers never share a prefix', 'the second drew ' + JSON.stringify(c1b.order()[0]));
+ok(/class="[^"]*\bfill\b/.test(c1.innerHTML) && new RegExp('id="' + (ids[iContent] || 'x') + '"[^>]*class="[^"]*\\bfill\\b|class="[^"]*\\bfill\\b[^"]*"[^>]*id="' + (ids[iContent] || 'x') + '"').test(c1.innerHTML),
+  'its root and its content area take the shell\'s fill class', 'markup: ' + c1.innerHTML.slice(0, 300));
+ok(!c1.style.width && !c1.style.height && !c1.style.flex, 'it sets no size on the container it is given', 'container style: ' + JSON.stringify(c1.style));
+
+test.subHeading('the buttons');
+const m0 = marks(c1.innerHTML);
+ok(JSON.stringify(Object.keys(m0)) === '["one","two","three"]' && /Lone/.test(c1.innerHTML) && /Ltwo/.test(c1.innerHTML),
+  'one button per tab, with its name and its label', 'buttons: ' + JSON.stringify(m0));
+ok(m0.one === 'true' && m0.two === 'false' && m0.three === 'false', 'the selected tab\'s button carries aria-selected true, every other false',
+  'marks: ' + JSON.stringify(m0));
+
+test.subHeading('selecting');
+const firstMounts = mounted.filter(function (m) { return m.name === 'one' || m.name === 'two' || m.name === 'three'; });
+ok(tc.selected() === 'one' && firstMounts.length === 1 && firstMounts[0].name === 'one' && firstMounts[0].box && typeof firstMounts[0].box === 'object',
+  'at start the first tab is selected and mounted once, into a box of its own', 'selected ' + tc.selected() + ', mounted ' + JSON.stringify(mounted.map(function (m) { return m.name; })));
+const c2 = container(); const before = mounted.length;
+const tc2 = T.create(c2, { tabs: [tab('p'), tab('q')], selected: 'q' });
+ok(tc2.selected() === 'q' && mounted.length === before + 1 && mounted[before].name === 'q', 'selected names the tab shown first',
+  'selected ' + tc2.selected());
+const c3 = container(); const tc3 = T.create(c3, { tabs: [tab('r'), tab('s')], selected: 'nosuch' });
+ok(tc3.selected() === 'r', 'a selected that names no tab falls back to the first', 'selected ' + tc3.selected());
+tc.select('two');
+const boxOne = mounted.filter(function (m) { return m.name === 'one'; })[0].box;
+const boxTwo = (mounted.filter(function (m) { return m.name === 'two'; })[0] || {}).box;
+ok(tc.selected() === 'two' && boxTwo && boxTwo !== boxOne, 'select shows that tab, mounted into its own box', 'selected ' + tc.selected());
+ok(hiddenNow(boxOne) && !hiddenNow(boxTwo), 'only the selected tab\'s box shows; the others are hidden', 'one hidden ' + hiddenNow(boxOne) + ', two hidden ' + hiddenNow(boxTwo));
+const m1 = marks(c1.innerHTML);
+ok(m1.two === 'true' && m1.one === 'false', 'the marks follow the selection', 'marks: ' + JSON.stringify(m1));
+tc.select('one');
+ok(tc.selected() === 'one' && mounted.filter(function (m) { return m.name === 'one'; }).length === 1 && !hiddenNow(boxOne) && hiddenNow(boxTwo),
+  'a tab selected again is not mounted again: its box is kept and shown', 'mounts of one: ' + mounted.filter(function (m) { return m.name === 'one'; }).length);
+tc.select('nosuch');
+ok(tc.selected() === 'one', 'select with a name that is no tab changes nothing', 'selected ' + tc.selected());
+
+test.subHeading('its listeners: on its container, a click selects');
+ok(c1.perType() && c1.heardTypes().indexOf('click') !== -1, 'it listens on its container, one listener per event type', 'listeners: ' + JSON.stringify(c1.heardTypes()));
+c1.fire('click', clickOn('three'));
+ok(tc.selected() === 'three', 'a click on a tab button selects that tab', 'selected after a click on three: ' + tc.selected());
+
+test.subHeading('destroy');
+tc.destroy();
+ok(c1.innerHTML === '' && c1.listenerCount() === 0, 'destroy empties the container and drops its listeners', 'after destroy: ' + c1.listenerCount() + ' listeners');
+let threw = null;
+try { c1.fire('click', clickOn('one')); tc.select('two'); } catch (e) { threw = e; }
+ok(!threw, 'a click or a select after destroy does nothing and throws nothing', 'threw ' + (threw && threw.message));
+
+test.reportSuccessFailureCount();
