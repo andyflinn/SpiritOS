@@ -95,3 +95,13 @@ And agent may not autonomously split, create, delete or modify items, unless spe
 
 when closing an item, verify only with the items red. the full harness runs only to get the 'Done' button for the current goal.
 
+## test
+
+### rule/20 (version 50): verification of test folders in product tree
+
+do not claim verification of a product script is done is green until
+
+- the proper ./test folder and test/documentation files exists
+- the test completely verifies the behavior of that script, in line with all the requirements of the item
+- the doc.md file describes the new or changed behavior of that script completely and precisely in accordance with the items requirements
+
