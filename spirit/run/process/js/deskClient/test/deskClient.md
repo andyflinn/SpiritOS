@@ -11,7 +11,8 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - **The cache dump** (Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/<fixedFileName>.json"):
   the verb `cache.dump`, owner-only, writes the whole cache, its spirit.data tree, as JSON to `<state>/cache.json`
   (the node's state folder for deskClient, `relay-state/process/deskClient/`), and nowhere else, whatever the caller
-  names. A caller who is not the owner is refused `not-owner` and nothing is written. Its family interface
+  names: no file but `cache.json` appears in the state folder. A caller who is not the owner is refused `not-owner`.
+  (Since the cache is saved on every update, `cache.json` may stand before any dump.) Its family interface
   (`deskClient.family/api.js`) names it. For looking, never for deciding.
 - **The cache, whole from the first push**: the file list and the checks of every item of the current goal are kept
   from the first push of its facts, whole, so the agent's `item.files` and `item.checks` of such an item are answered
@@ -37,6 +38,17 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   naming its key drops it, and the next wait hands only what came after, under a new key.
 - **The news cap sheds only news never handed**, by bytes (Andy's standing rule: every store sheds past a cap), and
   the next wake says how many went; a line of a wake not yet read is never shed.
+- **The cache is saved on every update** (Andy: "on every update the deskClient receives, it saves the cache,
+  (10ms?)"): within `CACHE_SAVE_MS` (10 ms) of a row, `<state>/cache.json` holds the whole cache as it stands.
+- **A restart reads the cache back and subscribes from its position** (Andy: "(if it restarts or similar) it calls the
+  \"subscribe/(connect)\" verb do desk, (re-use that verb) with the position number as argument"): a deskClient started
+  on the same state folder holds what it kept before any push, and subscribes with `since` = the newest change it
+  heard (`desk/change`). `setDesk` naming the same desk subscribes from there; naming another desk, from 0.
+- **The catch-up**: rows the desk hands after such a subscribe are taken as any row: a line addressed to this agent
+  wakes it; a line addressed to another agent is neither its own nor its news.
+- **A push replaces the items and rules whole** (Q5, Andy: "YES"): deskClient names `renews: ['deskItems',
+  'deskRules']`; once a push has landed (`{ bootstrapped: true }`), an item it no longer holds is gone, while the
+  position (`desk/current`, `desk/change`) and the parts read (`deskItem`, a kept file list) are never swept.
 - **A bundle is its rows**: a publish `{ change, rows: [...] }` is taken row by row, as each row alone would be.
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
@@ -50,6 +62,10 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - A take with no answer that wakes the agent.
 - Lines cut from an answer, or past a cap, that never come.
 - A wake dropped before its key comes back, or an unread wake not handed again at once.
+- A cache not saved after a row, or not read back after a restart.
+- A restarted client that subscribes from 0, or from a position it did not hear.
+- A push that leaves a deleted item's facts, or sweeps the position or a kept file list.
+- A line for another agent that comes back in a catch-up as this agent's.
 
 ## Not testable as written here
 

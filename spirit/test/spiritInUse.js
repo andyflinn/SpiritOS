@@ -274,10 +274,14 @@ test.startTest('goal/G40.6 (throw-away): spirit.js works wherever it is put to u
     test.check('faceHome sends every process/js server job to the face, its status alone when it publishes no app object');
   else test.fail('faceHome does not send every appServer\'s status to the face');
 
-  test.subHeading('1f2. a process\'s cache forgets when it subscribes again');
-  const subscribeAt = /s\.subscribe = function \(key, family\) \{([\s\S]*?)\n  \};/.exec(code('spirit/appServer.js'));
-  if (subscribeAt && /dataSet\(\)\.forget\(\)/.test(subscribeAt[1])) test.check('appServer\'s subscribe forgets the server\'s cache before it asks the publisher, whose bootstrap then pushes it whole');
-  else test.fail('appServer\'s subscribe does not forget the server\'s cache before subscribing again');
+  // SUPERSEDED (goal/G41.11, Q5; Andy: "May a subscribe keep the old cache until the new push lands, then replace it
+  // whole, instead of wiping it first? YES"): the cache is no longer forgotten at the subscribe. appServer has its own
+  // test since (spirit/run/spirit/test/appServer.js), which holds the behaviour; this only checks the old wipe is gone.
+  test.subHeading('1f2. a process\'s cache is kept through a subscribe, replaced whole when the push lands');
+  const subscribeAt = /s\.subscribe = function \(key, family[^)]*\) \{([\s\S]*?)\n  \};/.exec(code('spirit/appServer.js'));
+  if (subscribeAt && !/dataSet\(\)\.forget\(\)/.test(subscribeAt[1]) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'appServer.js')))
+    test.check('appServer\'s subscribe forgets nothing; its own test (spirit/test/appServer.js) holds the cache replaced whole when the push lands');
+  else test.fail('appServer\'s subscribe ' + (!subscribeAt ? 'not found' : /dataSet\(\)\.forget\(\)/.test(subscribeAt[1]) ? 'still wipes the cache before the push lands' : 'has no test of its own'));
 
   // INFO ON THE FACE (goal/G40.10, box v5; Andy: "port the info app to face.").
   test.subHeading('1g. Info on the face: a face app, everything it calls the face gives it');

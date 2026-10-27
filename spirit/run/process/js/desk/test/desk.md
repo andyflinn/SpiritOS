@@ -27,6 +27,20 @@ folders").
   off is refused the box (taken, the cap's why), and an agent with cap on takes it under the one-write hold. A box write
   below red offers nothing.
 
+- **The position** (Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do desk, (re-use that
+  verb) with the position number as argument"): `subscribe {family, since?}`. Without `since`, or 0, the bootstrap is
+  what it always was: the current goal's facts whole, no side row. With `since` = N it hands, after the goal's facts,
+  every side row of the current goal and the group chat whose change is after N, oldest first, each as the row its
+  write published; nothing at or before N, nothing of another goal. A line of his addressed to other agents (its `to`)
+  never comes back to one it was not addressed to; one to the subscriber, or to nobody, does. The box has no change of
+  its own: an item whose own row changed after N hands its box too.
+- **Every push ends with `{ bootstrapped: true }`**, once, after its last row (Q5: the subscriber replaces its cache
+  whole once the push has landed).
+- **A subscribe does not expire** (Andy: "subscribes over peerPost should NOT expire"): a row a subscriber did not take
+  stays first in its queue and is posted to it again after the publisher's wait, the same row; once it answers, its
+  whole push and what was written meanwhile land, none dropped. Past QUEUE_MAX (1000) the oldest go; that cap is not
+  driven here (over a thousand rows behind a 10 s wait), it is the publisher's own (spirit/appServer.js).
+
 ## What its test must try to break
 
 - A list of paths refused, or only its first path landing.
@@ -34,3 +48,7 @@ folders").
 - A code item green with no files; a Go taken on it; a late file not marked, or an early one marked.
 - "all agents ..." or "wsl is ..." addressing anybody; an included agent left out of an ALL line.
 - A red box write that offers no cap; a cap offered to an agent with cap off; a cap offered below red.
+- A catch-up that hands nothing after the position, or the same again from before it, or another goal's lines.
+- A line to cw handed to ubi in a catch-up.
+- A push without its end, or with two.
+- A subscriber dropped, or its row lost, because one delivery got no answer.

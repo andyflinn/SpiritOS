@@ -47,12 +47,14 @@ const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
 const D = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
+const subscribeArgs = [];   // what each subscribe was handed: { key, family, since }
+let curD = D;   // the data set the running deskClient holds (a restarted one gets a fresh one)
 const appServerStub = {
-  get data() { return D; },
+  get data() { return curD; },
   serve: function (verbs, opts) {
     if (opts && opts.stream && opts.stream.translator) require(path.resolve(String(opts.stream.translator)));
     served = { verbs: verbs, opts: opts || {} };
-    return { subscribe: function () { subscribes += 1; return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
+    return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
   publish: function () {},
 };
@@ -82,8 +84,18 @@ let change = 0;
 function push(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
-  D.take({ module: 'process/js/desk', data: {}, app: r });
+  curD.take({ module: 'process/js/desk', data: {}, app: r });
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
+}
+// A row of a push, as appServer's streamListener takes it (spirit/appServer.js): into the data set under noting, so a push
+// being renewed keeps what it wrote; the push's end, { bootstrapped: true }, is no row: the renewal ends there.
+function pushNoted(row) {
+  if (row && row.bootstrapped === true) { curD.renewed(); return Promise.resolve(); }
+  change += 1;
+  const r = Object.assign({ change: change }, row);
+  let said = null;
+  curD.noting(function () { curD.take({ module: 'process/js/desk', data: {}, app: r }); said = served.opts.stream.onRow(r, DESK); });
+  return Promise.resolve(said);
 }
 let tick = Date.parse('2030-01-01T00:00:00Z');
 const at = function () { tick += 1000; return new Date(tick).toISOString(); };
@@ -118,18 +130,21 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const apiText = fs.existsSync(API) ? fs.readFileSync(API, 'utf8') : '';
   ok(/['"]?cache\.dump['"]?\s*:/.test(apiText), 'its family interface (deskClient.family/api.js) names cache.dump', 'api.js does not name cache.dump');
   if (dump) {
+    // The cache is saved on every update (Andy: "on every update the deskClient receives, it saves the cache, (10ms?)"),
+    // so cache.json may stand before any dump; a stranger's dump is refused all the same.
     const before = fs.readdirSync(STATE).sort();
     let refusedStranger = null;
     try { await call('cache.dump', {}, STRANGER); } catch (e) { refusedStranger = e.refusal || e.message; }
-    ok(refusedStranger === 'not-owner' && !fs.existsSync(path.join(STATE, 'cache.json')), 'a caller who is not the owner is refused, and nothing is written', 'stranger: ' + short(refusedStranger));
+    ok(refusedStranger === 'not-owner', 'a caller who is not the owner is refused', 'stranger: ' + short(refusedStranger));
     let r = null;
     try { r = await call('cache.dump', { path: '../elsewhere.json' }); } catch (e) { r = { threw: e.message }; }
     const file = path.join(STATE, 'cache.json');
     const written = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
     ok(!!written && JSON.stringify(written) === JSON.stringify(D.data), 'the owner\'s call writes the whole cache, its spirit.data tree, as JSON to <state>/cache.json', 'written: ' + short(written) + ' answer ' + short(r));
     const after = fs.readdirSync(STATE).sort();
-    ok(after.filter(function (f) { return before.indexOf(f) === -1; }).join() === 'cache.json' && !fs.existsSync(path.join(path.dirname(STATE), 'elsewhere.json')),
-      'and nowhere else, whatever the caller names', 'new files: ' + short(after.filter(function (f) { return before.indexOf(f) === -1; })));
+    const newFiles = after.filter(function (f) { return before.indexOf(f) === -1; });
+    ok(newFiles.every(function (f) { return f === 'cache.json'; }) && after.indexOf('cache.json') !== -1 && !fs.existsSync(path.join(path.dirname(STATE), 'elsewhere.json')) && !after.some(function (f) { return /elsewhere/.test(f); }),
+      'and nowhere else, whatever the caller names: no file but cache.json appears', 'new files: ' + short(newFiles) + ', state: ' + short(after));
   }
 
   test.subHeading('the cache, whole from the first push: the agent\'s reads ask the desk nothing');
@@ -312,5 +327,73 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ok(has(s5, 'while the desk is slow') && handedIn < 3000, 'the line is handed within 3 s, never held behind a slow job ask or a slow agent.state', 'handed in ' + handedIn + ' ms: ' + short(s5));
   delete desk.answers['work.open'];
   delete desk.answers['agent.state'];
+  if (s5 && s5.key) readKey = s5.key;
+
+  // ── 0ebb4abd: THE POSITION, THE SAVED CACHE AND THE SWEEP (goal/G41.11) ────────────────────────────────────────────
+  test.subHeading('the cache is saved within 10 ms of each update');
+  const CACHE_FILE = path.join(STATE, 'cache.json');
+  await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
+  await settle();
+  await new Promise(function (r) { setTimeout(r, 40); });
+  let savedNow = null;
+  try { savedNow = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')); } catch (e) { savedNow = null; }
+  ok(!!savedNow && JSON.stringify(savedNow) === JSON.stringify(curD.data) && !!(savedNow.deskItems && savedNow.deskItems['goal/G9.6']),
+    'a moment after a row, <state>/cache.json holds the whole cache as it stands, the new row in it', 'cache.json: ' + short(savedNow && Object.keys(savedNow)) + ', holds G9.6: ' + !!(savedNow && savedNow.deskItems && savedNow.deskItems['goal/G9.6']));
+
+  test.subHeading('a push replaces the items and rules whole, never the position or a kept part');
+  const renews = (served.opts.stream && served.opts.stream.renews) || [];
+  ok(JSON.stringify(renews.slice().sort()) === JSON.stringify(['deskItems', 'deskRules']), 'deskClient names what a push replaces: deskItems and deskRules', 'renews: ' + short(renews));
+  const ITEM7 = 'goal/G9.7';
+  await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM7, title: 'to be deleted' }) });
+  await settle();
+  const curBefore = curD.get('desk/current');
+  const changeBefore = curD.get('desk/change');
+  const partBefore = curD.get('deskItem/' + ITEM);
+  ok(!!curD.get('deskItems/' + ITEM7) && curBefore !== undefined && changeBefore !== undefined && !!partBefore && Array.isArray(partBefore.files),
+    'before the push: the item to be deleted, the position (desk/current, desk/change) and a kept file list are all held',
+    short({ item7: !!curD.get('deskItems/' + ITEM7), current: curBefore, change: changeBefore, part: partBefore && Object.keys(partBefore) }));
+  // A subscribe opens the renewal (spirit/appServer.js, s.subscribe); its push names every item but ITEM7, then ends.
+  curD.renew(renews);
+  await pushNoted({ verb: 'goal.whole', goal: 9, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
+  await pushNoted({ verb: 'goal.whole', goal: 9, item: factsOf() });
+  await pushNoted({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM4 }) });
+  await pushNoted({ bootstrapped: true });
+  await settle();
+  ok(!curD.get('deskItems/' + ITEM7) && !!curD.get('deskItems/' + ITEM) && !!curD.get('deskItems/' + ITEM4), 'once the push has landed, an item it no longer holds is gone, the ones it holds are kept', short({ item7: curD.get('deskItems/' + ITEM7), item: !!curD.get('deskItems/' + ITEM), item4: !!curD.get('deskItems/' + ITEM4) }));
+  const partAfter = curD.get('deskItem/' + ITEM);
+  ok(curD.get('desk/current') !== undefined && curD.get('desk/change') !== undefined && !!partAfter && Array.isArray(partAfter.files),
+    'desk/current, desk/change and a kept file list are never swept', short({ current: curD.get('desk/current'), change: curD.get('desk/change'), part: partAfter && Object.keys(partAfter) }));
+
+  test.subHeading('a restarted deskClient reads its cache back and subscribes from where it was');
+  await new Promise(function (r) { setTimeout(r, 40); });
+  const heard = Number(curD.get('desk/change')) || 0;
+  // The process goes; a new one starts on the same state folder: fresh modules, a fresh data set.
+  [FILE, path.join(RUN, 'shell', 'js', 'spiritData.js'), path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')].forEach(function (f) { delete require.cache[require.resolve(f)]; });
+  curD = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
+  globalThis.spirit.data = curD;
+  served = null;
+  subscribeArgs.length = 0;
+  try { require(FILE); } catch (e) { test.fail('the restarted deskClient threw as it loaded: ' + e.message); }
+  await settle();
+  ok(!!served && !!curD.get('deskItems/' + ITEM) && !!curD.get('deskItems/' + ITEM4) && Number(curD.get('desk/change')) === heard,
+    'before any push, the restarted client holds what it kept: the items and the position (desk/change ' + heard + ')', short({ item: !!curD.get('deskItems/' + ITEM), change: curD.get('desk/change') }));
+  const firstSub = subscribeArgs[0];
+  ok(heard > 0 && !!firstSub && firstSub.key === DESK && firstSub.family === 'desk' && Number(firstSub.since) === heard, 'it subscribes to the desk with since = the newest change it heard', 'subscribes: ' + short(subscribeArgs) + ', heard ' + heard);
+  subscribeArgs.length = 0;
+  await call('setDesk', { key: DESK });
+  ok(subscribeArgs.length === 1 && Number(subscribeArgs[0].since) === heard, 'setDesk naming the same desk subscribes from where it was', 'subscribes: ' + short(subscribeArgs));
+  subscribeArgs.length = 0;
+  await call('setDesk', { key: 'KEY-ANOTHER-DESK' });
+  ok(subscribeArgs.length === 1 && !(Number(subscribeArgs[0].since) > 0), 'setDesk naming another desk subscribes from 0', 'subscribes: ' + short(subscribeArgs));
+  await call('setDesk', { key: DESK });
+
+  test.subHeading('the catch-up after a since-subscribe: its own lines wake it, another\'s never');
+  change = heard;
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: missed while down' } });
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [OTHER_KEY], row: { at: at(), by: 'andy', text: 'cw: for the other agent only' } });
+  await settle();
+  const caught = await next();
+  ok(has(caught, 'missed while down'), 'a line addressed to it, handed in the catch-up, wakes it', 'wake: ' + short(caught));
+  ok(!has(caught, 'for the other agent only'), 'a line addressed to another agent in the catch-up is neither its own nor its news', 'wake: ' + short(caught));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });

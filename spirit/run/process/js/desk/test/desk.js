@@ -65,7 +65,7 @@ function familyOf(body) {
 // family's interface (api {family}); each post to a deskClient's streamListener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
 function pretendNode() {
-  const pages = []; const posts = []; const sent = []; const streams = [];
+  const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set();
   const server = http.createServer(function (req, res) {
     let raw = '';
     req.on('data', function (c) { raw += c; });
@@ -90,12 +90,14 @@ function pretendNode() {
         const rows = Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : [];
         rows.forEach(function (row) { sent.push({ to: String(b.to), row: row }); });
         answer = { heard: true };
+        // A subscriber that is away: its post is seen, and never answered, so the desk's peerPost waits it out.
+        if (deaf.has(String(b.to))) return;
       }
       const made = packet.encode('api', answer || { ok: false, code: 'no-verb' }, { re: hash });
       setImmediate(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: String(b.to), text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); });
     });
   });
-  return { server: server, pages: pages, posts: posts, sent: sent };
+  return { server: server, pages: pages, posts: posts, sent: sent, deaf: deaf };
 }
 
 const GOAL = { id: 'goal/G100', title: 'Desk test' };
@@ -112,8 +114,10 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     { goal: OTHER, items: OTHER_ITEMS.map(function (id) { return { id: id, title: 'Other ' + id, blocks: [OTHER.id] }; }) },
     { goal: GOAL, items: ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [GOAL.id] }; }) },
   ]);
-  // A pipe on Windows is a \\.\pipe\ name, never a file path (appClient.pipePathFor, as the other suites do).
-  const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
+  // THE PIPE BY appClient.pipePathFor ALONE (Andy, 2026-10-27: "don't use unix sockets in tests, use
+  // appClient.pipePathFor"): a \\.\pipe\ name on Windows, the door's own place under the scratch folder elsewhere.
+  const pipe = appClient.pipePathFor(scratch, 'desk', process.platform, 'process');
+  if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
@@ -229,6 +233,103 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       const held = await facts('goal/G100.4');
       ok(!!onTake.change && held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'ubi\'s take answered ' + short(onTake) + ', boxTaken ' + short(held.boxTaken));
     }
+
+    // ── THE POSITION (goal/G41.11, 0ebb4abd; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)"
+    // verb do desk, (re-use that verb) with the position number as argument") ─────────────────────────────────────────
+    const rowsTo = function (key, from) { return node.sent.slice(from).filter(function (x) { return x.to === key; }).map(function (x) { return x.row; }); };
+    const pushEnded = function (key, from) { return rowsTo(key, from).some(function (r) { return r && r.bootstrapped === true; }); };
+    const waitEnd = async function (key, from, ms) { for (let i = 0; i < (ms || 15000) / 100; i++) { if (pushEnded(key, from)) return true; await sleep(100); } return false; };
+    const memberIds = [GOAL.id].concat(ITEMS);
+    const wholeOf = function (rows) { return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item; }); };
+    const sideOf = function (rows) { return rows.filter(function (r) { return r && typeof r.table === 'string' && !r.verb; }); };
+
+    test.subHeading('the position: a subscribe without since bootstraps as before');
+    const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
+    const f0 = node.sent.length;
+    const plain = await call('subscribe', { family: 'deskClient' }, FRESH);
+    const plainEnded = await waitEnd(FRESH.key, f0);
+    const plainRows = rowsTo(FRESH.key, f0);
+    const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
+    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no since, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
+      'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
+    ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box): nothing after a position it never named', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
+    const zero = node.sent.length;
+    await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
+    await waitEnd(FRESH.key, zero);
+    ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'since 0 is the same as none', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
+
+    test.subHeading('the position: a subscribe with since hands what changed after it, oldest first');
+    await sleep(500);
+    const N = node.pages.reduce(function (m, o) { return Math.max(m, Number(o && o.change) || 0); }, 0);
+    const oldLine = 'all agents seem busy';   // written before N, above
+    const LINES = { nobody: 'after the position, for whoever', ubi: 'ubi, after the position, for you', cw: 'cw, after the position, not for ubi', group: 'after the position, in the group chat' };
+    await call('chat.add', { id: 'goal/G100.3', text: LINES.nobody }, ANDY);
+    await call('chat.add', { id: 'goal/G100.3', text: LINES.ubi }, ANDY);
+    await call('chat.add', { id: 'goal/G100.3', text: LINES.cw }, ANDY);
+    await call('chat.add', { id: 'goal/G0', text: LINES.group }, ANDY);
+    const v5 = (await facts('goal/G100.5')).version || 0;
+    const boxed = await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
+    await call('chat.add', { id: 'goal/G200.1', text: 'in another goal, after the position' }, ANDY);
+    await sleep(500);
+    const u0 = node.sent.length;
+    const caught = await call('subscribe', { family: 'deskClient', since: N }, UBI);
+    const caughtEnded = await waitEnd(UBI.key, u0);
+    const got = rowsTo(UBI.key, u0);
+    const sides = sideOf(got);
+    const texts = sides.filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
+    ok(caught.subscribed === true && caughtEnded, 'a subscribe with since = ' + N + ' is taken, and its push ends', 'subscribed ' + short(caught) + ', ended ' + caughtEnded);
+    ok(texts.indexOf(LINES.nobody) !== -1 && texts.indexOf(LINES.group) !== -1, 'it hands the lines written after the position: the current goal\'s and the group chat\'s', 'chat rows handed: ' + short(texts));
+    ok(texts.indexOf(oldLine) === -1 && sides.every(function (r) { return Number(r.change) > N; }), 'and nothing written at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', changes ' + short(sides.map(function (r) { return r.change; })));
+    ok(texts.indexOf('in another goal, after the position') === -1, 'a line of another goal is not handed', 'chat rows handed: ' + short(texts));
+    const lastWhole = got.reduce(function (m, r, i) { return r && r.verb === 'goal.whole' ? i : m; }, -1);
+    const firstSide = got.findIndex(function (r) { return r && typeof r.table === 'string' && !r.verb; });
+    ok(lastWhole !== -1 && firstSide !== -1 && lastWhole < firstSide, 'the goal\'s facts come first, the side rows after them', 'last facts row at ' + lastWhole + ', first side row at ' + firstSide);
+    const order = sides.map(function (r) { return Number(r.change); });
+    ok(order.length > 1 && order.every(function (c, i) { return i === 0 || c >= order[i - 1]; }), 'the side rows oldest first', 'changes in order handed: ' + short(order));
+    ok(sides.every(function (r) { return r.table && r.id && Number(r.change) > 0 && (r.table !== 'chat' || (r.row && typeof r.row.text === 'string')); }), 'each as the side row its write published (table, id, change, row)', 'a row: ' + short(sides[0]));
+
+    test.subHeading('the position: a line addressed to another agent never comes back in a catch-up');
+    ok(texts.indexOf(LINES.cw) === -1, 'his line to cw is not handed to ubi', 'chat rows handed: ' + short(texts));
+    ok(texts.indexOf(LINES.ubi) !== -1, 'his line to ubi is', 'chat rows handed: ' + short(texts));
+    const c0 = node.sent.length;
+    await call('subscribe', { family: 'deskClient', since: N }, CW);
+    await waitEnd(CW.key, c0);
+    const cwTexts = sideOf(rowsTo(CW.key, c0)).filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
+    ok(cwTexts.indexOf(LINES.cw) !== -1 && cwTexts.indexOf(LINES.ubi) === -1, 'and the same catch-up for cw holds its own line and not ubi\'s', 'cw handed: ' + short(cwTexts));
+
+    test.subHeading('the position: an item whose row changed after it hands its box');
+    const boxRow = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.5'; })[0];
+    ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes with the catch-up', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
+    const staleBox = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.4'; })[0];
+    ok(!staleBox, 'a box written before the position does not', 'G100.4\'s box handed: ' + short(staleBox));
+
+    test.subHeading('the position: every push ends with { bootstrapped: true }');
+    const lastOf = function (rows) { return rows[rows.length - 1]; };
+    ok(!!lastOf(got) && lastOf(got).bootstrapped === true && !!lastOf(plainRows) && lastOf(plainRows).bootstrapped === true, 'the last row of each push, with since and without, is { bootstrapped: true }',
+      'last rows: ' + short([lastOf(got), lastOf(plainRows)]));
+    ok(got.filter(function (r) { return r && r.bootstrapped === true; }).length === 1, 'once per push', 'ends in one push: ' + got.filter(function (r) { return r && r.bootstrapped === true; }).length);
+
+    test.subHeading('a subscriber whose delivery failed is kept: the row is tried again, not dropped');
+    // A delivery waits the publisher's waitMs (the desk's CLIENT_WAIT_MS, 10 s) for its answer, then waits as long
+    // again before the next try: this section takes about half a minute.
+    const AWAY = { key: 'MCowBQYDK2VwAyEAdeskProductTestAWAYAAAAAAAAAAAAAAAAAAAA=', label: 'away' };
+    node.deaf.add(AWAY.key);
+    const a0 = node.posts.length;
+    await call('subscribe', { family: 'deskClient' }, AWAY);
+    const attemptsOf = function () { return node.posts.slice(a0).filter(function (p) { return p.to === AWAY.key; }); };
+    for (let i = 0; i < 300 && attemptsOf().length < 2; i++) await sleep(100);
+    const tries = attemptsOf();
+    ok(tries.length >= 2 && tries[0].json === tries[1].json, 'a row it did not take is posted to it again, the same row, after the wait', 'posts to it: ' + tries.length + (tries.length >= 2 ? ', same row: ' + (tries[0].json === tries[1].json) : ''));
+    await call('chat.add', { id: 'goal/G100.6', text: 'written while it was away' }, ANDY);
+    node.deaf.delete(AWAY.key);
+    const back = async function () { for (let i = 0; i < 400; i++) { const t = node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); if (t.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; })) return t; await sleep(100); } return node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); };
+    const awayRows = await back();
+    const awayWhole = wholeOf(awayRows).map(function (r) { return String(r.item.id); });
+    ok(memberIds.every(function (id) { return awayWhole.indexOf(id) !== -1; }) && awayRows.some(function (r) { return r && r.bootstrapped === true; }), 'once it answers, its whole push lands: none of it was dropped', 'facts of ' + short(awayWhole));
+    ok(awayRows.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; }), 'and the line written while it was away follows', 'rows it got: ' + awayRows.length);
+    // QUEUE_MAX (1000, appServer.js) is not driven here: reaching it means over a thousand rows queued behind a row
+    // that waits 10 s each try; the shedding of the oldest is the publisher's own (sendTo), and spirit/test/appServer
+    // is the place to drive it with a small queue.
   } finally {
     try { kid.kill(); } catch (e) { /* gone */ }
     node.server.close();
