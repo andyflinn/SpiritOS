@@ -1,5 +1,5 @@
 {
- "change": 106513,
+ "change": 106538,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.3",
     "goal/G41.4"
    ],
    "codeOffered": false,
@@ -1959,15 +1958,13 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 21,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -1977,20 +1974,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
    "fileCount": 59,
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "20d0b569",
-   "redCommit": "8d0cb63e",
+   "claimCommit": "976a110f",
+   "redCommit": "66d0e8a9",
    "waived": true,
    "rules": [
     {
@@ -2036,7 +2033,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, so no page can change them: the node's file gate refuses every core file. Today only join.js is core.\n- login.json and join.json are no manifests: they are code, the apps' own UI text (their steps), and stay beside their apps as they are, core with them (Andy, Q9: \"if they're code, just keep them, they are obviously NOT manifests.\"). Nothing of either app is deleted.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n\n# reopened: an app naming a server shows with it (found on his face: \"the agent app-face doesn't show up in my Apps app, and i don't see it anymore\")\n\n- on the face (shell/boot.js) an app that names a server shows while that server runs, with no face mark: it has no row in Apps and so no switch of its own; its server's button activates it (goal/G41.1, box v14).\n- the boot test asserts it.",
@@ -2718,6 +2715,30 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-27T09:43:10.732Z",
      "text": "agreed. go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:44:51.871Z",
+     "text": "commit 66d0e8a9f24137330952b229f1e3975e0f92a3b6: goal/G41.3 red: an app that names a server shows on the face while its server runs, no face mark needed\n- spirit/run/shell/test/boot.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:44:58.302Z",
+     "text": "commit 976a110f9f531ad48530e994f53c53a0dd41350d: goal/G41.3: on the face an app that names a server shows while that server runs, with no face mark: its server's button in Apps is its switch\n- spirit/run/shell/boot.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:44:59.801Z",
+     "text": "- cw: landed and claimed at 976a110f, pushed. Boot 26 green.\n- On your node: restart it on this, then tick the agent server in Apps, and the agent app appears on your face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:46:15.795Z",
+     "text": "- cw: verified at 976a110f: its seven suites green, boot 26 among them. The agent app shows on the face while the agent server runs."
     }
    ]
   },
