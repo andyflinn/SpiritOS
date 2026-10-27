@@ -45,7 +45,9 @@ function setup() {
   const sh = function (p) { return p.split(path.sep).join('/'); };
   fs.writeFileSync(path.join(ORIGIN, 'hooks', 'pre-receive'), '#!/bin/sh\n' +
     'n=$(cat "' + sh(COUNT) + '" 2>/dev/null || echo 0)\nn=$((n+1))\necho $n > "' + sh(COUNT) + '"\n' +
-    'limit=$(cat "' + sh(REFUSE) + '" 2>/dev/null || echo 0)\nif [ "$n" -le "$limit" ]; then echo "refused by the test" >&2; exit 1; fi\nexit 0\n');
+    'limit=$(cat "' + sh(REFUSE) + '" 2>/dev/null || echo 0)\nif [ "$n" -le "$limit" ]; then echo "refused by the test" >&2; exit 1; fi\nexit 0\n',
+    // Executable: git on Linux skips a hook that is not (Windows runs it anyway).
+    { mode: 0o755 });
   git(TMP, ['clone', '-q', ORIGIN, WORK]);
   ident(WORK);
   fs.writeFileSync(path.join(WORK, 'README.md'), 'his repo\n');
