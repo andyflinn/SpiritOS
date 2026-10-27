@@ -1,5 +1,5 @@
 {
- "change": 106498,
+ "change": 106513,
  "goal": "goal/G41",
  "items": [
   {
@@ -1959,32 +1959,32 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "verified green",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 20,
+   "version": 21,
    "buttons": [
-    "end-design",
-    "close",
-    "delete",
-    "verify"
+    "start-design",
+    "done",
+    "verify",
+    "delete"
    ],
    "blocking": [
     "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 59,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
@@ -2039,7 +2039,7 @@
    "asks": 1,
    "half": true,
    "full": false,
-   "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, so no page can change them: the node's file gate refuses every core file. Today only join.js is core.\n- login.json and join.json are no manifests: they are code, the apps' own UI text (their steps), and stay beside their apps as they are, core with them (Andy, Q9: \"if they're code, just keep them, they are obviously NOT manifests.\"). Nothing of either app is deleted.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n",
+   "box": "FACE/ MOVES INTO SHELL/\n\nTHE MOVE\n- face/shell.js becomes shell/boot.js.\n- The rest of face/ moves unchanged, under the same names:\n  - face/seal.js -> shell/seal.js\n  - face/face.css -> shell/face.css\n  - face/favicon.svg -> shell/favicon.svg\n  - face/login/ (login.js, login.json) -> shell/login/, beside the other apps\n- face.html stays where it is, at the run root: it is the page itself.\n\nWHAT CHANGES WITH IT\n- spirit.js loads shell/boot.js where it loaded face/shell.js.\n- face.html links /shell/face.css and /shell/favicon.svg.\n- The relay serves the face from its map of addresses to files (relayServer.js, FACE_FILES): the map names the new addresses and the moved files, and the old addresses are gone. The relays run the new code the same day as the nodes (no backward compatibility before alpha). relayServer.js is the bones: a team review.\n- shell/boot.js names its own parts by their new paths (the seal, the login app).\n- Login and Join are the two mandatory components of shell/boot.js, one for its loopback mode and one for its face mode (Andy). boot makes hard-coded assumptions about both and disregards their sidecars.\n- Both apps are core whole, so no page can change them: the node's file gate refuses every core file. Today only join.js is core.\n- login.json and join.json are no manifests: they are code, the apps' own UI text (their steps), and stay beside their apps as they are, core with them (Andy, Q9: \"if they're code, just keep them, they are obviously NOT manifests.\"). Nothing of either app is deleted.\n- coreFiles.js keeps them core: shell/boot.js, shell/seal.js, shell/face.css, shell/favicon.svg and shell/login/, as face/ was.\n- The tests that name the old paths follow: spirit/run/test/spirit.js and the throwaway red.\n\nWHAT BOOT LOADS (Andy)\n- shell/boot.js boots only itself and the home and Join components it needs, as they stand. That is the only preload allowed.\n- Every face app loads its own components, as a tree, through spirit.require, each once. No core component knows about an application.\n- spirit.require de-dupes, as node's require does (Andy): a path required twice is fetched and run once, and every caller gets the same answer; a script the boot already loaded counts as required. Today on a page it fetches and runs the file on every call.\n\nTHE CACHE (Andy, Q2)\n- spirit.js loads the cache itself (shell/js/spiritData.js) when its client part starts, on a page and in a process alike, and keeps every streamed dataset, each type through its own translator, which its type loads. The file tree is cached too, by the files type's translator (Andy: \"Q2, the file tree must be cached.\"). Not kept: stats and presence, which are display streams.\n- A page's cache has no cap; a process's cache is a node store, so it sheds oldest first past a byte cap.\n- On a reconnect a cache forgets what it kept, and its partner pushes it whole again, for every type.\n- One write: the cache takes a change only when the owner's acceptance comes back on the stream, never a local copy first (rule/19).\n- The translators are lazy too (Andy, Q4): every app adds its own data, tables and searches to the cache when it loads, its translator with it. A type loaded late is handed its data whole by its partner when it subscribes.\n- Out of scope here: wrapping every SQLite database in the tree, so its tables and searches are added to the cache by themselves (Andy: \"oos for now\").\n\nTHE TESTS\n- Every test of this item is placed in the product test tree, beside the module it tests (Andy): boot's and the seal's in shell/test/, the de-dupe of spirit.require in spirit.js's own test (spirit/run/test/spirit.js), the relay's new addresses in the test beside relayServer.js (spirit/run/spirit/test/relayServer.js), and a face app loading alone in a general test over shell/.\n- spirit/test/spiritInUse.js may take throwaway checks, for what needs testing once and is not kept (Andy).\n- shell/test/ holds a test and its doc for each of the two modules of shell/ (Andy), beside them (TEST_SYSTEM.md): shell/test/boot.js and boot.md, shell/test/seal.js and seal.md.\n- boot's test asserts:\n  - boot loads its own list and nothing an app needs;\n  - every face app loads alone, with only spirit.js and a spirit.require that serves files: its tree is complete;\n  - the relay serves each moved file at its new address, and nothing at an old one.\n\nTHE BLAST RADIUS\n- the relay: relayServer.js, its map of face addresses, and every relay running it, the same day.\n- the page and the loader: face.html and spirit.js.\n- the core list: coreFiles.js.\n- every face app to date, each to load its own components: agent, apps, contacts, files, icons, info, mediaViewer, and Join and the login app, which boot loads.\n- the shared elements those apps use, each to load its own parts: the contacts, files and icons lists, probabilitySearch, rowElement, spiritData, the viewers, the detail pages.\n- the tests that name the old paths: spirit/run/test/spirit.js and the throwaway red.\n\nORDER (Andy, after Q6)\n- The agent skeleton (G41.1) first: it has no tables and table definitions yet, so the blast radius of doing it first is small. Then this move and the loading tree, the agent app retrofitted with it.\n\n# reopened: an app naming a server shows with it (found on his face: \"the agent app-face doesn't show up in my Apps app, and i don't see it anymore\")\n\n- on the face (shell/boot.js) an app that names a server shows while that server runs, with no face mark: it has no row in Apps and so no switch of its own; its server's button activates it (goal/G41.1, box v14).\n- the boot test asserts it.",
    "checks": [
     {
      "number": "Q1",
@@ -2202,9 +2202,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-27T09:39:07.120Z",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-27T09:43:08.015Z",
      "made": "desk"
     }
    ],
@@ -2694,6 +2694,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T05:51:12.114Z",
      "text": "- cw: nothing runs on 11111, the ollama agent's port. The one other agent node running is claude-windows-2 (port 45442, its own repo in lab/claude-windows-2).\n- Is that the node to kill?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:39:44.897Z",
+     "text": "- cw: taking the agent-app face fix here, boxed. Red and fix are written and green (boot 26): an app that names a server shows while its server runs.\n- The item reopened in design, so the commit waits. End design and it lands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:40:28.816Z",
+     "text": "damn right commit is blocked first i want to know THE problem then i want to know HOW you'll fix it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-27T09:41:05.123Z",
+     "text": "- cw: THE problem: three rules from today that do not fit together.\n  - Apps lists no shell app that names a server (the agent face app names agent), so it gets no row and no button of its own.\n  - The face shows a shell app only if its face mark is on, or it is intrinsic.\n  - The agent face app is not intrinsic, and with no row nothing can ever turn its face mark on. So it can never show, even with its server running.\n- HOW: the face drops the face-mark need for an app that names a server. Such an app shows exactly while its server runs (the G27.16 rule boot already checks), and goes when the server stops. Its server's button in Apps is then its switch, as box v14 says.\n- The change: one condition in boot's readFace, plus a check in the boot test that went red first. Written and green on my side, not committed.\n- On your node afterwards: tick the agent server in Apps, and the agent app appears on your face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-27T09:43:10.732Z",
+     "text": "agreed. go."
     }
    ]
   },
@@ -2726,7 +2750,7 @@
    "limbo": false,
    "design": true,
    "fileCount": 0,
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "",
@@ -2769,7 +2793,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a jobs table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n\n- the the ID as key for all tables comes from the idea, that when i give an agent node-api's as tools, i may want to control access using the same grants-app as i use for peers. this has a bunch of holes, because, i'd have to put my \"personas\" OR \"jobs\" into the shadow roll....\n\n- every one of these tables will come with a left-edge icon that puts up a tab ,\n\n# keys (Andy, Q1 and Q2: \"they WILL need grants and i want keys that are separate from a label\", \"we'll put off the grant-problem, but not the keys.\")\n\n- every row of the three tables (providers, personas, jobs) has a key of its own, a peer's shape: a key pair the agent server makes when the row is created. The public half is the row's id; its label is a separate caption that may change.\n- the private half never leaves the agent server, nor does a provider's API key: a page sets one, and only sees whether it is set.\n- grants are put off: how a row's key is granted node verbs (the shadow roll, or the grants app reading the agent server) is decided when tools come.\n\n# out of scope for now\n\n- a conversation context. The primitive version sends a job's persona and job text fresh with each call. The direction for later (Andy): ONE context, persisted and maintained, for each persona (its direct chat) and for each job; each kept within a probabilityBucket-style limit by built-in shedding strategies, possibly in layers, an overall bucket over component buckets. The node's traffic log does not record model calls: they are plain web requests, not peer packets.",
@@ -2803,9 +2827,9 @@
      "kind": "Q",
      "words": "Reopen G41.1 to land the agent-app face fix, or carry it here once you end design?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-27T09:39:29.416Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
