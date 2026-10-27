@@ -57,20 +57,43 @@ function gitDir() {
   return path.resolve(r.stdout.trim());
 }
 
-// One ask of the desk through this agent's own deskClient, as deskAgentEar asks it: the desk's answer, parsed; a
-// refusal, deskClient's or the desk's, or a node that does not answer, ends the check as refused.
-function desk(verb, args) {
+// One ask through this agent's own deskClient, as deskAgentEar asks it: deskClient's answer, parsed, as {status, body};
+// a node that does not answer is no answer.
+function viaClient(request) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the one spirit object (goal/G32.3, goal/G40.6): deskClient.desk on this clone's own node, as {status, body}.
-  const ask = spirit.outcome(spirit.require('process/js/deskClient/deskClient.family/api.js').then(function (c) { return c.desk({ name: verb, json: JSON.stringify(args) }); }));
+  const ask = spirit.outcome(spirit.require('process/js/deskClient/deskClient.family/api.js').then(function (c) { return c.desk(request); }));
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
     // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.
     if (!r || r.status !== 200 || !r.body || typeof r.body !== 'object') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'nothing'));
-    if (r.body.ok === false) throw new Error('the desk answered ' + JSON.stringify(r.body));
     return r.body;
-  }).catch(function (e) { clearTimeout(timer); end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });
+  });
+}
+// One ask of the desk itself, for the push alone (its chat line, once the remote holds the commit): a refusal, or a
+// node that does not answer, ends it as refused.
+function desk(verb, args) {
+  return viaClient({ name: verb, json: JSON.stringify(args) }).then(function (body) {
+    if (body.ok === false) throw new Error('the desk answered ' + JSON.stringify(body));
+    return body;
+  }).catch(function (e) { end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });
+}
+// A COMMIT ASKS THE DESK NOTHING (goal/G41.11). Andy: "the agents verifier has ALL the information needed for commits
+// right on the agents node.... so we put in specific cache-searches into the deskClients api". Every ask the check makes
+// is a kept read of deskClient's (KEPT_READS in deskClient.js), answered from its cache or refused not-kept, never asked
+// of the desk; so a lagging desk refuses nothing the cache can say. Answers the body, a not-kept refusal included, for
+// the caller to refuse with; any other refusal, or a node that does not answer, ends the check as refused.
+function kept(verb, args) {
+  return viaClient({ name: verb, json: JSON.stringify(args), kept: true }).then(function (body) {
+    if (body.ok === false && body.code !== 'not-kept') throw new Error('deskClient answered ' + JSON.stringify(body));
+    return body;
+  }).catch(function (e) { end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ' from its cache: ' + ((e && e.message) || e)); });
+}
+// A kept read the cache could not answer refuses the commit, saying what was not there; nothing else is asked.
+function notInCache(verb, id, body) {
+  end(1, 'commitCheck: REFUSED, ' + verb + ' of ' + id + ' is not in the cache of deskClient on port ' + port + ': ' + String((body && (body.why || body.error)) || 'not kept') +
+    '\n(the commit asks the desk nothing; once the desk has pushed the item to this node, commit again)');
 }
 
 // ── install ──────────────────────────────────────────────────────────
@@ -91,7 +114,7 @@ function install() {
 }
 
 // ── check ────────────────────────────────────────────────────────────
-// The items the message names, each asked of the desk; the first with his Go and not done lets the commit through.
+// The items the message names, each read from deskClient's cache (goal/G41.11); the first with his Go and not done lets the commit through.
 function check() {
   const file = String(process.argv[4] || '');
   let message = '';
@@ -112,35 +135,41 @@ function check() {
 function ownFolderOnly() {
   const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   if (!staged.length || !staged.every(function (f) { return /^agents\//.test(f); })) return Promise.resolve('');
-  return desk('profile.get', { agent: '' }).then(function (p) {
-    const name = String((p && p.name) || '');
+  // goal/G41.11: the agent is the one its deskClient serves (a kept item.get names it as self), not asked of the desk.
+  return kept('item.get', {}).then(function (p) {
+    const name = String((p && p.ok !== false && p.self) || '');
     const mine = 'agents/' + name + '/';
     return name && staged.every(function (f) { return f.indexOf(mine) === 0; }) ? name : '';
   });
 }
 
+// goal/G41.11: the current goal is the one the kept item.get names beside the facts (current), not an items.search.
 function checkItems(ids) {
-  return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }).then(function (goals) {
-    const current = (goals.items || []).map(function (p) { try { return JSON.parse(p.label).id; } catch (e) { return ''; } }).filter(Boolean);
-    const reasons = [];
-    function one(i) {
-      if (i >= ids.length) end(1, 'commitCheck: REFUSED (rules 3 and 4)\n' + reasons.join('\n'));
-      const id = ids[i];
-      return desk('item.get', { id: id }).then(function (got) {
-        let f = null;
-        try { f = JSON.parse(got.item); } catch (e) { f = null; }
-        if (!f) { reasons.push('- ' + id + ': the desk knows no such item'); return one(i + 1); }
-        if (current.indexOf(f.goal) === -1) { reasons.push('- ' + id + ': not an item of the current goal'); return one(i + 1); }
-        if (f.status === 'done' || f.status === 'closed') { reasons.push('- ' + id + ': ' + f.status + ' already; nothing is owed on it'); return one(i + 1); }
-        if (f.go !== true) { reasons.push('- ' + id + ': Andy has not pressed Go on it'); return one(i + 1); }
-        return coreGrants(id).then(function () { return redWriterBuilds(id); }).then(function () {
-          fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
-          end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
-        });
+  const reasons = [];
+  function one(i) {
+    if (i >= ids.length) end(1, 'commitCheck: REFUSED (rules 3 and 4)\n' + reasons.join('\n'));
+    const id = ids[i];
+    return kept('item.get', { id: id }).then(function (got) {
+      let f = null;
+      try { f = got.ok === false ? null : JSON.parse(got.item); } catch (e) { f = null; }
+      if (!f) { reasons.push('- ' + id + ': not in the cache of deskClient (' + String(got.why || 'not kept') + '); only an item of the current goal is kept'); return one(i + 1); }
+      if (!got.current || f.goal !== got.current) { reasons.push('- ' + id + ': not an item of the current goal'); return one(i + 1); }
+      if (f.status === 'done' || f.status === 'closed') { reasons.push('- ' + id + ': ' + f.status + ' already; nothing is owed on it'); return one(i + 1); }
+      if (f.go !== true) { reasons.push('- ' + id + ': Andy has not pressed Go on it'); return one(i + 1); }
+      return Promise.all([kept('item.files', { id: id }), kept('item.checks', { id: id })]).then(function (parts) {
+        const files = parts[0];
+        const checks = parts[1];
+        if (files.ok === false || !Array.isArray(files.files)) notInCache('item.files', id, files);
+        if (files.filesMore !== false) notInCache('item.files', id, { why: 'the kept file list of ' + id + ' is cut short' });
+        if (checks.ok === false || !Array.isArray(checks.checks)) notInCache('item.checks', id, checks);
+        onTheList(id, files.files, checks.checks);
+        redWriterBuilds(id, f, got, checks.checks);
+        fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
+        end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
       });
-    }
-    return one(0);
-  });
+    });
+  }
+  return one(0);
 }
 
 // ── the core grants (goal/G4.23) ───────────────────────────────────
@@ -153,64 +182,52 @@ function checkItems(ids) {
 // repository path or under spirit/run, never as the end of a longer path.
 // NO SCOPE SINCE goal/G10.8: Andy, 2026-10-12, "all agents in desk have "/" file scope", the per-agent setting removed
 // from desk and commitCheck ("b"). Every agent commits anywhere in the repo; the core grants still hold.
-function coreGrants(id) {
+// EVERY STAGED FILE ON THE LIST, CORE OR NOT (goal/G41.11). The item's whole kept list (item.files, filesMore false;
+// one cut short refused above) is the list: a staged file not on it is refused by name, core or not.
+// ONE GRANT FOR THE LIST (goal/G40.3). Andy: "yes to the commit-check making sure each file exists in the granted
+// list." A staged core file needs the list's one core grant standing granted (from the kept checks): a core file added
+// after his press voids it, so a granted one covers every core file on the list.
+function onTheList(id, files, checks) {
   const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   const top = git(['rev-parse', '--show-toplevel']).stdout.trim();
-  return Promise.resolve().then(function () {
-    const core = staged.filter(function (f) { return require('../../../spirit/coreFiles.js').isCore(f, top); });
-    if (!core.length) return null;
-    // ONE GRANT FOR THE LIST (goal/G40.3). Andy: "yes to the commit-check making sure each file exists in the granted
-    // list." Each staged core file is looked up on the item's list by its exact path (item.files.search, never a whole
-    // list or a cache that may be partial), and the list's one core grant must stand granted: a core file added after
-    // his press voids it, so a granted one covers every core file on the list.
-    const rowOf = function (label) { try { return JSON.parse(label); } catch (e) { return null; } };
-    const listed = function (f) {
-      return desk('item.files.search', { id: id, text: f }).then(function (got) {
-        return (Array.isArray(got.items) ? got.items : []).some(function (p) { const r = rowOf(p.label); return !!r && r.path === f; });
-      });
-    };
-    // ONE LOOKUP AT A TIME (goal/G40.2, found landing the move): all at once, 245 core files flooded the desk past
-    // deskClient's wait and the check crashed on a no-answer.
-    const on = [];
-    const each = core.reduce(function (p, f) { return p.then(function () { return listed(f).then(function (hit) { on.push(hit); }); }); }, Promise.resolve());
-    return each.then(function () {
-      return desk('item.checks.search', { id: id, text: 'core grant' }).then(function (got) {
-        const granted = (Array.isArray(got.items) ? got.items : []).some(function (p) {
-          const c = rowOf(p.label);
-          return !!c && c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0 && c.state === 'granted';
-        });
-        const missing = core.filter(function (f, i) { return !on[i]; });
-        if (!missing.length && granted) return null;
-        const lines = missing.length ? missing : core;
-        end(1, 'commitCheck: REFUSED (grant): ' + (missing.length ? 'core files not on the list of ' + id + ': add each with item.files.add, then Andy grants the list.'
-          : 'the list of ' + id + ' has no standing grant: Andy grants the whole list once, and a core file added after it asks again.') + '\n' +
-          lines.map(function (f) { return '- ' + f; }).join('\n'));
-      });
-    });
-  });
+  const paths = files.map(function (f) { return String((f && f.path) || ''); });
+  // By the full repository path, or the same path under spirit/run, never as the end of a longer path.
+  const listed = function (f) { return paths.indexOf(f) !== -1 || (f.indexOf('spirit/run/') === 0 && paths.indexOf(f.slice('spirit/run/'.length)) !== -1); };
+  const missing = staged.filter(function (f) { return !listed(f); });
+  if (missing.length) {
+    end(1, 'commitCheck: REFUSED (list): staged files not on the list of ' + id + ': add each with item.files.add' +
+      (missing.some(function (f) { return require('../../../spirit/coreFiles.js').isCore(f, top); }) ? ', then Andy grants the list.' : '.') + '\n' +
+      missing.map(function (f) { return '- ' + f; }).join('\n'));
+  }
+  const core = staged.filter(function (f) { return require('../../../spirit/coreFiles.js').isCore(f, top); });
+  if (!core.length) return;
+  const granted = checks.some(function (c) { return !!c && c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0 && c.state === 'granted'; });
+  if (granted) return;
+  end(1, 'commitCheck: REFUSED (grant): the list of ' + id + ' has no standing grant: Andy grants the whole list once, and a core file added after it asks again.\n' +
+    core.map(function (f) { return '- ' + f; }).join('\n'));
 }
 
 // ── the red writer's build (goal/G5.9) ─────────────────────────────
-// Andy, to Q7: "it should trigger a red GRANT request for me." The desk says whether this agent may commit on the
-// item (phase.may, by the key it asks with); not allowed, the commit is refused unless a G check "red writer builds"
-// on the item is granted, and the refusal puts that G check there, open, once, so his List shows it.
-function redWriterBuilds(id) {
-  // A desk that does not know phase.may yet (a node still running the code from before goal/G5.9) allows the commit,
-  // so no agent is locked out between this build landing and his node's restart.
-  return desk('phase.may', { id: id }).catch(function (e) {
-    if (/no-such-verb/.test(String(e && e.message))) return { allowed: true, why: '' };
-    throw e;
-  }).then(function (may) {
-    if (may.allowed !== false) return null;
-    // By search (goal/G40.3): an item's checks can outgrow one answer, and a bare item.checks answers only what fits.
-    return desk('item.checks.search', { id: id, text: 'red writer builds' }).then(function (got) {
-      const mine = (Array.isArray(got.items) ? got.items : []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return null; } })
-        .filter(function (c) { return !!c && c.kind === 'G' && /red writer builds/i.test(String(c.words)); });
-      if (mine.some(function (c) { return c.state === 'granted'; })) return null;
-      const ask = mine.length ? Promise.resolve() : desk('check.add', { id: id, kind: 'G', words: 'red writer builds: ' + String(may.why || ''), test: '' });
-      return ask.then(function () { end(1, 'commitCheck: REFUSED (red writer): ' + String(may.why || '') + ' (a grant request is under the item)'); });
-    });
-  });
+// Andy, to Q7: "it should trigger a red GRANT request for me." Whether this agent may commit on the item is the desk's
+// phase.may, read here from the kept facts (goal/G41.11: a commit asks the desk nothing), as phase.may reads its own:
+// not while its own red Q is open on the item, nor while the item, its goal or the current goal is in design; and not
+// by the agent who wrote the red of a code item in build, unless he waived it or a G check "red writer builds" on the
+// item stands granted. Refused, it says why; the grant request is the agent's to place (check.add), since the commit
+// writes nothing to the desk.
+function redWriterBuilds(id, f, got, checks) {
+  const self = String(got.self || '');
+  const names = (f.names && typeof f.names === 'object') ? f.names : {};
+  const nameOf = function (label) { return names[label] || label; };
+  let why = '';
+  const q = checks.filter(function (c) { return !!c && c.kind === 'Q' && c.state === 'open' && c.placedBy === self; })[0];
+  if (q) why = 'red Q: ' + q.number + ' of ' + self + ' is open on ' + id + '; it is resolved with Andy before anything lands';
+  else if (f.design === true || got.goalDesign === true) why = 'design: ' + id + ' or its goal is in design, so no commit lands';
+  else if (f.code === true && f.phase === 'build' && f.waived !== true && !!f.red && nameOf(f.red) === self) why = 'red writer: ' + self + ' wrote the red of ' + id + ', which is in build';
+  if (!why) return;
+  const mine = checks.filter(function (c) { return !!c && c.kind === 'G' && /red writer builds/i.test(String(c.words)); });
+  if (mine.some(function (c) { return c.state === 'granted'; })) return;
+  end(1, 'commitCheck: REFUSED (red writer): ' + why + (mine.length ? ' (a grant request is under the item)' :
+    ' (ask his grant: check.add on ' + id + ', kind G, words "red writer builds: ' + why + '")'));
 }
 
 // ── record ───────────────────────────────────────────────────────────
