@@ -113,7 +113,8 @@
   function annotationManager(host, path) {
     host.innerHTML = '';
     return ask('fs.annotations', { path: path }).then(function (a) {
-      var client = a && a.client;
+      // The face part, the one part (goal/G41.1, box v15): the old shell's client part is gone.
+      var client = a && a.face;
       if (!client || !Object.keys(client).length) return;
       host.innerHTML = '<h3>More Information</h3>' + Object.keys(client).map(function (k) {
         return '<div class="stat-tile wide"><h4>' + esc(prettify(k)) + '</h4>' + valueHtml(client[k]) + '</div>';

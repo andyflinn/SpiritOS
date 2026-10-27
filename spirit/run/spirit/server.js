@@ -459,12 +459,11 @@ function handleFsDelete(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-// Writes into the target file's sidecar 'client' bucket only — see
-// fileSystem.annotateFile for why no bucket argument is
-// accepted here even in principle.
+// Writes the target file's sidecar face part, as the face link does (goal/G41.1, box v15: "the node's door writes a
+// sidecar's face part for every caller"; Andy: "the loopback door MUST NOT be compatible with the old shell.").
 function handleFsAnnotate(req, res) {
   readJsonBody(req).then((body) => {
-    writeFsResult(res, fileSystem.annotateFile(body.path, body.payload));
+    writeFsResult(res, fileSystem.annotateFace(body.path, body.payload));
   }).catch((e) => bodyRefused(req, res, e));
 }
 

@@ -306,6 +306,8 @@ function createFaceHome(opts) {
     // The one table's rows as they change (goal/G40.11; goal/G40.10, Andy: "onBoards face https://master.noderoutes.net/
     // did not update its relay dropdowns"): the shadow job, so the forms, Info and Contacts on the face redraw as at home.
     if (job.type === 'shadow') return FACE_PRIORITY.presence;
+    // AN APP'S FACE PART AS IT CHANGES (goal/G41.1, box v15), so every app installer and the face's boot follow it.
+    if (job.type === 'app-face') return FACE_PRIORITY.app;
     if (/^process\/js\/[^/]+$/.test(String(job.module || '')) && job.app && typeof job.app === 'object') return FACE_PRIORITY.app;
     // EVERY APPSERVER'S STATUS (goal/G41.1, box v14: "the node streams each appServer's status to the face shell"), so
     // the face shows an app only while its server runs (goal/G27.16): a server job of a process/js module, slim.

@@ -120,7 +120,7 @@ function fsVerbs(dir, prefix) {
   } };
   v[prefix + 'FS.saveJsonValue'] = { request: { path: '', value: {} }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), JSON.stringify(a.value, null, 2)); } };
   v[prefix + 'FS.getAnnotations'] = { request: { path: '' }, reply: {}, handler: function (a) { const u = underRun(inside(a.path)); return fileSystem.getAnnotations(u.rel); } };
-  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = fileSystem.annotateFile(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
+  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = fileSystem.annotateFace(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
   // NO LIST, A SEARCH (Andy's rule: "no lists, only searches"): the folder's file names ranked against the words,
   // every file in name order with none, cut in bytes to one answer with `more`.
   v[prefix + 'FS.search'] = { request: { q: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: function (a) {

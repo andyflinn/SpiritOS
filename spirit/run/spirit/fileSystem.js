@@ -159,7 +159,7 @@ function fileWritable(filePath) {
   const canonical = canonicalPath(filePath);
   if (canonical === null) return false;
   if (isOwnState(canonical)) return true;
-  if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
+  if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFace touches a sidecar's own path
   if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
@@ -242,12 +242,9 @@ function deleteFile(filePath) {
 }
 
 // Per-file annotation interface: one sidecar JSON file colocated with the
-// target (<file>.sidecar.json), its top-level parts client, server and face.
-// 'client' is the only part any external caller — a browser app or a spawned
-// process script alike — can ever reach through annotateFile, because it never
-// accepts a part argument. 'server' is reserved for the node's own internal use
-// and is unused so far; 'face' is annotateFace's. Buckets aren't further
-// subdivided per-caller: nothing server-side can verify which app is really asking.
+// target (<file>.sidecar.json). ITS ONE WRITTEN PART IS THE FACE PART (goal/G41.1, box v15; Andy: "the loopback door
+// MUST NOT be compatible with the old shell."): every caller's fs.annotate writes it, the face link's and the door's
+// alike, so the old shell's client part is gone. Nothing server-side can verify which app is really asking.
 function sidecarPathFor(filePath) {
   return filePath + SIDECAR_SUFFIX;
 }
@@ -281,14 +278,8 @@ function writeBucket(bucket, filePath, payload) {
   return { ok: true };
 }
 
-// The entry point for any outside caller — always writes 'client', wholesale (not a deep merge). A caller adding one
-// key without disturbing its others must read-modify-write via getAnnotations(...).client first.
-function annotateFile(filePath, payload) {
-  return writeBucket('client', filePath, payload);
-}
-
-// THE FACE'S PART (goal/G30.21). A sidecar has three parts, client, server and face. Only faceHome calls this, for a
-// request that came from the face, so the face's fs.annotate lands here and never in the client part. Wholesale too.
+// THE FACE PART (goal/G30.21), the entry point for every caller (goal/G41.1): wholesale, not a deep merge. A caller
+// changing one key without disturbing the others reads getAnnotations(...).face first and writes it back whole.
 function annotateFace(filePath, payload) {
   return writeBucket('face', filePath, payload);
 }
@@ -369,7 +360,6 @@ module.exports = {
   loadJsonValue: loadJsonValue,
   saveJsonValue: saveJsonValue,
   deleteFile: deleteFile,
-  annotateFile: annotateFile,
   annotateFace: annotateFace,
   getAnnotations: getAnnotations,
   scanFolder: scanFolder,

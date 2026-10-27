@@ -458,6 +458,12 @@
     (pagesOf[id] || []).forEach(function (p) { try { p.close(); } catch (e) { /* closed already */ } });
     delete pagesOf[id];
   }
+  // AN APP'S FACE PART STREAMED (goal/G41.1, box v15): a shell app is read again, so it comes or goes at once.
+  function followFace(job) {
+    var p = job && job.type === 'app-face' && job.data ? String(job.data.path || '') : '';
+    var m = /^(shell\/([^/]+))\/\2\.js$/.exec(p);
+    if (m) readFace(m[1]);
+  }
   // A SERVER STARTED OR STOPPED: the desktop drawn again, and the open pages of every app whose server went closed.
   var serversShown = '';
   function followServers() {
@@ -753,7 +759,7 @@
       openStream(false);
       listApps();
       // The servers' jobs as they change: an app comes or goes with its server (goal/G27.16).
-      events({ onSnapshot: followServers, onUpdate: followServers, onDelete: followServers });
+      events({ onSnapshot: followServers, onUpdate: function (job) { followFace(job); followServers(); }, onDelete: followServers });
       if (home) startJoin();
       // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).
       joinFromLink();

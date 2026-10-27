@@ -6,9 +6,8 @@
 // intrinsic mark is the only one that makes the app's code core. Where a shell app runs at home (its .json's runs) is
 // shown, not changed; a server's home switch is its face part's home, a checkbox here (goal/G41.1).
 //
-// THE FACE PART IS WRITTEN FROM THE FACE ONLY: the node routes the face's fs.annotate to the face part (faceHome), and
-// the home shell's fs.annotate writes the client part, so at home the panel shows the face part and says so. On the face
-// a save tells the face shell (spirit.shell.faceApp), and the app comes or goes on its desktop at once.
+// THE FACE PART IS THE ONE PART (goal/G41.1, box v15): every fs.annotate writes it, the face link's and the node's door
+// alike. On the face a save tells the face shell (spirit.shell.faceApp), and the app comes or goes on its desktop at once.
 //
 // The old Apps app's overrides (custom name, icon, tile place) are not carried over (the box).
 //
@@ -25,18 +24,26 @@ function appsIsApp(path) {
   var D = window.spirit.data;
   return !!m && !!D && !!D.get('files/' + path.replace(/\.js$/, '.json'));
 }
-// EVERY APP'S MANIFEST, read once before the list is drawn (goal/G41.1, box v14), by its script's path.
+// EVERY APP'S MANIFEST AND FACE PART, read once before the list is drawn (goal/G41.1, box v14 and v15), by its
+// script's path.
 var appsManifests = {};
+var appsFaces = {};
 function appsReadManifests() {
   var D = window.spirit.data;
   var paths = D ? Object.keys(D.branch('files')).filter(appsIsApp) : [];
   return spirit.ready.then(function (s) {
     return Promise.all(paths.map(function (p) {
-      return Promise.resolve(s.fs.loadFile(p.replace(/\.js$/, '.json'))).then(function (t) {
+      var manifest = Promise.resolve(s.fs.loadFile(p.replace(/\.js$/, '.json'))).then(function (t) {
         try { appsManifests[p] = JSON.parse(t || '{}') || {}; } catch (e) { appsManifests[p] = {}; }
       }, function () { appsManifests[p] = {}; });
+      var face = Promise.resolve(s.fs.getAnnotations(p)).then(function (a) { appsFaces[p] = (a && a.face) || {}; }, function () { appsFaces[p] = {}; });
+      return Promise.all([manifest, face]);
     }));
   });
+}
+// AN APP WITH A BUTTON (box v15: "a filter for installable apps only"): not intrinsic, and not this app itself.
+function appsInstallable(path) {
+  return !(appsFaces[path] && appsFaces[path].intrinsic === true) && String(path) !== 'shell/apps/apps.js';
 }
 // TWO TYPES OF ROW ONLY (box v14: "the apps app only lists two types of apps: 1 ) shell apps that don't depend on an
 // appServer and 2) appServers"): a shell app naming a server goes with its server; under process/js only a server.
@@ -160,6 +167,8 @@ function appsDraw(listHost, api) {
             if (!v || v === 'all') return 1;
             return (v === 'shell') === (String(row.path).indexOf('shell/') === 0) ? 1 : 0;
           } },
+        { name: 'installable', choices: [{ value: 'all', word: 'all' }, { value: 'only', word: 'installable' }],
+          test: function (row, v) { return v === 'only' && !appsInstallable(row.path) ? 0 : 1; } },
       ],
       details: function (row, key) { appsPanel(api, key); },
       empty: 'No app matches.',

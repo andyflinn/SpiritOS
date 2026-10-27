@@ -47,11 +47,25 @@
     function serverOn() {
       return Object.keys(jobs).some(function (id) { var j = jobs[id]; return j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending'); });
     }
+    // ONE STATE, DRAWN WHEN IT CHANGES: exempt (intrinsic, or the Apps app), else on or off.
+    var shown = '';
+    function render() {
+      var isExempt = face.intrinsic === true || (m[1] === 'shell' && m[2] === 'apps');
+      on = !isExempt && (isServer ? serverOn() : face.app === true);
+      var now = isExempt ? 'exempt' : (on ? 'on' : 'off');
+      if (now === shown) return;
+      shown = now;
+      if (isExempt) exempt(); else draw();
+    }
+    // EVERY BUTTON LISTENS (box v15): its app's face part as the node streams it (an app-face job), and a server's job.
     function heard(job) {
       if (!job || !job.id) return;
+      if (job.type === 'app-face') {
+        if (job.data && job.data.path === path) { face = (job.data.face && typeof job.data.face === 'object') ? job.data.face : {}; render(); }
+        return;
+      }
       jobs[job.id] = job;
-      var now = serverOn();
-      if (now !== on) { on = now; draw(); }
+      if (isServer) render();
     }
     function readFace() {
       return fsOf().then(function (f) { return f.getAnnotations(path); }).then(function (a) { face = (a && a.face) || {}; return face; });
@@ -68,22 +82,20 @@
         // A shell app: the face shell shows or hides it at once, and the button draws the node's answer.
         if (isServer) return;
         if (sp().shell && typeof sp().shell.faceApp === 'function') sp().shell.faceApp(m[1] + '/' + m[2]);
-        return readFace().then(function () { on = face.app === true; draw(); });
+        return readFace().then(render);
       }, function () { /* not written: the button stays as the node last said */ });
     }
 
     if (!m || !host) return { destroy: function () {} };
     readFace().then(function () {
       if (gone) return;
-      if (face.intrinsic === true || (m[1] === 'shell' && m[2] === 'apps')) { exempt(); return; }
-      if (!isServer) { on = face.app === true; draw(); return; }
-      draw();
+      render();
       var ev = sp().events;
       if (ev && typeof ev.subscribe === 'function') {
         off = ev.subscribe({
           onSnapshot: function (list) { (list || []).forEach(heard); },
           onUpdate: heard,
-          onDelete: function (id) { if (jobs[id]) { delete jobs[id]; var now = serverOn(); if (now !== on) { on = now; draw(); } } },
+          onDelete: function (id) { if (jobs[id]) { delete jobs[id]; render(); } },
         }) || off;
       }
     }, function () { if (!gone && host) host.innerHTML = '<span class="job-manifest-note">' + esc('could not read ' + path) + '</span>'; });

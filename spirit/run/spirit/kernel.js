@@ -186,7 +186,7 @@ if (isNode()) {
   spirit.core.node.util.fsPath = fileSystem.fsPath;
   spirit.core.node.util.scanFolder = fileSystem.scanFolder;
   ['loadFile', 'statFile', 'fileWritable', 'fileServable', 'saveFile', 'loadJsonValue', 'saveJsonValue', 'deleteFile',
-    'annotateFile', 'annotateFace', 'getAnnotations'].forEach(function (n) { spirit.core.fs[n] = fileSystem[n]; });
+    'annotateFace', 'getAnnotations'].forEach(function (n) { spirit.core.fs[n] = fileSystem[n]; });
 
   function hashFileContents(fullPath) {
     return crypto.createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex');
@@ -315,11 +315,11 @@ if (isNode()) {
   };
 
   // Sync, same as loadFile/statFile — "More Information" data any tool has
-  // recorded about this file via annotateFile (kernel.js's Node side), via
+  // recorded about this file via annotateFace (kernel.js's Node side; the face part, the one part since goal/G41.1), via
   // the fs.annotations verb (no direct filesystem access from the
   // browser). Always resolves to an object — {} both when nothing's been
   // recorded and when the request itself fails — so callers never need a
-  // null-check before reading .client.
+  // null-check before reading .face.
   spirit.core.fs.getAnnotations = function(filePath) {
     let result = {};
     let xmlhttp = new XMLHttpRequest();

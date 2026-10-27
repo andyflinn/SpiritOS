@@ -215,13 +215,22 @@ module.exports = function installJobs(port) {
     scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, statOf(m.fullPath, m.kind)); });
     fsTree = tree;
     const job = createJob('permanent', 'fs-watcher', {});
+    // AN APP'S FACE PART, STREAMED (goal/G41.1, box v15: "the node streams an app's face part whenever its sidecar
+    // changes, and every app installer button listens to it"): one job, its data the app's script and its face part as
+    // the sidecar now holds it ({} once the sidecar is gone).
+    const faces = createJob('permanent', 'app-face', {});
+    const publishFace = function (rel, full, op) {
+      let side = null;
+      if (op !== 'deleteFile') { try { side = JSON.parse(fs.readFileSync(full, 'utf8')); } catch (e) { side = null; } }
+      updateJob(faces.id, { data: { path: rel.replace(/\.sidecar\.json$/, ''), face: (side && side.face && typeof side.face === 'object') ? side.face : {} } });
+    };
     const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
     const ignored = function (full) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
       if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
       // A server's sidecar is never served, but it is its home switch: heard here, kept out of the tree (goal/G41.1).
-      if (SIDECAR.test(rel)) return false;
+      if (APP_SIDECAR.test(rel)) return false;
       return !fileSystem.fileServable(rel);
     };
     const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
@@ -229,7 +238,7 @@ module.exports = function installJobs(port) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
       if (!op || !rel || rel.indexOf('..') === 0) return;
-      if (SIDECAR.test(rel)) { followHome(rootDir, rel); return; }
+      if (APP_SIDECAR.test(rel)) { publishFace(rel, full, op); if (SIDECAR.test(rel)) followHome(rootDir, rel); return; }
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
         if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
@@ -255,6 +264,7 @@ module.exports = function installJobs(port) {
 
     job._stop = function() {
       watcher.close();
+      cancelJob(faces.id);
       if (fsTree === tree) fsTree = null;
     };
 
@@ -544,6 +554,8 @@ module.exports = function installJobs(port) {
   // A SIDECAR WRITTEN STARTS OR STOPS ITS SERVER (goal/G41.1, box v13: "the node starts or stops the server when that
   // sidecar changes"): heard by the fs watcher, on the node startNodeServers was handed.
   const SIDECAR = /^process\/js\/([^/]+)\/\1\.js\.sidecar\.json$/;
+  // Any app's sidecar, a shell app's or a server's: never served, but heard, its face part streamed (goal/G41.1).
+  const APP_SIDECAR = /^(shell|process\/js)\/([^/]+)\/\2\.js\.sidecar\.json$/;
   function followHome(rootDir, rel) {
     const m = SIDECAR.exec(rel);
     if (!m || !serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
