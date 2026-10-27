@@ -1,5 +1,5 @@
 {
- "change": 108098,
+ "change": 108099,
  "goal": "goal/G41",
  "items": [
   {
@@ -3194,7 +3194,6 @@
    ],
    "blocked": [
     "goal/G41.6",
-    "goal/G41.7",
     "goal/G41.8",
     "goal/G41.9",
     "goal/G41.10"
@@ -4141,14 +4140,13 @@
    "id": "goal/G41.7",
    "title": "Make app TextEditor face-able",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 4,
    "buttons": [
-    "start-design",
-    "done",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
