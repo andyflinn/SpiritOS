@@ -1,5 +1,5 @@
 {
- "change": 106538,
+ "change": 106539,
  "goal": "goal/G41",
  "items": [
   {
@@ -93,7 +93,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -1958,12 +1958,11 @@
    "id": "goal/G41.3",
    "title": "face/shell fixes",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 21,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
