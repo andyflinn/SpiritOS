@@ -129,9 +129,32 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job' }),
   });
-  const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
-  const filesOf = async function (id) { return ((await call('item.files', { id: id }, ANDY)).files) || []; };
-  const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
+  // EVERY ANSWER IS "ok" (goal/G41.12, box v32: "the implementation's API is all PUT"; "The client PUTs and the server
+  // STREAMs"): what a write did is read from what the desk published, as his pages hear it, never from its answer.
+  const factsRows = function (id) {
+    return node.pages.filter(function (o) { return o && o.item && !o.table && !o.removed; }).map(function (o) {
+      let it = o.item; if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } } return it;
+    }).filter(function (it) { return it && String(it.id) === id; });
+  };
+  // The newest facts of an item, waited for until pass holds them (3 s at most).
+  const facts = async function (id, pass) {
+    for (let i = 0; i < 30; i++) { const rows = factsRows(id); const last = rows[rows.length - 1]; if (last && (!pass || pass(last))) return last; await sleep(100); }
+    const rows = factsRows(id); return rows[rows.length - 1] || {};
+  };
+  // An item nothing has published yet is pushed by his push button (box v30), so its facts are known.
+  const known = async function (id) { if (!factsRows(id).length) await call('press', { id: id, what: 'push' }, ANDY); return facts(id); };
+  // An item's file list, rebuilt from the files rows published, one agent's path each, waited for until pass holds it.
+  const filesOf = async function (id, pass) {
+    const now = function () {
+      const out = new Map();
+      node.pages.forEach(function (o) { if (!o || o.table !== 'files' || o.id !== id) return; if (o.removed) { out.delete(String(o.at)); return; } if (o.row) out.set(o.row.by + '|' + o.row.path, o.row); });
+      return Array.from(out.values());
+    };
+    for (let i = 0; i < 30 && !(pass ? pass(now()) : false); i++) await sleep(100);
+    return now();
+  };
+  const boxRows = function (id) { return node.pages.filter(function (o) { return o && o.table === 'box' && o.id === id && o.row; }).map(function (o) { return String(o.row.text || ''); }); };
+  const accepted = function (r) { return r === 'ok' || !!(r && (r.ok === true || r.subscribed === true)); };
   // The to list his line was published with, as his pages heard it.
   const toOf = async function (text) {
     for (let i = 0; i < 40; i++) {
@@ -157,10 +180,9 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     test.subHeading('bundles: item.files.add takes a list of paths (Desk only)');
     await call('item.take', { id: 'goal/G100.1' }, CW);
     const paths = ['spirit/run/a.js', 'spirit/run/b.js', 'spirit/run/c.js'];
-    const bundle = await call('item.files.add', { id: 'goal/G100.1', paths: paths }, CW);
-    const listed = (await filesOf('goal/G100.1')).map(function (f) { return f.path; });
-    ok(bundle.ok !== false && paths.every(function (p) { return listed.indexOf(p) !== -1; }), 'item.files.add {id, paths} lands every path of the list on the caller\'s list',
-      'the bundle answered ' + short(bundle) + '; listed ' + short(listed));
+    await call('item.files.add', { id: 'goal/G100.1', paths: paths }, CW);
+    const listed = (await filesOf('goal/G100.1', function (fs_) { return paths.every(function (p) { return fs_.some(function (f) { return f.path === p; }); }); })).map(function (f) { return f.path; });
+    ok(paths.every(function (p) { return listed.indexOf(p) !== -1; }), 'item.files.add {id, paths} lands every path of the list on the caller\'s list', 'listed ' + short(listed));
 
     test.subHeading('bundles: a goal pushed whole reaches a subscribed client as bundles of rows');
     const before = node.posts.length;
@@ -179,26 +201,30 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }), 'each post stays within one payload', 'a post of ' + short(pushed.map(function (p) { return Buffer.byteLength(String(p.json), 'utf8'); })) + ' bytes');
     await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
     // Out of design, so his Go is offered: what refuses it below is the file list alone.
-    const ended = await call('press', { id: GOAL.id, what: 'end-design' }, ANDY);
-    ok(!!ended.change, 'the world: the goal leaves design mode', 'End design answered ' + short(ended));
+    await call('press', { id: GOAL.id, what: 'end-design' }, ANDY);
+    const ended = await facts(GOAL.id, function (f) { return f.design === false; });
+    ok(ended.design === false, 'the world: the goal leaves design mode', 'its row: ' + short(ended));
 
     test.subHeading('files known in design: a code item is not green with an empty file list');
     await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
-    const bare = await facts('goal/G100.2');
+    const bare = await facts('goal/G100.2', function (f) { return f.code === true; });
     ok(bare.code === true && bare.green === false, 'a code item with no file listed is not green', 'code ' + short(bare.code) + ', green ' + short(bare.green) + ', files ' + short(bare.fileCount));
-    const goEmpty = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
-    ok(goEmpty.ok === false && /file/i.test(why(goEmpty) + ' ' + String(goEmpty.error || '')), 'his Go on it is refused, the why naming its empty file list', 'Go answered ' + short(goEmpty));
+    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+    await sleep(800);
+    const noGo = await facts('goal/G100.2');
+    ok(noGo.code === true && noGo.go !== true, 'his Go on it does not take: its row never shows go', 'its row: ' + short({ go: noGo.go, green: noGo.green }));
     await call('item.take', { id: 'goal/G100.2' }, UBI);
     await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/early.js' }, UBI);
-    const listedOne = await facts('goal/G100.2');
+    const listedOne = await facts('goal/G100.2', function (f) { return f.green === true; });
     ok(listedOne.green === true, 'with a file listed it is green', 'green ' + short(listedOne.green));
-    const goNow = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
-    ok(!!goNow.change && goNow.ok !== false, 'and his Go is taken', 'Go answered ' + short(goNow));
-    const lateAdd = await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/late.js' }, UBI);
-    const entries = await filesOf('goal/G100.2');
+    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+    const goNow = await facts('goal/G100.2', function (f) { return f.go === true; });
+    ok(goNow.go === true, 'and his Go is taken', 'its row: ' + short({ go: goNow.go }));
+    await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/late.js' }, UBI);
+    const entries = await filesOf('goal/G100.2', function (fs_) { return fs_.some(function (f) { return f.path === 'spirit/run/late.js'; }); });
     const early = entries.filter(function (f) { return f.path === 'spirit/run/early.js'; })[0] || {};
     const late = entries.filter(function (f) { return f.path === 'spirit/run/late.js'; })[0] || null;
-    ok(!!lateAdd.change && !!late, 'a file added after his Go is allowed', 'the late add answered ' + short(lateAdd));
+    ok(!!late, 'a file added after his Go is allowed', 'files ' + short(entries));
     ok(!!late && late.late === true && early.late !== true, 'and marked late on the item; the file listed before Go is not', 'late ' + short(late) + ', early ' + short(early));
 
     test.subHeading('addresses: all or a nick counts only when punctuation follows');
@@ -215,25 +241,29 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(to.indexOf(OUT.key) === -1, 'and never one he excluded', 'its to list: ' + short(to));
 
     test.subHeading('auto-cap: a box write into red offers the cap to the agents with cap on');
-    const tooBig = await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(20000), version: 0 }, ANDY);
-    const room = tooBig && tooBig.extra && Number(tooBig.extra.max) > 0 ? Number(tooBig.extra.max) : 0;
-    ok(room > 0, 'the desk names the room of one answer (' + room + ' bytes)', 'a box past one answer answered ' + short(tooBig));
-    if (room > 0) {
-      const v0 = (await facts('goal/G100.4')).version || 0;
-      const small = await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
-      const takeSmall = await call('box.take', { id: 'goal/G100.4' }, WSL);
-      ok(!!small.change && !!takeSmall.change, 'a box write below red offers nothing: an agent with cap off takes it plainly', 'write ' + short(small) + ', take ' + short(takeSmall));
-      await call('box.release', { id: 'goal/G100.4' }, WSL);
-      const v1 = (await facts('goal/G100.4')).version || 0;
-      const red = 'y'.repeat(Math.ceil(room * 0.8));
-      const big = await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
-      ok(!!big.change, 'a box write to 80% of one answer lands', 'it answered ' + short(big));
-      const offOff = await call('box.take', { id: 'goal/G100.4' }, WSL);
-      ok(offOff.ok === false && /cap/i.test(why(offOff)), 'then an agent with cap off is refused the box, the cap\'s why', 'wsl\'s take answered ' + short(offOff));
-      const onTake = await call('box.take', { id: 'goal/G100.4' }, UBI);
-      const held = await facts('goal/G100.4');
-      ok(!!onTake.change && held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'ubi\'s take answered ' + short(onTake) + ', boxTaken ' + short(held.boxTaken));
-    }
+    // One answer's room, as the desk cuts it (desk.js ANSWER_ROOM: limits.ANSWER_MAX - 512).
+    const room = require(path.join(RUN, 'spirit', 'limits.js')).ANSWER_MAX - 512;
+    const v00 = (await known('goal/G100.4')).version || 0;
+    await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(room + 100), version: v00 }, ANDY);
+    await sleep(800);
+    ok(!boxRows('goal/G100.4').some(function (t) { return t.length > room; }), 'a box past one answer (' + room + ' bytes) never lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
+    const v0 = (await facts('goal/G100.4')).version || 0;
+    await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
+    await call('box.take', { id: 'goal/G100.4' }, WSL);
+    const takenSmall = await facts('goal/G100.4', function (f) { return f.boxTaken === WSL.label; });
+    ok(boxRows('goal/G100.4').indexOf('a short box') !== -1 && takenSmall.boxTaken === WSL.label, 'a box write below red offers nothing: an agent with cap off takes it plainly', 'box rows ' + short(boxRows('goal/G100.4')) + ', boxTaken ' + short(takenSmall.boxTaken));
+    await call('box.release', { id: 'goal/G100.4' }, WSL);
+    const v1 = (await facts('goal/G100.4', function (f) { return f.boxTaken !== WSL.label; })).version || 0;
+    const red = 'y'.repeat(Math.ceil(room * 0.8));
+    await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
+    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf(red) === -1; i++) await sleep(100);
+    ok(boxRows('goal/G100.4').indexOf(red) !== -1, 'a box write to 80% of one answer lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
+    await call('box.take', { id: 'goal/G100.4' }, WSL);
+    await sleep(800);
+    ok((await facts('goal/G100.4')).boxTaken !== WSL.label, 'then an agent with cap off is refused the box: it never holds it', 'boxTaken ' + short((await facts('goal/G100.4')).boxTaken));
+    await call('box.take', { id: 'goal/G100.4' }, UBI);
+    const held = await facts('goal/G100.4', function (f) { return f.boxTaken === UBI.label; });
+    ok(held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'boxTaken ' + short(held.boxTaken));
 
     // ── THE POSITION IS appServer'S (goal/G41.12, box v15: "Each sender numbers every row it publishes, one count per
     // sender, kept with its run id"; "The desk's change number as the stream's position" goes). A subscribe carries
@@ -262,7 +292,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const plainEnded = await waitEnd(FRESH.key, f0);
     const plainRows = rowsTo(FRESH.key, f0);
     const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
-    ok(plain.subscribed === true && plainEnded && plainIds.indexOf(GOAL.id) !== -1, 'with no position, the current goal\'s row comes', 'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
+    ok(accepted(plain) && plainEnded && plainIds.indexOf(GOAL.id) !== -1, 'with no position, the current goal\'s row comes', 'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
     ok(plainEnded && ITEMS.every(function (id) { return plainIds.indexOf(id) === -1; }) && plainRows.every(function (r) { return !r || !r.item || String(r.item.id) === GOAL.id || String(r.item.id) === 'goal/G0'; }),
       'and none of its items\' rows, nor another goal\'s: no initial push', 'rows of ' + short(plainRows.map(function (r) { return r && (r.item ? r.item.id : r.rule || r.table); })));
     ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box)', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
@@ -282,8 +312,8 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     await call('chat.add', { id: 'goal/G100.3', text: LINES.ubi }, ANDY);
     await call('chat.add', { id: 'goal/G100.3', text: LINES.cw }, ANDY);
     await call('chat.add', { id: 'goal/G0', text: LINES.group }, ANDY);
-    const v5 = (await facts('goal/G100.5')).version || 0;
-    const boxed = await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
+    const v5 = (await known('goal/G100.5')).version || 0;
+    await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
     await call('chat.add', { id: 'goal/G200.1', text: LINES.other }, ANDY);
     await sleep(500);
     const u0 = node.sent.length;
@@ -293,7 +323,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const gotEntries = entriesTo(UBI.key, u0);
     const sides = sideOf(got);
     const texts = textsOf(got);
-    ok(!!pos && caught.subscribed === true && got.length > 0, 'a subscribe with the position (' + short(pos) + ') is taken and handed rows', 'subscribed ' + short(caught) + ', rows ' + got.length);
+    ok(!!pos && accepted(caught) && got.length > 0, 'a subscribe with the position (' + short(pos) + ') is taken and handed rows', 'subscribed ' + short(caught) + ', rows ' + got.length);
     ok(texts.indexOf(LINES.nobody) !== -1 && texts.indexOf(LINES.group) !== -1, 'it hands the lines written after the position: the current goal\'s and the group chat\'s', 'chat rows handed: ' + short(texts));
     ok(texts.indexOf(LINES.other) !== -1, 'and another goal\'s: the cache keeps every goal (box v15)', 'chat rows handed: ' + short(texts));
     ok(texts.indexOf(oldLine) === -1 && gotEntries.every(function (e) { return Number(e.n) > pos.since; }), 'and nothing published at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', numbers ' + short(gotEntries.map(function (e) { return e.n; })));
@@ -313,7 +343,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
 
     test.subHeading('the position: a box written after it comes, one before it does not');
     const boxRow = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.5'; })[0];
-    ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
+    ok(!!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes', 'box row ' + short(boxRow));
     const staleBox = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.4'; })[0];
     ok(!staleBox, 'a box written before the position does not', 'G100.4\'s box handed: ' + short(staleBox));
 
@@ -324,12 +354,12 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const pushed3 = await call('press', { id: 'goal/G100.3', what: 'push' }, ANDY);
     await waitFor(CW.key, q0, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }); }, 5000);
     const after3 = rowsTo(CW.key, q0);
-    ok(pushed3.ok !== false && after3.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }), 'press push on goal/G100.3 hands its row to a subscribed client', 'press answered ' + short(pushed3) + ', rows ' + short(after3.map(function (r) { return r && (r.item ? r.item.id : r.table + ' ' + r.id); })));
+    ok(after3.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }), 'press push on goal/G100.3 hands its row to a subscribed client', 'press answered ' + short(pushed3) + ', rows ' + short(after3.map(function (r) { return r && (r.item ? r.item.id : r.table + ' ' + r.id); })));
     ok(!after3.some(function (r) { return r && r.item && String(r.item.id) !== 'goal/G100.3'; }), 'and no other item\'s row', 'rows ' + short(after3.map(function (r) { return r && r.item && r.item.id; })));
     const q1 = node.sent.length;
     const pushedGoal = await call('press', { id: GOAL.id, what: 'push' }, ANDY);
     await waitFor(CW.key, q1, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }); }, 5000);
-    ok(pushedGoal.ok !== false && rowsTo(CW.key, q1).some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }), 'and on a goal, the goal\'s row', 'press answered ' + short(pushedGoal));
+    ok(rowsTo(CW.key, q1).some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }), 'and on a goal, the goal\'s row', 'press answered ' + short(pushedGoal));
 
     test.subHeading('a subscriber whose delivery failed is dropped, and handed what it missed when it subscribes again');
     // goal/G41.12, kept: "A subscribe or a delivery not answered in 3 s fails; the sender drops that subscriber until

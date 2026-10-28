@@ -49,15 +49,21 @@ const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
 const D = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
-const subscribeArgs = [];   // what each subscribe was handed: { key, family, since }
+const subscribeArgs = [];
+const askedVia = [];   // each ask deskClient made through its appServer's ask   // what each subscribe was handed: { key, family, since }
 let curD = D;   // the data set the running deskClient holds (a restarted one gets a fresh one)
 const appServerStub = {
   get data() { return curD; },
   serve: function (verbs, opts) {
     if (opts && opts.stream && opts.stream.translator) require(path.resolve(String(opts.stream.translator)));
     served = { verbs: verbs, opts: opts || {} };
-    return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
+    return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); },
+      // A client implementation asks through spirit/appServer.js (box v28), which bundles; answered { status, body } (cw).
+      ask: function (key, family, verb, args) { askedVia.push({ key: key, family: family, verb: verb }); return deskAnswer(verb, args).then(function (b) { return { status: 200, body: b }; }); } };
   },
+  // The role it sets at its startup (box v26: setMode("client" | "server")).
+  modes: [],
+  setMode: function (m) { this.modes.push(m); },
   publish: function () {},
   // The cache is appServer's since goal/G41.12: saveCaches saves each sender's now and names its file.
   caches: [],
@@ -153,6 +159,30 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
     const newFiles = after.filter(function (f) { return before.indexOf(f) === -1; });
     ok(!newFiles.length && after.indexOf('cache.json') === -1 && !fs.existsSync(path.join(path.dirname(STATE), 'elsewhere.json')),
       'and deskClient writes no file of its own, whatever the caller names: no cache.json, nothing new', 'new files: ' + short(newFiles) + ', state: ' + short(after));
+  }
+
+  // ── box v26-v32: the client role, its asks through spirit/appServer.js, and the shared current goal ─────────────
+  test.subHeading('the client role: setMode("client") at startup, its asks of the desk through spirit/appServer.js');
+  ok(appServerStub.modes.indexOf('client') !== -1 && appServerStub.modes.indexOf('server') === -1, 'deskClient calls setMode("client"), and never "server"', 'modes set: ' + short(appServerStub.modes));
+  const viaBefore = askedVia.length;
+  const takesVia = asksOf('box.take').length;
+  try { await ask('box.take', { id: ITEM }); } catch (e) { /* the answer is not the point */ }
+  ok(asksOf('box.take').length === takesVia + 1 && askedVia.slice(viaBefore).some(function (a) { return a.verb === 'box.take' && a.key === DESK && a.family === 'desk'; }),
+    'a write its agent asks goes to the desk through server.ask(desk key, "desk", verb, args)', 'asked via ask: ' + short(askedVia.slice(viaBefore)));
+
+  test.subHeading('the shared current goal: a part the cache lacks is answered from process/js/desk/currentGoal.json');
+  // Andy, box v32: "the desk client MUST use process/js/desk/currentGoal.json to update it's knowledge". The file the
+  // desk commits to the repo, as this checkout holds it.
+  let shared = null;
+  try { shared = JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'currentGoal.json'), 'utf8')); } catch (e) { shared = null; }
+  const sharedItem = shared && Array.isArray(shared.items) ? shared.items.filter(function (i) { return i && i.id && typeof i.box === 'string' && i.box.length > 0 && !curD.get('deskItems/' + i.id); })[0] : null;
+  ok(!!sharedItem, 'this checkout\'s currentGoal.json holds an item with a box the cache does not hold', 'currentGoal.json: ' + short(shared && Object.keys(shared)));
+  if (sharedItem) {
+    desk.answers['item.box'] = 'ok';
+    let got = null;
+    try { got = await ask('item.box', { id: sharedItem.id }); } catch (e) { got = { threw: e.refusal || e.message }; }
+    ok(!!got && got.box === sharedItem.box, 'item.box of ' + sharedItem.id + ', which the desk answers "ok" alone, is answered with its box from the shared goal', 'answer: ' + short(got));
+    delete desk.answers['item.box'];
   }
 
   test.subHeading('the cache, whole from the first push: the agent\'s reads ask the desk nothing');
