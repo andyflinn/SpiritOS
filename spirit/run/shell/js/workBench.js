@@ -30,8 +30,8 @@
 // given (box-sizing: border-box), so no app pads its own.
 //
 // THE SHOWN TOOL'S ICON IS MARKED (Andy, on G41.4: "the current left-strip icon should be highlighted, may be with a
-// lightly brighter background color"): on each strip the icon of the tool shown carries data-current and a lighter
-// background, the others none; a collapsed side marks none.
+// lightly brighter background color"): on each strip the icon of the tool shown carries data-current, a brighter
+// background and a dark border, the others none; a collapsed side marks none.
 (function () {
   var MIN_WIDTH = 120;
   var START_WIDTH = 240;
@@ -64,7 +64,10 @@
     function part(name) { return container.querySelector('#' + pre + name); }
 
     function toolOf(side, name) { return (sides[side] || []).filter(function (t) { return t.name === name; })[0] || null; }
-    var CURRENT = 'var(--spirit-current, rgba(255,255,255,0.18))';
+    // Brighter than the others and framed dark (Andy: "the current one should also have a dark border, right now it looks
+    // more dead than the others, a bit brighter with a darker border").
+    var CURRENT = 'var(--spirit-current, rgba(255,255,255,0.4))';
+    var CURRENT_BORDER = '2px solid var(--spirit-current-border, rgba(0,0,0,0.75))';
     // The side's shown tool is now name ('' collapsed): its icon marked, the app told when it changed.
     function now(side, name) {
       var was = shownTool[side];
@@ -75,6 +78,7 @@
         var on = b.getAttribute('data-tool') === name;
         if (on) b.setAttribute('data-current', 'true'); else b.removeAttribute('data-current');
         b.style.background = on ? CURRENT : '';
+        b.style.border = on ? CURRENT_BORDER : '';
       });
       if (was !== name && typeof o.changed === 'function') { try { o.changed(side, name); } catch (e) { /* the app's fault */ } }
     }

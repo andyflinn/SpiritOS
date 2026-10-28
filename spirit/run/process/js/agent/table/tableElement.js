@@ -58,7 +58,9 @@
   //   table's name, a list pane's the table's name alone.
   function titleRow(look, words) {
     var l = look || {};
-    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em"><span style="font-size:20px">' + esc(l.icon || '') + '</span>' +
+    // Set as a title, bigger than the lines below it (Andy: "the type face of the list and detail title rows should be a
+    // bit more title-like a bit bigger").
+    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em;font-size:1.3em;font-weight:600"><span style="font-size:1.2em">' + esc(l.icon || '') + '</span>' +
       words.map(function (w, i) { return i === 0 && words.length > 1 ? '<b>' + esc(w) + '</b>' : '<span>' + esc(w) + '</span>'; }).join('') + '</div>';
   }
   //   ONE FIELD A LINE ("the simple input lines, take up all the with availabe, with only the 1em between the inputs
