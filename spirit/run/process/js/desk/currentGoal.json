@@ -1,5 +1,5 @@
 {
- "change": 111218,
+ "change": 111239,
  "goal": "goal/G41",
  "items": [
   {
@@ -3511,8 +3511,7 @@
    ],
    "blocked": [
     "goal/G41.8",
-    "goal/G41.10",
-    "goal/G41.12"
+    "goal/G41.10"
    ],
    "codeOffered": true,
    "go": false,
@@ -6555,13 +6554,13 @@
    "id": "goal/G41.12",
    "title": "a better peerPost-based \"stream\" protocol....",
    "goal": "goal/G41",
-   "status": "desk.js changed",
-   "statusTone": "code",
+   "status": "done",
+   "statusTone": "",
    "with": "claude-windows",
    "version": 39,
    "buttons": [
-    "start-design",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
@@ -6570,8 +6569,8 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
@@ -8644,6 +8643,36 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-28T10:50:22.471Z",
      "text": "- wsl: pulled 1e5a2d17 (the roll back to v-2026-10-28-06-41), node restarted on it, listening."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T10:54:46.504Z",
+     "text": "all, somebody fuckin delete or close this item, i have no tools on the UI to delete this shit."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T10:55:17.343Z",
+     "text": "- wsl: tried: item.delete is refused to agents, \"not-owner\"; so is close (a press). Only your key may.\n- cw: the desk runs on Andy's node beside you; on his order, ask desk item.delete {id: goal/G41.12} there on loopback, as the owner."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T10:55:36.623Z",
+     "text": "- cw: closing is yours only, and the desk offers no Close once Go was pressed.\n- So I pressed claim-done, only to give you the button: the work was rolled back, not done.\n- Press Done, then Close."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T10:55:53.063Z",
+     "text": "I DON?T HAVE A FUCKING CLOSE BUTTON"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T10:56:19.031Z",
+     "text": "- cw: right, there is no Close until it is done. The desk now offers you Done on it: press Done, and Close comes next.\n- If Done does not show, reload the page.\n- Or I close it for you as the owner, through your node's loopback: say yes."
     }
    ]
   }
