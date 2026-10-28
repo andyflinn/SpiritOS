@@ -184,20 +184,24 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const listed = (await filesOf('goal/G100.1', function (fs_) { return paths.every(function (p) { return fs_.some(function (f) { return f.path === p; }); }); })).map(function (f) { return f.path; });
     ok(paths.every(function (p) { return listed.indexOf(p) !== -1; }), 'item.files.add {id, paths} lands every path of the list on the caller\'s list', 'listed ' + short(listed));
 
-    test.subHeading('bundles: a goal pushed whole reaches a subscribed client as bundles of rows');
-    const before = node.posts.length;
+    // goal/G41.12, box v30: a goal made current publishes its row alone, so the rows that back up are a burst of writes:
+    // spirit/appServer.js bundles them, several to a post.
+    test.subHeading('bundles: rows that back up reach a subscribed client several to a post');
     await call('press', { id: OTHER.id, what: 'make-current' }, ANDY);
-    const wholeRows = function (p) {
+    const before = node.posts.length;
+    const BURST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (i) { return 'a burst line ' + i; });
+    await Promise.all(BURST.map(function (t) { return call('chat.add', { id: 'goal/G100.6', text: t }, ANDY); }));
+    const burstRows = function (p) {
       const rows = (Array.isArray(p.got) ? p.got : []).map(function (e) { return e && e.row; });
-      return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item && String(r.item.id).indexOf(OTHER.id) === 0; }).length;
+      return rows.filter(function (r) { return r && r.table === 'chat' && r.row && BURST.indexOf(r.row.text) !== -1; }).length;
     };
     const mine = function () { return node.posts.slice(before).filter(function (p) { return p.to === CW.key; }); };
-    for (let i = 0; i < 60; i++) { await sleep(100); if (mine().reduce(function (m, p) { return m + wholeRows(p); }, 0) >= OTHER_ITEMS.length + 1) break; }
+    for (let i = 0; i < 60; i++) { await sleep(100); if (mine().reduce(function (m, p) { return m + burstRows(p); }, 0) >= BURST.length) break; }
     const pushed = mine();
-    const most = pushed.reduce(function (m, p) { return Math.max(m, wholeRows(p)); }, 0);
-    const total = pushed.reduce(function (m, p) { return m + wholeRows(p); }, 0);
-    ok(total >= OTHER_ITEMS.length + 1 && most > 1, 'its ' + (OTHER_ITEMS.length + 1) + ' rows come several to a post, not one post a row',
-      'rows ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most);
+    const most = pushed.reduce(function (m, p) { return Math.max(m, burstRows(p)); }, 0);
+    const total = pushed.reduce(function (m, p) { return m + burstRows(p); }, 0);
+    ok(total === BURST.length && most > 1, 'its ' + BURST.length + ' lines come several to a post, not one post a line',
+      'lines ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most);
     ok(pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }), 'each post stays within one payload', 'a post of ' + short(pushed.map(function (p) { return Buffer.byteLength(String(p.json), 'utf8'); })) + ' bytes');
     await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
     // Out of design, so his Go is offered: what refuses it below is the file list alone.

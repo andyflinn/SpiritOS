@@ -164,6 +164,9 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   // ── box v26-v32: the client role, its asks through spirit/appServer.js, and the shared current goal ─────────────
   test.subHeading('the client role: setMode("client") at startup, its asks of the desk through spirit/appServer.js');
   ok(appServerStub.modes.indexOf('client') !== -1 && appServerStub.modes.indexOf('server') === -1, 'deskClient calls setMode("client"), and never "server"', 'modes set: ' + short(appServerStub.modes));
+  // The item held by this agent, as the stream says: its chat gate reads the facts from the cache first (cw).
+  await push({ verb: 'item.row', goal: 9, item: factsOf({ with: SELF, withKey: SELF_KEY, version: 2 }) });
+  await settle();
   const viaBefore = askedVia.length;
   const takesVia = asksOf('box.take').length;
   try { await ask('box.take', { id: ITEM }); } catch (e) { /* the answer is not the point */ }
@@ -375,7 +378,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   // sender) ─────────────────────────────────────────────────────────────────────────────────────────────────────────
   test.subHeading('the cache is appServer\'s switch: deskClient saves, sweeps and positions nothing of its own');
   const streamOpts = served.opts.stream || {};
-  ok(streamOpts.cache === true && !('renews' in streamOpts), 'deskClient follows the desk with stream.cache on, at its default limit, and names no renews', 'stream: ' + short(Object.keys(streamOpts)) + ', cache ' + short(streamOpts.cache));
+  // box v24: setMode("client") is the switch, the limit hard-coded; deskClient names no cache option of its own.
+  ok(!('cache' in streamOpts) && !('renews' in streamOpts) && appServerStub.modes.indexOf('client') !== -1, 'deskClient names no cache option and no renews: setMode("client") turns the cache on', 'stream: ' + short(Object.keys(streamOpts)) + ', modes ' + short(appServerStub.modes));
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });
