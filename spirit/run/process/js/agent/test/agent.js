@@ -96,6 +96,50 @@ test.startTest('agent.js: the agent server');
     ok(!(bad.status === 200 && bad.body && bad.body.ok !== false) && cfg3 && cfg3.debug === false && d3.body && d3.body.debug === false,
       'a debug whose on is not true or false is refused, and changes nothing', 'debug "yes": ' + short(bad.body || bad) + ', config ' + short(cfg3));
 
+    // ── goal/G41.4: THE DATA SET OF agent.db (box v22) ─────────────────────────────────────────────────────────────────
+    // Andy: "a provider table ... a model table ... a persona table ... a job table ... an grant/auth table, keyed by
+    // job-ID, structured exactly like the auth table in node"; each "keyed by ID same as the shadow-roll".
+    test.subHeading('goal/G41.4: agent.db holds the five tables, each with its fields');
+    const { DatabaseSync } = require('node:sqlite');
+    const look = new DatabaseSync(db, { readOnly: true });
+    const tables = look.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; });
+    const tableOf = function (name) { return tables.filter(function (t) { return new RegExp('^' + name + 's?$', 'i').test(t); })[0] || ''; };
+    const colsOf = function (t) { return t ? look.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all() : []; };
+    const WANT = {
+      provider: [/^id$/i, /label/i, /description/i, /url/i, /api_?key/i],
+      model: [/^id$/i, /label/i, /description/i, /provider/i, /model_?name|^name$/i, /capabilit/i],
+      persona: [/^id$/i, /label/i, /^description$/i, /persona/i],
+      job: [/^id$/i, /label/i, /^description$/i, /loop/i, /job/i],
+    };
+    Object.keys(WANT).forEach(function (name) {
+      const t = tableOf(name);
+      const cols = colsOf(t).map(function (c) { return c.name; });
+      const missing = WANT[name].filter(function (re) { return !cols.some(function (c) { return re.test(c); }); });
+      ok(!!t && !missing.length, 'a ' + name + ' table, with ' + WANT[name].map(String).join(', '), name + ': table ' + (t || 'none') + ', columns ' + short(cols) + ', missing ' + missing.map(String).join(', '));
+      const pk = colsOf(t).filter(function (c) { return c.pk > 0; }).map(function (c) { return c.name; });
+      ok(!!t && pk.length === 1 && /^id$/i.test(pk[0]), name + ' is keyed by its id alone', name + ': primary key ' + short(pk));
+    });
+    const grantT = tableOf('grant');
+    const grantPk = colsOf(grantT).filter(function (c) { return c.pk > 0; }).sort(function (a, b) { return a.pk - b.pk; }).map(function (c) { return c.name; });
+    // node's grants (spirit/nodeStore.js:502): peer_id and path, one row per grant; here the job's ID stands for the peer.
+    ok(!!grantT && grantPk.length === 2 && /job/i.test(grantPk[0]) && /^path$/i.test(grantPk[1]), 'a grant table keyed (job ID, path), as node\'s grants are (peer_id, path)', 'grant: table ' + (grantT || 'none') + ', primary key ' + short(grantPk));
+    look.close();
+
+    test.subHeading('goal/G41.4: one verb per table, in its family interface, each in its own folder');
+    const TABLES = ['provider', 'model', 'persona', 'job', 'grant'];
+    let fam = null;
+    try { delete require.cache[require.resolve(API)]; fam = require(API); } catch (e) { fam = null; }
+    const verbs = (fam && fam.verbs) || {};
+    ok(TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }), 'its interface declares the five verbs, provider, model, persona, job and grant', 'verbs: ' + short(Object.keys(verbs)));
+    const files = [];
+    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
+    const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
+    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 15 missing: ' + absent.join(', '));
+    const served = (await ask('DEBUG', {})).status === 200;
+    const answers = {};
+    for (const t of TABLES) answers[t] = await ask(t, {});
+    ok(served && TABLES.every(function (t) { return !(answers[t].body && answers[t].body.code === 'no-such-verb') && !/no.such.verb|unknown verb/i.test(short(answers[t])); }), 'the server serves each of the five verbs', 'answers: ' + short(answers));
+
     test.subHeading('the state persists across restarts');
     await ask('debug', { on: true });
     await stop();

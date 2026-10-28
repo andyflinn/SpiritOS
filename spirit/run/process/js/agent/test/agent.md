@@ -39,3 +39,15 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - A DEBUG state kept apart from the built-in one.
 - A restart that forgets the state.
 - A `debug` with a value that is not true or false.
+
+## goal/G41.4 (box v22): the data set of agent.db
+
+- **Five tables in agent.db**: provider (id, label, description, url, api_key), model (id, label, description, its
+  provider's key, model name, capabilities), persona (id, label, description, the persona text), job (id, label,
+  description, the loop flag, the job text), each keyed by its id alone; and grant, keyed (job ID, path), as node's
+  grants are (peer_id, path) (spirit/nodeStore.js:502). Column names are matched loosely until the build names them.
+- **One verb per table** (provider, model, persona, job, grant), declared in the family interface and served.
+- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for each table.
+- Not asserted yet, waiting on the names the build gives them: the multiplexed verb's shape; the key set made at
+  add-row (relayAuth.generateIdentity) and its private halves, and API_KEY, never in an answer or a published row;
+  authTableInterface.js's exports; the workBench icons.
