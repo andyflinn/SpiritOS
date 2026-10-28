@@ -353,7 +353,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ok(asksOf('box.take').length === boxTakes + 1 && asksOf('box.write').length === boxWrites + 1 && asksOf('item.get').length === getsBefore,
     'box.take and box.write of an item it does not hold go to the desk as asked, no gate of its own, no item.get', 'box.take ' + (asksOf('box.take').length - boxTakes) + ', box.write ' + (asksOf('box.write').length - boxWrites) + ', item.get ' + (asksOf('item.get').length - getsBefore));
   const deskClientCode = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '');
-  ok(!/cap is offered|capOffered|entitled/i.test(deskClientCode), 'deskClient keeps nothing of the cap offer', 'deskClient.js still names the cap offer');
+  // His addressed line still entitles the agent to answer in chat (goal/G33.2); only the box leaves the gate.
+  ok(!/GATED\s*=\s*\[[^\]]*box\.(take|write)/.test(deskClientCode) && !/cap is offered|cap agents/i.test(deskClientCode), 'deskClient gates no box verb and keeps nothing of the cap offer', 'deskClient.js still gates a box verb or names the cap offer');
 
   // ── THE FLOOD (Andy, goal/G41.11: "and we MUST look more precisely at performance again"; "deskClient keeps it's cache
   // ... through new subscribes"; "subscribes over peerPost should NOT expire, at least not on the client-side") ──────
