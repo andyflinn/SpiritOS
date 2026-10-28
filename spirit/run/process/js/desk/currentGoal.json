@@ -1,17 +1,19 @@
 {
- "change": 111215,
+ "change": 111218,
  "goal": "goal/G41",
  "items": [
   {
    "id": "goal/G41",
    "title": "The \"agent\" App, re-design from pieces of deskUnsloth and it's remote",
    "goal": "",
-   "status": "closed",
+   "status": "",
    "statusTone": "",
    "with": "claude-windows",
    "version": 1,
    "buttons": [
-    "reopen"
+    "done",
+    "verify",
+    "close"
    ],
    "blocking": [],
    "blocked": [
@@ -24,7 +26,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
+   "design": true,
    "fileCount": 0,
    "green": true,
    "code": false,
@@ -141,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 0,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -3500,7 +3502,6 @@
    "with": "",
    "version": 10,
    "buttons": [
-    "end-design",
     "close",
     "delete",
     "verify"
@@ -4940,7 +4941,6 @@
    "with": "",
    "version": 0,
    "buttons": [
-    "end-design",
     "close",
     "delete",
     "verify"
@@ -5376,7 +5376,6 @@
    "with": "",
    "version": 0,
    "buttons": [
-    "end-design",
     "close",
     "delete",
     "verify"
