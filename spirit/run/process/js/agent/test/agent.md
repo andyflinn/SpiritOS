@@ -42,12 +42,18 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## goal/G41.4 (box v22): the data set of agent.db
 
-- **Five tables in agent.db**: provider (id, label, description, url, api_key), model (id, label, description, its
-  provider's key, model name, capabilities), persona (id, label, description, the persona text), job (id, label,
-  description, the loop flag, the job text), each keyed by its id alone; and grant, keyed (job ID, path), as node's
-  grants are (peer_id, path) (spirit/nodeStore.js:502). Column names are matched loosely until the build names them.
-- **One verb per table** (provider, model, persona, job, grant), declared in the family interface and served.
-- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for each table.
-- Not asserted yet, waiting on the names the build gives them: the multiplexed verb's shape; the key set made at
-  add-row (relayAuth.generateIdentity) and its private halves, and API_KEY, never in an answer or a published row;
-  authTableInterface.js's exports; the workBench icons.
+- **Five tables in agent.db**, camelCase as the shadow-roll is (cw): every table has `id` (an ed25519 public key, as the
+  shadow-roll keys a row), `privateKey`, `sealPublicKey`, `sealPrivateKey`, `label`, `description`, keyed by `id` alone;
+  provider adds `url`, `apiKey`; model `providerId`, `modelName`, `capabilities`; persona `persona`; job `loop`, `job`.
+  grant is node's grants exactly: `job_id`, `path`, keyed by both (spirit/nodeStore.js:502).
+- **One verb per table** (provider, model, persona, job, grant), flat as every family verb is (cw): `{op, ...fields}`,
+  op one of add (answers the new id), set, delete, get (the row without its secrets, `apiKeySet` in place of the key)
+  and search (items and more); any other op refused.
+- **The key set at add-row** (Andy: "including the rest of the key-set stored on that table row"), the shadow-roll's
+  kind (spirit/relayAuth.js generateIdentity).
+- **No secret leaves the process** (Andy: API_KEY "will never reach the browser or any place outside of the agent
+  process except the model providers API"; "The private halves of that set stay in the agent process"): no answer of
+  add, set, get or search carries the API key or a private key.
+- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for each table;
+  the table servers publish their rows.
+- Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.

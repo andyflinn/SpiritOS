@@ -105,11 +105,14 @@ test.startTest('agent.js: the agent server');
     const tables = look.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; });
     const tableOf = function (name) { return tables.filter(function (t) { return new RegExp('^' + name + 's?$', 'i').test(t); })[0] || ''; };
     const colsOf = function (t) { return t ? look.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all() : []; };
+    // The columns, as cw named them for the build: camelCase as the shadow-roll is, every table's id the public key and
+    // the rest of its key set beside it.
+    const KEYSET = [/^id$/, /^privateKey$/, /^sealPublicKey$/, /^sealPrivateKey$/, /^label$/, /^description$/];
     const WANT = {
-      provider: [/^id$/i, /label/i, /description/i, /url/i, /api_?key/i],
-      model: [/^id$/i, /label/i, /description/i, /provider/i, /model_?name|^name$/i, /capabilit/i],
-      persona: [/^id$/i, /label/i, /^description$/i, /persona/i],
-      job: [/^id$/i, /label/i, /^description$/i, /loop/i, /job/i],
+      provider: KEYSET.concat([/^url$/, /^apiKey$/]),
+      model: KEYSET.concat([/^providerId$/, /^modelName$/, /^capabilities$/]),
+      persona: KEYSET.concat([/^persona$/]),
+      job: KEYSET.concat([/^loop$/, /^job$/]),
     };
     Object.keys(WANT).forEach(function (name) {
       const t = tableOf(name);
@@ -122,7 +125,7 @@ test.startTest('agent.js: the agent server');
     const grantT = tableOf('grant');
     const grantPk = colsOf(grantT).filter(function (c) { return c.pk > 0; }).sort(function (a, b) { return a.pk - b.pk; }).map(function (c) { return c.name; });
     // node's grants (spirit/nodeStore.js:502): peer_id and path, one row per grant; here the job's ID stands for the peer.
-    ok(!!grantT && grantPk.length === 2 && /job/i.test(grantPk[0]) && /^path$/i.test(grantPk[1]), 'a grant table keyed (job ID, path), as node\'s grants are (peer_id, path)', 'grant: table ' + (grantT || 'none') + ', primary key ' + short(grantPk));
+    ok(!!grantT && JSON.stringify(grantPk) === '["job_id","path"]' && colsOf(grantT).length === 2, 'a grant table keyed (job ID, path), as node\'s grants are (peer_id, path)', 'grant: table ' + (grantT || 'none') + ', primary key ' + short(grantPk));
     look.close();
 
     test.subHeading('goal/G41.4: one verb per table, in its family interface, each in its own folder');
@@ -139,6 +142,58 @@ test.startTest('agent.js: the agent server');
     const answers = {};
     for (const t of TABLES) answers[t] = await ask(t, {});
     ok(served && TABLES.every(function (t) { return !(answers[t].body && answers[t].body.code === 'no-such-verb') && !/no.such.verb|unknown verb/i.test(short(answers[t])); }), 'the server serves each of the five verbs', 'answers: ' + short(answers));
+
+    // The verb's shape, as cw named it for the build: flat, as every family verb is, <table> {op, ...fields}, op one of
+    // add (answers the new id), set, delete, get (the row without its secrets, apiKeySet in place of the key) and search.
+    test.subHeading('goal/G41.4: add makes a row with its key set; set changes it; delete removes it');
+    const API_KEY = 'sk-test-' + 'a'.repeat(24);
+    const added = await ask('provider', { op: 'add', label: 'A provider', description: 'for the test', url: 'https://api.example.test/v1', apiKey: API_KEY });
+    const pid = added.body && added.body.id;
+    // The shadow-roll's kind of ID: an ed25519 public key, SPKI DER in base64 (spirit/relayAuth.js generateIdentity).
+    const isKey = function (k) { return typeof k === 'string' && /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/.test(k); };
+    ok(added.status === 200 && isKey(pid), 'provider {op: add} answers the new row\'s id, an ed25519 public key as the shadow-roll keys a row', 'answer: ' + short(added.body || added));
+    const look2 = new DatabaseSync(db, { readOnly: true });
+    const pT = tableOf('provider');
+    const row = pT && isKey(pid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(pT) + ' WHERE id = ?').get(pid) : null;
+    const privates = row ? ['privateKey', 'sealPrivateKey'].filter(function (k) { return row[k]; }) : [];
+    ok(!!row && row.label === 'A provider' && row.url === 'https://api.example.test/v1' && row.apiKey === API_KEY && !!row.privateKey && !!row.sealPrivateKey && !!row.sealPublicKey,
+      'the row holds its fields, its API key, and the private halves of its key set (box: "the rest of the key-set stored on that table row")', 'row: ' + short(row && Object.keys(row)) + ', private columns ' + short(privates));
+    // Andy: API_KEY "will never reach the browser or any place outside of the agent process"; "The private halves of that
+    // set stay in the agent process".
+    const secrets = [API_KEY].concat(privates.map(function (k) { return String(row[k]); }));
+    const leaks = function (r) { const t = JSON.stringify(r || {}); return secrets.filter(function (x) { return x && t.indexOf(x) !== -1; }).length; };
+    ok(isKey(pid) && leaks(added) === 0, 'the add\'s answer carries no API key and no private key', 'secrets in the answer: ' + leaks(added));
+    const changed = await ask('provider', { op: 'set', id: pid, label: 'A provider, renamed' });
+    const row2 = pT && isKey(pid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(pT) + ' WHERE id = ?').get(pid) : null;
+    ok(changed.status === 200 && !!row2 && row2.label === 'A provider, renamed' && row2.apiKey === API_KEY && leaks(changed) === 0, 'provider {set} changes the field it names, keeps the rest, and answers no secret', 'answer ' + short(changed.body || changed) + ', label ' + short(row2 && row2.label));
+    const modelAdd = await ask('model', { op: 'add', label: 'A model', description: 'd', providerId: pid, modelName: 'test-model-1', capabilities: ['text'] });
+    const mid = modelAdd.body && modelAdd.body.id;
+    const mT = tableOf('model');
+    const mrow = mT && isKey(mid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(mT) + ' WHERE id = ?').get(mid) : null;
+    ok(isKey(mid) && mid !== pid && !!mrow && mrow.providerId === pid && mrow.modelName === 'test-model-1', 'model {add} keys its own row, naming its provider by the provider\'s id', 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow));
+    const jobAdd = await ask('job', { op: 'add', label: 'Code review', description: 'd', loop: true, job: 'Review the diff.' });
+    const jid = jobAdd.body && jobAdd.body.id;
+    const personaAdd = await ask('persona', { op: 'add', label: 'A reviewer', description: 'd', persona: 'You review code.' });
+    ok(isKey(jid) && isKey(personaAdd.body && personaAdd.body.id), 'job {add} and persona {add} each answer a key of their own', 'job ' + short(jobAdd.body || jobAdd) + ', persona ' + short(personaAdd.body || personaAdd));
+    const gAdd = await ask('grant', { op: 'add', job_id: jid, path: 'desk.chat.add' });
+    const gT = tableOf('grant');
+    const grows = gT && isKey(jid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(gT) + ' WHERE job_id = ?').all(jid) : [];
+    ok(gAdd.status === 200 && grows.length === 1 && grows[0].path === 'desk.chat.add', 'grant {op: add, job_id, path} grants that job that path, one row', 'answer ' + short(gAdd.body || gAdd) + ', rows ' + short(grows));
+    const got = await ask('provider', { op: 'get', id: pid });
+    ok(got.status === 200 && got.body && got.body.label === 'A provider, renamed' && got.body.apiKeySet === true && leaks(got) === 0 && !('apiKey' in got.body) && !('privateKey' in got.body) && !('sealPrivateKey' in got.body),
+      'provider {op: get} answers the row without its secrets, apiKeySet true in place of the key', 'answer: ' + short(got.body || got));
+    const found = await ask('provider', { op: 'search', text: 'renamed' });
+    ok(found.status === 200 && found.body && Array.isArray(found.body.items) && typeof found.body.more === 'boolean' && found.body.items.some(function (i) { return i && i.key === pid; }) && leaks(found) === 0,
+      'provider {op: search} answers items and more, as every search does, the row among them, no secret', 'answer: ' + short(found.body || found));
+    const gone = await ask('provider', { op: 'delete', id: pid });
+    const row3 = pT && isKey(pid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(pT) + ' WHERE id = ?').get(pid) : null;
+    ok(gone.status === 200 && isKey(pid) && !row3, 'provider {delete} removes its row', 'answer ' + short(gone.body || gone) + ', row left ' + !!row3);
+    const junk = await ask('provider', { op: 'fly' });
+    ok(verbs.provider && !(junk.body && junk.body.code === 'no-such-verb') && !(junk.status === 200 && junk.body && junk.body.ok !== false), 'any other action of the verb is refused', 'provider {op: fly}: ' + short(junk.body || junk));
+    look2.close();
+    // What the server publishes carries no secret: read in its code, since a test server's stream reaches no node.
+    const srvCode = TABLES.map(function (t) { try { return fs.readFileSync(path.join(RUN, 'process', 'js', 'agent', 'table', t, 'server.js'), 'utf8'); } catch (e) { return ''; } }).filter(Boolean).join('\n');
+    ok(srvCode.length > 0 && /publish\(/.test(srvCode + fs.readFileSync(SERVER, 'utf8')), 'the table servers publish their rows to the stream', 'no publish in the table servers');
 
     test.subHeading('the state persists across restarts');
     await ask('debug', { on: true });
