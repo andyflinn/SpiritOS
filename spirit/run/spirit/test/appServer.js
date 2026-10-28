@@ -142,14 +142,34 @@ async function child(mode) {
     bootstrap = [row(GOAL), row(item(1))];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
-  } else if (mode === 'limit') {
-    const { A, s } = start({ cache: { limit: 4000 } });
+  } else if (mode === 'every') {
+    // The default limit: two goals, both kept, every row of each (box v15: "every goal, no filtering on the client side").
+    const { A, s, D } = start({ cache: true });
     await tick(100);
     bootstrap = [row(GOAL)];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(200);
-    for (let i = 100; i < 300; i++) A.publish(row(item(i, { title: 'a row long enough to fill a small cache quickly, number ' + i })));
+    for (let i = 1; i <= 3; i++) A.publish(row(item(i)));
+    await tick(200);
+    for (let i = 1; i <= 3; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: 'item ' + i, version: 1 } });
+    await tick(800);
+    out.g9 = []; out.g10 = [];
+    for (let i = 1; i <= 3; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+  } else if (mode === 'limit') {
+    // Two goals, ten rows each: goal/G9 first and untouched since, goal/G10 after. Together past the limit, either alone
+    // within it: the desk's family api.js (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL").
+    const { A, s, D } = start({ cache: { limit: 3500 } });
+    await tick(100);
+    bootstrap = [row(GOAL)];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(200);
+    const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
+    for (let i = 1; i <= 10; i++) A.publish(row(item(i, { title: long(i) })));
+    await tick(300);
+    for (let i = 1; i <= 10; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: long(i), version: 1 } });
     await tick(1500);
+    out.g9 = []; out.g10 = [];
+    for (let i = 1; i <= 10; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
   }
   process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
   process.exit(0);
@@ -286,12 +306,18 @@ if (CHILD) {
     clearCache('cacheNoFam');
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
     ok(!fs.existsSync(cacheFile('cacheNoFam')), 'a sender whose family has no folder on this node is not cached', 'cache file found: ' + path.relative(RUN, cacheFile('cacheNoFam')));
+    clearCache('cacheEvery');
+    const every = runChild('every', 'cacheEvery');
+    ok(Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3,
+      'within the limit the cache keeps every goal the sender sends, no filtering on the client side', short(every));
     clearCache('cacheLimit');
-    runChild('limit', 'cacheLimit');
+    const full = runChild('limit', 'cacheLimit');
     let size = -1;
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
-    ok(size > 0 && size <= 4000, 'the cache keeps to the limit the client sets', 'cache file of ' + size + ' bytes for a limit of 4000');
-    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheLimit'].forEach(clearCache);
+    ok(size > 0 && size <= 3500, 'the cache keeps to the limit the client sets', 'cache file of ' + size + ' bytes for a limit of 3500');
+    ok(Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10,
+      'past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', short(full));
+    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit'].forEach(clearCache);
   }()).then(function () {
     try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
     test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);

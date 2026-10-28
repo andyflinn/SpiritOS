@@ -36,8 +36,12 @@ stream"); Desk and deskClient move onto it.
 - **Per sender, under the run root** (where spirit.js sits):
   `relay-state/process/<client server>/cache-<sender key in hex>.json` (the key's base64 decoded, in hex), saved
   as it changes and read back into the data set at start, before any subscribe.
+- **It keeps every goal the sender sends**, no filtering on the client side, within its limit.
 - **A sender whose family has no folder on this node** (`familyPath` of it resolved from the run root) is not cached.
-- **The cache keeps to its limit.**
+- **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring
+  nothing (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache, it knows the default cache limit,
+  IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"). For the desk: **the goal untouched longest goes whole**
+  (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL"); older rows go first.
 
 ### What goes (goal/G41.12)
 
@@ -50,11 +54,8 @@ stream"); Desk and deskClient move onto it.
 
 ## Not asserted yet, and why
 
-- **What the family api.js declares for the cache** (how rows are structured in it, what sheds first at the limit),
-  **the client's query of its cache through it, and `includeServer`**: the box says the stream is driven by data
-  only, but not the shape of that data or the query's name. A red that guessed them would be rewritten when they
-  settle; asked as a Q on goal/G41.12.
-- **The client bundling its requests**: which requests are meant (the includeServer queries?) waits on the same Q.
+- **The client's query of its cache through the family api.js, and `includeServer`**, and **the client bundling its
+  requests**: the box names no verb for them; the build names them, and the verify asserts them.
 
 ## What its test must try to break
 
