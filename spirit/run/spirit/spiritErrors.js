@@ -765,6 +765,8 @@ define('already-granted', { status: 409, texts: ['already granted'] });
 define('owner-only', { status: 403, texts: ['the owner\'s alone'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
 define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
+// goal/G41.13: auth.bundle's, a bundle id the bundle table does not hold.
+define('no-such-bundle', { status: 404, texts: ['no such bundle'] });
 define('store-unavailable', { status: 503, texts: ['the grants cannot be read'], fault: 'node' });
 define('no-governor', { status: 404, texts: ['no Governor'] });
 define('no-such-lever', { status: 404, texts: ['no such lever'] });

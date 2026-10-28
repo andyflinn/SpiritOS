@@ -1,0 +1,4 @@
+{
+  "description": "The node's bundles, each a named subset of the API: op add {label, description, paths} answers {id}; set {id, ...} changes what it names, paths the whole list; delete {id}; get {id} answers {id, label, description, paths}; search {text} answers {items, more}. A path is a family or family.verb, never the fs family.",
+  "request": { "op": "", "id": "", "label": "", "description": "", "paths": [""], "text": "" }
+}

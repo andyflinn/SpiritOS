@@ -27,6 +27,14 @@
 // options.face 'pane' is the list itself; the default face is the shared list's dropdown mode (goal/G29.9): the filter
 // and search rows stand, the list drops down under the search row and closes on a pick, the chosen name in the box.
 // options.status(row), when given, names a row's status from the row itself (Contacts: blocked, held).
+//
+// THE CONFIGURABLE ID SELECTOR (goal/G41.13, Andy, Q2: "the loopback-api-location of the ID table, which must be formed
+// like the shadow roll : key:ID (ID-field-rules, label (label-field rules)", "table:\"loopback://api/contact/search\"",
+// and "if neccessary: key field name ... label field name"): options.table names any ID table of the shadow roll's
+// shape as loopback://api/<family>/<verb>, searched through the spirit object at that family and verb with the words
+// typed: a search verb takes { text }, a table's one verb (the agent tables', auth.bundle) { op: 'search', text }.
+// options.key and options.label name the fields of a row's label json its ID and its label are in; without them the
+// item's key is the ID and the row's label (or name) its label. No table, or the contacts' own, is the contacts.
 
 (function () {
   var escapeHtml = spirit.escapeHtml;
@@ -42,9 +50,24 @@
     return row;
   }
 
+  // The ID table options.table names, { family, verb }, or null for the contacts (none named, or the contacts' own).
+  function tableOf(options) {
+    var m = /^loopback:\/\/api\/([^/]+)\/([^/]+)$/.exec(String(options.table || ''));
+    if (!m || (m[1] === 'contact' && m[2] === 'search')) return null;
+    return { family: m[1], verb: m[2] };
+  }
+  // A row of a configured table: its ID and label from the fields options.key and options.label name.
+  function idRow(item, options) {
+    var row = parseRow(item);
+    var id = options.key && row[options.key] != null ? String(row[options.key]) : row.key;
+    var label = options.label && row[options.label] != null ? row[options.label] : (row.label != null ? row.label : row.name);
+    return Object.assign({}, row, { key: id, name: String(label == null ? '' : label) });
+  }
+
   function createContactSelector(options) {
     options = options || {};
     var isPane = options.face === 'pane';
+    var table = tableOf(options);
     var statuses = (Array.isArray(options.statuses) && options.statuses.length) ? options.statuses : [{ status: 'none' }];
     var statusOf = {};
     var presentOf = {};
@@ -102,6 +125,11 @@
           return r && r.key && (!t || String(r.label || '').toLowerCase().indexOf(t) !== -1 || String(r.key).toLowerCase().indexOf(t) !== -1);
         }), more: false });
       }
+      // A configured ID table, at its own family and verb (goal/G41.13).
+      if (table) {
+        var asked = table.verb === 'search' ? { text: text } : { op: 'search', text: text };
+        return spirit.ready.then(function (s) { return s[table.family][table.verb](asked); }).then(function (b) { return b || {}; });
+      }
       // Through the spirit object (goal/G32.2): spirit.contact.search answers the reply's body.
       return spirit.ready.then(function (s) { return s.contact.search(args); }).then(function (b) { return b || {}; });
     }
@@ -109,7 +137,8 @@
       verb: function (name, body) {
         return rows(body || {}).then(function (answer) {
           var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
-            return { key: String(i.key), label: JSON.stringify(parseRow(i)) };
+            var row = table ? idRow(i, options) : parseRow(i);
+            return { key: String(row.key), label: JSON.stringify(row) };
           });
           return { status: 200, body: { items: items, more: !!(answer && answer.more), total: Number(answer && answer.total) || items.length } };
         });

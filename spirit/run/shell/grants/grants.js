@@ -7,26 +7,29 @@
 //   issue or revoke grand rows for that key.", "so we defer pruning to be triggered by the owners
 //   auth app, who can report deprecated branches", and on the name: "YES to your name".
 //
-// ON THE SHARED LIST (goal/G29.7). Andy, 2026-10-18: "one line of selectors at the top, no stacked stuff...
-// [whose access] [choose a server] [chose a verb, displayed only when a server is chosen ] [grant-button] below it a
-// pretty looking list like all other searches", and "the selected ones filter the list with their selection, if not
-// selected, the list show "all (peers,servers,verbs)", the search bar below that line searches within those set
-// filters." So:
-//   - THE LINE: the contact selector, the api-branch selector (server, then verb) and Grant, on one line. Each chosen
-//     selector narrows the table; one left unchosen means all. Grant grants what the line names: the peer the server,
-//     one verb or all of them; a server that names a bundle (its DEPENDENCIES) offers Grant the bundle beside it.
-//   - THE TABLE: every grant, held by the page (auth.search with no words) and ranked by the shared list within
-//     the line's filters: the peer's name, the path, deprecated when spiritApiTreeIndex.serves says no server serves
-//     it today (a REPORT: pruning is the owner's press, one Revoke at a time), and each row's own Revoke.
+// TWO TABS, AND EVERY GRANT THROUGH A BUNDLE (goal/G41.13, box v7). Its contract and its test: ./test/grants.md and
+// ./test/grants.js.
+//   - GRANTS: the add-grant row, "grant" [bundleSelector] "to" [configurable ID selector] (shell/js/bundleSelector.js,
+//     shell/js/contactSelector.js), then Grant; below it every grant, held by the page (auth.search with no words) and
+//     ranked by probabilitySearch, narrowed by the ID chosen: the peer's name, the path, deprecated when
+//     spiritApiTreeIndex.serves says no server serves it today (a REPORT: pruning is the owner's press, one Revoke at a
+//     time), and each row's own Revoke.
+//   - BUNDLES: the bundle editor (shell/js/bundleEditor.js), "where bundles are created and maintained with the bundle
+//     shell element".
+// A BUNDLE IS NOT GRANTED BY REFERENCE (box v7): "each path row of the bundle, combined with the ID chosen in the ID
+// selector (contactSelector), becomes a new auth row, unless that row exists already": one auth.grant per path, a path
+// already granted counted done. The old line, its api-branch selector, its contacts list and the Grant the bundle button
+// of a server's DEPENDENCIES are gone with it.
 // Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
 var grApi = null;
 var grTree = null;
 var grGrants = [];      // every grant, {name, key, path}, as auth.search answered with no words
-var grList = null;      // the shared list over them
-var grContact = null;
-var grBranch = null;
-var grSaid = null;      // where the page says what a press did
-var grBundle = null;    // the Grant-the-bundle slot on the line
+var grList = null;      // the probabilitySearch over them
+var grBundleSel = null; // the add-grant row's bundle selector
+var grIdSel = null;     // and its ID selector
+var grSaid = '';        // what the page says a press did
+var grSaidError = false;
+var grPaint = null;     // draws the Grants tab again with what it says
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
 // The owner's api tree, once per paint: what serves() judges against.
 function grLoadTree() {
@@ -36,15 +39,14 @@ function grLoadTree() {
   });
 }
 function grSay(text, isError) {
-  var out = grSaid;
-  if (!out) return;
-  out.textContent = text;
-  out.className = isError ? 'job-refusal' : 'job-manifest-note';
+  grSaid = String(text || '');
+  grSaidError = !!isError;
+  if (grPaint) grPaint();
 }
 function grRefusal(body) {
   return (body && (body.error || body.code)) || 'refused';
 }
-// Every grant, held by the page; the shared list ranks them.
+// Every grant, held by the page; the list ranks them.
 function grLoadGrants() {
   return grApi.verb('auth.search', { text: '' }).then(function (a) {
     if (a.status !== 200) { grSay('the grants could not be read: ' + grRefusal(a.body), true); return; }
@@ -55,19 +57,11 @@ function grLoadGrants() {
     if (grList) grList.redraw();
   });
 }
-// THE LINE'S FILTERS: a chosen peer, server or verb narrows the table; unchosen means all.
+// THE ID CHOSEN NARROWS THE LIST to its grants; none chosen means all. A row is one grant, keyed by its peer and path.
 function grRows() {
-  var peer = grContact ? grContact.value : '';
-  var server = grBranch ? grBranch.server : '';
-  var verb = grBranch ? grBranch.verb : '';
-  return grGrants.filter(function (g) {
-    if (peer && g.key !== peer) return false;
-    var dot = g.path.indexOf('.');
-    var app = dot === -1 ? g.path : g.path.slice(0, dot);
-    if (server && app !== server) return false;
-    if (verb && g.path !== app + '.' + verb) return false;
-    return true;
-  }).map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
+  var peer = grIdSel ? grIdSel.value : '';
+  return grGrants.filter(function (g) { return !peer || g.key === peer; })
+    .map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
 }
 // EACH GRANT A ROW ELEMENT (goal/G41.5): it paints whose grant it is, the path, and its own Revoke, a row action that asks
 // the node once he is sure; the grants read again afterwards are what the list then shows (rule/19).
@@ -101,22 +95,6 @@ function grElement(row, key) {
   return el;
 }
 
-// The chosen server's bundle: its DEPENDENCIES (<server>.DEPENDENCIES on the flat apiDoor),
-// the way every owner question reaches a server.
-function grLoadBundle(server) {
-  var slot = grBundle;
-  if (!slot) return;
-  if (!server) { slot.innerHTML = ''; return; }
-  grApi.verb(server + '.DEPENDENCIES', {}).then(function (a) {
-    var paths = (a.body && a.body.paths) || [];
-    slot.innerHTML = paths.length
-      ? '<button type="button" id="gr-grant-bundle" title="' + grEsc(server) + ' says a peer user needs: ' + grEsc(paths.join(', ')) + '">Grant the bundle</button>'
-      : '';
-    var all = slot.querySelector('#gr-grant-bundle');
-    if (all) all.addEventListener('click', function () { grGrantMany(paths); });
-  });
-}
-
 // THE WARNINGS BEFORE A GRANT (goal/G30.4; Andy, 2026-10-20: "the grant screen warns when a grant reaches a verb that
 // carries a warning"). A warning is a file in the family's folder, <verb>.warning.txt, read through that family's FS
 // (FS.loadFile); nothing about it is opened to agents. A grant of a whole family reaches every verb in it, so each
@@ -135,34 +113,35 @@ function grWarnings(path) {
   })).then(function (all) { return all.filter(Boolean); });
 }
 
-function grGrant(key, path) {
-  if (!key) { grSay('pick whose access first', true); return Promise.resolve(); }
-  if (!path) { grSay('pick a server first', true); return Promise.resolve(); }
-  return grWarnings(path).then(function (warnings) {
-    if (warnings.length && !window.confirm('Before you grant ' + path + ':\n\n' + warnings.join('\n\n') + '\n\nGrant it anyway?')) {
-      grSay('not granted: ' + path);
+// GRANT: the chosen bundle's paths to the chosen ID, one auth.grant per path, after the warnings of every path it
+// reaches; a path the ID holds already is counted done; any other refusal is said. Then the grants are read again.
+function grGrantBundle() {
+  var key = grIdSel ? grIdSel.value : '';
+  var bundle = grBundleSel ? grBundleSel.row : null;
+  if (!key || !bundle || !grBundleSel.value) return Promise.resolve();
+  var paths = Array.isArray(bundle.paths) ? bundle.paths.slice() : [];
+  return Promise.all(paths.map(grWarnings)).then(function (lists) {
+    var warnings = [].concat.apply([], lists);
+    if (warnings.length && !window.confirm('Before you grant ' + (bundle.label || 'this bundle') + ':\n\n' + warnings.join('\n\n') + '\n\nGrant it anyway?')) {
+      grSay('not granted: ' + (bundle.label || 'the bundle'));
       return null;
     }
-    return grGrantNow(key, path);
+    var done = 0;
+    var refused = [];
+    return paths.reduce(function (chain, path) {
+      return chain.then(function () {
+        return grApi.verb('auth.grant', { key: key, path: path }).then(function (a) {
+          var code = a && a.body && a.body.code;
+          if (a.status === 200 || code === 'already-granted') { done += 1; return; }
+          refused.push(path + ': ' + grRefusal(a.body));
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      if (refused.length) grSay('not granted: ' + refused.join('; '), true);
+      else grSay('granted ' + (bundle.label || 'the bundle') + ' (' + done + ' of ' + paths.length + ' paths) to ' + ((grIdSel.row && grIdSel.row.name) || 'that ID'));
+      return grLoadGrants();
+    });
   });
-}
-
-function grGrantNow(key, path) {
-  return grApi.verb('auth.grant', { key: key, path: path }).then(function (a) {
-    if (a.status !== 200) { grSay('grant refused: ' + grRefusal(a.body), true); return; }
-    grSay('granted ' + ((a.body && a.body.label) || '') + ' ' + path);
-    return grLoadGrants();
-  });
-}
-
-function grGrantMany(paths) {
-  var key = grContact ? grContact.value : '';
-  if (!key) { grSay('pick whose access first', true); return; }
-  var left = paths.slice();
-  (function next() {
-    if (!left.length) return;
-    grGrant(key, left.shift()).then(next);
-  })();
 }
 
 function grRevoke(key, path) {
@@ -175,86 +154,63 @@ function grRevoke(key, path) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
 // tree...."): through spirit.require, each element bringing its own. Nothing of the old shell's list search is left.
-var grParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js',
-  'shell/js/apiBranchSelector.js', 'shell/js/armingButton.js'].map(function (p) { return spirit.require(p); }));
+var grParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/armingButton.js',
+  'shell/js/tabContainer.js', 'shell/js/bundleSelector.js', 'shell/js/contactSelector.js', 'shell/js/bundleEditor.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     grApi = api;
-    // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (rule/16; as in Apps and Contacts).
-    container.innerHTML =
-      '<div class="fill">' +
-        '<div class="label">Who may call which api</div>' +
-        '<div class="job-manifest-note">A member calls only what you have granted: a whole server, ' +
-          'or one verb. Denial is the absence of a row, so an empty table means only you.</div>' +
-        // THE LINE, nothing stacked: [whose access] [server] [verb] [Grant] [Grant the bundle].
-        '<div data-grants="line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em"></div>' +
-        '<div data-grants="said" class="job-manifest-note"></div>' +
-        '<div data-grants="list" class="fill"></div>' +
-      '</div>';
-    var line = container.querySelector('[data-grants="line"]');
-    grSaid = container.querySelector('[data-grants="said"]');
-    var listHost = container.querySelector('[data-grants="list"]');
-    return grParts.then(function () { return grDraw(api, line, listHost); }, function () { listHost.textContent = 'Grants could not be loaded.'; });
+    return grParts.then(function () {
+      var E = window.spirit.elements;
+      E.tabContainer.create(container, {
+        tabs: [
+          { name: 'grants', label: 'Grants', mount: function (box) { grGrantsTab(box); } },
+          { name: 'bundles', label: 'Bundles', mount: function (box) { E.bundleEditor.create(box, { api: api }); } },
+        ],
+      });
+    }, function () { container.textContent = 'Grants could not be loaded.'; });
   },
 });
 
-function grDraw(api, line, listHost) {
-    var E = window.spirit.elements;
-    // The contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js); its value is the picked key.
-    var contactHost = document.createElement('span');
-    grContact = E.contactList.create(contactHost, {
-      api: api,
-      face: 'dropdown',
-      placeholder: 'whose access…',
-      all: 'all peers',
-      pick: function () { grList.redraw(); grLine(); },
-    }).list;
-    grBranch = E.createApiBranchSelector({ all: 'all servers' });
-    var grant = document.createElement('button');
-    grant.type = 'button';
-    grant.id = 'gr-grant';
-    grant.textContent = 'Grant';
-    // NO BLANKET GRANTS (Andy, 2026-10-18: "just don't show the Grant button, show \"Select a contact\". The designed
-    // restriction makes sense."): Grant shows only once a contact and a server are chosen; until then the line says
-    // which is missing.
-    var hint = document.createElement('span');
-    hint.id = 'gr-hint';
-    hint.className = 'job-manifest-note';
-    function grLine() {
-      var missing = !grContact.value ? 'Select a contact' : !grBranch.server ? 'Select a server' : '';
-      grant.hidden = !!missing;
-      hint.hidden = !missing;
-      hint.textContent = missing;
-    }
-    grBundle = document.createElement('span');
-    grBundle.id = 'gr-bundle';
-    line.appendChild(contactHost);
-    line.appendChild(grBranch);
-    line.appendChild(grant);
-    line.appendChild(hint);
-    line.appendChild(grBundle);
+// THE GRANTS TAB: the add-grant row, what a press did, and the list below in a box of a stated size (rule/16). Drawn again
+// when it has something to say; the selectors and the list are made once and put back in their places.
+function grGrantsTab(box) {
+  var E = window.spirit.elements;
+  grBundleSel = E.createBundleSelector({ placeholder: 'choose a bundle…' });
+  grIdSel = E.createContactSelector({ placeholder: 'choose an ID…', all: 'every ID' });
+  grIdSel.addEventListener('change', function () { if (grList) grList.redraw(); });
+  var listHost = document.createElement('div');
+  listHost.className = 'fill';
+  grPaint = function () {
+    box.innerHTML =
+      '<div class="fill">' +
+        '<div class="label">Who may call which api</div>' +
+        '<div class="job-manifest-note">A member calls only what you have granted, a bundle at a time. ' +
+          'Denial is the absence of a row, so an empty table means only you.</div>' +
+        '<div data-grants="line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em">' +
+          '<span>grant</span><span data-grants="bundle"></span><span>to</span><span data-grants="id"></span>' +
+          '<button type="button" id="gr-grant">Grant</button>' +
+        '</div>' +
+        '<div data-grants="said" class="' + (grSaidError ? 'job-refusal' : 'job-manifest-note') + '">' + grEsc(grSaid) + '</div>' +
+      '</div>';
+    box.querySelector('[data-grants="bundle"]').appendChild(grBundleSel);
+    box.querySelector('[data-grants="id"]').appendChild(grIdSel);
+    box.querySelector('#gr-grant').addEventListener('click', function () { grGrantBundle(); });
+    box.appendChild(listHost);
+  };
+  grPaint();
 
-    // THE GRANTS LIST, A PROBABILITYSEARCH PANE (goal/G41.5): the page's grants are its rows, each a row element.
-    grList = E.probabilitySearch.create(listHost, {
-      rows: grRows,
-      columns: [
-        { field: 'name', label: 'Whose', sort: 'text' },
-        { field: 'path', label: 'Path', sort: 'text' },
-        { field: 'revoke', label: '' },
-      ],
-      element: grElement,
-      matched: function (row) { return { name: row.name, path: row.path.split('.').join(' ') }; },
-      empty: 'No grant matches.',
-    });
-
-    grBranch.addEventListener('change', function () {
-      grList.redraw();
-      grLine();
-      grLoadBundle(grBranch.server);
-    });
-    grant.addEventListener('click', function () { grGrant(grContact.value, grBranch.value); });
-
-    grLine();
-    return grLoadTree().then(grLoadGrants);
+  // THE GRANTS LIST, A PROBABILITYSEARCH PANE (goal/G41.5): the page's grants are its rows, each a row element.
+  grList = E.probabilitySearch.create(listHost, {
+    rows: grRows,
+    columns: [
+      { field: 'name', label: 'Whose', sort: 'text' },
+      { field: 'path', label: 'Path', sort: 'text' },
+      { field: 'revoke', label: '' },
+    ],
+    element: grElement,
+    matched: function (row) { return { name: row.name, path: row.path.split('.').join(' ') }; },
+    empty: 'No grant matches.',
+  });
+  return grLoadTree().then(grLoadGrants);
 }

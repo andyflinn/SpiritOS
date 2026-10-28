@@ -505,6 +505,17 @@ function open(rootDir, opts) {
       PRIMARY KEY (peer_id, path)
     );
   `);
+  // THE BUNDLES (goal/G41.13; Andy, box v7: "A bundle is a clearly defined subset of an API, with no user, process or
+  // agent tied to it", "The node keeps one bundle table, in node.db"): one row per bundle, keyed by an ID in the shadow
+  // roll's form. Its paths are rows of their own, bundle_paths (bundle_id, path), the grants' shape, kept through
+  // authTableInterface.js (apiAuth.js), which makes that table.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bundles (
+      id          TEXT PRIMARY KEY,
+      label       TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT ''
+    );
+  `);
 
   // ── THE MOVE, ON EACH NODE'S FIRST START ON THIS CODE (goal/G40.11) ──
   //
@@ -711,6 +722,12 @@ function open(rootDir, opts) {
     aGranted: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? LIMIT 1'),
     aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
     aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
+    // goal/G41.13: the bundles, by id; all of them in label order.
+    bundleGet: db.prepare('SELECT id, label, description FROM bundles WHERE id = ?'),
+    bundleAll: db.prepare('SELECT id, label, description FROM bundles ORDER BY label, id'),
+    bundlePut: db.prepare('INSERT INTO bundles (id, label, description) VALUES (?, ?, ?)'),
+    bundleSet: db.prepare('UPDATE bundles SET label = ?, description = ? WHERE id = ?'),
+    bundleDel: db.prepare('DELETE FROM bundles WHERE id = ?'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
@@ -1407,6 +1424,15 @@ function open(rootDir, opts) {
         store.seen.set(String(key), { myLabel: String(label) });
         return true;
       },
+    },
+
+    // goal/G41.13's bundle rows, for apiAuth.js alone; a bundle's paths are its bundle_paths rows, kept there.
+    bundles: {
+      get: function (id) { const r = q.bundleGet.get(String(id)); return r ? { id: r.id, label: r.label, description: r.description } : null; },
+      all: function () { return q.bundleAll.all().map(function (r) { return { id: r.id, label: r.label, description: r.description }; }); },
+      add: function (id, label, description) { q.bundlePut.run(String(id), String(label || ''), String(description || '')); },
+      set: function (id, label, description) { return q.bundleSet.run(String(label || ''), String(description || ''), String(id)).changes > 0; },
+      del: function (id) { return q.bundleDel.run(String(id)).changes > 0; },
     },
 
     transaction: function (fn) {
