@@ -374,7 +374,8 @@ if (CHILD) {
     ok(asks.inFlight === 1, 'while one ask is in flight, the four behind it wait', 'calls out while the first was held: ' + short(asks.inFlight));
     ok(asks.sent === 2 && asks.settled === 5, 'then the four go together: five asks, two calls out, each ask answered', 'calls out ' + short(asks.sent) + ', asks answered ' + short(asks.settled) + ' of 5: ' + short(asks.calls));
     const bundle = (asks.calls || []).filter(function (c) { return c.peerPost; })[0];
-    const inside = bundle && bundle.body && bundle.body[NAME];
+    // The child serves as askProbe, and asks its own family by that name.
+    const inside = bundle && bundle.body && bundle.body.askProbe;
     ok(!!bundle && bundle.key === PUBLISHER && bundle.app === 'api' && Array.isArray(inside) && inside.length === 4 && inside.every(function (c) { return c && c.count && typeof c.count.n === 'number'; }),
       'the bundle is one spirit.peerPost(key, "api", { <family>: [the four calls] }), each call as it would go alone', 'bundle: ' + short(bundle));
 
