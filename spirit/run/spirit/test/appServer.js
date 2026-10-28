@@ -83,6 +83,11 @@ const fake = {
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },
   events: { publish: function () {}, subscribe: function () {} },
+  // spirit.js's own familyPath (goal/G41.12 Q3), taken from its text so the stand-in writes no path of its own.
+  familyPath: (function () {
+    const m = /function familyPath\(name\) \{([^\n]*)\}\n/.exec(fs.readFileSync(path.join(RUN, 'spirit.js'), 'utf8'));
+    return m ? new Function('name', m[1]) : undefined;
+  })(),
 };
 const realLoad = Module._load;
 Module._load = function (request, parent) {
