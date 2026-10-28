@@ -87,3 +87,5 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   `deskAgentEar.js`'s, tested beside it.
 - **No cap offer** (box v38: the desk refuses box changes from agents): a desk line addressed to the agent wakes it with
   no take; box.take and box.write go to the desk as asked, no gate of its own; nothing of the cap offer is left.
+- **Searches from the cache** (found live on 63d88daf: chat.search answered {"ok":true}, no lines): an agent's
+  chat.search, the desk answering ok, finds the line the stream brought in its items.

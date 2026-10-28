@@ -437,5 +437,16 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const caught = await next();
   ok(has(caught, 'missed while down'), 'a line addressed to it, handed in the catch-up, wakes it', 'wake: ' + short(caught));
   ok(!has(caught, 'for the other agent only'), 'a line addressed to another agent in the catch-up is neither its own nor its news', 'wake: ' + short(caught));
+
+  // goal/G41.12, box v32: "the client always has all available information about the server's state in its (persisted)
+  // cache, and reads nothing from the server". Found live on 63d88daf: an agent's chat.search answered {"ok":true} and no
+  // lines, while item.box and item.get answered from the cache.
+  test.subHeading('an agent\'s chat.search is answered from the cache, the desk answering ok');
+  desk.answers['chat.search'] = 'ok';
+  let found = null;
+  try { found = await ask('chat.search', { id: ITEM4, by: '', text: 'missed while down', since: '2000-01-01T00:00:00Z', before: '2100-01-01T00:00:00Z', scope: 'goal' }); } catch (e) { found = { threw: e.refusal || e.message }; }
+  const hits = found && Array.isArray(found.items) ? found.items.filter(function (i) { return /missed while down/.test(String(i && i.label)); }) : [];
+  ok(hits.length >= 1, 'chat.search finds the line the stream brought, in its items', 'answer: ' + short(found));
+  delete desk.answers['chat.search'];
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
