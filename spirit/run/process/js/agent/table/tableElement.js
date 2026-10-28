@@ -105,12 +105,11 @@
       editors = {};
       var simple = o.fields.filter(function (f) { return f.kind !== 'code'; });
       var code = o.fields.filter(function (f) { return f.kind === 'code'; });
-      // THE PANE NEVER WIDENS THE CENTRE (Andy: "the codeMirror pane in details must not be allowed to move the
+      // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
       // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
-      // free vertical space"): the whole pane claims no width of its own (contain: inline-size), so the centre's width
-      // is the workBench's to give; the code field is a fill box and its CodeMirror takes the free height (shell.css
-      // .text-view.fill), scrolling inside it.
-      container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head() +
+      // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
+      // .text-view.fill). Its width is the centre's, which the workBench holds (shell/js/workBench.js).
+      container.innerHTML = '<div class="fill">' + head() +
         '<div style="margin-top:1em;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1em;align-items:center">' +
         simple.map(function (f) { return '<label for="' + pre + f.field + '">' + esc(f.label) + '</label>' + cell(f, row[f.field]); }).join('') + '</div>' +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +

@@ -16,6 +16,11 @@
 // SPACE IS GRANTED TOP-DOWN (rule/16): the root takes the shell's fill class and the container is never sized here; the
 // app hands it a box of the whole app area. One listener per event type, on the container; a drag's moves are heard on
 // the document while the pointer is down, and not after.
+//
+// NO INHABITANT MOVES A BORDER (Andy, on G41.4: "should not the workBench component ensure that it's inhabitants are
+// not able to shift pane boundaries in a proper design?", then "do the proper fix."): the strips, the side panes and
+// the borders never grow or shrink (flex: none), so a side pane is the width it was given or dragged to; the centre
+// takes what is left and never more (min-width: 0), so a wide child scrolls or wraps inside it.
 (function () {
   var MIN_WIDTH = 120;
   var START_WIDTH = 240;
@@ -33,16 +38,16 @@
     var drag = null;
 
     function strip(side) {
-      return '<div id="' + pre + 'strip-' + side + '" style="display:flex;flex-direction:column;gap:6px;padding:4px">' +
+      return '<div id="' + pre + 'strip-' + side + '" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:4px">' +
         sides[side].map(function (t) {
           return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="font-size:20px">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
-    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" style="width:' + widths[side] + 'px;overflow:auto"></div>'; }
-    function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
-    container.innerHTML = '<div class="fill" style="flex-direction:row">' +
+    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" style="flex:none;width:' + widths[side] + 'px;overflow:auto"></div>'; }
+    function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="flex:none;width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
+    container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
-      '<div id="' + pre + 'center" class="fill" style="overflow:auto"></div>' +
+      '<div id="' + pre + 'center" class="fill" style="overflow:auto;min-width:0"></div>' +
       (sides.right.length ? border('right') + pane('right') + strip('right') : '') + '</div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 

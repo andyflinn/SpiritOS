@@ -28,7 +28,7 @@
       var GRID = 'margin-top:1em;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1em;align-items:center';
       function shown(g) {
         if (pickJob) { pickJob.destroy(); pickJob = null; }
-        container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head('Change') +
+        container.innerHTML = '<div class="fill">' + head('Change') +
           '<div style="' + GRID + '"><span>Job</span><span>' + esc(g.job || g.job_id) + '</span><span>Path</span><b>' + esc(g.path) + '</b></div>' +
           '<div style="margin-top:1em"><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note"></span></div></div>';
         container.querySelector('#' + pre + 'delete').addEventListener('click', function () {
@@ -40,7 +40,7 @@
         });
       }
       function fresh(said) {
-        container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head('Add') +
+        container.innerHTML = '<div class="fill">' + head('Add') +
           '<div style="' + GRID + '"><span>Job</span><div id="' + pre + 'job"></div>' +
           '<label for="' + pre + 'path">Path</label><input type="text" id="' + pre + 'path" style="width:100%;box-sizing:border-box" placeholder="server.verb"></div>' +
           '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add</button> <span id="' + pre + 'note">' + esc(said || '') + '</span></div></div>';
