@@ -16,6 +16,19 @@ stream"); Desk and deskClient move onto it.
 - **The eight family folders are `process/js/<name>/family/`** (agent, backup, chatClerver, desk, deskAgent,
   deskClient, deskVerify, fileServer); no `<name>.family` is left.
 
+### The roles (goal/G41.12, box v26)
+
+- **`setMode("client" | "server")`, exported by spirit/appServer.js**, is called by the implementation at its startup:
+  the desk `setMode("server")`, deskClient `setMode("client")`. A server that calls neither (Chatter) bundles nothing
+  and keeps no cache.
+- **No bundle verb**: a bundle is known by its shape, one JSON array of the existing calls.
+
+### The server side (goal/G41.12, box v26)
+
+- **Every request is answered "ok" at once, then handled** (the implementation's API is all PUT): a slow handler's
+  caller has its "ok" before the handler ends.
+- **A peer's bundle is answered "ok"**, and each request in it is handed to the server as a normal request.
+
 ### Bundles (goal/G41.12)
 
 - **Every delivery is a bundle**: one JSON array of rows in one peerPost to the subscriber's streamListener.
@@ -33,8 +46,9 @@ stream"); Desk and deskClient move onto it.
 
 ### The cache (goal/G41.12)
 
-- **Only a client caches, by one switch**: `serve(verbs, { stream: { cache: true } })`, or `{ cache: { limit } }`
-  with a limit in bytes (4 MB per sender when not given). Without it no cache file is kept.
+- **Only a client caches**: `setMode("client")` turns the cache on, HARD-CODED at 4 MB per sender (box v26). Without
+  it no cache file is kept. The test sends about 4.8 MB, past the limit whether a MB is 10^6 bytes or 2^20, and holds
+  the file within 2^20 × 4.
 - **Per sender, under the run root** (where spirit.js sits):
   `relay-state/process/<client server>/cache-<sender key in hex>.json` (the key's base64 decoded, in hex), saved
   as it changes and read back into the data set at start, before any subscribe.
@@ -59,8 +73,13 @@ stream"); Desk and deskClient move onto it.
 
 ## Not asserted yet, and why
 
-- **The client's query of its cache through the family api.js, and `includeServer`**, and **the client bundling its
-  requests**: the box names no verb for them; the build names them, and the verify asserts them.
+- **Each request in a peer's bundle granted on its own**, through a module shared with the auth system: the box names
+  no module, and the grants table is the node's (node.db), which this test must not touch; the build names it, and
+  the verify asserts it with a request not granted.
+- **The client bundling its requests** (one in flight, the ones behind it as one bundle): the box names no call by
+  which an implementation asks through spirit/appServer.js; the build names it, and the verify asserts it.
+- **The client's query of its cache through the family api.js**: the box names no call for it. `includeServer` is
+  struck (box v24).
 
 ## What its test must try to break
 
