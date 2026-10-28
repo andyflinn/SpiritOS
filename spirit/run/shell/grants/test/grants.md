@@ -20,7 +20,7 @@ travel?").
   element"*. The Grants tab holds the add-grant row and the list.
 - **The grants list is a probabilitySearch pane** in a box of a stated size (`fill`, rule/16). Its columns are whose
   grant (`name`), the path (`path`) and `revoke`. Its rows are every grant `auth.search` answered with no words, held by
-  the page, narrowed by the ID chosen in the add-grant row; none chosen means all.
+  the page, narrowed by the list's filters; none chosen means all.
 - **Each row is a row element** (`rowElement.create`): it paints whose grant it is, the path, `deprecated` beside a path
   no server serves today (`apiTreeIndex.serves`; a report, never a prune), and its own Revoke, a row action
   (`data-action="revoke"`).
@@ -31,10 +31,18 @@ travel?").
   `armUntilElsewhere`, no `armed` class.
 - **Revoke's run asks the node** (`auth.revoke` with the row's key and path) and then reads the grants again: what the list
   shows is only what the node answered (rule/19).
-- **The add-grant row** (goal/G41.13, box v7: *"\"grant\" [bundleSelector] \"to\" [configurable ID selector]"*): it
-  reads "grant" [the bundle selector] "to" [the ID selector, `createContactSelector`], then a Grant button, found by
-  an id or data-action naming grant. There is no api-branch selector and no contacts list on it, and no server is asked
-  for its DEPENDENCIES: every grant goes through a bundle. What is configured on the ID selector waits on Q2.
+- **The grant form, one row** (Andy, on G41.13: *"the grants tab should have one-row grant form: \"grant\" [idSelector]
+  [bundleSelector] [grantButton]"*): "grant", the ID selector (`createContactSelector`), the bundle selector, then
+  the Grant button, found by an id or data-action naming grant. There is no contacts list, and no server is asked for
+  its DEPENDENCIES: every grant goes through a bundle.
+- **The list's filters** (*"a probabilitySearch for grants. with the normal filters, (idSelector, apiBranchSelector,
+  apiVerbSelector)"*), below the form: an ID selector of their own and the api-branch selector (server, then verb).
+  The ID narrows the list to that ID's grants; a server to its paths; a verb to that verb; nothing chosen shows every
+  grant.
+- **Revoke is the rightmost column** (*"the rows of the grant list show in the rightmost column a armingButton
+  [Revoke]"*).
+- **It loads every element it uses itself** (rule/26). Its test runs on a bare page: a stand-in is put there only
+  once the app requires its file.
 - **Grant copies the bundle's paths** (box v7: *"each path row of the bundle, combined with the ID chosen in the ID
   selector (contactSelector), becomes a new auth row, unless that row exists already"*):
   - With no bundle or no ID chosen, Grant asks nothing.
