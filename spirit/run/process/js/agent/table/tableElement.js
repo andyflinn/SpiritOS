@@ -5,14 +5,15 @@
 // panel element, to maintain and edit one row of the table)".
 //
 //   spirit.elements.agentTable.create(container, { api, table, columns, matched, detail, row, add }) -> { refresh, destroy }
-//     a probabilitySearch pane over the table's search (agent.<table> {op: search}), shown at once, an Add button above
-//     it; picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is
-//     what Add does instead of adding an empty row. detail is the page's: detail.open(make) empties
-//     the pane, destroys what was in it and puts make(box) there. Andy, on G41.4: "make the detail-panel take over the
-//     middle pane of the workBench UI please", so the agent page hands its workBench's centre.
+//     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once;
+//     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
+//     Add does instead of adding an empty row. detail is the page's: detail.open(make) empties the pane, destroys what
+//     was in it and puts make(box) there, and detail.look(table) is the table's { icon, name, title }. Andy, on G41.4:
+//     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
+//     workBench's centre.
 //   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields }) -> { destroy }
-//     one row's fields as inputs, Save and Delete, under a title row: look { icon, name } is the page's for the table
-//     (detail.look(table)), added says the row was just made by Add; fields [{ field, label, kind }], kind one of
+//     one row's fields as inputs, Save and Delete, under a title row; added says the row was just made by Add; fields
+//     [{ field, label, kind }], kind one of
 //       text, url, name, description   one line (name and description stop at their field rules' limits)
 //       secret                          a password box: what is typed replaces the secret, left empty it stays; the
 //                                       row says only whether it is set ("<field>Set"), the secret never reaches a page
@@ -21,8 +22,15 @@
 //       code                            a CodeMirror editor (shell/js/codeMirror.js)
 //       pick                            a row of another table, from a dropdown search of it (pick: that table)
 //
+// EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
+// needs listening to, by themselves, automatically. This should also be a general implementation. if those table
+// searches and list were make properly from a probability framework, this should not have happened"): a table is its
+// branch of spirit.data, agent.<table>, which the stream keeps current through ./data.js. A list is probabilitySearch
+// with that branch as its data, so a search's answer is seated there and any write redraws it; an editor watches its
+// row's path there. Nothing here hears the stream by hand.
+//
 // THE PAGE ONLY PROPOSES (rule/19: "the ui must propose all state changes to the server and only draw changes contained
-// in the servers update/change stream"): Save and Delete go to the server, and what the editor shows is the server's get
+// in the servers update/change stream"): Save and Delete go to the server, and what an editor shows is the server's get
 // and the rows its stream then brings, never what was typed.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
@@ -35,15 +43,21 @@
     return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: (e && e.message) || 'refused' }; });
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
+  // The table's branch of spirit.data, which ./data.js keeps: required with this file, so it is there before any table.
+  spirit.require('process/js/agent/table/data.js');
+  function branchOf(table) { return 'agent.' + table; }
+  function D() { return window.spirit.data; }
 
-  // EVERY DETAIL PANE'S LOOK, IN THIS ONE PLACE (Andy, on G41.4: "is it possible to organize the code so that my changes
-  // so far are only done in one place?"): the title row and the field line, which every table's editor draws with,
-  // the grant editor included (E.agentDetail).
-  //   THE TITLE ROW ("[Table-Icon] \"Add | Change\" [Table-name]"): look { icon, name } is the page's for the table.
-  function titleRow(look, word, table) {
+  // EVERY PANE'S LOOK, IN THIS ONE PLACE (Andy, on G41.4: "is it possible to organize the code so that my changes so far
+  // are only done in one place?"; "both the list pane and detail pane should have similarly styled title areas ... these
+  // title bits should be structured so that a style change affects them all equally"): the title row and the field
+  // line, which every table's list and editor draw with, the grant editor included (E.agentDetail).
+  //   THE TITLE ROW: [icon] then the words, each part in its own span; a detail pane's words are "Add | Change" and the
+  //   table's name, a list pane's the table's name alone.
+  function titleRow(look, words) {
     var l = look || {};
-    return '<div style="display:flex;align-items:center;gap:1em"><span style="font-size:20px">' + esc(l.icon || '') + '</span>' +
-      '<b>' + esc(word) + '</b><span>' + esc(l.name || table || '') + '</span></div>';
+    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em"><span style="font-size:20px">' + esc(l.icon || '') + '</span>' +
+      words.map(function (w, i) { return i === 0 && words.length > 1 ? '<b>' + esc(w) + '</b>' : '<span>' + esc(w) + '</span>'; }).join('') + '</div>';
   }
   //   ONE FIELD A LINE ("the simple input lines, take up all the with availabe, with only the 1em between the inputs
   //   label and the input itself"): the label at its own width, 1em, and the input taking the rest of the line to the
@@ -53,7 +67,17 @@
     return '<div style="margin-top:1em;display:flex;align-items:center;gap:1em"><span style="flex:none">' + labelHtml + '</span>' +
       '<div style="flex:1 1 0;min-width:0">' + inputHtml + '</div></div>';
   }
-  E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH };
+  //   A SEARCH OF A TABLE, a list or a dropdown: probabilitySearch over its branch, its first search sent as it is made
+  //   ("the table-list in the left pane must be immediately shown when the table icon is selected").
+  function search(host, o, more) {
+    var s = E.probabilitySearch.create(host, Object.assign({
+      api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
+      args: function (text) { return { op: 'search', text: text }; },
+    }, more));
+    s.refresh();
+    return s;
+  }
+  E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf };
 
   // o.add(open): what Add does instead of an empty row (the grant table's: an empty editor, since a grant is made from a
   // job and a path). o.row(box, key, added, row): the editor of the row picked or added.
@@ -61,8 +85,9 @@
     var pre = 'at' + (++made) + '-';
     var gone = false;
     var list = null;
-    container.innerHTML = '<div class="fill">' +
-      '<div><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> <span id="' + pre + 'note"></span></div>' +
+    var look = o.detail && o.detail.look ? o.detail.look(o.table) : { name: o.table };
+    container.innerHTML = '<div class="fill">' + titleRow(look, [look.title || look.name || o.table]) +
+      '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> <span id="' + pre + 'note"></span></div>' +
       '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';
     // added: the row was just made by Add, so its editor says Add until it is saved.
     function open(key, added, row) {
@@ -70,25 +95,21 @@
     }
     container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       if (typeof o.add === 'function') { o.add(open); return; }
+      // The new row reaches the list by the stream, as every change does.
       call(o.table, { op: 'add' }).then(function (r) {
         if (gone) return;
         container.querySelector('#' + pre + 'note').textContent = r.refused ? 'Not added: ' + r.refused : '';
-        if (r.id) { open(r.id, true); if (list) list.refresh(); }
+        if (r.id) open(r.id, true);
       });
     });
     needs(['shell/js/probabilitySearch.js']).then(function () {
       if (gone) return;
-      list = E.probabilitySearch.create(container.querySelector('#' + pre + 'list'), {
-        api: o.api, server: 'agent', verb: o.table,
-        args: function (text) { return { op: 'search', text: text }; },
+      list = search(container.querySelector('#' + pre + 'list'), o, {
         columns: o.columns,
         matched: o.matched,
         pick: function (row, key) { open(key, false, row); },
         empty: 'No ' + o.table + ' yet.',
       });
-      // THE LIST SHOWS AT ONCE (Andy: "the table-list in the left pane must be immediately shown when the table icon is
-      // selected"): its first search goes as it is made, not on the first word typed or the first Add.
-      list.refresh();
     });
     return {
       refresh: function () { if (list) list.refresh(); },
@@ -102,11 +123,12 @@
     var row = null;
     var editors = {};
     var picks = {};
-    var off = null;
+    var note = '';
     var added = o.added === true;
+    var path = branchOf(o.table) + '/' + o.id;
     function input(f) { return container.querySelector('#' + pre + f.field); }
     // The title says Add while the row is new, Change once it was saved or when it was opened from the list.
-    function head() { return titleRow(o.look, added ? 'Add' : 'Change', o.table); }
+    function head() { return titleRow(o.look, [added ? 'Add' : 'Change', (o.look && o.look.name) || o.table]); }
     function cell(f, v) {
       var id = pre + f.field;
       if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
@@ -115,12 +137,12 @@
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
     }
-    function paint(note) {
+    function paint() {
       if (gone) return;
-      if (!row) { container.innerHTML = '<div>' + esc(note || 'Loading…') + '</div>'; return; }
       Object.keys(picks).forEach(function (k) { picks[k].destroy(); });
       picks = {};
       editors = {};
+      if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div style="margin-top:1em">' + esc(note || 'Loading…') + '</div></div>'; return; }
       var simple = o.fields.filter(function (f) { return f.kind !== 'code'; });
       var code = o.fields.filter(function (f) { return f.kind === 'code'; });
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
@@ -130,7 +152,7 @@
       container.innerHTML = '<div class="fill">' + head() +
         simple.map(function (f) { return fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field])); }).join('') +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
-        '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note || '') + '</span></div></div>';
+        '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       o.fields.forEach(function (f) {
         var el = input(f);
         if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
@@ -139,17 +161,17 @@
             return E.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
           }).then(function (cm) { editors[f.field] = cm; });
         }
-        // The field shows the row picked now, by its label, until another is picked; only a new pick is saved.
+        // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
+        // new pick is saved.
         if (f.kind === 'pick') {
-          var now = row[f.field] ? call(f.pick, { op: 'get', id: row[f.field] }) : Promise.resolve({});
-          Promise.all([needs(['shell/js/probabilitySearch.js']), now]).then(function (got) {
+          var other = row[f.field] ? D().get(branchOf(f.pick) + '/' + row[f.field]) : null;
+          var current = other ? (other.label || row[f.field]) : '';
+          needs(['shell/js/probabilitySearch.js']).then(function () {
             if (gone) return;
-            var current = got[1] && !got[1].refused ? (got[1].label || got[1].id) : '';
-            picks[f.field] = E.probabilitySearch.create(el, {
-              api: o.api, server: 'agent', verb: f.pick, face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
-              args: function (text) { return { op: 'search', text: text }; },
+            picks[f.field] = search(el, { api: o.api, table: f.pick }, {
+              face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
               columns: [{ field: 'label', label: 'Label', sort: 'text' }],
-              name: function (r) { return r.label || r.id; },
+              name: function (r) { return r.label || r.key; },
             });
           });
         }
@@ -174,41 +196,40 @@
       });
       return out;
     }
-    function load(note) {
-      return call(o.table, { op: 'get', id: o.id }).then(function (r) {
-        if (gone) return;
-        if (r.refused) { row = null; paint('Not found: ' + r.refused); return; }
-        row = r;
-        paint(note);
-      });
-    }
+    // Save and Delete only propose: the editor repaints when the stream writes the row's path (or deletes it), and says
+    // a refusal in its note.
     function save() {
       call(o.table, changes()).then(function (r) {
         if (gone) return;
         if (!r.refused) added = false;
-        load(r.refused ? 'Not saved: ' + r.refused : 'Saved.');
+        note = r.refused ? 'Not saved: ' + r.refused : 'Saved.';
+        paint();
       });
     }
     function remove() {
       call(o.table, { op: 'delete', id: o.id }).then(function (r) {
-        if (gone) return;
-        if (r.refused) { load('Not deleted: ' + r.refused); return; }
-        row = null;
-        container.innerHTML = '<div>Deleted.</div>';
+        if (gone || !r.refused) return;
+        note = 'Not deleted: ' + r.refused;
+        paint();
       });
     }
-    // The row as the stream brings it: another window's change repaints this one.
-    if (o.api && typeof o.api.onPublished === 'function') {
-      off = o.api.onPublished(function (x) {
-        var a = x && x.agent;
-        if (!a || a.table !== o.table) return;
-        if (a.removed && a.id === o.id) { row = null; container.innerHTML = '<div>Deleted.</div>'; return; }
-        if (a.row && a.row.id === o.id) { row = a.row; paint(''); }
-      }, 'agent');
-    }
+    // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so.
+    var unwatch = D().watch(path, function (p, value) {
+      if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
+      row = value;
+      paint();
+    });
+    // Its first state: what the branch holds, else the server's get, put where the stream writes it.
+    row = D().get(path) || null;
     paint();
-    load();
-    return { destroy: function () { gone = true; if (typeof off === 'function') off(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); container.innerHTML = ''; } };
+    if (!row) {
+      call(o.table, { op: 'get', id: o.id }).then(function (r) {
+        if (gone) return;
+        if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
+        D().set(path, r);
+      });
+    }
+    return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); container.innerHTML = ''; } };
   }
 
   E.agentTable = { create: createTable };

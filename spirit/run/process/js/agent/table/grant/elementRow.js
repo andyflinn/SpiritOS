@@ -25,7 +25,7 @@
       function note(text) { var n = container.querySelector('#' + pre + 'note'); if (n) n.textContent = text; }
       function shown(g) {
         if (pickJob) { pickJob.destroy(); pickJob = null; }
-        container.innerHTML = '<div class="fill">' + D.titleRow(look, 'Change', 'grant') +
+        container.innerHTML = '<div class="fill">' + D.titleRow(look, ['Change', (look && look.name) || 'grant']) +
           D.fieldLine('Job', esc(g.job || g.job_id)) + D.fieldLine('Path', '<b>' + esc(g.path) + '</b>') +
           '<div style="margin-top:1em"><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note"></span></div></div>';
         container.querySelector('#' + pre + 'delete').addEventListener('click', function () {
@@ -37,17 +37,17 @@
         });
       }
       function fresh(said) {
-        container.innerHTML = '<div class="fill">' + D.titleRow(look, 'Add', 'grant') +
+        container.innerHTML = '<div class="fill">' + D.titleRow(look, ['Add', (look && look.name) || 'grant']) +
           D.fieldLine('Job', '<div id="' + pre + 'job"></div>') +
           D.fieldLine('<label for="' + pre + 'path">Path</label>', '<input type="text" id="' + pre + 'path" style="' + D.stretch + '" placeholder="server.verb">') +
           '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add</button> <span id="' + pre + 'note">' + esc(said || '') + '</span></div></div>';
+        // The jobs from their branch of spirit.data, by the one table search (../tableElement.js).
         Promise.resolve(spirit.require('shell/js/probabilitySearch.js')).then(function () {
           if (gone) return;
-          pickJob = window.spirit.elements.probabilitySearch.create(container.querySelector('#' + pre + 'job'), {
-            api: api, server: 'agent', verb: 'job', face: 'dropdown', placeholder: 'Pick a job',
-            args: function (text) { return { op: 'search', text: text }; },
+          pickJob = D.search(container.querySelector('#' + pre + 'job'), { api: api, table: 'job' }, {
+            face: 'dropdown', placeholder: 'Pick a job',
             columns: [{ field: 'label', label: 'Job', sort: 'text' }],
-            name: function (r) { return r.label || r.id; },
+            name: function (r) { return r.label || r.key; },
           });
         });
         container.querySelector('#' + pre + 'add').addEventListener('click', function () {

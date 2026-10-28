@@ -60,10 +60,10 @@
           bench.center.innerHTML = '';
           inCentre = make(bench.center);
         },
-        // A table's icon and name, for the pane's title row.
+        // A table's icon, its name (a detail pane's title row) and its title (a list pane's).
         look: function (table) {
           var t = TABLES.filter(function (x) { return x.name === table; })[0];
-          return t ? { icon: t.icon, name: t.one } : { icon: '', name: table };
+          return t ? { icon: t.icon, name: t.one, title: t.title } : { icon: '', name: table, title: table };
         },
       };
       function build() {

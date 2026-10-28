@@ -21,6 +21,10 @@
 // not able to shift pane boundaries in a proper design?", then "do the proper fix."): the strips, the side panes and
 // the borders never grow or shrink (flex: none), so a side pane is the width it was given or dragged to; the centre
 // takes what is left and never more (min-width: 0), so a wide child scrolls or wraps inside it.
+//
+// ITS PANES PAD THEIR INHABITANTS (Andy, on G41.4: "should not the workBench element have some padding-left and
+// padding-right of about 0.5em?"): the side panes and the centre each 0.5em left and right, inside the width they are
+// given (box-sizing: border-box), so no app pads its own.
 (function () {
   var MIN_WIDTH = 120;
   var START_WIDTH = 240;
@@ -43,11 +47,12 @@
           return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="font-size:20px">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
-    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" style="flex:none;width:' + widths[side] + 'px;overflow:auto"></div>'; }
+    var PAD = 'box-sizing:border-box;padding-left:0.5em;padding-right:0.5em';
+    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
     function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="flex:none;width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
     container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
-      '<div id="' + pre + 'center" class="fill" style="overflow:auto;min-width:0"></div>' +
+      '<div id="' + pre + 'center" class="fill" style="overflow:auto;min-width:0;' + PAD + '"></div>' +
       (sides.right.length ? border('right') + pane('right') + strip('right') : '') + '</div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 
