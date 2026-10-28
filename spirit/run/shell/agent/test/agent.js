@@ -18,6 +18,8 @@ const CONFIG = 'relay-state/shell/agent/config.json';
 const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 const AGENT_FAMILY = familyPath('agent');
 const BUG = '🐞';
+// The tables of agent.db, in the order of their left tools (goal/G41.4, box v22).
+const TABLES = ['provider', 'model', 'persona', 'job', 'grant'];
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -140,9 +142,32 @@ test.startTest('agent.js: the agent face app');
   ok(/\bfill\b/.test(String(into.className || '')) || (into === app && false), 'the box it hands the workBench takes the shell\'s fill class',
     'the box: ' + short(into.tag || into.className || (into === app ? 'the container itself, unsized' : typeof into)));
   const L = wb.opts.left || []; const R = wb.opts.right || [];
-  ok(L.length === 1 && R.length === 1 && [L[0], R[0]].every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; }),
-    'one tool on the left strip and one on the right, each with its name, icon, title and mount', 'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) }));
-  if (L.length !== 1 || R.length !== 1) return;
+  // The app's own tool, then one per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
+  // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
+  const LEFT = ['app'].concat(TABLES);
+  ok(JSON.stringify(L.map(function (t) { return t && t.name; })) === JSON.stringify(LEFT) && R.length === 1 &&
+    L.concat(R).every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; }),
+    'the left strip holds the app\'s tool, then one per table (' + TABLES.join(', ') + '); the right one tool; each with its name, icon, title and mount',
+    'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) }));
+  ok(new Set(L.map(function (t) { return t && t.icon; })).size === L.length, 'every left tool has an icon of its own', 'icons: ' + short(L.map(function (t) { return t && t.icon; })));
+  if (L.length !== LEFT.length || R.length !== 1) return;
+
+  test.subHeading('each table\'s tool mounts that table\'s own element');
+  for (const name of TABLES) {
+    const t = L.filter(function (x) { return x.name === name; })[0];
+    const before = w.required.length;
+    const made = [];
+    global.window.spirit.elements[name + 'Table'] = { create: function (into, api, detail) { made.push({ into: into, api: api, detail: detail }); return { refresh: function () {}, destroy: function () {} }; } };
+    const tb = box('table-' + name); t.mount(tb); await settle();
+    const asked = w.required.slice(before);
+    ok(asked.indexOf('process/js/agent/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
+      'the ' + name + ' tool requires process/js/agent/table/' + name + '/elementTable.js into a fill box', 'required ' + short(asked) + ', class ' + short(tb.className));
+    const d = made[0] && made[0].detail;
+    ok(made.length === 1 && made[0].into === tb && made[0].api === w.api && d && typeof d.open === 'function' && typeof d.look === 'function',
+      'and creates ' + name + 'Table once in that box, with the app\'s api and its detail pane', 'created: ' + made.length);
+    const look = d && d.look(name);
+    ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
+  }
 
   test.subHeading('the left tool keeps the app\'s own config');
   const lb = box('left'); L[0].mount(lb); await settle();
@@ -216,7 +241,7 @@ test.startTest('agent.js: the agent face app');
   def2.mount(box('app2'), w2.api); await settle();
   const L2 = ((w2.created[0] || {}).opts || {}).left || [];
   const lb2 = box('left2'); if (L2[0]) L2[0].mount(lb2); await settle();
-  ok(L2.length === 1 && !isOn(lb2), 'with no config file, showDebug is false: the checkbox is unchecked', 'checkbox: ' + (lb2.inputs[0] ? lb2.inputs[0].checked : 'none'));
+  ok(L2.length === 1 + TABLES.length && !isOn(lb2), 'with no config file, showDebug is false: the checkbox is unchecked', 'checkbox: ' + (lb2.inputs[0] ? lb2.inputs[0].checked : 'none'));
   w2.stream(true); await settle();
   ok(w2.title().indexOf(BUG) === -1, 'and the title shows no bug, the server on or not', 'title: ' + short(w2.title()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },

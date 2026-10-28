@@ -24,7 +24,12 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
   components."): with no workBench on the page, it loads `shell/js/workBench.js` through `spirit.require`, then builds.
-- The workBench has one tool on its left strip and one on its right.
+- The workBench has one tool on its right strip, and on its left the app's own tool, then one per table of `agent.db`,
+  in the order provider, model, persona, job, grant, each with an icon of its own (goal/G41.4, box v22: "every one of
+  these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
+  used in this app").
+- A table's tool mounts that table's own element: it requires `process/js/agent/table/<name>/elementTable.js` into a
+  box of the shell's `fill` class.
 - The left tool keeps `relay-state/shell/agent/config.json`:
   - At mount it reads the file through `spirit.fs.loadFile`; with none, `showDebug` is false.
   - It draws one checkbox, checked when `showDebug` is true.
