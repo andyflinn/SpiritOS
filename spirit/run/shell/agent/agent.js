@@ -14,7 +14,8 @@
 //   The title shows the bug while showDebug is true and the server's DEBUG state is on.
 //   THE DATA SET'S TABLES (goal/G41.4; Andy, box v22: "every one of these tables will come with a left-edge icon that
 //   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
-//   agent.db, each mounting that table's own element, process/js/agent/table/<name>/elementTable.js.
+//   agent.db, each mounting that table's own element, process/js/agent/table/<name>/elementTable.js. A row opened from
+//   a list is edited in the workBench's centre, the one detail pane of the app.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
   var AGENT = spirit.familyPath('agent');
@@ -47,8 +48,20 @@
       var benchBox = container.querySelector('#agent-bench');
       var loaded = E.workBench ? Promise.resolve() : Promise.resolve(spirit.require('shell/js/workBench.js'));
       loaded.then(function () { E = (window.spirit && window.spirit.elements) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
+      // THE DETAIL PANE IS THE WORKBENCH'S CENTRE (Andy, on G41.4: "make the detail-panel take over the middle pane of the
+      // workBench UI please"): a row opened from any table's list fills it, and what was there goes.
+      var bench = null;
+      var inCentre = null;
+      var detail = {
+        open: function (make) {
+          if (!bench) return;
+          if (inCentre && typeof inCentre.destroy === 'function') inCentre.destroy();
+          bench.center.innerHTML = '';
+          inCentre = make(bench.center);
+        },
+      };
       function build() {
-      E.workBench.create(benchBox, {
+      bench = E.workBench.create(benchBox, {
         left: [{ name: 'app', icon: '⚙️', title: 'This app', mount: function (box) {
           box.innerHTML = '<label><input type="checkbox"> Show the server\'s DEBUG state in the title bar</label>';
           Promise.resolve(spirit.fs.loadFile(CONFIG)).then(function (text) {
@@ -67,7 +80,7 @@
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
             Promise.resolve(spirit.require('process/js/agent/table/' + t.name + '/elementTable.js')).then(function () {
-              window.spirit.elements[t.name + 'Table'].create(box, api);
+              window.spirit.elements[t.name + 'Table'].create(box, api, detail);
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
         })),

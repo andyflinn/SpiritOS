@@ -4,9 +4,11 @@
 // table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.elements.agentTable.create(container, { api, table, columns, row(box, id) }) -> { refresh, destroy }
+//   spirit.elements.agentTable.create(container, { api, table, columns, detail, row(box, id) }) -> { refresh, destroy }
 //     a probabilitySearch pane over the table's search (agent.<table> {op: search}), an Add button above it; picking a
-//     row, or adding one, opens it in row(box, id) below the list
+//     row, or adding one, opens it in row(box, id) in the detail pane. detail is the page's: detail.open(make) empties
+//     the pane, destroys what was in it and puts make(box) there. Andy, on G41.4: "make the detail-panel take over the
+//     middle pane of the workBench UI please", so the agent page hands its workBench's centre.
 //   spirit.elements.agentRow.create(container, { api, table, id, fields }) -> { destroy }
 //     one row's fields as inputs, Save and Delete; fields [{ field, label, kind }], kind one of
 //       text, url, name, description   one line (name and description stop at their field rules' limits)
@@ -36,18 +38,11 @@
     var pre = 'at' + (++made) + '-';
     var gone = false;
     var list = null;
-    var rowBox = null;
-    var rowEl = null;
     container.innerHTML = '<div class="fill">' +
       '<div><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> <span id="' + pre + 'note"></span></div>' +
-      '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div>' +
-      '<div id="' + pre + 'row"></div></div>';
-    rowBox = container.querySelector('#' + pre + 'row');
+      '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';
     function open(id) {
-      if (rowEl) rowEl.destroy();
-      rowEl = null;
-      rowBox.innerHTML = '';
-      if (id && typeof o.row === 'function') rowEl = o.row(rowBox, id);
+      if (id && typeof o.row === 'function' && o.detail) o.detail.open(function (box) { return o.row(box, id); });
     }
     container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       call(o.table, { op: 'add' }).then(function (r) {
@@ -68,7 +63,7 @@
     });
     return {
       refresh: function () { if (list) list.refresh(); },
-      destroy: function () { gone = true; if (rowEl) rowEl.destroy(); if (list) list.destroy(); container.innerHTML = ''; },
+      destroy: function () { gone = true; if (list) list.destroy(); container.innerHTML = ''; },
     };
   }
 
