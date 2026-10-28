@@ -1182,3 +1182,9 @@ details.stat-tile > summary {
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */
 .tab-content { padding: 0.5em; min-height: 0; overflow: auto; border-radius: 8px; background: var(--shell-well); }
+/* ITS TABS (goal/G41.13, Andy: "the top row tab buttons: the bottom corners should not be rounded", and "the background
+   color of those buttons should be same as the pane's background color, when they're NOT the active tab, while the
+   active tab has the same background color as all tabs currently have"): square at the bottom; a tab not selected the
+   well's colour, the selected one a button's own. */
+.tab-button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.tab-button[aria-selected="false"] { background: var(--shell-well); }

@@ -28,7 +28,8 @@
 
     function rowHtml() {
       return tabs.map(function (t) {
-        return '<button type="button" data-tab="' + esc(t.name) + '" aria-selected="' + (t.name === current ? 'true' : 'false') + '"' +
+        // class tab-button: its look in shell.css, a tab's square bottom and the selected one's colour (goal/G41.13).
+        return '<button type="button" class="tab-button" data-tab="' + esc(t.name) + '" aria-selected="' + (t.name === current ? 'true' : 'false') + '"' +
           (t.name === current ? ' style="font-weight:bold"' : '') + '>' + esc(t.label) + '</button>';
       }).join(' ');
     }
