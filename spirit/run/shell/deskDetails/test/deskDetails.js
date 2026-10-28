@@ -379,5 +379,56 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   let bound = null;
   for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
   ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
+
+  // ── goal/G41.12, box v26-v35: THE PAGE READS NOTHING FROM THE DESK ─────────────────────────────────────────────────
+  // Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
+  // state in its (persisted) cache, and reads nothing from the server"; every request, "the owner's or a peer's", is
+  // answered "ok"; "the UI for desk is tested fully". The page's cache is spirit.data with the desk's translator.
+  test.subHeading('goal/G41.12: the detail reads nothing from the desk, it draws from spirit.data');
+  const READS = ['item.get', 'item.box', 'item.chat', 'item.checks', 'item.files', 'items.search', 'chat.search', 'rules.search', 'rule.get', 'profile.get', 'item.suites.search', 'item.checks.search', 'item.rules.search', 'log.search', 'changes'];
+  const readsIn = function (text) { return READS.filter(function (v) { return new RegExp('[\'"`](desk\\.)?' + v.replace(/\./g, '\\.') + '[\'"`]').test(text); }); };
+  ok(readsIn(code).length === 0, 'deskDetails.js asks the desk no read verb', 'deskDetails.js names: ' + readsIn(code).join(', '));
+  const put = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item from the stream' }), []);
+  // The desk answers "ok" to everything; what the page knows is what the stream put in spirit.data.
+  put.api.verb = function (name, args) { put.asked.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: 'ok' }); };
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), put.win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), put.win, { filename: 'deskData.js' });
+  const PD = put.win.spirit.data;
+  const fed = !!(PD && put.win.spirit.deskData);
+  if (fed) {
+    put.win.spirit.deskData.published({ verb: 'goal.whole', item: { id: 'goal/G9', goal: '', title: 'The goal', version: 1 } });
+    put.win.spirit.deskData.published({ verb: 'goal.whole', item: Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item from the stream', version: 3 }) });
+    put.win.spirit.deskData.published({ table: 'box', id: 'goal/G9.8', row: { text: 'a box the stream brought', version: 3 } });
+    put.win.spirit.deskData.published({ table: 'chat', id: 'goal/G9.8', row: { by: 'andy', at: '2026-10-28T10:00:00.000Z', text: 'a line the stream brought' } });
+  }
+  ok(fed, 'the stand-in page holds spirit.data with the desk\'s translator', 'spirit.data ' + typeof PD + ', deskData ' + typeof put.win.spirit.deskData);
+  await put.open();
+  const putShown = put.document.body.textContent;
+  ok(/An item from the stream/.test(putShown) && /a box the stream brought/.test(putShown) && /a line the stream brought/.test(putShown), 'opened on the item, it shows its title, box and chat from spirit.data, though every desk answer is "ok"',
+    'shown: ' + JSON.stringify({ title: /An item from the stream/.test(putShown), box: /a box the stream brought/.test(putShown), chat: /a line the stream brought/.test(putShown) }));
+  const readsAsked = put.asked.filter(function (a) { return READS.indexOf(String(a.name).replace(/^desk\./, '')) !== -1; });
+  ok(readsAsked.length === 0, 'and asks the desk nothing to draw it', 'asked: ' + JSON.stringify(readsAsked.map(function (a) { return a.name; })));
+
+  // Andy, box v30: "The user get's a \"push\" button the the detail of every goal or item, to force a server push of
+  // that item."
+  test.subHeading('goal/G41.12: the push button in the detail of an item and of a goal');
+  const pushOf = async function (w, id, what) {
+    const find = function () { return w.document.querySelector('[data-press="push"]') || w.document.querySelectorAll('button').filter(function (b) { return /^\W*push\b/i.test(String(b.textContent || '').trim()); })[0] || null; };
+    const before = w.writes().length;
+    const b = find();
+    if (!b) { test.fail(what + ': no push button in the detail'); return; }
+    w.document.click(b); await settle();
+    let sent = w.writes().slice(before);
+    // An are-you-sure takes a second press; either way one press is sent.
+    if (!sent.length && find()) { w.document.click(find()); await settle(); sent = w.writes().slice(before); }
+    ok(sent.length === 1 && sent[0].name === 'desk.press' && sent[0].args && sent[0].args.id === id && sent[0].args.what === 'push', what + ': its push button sends desk.press {id, what: "push"}, once',
+      what + ': sent ' + JSON.stringify(sent));
+  };
+  const pi = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.9' }), []);
+  await pi.open();
+  await pushOf(pi, 'goal/G9.9', 'an item');
+  const pg = ddWorld({ id: 'goal/G9', title: 'The goal', goal: '', status: 'open', buttons: [], design: false, blocked: [], version: 1 }, []);
+  await pg.open();
+  await pushOf(pg, 'goal/G9', 'a goal');
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

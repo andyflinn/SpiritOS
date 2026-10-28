@@ -59,3 +59,13 @@ Andy: "the rules list is NOT placed properly in a size-limited container.... is 
 Every probabilitySearch list of the Desk page, the List (items.search) and the Rules list (rules.search), is mounted in a
 box of class fill, and every box between it and the app's own box is fill too: no stat-tile, no box only as tall as its
 content. A dropdown stands inline, as every dropdown in the tree does, and is not asked.
+
+## goal/G41.12 (box v26-v35): the page reads nothing from the desk
+
+- Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
+  state in its (persisted) cache, and reads nothing from the server"; every request is answered "ok"; "the UI for desk
+  is tested fully". The page names no read verb of the desk (item.get, item.box, item.chat, item.checks, item.files,
+  items.search, chat.search, rules.search, rule.get, profile.get, item.suites.search, item.checks.search,
+  item.rules.search, log.search, changes); what it draws comes from spirit.data and the desk's translator.
+- Not asserted yet: how the List's probabilitySearch searches spirit.data instead of items.search; the box names no
+  shape for it, so the build names it and the verify drives it.

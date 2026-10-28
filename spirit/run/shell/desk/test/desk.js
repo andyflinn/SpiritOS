@@ -332,5 +332,13 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     const gaps = notFill(made.host);
     ok(isFill(made.host) && !gaps.length, want[0] + ' stands in a fill box, and every box up to the app is fill too', want[0] + ': not fill: ' + gaps.join(' < '));
   });
+  // ── goal/G41.12, box v26-v35: THE PAGE READS NOTHING FROM THE DESK ───────────────────────────────────────────────
+  // Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
+  // state in its (persisted) cache, and reads nothing from the server"; every request, "the owner's or a peer's", is
+  // answered "ok"; "the UI for desk is tested fully". The List and Team draw from spirit.data.
+  test.subHeading('goal/G41.12: the Desk page asks the desk no read verb');
+  const READS = ['item.get', 'item.box', 'item.chat', 'item.checks', 'item.files', 'items.search', 'chat.search', 'rules.search', 'rule.get', 'profile.get', 'item.suites.search', 'item.checks.search', 'item.rules.search', 'log.search', 'changes'];
+  const named = READS.filter(function (v) { return new RegExp('[\'"`](desk\\.)?' + v.replace(/\./g, '\\.') + '[\'"`]').test(code); });
+  ok(named.length === 0, 'desk.js names no read verb of the desk', 'desk.js names: ' + named.join(', '));
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

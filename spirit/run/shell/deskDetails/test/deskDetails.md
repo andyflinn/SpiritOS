@@ -60,3 +60,15 @@ first displayed."
 
 The upper half is fixed at 30vh with its overflow hidden; the box that bounds the rules panel scrolls (overflow auto), so
 a long list of rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.
+
+## goal/G41.12 (box v26-v35): the page reads nothing from the desk
+
+- Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
+  state in its (persisted) cache, and reads nothing from the server"; every request is answered "ok"; "the UI for desk
+  is tested fully". The page names no read verb of the desk (item.get, item.box, item.chat, item.checks, item.files,
+  items.search, chat.search, rules.search, rule.get, profile.get, item.suites.search, item.checks.search,
+  item.rules.search, log.search, changes); what it draws comes from spirit.data and the desk's translator.
+- Opened on an item while every desk answer is "ok", the detail shows its title, box and chat from spirit.data,
+  asking nothing.
+- The push button (Andy, box v30: "a \"push\" button the the detail of every goal or item"): in the detail of an
+  item and of a goal, it sends desk.press {id, what: "push"} once, with or without an are-you-sure.
