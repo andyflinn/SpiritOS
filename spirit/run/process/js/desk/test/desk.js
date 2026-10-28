@@ -125,7 +125,10 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
   const node = pretendNode();
   await new Promise(function (r) { node.server.listen(0, '127.0.0.1', r); });
   const SERVER = runCopy(path.join(scratch, 'run'), node.server.address().port);
-  const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
+  // A goal shared (goalRepo, goalPath), so the desk writes its currentGoal.json; the share itself is a job the pretend
+  // node takes and runs nothing for, so nothing is pushed anywhere.
+  fs.mkdirSync(path.join(scratch, 'repo', '.git'), { recursive: true });
+  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ goalRepo: path.join(scratch, 'repo'), goalPath: 'currentGoal.json' }), '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job' }),
   });
@@ -307,6 +310,16 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
     await waitEnd(FRESH.key, zero);
     ok(pushEnded(FRESH.key, zero) && sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).some(function (r) { return String(r.item.id) === GOAL.id; }), 'a since with no run is no position: a full push again, the goal\'s row', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
+
+    // Andy, box v34: "the server on every restart, auto-publishes its currentGoal.json", with "which desk-\"run\" and
+    // which \"version\"" on top: the stream's own run and number (cw: run and version, then change, goal, items, rows).
+    test.subHeading('currentGoal.json: written at the start, its run and version the stream\'s (box v34)');
+    let shared = null;
+    try { shared = JSON.parse(fs.readFileSync(path.join(state, 'currentGoal.json'), 'utf8')); } catch (e) { shared = null; }
+    ok(!!shared, 'the desk wrote currentGoal.json on its own, with no press of his', 'no currentGoal.json in its state folder');
+    ok(!!shared && JSON.stringify(Object.keys(shared).slice(0, 2).sort()) === '["run","version"]' && typeof shared.version === 'number' && Array.isArray(shared.rows),
+      'its top is run and version, and it carries the stream\'s rows', 'its keys: ' + short(shared && Object.keys(shared)));
+    ok(!!shared && !!plainEntries[0] && shared.run === plainEntries[0].run, 'its run is the run the stream numbers its rows in', 'file run ' + short(shared && shared.run) + ', stream run ' + short(plainEntries[0] && plainEntries[0].run));
 
     test.subHeading('the position: a subscribe with one hands what was published after it, oldest first');
     const pos = positionOf(FRESH.key, f0);

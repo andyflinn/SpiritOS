@@ -34,7 +34,8 @@ const STRANGER = { owner: false, key: 'KEY-NOBODY' };
 // ── THE FAKE DESK ────────────────────────────────────────────────────
 // Every ask is kept. An answer is what `answers[verb]` gives (a value, or a function of the args); `hold[verb]` makes
 // the ask never answer; the default is a plain ok.
-const desk = { asks: [], answers: {}, hold: {} };
+// A write is answered "ok" (box v26: the implementation's API is all PUT).
+const desk = { asks: [], answers: { 'box.take': 'ok' }, hold: {} };
 function deskAnswer(verb, args) {
   desk.asks.push({ verb: verb, args: args });
   if (desk.hold[verb]) return new Promise(function () {});
@@ -50,7 +51,8 @@ const D = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
 const subscribeArgs = [];
-const askedVia = [];   // each ask deskClient made through its appServer's ask   // what each subscribe was handed: { key, family, since }
+const askedVia = [];
+const merged = [];   // each server.merge deskClient made   // each ask deskClient made through its appServer's ask   // what each subscribe was handed: { key, family, since }
 let curD = D;   // the data set the running deskClient holds (a restarted one gets a fresh one)
 const appServerStub = {
   get data() { return curD; },
@@ -59,6 +61,8 @@ const appServerStub = {
     served = { verbs: verbs, opts: opts || {} };
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); },
       // A client implementation asks through spirit/appServer.js (box v28), which bundles; answered { status, body } (cw).
+      // currentGoal.json's rows, merged into the cache of the desk as stream rows (cw): server.merge(desk key, 'desk', rows).
+      merge: function (key, family, rows) { merged.push({ key: key, family: family, rows: rows }); return true; },
       ask: function (key, family, verb, args) { askedVia.push({ key: key, family: family, verb: verb }); return deskAnswer(verb, args).then(function (b) { return { status: 200, body: b }; }); } };
   },
   // The role it sets at its startup (box v26: setMode("client" | "server")).
@@ -172,6 +176,18 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   try { await ask('box.take', { id: ITEM }); } catch (e) { /* the answer is not the point */ }
   ok(asksOf('box.take').length === takesVia + 1 && askedVia.slice(viaBefore).some(function (a) { return a.verb === 'box.take' && a.key === DESK && a.family === 'desk'; }),
     'a write its agent asks goes to the desk through server.ask(desk key, "desk", verb, args)', 'asked via ask: ' + short(askedVia.slice(viaBefore)));
+
+  test.subHeading('the shared current goal: its rows merged into the cache, by its run and version (box v34)');
+  // Andy, box v34: the server "embeds at the top of currentGoal.json of every shared goal with that number, so
+  // deskClient knows which desk-\"run\" and which \"version\" of the deskServer state is contained"; cw: run and version
+  // on top, then change, goal, items, rows; deskClient merges a file whose run:version is not the one it merged last.
+  let top = null;
+  try { top = JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'currentGoal.json'), 'utf8')); } catch (e) { top = null; }
+  ok(!!top && typeof top.run === 'string' && top.run.length > 0 && typeof top.version === 'number' && JSON.stringify(Object.keys(top).slice(0, 2).sort()) === '["run","version"]' && Array.isArray(top.rows),
+    'this checkout\'s currentGoal.json carries run and version on top, and the stream\'s rows', 'its keys: ' + short(top && Object.keys(top)));
+  const mergedOnce = merged.filter(function (m) { return m.key === DESK && m.family === 'desk'; });
+  ok(!!top && Array.isArray(top.rows) && mergedOnce.length === 1 && JSON.stringify(mergedOnce[0].rows) === JSON.stringify(top.rows),
+    'deskClient merges its rows once into its cache of the desk: server.merge(desk key, "desk", rows)', 'merges: ' + short(merged.map(function (m) { return { key: m.key, family: m.family, rows: Array.isArray(m.rows) ? m.rows.length : m.rows }; })));
 
   test.subHeading('the shared current goal: a part the cache lacks is answered from process/js/desk/currentGoal.json');
   // Andy, box v32: "the desk client MUST use process/js/desk/currentGoal.json to update it's knowledge". The file the
