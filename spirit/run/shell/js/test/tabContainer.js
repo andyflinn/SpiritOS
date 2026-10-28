@@ -173,8 +173,9 @@ ok(fw && (parseInt(fw.slice(3, 5), 16) > parseInt(fw.slice(1, 3), 16)) && (parse
 
 // THE TAB BUTTONS (goal/G41.13, box; Andy: "the top row tab buttons: the bottom corners should not be rounded", "the
 // background color of those buttons should be same as the pane's background color, when they're NOT the active tab,
-// while the active tab has the same background color as all tabs currently have").
-test.subHeading('the tab buttons: square bottoms, the unselected ones the pane\'s colour');
+// while the active tab has the same background color as all tabs currently have"; then: "for the tab button colors, i want
+// them reversed, the selected on dark, the unselected bighter.").
+test.subHeading('the tab buttons: square bottoms, the selected one dark as the pane, the others the button colour');
 const c5 = container();
 T.create(c5, { tabs: [tab('w'), tab('x')] });
 const buttons = (c5.innerHTML.match(/<button\b[^>]*>/g) || []);
@@ -185,17 +186,17 @@ const rules = []; sheet.replace(/\/\*[\s\S]*?\*\//g, '').replace(/([^{}]+)\{([^}
 function weight(sel) { const ids = (sel.match(/#[\w-]+/g) || []).length; const cls = (sel.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/g) || []).length; const tags = (sel.replace(/#[\w-]+|\.[\w-]+|\[[^\]]+\]|:[\w-]+/g, ' ').match(/\b[a-z]+\b/g) || []).length; return ids * 10000 + cls * 100 + tags; }
 const tabRules = rules.filter(function (r) { return /\.tab-button\b/.test(r.sel); });
 ok(tabRules.some(function (r) { return /border-bottom-left-radius:\s*0/.test(r.body) && /border-bottom-right-radius:\s*0/.test(r.body); }), 'shell.css squares a tab button\'s bottom corners', 'tab rules: ' + JSON.stringify(tabRules));
-const off = tabRules.filter(function (r) { return /aria-selected="false"/.test(r.sel) && /background:\s*var\(--shell-well\)/.test(r.body); })[0];
-ok(!!off, 'an unselected tab\'s background is the content pane\'s, var(--shell-well)', 'tab rules: ' + JSON.stringify(tabRules));
+const off = tabRules.filter(function (r) { return /aria-selected="true"/.test(r.sel) && /background:\s*var\(--shell-well\)/.test(r.body); })[0];
+ok(!!off, 'the selected tab\'s background is the content pane\'s dark, var(--shell-well)', 'tab rules: ' + JSON.stringify(tabRules));
 // A tab inside an app is a button under #app-content, whose own rule paints every button (shell.css); the tab's rules
 // must win there, or the page shows no change at all.
 const appButton = rules.filter(function (r) { return r.sel === '#app-content button' && /background/.test(r.body); })[0];
 ok(off && (!appButton || weight(off.sel) > weight(appButton.sel) || /!important/.test(off.body)), 'and it outweighs #app-content button, so it holds inside an app',
-  'unselected rule ' + JSON.stringify(off && off.sel) + ' (' + (off ? weight(off.sel) : 0) + ') against ' + JSON.stringify(appButton && appButton.sel) + ' (' + (appButton ? weight(appButton.sel) : 0) + ')');
+  'selected rule ' + JSON.stringify(off && off.sel) + ' (' + (off ? weight(off.sel) : 0) + ') against ' + JSON.stringify(appButton && appButton.sel) + ' (' + (appButton ? weight(appButton.sel) : 0) + ')');
 const squared = tabRules.filter(function (r) { return /border-bottom-left-radius:\s*0/.test(r.body); })[0];
 const appRadius = rules.filter(function (r) { return r.sel === '#app-content button' && /border-radius/.test(r.body); })[0];
 ok(squared && (!appRadius || weight(squared.sel) > weight(appRadius.sel) || /!important/.test(squared.body)), 'the square corners outweigh it too',
   'squared ' + JSON.stringify(squared && squared.sel) + ' against ' + JSON.stringify(appRadius && appRadius.sel));
-ok(!tabRules.some(function (r) { return /aria-selected="true"/.test(r.sel) && /background/.test(r.body); }), 'the selected tab keeps the colour every button has: no rule repaints it', 'tab rules: ' + JSON.stringify(tabRules));
+ok(!tabRules.some(function (r) { return /aria-selected="false"/.test(r.sel) && /background/.test(r.body); }), 'the others keep the brighter colour every button has: no rule repaints them', 'tab rules: ' + JSON.stringify(tabRules));
 
 test.reportSuccessFailureCount();
