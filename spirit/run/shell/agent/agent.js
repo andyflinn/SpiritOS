@@ -60,6 +60,12 @@
           bench.center.innerHTML = '';
           inCentre = make(bench.center);
         },
+        // The centre emptied, what was in it destroyed.
+        clear: function () {
+          if (inCentre && typeof inCentre.destroy === 'function') inCentre.destroy();
+          inCentre = null;
+          if (bench) bench.center.innerHTML = '';
+        },
         // A table's icon, its name (a detail pane's title row) and its title (a list pane's).
         look: function (table) {
           var t = TABLES.filter(function (x) { return x.name === table; })[0];
@@ -68,6 +74,9 @@
       };
       function build() {
       bench = E.workBench.create(benchBox, {
+        // ANOTHER LEFT TOOL, AN EMPTY CENTRE (Andy, on G41.4: "if the current \"icon\" is changed the content of a
+        // left-strip icon should disappear from the middle workBench Pane").
+        changed: function (side) { if (side === 'left') detail.clear(); },
         left: [{ name: 'app', icon: '⚙️', title: 'This app', mount: function (box) {
           box.innerHTML = '<label><input type="checkbox"> Show the server\'s DEBUG state in the title bar</label>';
           Promise.resolve(spirit.fs.loadFile(CONFIG)).then(function (text) {

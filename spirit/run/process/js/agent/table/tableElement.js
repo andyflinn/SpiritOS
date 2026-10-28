@@ -69,21 +69,25 @@
     return '<div style="margin-top:1em;display:flex;align-items:center;gap:1em"><span style="flex:none">' + labelHtml + '</span>' +
       '<div style="flex:1 1 0;min-width:0">' + inputHtml + '</div></div>';
   }
-  //   A SEARCH OF A TABLE, a list or a dropdown: probabilitySearch over its branch, its first search sent as it is made
-  //   ("the table-list in the left pane must be immediately shown when the table icon is selected").
+  // EVERY LIST SHOWS A ROW BY ITS ICON AND ITS LABEL, AND NOTHING ELSE (Andy: "the list in the left side pane then will
+  // only show: icon and label").
+  var LIST_COLUMNS = [{ field: 'icon', label: '' }, { field: 'label', label: 'Label', sort: 'text' }];
+  //   A SEARCH OF A TABLE, a list or a picker: probabilitySearch over its branch, its first search sent as it is made
+  //   ("the table-list in the left pane must be immediately shown when the table icon is selected"), each row drawn by
+  //   its icon and its label, a picker's chosen row too ("pickers for all these tables, should display: [icon][label],
+  //   exactly the same as the list").
   function search(host, o, more) {
     var s = E.probabilitySearch.create(host, Object.assign({
       api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
+      columns: LIST_COLUMNS,
+      name: function (r) { return (r && r.icon ? r.icon + ' ' : '') + String((r && (r.label || r.key)) || ''); },
     }, more));
     s.refresh();
     return s;
   }
   E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf };
 
-  // EVERY LIST SHOWS A ROW BY ITS ICON AND ITS LABEL, AND NOTHING ELSE (Andy: "the list in the left side pane then will
-  // only show: icon and label").
-  var LIST_COLUMNS = [{ field: 'icon', label: '' }, { field: 'label', label: 'Label', sort: 'text' }];
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
   // chosen with the shell's icon selector (shell/js/iconSelector.js).
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
@@ -115,7 +119,6 @@
     needs(['shell/js/probabilitySearch.js']).then(function () {
       if (gone) return;
       list = search(container.querySelector('#' + pre + 'list'), o, {
-        columns: LIST_COLUMNS,
         matched: o.matched,
         pick: function (row, key) { open(key, false, row); },
         empty: 'No ' + o.table + ' yet.',
@@ -186,13 +189,11 @@
         // new pick is saved.
         if (f.kind === 'pick') {
           var other = row[f.field] ? D().get(branchOf(f.pick) + '/' + row[f.field]) : null;
-          var current = other ? (other.label || row[f.field]) : '';
+          var current = other ? (other.icon ? other.icon + ' ' : '') + (other.label || row[f.field]) : '';
           needs(['shell/js/probabilitySearch.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, {
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
-              columns: [{ field: 'label', label: 'Label', sort: 'text' }],
-              name: function (r) { return r.label || r.key; },
             });
           });
         }

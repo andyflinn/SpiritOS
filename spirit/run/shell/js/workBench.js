@@ -5,9 +5,12 @@
 // and a movable border between each side pane and the centre. Its contract and its test: ./test/workBench.md and
 // ./test/workBench.js.
 //
-//   window.spirit.elements.workBench.create(container, { left, right }) -> { center, press, shown, width, destroy }
+//   window.spirit.elements.workBench.create(container, { left, right, changed }) -> { center, press, shown, width, destroy }
 //     left, right    [{ name, icon, title, mount(box) }]: a tool's mount is called once, the first time it shows, with a
 //                    box of its own inside its side's pane; the box is kept, so a tool shown again keeps what it drew
+//     changed(side, name)  optional: called each time the tool shown on a side changes, name '' when the side collapses
+//                    (Andy, on G41.4: "if the current \"icon\" is changed the content of a left-strip icon should
+//                    disappear from the middle workBench Pane": the app empties what the old tool put in the centre)
 //     center         the centre pane's box, the one the app draws into
 //     press(side, name)   what a click on that strip's icon does: shows the tool, or collapses the side when it shows
 //     shown(side)    the name of the tool shown on that side, '' while that side is collapsed
@@ -25,6 +28,10 @@
 // ITS PANES PAD THEIR INHABITANTS (Andy, on G41.4: "should not the workBench element have some padding-left and
 // padding-right of about 0.5em?"): the side panes and the centre each 0.5em left and right, inside the width they are
 // given (box-sizing: border-box), so no app pads its own.
+//
+// THE SHOWN TOOL'S ICON IS MARKED (Andy, on G41.4: "the current left-strip icon should be highlighted, may be with a
+// lightly brighter background color"): on each strip the icon of the tool shown carries data-current and a lighter
+// background, the others none; a collapsed side marks none.
 (function () {
   var MIN_WIDTH = 120;
   var START_WIDTH = 240;
@@ -57,11 +64,25 @@
     function part(name) { return container.querySelector('#' + pre + name); }
 
     function toolOf(side, name) { return (sides[side] || []).filter(function (t) { return t.name === name; })[0] || null; }
+    var CURRENT = 'var(--spirit-current, rgba(255,255,255,0.18))';
+    // The side's shown tool is now name ('' collapsed): its icon marked, the app told when it changed.
+    function now(side, name) {
+      var was = shownTool[side];
+      shownTool[side] = name;
+      var s = part('strip-' + side);
+      if (s) Array.prototype.forEach.call(s.children || [], function (b) {
+        if (!b || typeof b.getAttribute !== 'function' || b.getAttribute('data-tool') == null) return;
+        var on = b.getAttribute('data-tool') === name;
+        if (on) b.setAttribute('data-current', 'true'); else b.removeAttribute('data-current');
+        b.style.background = on ? CURRENT : '';
+      });
+      if (was !== name && typeof o.changed === 'function') { try { o.changed(side, name); } catch (e) { /* the app's fault */ } }
+    }
     function show(side, name) {
       var t = toolOf(side, name);
       var p = part('pane-' + side);
       if (!t || !p) return;
-      shownTool[side] = name;
+      now(side, name);
       p.hidden = false;
       p.style.width = widths[side] + 'px';
       if (!boxes[side][name]) {
@@ -74,7 +95,7 @@
     }
     function press(side, name) {
       if (gone || !toolOf(side, name)) return;
-      if (shownTool[side] === name) { shownTool[side] = ''; var p = part('pane-' + side); if (p) p.hidden = true; return; }
+      if (shownTool[side] === name) { now(side, ''); var p = part('pane-' + side); if (p) p.hidden = true; return; }
       show(side, name);
     }
 

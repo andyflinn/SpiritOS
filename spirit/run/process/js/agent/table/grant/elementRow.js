@@ -46,8 +46,6 @@
           if (gone) return;
           pickJob = D.search(container.querySelector('#' + pre + 'job'), { api: api, table: 'job' }, {
             face: 'dropdown', placeholder: 'Pick a job',
-            columns: [{ field: 'label', label: 'Job', sort: 'text' }],
-            name: function (r) { return r.label || r.key; },
           });
         });
         container.querySelector('#' + pre + 'add').addEventListener('click', function () {
