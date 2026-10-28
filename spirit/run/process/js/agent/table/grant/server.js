@@ -11,7 +11,7 @@
 //   delete {job_id, path}   takes that grant away; answers { job_id, path }
 //   get {job_id}            that job's paths; answers { job_id, paths }
 //   search {text}           the grants ranked against the words, cut to one answer; answers { items, more }, each
-//                           { job_id, job (its label), path }
+//                           { job_id, job (its label), path, icon (the job's), label (the job: the path) }
 // A grant names a job that is there. Every change is published as { agent: { table: 'grant', row } }, removed on a delete.
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
@@ -55,8 +55,10 @@ module.exports = function (ctx) {
       const bucket = createProbabilityBucket(Infinity);
       let n = 0;
       grants.all().forEach(function (g) {
-        // The job's label rides with the grant, so a list can name the job.
-        const row = { job_id: g.key, job: ctx.tables.job.label(g.key), path: g.path };
+        // The job's label and icon ride with the grant, so a list shows it as every list shows a row, its icon and its
+        // label: the job's icon, and the job with the path.
+        const job = ctx.tables.job.label(g.key);
+        const row = { job_id: g.key, job: job, path: g.path, icon: ctx.tables.job.icon(g.key), label: (job || g.key) + ': ' + g.path };
         const score = words ? Number(probabilityStringObjectMatch(words, { job: row.job, path: g.path.split('.').join(' ') })) || 0 : 1;
         n += 1;
         if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: g.key + '|' + g.path, label: JSON.stringify(row) });

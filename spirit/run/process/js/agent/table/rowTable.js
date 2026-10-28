@@ -31,8 +31,10 @@ const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
 const KEYSET = ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey'];
 const PRIVATE = ['privateKey', 'sealPrivateKey'];
-// What every row has beside its key set, with its rule (spirit.js's standard).
-const COMMON = { label: 'name?', description: 'description?' };
+// What every row has beside its key set, with its rule (spirit.js's standard). EVERY ROW HAS AN ICON (Andy, on G41.4:
+// "all table rows will have an icon, by default the tables icon"): a glyph, which the page's Add sets to its table's
+// icon and its editor lets him choose.
+const COMMON = { icon: 'text?', label: 'name?', description: 'description?' };
 // One answer is what appServer lets leave, measured on the whole body.
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
@@ -51,6 +53,13 @@ function rowTable(db, def, publish) {
     'sealPrivateKey TEXT NOT NULL, ' + Object.keys(fields).map(function (f) {
       return '"' + f + '" ' + sqlType(fields[f]) + ' NOT NULL DEFAULT ' + (sqlType(fields[f]) === 'INTEGER' ? '0' : "''");
     }).join(', ') + ')');
+  // A TABLE MADE BEFORE A FIELD WAS: the field is added to it, empty, so a node's agent.db takes the new shape at start
+  // (the icon came after the first tables were made).
+  const have = db.prepare('PRAGMA table_info(' + t + ')').all().map(function (c) { return c.name; });
+  Object.keys(fields).forEach(function (f) {
+    if (have.indexOf(f) !== -1) return;
+    db.exec('ALTER TABLE ' + t + ' ADD COLUMN "' + f + '" ' + sqlType(fields[f]) + ' NOT NULL DEFAULT ' + (sqlType(fields[f]) === 'INTEGER' ? '0' : "''"));
+  });
   const q = {
     get: db.prepare('SELECT * FROM ' + t + ' WHERE id = ?'),
     all: db.prepare('SELECT * FROM ' + t + ' ORDER BY label, id'),
@@ -143,11 +152,13 @@ function rowTable(db, def, publish) {
       return { items: r.items, more: !!r.more };
     },
   };
-  // has(id): the row is there; label(id): its label, '' when it is not (a grant names its job by it).
+  // has(id): the row is there; label(id), icon(id): its label and its icon, '' when it is not (a grant shows its job by
+  // them).
   return {
     verb: verb,
     has: function (id) { return !!q.get.get(String(id)); },
     label: function (id) { const r = q.get.get(String(id)); return r ? String(r.label || '') : ''; },
+    icon: function (id) { const r = q.get.get(String(id)); return r ? String(r.icon || '') : ''; },
   };
 }
 

@@ -4,7 +4,6 @@
 //   spirit.elements.jobTable.create(container, api, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  var COLUMNS = [{ field: 'label', label: 'Label', sort: 'text' }, { field: 'description', label: 'Description', sort: 'text' }];
   E.jobTable = {
     create: function (container, api, detail) {
       var made = null;
@@ -13,7 +12,7 @@
         if (gone) return;
         E = window.spirit.elements;
         made = E.agentTable.create(container, {
-          api: api, table: 'job', columns: COLUMNS, detail: detail,
+          api: api, table: 'job', detail: detail,
           row: function (box, id, added) { return E.jobRow.create(box, api, id, added, detail); },
         });
       });

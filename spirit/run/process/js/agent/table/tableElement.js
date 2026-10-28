@@ -4,8 +4,9 @@
 // table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.elements.agentTable.create(container, { api, table, columns, matched, detail, row, add }) -> { refresh, destroy }
-//     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once;
+//   spirit.elements.agentTable.create(container, { api, table, matched, detail, row, add }) -> { refresh, destroy }
+//     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once,
+//     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
 //     Add does instead of adding an empty row. detail is the page's: detail.open(make) empties the pane, destroys what
 //     was in it and puts make(box) there, and detail.look(table) is the table's { icon, name, title }. Andy, on G41.4:
@@ -13,7 +14,8 @@
 //     workBench's centre.
 //   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields }) -> { destroy }
 //     one row's fields as inputs, Save and Delete, under a title row; added says the row was just made by Add; fields
-//     [{ field, label, kind }], kind one of
+//     [{ field, label, kind }], the row's icon always the first before them (ICON_FIELD), kind one of
+//       icon                            a glyph from the shell's icon selector, the table's icon until one is chosen
 //       text, url, name, description   one line (name and description stop at their field rules' limits)
 //       secret                          a password box: what is typed replaces the secret, left empty it stays; the
 //                                       row says only whether it is set ("<field>Set"), the secret never reaches a page
@@ -79,6 +81,13 @@
   }
   E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf };
 
+  // EVERY LIST SHOWS A ROW BY ITS ICON AND ITS LABEL, AND NOTHING ELSE (Andy: "the list in the left side pane then will
+  // only show: icon and label").
+  var LIST_COLUMNS = [{ field: 'icon', label: '' }, { field: 'label', label: 'Label', sort: 'text' }];
+  // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
+  // chosen with the shell's icon selector (shell/js/iconSelector.js).
+  var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
+
   // o.add(open): what Add does instead of an empty row (the grant table's: an empty editor, since a grant is made from a
   // job and a path). o.row(box, key, added, row): the editor of the row picked or added.
   function createTable(container, o) {
@@ -96,7 +105,8 @@
     container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       if (typeof o.add === 'function') { o.add(open); return; }
       // The new row reaches the list by the stream, as every change does.
-      call(o.table, { op: 'add' }).then(function (r) {
+      // A NEW ROW TAKES ITS TABLE'S ICON (Andy: "all table rows will have an icon, by default the tables icon").
+      call(o.table, look.icon ? { op: 'add', icon: look.icon } : { op: 'add' }).then(function (r) {
         if (gone) return;
         container.querySelector('#' + pre + 'note').textContent = r.refused ? 'Not added: ' + r.refused : '';
         if (r.id) open(r.id, true);
@@ -105,7 +115,7 @@
     needs(['shell/js/probabilitySearch.js']).then(function () {
       if (gone) return;
       list = search(container.querySelector('#' + pre + 'list'), o, {
-        columns: o.columns,
+        columns: LIST_COLUMNS,
         matched: o.matched,
         pick: function (row, key) { open(key, false, row); },
         empty: 'No ' + o.table + ' yet.',
@@ -123,9 +133,11 @@
     var row = null;
     var editors = {};
     var picks = {};
+    var icons = {};
     var note = '';
     var added = o.added === true;
     var path = branchOf(o.table) + '/' + o.id;
+    var fields = [ICON_FIELD].concat(o.fields || []);
     function input(f) { return container.querySelector('#' + pre + f.field); }
     // The title says Add while the row is new, Change once it was saved or when it was opened from the list.
     function head() { return titleRow(o.look, [added ? 'Add' : 'Change', (o.look && o.look.name) || o.table]); }
@@ -133,7 +145,7 @@
       var id = pre + f.field;
       if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
       if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
-      if (f.kind === 'pick') return '<div id="' + id + '"></div>';
+      if (f.kind === 'pick' || f.kind === 'icon') return '<div id="' + id + '"></div>';
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
     }
@@ -142,9 +154,10 @@
       Object.keys(picks).forEach(function (k) { picks[k].destroy(); });
       picks = {};
       editors = {};
+      icons = {};
       if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div style="margin-top:1em">' + esc(note || 'Loading…') + '</div></div>'; return; }
-      var simple = o.fields.filter(function (f) { return f.kind !== 'code'; });
-      var code = o.fields.filter(function (f) { return f.kind === 'code'; });
+      var simple = fields.filter(function (f) { return f.kind !== 'code'; });
+      var code = fields.filter(function (f) { return f.kind === 'code'; });
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
       // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
       // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
@@ -153,9 +166,17 @@
         simple.map(function (f) { return fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field])); }).join('') +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
         '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
-      o.fields.forEach(function (f) {
+      fields.forEach(function (f) {
         var el = input(f);
         if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
+        // The row's icon, or its table's while it has none.
+        if (f.kind === 'icon') {
+          needs(['shell/js/iconSelector.js']).then(function () {
+            if (gone || !el.isConnected) return;
+            icons[f.field] = E.createIconSelector(null, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            el.appendChild(icons[f.field]);
+          });
+        }
         if (f.kind === 'code') {
           needs(['shell/js/codeMirror.js']).then(function () {
             return E.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
@@ -182,12 +203,13 @@
     // What was changed, as the verb takes it: a secret only when typed, a pick only when picked.
     function changes() {
       var out = { op: 'set', id: o.id };
-      o.fields.forEach(function (f) {
+      fields.forEach(function (f) {
         var el = input(f);
         var v;
         if (f.kind === 'bool') v = !!(el && el.checked);
         else if (f.kind === 'code') v = editors[f.field] ? editors[f.field].value() : undefined;
         else if (f.kind === 'pick') v = picks[f.field] && picks[f.field].value ? picks[f.field].value : undefined;
+        else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : undefined;
         else if (f.kind === 'list') v = String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         else v = el ? String(el.value || '') : undefined;
         if (f.kind === 'secret' && !v) return;
