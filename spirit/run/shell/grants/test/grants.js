@@ -229,6 +229,6 @@ test.startTest('grants.js: the Grants app');
 
   test.subHeading('a chosen ID narrows the list to its grants');
   w.ids[0].value = 'K1';
-  ok(o.rows().length === 1 && o.rows()[0].key === 'K1', 'the ID chosen in the row narrows the list to its grants', 'rows: ' + short(o.rows()));
+  ok(o.rows().length === 1 && o.rows()[0].peer === 'K1', 'the ID chosen in the row narrows the list to its grants', 'rows: ' + short(o.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
