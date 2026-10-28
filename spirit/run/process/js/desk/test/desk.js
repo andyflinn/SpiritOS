@@ -247,7 +247,9 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(to.indexOf(UBI.key) !== -1 && to.indexOf(KEYED.key) !== -1, 'among them one known by its profile alone, and one known by its key alone', 'its to list: ' + short(to));
     ok(to.indexOf(OUT.key) === -1, 'and never one he excluded', 'its to list: ' + short(to));
 
-    test.subHeading('auto-cap: a box write into red offers the cap to the agents with cap on');
+    // goal/G41.12, box v38: "change desk to refuse box changes from agents" (rule/25: "The USER owns the box"). No agent
+    // takes or writes a box, cap on or off; so no cap is offered when a box turns red.
+    test.subHeading('the box is his: the desk refuses every box change from an agent (box v38)');
     // One answer's room, as the desk cuts it (desk.js ANSWER_ROOM: limits.ANSWER_MAX - 512).
     const room = require(path.join(RUN, 'spirit', 'limits.js')).ANSWER_MAX - 512;
     const v00 = (await known('goal/G100.4')).version || 0;
@@ -256,21 +258,26 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(!boxRows('goal/G100.4').some(function (t) { return t.length > room; }), 'a box past one answer (' + room + ' bytes) never lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
     const v0 = (await facts('goal/G100.4')).version || 0;
     await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
-    await call('box.take', { id: 'goal/G100.4' }, WSL);
-    const takenSmall = await facts('goal/G100.4', function (f) { return f.boxTaken === WSL.label; });
-    ok(boxRows('goal/G100.4').indexOf('a short box') !== -1 && takenSmall.boxTaken === WSL.label, 'a box write below red offers nothing: an agent with cap off takes it plainly', 'box rows ' + short(boxRows('goal/G100.4')) + ', boxTaken ' + short(takenSmall.boxTaken));
-    await call('box.release', { id: 'goal/G100.4' }, WSL);
-    const v1 = (await facts('goal/G100.4', function (f) { return f.boxTaken !== WSL.label; })).version || 0;
-    const red = 'y'.repeat(Math.ceil(room * 0.8));
-    await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
-    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf(red) === -1; i++) await sleep(100);
-    ok(boxRows('goal/G100.4').indexOf(red) !== -1, 'a box write to 80% of one answer lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
-    await call('box.take', { id: 'goal/G100.4' }, WSL);
+    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf('a short box') === -1; i++) await sleep(100);
+    ok(boxRows('goal/G100.4').indexOf('a short box') !== -1, 'his box write lands', 'box rows ' + short(boxRows('goal/G100.4')));
+    for (const agent of [WSL, UBI]) await call('box.take', { id: 'goal/G100.4' }, agent);
     await sleep(800);
-    ok((await facts('goal/G100.4')).boxTaken !== WSL.label, 'then an agent with cap off is refused the box: it never holds it', 'boxTaken ' + short((await facts('goal/G100.4')).boxTaken));
-    await call('box.take', { id: 'goal/G100.4' }, UBI);
-    const held = await facts('goal/G100.4', function (f) { return f.boxTaken === UBI.label; });
-    ok(held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'boxTaken ' + short(held.boxTaken));
+    const taken = (await facts('goal/G100.4')).boxTaken;
+    ok(taken !== WSL.label && taken !== UBI.label, 'an agent\'s box.take never holds the box, cap off (wsl) or cap on (ubi)', 'boxTaken ' + short(taken));
+    const vA = (await facts('goal/G100.4')).version || 0;
+    for (const agent of [WSL, UBI, CW]) await call('box.write', { id: 'goal/G100.4', text: 'an agent wrote this, as ' + agent.label, version: vA }, agent);
+    await sleep(800);
+    const byAgents = boxRows('goal/G100.4').filter(function (t) { return /^an agent wrote this/.test(t); });
+    ok(byAgents.length === 0, 'an agent\'s box.write never lands, whoever writes it', 'agent box rows: ' + short(byAgents));
+    const red = 'y'.repeat(Math.ceil(room * 0.8));
+    const vR = (await facts('goal/G100.4')).version || 0;
+    const capBefore = node.pages.length;
+    await call('box.write', { id: 'goal/G100.4', text: red, version: vR }, ANDY);
+    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf(red) === -1; i++) await sleep(100);
+    ok(boxRows('goal/G100.4').indexOf(red) !== -1, 'his box write to 80% of one answer lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
+    await sleep(500);
+    const offers = node.pages.slice(capBefore).filter(function (o) { return o && o.table === 'chat' && o.row && /cap is offered/.test(String(o.row.text || '')); });
+    ok(offers.length === 0, 'and no cap is offered to the agents: none may take it', 'cap offers: ' + short(offers.map(function (o) { return o.row.text; })));
 
     // ── THE POSITION IS appServer'S (goal/G41.12, box v15: "Each sender numbers every row it publishes, one count per
     // sender, kept with its run id"; "The desk's change number as the stream's position" goes). A subscribe carries

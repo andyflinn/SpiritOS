@@ -65,3 +65,5 @@ folders").
 - A line to cw handed to ubi in a catch-up.
 - A push without its end, or with two.
 - A subscriber dropped, or its row lost, because one delivery got no answer.
+- **The box is his** (Andy, box v38: "change desk to refuse box changes from agents"; rule/25): no agent's box.take
+  holds a box and no agent's box.write lands, cap on or off; his writes land; no cap is offered when a box turns red.
