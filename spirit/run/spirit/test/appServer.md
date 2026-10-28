@@ -27,7 +27,16 @@ stream"); Desk and deskClient move onto it.
 
 - **Every request is answered "ok" at once, then handled** (the implementation's API is all PUT): a slow handler's
   caller has its "ok" before the handler ends.
-- **A peer's bundle is answered "ok"**, and each request in it is handed to the server as a normal request.
+- **A peer's bundle is answered "ok", never refused**; each request in it is checked against the node's grants table
+  (spirit/nodeStore.js, `open(<run root>).auth.has(key, path)`, the table spirit/apiAuth.js reads; cw), granted when
+  the key holds `<server>` or `<server>.<verb>`, and only a granted one is handed to the server, as a normal request.
+  The test stands in for nodeStore and never opens the real node.db.
+
+### The client side (goal/G41.12, box v27)
+
+- **A client implementation asks through spirit/appServer.js**: `server.ask(key, family, verb, args, how)` (cw).
+  While one ask is in flight, the ones behind it go together as one bundle: five asks, two calls of the server's
+  family, each ask answered.
 
 ### Bundles (goal/G41.12)
 
@@ -73,11 +82,6 @@ stream"); Desk and deskClient move onto it.
 
 ## Not asserted yet, and why
 
-- **Each request in a peer's bundle granted on its own**, through a module shared with the auth system: the box names
-  no module, and the grants table is the node's (node.db), which this test must not touch; the build names it, and
-  the verify asserts it with a request not granted.
-- **The client bundling its requests** (one in flight, the ones behind it as one bundle): the box names no call by
-  which an implementation asks through spirit/appServer.js; the build names it, and the verify asserts it.
 - **The client's query of its cache through the family api.js**: the box names no call for it. `includeServer` is
   struck (box v24).
 

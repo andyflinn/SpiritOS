@@ -76,6 +76,8 @@ function deliver(json) {
 }
 function release() { gate.held = false; const w = gate.waiting.splice(0); w.forEach(function (fn) { fn(); }); }
 const asked = [];
+const askCalls = [];
+const askGate = { held: false, waiting: [] };
 const fake = {
   require: function (p, key) {
     const q = String(p);
@@ -88,10 +90,22 @@ const fake = {
     // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
     // by the old name or the new: routing only, this test writes no family path of its own.
     if (key && /(?:^|\/)([^/]+)\/(?:family|\1\.family)\/api\.js$/.test(q)) {
-      return Promise.resolve({
+      const known = {
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
         streamListener: function (a) { return deliver(a.json); },
-      });
+      };
+      // Any other call the client half makes of the server's family (its requests, single or bundled), kept, and held
+      // while askGate.held.
+      return Promise.resolve(new Proxy(known, { get: function (t, verb) {
+        if (typeof verb !== 'string' || verb === 'then') return undefined;
+        if (t[verb]) return t[verb];
+        return function (a) {
+          askCalls.push({ verb: verb, args: a });
+          const answer = function () { return { ok: true }; };
+          if (!askGate.held) return Promise.resolve(answer());
+          return new Promise(function (r) { askGate.waiting.push(function () { r(answer()); }); });
+        };
+      } }));
     }
     return Promise.resolve({});
   },
@@ -103,8 +117,15 @@ const fake = {
     return m ? new Function('name', m[1]) : undefined;
   })(),
 };
+// THE NODE'S GRANTS TABLE, A STAND-IN (box v27: "the server MUST verify that the sender has an entry in the nodes grants
+// table for that family/verb"): spirit/nodeStore.js, open(<run root>).auth.has(key, path), the table spirit/apiAuth.js
+// reads (cw, goal/G41.12); a call is granted when the key holds <server> or <server>.<verb>. The real node.db is never
+// opened here.
+const grants = new Set();
+const fakeStore = { open: function () { return { auth: { has: function (key, p) { return grants.has(String(key) + '|' + String(p)); } } }; } };
 const realLoad = Module._load;
 Module._load = function (request, parent) {
+  if (/(^|[\\/])nodeStore(\.js)?$/.test(request) && parent && String(parent.filename) === FILE) return fakeStore;
   if (/(^|[\\/])spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
   return realLoad.apply(this, arguments);
 };
@@ -123,7 +144,7 @@ const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
 const cacheFile = function (name) { return path.join(RUN, 'relay-state', 'process', name, 'cache-' + PUBLISHER_HEX + '.json'); };
 
 // Counts of what the server's own verbs handled: count at once, slow 1.5 s later.
-const handled = { count: 0, slow: 0 };
+const handled = { count: 0, slow: 0, secret: 0 };
 // mode: the role the implementation sets at its startup (box v26: setMode("client" | "server")), or none.
 function start(mode, publisherOpts) {
   const A = require(FILE);
@@ -131,6 +152,7 @@ function start(mode, publisherOpts) {
   const s = A.serve({
     ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } },
     count: { request: {}, reply: { counted: 0 }, handler: function () { handled.count += 1; return { counted: handled.count }; } },
+    secret: { request: {}, reply: { done: true }, handler: function () { handled.secret += 1; return { done: true }; } },
     slow: { request: {}, reply: { done: true }, handler: function () { return new Promise(function (r) { setTimeout(function () { handled.slow += 1; r({ done: true }); }, 1500); }); } },
   }, {
     stream: { module: 'process/js/desk', translator: TRANSLATOR },
@@ -298,6 +320,8 @@ if (CHILD) {
     const has = function (n) { return hasIn(D, n); };
 
     test.subHeading('the server side: every request answered "ok" at once, then handled (box v26)');
+    grants.add('KEY-A-PEER|' + NAME + '.slow');
+    grants.add('KEY-A-PEER|' + NAME + '.count');
     const tOk = Date.now();
     const slowAsk = await post('slow', {}, 'KEY-A-PEER');
     const answeredIn = Date.now() - tOk;
@@ -305,10 +329,33 @@ if (CHILD) {
     for (let i = 0; i < 30 && handled.slow < 1; i++) await tick(100);
     ok(handled.slow === 1, 'and then it is handled', 'slow handled ' + handled.slow);
     const countBefore = handled.count;
-    const bundled = await postRaw([{ count: {} }, { count: {} }, { count: {} }], 'KEY-A-PEER');
+    const secretBefore = handled.secret;
+    const bundled = await postRaw([{ count: {} }, { secret: {} }, { count: {} }, { count: {} }], 'KEY-A-PEER');
     await tick(300);
-    ok(bundled.status === 200 && isOk(bundled.body), 'a peer\'s bundle, an array of the existing calls, is answered "ok"', 'answered ' + short(bundled));
-    ok(handled.count === countBefore + 3, 'and each request in it is handed to the server as a normal request', 'count handled ' + (handled.count - countBefore) + ' of 3');
+    ok(bundled.status === 200 && isOk(bundled.body), 'a peer\'s bundle, an array of the existing calls, is answered "ok", never refused', 'answered ' + short(bundled));
+    ok(handled.count === countBefore + 3, 'each granted request in it (' + NAME + '.count) is handed to the server as a normal request', 'count handled ' + (handled.count - countBefore) + ' of 3');
+    ok(handled.secret === secretBefore, 'one the grants table does not grant (' + NAME + '.secret) is never handed to it', 'secret handled ' + (handled.secret - secretBefore));
+    grants.add('KEY-OTHER-PEER|' + NAME);
+    const wholeServer = await postRaw([{ secret: {} }], 'KEY-OTHER-PEER');
+    await tick(300);
+    ok(isOk(wholeServer.body) && handled.secret === secretBefore + 1, 'a key granted the whole server (' + NAME + ') has every call handed', 'answered ' + short(wholeServer) + ', secret handled ' + (handled.secret - secretBefore));
+
+    test.subHeading('the client side: requests go through spirit/appServer.js, the ones behind one in flight as one bundle (box v27)');
+    ok(typeof s.ask === 'function', 'its client half asks: server.ask(key, family, verb, args, how)', 'server.ask is ' + typeof s.ask);
+    if (typeof s.ask === 'function') {
+      const callsBefore = askCalls.length;
+      askGate.held = true;
+      const settled = [];
+      const asks = [0, 1, 2, 3, 4].map(function (i) { return Promise.resolve(s.ask(PUBLISHER, NAME, 'count', { n: i })).then(function (r) { settled.push(i); return r; }, function (e) { settled.push(i); return { threw: String(e && e.message || e) }; }); });
+      await tick(300);
+      const inFlight = askCalls.length - callsBefore;
+      askGate.held = false;
+      askGate.waiting.splice(0).forEach(function (fn) { fn(); });
+      for (let i = 0; i < 50 && settled.length < 5; i++) await tick(100);
+      const sent = askCalls.length - callsBefore;
+      ok(inFlight === 1, 'while one ask is in flight, the four behind it wait', 'calls of the server\'s family while the first was held: ' + inFlight);
+      ok(sent === 2 && settled.length === 5, 'then the four go as one bundle: five asks, two calls, each ask answered', 'calls ' + sent + ', asks answered ' + settled.length + ' of 5: ' + short(askCalls.slice(callsBefore)));
+    }
 
     test.subHeading('the first subscribe: a full push');
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
