@@ -1,5 +1,5 @@
 {
- "change": 111240,
+ "change": 111369,
  "goal": "goal/G41",
  "items": [
   {
@@ -26,7 +26,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 0,
    "green": true,
    "code": false,
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -151,7 +151,10 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2237,7 +2240,7 @@
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 6,
    "green": true,
    "code": true,
@@ -3497,34 +3500,31 @@
    "id": "goal/G41.4",
    "title": "Create the Data Set for agent.db",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 10,
+   "version": 22,
    "buttons": [
-    "close",
+    "start-design",
     "delete",
     "verify"
    ],
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [
-    "goal/G41.8",
-    "goal/G41.10"
-   ],
+   "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 20,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -3532,7 +3532,20 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -3581,6 +3594,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -3591,12 +3608,13 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a jobs table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n- an auth table, stuctured exactly like the auth table in node, in fact: node's auth modules will have a file authTableInterface.js, (configured by dataBase.db file name and authTableName)\n\ntable-specific code goes into the following folders\n- process/agent/table/provider/\n- process/agent/table/persona/\n- process/agent/table/job/\n- process/agent/table/grant/\n\nthese table folders will contain the following files.\n- process/agent/table/<tableName>/interface.js (an interface to the table, the agent verb <tableName>\n\nthe ID as key for all tables comes from the idea, that when i give an agent node-api's as tools, i may want to control access to the nodes API like this:\n-\n\n\n- every one of these tables will come with a left-edge icon that puts up a tab ,\n\n# keys (Andy, Q1 and Q2: \"they WILL need grants and i want keys that are separate from a label\", \"we'll put off the grant-problem, but not the keys.\")\n\n- every row of the three tables (providers, personas, jobs) has a key of its own, a peer's shape: a key pair the agent server makes when the row is created. The public half is the row's id; its label is a separate caption that may change.\n- the private half never leaves the agent server, nor does a provider's API key: a page sets one, and only sees whether it is set.\n- grants are put off: how a row's key is granted node verbs (the shadow roll, or the grants app reading the agent server) is decided when tools come.\n\n# out of scope for now\n\n- a conversation context. The primitive version sends a job's persona and job text fresh with each call. The direction for later (Andy): ONE context, persisted and maintained, for each persona (its direct chat) and for each job; each kept within a probabilityBucket-style limit by built-in shedding strategies, possibly in layers, an overall bucket over component buckets. The node's traffic log does not record model calls: they are plain web requests, not peer packets.",
+   "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY which will never reach the browser or any place outside of the agent process except the model providers API)\n- a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and model-name and capabilities)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a job table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n- an grant/auth table, keyed by job-ID, structured exactly like the auth table in node, in fact: node's auth modules will have a file authTableInterface.js, (configured by dataBase.db file name and authTableName)\n- the ID-key for each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table row. The private halves of that set stay in the agent process\n- the reason for keying the grant table by job-ID is: the jobs have their api requirements on the node. they are my ultimate target, agent-persona or underlying models may be subject to whim and experimentation. and this way i can start experimenting with a focus on jobs, and find good or capable models for them. jobs like code-review, design assertions etc...\n\ntable-specific code goes into the following folders\n- process/js/agent/table/provider/\n- process/js/agent/table/model/\n- process/js/agent/table/persona/\n- process/js/agent/table/job/\n- process/js/agent/table/grant/\n\nthese table folders will contain the following files.\n- process/js/agent/table/<tableName>/server.js (a table handler implementing the verb <tableName> in a multiplexed way)\n- process/js/agent/table/<tableName>/elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)\n- process/js/agent/table/<tableName>/elementRow.js (a panel element, to maintain and edit one row of the table)\n\n- every one of these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app.\n\n",
    "checks": [
     {
      "number": "Q1",
@@ -3643,6 +3661,42 @@
      "by": "andy",
      "at": "2026-10-27T11:35:46.539Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Does each provider, model, persona and job row get its own key pair, like a shadow-roll row, or only an ID written the same way?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-28T11:17:16.456Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "The folders say process/js/agent/table/<name>, but the files under them say process/agent/js/table/<name>: is process/js/agent/table/<name> meant for both?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-28T11:33:37.372Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-28T11:42:28.321Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -3761,6 +3815,174 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-27T11:35:46.208Z",
      "text": "Q4: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:14:42.429Z",
+     "text": "all, \ni've tightened the scope of this item to simply maintaining the db tables for now\n\nfeedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:15:28.179Z",
+     "text": "- cw: the tighter scope is good: five tables and their editors, nothing that talks to a model yet.\n- Folders: the agent app lives in process/js/agent today, and the box says process/agent/table. I read it as process/js/agent/table/<name>, beside the agent app, if you agree.\n- Naming: the box names an auth table, but its folder is grant. Node's own table is grants, one row per peer and path, so I read both as grant.\n- authTableInterface.js goes into node's auth modules, a core folder, so it is the one core change in this item.\n- API_KEY: it never leaves the server. Not in any row the stream sends, and the row editor shows only whether it is set.\n- Question: the shadow roll is keyed by a peer's public key. Does each provider, model, persona and job row get its own key pair, or only an ID written the same way?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:15:37.184Z",
+     "text": "- wsl: read v13, checked at 1e5a2d17:\n- 1. the agent server lives in process/js/agent/ (agent.js, family/), not process/agent/. Tables in process/js/agent/table/<name>/?\n- 2. agent.db is there (process/js/agent/agent.js:33) and holds one meta table so far.\n- 3. node's auth table is grants(peer_id, path) in node.db (spirit/nodeStore.js:502); authTableInterface.js does not exist yet, it would sit beside spirit/apiAuth.js.\n- 4. Q: \"keyed by ID same as the shadow-roll\": the shadow-roll keys by a node's public key (presenceNode.js:148). What ID does a provider or a model get?\n- 5. API_KEY: it must never reach a page, a peer or the stream; it stays in agent.db on the owner's node.\n- workBench (shell/js/workBench.js) and probabilitySearch are there to reuse."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:17:16.434Z",
+     "text": "Q5: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:24:15.597Z",
+     "text": "all, \nbox changed.\n\nreview?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:24:46.547Z",
+     "text": "- wsl: read v18. Agree, and Q6 (cw's) is the path one. Three more:\n- 1. the key-set at add-row: spirit/relayAuth.js generateIdentity() already makes one (ed25519 + x25519, public key as base64, the shadow-roll's ID). Reuse it; no second maker.\n- 2. its private keys are secrets like API_KEY: they never leave the agent process.\n- 3. Q: \"each row of these tables\" gets an ID-key, but node's grants table, which the grant table copies exactly, is keyed (peer_id, path), with no ID. Does grant get an ID too, or stay as node's?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:24:52.736Z",
+     "text": "- cw: reviewed v18.\n- The key set at add-row exists already: relayAuth's generateIdentity makes a node's whole set, a signing pair and a seal pair. Each row reuses it, so a row's ID is a public key exactly like a shadow-roll row's.\n- The private halves of that set stay in the agent process, as API_KEY does: no row sent to a page carries them.\n- The grant table and authTableInterface: if node itself is to read its grants through that interface, nodeStore's grants code moves onto it too. That is a second core change, beside the new file.\n- One verb per table, multiplexed (add, set, delete, search), sits in the agent app's own family. It is no node verb.\n- Still open is my red Q6: the file paths under the folders still say process/agent/js/table."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:28:46.679Z",
+     "text": "all, box changed.\n\nbetter?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:29:03.053Z",
+     "text": "- wsl: better: v19 keeps the private halves in the agent process. Two still open:\n- the file paths still say process/agent/js/table/<name>, the folders process/js/agent/table/<name> (Q6);\n- my Q: does the grant table get a row ID too, or stay keyed (peer_id, path) like node's?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:29:11.600Z",
+     "text": "- cw: better: v19 keeps the private halves in the agent process.\n- Two things left before it is buildable:\n- Q6, the file paths: under the folders, the files still say process/agent/js/table, not process/js/agent/table.\n- wsl's grant question: node's grants table has no ID, only peer and path, so does the grant table get an ID like the others?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:32:57.343Z",
+     "text": "all, box changed.\n\nbetter?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:33:19.317Z",
+     "text": "- wsl: yes, v21 answers both: the paths agree, and a grant row is (job ID, path), so a job holds grants as a peer does in node.\n- Buildable from my side. One thing to know: if node reads its own grants through authTableInterface.js too, nodeStore's grants code moves onto it, a second core change (cw)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:33:23.355Z",
+     "text": "Q6: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:33:28.984Z",
+     "text": "- cw: yes, v21 answers both: the paths agree, and grant is keyed by job ID. I took Q6 down.\n- One small point: node's grants are keyed by peer, and this table by job. authTableInterface.js then needs the key column's name as well as the file and the table, or both tables name it the same.\n- Otherwise I find it buildable."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:37:25.644Z",
+     "text": "all, box changed.\n\nbetter?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:37:43.816Z",
+     "text": "- wsl: yes, v22 is clear, and the reason holds: grants follow the job, so a model or persona can be swapped under it without touching its grants.\n- Nothing left from me. cw's small point stands: authTableInterface.js takes the key column's name too (peer_id in node, job ID here)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:37:48.843Z",
+     "text": "- cw: yes. v22 gives the reason: jobs carry the grants, because the job is the lasting thing and persona and model are what gets swapped.\n- Buildable from my side."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:38:27.842Z",
+     "text": "go!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:38:48.039Z",
+     "text": "- wsl: heard. The desk still has G41.4 in design, its Go not pressed, so the red is not offered yet. Press End design, then Go, and I take the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:38:55.513Z",
+     "text": "- cw: heard. The desk still has goal G41 in design, so it offers no Go on this item yet.\n- End design on G41 and press Go on G41.4, and I start with the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:39:44.141Z",
+     "text": "cw. add the know files to the file list in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:40:32.279Z",
+     "text": "- cw: added 20 files to the list.\n- The 15 the box names: a server, a table element and a row element for each of provider, model, persona, job and grant.\n- authTableInterface.js beside node's apiAuth.js, and nodeStore, if node reads its own grants through it. Those two are core.\n- The agent app's server and its family api, for agent.db and the five verbs, and the agent page, for the workBench icons."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:41:10.378Z",
+     "text": "why nodeStore.js?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:41:25.595Z",
+     "text": "- wsl: because node's grants table lives in spirit/nodeStore.js today: it creates it (:502) and holds its queries (:704-713). If node reads its own grants through authTableInterface.js, those move onto it; if not, nodeStore stays untouched and only the agent uses the interface."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:41:56.856Z",
+     "text": "and where are the key-generating functions to re-use?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:42:14.742Z",
+     "text": "- wsl: spirit/relayAuth.js:366, generateIdentity(name), exported at :744. It makes the whole set: an ed25519 signing pair and an x25519 seal pair, the public key as base64, the shadow-roll's kind of ID."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:43:34.898Z",
+     "text": "i tried to end design mode on the goal:\n\nNot pressed: not-offered: goal/G41.8 is a code item with an empty file list; list its files first (item.files.add); goal/G41.10 is a code item with an empty file list; list its files first (item.files.add) (desk: that press is not offered for this item now)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:44:08.298Z",
+     "text": "- wsl: the goal's End design waits on G41.8 and G41.10: both are code items with empty boxes and empty file lists.\n- From the tree, their first files: G41.8 spirit/run/spirit/kernel.js; G41.10 spirit/run/spirit/coreFiles.js.\n- Shall I list those two, so End design passes? Their full lists come when you write their boxes."
     }
    ]
   },
@@ -4935,14 +5157,12 @@
    "id": "goal/G41.8",
    "title": "KILL THE OLD SHELL, KILL kernel.js",
    "goal": "goal/G41",
-   "status": "",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 0,
    "buttons": [
-    "close",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
@@ -4955,7 +5175,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 0,
    "green": false,
    "code": true,
@@ -5370,14 +5590,12 @@
    "id": "goal/G41.10",
    "title": "Clean up core designations.",
    "goal": "goal/G41",
-   "status": "",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 0,
    "buttons": [
-    "close",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G41.4"
@@ -5390,7 +5608,7 @@
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 0,
    "green": false,
    "code": true,
