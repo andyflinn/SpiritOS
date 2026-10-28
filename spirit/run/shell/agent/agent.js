@@ -12,11 +12,21 @@
 //   server's stream says (rule/19: "the ui must propose all state changes to the server and only draw changes contained
 //   in the servers update/change stream"), the state arriving as { agent: { debug } } on the server's job.
 //   The title shows the bug while showDebug is true and the server's DEBUG state is on.
+//   THE DATA SET'S TABLES (goal/G41.4; Andy, box v22: "every one of these tables will come with a left-edge icon that
+//   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
+//   agent.db, each mounting that table's own element, process/js/agent/table/<name>/elementTable.js.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
   var AGENT = spirit.familyPath('agent');
   var NAME = 'Agent';
   var BUG = '🐞';
+  var TABLES = [
+    { name: 'provider', icon: '🏢', title: 'Model providers' },
+    { name: 'model', icon: '🧠', title: 'Models' },
+    { name: 'persona', icon: '🎭', title: 'Personas' },
+    { name: 'job', icon: '📋', title: 'Jobs' },
+    { name: 'grant', icon: '🔑', title: 'Grants, by job' },
+  ];
 
   spirit.shell.activateApp({
     mount: function (container, api) {
@@ -53,7 +63,14 @@
             spirit.fs.saveFile(CONFIG, JSON.stringify({ showDebug: showDebug }) + '\n');
             title();
           });
-        } }],
+        } }].concat(TABLES.map(function (t) {
+          return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
+            box.className = 'fill';
+            Promise.resolve(spirit.require('process/js/agent/table/' + t.name + '/elementTable.js')).then(function () {
+              window.spirit.elements[t.name + 'Table'].create(box, api);
+            }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
+          } };
+        })),
         right: [{ name: 'server', icon: '🐞', title: 'The agent server', mount: function (box) {
           serverBox = box;
           box.innerHTML = '<label><input type="checkbox"' + (debug ? ' checked' : '') + '> DEBUG on the agent server</label>';

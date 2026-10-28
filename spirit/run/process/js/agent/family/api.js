@@ -5,5 +5,13 @@ module.exports = {
   verbs: {
     // Sets the server's DEBUG state, the one appServer's DEBUG switches, and keeps it across restarts (Andy, Q3 and Q4).
     debug: { on: 'bool' },
+    // THE DATA SET OF agent.db (goal/G41.4): one flat verb per table, op one of add, set, delete, get and search
+    // (table/rowTable.js, table/grant/server.js). Which arguments an op takes the server checks per op: id for set,
+    // delete and get, text for search, the fields for add and set. A secret (apiKey) goes in and never comes out.
+    provider: { op: 'id', id: 'key?', label: 'name?', description: 'description?', url: 'url?', apiKey: 'text?', text: 'text?' },
+    model: { op: 'id', id: 'key?', label: 'name?', description: 'description?', providerId: 'key?', modelName: 'text?', capabilities: 'list?', text: 'text?' },
+    persona: { op: 'id', id: 'key?', label: 'name?', description: 'description?', persona: 'text?', text: 'text?' },
+    job: { op: 'id', id: 'key?', label: 'name?', description: 'description?', loop: 'bool?', job: 'text?', text: 'text?' },
+    grant: { op: 'id', job_id: 'key?', path: 'id?', text: 'text?' },
   },
 };

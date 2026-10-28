@@ -28,10 +28,16 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 if (!STATE) { console.error('agent: no --state; the node that starts a server names its state folder'); process.exit(2); }
 fs.mkdirSync(STATE, { recursive: true });
 
-// THE APP'S DATABASE. This item keeps nothing in it yet but its own being there; the state it will hold comes with the
-// items that need it.
-const db = new DatabaseSync(path.join(STATE, 'agent.db'));
+// THE APP'S DATABASE, AND ITS DATA SET (goal/G41.4): the provider, model, persona, job and grant tables, each with its
+// own folder, table/<name>/, whose server.js makes the table and serves its one verb. Built in this order, since a model
+// names its provider and a grant its job.
+const DB_FILE = path.join(STATE, 'agent.db');
+const db = new DatabaseSync(DB_FILE);
 db.exec('CREATE TABLE IF NOT EXISTS meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
+const TABLES = ['provider', 'model', 'persona', 'job', 'grant'];
+const tables = {};
+const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
+TABLES.forEach(function (name) { tables[name] = require('./table/' + name + '/server.js')(ctx); });
 
 // THE DEBUG STATE, across restarts: config.json is read at start, and written on every debug.
 const CONFIG = path.join(STATE, 'config.json');
@@ -42,7 +48,7 @@ spirit.debug(readConfig().debug === true);
 
 function stateOf() { return { agent: { debug: spirit.debug() === true } }; }
 
-appServer.serve({
+const verbs = {
   debug: {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return !!a && typeof a === 'object' && !Array.isArray(a) && Object.keys(a).length === 1 && typeof a.on === 'boolean'; },
@@ -55,7 +61,13 @@ appServer.serve({
       return { debug: a.on };
     },
   },
-}, { publisher: { family: 'agent', bootstrap: function () { return [stateOf()]; } } });
+};
+TABLES.forEach(function (name) { verbs[name] = tables[name].verb; });
+
+appServer.serve(verbs, {
+  codes: { 'no-such-row': { status: 404, text: 'no such row' } },
+  publisher: { family: 'agent', bootstrap: function () { return [stateOf()]; } },
+});
 
 // What a page opening now draws from: the state, once, on the server's job.
 appServer.publish(stateOf());
