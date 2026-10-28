@@ -336,17 +336,24 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const b1 = await next(w4.key);
   ok(has(b1, 'a row alone') && !has(b1, 'inside a bundle'), 'the row alone wakes its agent; the line inside a { change, rows } object is not read', 'answer: ' + short(b1));
 
-  test.subHeading('the desk\'s line addressed to the cap agents wakes them, with no take, and entitles them to the box');
+  // goal/G41.12, box v38: "change desk to refuse box changes from agents": the cap offer is gone, and the desk is the
+  // box's one gate; deskClient gates chat.add alone and hands box.take and box.write on as they are (cw).
+  test.subHeading('the desk\'s line addressed to it wakes it with no take; box.take and box.write pass to the desk ungated');
   const takesBefore = asksOf('line.take').length;
-  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'desk', text: 'the box of goal/G9.4 turned red; the cap is offered' } });
+  await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'desk', text: 'a line of the desk for this agent' } });
   await settle();
   const c1 = await next(b1.key);
-  ok(has(c1, 'DESK desk chat.add') && has(c1, 'the cap is offered') && asksOf('line.take').length === takesBefore, 'the desk\'s line whose to holds its key wakes it as its own, asking no take', 'answer: ' + short(c1) + ', takes ' + (asksOf('line.take').length - takesBefore));
+  ok(has(c1, 'DESK desk chat.add') && has(c1, 'a line of the desk for this agent') && asksOf('line.take').length === takesBefore, 'the desk\'s line whose to holds its key wakes it as its own, asking no take', 'answer: ' + short(c1) + ', takes ' + (asksOf('line.take').length - takesBefore));
   const getsBefore = asksOf('item.get').length;
   const boxTakes = asksOf('box.take').length;
-  let took = null;
-  try { took = await ask('box.take', { id: ITEM4 }); } catch (e) { took = { threw: e.refusal || e.message }; }
-  ok(asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore, 'and its box.take there passes the gate, entitled by that line', 'answer: ' + short(took));
+  const boxWrites = asksOf('box.write').length;
+  // goal/G9.7: an item this agent does not hold, never streamed as its own.
+  try { await ask('box.take', { id: 'goal/G9.7' }); } catch (e) { /* the desk's answer is not the point */ }
+  try { await ask('box.write', { id: 'goal/G9.7', text: 'x', version: 1 }); } catch (e) { /* the desk's answer is not the point */ }
+  ok(asksOf('box.take').length === boxTakes + 1 && asksOf('box.write').length === boxWrites + 1 && asksOf('item.get').length === getsBefore,
+    'box.take and box.write of an item it does not hold go to the desk as asked, no gate of its own, no item.get', 'box.take ' + (asksOf('box.take').length - boxTakes) + ', box.write ' + (asksOf('box.write').length - boxWrites) + ', item.get ' + (asksOf('item.get').length - getsBefore));
+  const deskClientCode = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '');
+  ok(!/cap is offered|capOffered|entitled/i.test(deskClientCode), 'deskClient keeps nothing of the cap offer', 'deskClient.js still names the cap offer');
 
   // ── THE FLOOD (Andy, goal/G41.11: "and we MUST look more precisely at performance again"; "deskClient keeps it's cache
   // ... through new subscribes"; "subscribes over peerPost should NOT expire, at least not on the client-side") ──────

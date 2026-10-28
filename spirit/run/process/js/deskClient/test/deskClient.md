@@ -85,3 +85,5 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   cannot be seen from inside deskClient: its handler's answer has left. What is tested is its stand-in: a wait that
   names no key, or an older one. The listener's half (its arm, `--read <key>`, passed to `next` as `read`) is
   `deskAgentEar.js`'s, tested beside it.
+- **No cap offer** (box v38: the desk refuses box changes from agents): a desk line addressed to the agent wakes it with
+  no take; box.take and box.write go to the desk as asked, no gate of its own; nothing of the cap offer is left.
