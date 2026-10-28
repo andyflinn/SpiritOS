@@ -1185,6 +1185,7 @@ details.stat-tile > summary {
 /* ITS TABS (goal/G41.13, Andy: "the top row tab buttons: the bottom corners should not be rounded", and "the background
    color of those buttons should be same as the pane's background color, when they're NOT the active tab, while the
    active tab has the same background color as all tabs currently have"): square at the bottom; a tab not selected the
-   well's colour, the selected one a button's own. */
-.tab-button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.tab-button[aria-selected="false"] { background: var(--shell-well); }
+   well's colour, the selected one a button's own. Named under #app-content, where tabs are drawn, so they outweigh
+   #app-content button (found on the face: every tab stayed round and in the button colour). */
+#app-content .tab-button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+#app-content .tab-button[aria-selected="false"] { background: var(--shell-well); }
