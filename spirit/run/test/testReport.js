@@ -56,7 +56,7 @@ function record(title, outcome, failure) {
     globalThis.spirit = undefined;
     let real = null;
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; }
-    family = family || real.require('process/js/' + name + '/' + name + '.family/api.js');
+    family = family || real.require(real.familyPath(name));
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ });
   } catch (e) { /* a test whose verifier cannot be reached still reports on its lines */ }
 }

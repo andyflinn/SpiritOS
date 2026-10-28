@@ -11,7 +11,7 @@
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
 //   - The rest comes from the api.js every family folder holds (js/fs/api.js, js/contact/api.js ...; a server's in
-//     process/js/<name>/<name>.family/api.js), written to this file's standard: module.exports = { verbs: { <verb>:
+//     its family folder, familyPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, names(call, tools) }. One member per family: spirit.fs.load({path}),
 //     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
 //     there in camel case (spirit.chatClerver.lineWrite for line.write).
@@ -345,12 +345,16 @@
   // can load its needed components there."; "the loaders name should be spirit.require()"; the key "a second argument
   // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
   // page and in node. path is from the run root. A path in the node's own naming of an interface,
-  // <name>/<name>.family/api.js (a server's) or spirit/<name>/api.js (a node family's), binds that family: on the
+  // familyPath(name) (a server's) or spirit/<name>/api.js (a node family's), binds that family: on the
   // instance as spirit.<name> from this VM's node, or with a key as that peer's family (how, in node, is peerPost's
   // waiting). Any other path is a component: in node required, answering its module.exports; on a page got and run as a
   // plain script (a stylesheet put on as a style), answering an empty object.
+  // THE ONE FAMILY PATH (goal/G41.12, box v15: "One function finds a family path ... and every caller uses it"; Andy,
+  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A server's family
+  // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
+  function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
   function interfaceName(p) {
-    var m = /(?:^|\/)([^/]+)\/\1\.family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
+    var m = /^process\/js\/([^/]+)\/family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
   // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation
@@ -437,6 +441,7 @@
   self.outcome = outcome;
   self.tree = tree;
   self.require = requireOne;
+  self.familyPath = familyPath;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;

@@ -5,7 +5,7 @@
 //
 //   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
 //   place there (verb.design.md, README.md, <verb>.warning.txt). It never holds code: the node's families are
-//   js/<family>/, an app's is <module>.family beside its <module>.js.
+//   js/<family>/, an app's is its family folder beside its <module>.js (spirit.familyPath).
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
@@ -80,7 +80,7 @@ function readFolder(dir, declared, manifest) {
 //   on listing, "then put a search in there."
 //
 // One owner verb, multiplexed as AGENTS is: FS.<name>, with the kernel's own names. A path is inside the folder or
-// refused; nothing above it is ever reached. A family folder holds no code (an app's is <module>.family beside its
+// refused; nothing above it is ever reached. A family folder holds no code (an app's is its family folder beside its
 // <module>.js), so the folder needs no fence of its own. Annotations are the node's sidecars, so those two go
 // through fileSystem.js, for a folder under spirit/run.
 function fsVerbs(dir, prefix) {

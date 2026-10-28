@@ -14,7 +14,7 @@
 //   The title shows the bug while showDebug is true and the server's DEBUG state is on.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
-  var AGENT = 'process/js/agent/agent.family/api.js';
+  var AGENT = spirit.familyPath('agent');
   var NAME = 'Agent';
   var BUG = '🐞';
 

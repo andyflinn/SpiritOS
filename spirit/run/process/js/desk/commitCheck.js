@@ -63,7 +63,7 @@ function viaClient(request) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the one spirit object (goal/G32.3, goal/G40.6): deskClient.desk on this clone's own node, as {status, body}.
-  const ask = spirit.outcome(spirit.require('process/js/deskClient/deskClient.family/api.js').then(function (c) { return c.desk(request); }));
+  const ask = spirit.outcome(spirit.require(spirit.familyPath('deskClient')).then(function (c) { return c.desk(request); }));
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
     // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.

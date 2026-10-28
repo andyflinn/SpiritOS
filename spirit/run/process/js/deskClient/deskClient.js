@@ -143,7 +143,7 @@ function begin(verb) {
 // and the kernel's own outcomes (not-posted, no-answer).
 const DESK_HOW = { waitMs: WAIT_MS, patienceMs: PATIENCE_MS };
 function askDesk(to, verb, args) {
-  return spirit.require('process/js/desk/desk.family/api.js', to, DESK_HOW).then(function (desk) {
+  return spirit.require(spirit.familyPath('desk'), to, DESK_HOW).then(function (desk) {
     return spirit.outcome(Promise.resolve().then(function () {
       if (typeof desk[verb] !== 'function') { const e = new Error('the desk serves no verb ' + verb); e.code = 'no-such-verb'; throw e; }
       return desk[verb](args);
@@ -192,76 +192,24 @@ const wakers = [];
 let jobsMaybe = true;
 
 // The data set: the server's spirit.data, which appServer fills from the stream through the desk's translator (box v41).
+// THE CACHE OUTLIVES A RESTART (goal/G41.11; Andy: "the client/receiver of a pushed peerPost stream must assume, no
+// disconnect ever happened"), and since goal/G41.12 it is appServer's: its cache switch (stream.cache, below) keeps the
+// desk's rows in relay-state/process/deskClient/cache-<desk key in hex>.json and reads them back at the start, before
+// any subscribe (box v15: deskClient's own cache file, "its save and restore ... go").
 const dataSet = appServer.data;
-// THE CACHE OUTLIVES A RESTART (goal/G41.11). Andy: "the client/receiver of a pushed peerPost stream must assume, no
-// disconnect ever happened, because it's NOT a real stream, just a sequece of inromation dumps.... and deskClient in
-// particular, may recover it's cache from it's dumpFile....", "...after a restart". The cache is written to cache.json in
-// this server's own state folder a moment after the stream brings anything (whole, through a temporary file, so a kill
-// leaves the last good one), and read back into spirit.data at the start, before it subscribes.
-const CACHE_FILE = path.join(STATE, 'cache.json');
-// Andy: "on every update the deskClient receives, it saves the cache, (10ms?)".
-const CACHE_SAVE_MS = 10;
-let cacheSaving = null;
-function saveCache() {
-  const text = JSON.stringify(dataSet.data);
-  fs.writeFileSync(CACHE_FILE + '.tmp', text);
-  fs.renameSync(CACHE_FILE + '.tmp', CACHE_FILE);
-  return Buffer.byteLength(text, 'utf8');
-}
-function saveCacheSoon() {
-  if (cacheSaving || !STATE) return;
-  cacheSaving = setTimeout(function () { cacheSaving = null; try { saveCache(); } catch (e) { /* the next row saves again */ } }, CACHE_SAVE_MS);
-}
-(function restoreCache() {
-  let kept = null;
-  if (!STATE) return;
-  try { kept = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')); } catch (e) { return; }
-  if (!kept || typeof kept !== 'object') return;
-  Object.keys(kept).forEach(function (type) {
-    const b = kept[type];
-    if (b && typeof b === 'object') Object.keys(b).forEach(function (k) { dataSet.set(type + '/' + k, b[k]); });
-  });
-}());
 const KEPT_READS = ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'];
 // Known by its key (goal/G3.9: Andy may relabel an agent), by its name only where the row names no key.
 function heldByMe(row) {
   if (!row || !row.with) return false;
   return row.withKey && SELF_KEY ? row.withKey === SELF_KEY : row.with === SELF;
 }
-// The answer the desk would give, from what the stream brought, or null when it is not all there. Any item of the
-// current goal the stream brought whole answers, held or not (box v37: "up-to-date information at the agents'
-// fingertips").
+// The answer the desk would give, from what the stream brought, or null when it is not all there. Any item the stream
+// brought answers, held or not (box v37: "up-to-date information at the agents' fingertips"). THE CACHE IS QUERIED
+// THROUGH THE DESK'S OWN api.js (goal/G41.12, box v15: "The client queries its own cache through that api.js"): its
+// cache.answer, on this node's own copy, the same appServer's query uses.
+const DESK_CACHE = require(path.join(__dirname, '..', '..', '..', spirit.familyPath('desk'))).cache;
 function fromKept(name, args) {
-  const id = String((args && args.id) || '');
-  const row = id ? dataSet.get('deskItems/' + id) : null;
-  const whole = id ? dataSet.get('deskItem/' + id) : null;
-  // The facts came with the push (goal/G33.4, box v46); a part only once it was read (took, below).
-  if (name === 'item.get' && row && typeof row.version === 'number') return { item: JSON.stringify(row), version: row.version, change: Number(dataSet.get('desk/change')) || 0 };
-  if (!row || !whole) return null;
-  if (name === 'item.box' && typeof whole.box === 'string') return { box: whole.box, version: Number(whole.version) || 0 };
-  if (name === 'item.checks' && Array.isArray(whole.checks)) return { checks: whole.checks };
-  if (name === 'item.chat' && Array.isArray(whole.chat)) {
-    // Newest first into one answer, as the desk's item.chat fills its room; more says some were left out.
-    const out = [];
-    for (let i = whole.chat.length - 1; i >= 0; i--) {
-      if (Buffer.byteLength(JSON.stringify({ chat: [whole.chat[i]].concat(out), chatMore: true }), 'utf8') > ANSWER_ROOM) break;
-      out.unshift(whole.chat[i]);
-    }
-    return { chat: out, chatMore: out.length < whole.chat.length };
-  }
-  // goal/G33.7 (the approved list: "deskClient's kept file list (filled to one answer)"): as many as fit one answer, in
-  // the desk's order, and filesMore when some were left out; the push only ever adds to what is kept.
-  if (name === 'item.files' && Array.isArray(whole.files) && !whole.filesMore) {
-    const under = typeof args.under === 'string' ? args.under : '';
-    const all = whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; });
-    const out = [];
-    for (const f of all) {
-      if (Buffer.byteLength(JSON.stringify({ files: out.concat([f]), filesMore: true }), 'utf8') > ANSWER_ROOM) break;
-      out.push(f);
-    }
-    return { files: out, filesMore: out.length < all.length };
-  }
-  return null;
+  return DESK_CACHE.answer(name, args, dataSet, ANSWER_ROOM);
 }
 // A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
 // node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
@@ -408,16 +356,10 @@ function wakeOnHeld(row, change) {
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
-  saveCacheSoon();
-  // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] }; each row is taken
-  // as a single row is, in order, its change the bundle's where it names none. A single row still comes as before.
-  if (Array.isArray(row.rows)) {
-    row.rows.forEach(function (r) { if (r && typeof r === 'object') streamed(r.change === undefined && row.change !== undefined ? Object.assign({ change: row.change }, r) : r); });
-    return;
-  }
-  // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write. A wake reads its
-  // rules from here and asks the desk for none.
-  if (row.rule && row.row && typeof row.row === 'object') { dataSet.set('deskRules/' + String(row.rule), row.row); return; }
+  // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write, kept in deskRules
+  // by the desk's translator (deskData), so the cache brings them back after a restart. A wake reads its rules from
+  // there and asks the desk for none; a rule row wakes nobody.
+  if (row.rule && row.row && typeof row.row === 'object') return;
   wakeOnHeld(row, keepSinceWake(row));
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   if (facts && !row.removed) keepWhole(facts);
@@ -934,10 +876,10 @@ const server = appServer.serve({
     handler: function (a, caller) {
       ownerOnly(caller);
       if (!a.key) throw refused('bad-request', { why: 'setDesk needs the key of the node that runs the desk' });
-      const was = getSetting.get('desk');
       putSetting.run('desk', a.key);
-      // IT SUBSCRIBES TO THE DESK'S STREAM (goal/G33.8, box v8: "A client subscribes; the desk only publishes").
-      subscribeDesk(a.key, !(was && was.value === a.key));
+      // IT SUBSCRIBES TO THE DESK'S STREAM (goal/G33.8, box v8: "A client subscribes; the desk only publishes"); a desk
+      // it never followed has no position here, so it pushes in full (appServer, goal/G41.12).
+      subscribeDesk(a.key);
       return { set: true };
     },
   },
@@ -1073,17 +1015,18 @@ const server = appServer.serve({
     },
   },
   // THE CACHE DUMP (goal/G41.11). Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/
-  // <fixedFileName>.json". Owner-only like every verb here: the whole cache, its spirit.data tree, as JSON, to
-  // cache.json in this server's own state folder and nowhere else; it takes no path, so a caller cannot name one. The
-  // same file the cache is saved to and restored from at a restart (saveCache).
+  // <fixedFileName>.json". Owner-only like every verb here: the cache as it stands, saved now, to its own file in
+  // relay-state/process/deskClient/ and nowhere else; it takes no path, so a caller cannot name one. Since goal/G41.12
+  // that file is appServer's cache of the desk (cache-<desk key in hex>.json), the one the cache is read back from.
   'cache.dump': {
     request: {}, reply: { file: '', bytes: 0 },
     handler: function (a, caller) {
       ownerOnly(caller);
-      let bytes = 0;
-      try { bytes = saveCache(); }
-      catch (e) { throw refused('not-saved', { why: 'could not write cache.json: ' + ((e && e.message) || e) }); }
-      return { file: 'cache.json', bytes: bytes };
+      let saved = [];
+      try { saved = appServer.saveCaches(); }
+      catch (e) { throw refused('not-saved', { why: 'could not write the cache: ' + ((e && e.message) || e) }); }
+      if (!saved.length) throw refused('not-saved', { why: 'no cache is kept yet: this deskClient follows no desk' });
+      return { file: saved[0].file, bytes: saved[0].bytes };
     },
   },
 // What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.
@@ -1094,9 +1037,8 @@ const server = appServer.serve({
 }, {
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
-  // renews (goal/G41.11): what the desk's push replaces whole, its items' facts and its rules; the position (desk) and
-  // the parts read (deskItem) stay.
-  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, renews: ['deskItems', 'deskRules'] },
+  // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
+  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, cache: true },
   dependencies: ['deskClient.streamListener'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
@@ -1108,17 +1050,15 @@ const server = appServer.serve({
 
 // SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (js/appServer.js server.subscribe): the desk setDesk
 // named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
-// WITH THE POSITION IT HOLDS (goal/G41.11). Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
-// desk, (re-use that verb) with the position number as argument": the newest change its cache heard (desk/change, kept
-// through a restart in cache.json), so the desk hands what changed after it. A desk other than the one it heard hands
-// all (since 0).
+// WITH THE POSITION IT HOLDS (goal/G41.11; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
+// desk, (re-use that verb) with the position number as argument"): since goal/G41.12 appServer's own, the desk's run
+// and the number of the last row it took, kept through a restart in its cache.
 // When the stream last brought a row, and when a subscribe was last asked (resubscribeQuiet, below).
 let heardAt = Date.now();
 let askedAt = Date.now();
-function subscribeDesk(key, fresh) {
-  const since = fresh ? 0 : Number(dataSet.get('desk/change')) || 0;
+function subscribeDesk(key) {
   askedAt = Date.now();
-  return server.subscribe(key, 'desk', since).catch(function () { return false; });
+  return server.subscribe(key, 'desk').catch(function () { return false; });
 }
 (function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());
 // A QUIET STREAM IS SUBSCRIBED AGAIN, WITH ITS POSITION (goal/G41.12). Andy: "the client after getting nothing for a

@@ -19,8 +19,7 @@
 //                   every one ends in set, merge or del. This file knows no type.
 //
 //   forget()        everything kept goes, each type told once (type, undefined): a connect, the partner pushes it whole
-//   renew(types?), noting(fn), renewed()  a push replacing whole what it names: kept until it lands, then swept
-//                   (goal/G41.11); types, the ones it replaces, else every type it wrote
+//   recording(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
 //   cap(n?)         the byte cap: reads it, or sets it in a process
 //
 // NO CAP ON A PAGE (box v17; Andy: "the browsers side will flush on every page-refresh, so we'll avoid the complication of
@@ -49,19 +48,19 @@
     (watchers[type] || []).slice().forEach(function (fn) { try { fn(type + '/' + key, value); } catch (e) { /* one reader's fault */ } });
   }
   function get(path) { var s = split(path); return s.key ? branch(s.type)[s.key] : branch(s.type); }
-  function set(path, value, merged) {
+  function set(path, value) {
     var s = split(path);
     if (!s.type || !s.key) return;
-    if (!merged) note(s.type, s.key);
+    recorded(s.type + '/' + s.key);
     branch(s.type)[s.key] = value;
     tell(s.type, s.key, value);
     counted(s.type + '/' + s.key, value);
   }
-  // A merge is no whole write: a push renewing the cache never notes it (renewed sweeps only what pushes set whole).
-  function merge(path, fields) { set(path, Object.assign({}, get(path) || {}, fields || {}), true); }
+  function merge(path, fields) { set(path, Object.assign({}, get(path) || {}, fields || {})); }
   function del(path) {
     var s = split(path);
     var b = branch(s.type);
+    recorded(s.type + '/' + s.key);
     if (!(s.key in b)) return;
     delete b[s.key];
     counted(s.type + '/' + s.key, undefined);
@@ -107,48 +106,18 @@
     sizes.clear();
     total = 0;
   }
-  // A PUSH REPLACES WHAT IT NAMES WHOLE (goal/G41.11, Q5; Andy: YES to "May a subscribe keep the old cache until the new
-  // push lands, then replace it whole"). renew() opens a renewal and keeps everything; each whole write (set) made
-  // inside noting(fn) is noted, type and key; renewed() closes it: every type a noted write touched keeps only the keys
-  // noted, the rest go, each told as a delete. A merge, or a write outside noting (a kept read's answer), is never
-  // noted, so a type only such writes touch (an item's parts, kept current by side rows) stays as it is.
-  // renew(types) names the types the push replaces; left out, every type it wrote.
-  var renewal = null;                   // type -> { key: true } while a renewal is open
-  var renewing = null;                  // the types it replaces, or null: every type noted
-  var noting_ = false;
-  function note(type, key) {
-    if (!renewal || !noting_) return;
-    (renewal[type] || (renewal[type] = Object.create(null)))[key] = true;
+  // WHAT A WRITE TOUCHED (goal/G41.12): a stream's client keeps each row with the paths it wrote, so a row its cache
+  // sheds, or a full push replaces, takes those with it (appServer). recording(fn) answers every path fn set, merged or
+  // deleted, once each, in order; a recording inside another counts for both.
+  var recorders = [];
+  function recorded(path) {
+    recorders.forEach(function (r) { if (!r.seen[path]) { r.seen[path] = true; r.paths.push(path); } });
   }
-  function renew(types) { renewal = Object.create(null); renewing = Array.isArray(types) ? types.map(String) : null; heldBack = Object.create(null); }
-  // A VALUE HELD UNTIL THE PUSH LANDS (goal/G41.12): a position must not move ahead of rows not yet taken. A push sends
-  // the goal's facts, stamped with the newest change, before the older rows it hands; cut after them, a position set at
-  // once would ask the next push only for what came after, and the rows between are never sent again (Andy's four file
-  // writes, 2026-10-27). So while a renewal is open, hold(path, value) keeps the value back and renewed() writes it once
-  // the push has landed whole; a cut push leaves the old value, and the next push is asked from there. Outside a
-  // renewal it is written at once. held(path) answers what is held, or undefined.
-  var heldBack = Object.create(null);
-  function hold(path, value) {
-    if (!renewal) { set(path, value); return; }
-    heldBack[String(path)] = value;
-  }
-  function held(path) { return heldBack[String(path)]; }
-  function noting(fn) {
-    var was = noting_;
-    noting_ = true;
-    try { return fn(); } finally { noting_ = was; }
-  }
-  function renewed() {
-    var r = renewal;
-    renewal = null;
-    if (!r) return;
-    Object.keys(r).forEach(function (type) {
-      if (renewing && renewing.indexOf(type) === -1) return;
-      Object.keys(branch(type)).forEach(function (k) { if (!r[type][k]) del(type + '/' + k); });
-    });
-    var h = heldBack;
-    heldBack = Object.create(null);
-    Object.keys(h).forEach(function (p) { set(p, h[p]); });
+  function recording(fn) {
+    var r = { seen: Object.create(null), paths: [] };
+    recorders.push(r);
+    try { fn(); } finally { recorders.splice(recorders.indexOf(r), 1); }
+    return r.paths;
   }
   function watch(path, fn) {
     if (typeof fn !== 'function') return function () {};
@@ -273,7 +242,7 @@
 
   var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
     translate: translate, quietly: quietly, ready: ready, branch: branch, search: search, forget: forget, cap: cap,
-    renew: renew, noting: noting, renewed: renewed, hold: hold, held: held,
+    recording: recording,
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 

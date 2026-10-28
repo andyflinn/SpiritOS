@@ -288,7 +288,7 @@ function createVerbTable() {
     var ownerOf = opts && typeof opts.owner === 'function' ? opts.owner : function () { return { owner: true }; };
     // A FAMILY'S INTERFACE (goal/G32.3; the verb change Andy approved, 2026-10-22: "verb change approved."). api {family}
     // answers {family, interface}, the text of the family's api.js, read from the folder the node mounted it with, or for
-    // a served app from the folder opts.familyDir(name) names (its <name>.family). The node maps the name; the file names
+    // a served app from the folder opts.familyDir(name) names (its family folder, spirit.familyPath). The node maps the name; the file names
     // none, and the server never hears of the read.
     var familyDirOf = opts && typeof opts.familyDir === 'function' ? opts.familyDir : function () { return ''; };
     function interfaceOf(name) {

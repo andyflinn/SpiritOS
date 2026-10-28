@@ -52,7 +52,7 @@ function ask(verb, args) {
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): the verb by its name, as {status, body}.
   // Every ask here is a deskClient verb: its family bound on the one spirit object (goal/G40.6).
-  const asked = spirit.outcome(spirit.require('process/js/deskClient/deskClient.family/api.js').then(function (c) { return c[String(verb).split('.').slice(1).join('.')](args); }));
+  const asked = spirit.outcome(spirit.require(spirit.familyPath('deskClient')).then(function (c) { return c[String(verb).split('.').slice(1).join('.')](args); }));
   return Promise.race([asked, late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }

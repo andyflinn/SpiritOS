@@ -1282,9 +1282,9 @@ catch (e) {
       if (me.name) own.label = String(me.name);
       return own;
     },
-    // A served app's family folder, where its api.js is (goal/G32.3): process/js/<name>/<name>.family, as appServer
-    // mounts it beside the script.
-    familyDir: function (name) { return path.join(ROOT_DIR, 'process', 'js', name, name + '.family'); },
+    // A served app's family folder, where its api.js is (goal/G32.3), as the one family path function names it
+    // (spirit.familyPath, goal/G41.12).
+    familyDir: function (name) { return path.join(ROOT_DIR, path.dirname(spirit.familyPath(name))); },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);
 

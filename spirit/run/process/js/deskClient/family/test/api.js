@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/deskClient.family/test/api.js
-// The tests of process/js/deskClient/deskClient.family/api.js, and of no other module (spec: ./api.md; goal/G41.11).
+// spirit/run/process/js/deskClient/: the test of the deskClient server's family interface (test/api.js in its family folder)
+// The tests of the deskClient server's family interface, spirit.familyPath('deskClient'), and of no other module (spec: ./api.md; goal/G41.11).
 // The interface is required as the node reads it, and every verb is checked by spirit.js's own check (spirit.check, its
 // rules list spirit.rules), the one the spirit object runs before a call leaves. The server's source is read as text
 // only, to find each verb's handler.
@@ -19,7 +19,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 const KEY = 'MCowBQYDK2VwAyEA' + 'deskClientApiTest'.padEnd(43, 'A') + '=';
 
-test.startTest('deskClient.family/api.js: the deskClient server\'s interface');
+test.startTest('the deskClient family api.js: the deskClient server\'s interface');
 
 (function () {
   let api = null;

@@ -13,7 +13,9 @@ const Module = require('module');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskClient.js');
-const API = path.join(__dirname, '..', 'deskClient.family', 'api.js');
+// The family paths, as the one function names them (goal/G41.12).
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const API = path.join(RUN, familyPath('deskClient'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -59,8 +61,9 @@ const appServerStub = {
   publish: function () {},
 };
 globalThis.spirit = {
+  familyPath: familyPath,
   require: function (p) {
-    if (/desk\.family\/api\.js$/.test(p)) return Promise.resolve(deskFamily);
+    if (p === familyPath('desk')) return Promise.resolve(deskFamily);
     if (/spirit\/contact\/api\.js$/.test(p)) return Promise.resolve({ get: function () { return Promise.resolve({ person: { blocked: true } }); } });
     return Promise.resolve({});
   },
@@ -128,7 +131,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const dump = verb('cache.dump');
   ok(!!dump, 'deskClient serves cache.dump', 'no cache.dump among ' + short(Object.keys(served.verbs)));
   const apiText = fs.existsSync(API) ? fs.readFileSync(API, 'utf8') : '';
-  ok(/['"]?cache\.dump['"]?\s*:/.test(apiText), 'its family interface (deskClient.family/api.js) names cache.dump', 'api.js does not name cache.dump');
+  ok(/['"]?cache\.dump['"]?\s*:/.test(apiText), 'its family interface names cache.dump', 'api.js does not name cache.dump');
   if (dump) {
     // The cache is saved on every update (Andy: "on every update the deskClient receives, it saves the cache, (10ms?)"),
     // so cache.json may stand before any dump; a stranger's dump is refused all the same.

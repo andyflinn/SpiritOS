@@ -2291,44 +2291,12 @@ const CLIENT_WAIT_MS = 10000;
 // in it's cache", as goal/G40.12's box has it: "The desk client caches ... the desk pushes them only when an attachment
 // changes, so a wake carries no rule text it already holds." So a subscriber is handed every active rule first, each as
 // the publish its writes make ({rule, row}), and from then on hears each rule write; it never asks for a rule's text.
-function deskBootstrap(key, since) {
+function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
   const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
   const ids = [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; });
-  // goal/G41.11: handed as bundles of rows (bundled).
-  return bundled(rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }), since > 0 ? changedSince(S, ids, String(key || ''), since) : []), S.change);
-}
-// WHAT CHANGED AFTER THE POSITION A SUBSCRIBER HOLDS (goal/G41.11). Andy: "(if it restarts or similar) it calls the
-// "subscribe/(connect)" verb do desk, (re-use that verb) with the position number as argument". Every side row of these
-// items whose change is after since, as the side row its write published, oldest first; his line addressed to others
-// only to them (to). Every table keeps the change that wrote each row; the box keeps none, so an item whose own row
-// changed after since hands its box too (a box write changes the item's version). A row deleted since is no row any more
-// and is not handed.
-const CHANGED_SINCE = {
-  chat: db.prepare('SELECT seq AS k, change FROM chat WHERE goal = ? AND item = ? AND change > ?'),
-  checks: db.prepare('SELECT number AS k, change FROM checks WHERE goal = ? AND item = ? AND change > ?'),
-  files: db.prepare('SELECT holder || \'|\' || path AS k, change FROM files WHERE goal = ? AND item = ? AND change > ?'),
-  claims: db.prepare('SELECT claimer AS k, change FROM claims WHERE goal = ? AND item = ? AND change > ?'),
-  suites: db.prepare('SELECT path AS k, change FROM suites WHERE goal = ? AND item = ? AND change > ?'),
-  items: db.prepare('SELECT change FROM items WHERE goal = ? AND item = ? AND change > ?'),
-};
-function changedSince(s, ids, key, since) {
-  const out = [];
-  ids.forEach(function (id) {
-    const it = s.items[id];
-    const k = numbersOf(id);
-    if (!it || !k) return;
-    const at = new Map();
-    Object.keys(CHANGED_SINCE).forEach(function (table) {
-      CHANGED_SINCE[table].all(k[0], k[1], since).forEach(function (row) { at.set(table === 'items' ? 'box' : table + '|' + row.k, Number(row.change)); });
-    });
-    rowsOf(s, it).forEach(function (x) {
-      if (x.table === 'items' || !at.has(x.key)) return;
-      if (Array.isArray(x.to) && x.to.indexOf(key) === -1) return;
-      out.push(sidePublish(s, id, { table: x.table, key: x.key, x: x, removed: false }, at.get(x.key)));
-    });
-  });
-  return out.sort(function (a, b) { return a.change - b.change; });
+  // goal/G41.12: one row each; appServer bundles what it hands.
+  return rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -2365,28 +2333,8 @@ function pushGoalWhole(gid) {
   const s = S;
   const g = s.goals[gid];
   if (!g) return;
-  // goal/G41.11: as bundles of rows, not one publish a row.
-  bundled([gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
-    .map(function (id) { return rowPublish(s, id, 'goal.whole', s.change); }), s.change).forEach(publishOne);
-}
-// A LIST PUBLISHED AS BUNDLES, FOR THE DESK ONLY (goal/G41.11). Andy: "agreed to publishing lists, FOR DESK ONLY, this
-// is NOT a general rule". A list of rows the desk publishes together (a goal pushed whole, a subscriber's bootstrap)
-// goes out as { change, rows: [...] }, several rows a publish, each cut at one answer's room by a sized probability
-// bucket (every row at probability 0, so the list's order stands). A row too large to share a bundle goes alone, as it
-// went before; every row already fits one publish (box.write, largestPanel). Its readers take each row of rows as the
-// row it is.
-function bundled(rows, change) {
-  const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ change: change, rows: [] }), 'utf8');
-  const out = [];
-  let rest = rows.slice();
-  while (rest.length) {
-    const bucket = createProbabilityBucket(rest.length);
-    rest.forEach(function (row) { bucket.seatFor(0, row); });
-    const n = Math.max(1, bucket.serialize(null, room).items.length);
-    out.push({ change: change, rows: rest.slice(0, n) });
-    rest = rest.slice(n);
-  }
-  return out;
+  [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
+    .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
 }
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
 // every item where somebody holds something (signoff and his exclusion let go of what that agent held).
@@ -2623,7 +2571,7 @@ function askDeskVerify(verb, args) {
   const port = nodeNamedPort();
   if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
   // Through the one spirit object (goal/G32.3, goal/G40.6), as {status, body}; bound when deskVerify first answers.
-  return spirit.outcome(spirit.require('process/js/deskVerify/deskVerify.family/api.js').then(function (v) {
+  return spirit.outcome(spirit.require(spirit.familyPath('deskVerify')).then(function (v) {
     if (typeof v[verb] !== 'function') throw Object.assign(new Error('deskVerify has no verb ' + verb), { code: 'no-such-verb' });
     return v[verb](args || {});
   })).then(function (r) {
@@ -3983,7 +3931,7 @@ appServer.serve(withPlugins({
 // themselves are unchanged, so nothing on the wire moved.
 // goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
 // no opts.stream: the desk follows no stream (box v42).
-{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function (key, since) { return deskBootstrap(key, since); }, waitMs: CLIENT_WAIT_MS }, codes: {
+{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

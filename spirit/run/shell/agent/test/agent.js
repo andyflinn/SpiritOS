@@ -14,7 +14,9 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'agent.js');
 const CONFIG = 'relay-state/shell/agent/config.json';
-const AGENT_FAMILY = 'process/js/agent/agent.family/api.js';
+// The agent server's family, as the one family path function names it (goal/G41.12).
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const AGENT_FAMILY = familyPath('agent');
 const BUG = '🐞';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -104,7 +106,7 @@ function world(configText) {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); },
+  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath,
     require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); } } };
   global.spirit = global.window.spirit;
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };

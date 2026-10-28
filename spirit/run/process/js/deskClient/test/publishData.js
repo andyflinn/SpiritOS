@@ -22,6 +22,9 @@ const ORIGIN = path.join(TMP, 'origin.git');
 const CLONE = path.join(TMP, 'clone');
 const BARE_CLONE = path.join(TMP, 'nolog');
 const AGENT = 'test-agent';
+// The deskClient's family as the one family path function names it (goal/G41.12).
+const SPIRIT = path.join(RUN, 'spirit.js');
+const FAMILY = require(SPIRIT).familyPath('deskClient');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
@@ -37,7 +40,9 @@ const STUB = [
   "  if (a.name === 'profile.get') return Promise.resolve({ ok: true, name: process.env.PD_NAME, nick: '' });",
   "  return Promise.resolve({ ok: true });",
   "} };",
+  "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
   "globalThis.spirit = {",
+  "  familyPath: familyPath,",
   "  require: function (p) { log({ require: p }); return Promise.resolve(family); },",
   "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
   "};",
@@ -121,7 +126,7 @@ test.startTest('publishData.js: one measurement run per agent');
   ok(r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + COMMIT + ', into ' + OUT) !== -1, 'its agent is the name in its profile, its commit the tree it runs from', 'out ' + short(r.out));
   const pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
   ok(pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4, 'one profile.get for its name, then 3 more, read-only, and nothing else asked', 'asks ' + short(r.asks));
-  ok(r.required.every(function (a) { return a.require === 'process/js/deskClient/deskClient.family/api.js'; }), 'every ask through its deskClient\'s family, on the spirit object', 'required ' + short(r.required));
+  ok(r.required.every(function (a) { return a.require === FAMILY; }), 'every ask through its deskClient\'s family, on the spirit object', 'required ' + short(r.required));
   let p = null;
   try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
   ok(p && p.agent === AGENT && p.commit === COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt)), 'packets.json names the agent, the commit, the asks and when', 'packets ' + short(p));

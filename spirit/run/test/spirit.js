@@ -103,11 +103,11 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
   out.keys = Object.keys(s).sort();
   out.same = require(process.argv[2] + '/spirit.js') === s && globalThis.spirit === s;
   if (process.argv[3] === 'none') {
-    out.require = await code(s.require('process/js/demo/demo.family/api.js'));
+    out.require = await code(s.require(s.familyPath('demo')));
     out.tree = await code(s.tree());
     out.noPort = !('port' in s);
   } else {
-    const fams = await Promise.all([s.require('process/js/demo/demo.family/api.js'), s.require('process/js/demo/demo.family/api.js')]);
+    const fams = await Promise.all([s.require(s.familyPath('demo')), s.require(s.familyPath('demo'))]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
     out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
@@ -116,11 +116,11 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     out.fs = (await s.demo.FS.loadFile({ path: 'x.txt' })).text;
     out.noArg = await code(s.demo.hello({ nme: 'x' }));
     out.noVerb = typeof s.demo.nothing === 'undefined';
-    out.noFamily = await code(s.require('process/js/gone/gone.family/api.js'));
+    out.noFamily = await code(s.require(s.familyPath('gone')));
     try { await s.demo.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
     try { await s.demo.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.tree()).sort();
-    out.viaRequire = (await s.require('process/js/demo/demo.family/api.js')) === s.demo;
+    out.viaRequire = (await s.require(s.familyPath('demo'))) === s.demo;
     out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error('gone')))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by events.publish with its own id, the one path.
@@ -150,7 +150,7 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
       out.peerHow = how && how.waitMs;
       return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${DEMO.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
-    const both = await Promise.all([s.require('process/js/demo/demo.family/api.js', 'peerKey1', { waitMs: 777 }), s.require('process/js/demo/demo.family/api.js', 'peerKey1', { waitMs: 777 })]);
+    const both = await Promise.all([s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 }), s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 })]);
     out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo !== both[0]];
   }
   process.stdout.write(JSON.stringify(out));
@@ -316,7 +316,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       else test.fail('the node\'s refusals: ' + short([o.held, o.slow]));
       if (JSON.stringify(o.tree) === JSON.stringify(['demo', 'gone'])) test.check('spirit.tree() answers its node\'s api as it stands');
       else test.fail('spirit.tree(): ' + short(o.tree));
-      if (o.viaRequire) test.check('spirit.require(\'process/js/demo/demo.family/api.js\') answers the same member, spirit.demo');
+      if (o.viaRequire) test.check('spirit.require(spirit.familyPath(\'demo\')) answers the same member, spirit.demo');
       else test.fail('spirit.require of an interface did not answer spirit.demo');
       const oc = o.outcome || [];
       if (oc[0] && oc[0][0] === 200 && oc[0][1] === 'hello eve' && oc[1][0] === 400 && oc[1][1] === 'no-such-argument' && oc[2][0] === 409 && oc[3][0] === 0)
@@ -462,10 +462,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('on a page a stylesheet was not put on as a style: ' + wq.styles.length + ' styles');
   if (await refusedWith(wq.spirit.require('spirit/noSuchComponent.js')) === 'not-found') test.check('on a page: a component that is not there refuses not-found');
   else test.fail('on a page: a missing component did not refuse not-found');
-  const pf = await wq.spirit.require('process/js/demo/demo.family/api.js');
+  const pf = await wq.spirit.require(wq.spirit.familyPath('demo'));
   if (pf === wq.spirit.demo) test.check('on a page: an interface answers its member on window.spirit');
   else test.fail('on a page: an interface answered another member');
-  const pp = await wq.spirit.require('process/js/demo/demo.family/api.js', 'peerKey2');
+  const pp = await wq.spirit.require(wq.spirit.familyPath('demo'), 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
   if (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).verb === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo)
     test.check('on a page: with a key, the peer\'s family through the home node\'s peer.post, not its own node\'s');

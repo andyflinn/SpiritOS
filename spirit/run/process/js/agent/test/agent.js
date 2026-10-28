@@ -35,11 +35,13 @@ test.startTest('agent.js: the agent server');
   ok(!fs.existsSync(path.join(DIR, 'agent.js.sidecar.json')) && !Object.prototype.hasOwnProperty.call(manifest, 'runs') && !Object.prototype.hasOwnProperty.call(manifest, 'intrinsic'),
     'whether a node runs it is that node\'s own: no sidecar beside its code, and its manifest names neither runs nor intrinsic',
     'sidecar beside the code ' + fs.existsSync(path.join(DIR, 'agent.js.sidecar.json')) + ', manifest ' + short(manifest));
+  // Its family folder where the one family path function finds it (goal/G41.12).
+  const API = path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('agent'));
   let family = null;
-  try { family = require(path.join(DIR, 'agent.family', 'api.js')); } catch (e) { family = null; }
+  try { family = require(API); } catch (e) { family = null; }
   ok(family && family.verbs && family.verbs.debug && family.verbs.debug.on === 'bool', 'its interface declares debug with on, a bool',
-    'agent.family/api.js: ' + short(family && family.verbs));
-  const described = readJson(path.join(DIR, 'agent.family', 'debug.json'));
+    path.relative(RUN, API) + ': ' + short(family && family.verbs));
+  const described = readJson(path.join(path.dirname(API), 'debug.json'));
   ok(described && typeof described.description === 'string' && described.description && described.request && 'on' in described.request,
     'debug.json describes the verb and its request', 'debug.json: ' + short(described));
 

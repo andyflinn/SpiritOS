@@ -258,7 +258,7 @@ function answered(name, args) {
   // A server family on this node (deskClient, deskAgent), bound on the one spirit object (goal/G40.6).
   const dot = name.indexOf('.');
   const fam = name.slice(0, dot);
-  return spirit.outcome(spirit.require('process/js/' + fam + '/' + fam + '.family/api.js').then(function (s) { return s[name.slice(dot + 1)](args); })).then(function (r) {
+  return spirit.outcome(spirit.require(spirit.familyPath(fam)).then(function (s) { return s[name.slice(dot + 1)](args); })).then(function (r) {
     if (!r || !r.status) throw new Error('the node did not answer ' + name);
     return r;
   });

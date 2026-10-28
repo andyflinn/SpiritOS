@@ -56,7 +56,7 @@ function seed(stateDir, sessions) {
 function familyOf(body) {
   if (!body || !body.api || typeof body.api.family !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.family)) return null;
   const f = body.api.family;
-  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'process', 'js', f, f + '.family', 'api.js')];
+  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath(f))];
   for (const file of tried) if (fs.existsSync(file)) return { family: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
 }

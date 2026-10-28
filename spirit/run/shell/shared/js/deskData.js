@@ -12,8 +12,8 @@
 //   desk/current  the goal the stream last pushed whole;  desk/change  the newest change number heard
 // The rows come as jobs of module process/js/desk: in the page as the desk's publishes, in a server that follows the
 // desk's stream (deskClient) through appServer's streamListener (js/appServer.js), which hands each row in exactly so.
-// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); a
-// bundle of them (goal/G41.11) is taken row by row.
+// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
+// stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
 (function (root) {
   var D = (root.spirit || {}).data;
@@ -29,34 +29,33 @@
   var GROUP = 'goal/G0';
 
   // A GOAL PUSHED (goal/G33.4, the box: "when a goal becomes current, the desk pushes it whole onto every desk client";
-  // since box v46 its items' facts alone): what was kept of another goal goes (the group chat stays), and this goal's
-  // items' facts are kept. Their parts come when needed (took).
+  // since box v46 its items' facts alone): it is the current goal from now on, and its items' facts are kept. Their
+  // parts come when needed (took). EVERY GOAL IS KEPT (goal/G41.12, box v15: "The cache keeps everything the server
+  // sends, every goal, no filtering on the client side"): another goal's rows stay; the cache's limit is the sender's
+  // family api.js's to keep (appServer).
   function rowOf(o, f) {
-    if (o.verb === 'goal.whole' && goalOf(f) !== GROUP && goalOf(f) !== D.get('desk/current')) {
-      Object.keys(D.branch('deskItems') || {}).concat(Object.keys(D.branch('deskItem') || {})).forEach(function (id) {
-        var it = D.get('deskItems/' + id);
-        // The group chat stays, and so does what was read of this goal before its rows came (took).
-        if (id === GROUP || (it && (goalOf(it) === GROUP || goalOf(it) === goalOf(f)))) return;
-        D.del('deskItem/' + id);
-        D.del('deskItems/' + id);
-      });
-      D.set('desk/current', goalOf(f));
-    }
+    if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) D.set('desk/current', goalOf(f));
     D.set('deskItems/' + f.id, f);
   }
 
   // ONE SIDE ROW: it keeps current the part of the item it belongs to, once that part was read; a part never read stays
-  // unread (goal/G33.4, box v46: "the box and other parts will come when needed and stay").
+  // unread (goal/G33.4, box v46: "the box and other parts will come when needed and stay"). A box and a chat line are
+  // kept unread too (goal/G41.12: the cache keeps everything the server sends): the box is whole in its row, and the
+  // chat lines the stream brought are the newest, with chatMore, so older ones are asked for as before. A check or a
+  // file alone is no list, so those wait for a read.
   function side(o) {
     var id = String(o.id || '');
     var whole = id ? D.get('deskItem/' + id) : null;
+    if (!whole && id && o.row && !o.removed && o.table === 'box') { keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 }); return; }
+    if (!whole && id && o.row && !o.removed && o.table === 'chat') { keep(id, { chat: [o.row], chatMore: true }); return; }
     if (!whole) return;
     if (o.table === 'box') {
-      if (o.row && typeof whole.box === 'string') keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 });
+      if (o.row) keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 });
       return;
     }
     if (o.table === 'chat') {
-      if (o.removed || !o.row || !Array.isArray(whole.chat)) return;
+      if (o.removed || !o.row) return;
+      if (!Array.isArray(whole.chat)) { keep(id, { chat: [o.row], chatMore: true }); return; }
       var lines = (whole.chat || []).slice();
       var at = -1;
       lines.forEach(function (l, i) { if (sameLine(l, o.row)) at = i; });
@@ -100,15 +99,10 @@
   }
   function published(o) {
     if (!o || typeof o !== 'object') return;
-    // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] } (desk.js
-    // bundled), and each row of it is taken as the single row it is.
-    // THE POSITION MOVES ONLY WITH WHAT LANDED (goal/G41.12): during a push it is held until the push has landed whole
-    // (spiritData hold), so a push cut after its first part is asked again from the old position.
-    if (typeof o.change === 'number') {
-      var top = Math.max(Number(D.get('desk/change')) || 0, typeof D.held === 'function' ? Number(D.held('desk/change')) || 0 : 0);
-      if (o.change > top) { if (typeof D.hold === 'function') D.hold('desk/change', o.change); else D.set('desk/change', o.change); }
-    }
-    if (Array.isArray(o.rows)) { o.rows.forEach(published); return; }
+    // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
+    if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
+    // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
+    if (o.rule && o.row && typeof o.row === 'object') { D.set('deskRules/' + String(o.rule), o.row); return; }
     if (o.table) { side(o); return; }
     var it = facts(o.item);
     if (!it) return;

@@ -63,7 +63,7 @@ fs.writeFileSync(PRELOAD, [
   "  return Promise.resolve(liveAnswer(name, args));",
   "} };",
   "const real = globalThis.spirit.require;",
-  "globalThis.spirit.require = function (p) { return /deskClient\\.family\\/api\\.js$/.test(String(p)) ? Promise.resolve(fake) : real.apply(this, arguments); };",
+  "globalThis.spirit.require = function (p) { return String(p) === globalThis.spirit.familyPath('deskClient') ? Promise.resolve(fake) : real.apply(this, arguments); };",
 ].join('\n'));
 
 const ID = 'goal/G41.11';

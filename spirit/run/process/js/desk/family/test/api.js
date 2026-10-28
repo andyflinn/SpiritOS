@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/desk/desk.family/test/api.js
-// The tests of process/js/desk/desk.family/api.js, and of no other module (spec: ./api.md; goal/G41.11). The interface
+// spirit/run/process/js/desk/: the test of the desk server's family interface (test/api.js in its family folder)
+// The tests of the desk server's family interface, spirit.familyPath('desk'), and of no other module (spec: ./api.md; goal/G41.11). The interface
 // is required as the node reads it, and every verb is checked by spirit.js's own check (spirit.check, its rules list
 // spirit.rules), the one the spirit object runs before a call leaves. The server's source is read as text only, to find
 // each verb's handler.
@@ -18,7 +18,7 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 
-test.startTest('desk.family/api.js: the desk server\'s interface');
+test.startTest('the desk family api.js: the desk server\'s interface');
 
 (function () {
   let api = null;
