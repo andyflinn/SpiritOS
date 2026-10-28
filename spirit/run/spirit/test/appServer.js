@@ -111,6 +111,13 @@ const fake = {
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },
   events: { publish: function () {}, subscribe: function () {} },
+  // A bundle of requests leaves as one spirit.peerPost(key, 'api', { <family>: [calls] }) (cw, goal/G41.12): kept, held
+  // while askGate.held, answered "ok" (box v26).
+  peerPost: function (key, app, body) {
+    askCalls.push({ peerPost: true, key: key, app: app, body: body });
+    if (!askGate.held) return Promise.resolve('ok');
+    return new Promise(function (r) { askGate.waiting.push(function () { r('ok'); }); });
+  },
   // spirit.js's own familyPath (goal/G41.12 Q3), taken from its text so the stand-in writes no path of its own.
   familyPath: (function () {
     const m = /function familyPath\(name\) \{([^\n]*)\}\r?\n/.exec(fs.readFileSync(path.join(RUN, 'spirit.js'), 'utf8'));
@@ -207,6 +214,25 @@ async function child(mode) {
     await tick(800);
     out.g9 = []; out.g10 = [];
     for (let i = 1; i <= 3; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+  } else if (mode === 'ask') {
+    const { s } = start('client');
+    await tick(100);
+    out.ask = typeof s.ask;
+    if (typeof s.ask === 'function') {
+      askGate.held = true;
+      let settled = 0;
+      [0, 1, 2, 3, 4].forEach(function (i) { Promise.resolve().then(function () { return s.ask(PUBLISHER, NAME, 'count', { n: i }); }).then(function () { settled += 1; }, function () { settled += 1; }); });
+      await tick(400);
+      out.inFlight = askCalls.length;
+      askGate.held = false;
+      askGate.waiting.splice(0).forEach(function (fn) { fn(); });
+      for (let i = 0; i < 50 && settled < 5; i++) await tick(100);
+      // A held call answered late may free the bundle behind it: let it go and be answered too.
+      for (let i = 0; i < 20 && askGate.waiting.length; i++) { askGate.waiting.splice(0).forEach(function (fn) { fn(); }); await tick(100); }
+      out.sent = askCalls.length;
+      out.settled = settled;
+      out.calls = askCalls;
+    }
   } else if (mode === 'items' || mode === 'chat' || mode === 'limit') {
     // The limit is HARD-CODED, 4 MB per sender (box v26): each run below sends about 4.8 MB, past it whether a MB is
     // 10^6 bytes or 2^20; a half of it alone is within. Rows of 6000 bytes, one bundle each at most.
@@ -341,21 +367,16 @@ if (CHILD) {
     ok(isOk(wholeServer.body) && handled.secret === secretBefore + 1, 'a key granted the whole server (' + NAME + ') has every call handed', 'answered ' + short(wholeServer) + ', secret handled ' + (handled.secret - secretBefore));
 
     test.subHeading('the client side: requests go through spirit/appServer.js, the ones behind one in flight as one bundle (box v27)');
-    ok(typeof s.ask === 'function', 'its client half asks: server.ask(key, family, verb, args, how)', 'server.ask is ' + typeof s.ask);
-    if (typeof s.ask === 'function') {
-      const callsBefore = askCalls.length;
-      askGate.held = true;
-      const settled = [];
-      const asks = [0, 1, 2, 3, 4].map(function (i) { return Promise.resolve(s.ask(PUBLISHER, NAME, 'count', { n: i })).then(function (r) { settled.push(i); return r; }, function (e) { settled.push(i); return { threw: String(e && e.message || e) }; }); });
-      await tick(300);
-      const inFlight = askCalls.length - callsBefore;
-      askGate.held = false;
-      askGate.waiting.splice(0).forEach(function (fn) { fn(); });
-      for (let i = 0; i < 50 && settled.length < 5; i++) await tick(100);
-      const sent = askCalls.length - callsBefore;
-      ok(inFlight === 1, 'while one ask is in flight, the four behind it wait', 'calls of the server\'s family while the first was held: ' + inFlight);
-      ok(sent === 2 && settled.length === 5, 'then the four go as one bundle: five asks, two calls, each ask answered', 'calls ' + sent + ', asks answered ' + settled.length + ' of 5: ' + short(askCalls.slice(callsBefore)));
-    }
+    // In client mode (box v26: requests are bundled "under the client side"; v28: "a client implementation ... in
+    // client mode"), a process of its own.
+    const asks = runChild('ask', 'askProbe');
+    ok(asks.ask === 'function', 'its client half asks: server.ask(key, family, verb, args, how)', 'server.ask is ' + short(asks.ask) + (asks.failed ? ', ' + asks.failed : ''));
+    ok(asks.inFlight === 1, 'while one ask is in flight, the four behind it wait', 'calls out while the first was held: ' + short(asks.inFlight));
+    ok(asks.sent === 2 && asks.settled === 5, 'then the four go together: five asks, two calls out, each ask answered', 'calls out ' + short(asks.sent) + ', asks answered ' + short(asks.settled) + ' of 5: ' + short(asks.calls));
+    const bundle = (asks.calls || []).filter(function (c) { return c.peerPost; })[0];
+    const inside = bundle && bundle.body && bundle.body[NAME];
+    ok(!!bundle && bundle.key === PUBLISHER && bundle.app === 'api' && Array.isArray(inside) && inside.length === 4 && inside.every(function (c) { return c && c.count && typeof c.count.n === 'number'; }),
+      'the bundle is one spirit.peerPost(key, "api", { <family>: [the four calls] }), each call as it would go alone', 'bundle: ' + short(bundle));
 
     test.subHeading('the first subscribe: a full push');
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
@@ -456,7 +477,7 @@ if (CHILD) {
     const lines = Array.isArray(chat.chat) ? chat.chat : [];
     const newest = lines.length > 0 && lines.length < SHED_N && lines.every(function (n, i) { return n === SHED_N - lines.length + 1 + i; });
     ok(chat.landed === true && chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest, 'one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', 'landed ' + chat.landed + ', items ' + short(chat.items) + ', lines kept ' + lines.length + ' from ' + lines[0] + (chat.failed ? ', ' + chat.failed : ''));
-    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
+    ['askProbe', 'cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
   }()).then(function () {
     try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
     test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);

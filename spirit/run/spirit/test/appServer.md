@@ -35,8 +35,9 @@ stream"); Desk and deskClient move onto it.
 ### The client side (goal/G41.12, box v27)
 
 - **A client implementation asks through spirit/appServer.js**: `server.ask(key, family, verb, args, how)` (cw).
-  While one ask is in flight, the ones behind it go together as one bundle: five asks, two calls of the server's
-  family, each ask answered.
+  In client mode (box v26, v28), while one ask is in flight, the ones behind it go together as one bundle: one
+  `spirit.peerPost(key, 'api', { <family>: [calls] })` (cw), each call as it would go alone; five asks, two calls
+  out, each ask answered. A child process of its own, in client mode.
 
 ### Bundles (goal/G41.12)
 
