@@ -155,6 +155,29 @@ async function child(mode) {
     await tick(800);
     out.g9 = []; out.g10 = [];
     for (let i = 1; i <= 3; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+  } else if (mode === 'items' || mode === 'chat') {
+    // One goal (Andy, Q2: "when there is only one goal, then you shed the longest untouched item, LOCK, stock and
+    // barrel, when there is only one goal with one item you shed the oldest chat line").
+    const { A, s, D } = start({ cache: { limit: mode === 'items' ? 1500 : 2500 } });
+    await tick(100);
+    bootstrap = [row(GOAL)];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(200);
+    const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
+    const line = function (id, n) { return { table: 'chat', id: id, row: { at: '2026-10-28T05:00:' + String(n).padStart(2, '0') + '.000Z', by: 'andy', text: long(n) } }; };
+    if (mode === 'items') {
+      A.publish(row(item(1)));
+      A.publish(line('goal/G9.1', 0));
+      for (let i = 2; i <= 10; i++) { await tick(30); A.publish(row(item(i, { title: long(i) }))); }
+    } else {
+      A.publish(row(item(1)));
+      for (let i = 1; i <= 30; i++) { await tick(10); A.publish(line('goal/G9.1', i)); }
+    }
+    await tick(1500);
+    out.goal = !!D.get('deskItems/goal/G9');
+    out.items = []; for (let i = 1; i <= 10; i++) if (D.get('deskItems/goal/G9.' + i)) out.items.push(i);
+    const whole = D.get('deskItem/goal/G9.1');
+    out.chat = whole && Array.isArray(whole.chat) ? whole.chat.map(function (l) { return Number(String(l.at).slice(17, 19)); }) : [];
   } else if (mode === 'limit') {
     // Two goals, ten rows each: goal/G9 first and untouched since, goal/G10 after. Together past the limit, either alone
     // within it: the desk's family api.js (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL").
@@ -211,8 +234,10 @@ if (CHILD) {
         n + ': family/api.js ' + fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) + ', ' + n + '.family still there: ' + fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family')));
     });
     // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
-    // routes by the pattern and is left out; so is appServer.js, the one place the path is written.
-    const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE; }).filter(function (f) {
+    // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
+    // spirit.js holds the function and appServer hands out the same one (cw, goal/G41.12 Q3).
+    const SPIRIT_JS = path.join(RUN, 'spirit.js');
+    const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return /\.family(?=['"`\/\\]|$)/m.test(t) || /(^|[^\\])\/?family\/api\.js/.test(t) || /['"`]family['"`]\s*[),]/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
@@ -317,7 +342,19 @@ if (CHILD) {
     ok(size > 0 && size <= 3500, 'the cache keeps to the limit the client sets', 'cache file of ' + size + ' bytes for a limit of 3500');
     ok(Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10,
       'past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', short(full));
-    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit'].forEach(clearCache);
+    // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
+    clearCache('cacheItems');
+    const items = runChild('items', 'cacheItems');
+    const kept = Array.isArray(items.items) ? items.items : [];
+    const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
+    ok(items.goal && prefixGone, 'one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', short(items));
+    ok(kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0, 'an item shed goes lock, stock and barrel: its chat with it', short(items));
+    clearCache('cacheChat');
+    const chat = runChild('chat', 'cacheChat');
+    const lines = Array.isArray(chat.chat) ? chat.chat : [];
+    const newest = lines.length > 0 && lines.length < 30 && lines.every(function (n, i) { return n === 30 - lines.length + 1 + i; });
+    ok(chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest, 'one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', short(chat));
+    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
   }()).then(function () {
     try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
     test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);

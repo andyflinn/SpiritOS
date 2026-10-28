@@ -11,6 +11,8 @@ stream"); Desk and deskClient move onto it.
 
 - **One function, `familyPath(name)`, exported by appServer**, answers `process/js/<name>/family/api.js`. Every
   caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
+  spirit.js holds the function, since the browser cannot load appServer, and appServer hands out the same one (cw,
+  goal/G41.12 Q3); it is the one other file that writes the path.
 - **The eight family folders are `process/js/<name>/family/`** (agent, backup, chatClerver, desk, deskAgent,
   deskClient, deskVerify, fileServer); no `<name>.family` is left.
 
@@ -41,7 +43,10 @@ stream"); Desk and deskClient move onto it.
 - **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring
   nothing (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache, it knows the default cache limit,
   IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"). For the desk: **the goal untouched longest goes whole**
-  (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL"); older rows go first.
+  (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL"); with one goal left, the item untouched
+  longest goes whole, its chat with it; with one goal of one item, the oldest chat lines go (Andy, Q2: "when there is
+  only one goal, then you shed the longest untouched item, LOCK, stock and barrel, when there is only one goal with one
+  item you shed the oldest chat line").
 
 ### What goes (goal/G41.12)
 
