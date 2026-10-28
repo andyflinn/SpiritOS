@@ -38,17 +38,14 @@
     D.set('deskItems/' + f.id, f);
   }
 
-  // ONE SIDE ROW: it keeps current the part of the item it belongs to, once that part was read; a part never read stays
-  // unread (goal/G33.4, box v46: "the box and other parts will come when needed and stay"). A box and a chat line are
-  // kept unread too (goal/G41.12: the cache keeps everything the server sends): the box is whole in its row, and the
-  // chat lines the stream brought are the newest, with chatMore, so older ones are asked for as before. A check or a
-  // file alone is no list, so those wait for a read.
+  // ONE SIDE ROW: it keeps current the part of the item it belongs to. EVERY PART IS LEARNED FROM ITS ROWS (goal/G41.12,
+  // box v39: "checks and file lists learned from rows"; the desk answers every request "ok" first, so nothing is read):
+  // a box, a chat line, a check or a file starts its part when none is kept yet and keeps it current from then on. Chat
+  // lines learned so are the newest, with chatMore; older ones come by his Push or the shared current goal.
   function side(o) {
     var id = String(o.id || '');
-    var whole = id ? D.get('deskItem/' + id) : null;
-    if (!whole && id && o.row && !o.removed && o.table === 'box') { keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 }); return; }
-    if (!whole && id && o.row && !o.removed && o.table === 'chat') { keep(id, { chat: [o.row], chatMore: true }); return; }
-    if (!whole) return;
+    if (!id) return;
+    var whole = D.get('deskItem/' + id) || {};
     if (o.table === 'box') {
       if (o.row) keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 });
       return;
@@ -64,7 +61,6 @@
       return;
     }
     if (o.table === 'checks') {
-      if (!Array.isArray(whole.checks)) return;
       // The panel holds the open and the decided ones, never the answered or cleared (desk.js shownChecks).
       var number = o.removed ? String(o.at || '') : String((o.row && o.row.number) || '');
       var checks = (whole.checks || []).filter(function (c) { return c.number !== number; });
@@ -78,8 +74,15 @@
       keep(id, { checks: checks });
       return;
     }
+    // AN ITEM'S SUITES (goal/G41.12): learned from their rows too, each a path; removed names it as its at.
+    if (o.table === 'suites') {
+      var drop = o.removed ? String(o.at || '') : String((o.row && o.row.path) || '');
+      var paths = (whole.suites || []).filter(function (p) { return p !== drop; });
+      if (!o.removed && o.row) paths.push(String(o.row.path));
+      keep(id, { suites: paths });
+      return;
+    }
     if (o.table === 'files') {
-      if (!Array.isArray(whole.files)) return;
       // A file row is one agent's path: removed names it as holder|path.
       var gone = o.removed ? String(o.at || '') : '';
       var files = (whole.files || []).filter(function (f) {
@@ -101,8 +104,12 @@
     if (!o || typeof o !== 'object') return;
     // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
     if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
-    // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
+    // A RULE (goal/G41.2): each rule write, and every rule in the shared current goal, kept by its key.
     if (o.rule && o.row && typeof o.row === 'object') { D.set('deskRules/' + String(o.rule), o.row); return; }
+    // A PROFILE AND HIS SEEN MARKER (goal/G41.12, box v39: "rows for profiles, his seen marker and agents, so the page
+    // keeps them"): a profile as profile.get answers it, by the agent's key; an item's seen time, by the item.
+    if (o.profile && o.row && typeof o.row === 'object') { D.set('deskProfiles/' + String(o.profile), o.row); return; }
+    if (o.seen && typeof o.at === 'string') { D.set('deskSeen/' + String(o.seen), { at: o.at }); return; }
     if (o.table) { side(o); return; }
     var it = facts(o.item);
     if (!it) return;

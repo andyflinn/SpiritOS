@@ -157,7 +157,9 @@ function createAppClient(opts) {
     }
     if (!isPlain(body) || Object.keys(body).length !== 1) return Promise.resolve(error('bad-request', { why: "'api', or one app as {app: {verb: {args}}}" }));
     const app = Object.keys(body)[0];
-    if (!APP_RE.test(app) || !isPlain(body[app])) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}' }));
+    // A BUNDLE (goal/G41.12): {app: [calls]}, known by its shape, goes to the app's server as it came; its
+    // spirit/appServer.js takes it or refuses it.
+    if (!APP_RE.test(app) || (!isPlain(body[app]) && !Array.isArray(body[app]))) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}, or a bundle of them' }));
     if (!Object.prototype.hasOwnProperty.call(table, app)) return Promise.resolve(error('app-not-served', { app: app }));
     return knock(table[app], body[app], caller);
   }

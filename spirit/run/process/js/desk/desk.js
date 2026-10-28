@@ -31,6 +31,10 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
+// THE DESK IS A SERVER (goal/G41.12, box v26: "the spirit/appServer.js implementation (desk, deskClient), on startup,
+// call a spirit/appServer.js function setMode("client" | "server)"): its publishes to peers bundle, and it takes a peer's
+// bundle of requests.
+appServer.setMode('server');
 const limits = require('../../../spirit/limits.js');
 
 const argv = process.argv;
@@ -2267,7 +2271,7 @@ function whyNotOffered(st, it, what, offered) {
 //                                                                     item.chat gives it), box (the newest version),
 //                                                                     checks (one check), files (one file), claims
 //   { change, table, goal, item, id, removed: true, at }              a side row it removed
-// A goal that becomes current is pushed whole (pushGoalWhole).
+// A goal that becomes current publishes its own row (pushCurrentGoal).
 // One object onto the desk's stream, as it is: THE ONE PUBLISH (box v43, Andy: "the desk server publishes its changes
 // to the browser with the same function that it publishes its changes to the deskClients"). appServer.publish hands it to
 // the node's pages and to every subscriber (goal/G33.8); the desk has no second send path.
@@ -2287,16 +2291,13 @@ function publishOne(o) {
 // (box v8: "for the desk that may be no more than the bare goal row"). The desk never acts as a client of its clients
 // and keeps nothing from them; it follows no stream itself (box v42).
 const CLIENT_WAIT_MS = 10000;
-// THE RULES COME WITH IT (goal/G41.2). Andy: "the deskClient is already supposed to have every fucking applicable rule
-// in it's cache", as goal/G40.12's box has it: "The desk client caches ... the desk pushes them only when an attachment
-// changes, so a wake carries no rule text it already holds." So a subscriber is handed every active rule first, each as
-// the publish its writes make ({rule, row}), and from then on hears each rule write; it never asks for a rule's text.
+// THE CURRENT GOAL'S ROW ALONE (goal/G41.12, box v30: "there is NO initial push for desk server, it will only PUSH the
+// current goal row when an agent reconnects"; Q5: "IT WILL ALWAYS PUBLISH WHAT's GOING ON and only push the CURRENT goal
+// row...."). Everything else reaches a client as it is written, or by his Push on an item (press push). This replaces
+// goal/G41.2's rules and items' facts handed with every push.
 function deskBootstrap() {
-  if (!S || !S.current || !S.goals[S.current]) return [];
-  const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
-  const ids = [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; });
-  // goal/G41.12: one row each; appServer bundles what it hands.
-  return rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
+  if (!S || !S.current || !S.items[S.current]) return [];
+  return [rowPublish(S, S.current, 'goal.whole', S.change)];
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -2322,19 +2323,11 @@ function sidePublish(s, id, ch, change) {
   if (ch.x && Array.isArray(ch.x.to)) o.to = ch.x.to.slice();
   return o;
 }
-// A GOAL BECOMING CURRENT IS PUSHED (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk pushes
-// it whole onto every desk client; from then on it pushes only that goal's updates." Since box v46 that is the goal's and
-// its items' facts, one publish each, and no part of an item. Andy: "getting it all at once, hmmm sounds like a bad idea,
-// maybe a new deskClient connect should start a stream-push of the goal, and the items, the box and other parts will come
-// when needed and stay". An item's box, chat, checks and files are each read by the client that needs them, each its own
-// answer under the payload, and kept current by the side rows every write pushes. Also at start, the current goal: every
-// client was away from a desk that was not there.
-function pushGoalWhole(gid) {
-  const s = S;
-  const g = s.goals[gid];
-  if (!g) return;
-  [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
-    .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
+// A GOAL BECOMING CURRENT SAYS SO (goal/G33.4; since goal/G41.12, box v30: "it will only PUSH the current goal row"): the
+// goal's row alone, as goal.whole, so every client knows its current goal; its items come as they are written, or by
+// his Push. No push at the desk's start (box v30: "there is NO initial push for desk server").
+function pushCurrentGoal(gid) {
+  if (S.items[gid]) publishOne(rowPublish(S, gid, 'goal.whole', S.change));
 }
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
 // every item where somebody holds something (signoff and his exclusion let go of what that agent held).
@@ -2437,7 +2430,7 @@ function write(verb, a, check) {
   side.forEach(function (o) { publishOne(byWriter(o)); });
   writeGoalFile(s, verb, a, s.change);
   // A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4).
-  if (s.current && s.current !== currentBefore) pushGoalWhole(s.current);
+  if (s.current && s.current !== currentBefore) pushCurrentGoal(s.current);
   shed();
   return s;
 }
@@ -2477,6 +2470,12 @@ function writeGoalFile(s, verb, a, change) {
   // leaves the file alone, so mucking about Stacks pushes no new currentGoal.json. A make-current is the switch itself.
   const pressed = his ? s.items[String(a.id)] : null;
   if (pressed && a.what !== 'make-current' && pressed.id !== s.current && pressed.goalId !== s.current) return;
+  shareGoal(s, change);
+}
+// The current goal, written and shared: on his presses above, and at every start (box v34: "the server on every restart,
+// auto-publishes its currentGoal.json").
+function shareGoal(s, change) {
+  if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
   const g = s.goals[s.current];
   const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
     return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,
@@ -2486,7 +2485,33 @@ function writeGoalFile(s, verb, a, change) {
   // committed again"): a clock in the file made every share new bytes, so goalShare's "same" never held. Nothing read
   // it; the commit carries its own time, and change names the desk's moment (line, the log's cursor, went with the log in
   // goal/G33.4).
-  const doc = { change: change, goal: s.current, items: items };
+  // ROWS A CLIENT MERGES (goal/G41.12, box v32: "desk will publish process/js/desk/currentGoal.json via gitHub in a
+  // format that allows deskClient to merge it with it's cache...."): beside items, the rows the desk's stream carries for
+  // those items, each item's facts row, then its box, chat lines, checks, files and claims as their side rows; a line his
+  // to some agents is left out here, as the file is everyone's.
+  // THE ROWS A PAGE NEEDS AT OPEN TOO (goal/G41.12, box v39: "rows for profiles, his seen marker and agents, so the page
+  // keeps them"; Q6: "same merge as deskClient gets"): beside the goal's items, the group chat (goal/G0), every rule, every
+  // agent's profile and each item's seen marker, so nothing the page draws needs a read. The agents come in the goal row.
+  const rows = [];
+  [s.current].concat(g.members, [GROUP_CHAT]).forEach(function (id) {
+    const it = s.items[id];
+    if (!it) return;
+    rows.push(rowPublish(s, id, 'goal.whole', change));
+    rowsOf(s, it).forEach(function (x) {
+      if (x.table === 'items' || typeof x.out !== 'function' || Array.isArray(x.to)) return;
+      rows.push(sidePublish(s, id, { table: x.table, key: x.key, x: x, removed: false }, change));
+    });
+    if (it.seenAt) rows.push({ change: change, seen: id, at: String(it.seenAt) });
+  });
+  // Each plugin goal's row too, so the page finds its plugins' tabs (their facts name the plugin).
+  Object.keys(PLUGIN_GOAL).forEach(function (gid) { if (s.items[gid]) rows.push(rowPublish(s, gid, 'item.get', change)); });
+  newestRules.all().forEach(function (r) { rows.push({ change: change, rule: r.key, row: ruleRow(r.key) }); });
+  Object.keys(s.profiles).forEach(function (k) { rows.push({ change: change, profile: k, row: profileOf(s, k) }); });
+  // THE STREAM'S POSITION ON TOP (box v33: "the server who controls the rolling "count/position" embeds at the top of
+  // currentGoal.json of every shared goal with that number, so deskClient knows which "version" of the deskServer state is
+  // contained in currentGoal.json. version=number"): version, with the run it counts in, the number restarting with it.
+  const at = appServer.position();
+  const doc = { version: at.version, run: at.run, change: change, goal: s.current, items: items, rows: rows };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
   shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
 }
@@ -2526,11 +2551,11 @@ function ruleRow(key) {
   const d = getDraft.get(r.key);
   return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by, autoAttach: r.autoAttach === true };
 }
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code', 'verify'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code', 'verify', 'push'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code', 'verify'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code', 'verify', 'push'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // IS THERE A deskVerify ON THIS NODE (goal/G8.3), which decides whether Done waits for it. Asked of this node, the
@@ -3222,6 +3247,9 @@ appServer.serve(withPlugins({
   'box.write': {
     request: { id: '', text: '', version: 0 }, reply: { change: 0, version: 0 },
     handler: function (a, caller) {
+      // THE BOX IS HIS (goal/G41.12, box v38: "change desk to refuse box changes from agents"; rule/25: "The USER owns the
+      // box."): an agent's write is refused, whatever it holds.
+      ownerOnly(caller);
       const w = writerOf(caller);
       // A BOX STAYS UNDER THE PAYLOAD (goal/G33.4, the box v31: a larger box write is refused, so a box is always read
       // and pushed in one piece; Andy: "Why would you let box past MAX_PAYLOAD?????"). Its bound is the one answer
@@ -3237,12 +3265,9 @@ appServer.serve(withPlugins({
       // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
       if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refusedWhy('bad-request', 'a line starting OPEN is not box text: an open point is a Q check');
-      // RED OFFERS THE CAP (goal/G41.11). Andy: "red should trigger an auto-cap". A write that leaves the box red (the
-      // facts' full, the dialog's red border) has the desk offer the cap itself, as his "cap" line does (addressOf):
-      // to every included agent with cap on, decided at the write and kept in it (capOffer). Below red, nothing.
-      const st0 = walkState();
-      const capOffer = boxFull(String(a.text), (Number(a.version) || 0) + 1) ? addressOf(st0, 'cap', null).to : null;
-      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }, capOffer ? { capOffer: capOffer } : {}), function (st, it) {
+      // NO CAP OFFERED (goal/G41.12, box v38: "change desk to refuse box changes from agents"): goal/G41.11's auto-cap on a
+      // red box offered agents a box.take and one write; an agent writes no box now, so a red box offers nothing.
+      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
         // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
         // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
@@ -3251,13 +3276,7 @@ appServer.serve(withPlugins({
         if (it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
         if (a.version !== it.version) throw refused('box-moved');
       });
-      const written = { change: s.change, version: s.items[a.id].version };
-      // AND WAKES THEM AS HIS LINE DOES (goal/G41.11): a desk line under the item, its record's to the very keys the cap
-      // is offered to (the shape of his addressed lines), so each of their deskClients wakes its agent.
-      if (capOffer && capOffer.length) {
-        write('chat.add', { id: a.id, text: 'the box is red: the cap is offered to the agents with cap on (box.take, then one write)', to: capOffer, cap: true, by: 'desk', key: '' });
-      }
-      return written;
+      return { change: s.change, version: s.items[a.id].version };
     },
   },
   'check.add': {
@@ -3693,7 +3712,11 @@ appServer.serve(withPlugins({
       const was = profileOf(st, a.agent);
       const included = typeof a.included === 'boolean' ? a.included : was.included;
       const cap = typeof a.cap === 'boolean' ? a.cap : was.cap;
-      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, by: w.by, key: w.key }).change };
+      const change = write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, by: w.by, key: w.key }).change;
+      // A PROFILE ROW ON THE STREAM (goal/G41.12, box v39: "rows for profiles, his seen marker and agents, so the page keeps
+      // them"): the profile as profile.get answers it, under the agent's key.
+      publishOne({ change: change, profile: a.agent, row: profileOf(walkState(), a.agent) });
+      return { change: change };
     },
   },
   'profile.get': {
@@ -3709,6 +3732,8 @@ appServer.serve(withPlugins({
   'box.take': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
+      // HIS ALONE (box v38: "change desk to refuse box changes from agents"): an agent takes no box, the cap included.
+      ownerOnly(caller);
       const w = writerOf(caller);
       // HE TAKES IT TOO (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
       // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for
@@ -3826,6 +3851,20 @@ appServer.serve(withPlugins({
         if (!suitesFor(st, it).length) throw notOffered(it.id + ' has no suites (its red writer adds them with item.suites.add), so there is nothing to run');
         return verifyEvent(it.id).then(function () { return { change: walkState().change }; });
       }
+      // HIS PUSH (goal/G41.12, box v30: "The user get's a "push" button the the detail of every goal or item, to force a
+      // server push of that item. chat's ar only pushed as lines happen."): no record, nothing changes; the item's facts,
+      // its box, its checks, its files and its claims go out again to every client, its chat never.
+      if (a.what === 'push') {
+        const st = walkState();
+        const it = st.items[String(a.id)];
+        if (!it) throw refused('no-such-item');
+        publishOne(rowPublish(st, it.id, 'item.push', st.change));
+        rowsOf(st, it).forEach(function (x) {
+          if (x.table === 'items' || x.table === 'chat' || typeof x.out !== 'function') return;
+          publishOne(sidePublish(st, it.id, { table: x.table, key: x.key, x: x, removed: false }, st.change));
+        });
+        return { change: st.change };
+      }
       const body = Object.assign({}, a, { by: w.by, key: w.key });
       const land = function () {
         const landed = write('press', body, pressCheck(a));
@@ -3911,7 +3950,10 @@ appServer.serve(withPlugins({
       if (atBytes > 64) throw tooLarge(atBytes, 64);
       if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/.test(String(a.at || ''))) throw refusedWhy('bad-request', 'at is a time like 2026-10-23T12:00:00.000Z');
       if (String(a.at || '') <= String(it.seenAt || '')) return { change: walkState().change };
-      return { change: write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change };
+      const change = write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change;
+      // HIS SEEN MARKER ON THE STREAM (goal/G41.12, box v39): the item's seen time, as seen.get answers it.
+      publishOne({ change: change, seen: it.id, at: String(a.at) });
+      return { change: change };
     },
   },
 // goal/G22.3: the table closes here, and withPlugins hands every verb of it to the plugins first.
@@ -3974,6 +4016,7 @@ function pressCheck(a) {
   };
 }
 
-// THE CURRENT GOAL, WHOLE, ONCE THE DESK SERVES (goal/G33.4). Andy, in the item's box: "a client that was away gets the
-// current goal pushed whole again"; after this desk's own start every client is one that was away from it.
-if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
+
+// THE CURRENT GOAL, SHARED AT EVERY START (goal/G41.12, box v34: "the server on every restart, auto-publishes its
+// currentGoal.json"), with this run's position on top, so every client knows which run its rows come from.
+if (S.current) setImmediate(function () { shareGoal(S, S.change); });
