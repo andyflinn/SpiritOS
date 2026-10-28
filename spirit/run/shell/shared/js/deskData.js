@@ -102,7 +102,12 @@
     if (!o || typeof o !== 'object') return;
     // A BUNDLE IS ITS ROWS (goal/G41.11): the desk publishes a list together as { change, rows: [...] } (desk.js
     // bundled), and each row of it is taken as the single row it is.
-    if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
+    // THE POSITION MOVES ONLY WITH WHAT LANDED (goal/G41.12): during a push it is held until the push has landed whole
+    // (spiritData hold), so a push cut after its first part is asked again from the old position.
+    if (typeof o.change === 'number') {
+      var top = Math.max(Number(D.get('desk/change')) || 0, typeof D.held === 'function' ? Number(D.held('desk/change')) || 0 : 0);
+      if (o.change > top) { if (typeof D.hold === 'function') D.hold('desk/change', o.change); else D.set('desk/change', o.change); }
+    }
     if (Array.isArray(o.rows)) { o.rows.forEach(published); return; }
     if (o.table) { side(o); return; }
     var it = facts(o.item);

@@ -120,7 +120,19 @@
     if (!renewal || !noting_) return;
     (renewal[type] || (renewal[type] = Object.create(null)))[key] = true;
   }
-  function renew(types) { renewal = Object.create(null); renewing = Array.isArray(types) ? types.map(String) : null; }
+  function renew(types) { renewal = Object.create(null); renewing = Array.isArray(types) ? types.map(String) : null; heldBack = Object.create(null); }
+  // A VALUE HELD UNTIL THE PUSH LANDS (goal/G41.12): a position must not move ahead of rows not yet taken. A push sends
+  // the goal's facts, stamped with the newest change, before the older rows it hands; cut after them, a position set at
+  // once would ask the next push only for what came after, and the rows between are never sent again (Andy's four file
+  // writes, 2026-10-27). So while a renewal is open, hold(path, value) keeps the value back and renewed() writes it once
+  // the push has landed whole; a cut push leaves the old value, and the next push is asked from there. Outside a
+  // renewal it is written at once. held(path) answers what is held, or undefined.
+  var heldBack = Object.create(null);
+  function hold(path, value) {
+    if (!renewal) { set(path, value); return; }
+    heldBack[String(path)] = value;
+  }
+  function held(path) { return heldBack[String(path)]; }
   function noting(fn) {
     var was = noting_;
     noting_ = true;
@@ -134,6 +146,9 @@
       if (renewing && renewing.indexOf(type) === -1) return;
       Object.keys(branch(type)).forEach(function (k) { if (!r[type][k]) del(type + '/' + k); });
     });
+    var h = heldBack;
+    heldBack = Object.create(null);
+    Object.keys(h).forEach(function (p) { set(p, h[p]); });
   }
   function watch(path, fn) {
     if (typeof fn !== 'function') return function () {};
@@ -258,7 +273,7 @@
 
   var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
     translate: translate, quietly: quietly, ready: ready, branch: branch, search: search, forget: forget, cap: cap,
-    renew: renew, noting: noting, renewed: renewed,
+    renew: renew, noting: noting, renewed: renewed, hold: hold, held: held,
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 
