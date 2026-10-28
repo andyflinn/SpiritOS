@@ -1,33 +1,41 @@
 'use strict';
 
 // spirit/run/spirit/test/appServer.js
-// The tests of spirit/appServer.js, and of no other module (spec: ./appServer.md; goal/G41.11). The real appServer
-// serves one server on a pipe of its own in a temp folder, publishing a stream and following it: its client half
-// subscribes to its own publisher half, and the publisher hands its bootstrap back over the same pipe, to its own
-// streamListener, row by row. The one spirit object is a stand-in, so nothing reaches a real node: the families answer
-// by posting to that pipe, and the rows the publisher sends can be held back until the test lets them go.
+// The tests of spirit/appServer.js, and of no other module (spec: ./appServer.md; goal/G41.11, goal/G41.12). The real
+// appServer serves one server on a pipe of its own in a temp folder, publishing a stream and following it: its client
+// half subscribes to its own publisher half, and the publisher hands its rows back over the same pipe, to its own
+// streamListener. The one spirit object is a stand-in, so nothing reaches a real node: the families answer by posting to
+// that pipe, and a delivery can be held back, or refused, until the test says otherwise. A restart is a second process:
+// this file run with --child <mode>, printing one RESULT line.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
 const Module = require('module');
+const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'appServer.js');
+const SELF_FILE = __filename;
 const TRANSLATOR = path.join(RUN, 'shell', 'shared', 'js', 'deskData.js');
+const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
+const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
-// A pipe on Windows is a \\.\pipe\ name, never a file path (appClient.pipePathFor, as the other suites do), named once
-// the stand-in for spirit.js is in place, since appClient brings spirit.js with it.
-let PIPE = path.join(TMP, 'door.sock');
-const PUBLISHER = 'KEY-DESK';   // the key the client follows: its publisher's
-const SELF = 'KEY-CLIENT';      // the key the publisher sees subscribing: the client's
-// One call on the pipe, as the node makes it: {verb: args}, the caller's key in a header.
+// The publisher's key, base64 as a node key is; the cache file names it in hex (box v15: cache-<sender key in hex>.json).
+const PUBLISHER = Buffer.from('KEY-DESK').toString('base64');
+const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
+const SELF = 'KEY-CLIENT';
+// The eight server families (box v15, Family folders).
+const FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskAgent', 'deskClient', 'deskVerify', 'fileServer'];
+
+const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
+// A server name of the test's own, so its cache folder (relay-state/process/<name>/) is no real server's.
+const NAME = CHILD ? String(process.argv[5]) : 'streamProbe';
+let PIPE = path.join(TMP, NAME + '.sock');
 function post(verb, args, callerKey) {
   return new Promise(function (resolve) {
     const body = JSON.stringify({ [verb]: args });
@@ -40,9 +48,14 @@ function post(verb, args, callerKey) {
     req.end(body);
   });
 }
-// The rows the publisher sends wait here while held; let go, they reach the streamListener in order.
-const gate = { held: false, waiting: [] };
+// Every delivery the publisher makes, parsed; held while gate.held, refused while gate.refuse.
+const gate = { held: false, refuse: false, waiting: [] };
+const posts = [];
 function deliver(json) {
+  let parsed = null;
+  try { parsed = JSON.parse(json); } catch (e) { parsed = null; }
+  posts.push(parsed);
+  if (gate.refuse) return Promise.reject(new Error('refused by the test'));
   const go = function () { return post('streamListener', { json: json }, PUBLISHER).then(function (r) { return r.status === 200 ? r.body : Promise.reject(new Error('refused ' + short(r.body))); }); };
   if (!gate.held) return go();
   return new Promise(function (resolve, reject) { gate.waiting.push(function () { go().then(resolve, reject); }); });
@@ -58,8 +71,9 @@ const fake = {
         search: function () { return Promise.resolve({ items: [], more: false }); },
       });
     }
-    // A family under a key: the publisher's (the client subscribing) or the client's (the publisher delivering).
-    if (/\.family\/api\.js$/.test(q) && key) {
+    // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
+    // by the old name or the new: routing only, this test writes no family path of its own.
+    if (key && /(?:^|\/)([^/]+)\/(?:family|\1\.family)\/api\.js$/.test(q)) {
       return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
         streamListener: function (a) { return deliver(a.json); },
@@ -72,57 +86,214 @@ const fake = {
 };
 const realLoad = Module._load;
 Module._load = function (request, parent) {
-  // spirit.js is the stand-in for every module that requires it: the real one would write its own require onto it.
-  // Either slash: on Windows a module may name it by a path.join, backslashes and all.
   if (/(^|[\\/])spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, 'desk', 'win32', 'process');
-process.argv =[process.argv[0], path.join(TMP, 'desk.js'), '--pipe', PIPE];
+if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, NAME, 'win32', 'process');
+const childArgv = process.argv.slice();
+process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE];
 
-// What the publisher's bootstrap holds now: the goal whole, its items' facts.
 let bootstrap = [];
+let bootstraps = 0;
 const GOAL = { id: 'goal/G9', goal: '', title: 'the goal', version: 1 };
 const item = function (n, extra) { return Object.assign({ id: 'goal/G9.' + n, goal: 'goal/G9', title: 'item ' + n, version: 1 }, extra || {}); };
 const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
+// The client's cache file for the publisher (box v15): relay-state/process/<client server>/cache-<sender key in hex>.json,
+// under the run root, where spirit.js sits.
+const cacheFile = function (name) { return path.join(RUN, 'relay-state', 'process', name, 'cache-' + PUBLISHER_HEX + '.json'); };
 
-test.startTest('appServer.js: a subscribe keeps the cache until the new push lands (goal/G41.11)');
-
-(async function () {
+function start(streamOpts, publisherOpts) {
   const A = require(FILE);
   const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {
-    stream: { module: 'process/js/desk', translator: TRANSLATOR },
-    publisher: { family: 'desk', bootstrap: function () { return bootstrap.slice(); }, waitMs: 5000 },
+    stream: Object.assign({ module: 'process/js/desk', translator: TRANSLATOR }, streamOpts || {}),
+    publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
-  await tick(100);
-  const D = A.data;
-  ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));
-  if (!D || !s || typeof s.subscribe !== 'function') return;
-  const has = function (n) { return !!D.get('deskItems/goal/G9.' + n); };
+  return { A: A, s: s, D: A.data };
+}
+const hasIn = function (D, n) { return !!(D && D.get('deskItems/goal/G9.' + n)); };
 
-  test.subHeading('the first subscribe: the push lands, the cache holds it');
-  bootstrap = [row(GOAL), row(item(1)), row(item(2))];
-  const first = await s.subscribe(PUBLISHER, 'desk');
-  await tick(200);
-  ok(first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }),
-    'a subscribe follows the publisher\'s key and asks its family to subscribe it', 'answered ' + short(first) + ', asked ' + short(asked));
-  ok(has(1) && has(2), 'the bootstrap lands in the cache: both items', short({ one: D.get('deskItems/goal/G9.1'), two: D.get('deskItems/goal/G9.2') }));
+// ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
+async function child(mode) {
+  const out = {};
+  const FAM = childArgv[6] || 'desk';
+  if (mode === 'first') {
+    // Cache on: the first run of a client, its push landed.
+    const { s, D } = start({ cache: true });
+    await tick(100);
+    bootstrap = [row(GOAL), row(item(1)), row(item(2))];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(400);
+    out.one = hasIn(D, 1); out.two = hasIn(D, 2);
+  } else if (mode === 'restart') {
+    // The same client again, a new process: the publisher in it a new run. Its cache read back before any subscribe.
+    const { s, D } = start({ cache: true });
+    await tick(300);
+    out.readOne = hasIn(D, 1); out.readTwo = hasIn(D, 2);
+    bootstrap = [row(GOAL), row(item(1, { title: 'item 1, renamed', version: 2 }))];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(400);
+    out.title = D.get('deskItems/goal/G9.1') && D.get('deskItems/goal/G9.1').title;
+    out.two = hasIn(D, 2);
+  } else if (mode === 'off' || mode === 'nofamily') {
+    // off: no cache switch; nofamily: the switch on, but the sender's family has no folder on this node.
+    const { s } = start(mode === 'off' ? {} : { cache: true });
+    await tick(100);
+    bootstrap = [row(GOAL), row(item(1))];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(400);
+  } else if (mode === 'limit') {
+    const { A, s } = start({ cache: { limit: 4000 } });
+    await tick(100);
+    bootstrap = [row(GOAL)];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(200);
+    for (let i = 100; i < 300; i++) A.publish(row(item(i, { title: 'a row long enough to fill a small cache quickly, number ' + i })));
+    await tick(1500);
+  }
+  process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
+  process.exit(0);
+}
+function runChild(mode, name, fam) {
+  const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || 'desk'], { encoding: 'utf8', timeout: 30000 });
+  const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
+  try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
+}
+function clearCache(name) { try { fs.rmSync(path.join(RUN, 'relay-state', 'process', name), { recursive: true, force: true }); } catch (e) { /* none */ } }
 
-  test.subHeading('a subscribe again: the old cache stays until the new push lands (Andy, Q5: "YES")');
-  // The new push holds item 1 changed and no item 2.
-  bootstrap = [row(GOAL), row(item(1, { title: 'item 1, renamed', version: 2 }))];
-  gate.held = true;
-  const again = s.subscribe(PUBLISHER, 'desk');
-  await tick(200);
-  ok(has(1) && has(2) && D.get('deskItems/goal/G9.1').title === 'item 1' && D.get('desk/current') === 'goal/G9',
-    'subscribed again, its push not yet landed: every row it kept is still there, as it was', 'kept: ' + short({ one: D.get('deskItems/goal/G9.1'), two: D.get('deskItems/goal/G9.2'), current: D.get('desk/current') }));
-  release();
-  await again;
-  await tick(300);
-  ok(has(1) && D.get('deskItems/goal/G9.1').title === 'item 1, renamed', 'once the push lands, a row it holds is current', 'item 1: ' + short(D.get('deskItems/goal/G9.1')));
-  ok(!has(2), 'and the cache is replaced whole by it: a row the new push does not hold is gone', 'item 2 still kept: ' + short(D.get('deskItems/goal/G9.2')));
-}()).then(function () {
-  try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
-  test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);
-}, function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
+// ── the tree: one family path, eight folders (box v15, Family folders) ─────────────────────────────────────────────
+function codeFiles(dir, out) {
+  let names = [];
+  try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
+  names.forEach(function (d) {
+    const p = path.join(dir, d.name);
+    if (d.isDirectory()) {
+      if (d.name === 'node_modules' || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state')) return;
+      codeFiles(p, out);
+    } else if (/\.(js|html)$/.test(d.name)) out.push(p);
+  });
+  return out;
+}
+
+if (CHILD) {
+  child(CHILD).catch(function (e) { process.stdout.write('RESULT ' + JSON.stringify({ failed: String(e && e.stack || e) }) + '\n'); process.exit(1); });
+} else {
+  test.startTest('appServer.js: one stream protocol for every server (goal/G41.11, goal/G41.12)');
+  (async function () {
+    test.subHeading('the family path: one function, in appServer (box v15)');
+    const A0 = require(FILE);
+    ok(typeof A0.familyPath === 'function', 'appServer exports familyPath', 'appServer has no familyPath export: ' + typeof A0.familyPath);
+    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('desk') : null;
+    ok(fp === 'process/js/desk/family/api.js', 'familyPath(name) is process/js/<name>/family/api.js', 'familyPath(\'desk\') is ' + short(fp));
+    FAMILIES.forEach(function (n) {
+      const moved = fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) && !fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family'));
+      ok(moved, n + ': its family folder is process/js/' + n + '/family/, no ' + n + '.family is left',
+        n + ': family/api.js ' + fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) + ', ' + n + '.family still there: ' + fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family')));
+    });
+    // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
+    // routes by the pattern and is left out; so is appServer.js, the one place the path is written.
+    const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE; }).filter(function (f) {
+      const t = fs.readFileSync(f, 'utf8');
+      return /\.family(?=['"`\/\\]|$)/m.test(t) || /(^|[^\\])\/?family\/api\.js/.test(t) || /['"`]family['"`]\s*[),]/.test(t);
+    }).map(function (f) { return path.relative(RUN, f); });
+    ok(writers.length === 0, 'no file outside appServer\'s familyPath writes a family path', writers.length + ' files write one: ' + writers.join(', '));
+
+    test.subHeading('what goes (box v15)');
+    const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');
+    const clientJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
+    ok(!/function\s+bundled\s*\(/.test(deskJs), 'the desk has no bundled() of its own', 'desk.js still defines bundled()');
+    ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
+
+    // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
+    const { A, s, D } = start({}, { logMax: 5 });
+    await tick(100);
+    ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));
+    if (!D || !s || typeof s.subscribe !== 'function') return;
+    const has = function (n) { return hasIn(D, n); };
+
+    test.subHeading('the first subscribe: a full push');
+    bootstrap = [row(GOAL), row(item(1)), row(item(2))];
+    const first = await s.subscribe(PUBLISHER, NAME);
+    await tick(300);
+    ok(first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }),
+      'a subscribe follows the publisher\'s key and asks its family to subscribe it', 'answered ' + short(first) + ', asked ' + short(asked));
+    ok(has(1) && has(2), 'the bootstrap lands in the cache: both items', short({ one: D.get('deskItems/goal/G9.1'), two: D.get('deskItems/goal/G9.2') }));
+    ok(posts.length > 0 && posts.every(Array.isArray), 'every delivery is a bundle: one JSON array of rows in one peerPost', 'deliveries: ' + short(posts));
+
+    test.subHeading('rows that back up go as bundles (box v15)');
+    let before = posts.length;
+    gate.held = true;
+    A.publish(row(item(10)));
+    await tick(50);
+    for (let i = 11; i < 30; i++) A.publish(row(item(i)));
+    await tick(300);
+    release();
+    await tick(800);
+    const landed = []; for (let i = 10; i < 30; i++) if (has(i)) landed.push(i);
+    ok(landed.length === 20, 'twenty rows published, twenty landed', 'landed: ' + short(landed));
+    ok(posts.length - before <= 3, 'nineteen rows backed up behind a held one went in a bundle, not one peerPost each', (posts.length - before) + ' peerPosts for 20 rows');
+
+    test.subHeading('the position: a subscribe again is handed what came after it, no push (box v15)');
+    before = bootstraps;
+    gate.refuse = true;
+    A.publish(row(item(30)));
+    await tick(300);
+    gate.refuse = false;
+    A.publish(row(item(31)));
+    A.publish(row(item(32)));
+    A.publish(Object.assign(row(item(33)), { to: ['KEY-SOMEONE-ELSE'] }));
+    await tick(100);
+    // The new bootstrap holds no item 2: a full push would sweep it.
+    bootstrap = [row(GOAL), row(item(1))];
+    const again = await s.subscribe(PUBLISHER, NAME);
+    await tick(500);
+    ok(again === true && has(30) && has(31) && has(32), 'dropped by a refused delivery, it subscribes again and is handed the rows it missed', 'answered ' + short(again) + ', items 30-32: ' + [has(30), has(31), has(32)].join(' '));
+    ok(again === true && has(32) && !has(33), 'a row addressed to another key is left out of what it is handed', 'item 33, addressed to another key: ' + has(33));
+    ok(bootstraps === before && has(2),'the sender\'s log answers it: no bootstrap, and the cache is not replaced', 'bootstraps ' + before + ' -> ' + bootstraps + ', item 2 kept: ' + has(2));
+    const subArgs = asked.filter(function (a) { return a.verb === 'subscribe'; }).map(function (a) { return a.args; });
+    const last = subArgs[subArgs.length - 1] || {};
+    ok(subArgs.length >= 2 && JSON.stringify(last) !== JSON.stringify(subArgs[0]), 'the subscribe again carries the position the client holds', 'subscribes: ' + short(subArgs));
+
+    test.subHeading('older than the bounded log: a full push, the cache replaced whole (box v15)');
+    before = bootstraps;
+    gate.refuse = true;
+    A.publish(row(item(40)));
+    await tick(300);
+    gate.refuse = false;
+    for (let i = 41; i < 50; i++) A.publish(row(item(i)));
+    await tick(100);
+    bootstrap = [row(GOAL), row(item(1))];
+    await s.subscribe(PUBLISHER, NAME);
+    await tick(600);
+    ok(bootstraps === before + 1, 'nine rows missed past a log of five: the sender pushes in full', 'bootstraps ' + before + ' -> ' + bootstraps);
+    ok(has(1) && !has(2) && !has(45), 'a full push replaces the sender\'s cache whole', 'item 1 ' + has(1) + ', item 2 ' + has(2) + ', item 45 ' + has(45));
+
+    // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
+    test.subHeading('the cache, per sender, saved and read back (box v15)');
+    clearCache('cacheProbe');
+    const one = runChild('first', 'cacheProbe');
+    const file = cacheFile('cacheProbe');
+    let text = '';
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
+    ok(one.subscribed === true && one.one && one.two, 'a client with the cache switch on takes the push', short(one));
+    ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/process/<client>/cache-<sender key in hex>.json', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
+    const two = runChild('restart', 'cacheProbe');
+    ok(two.readOne && two.readTwo, 'started again, it reads its cache back before it subscribes', short(two));
+    ok(two.subscribed === true && two.title === 'item 1, renamed' && !two.two, 'a sender of a new run pushes in full, and the cache is replaced whole', short(two));
+    clearCache('cacheOff');
+    runChild('off', 'cacheOff');
+    ok(!fs.existsSync(cacheFile('cacheOff')), 'without the switch no cache file is kept', 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff')));
+    clearCache('cacheNoFam');
+    runChild('nofamily', 'cacheNoFam', 'noSuchServer');
+    ok(!fs.existsSync(cacheFile('cacheNoFam')), 'a sender whose family has no folder on this node is not cached', 'cache file found: ' + path.relative(RUN, cacheFile('cacheNoFam')));
+    clearCache('cacheLimit');
+    runChild('limit', 'cacheLimit');
+    let size = -1;
+    try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
+    ok(size > 0 && size <= 4000, 'the cache keeps to the limit the client sets', 'cache file of ' + size + ' bytes for a limit of 4000');
+    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheLimit'].forEach(clearCache);
+  }()).then(function () {
+    try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
+    test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);
+  }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
+}
