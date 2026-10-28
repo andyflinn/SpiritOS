@@ -1,9 +1,10 @@
 'use strict';
 
 // spirit/run/shell/grants/test/grants.js
-// The tests of shell/grants/grants.js, and of no other module (spec: ./grants.md; goal/G41.5). The browser file runs in
-// node on a window of its own: the search list, the contacts dropdown, the api-branch selector and the node are stubs
-// that keep what the app asked of them; the row element is the real one (shell/js/rowElement.js).
+// The tests of shell/grants/grants.js, and of no other module (spec: ./grants.md; goal/G41.5, goal/G41.13). The browser
+// file runs in node on a window of its own: the search list, the tab container, the bundle selector, the contact
+// selector, the bundle editor and the node are stubs that keep what the app asked of them; the row element is the real
+// one (shell/js/rowElement.js).
 
 const fs = require('fs');
 const path = require('path');
@@ -61,7 +62,7 @@ const GRANTS = [
 ];
 
 function world() {
-  const w = { lists: [], contacts: [], branches: [], required: [], calls: [], def: null, made: [] };
+  const w = { lists: [], contacts: [], branches: [], required: [], calls: [], def: null, made: [], tabs: [], bundles: [], ids: [], editors: [], grantAnswer: null };
   const E = {
     // The are-you-sure button (goal/G41.9): a recorder of every button made arming, by attach or create.
     armingButton: {
@@ -73,6 +74,11 @@ function world() {
     contactList: { create: function (host, opts) { const c = { host: host, opts: opts, list: { value: '', row: null } }; w.contacts.push(c); return c; } },
     createApiBranchSelector: function (opts) { const b = node('branch'); b.opts = opts; b.server = ''; b.verb = ''; b.value = ''; w.branches.push(b); return b; },
     shellCreateListSearch: function (host, opts) { w.oldList = { host: host, opts: opts }; return { redraw: function () {}, refresh: function () {} }; },
+    // goal/G41.13: the two tabs, the bundle and ID selectors of the add-grant row, and the bundle editor.
+    tabContainer: { create: function (host, opts) { const t = { host: host, opts: opts || {}, select: function () {}, selected: function () { return ''; }, destroy: function () {} }; w.tabs.push(t); return t; } },
+    createBundleSelector: function (opts) { const b = node('bundle'); b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); return b; },
+    createContactSelector: function (opts) { const c = node('contact'); c.opts = opts; c.value = ''; c.row = null; w.ids.push(c); return c; },
+    bundleEditor: { create: function (host, opts) { const e = { host: host, opts: opts || {}, destroy: function () {} }; w.editors.push(e); return e; } },
   };
   const api = {
     escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); },
@@ -80,6 +86,7 @@ function world() {
       w.calls.push({ name: name, args: args });
       if (name === 'api') return Promise.resolve({ status: 200, body: TREE });
       if (name === 'auth.search') return Promise.resolve({ status: 200, body: { items: GRANTS.map(function (g) { return { key: g.key, label: JSON.stringify(g) }; }), more: false } });
+      if (name === 'auth.grant' && w.grantAnswer) return Promise.resolve(w.grantAnswer(args));
       if (name === 'auth.revoke' || name === 'auth.grant') return Promise.resolve({ status: 200, body: { ok: true } });
       return Promise.resolve({ status: 200, body: {} });
     },
@@ -116,13 +123,26 @@ test.startTest('grants.js: the Grants app');
   if (!w.def) return;
 
   test.subHeading('it loads what it uses itself (goal/G41.3)');
-  ['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/contacts/listElement.js', 'shell/js/apiBranchSelector.js',
-    'shell/js/armingButton.js'].forEach(function (p) {
+  ['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/armingButton.js', 'shell/js/tabContainer.js', 'shell/js/bundleSelector.js',
+    'shell/js/contactSelector.js', 'shell/js/bundleEditor.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
 
-  const box = node('container');
-  await w.def.mount(box, w.api); await settle();
+  const app = node('container');
+  await w.def.mount(app, w.api); await settle();
+
+  test.subHeading('two tabs: Grants, and Bundles (goal/G41.13)');
+  const tabs = w.tabs[0];
+  const names = tabs ? (tabs.opts.tabs || []).map(function (t) { return t && t.name; }) : [];
+  ok(w.tabs.length === 1 && JSON.stringify(names) === '["grants","bundles"]' && (tabs.opts.tabs || []).every(function (t) { return t.label && typeof t.mount === 'function'; }),
+    'the app is one tabContainer with the tabs grants and bundles, each with its label and mount', 'tabs: ' + short(names));
+  if (!tabs || names.length !== 2) return;
+  const box = node('grants-tab');
+  tabs.opts.tabs[0].mount(box); await settle();
+  const bundlesBox = node('bundles-tab');
+  tabs.opts.tabs[1].mount(bundlesBox); await settle();
+  ok(w.editors.length === 1 && w.editors[0].host === bundlesBox && w.editors[0].opts.api === w.api,
+    'the Bundles tab is the bundle editor, in its own box, with the app\'s api (Andy: "where bundles are created and maintained with the bundle shell element")', 'editors: ' + short(w.editors.map(function (e) { return e.host === bundlesBox; })));
 
   test.subHeading('the grants list: a probabilitySearch pane in a box of a stated size (rule/16)');
   ok(!w.oldList, 'no old shell list is made', 'it made a shellCreateListSearch list');
@@ -176,12 +196,39 @@ test.startTest('grants.js: the Grants app');
   ok(mine && mine.asked.args.path === 'fs.search', 'the row\'s run asks auth.revoke for that key and path', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
   ok(mine && mine.after.some(function (c) { return c.name === 'auth.search'; }), 'and reads the grants again, drawing only what the node answers', 'no auth.search after the revoke');
 
-  test.subHeading('the line: whose access, the api branch, Grant');
-  ok(w.contacts.length === 1 && w.contacts[0].opts.face === 'dropdown', 'whose access is the contacts list as a dropdown', 'contact lists: ' + short(w.contacts.map(function (c) { return c.opts.face; })));
-  ok(w.branches.length === 1, 'the server and verb are the api-branch selector', 'branch selectors: ' + w.branches.length);
-  if (!w.contacts.length || !w.branches.length) return;
-  w.contacts[0].list.value = 'K1';
-  w.branches[0].server = 'fs'; w.branches[0].value = 'fs';
-  ok(o.rows().length === 1 && o.rows()[0].peer === 'K1', 'a chosen peer narrows the list to its grants', 'rows: ' + short(o.rows()));
+  test.subHeading('the add-grant row: grant [bundleSelector] to [ID selector] (goal/G41.13)');
+  ok(w.bundles.length === 1 && w.ids.length === 1, 'the Grants tab has one bundle selector and one ID selector, the contact selector', 'bundle selectors ' + w.bundles.length + ', ID selectors ' + w.ids.length);
+  ok(w.branches.length === 0 && w.contacts.length === 0, 'and no api-branch selector or contacts list of the old line: every grant goes through a bundle', 'branch selectors ' + w.branches.length + ', contact lists ' + w.contacts.length);
+  ok(!w.calls.some(function (c) { return /\.DEPENDENCIES$/.test(c.name); }), 'it asks no server for its DEPENDENCIES: no Grant the bundle button', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
+  const text = box.innerHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+  ok(/\bgrant\b/i.test(text) && /\bto\b/.test(text) && /<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML), 'the row reads "grant" [bundle] "to" [ID], then a Grant button', 'row: ' + short(text));
+  if (!w.bundles.length || !w.ids.length) return;
+
+  test.subHeading('Grant copies the bundle\'s paths to the ID, one auth.grant per path');
+  const grantBtn = box.querySelectorAll('[type="button"]').concat(box.nodes).filter(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || ''); })[0];
+  const press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
+  ok(!!grantBtn, 'the Grant button is found by its id or data-action naming grant', 'buttons: ' + short(box.nodes.filter(function (n) { return /<button/.test(n.tag); }).map(function (n) { return n.tag; })));
+  let at0 = w.calls.length;
+  press(); await settle();
+  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'auth.grant'; }), 'with no bundle or no ID chosen, Grant asks nothing', 'calls: ' + short(w.calls.slice(at0)));
+  w.bundles[0].value = 'KB1'; w.bundles[0].row = { key: 'KB1', label: 'Reader', paths: ['jobs.list', 'fs.search'] };
+  w.ids[0].value = 'K3'; w.ids[0].row = { key: 'K3', name: 'Cat' };
+  w.grantAnswer = function (a) { return a.path === 'fs.search' ? { status: 409, body: { ok: false, code: 'already-granted', error: 'already granted' } } : { status: 200, body: { key: a.key, path: a.path } }; };
+  at0 = w.calls.length;
+  press(); await settle();
+  const grants = w.calls.slice(at0).filter(function (c) { return c.name === 'auth.grant'; });
+  ok(grants.length === 2 && grants.every(function (c) { return c.args.key === 'K3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["fs.search","jobs.list"]',
+    'Grant asks auth.grant { key, path } once for each path of the bundle, the key the ID chosen (Andy: "each path row of the bundle, combined with the ID ... becomes a new auth row")', 'grants: ' + short(grants.map(function (c) { return c.args; })));
+  ok(!/already-granted|already granted|not granted|refused/i.test(box.innerHTML.replace(/<[^>]*>/g, ' ')), 'a path the ID holds already is counted done, never said as a refusal ("unless that row exists already")', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
+  ok(w.calls.slice(at0).some(function (c) { return c.name === 'auth.search'; }), 'and the grants are read again, drawing only what the node answers (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
+  w.grantAnswer = function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner only' } }; };
+  at0 = w.calls.length;
+  press(); await settle();
+  ok(/owner-only|owner only/.test(box.innerHTML), 'a grant refused for another reason says so', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
+  w.grantAnswer = null;
+
+  test.subHeading('a chosen ID narrows the list to its grants');
+  w.ids[0].value = 'K1';
+  ok(o.rows().length === 1 && o.rows()[0].key === 'K1', 'the ID chosen in the row narrows the list to its grants', 'rows: ' + short(o.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
