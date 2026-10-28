@@ -1,5 +1,5 @@
 {
- "change": 111239,
+ "change": 111240,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -6554,12 +6554,11 @@
    "id": "goal/G41.12",
    "title": "a better peerPost-based \"stream\" protocol....",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 39,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
