@@ -596,7 +596,8 @@ const test = {
       if (!body || body.verb !== 'api' || typeof body.family !== 'string') return null;
       const run = require('path').join(__dirname, '..', 'run');
       const f = body.family;
-      const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, 'process', 'js', f, f + '.family', 'api.js')];
+      // A server's family path by the one function (goal/G41.12: spirit.familyPath; no file writes one of its own).
+      const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, require(require('path').join(run, 'spirit.js')).familyPath(f))];
       for (const file of tried) {
         if (/^[A-Za-z]\w*$/.test(f) && require('fs').existsSync(file)) return { status: 200, body: { family: f, interface: require('fs').readFileSync(file, 'utf8') } };
       }
