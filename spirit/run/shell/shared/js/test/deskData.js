@@ -118,8 +118,8 @@ ok(!wn.part('goal/G9.1'), 'before any goal was pushed nothing is kept', short(wn
 
 // goal/G41.12, box v15: the cache keeps everything the server sends. A box row is the whole box and a chat line is the
 // newest, so both are kept unread. Box v39: "checks and file lists learned from rows": a check or a file row starts its
-// list, marked as maybe incomplete (cw), since reads are gone.
-test.subHeading('side rows: a box, a chat line, a check and a file are each kept unread, a list it starts marked maybe incomplete');
+// list, since reads are gone.
+test.subHeading('side rows: a box, a chat line, a check and a file are each kept unread, starting their lists');
 const ws = world(true);
 ws.job(whole(it('goal/G9.1', 'goal/G9')));
 ws.job(whole(it('goal/G9.2', 'goal/G9')));
@@ -129,7 +129,7 @@ ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '1', state: 'open' } }
 ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
 const learned = ws.part('goal/G9.1') || {};
 ok(Array.isArray(learned.checks) && learned.checks.length === 1 && learned.checks[0].number === '1', 'a check row of an item never read starts its checks list', short(learned));
-ok(Array.isArray(learned.files) && learned.files.length === 1 && learned.files[0].path === 'a.js' && learned.filesMore === true, 'a file row starts its file list, filesMore: true, as maybe incomplete', short(learned));
+ok(Array.isArray(learned.files) && learned.files.length === 1 && learned.files[0].path === 'a.js', 'a file row starts its file list', short(learned));
 ws.job({ table: 'checks', id: 'goal/G9.1', removed: true, at: '1' });
 ws.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|a.js' });
 ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [] });
@@ -184,6 +184,18 @@ ok(wf.part('goal/G9.1').files.filter(function (f) { return f.path === 'x.js'; })
 wf.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|x.js' });
 files = wf.part('goal/G9.1').files;
 ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.path === 'x.js'; }), 'a removed file goes by holder|path, the other agent\'s stays', short(files));
+
+// goal/G41.12, box v39: "rows for profiles, his seen marker and agents, so the page keeps them"; cw: profile.set
+// publishes {profile: <key>, row}, seen.set {seen: <id>, at}, kept in deskProfiles and deskSeen.
+test.subHeading('profiles and his seen marker are kept from their rows (box v39)');
+const wp = world(true);
+wp.job({ profile: 'KEY-CW', row: { agent: 'KEY-CW', name: 'Claude Windows', nick: 'cw', included: true } });
+ok(wp.D.get('deskProfiles/KEY-CW') && wp.D.get('deskProfiles/KEY-CW').nick === 'cw', 'a profile row is kept by its key in deskProfiles', short(wp.D.get('deskProfiles/KEY-CW')));
+wp.job({ profile: 'KEY-CW', row: { agent: 'KEY-CW', name: 'Claude Windows', nick: 'cwin', included: true } });
+ok(wp.D.get('deskProfiles/KEY-CW') && wp.D.get('deskProfiles/KEY-CW').nick === 'cwin', 'a later row of the same key replaces it', short(wp.D.get('deskProfiles/KEY-CW')));
+wp.job({ seen: 'goal/G9.1', at: '2026-10-28T11:00:00.000Z' });
+const seenKept = wp.D.get('deskSeen/goal/G9.1');
+ok(seenKept === '2026-10-28T11:00:00.000Z' || !!(seenKept && seenKept.at === '2026-10-28T11:00:00.000Z'), 'his seen marker is kept by its item in deskSeen, with its at', short(seenKept));
 
 test.subHeading('only the desk\'s jobs are read');
 const wm = world(true);

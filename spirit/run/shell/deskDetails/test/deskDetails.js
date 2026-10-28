@@ -170,14 +170,10 @@ function ddWorld(facts, checks) {
   const closed = [];
   const api = { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     setScreenTitle: function () {}, closeDialog: function (x) { closed.push(x); }, onPublished: function () {}, armUntilElsewhere: function () {},
+    // Every desk answer is "ok" (goal/G41.12, box v26: the API is all PUT); what the dialog draws is in spirit.data.
     verb: function (name, args) {
       asked.push({ name: name, args: args });
-      if (name === 'desk.item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 1 } });
-      if (name === 'desk.item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
-      if (name === 'desk.item.box') return Promise.resolve({ status: 200, body: { box: 'the box', version: 1 } });
-      if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [] } });
-      if (name === 'desk.item.files') return Promise.resolve({ status: 200, body: { files: [] } });
-      return Promise.resolve({ status: 200, body: { ok: true } });
+      return Promise.resolve({ status: 200, body: 'ok' });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
     Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Date: Date, Math: Math, RegExp: RegExp, Error: Error,
@@ -186,9 +182,22 @@ function ddWorld(facts, checks) {
   win.spirit = { escapeHtml: api.escapeHtml,
     require: function (p) { required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
-      probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
+      probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } },
+      // The desk's own copy (box v39; cw: shell/shared/js/deskSearch.js, spirit.elements.deskSearch).
+      deskSearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '', values: function () { return {}; } }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
+  // The page's cache: spirit.data and the desk's translator, filled as the stream fills it.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), win, { filename: 'deskData.js' });
+  const fill = win.spirit.deskData ? win.spirit.deskData.published : function () {};
+  const goalId = facts.goal === '' ? facts.id : (facts.goal || 'goal/G9');
+  if (goalId !== facts.id) fill({ verb: 'goal.whole', item: { id: goalId, goal: '', title: 'The goal', version: 1 } });
+  fill({ verb: 'goal.whole', item: Object.assign({ version: 1 }, facts) });
+  fill({ table: 'box', id: facts.id, row: { text: 'the box', version: 1 } });
+  (checks || []).forEach(function (c) { fill({ table: 'checks', id: facts.id, row: c }); });
+  // Every active rule comes on the stream, kept in deskRules (goal/G41.2).
+  (facts.rules || []).forEach(function (r) { fill({ rule: r.key, row: { key: r.key, label: 'Rule ' + r.key, text: 'the text of ' + r.key, type: 'desk', status: 'active', version: r.version || 1 } }); });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win };
   w.open = async function () {
