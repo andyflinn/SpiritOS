@@ -391,6 +391,9 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const put = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item from the stream' }), []);
   // The desk answers "ok" to everything; what the page knows is what the stream put in spirit.data.
   put.api.verb = function (name, args) { put.asked.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: 'ok' }); };
+  // The stream as the shell hands it to the app (api.onPublished), and as the translator takes it into spirit.data.
+  const putHearers = [];
+  put.api.onPublished = function (fn) { putHearers.push(fn); return function () {}; };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), put.win, { filename: 'spiritData.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), put.win, { filename: 'deskData.js' });
   const PD = put.win.spirit.data;
@@ -406,6 +409,18 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const putShown = put.document.body.textContent;
   ok(/An item from the stream/.test(putShown) && /a box the stream brought/.test(putShown) && /a line the stream brought/.test(putShown), 'opened on the item, it shows its title, box and chat from spirit.data, though every desk answer is "ok"',
     'shown: ' + JSON.stringify({ title: /An item from the stream/.test(putShown), box: /a box the stream brought/.test(putShown), chat: /a line the stream brought/.test(putShown) }));
+  // Andy, box v37: "it will function flawlessly with all desk-state painted in real-time".
+  test.subHeading('goal/G41.12: the open detail is painted in real time from the stream');
+  const streamed = async function (row) { put.win.spirit.deskData.published(row); putHearers.slice().forEach(function (fn) { fn(row); }); await settle(); };
+  if (fed) {
+    await streamed({ table: 'box', id: 'goal/G9.8', row: { text: 'a box written while it is open', version: 4 } });
+    await streamed({ table: 'chat', id: 'goal/G9.8', row: { by: 'claude-windows', at: '2026-10-28T10:05:00.000Z', text: 'a line written while it is open' } });
+    await streamed({ verb: 'item.row', item: Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item renamed on the stream', version: 5 }) });
+  }
+  const live = put.document.body.textContent;
+  ok(/a box written while it is open/.test(live), 'a box row on the stream repaints the open detail\'s box', 'box shown: ' + /a box written while it is open/.test(live));
+  ok(/a line written while it is open/.test(live) && /a line the stream brought/.test(live), 'a chat line on the stream joins the open chat', 'chat shown: ' + JSON.stringify({ newLine: /a line written while it is open/.test(live), old: /a line the stream brought/.test(live) }));
+  ok(/An item renamed on the stream/.test(live), 'its facts row on the stream repaints its title', 'title shown: ' + /An item renamed on the stream/.test(live));
   const readsAsked = put.asked.filter(function (a) { return READS.indexOf(String(a.name).replace(/^desk\./, '')) !== -1; });
   ok(readsAsked.length === 0, 'and asks the desk nothing to draw it', 'asked: ' + JSON.stringify(readsAsked.map(function (a) { return a.name; })));
 

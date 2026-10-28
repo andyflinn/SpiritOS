@@ -72,3 +72,5 @@ a long list of rules is never cut off unseen. Its dropdowns stand inline, as eve
   asking nothing.
 - The push button (Andy, box v30: "a \"push\" button the the detail of every goal or item"): in the detail of an
   item and of a goal, it sends desk.press {id, what: "push"} once, with or without an are-you-sure.
+- Painted in real time (Andy, box v37: "all desk-state painted in real-time"): a box row, a chat line and a facts row
+  on the stream repaint the open detail, the lines shown before staying.
