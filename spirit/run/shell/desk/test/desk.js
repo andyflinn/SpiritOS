@@ -171,10 +171,10 @@ function deskWorld(goal, items) {
   const api = { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     setScreenTitle: function () {}, closeDialog: function () {}, callDialog: function () {}, onPublished: function () {}, onFiles: function () {},
     ui: { elements: {} }, armUntilElsewhere: function () {},
-    // Every desk answer is "ok" (goal/G41.12, box v26: the API is all PUT); what the page draws is in spirit.data.
     verb: function (name, args) {
       asked.push({ name: name, args: args });
-      return Promise.resolve({ status: 200, body: 'ok' });
+      if (name === 'desk.items.search') return Promise.resolve({ status: 200, body: { items: [goal].concat(items).map(label) } });
+      return Promise.resolve({ status: 200, body: { ok: true, chat: [], items: [], rules: [] } });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
     Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Date: Date, Math: Math, RegExp: RegExp, Error: Error,
@@ -182,23 +182,15 @@ function deskWorld(goal, items) {
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
   let listOpts = null;
-  const searchStub = { create: function (host, o) { if (!listOpts) listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '', values: function () { return {}; } }; } };
   win.spirit = { escapeHtml: api.escapeHtml,
     require: function (p) { required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     elements: { armingButton: armingStub(document, made),
-      probabilitySearch: searchStub,
-      // The desk's own copy (box v39; cw: shell/shared/js/deskSearch.js, spirit.elements.deskSearch).
-      deskSearch: searchStub },
+      probabilitySearch: { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
-  // The page's cache: spirit.data and the desk's translator, filled as the stream fills it.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), win, { filename: 'deskData.js' });
-  const fill = win.spirit.deskData ? win.spirit.deskData.published : function () {};
-  [goal].concat(items).forEach(function (r) { fill({ verb: 'goal.whole', item: Object.assign({ version: 1 }, r) }); });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
-  const w = { document: document, made: made, asked: asked, required: required, api: api, win: win, fill: fill };
+  const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
     win.def.mount(document.body.appendChild(document.createElement('div')), api);
     await settle();
@@ -299,13 +291,12 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const wt = deskWorld(goal, []);
   const hearers = [];
   wt.api.onPublished = function (fn) { hearers.push(fn); return function () {}; };
-  // The group chat's lines, kept in spirit.data as the stream brought them.
-  wt.fill({ verb: 'goal.whole', item: { id: 'goal/G0', goal: '', title: 'Team', version: 1 } });
-  [T1, T2].forEach(function (l) { wt.fill({ table: 'chat', id: 'goal/G0', row: l }); });
+  const verbT = wt.api.verb;
+  wt.api.verb = function (name, args) { if (name === 'desk.item.chat' && args && args.id === 'goal/G0') return Promise.resolve({ status: 200, body: { ok: true, chat: [T1, T2] } }); return verbT(name, args); };
   // The page's own element for its Team chat, as the page has it (shell/shared/js/deskElement.js).
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskElement.js'), 'utf8'), wt.win, { filename: 'deskElement.js' });
   await wt.mount();
-  const heardBy = async function (obj) { wt.fill(obj); hearers.slice().forEach(function (fn) { fn(obj); }); await settle(); };
+  const heardBy = async function (obj) { hearers.slice().forEach(function (fn) { fn(obj); }); await settle(); };
   const team = function () { return wt.document.getElementById('desk-team'); };
   const teamLines = function () { return (team() ? team().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); };
   const tBefore = teamLines();
@@ -328,33 +319,18 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const wf = deskWorld(goal, [item]);
   const panes = [];
   const realCreate = wf.win.spirit.elements.probabilitySearch.create;
-  let tab = 'list';
-  wf.win.spirit.elements.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {}, made: tab }); return realCreate(host, o); };
-  wf.win.spirit.elements.deskSearch = wf.win.spirit.elements.probabilitySearch;
+  wf.win.spirit.elements.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');
-  tab = 'rules';
   if (rulesTab) { wf.document.click(rulesTab); await settle(); }
   const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
   const notFill = function (host) { const out = []; for (let n = host; n && n !== mountBox; n = n.parentNode) { if (!isFill(n)) out.push((n.id ? '#' + n.id : n.tagName || n.tag) + (n.className ? '.' + n.className : '')); } return out; };
-  // The List by its box, desk-list; the Rules list as the list the rules tab opened (both on deskSearch, no verb: box v39).
-  const under = function (host, id) { for (let n = host; n; n = n.parentNode) if (n.id === id) return true; return false; };
-  const listPane = panes.filter(function (x) { return x.o.verb === 'items.search' || under(x.host, 'desk-list'); })[0];
-  const rulesPane = panes.filter(function (x) { return x.o.verb === 'rules.search' || (x !== listPane && x.made === 'rules'); })[0];
-  [['the List', listPane], ['the Rules list', rulesPane]].forEach(function (want) {
-    const made = want[1];
+  [['the List', 'items.search'], ['the Rules list', 'rules.search']].forEach(function (want) {
+    const made = panes.filter(function (x) { return x.o.verb === want[1]; })[0];
     if (!made) { test.fail(want[0] + ': no list made'); return; }
     const gaps = notFill(made.host);
     ok(isFill(made.host) && !gaps.length, want[0] + ' stands in a fill box, and every box up to the app is fill too', want[0] + ': not fill: ' + gaps.join(' < '));
   });
-  // ── goal/G41.12, box v26-v35: THE PAGE READS NOTHING FROM THE DESK ───────────────────────────────────────────────
-  // Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
-  // state in its (persisted) cache, and reads nothing from the server"; every request, "the owner's or a peer's", is
-  // answered "ok"; "the UI for desk is tested fully". The List and Team draw from spirit.data.
-  test.subHeading('goal/G41.12: the Desk page asks the desk no read verb');
-  const READS = ['item.get', 'item.box', 'item.chat', 'item.checks', 'item.files', 'items.search', 'chat.search', 'rules.search', 'rule.get', 'profile.get', 'item.suites.search', 'item.checks.search', 'item.rules.search', 'log.search', 'changes'];
-  const named = READS.filter(function (v) { return new RegExp('[\'"`](desk\\.)?' + v.replace(/\./g, '\\.') + '[\'"`]').test(code); });
-  ok(named.length === 0, 'desk.js names no read verb of the desk', 'desk.js names: ' + named.join(', '));
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

@@ -291,14 +291,12 @@ function deskAgentOpen(name) {
 function deskAgentProfileLoad() {
   var key = deskAgentKey();
   if (!key || !deskAgentProfile) return Promise.resolve();
-  // The profile as spirit.data holds it (goal/G41.12, box v39: the desk's profile rows); none kept, none set.
-  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-  var r = D ? D.get('deskProfiles/' + key) : null;
-  deskAgentProfile.name.value = (r && r.name) || '';
-  deskAgentProfile.nick.value = (r && r.nick) || '';
-  deskAgentProfile.included.checked = !(r && r.included === false);
-  deskAgentProfile.cap.checked = !(r && r.cap === false);
-  return Promise.resolve();
+  return deskAsk('profile.get', { agent: key }).then(function (r) {
+    deskAgentProfile.name.value = (r && r.name) || '';
+    deskAgentProfile.nick.value = (r && r.nick) || '';
+    deskAgentProfile.included.checked = !(r && r.included === false);
+    deskAgentProfile.cap.checked = !(r && r.cap === false);
+  }, function (e) { deskAgentNote = 'Profile not read: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 function deskAgentProfileSave() {
   var key = deskAgentKey();
@@ -384,26 +382,23 @@ function deskLabels(r) {
 // have it; with words the answer only adds to the cache, and what is drawn is the cache ranked against the words as
 // they stand now (the List, deskMountList). One call on the wire at a time: words typed while one is out ask once more
 // after it.
-// FROM THE PAGE'S DATA SET (goal/G41.12, box v36: the page works as a client does; Q6: "same merge as deskClient
-// gets"): the desk answers "ok" first, so the List is what spirit.data holds of the desk's items (its translator, fed by
-// the desk's publishes and the shared current goal), cut by the toggles as items.search cut it: the current goal and
-// the group chat's, every goal's rows with Goals Only, closed ones only with Include Closed, a plugin's goal never.
+var deskSearching = false;
+var deskSearchAgain = false;
 function deskSearchItems() {
-  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-  if (!D || typeof D.branch !== 'function') return Promise.resolve();
-  var current = String(D.get('desk/current') || '');
-  var all = D.branch('deskItems') || {};
-  deskItems = Object.keys(all).map(function (id) { return all[id]; }).filter(function (f) {
-    if (!f || !f.id || f.special === true) return false;
-    var goal = f.goal === '' ? f.id : String(f.goal || '');
-    if (deskFilter.goalsOnly && f.goal !== '') return false;
-    if (deskFilter.currentGoalOnly && !deskFilter.goalsOnly && goal !== current && goal !== DESK_GROUP) return false;
-    if (!deskFilter.includeClosed && f.status === 'closed') return false;
-    return true;
-  });
-  deskNotePlugins(deskItems);
-  deskDraw();
-  return Promise.resolve();
+  if (deskSearching) { deskSearchAgain = true; return Promise.resolve(); }
+  deskSearching = true;
+  var text = String(deskFilter.text || '');
+  var done = function () {
+    deskSearching = false;
+    if (deskSearchAgain) { deskSearchAgain = false; deskSearchItems(); }
+  };
+  return deskAsk('items.search', { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
+    .then(function (r) {
+      var got = deskLabels(r);
+      if (!text.trim()) deskItems = got;
+      else got.forEach(function (row) { var at = deskRowAt(row.id); if (at === -1) deskItems.push(row); else deskItems[at] = row; });
+      deskNotePlugins(deskItems); deskDraw(); done();
+    }, function (e) { done(); deskWriteError('read its list')(e); });
 }
 // A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
 // asks again, since it adds and drops whole rows. A row the List does not hold
@@ -532,46 +527,8 @@ function deskNeed(p) {
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
 function deskLoadData() {
-  if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) { deskMergeShared(); return; }
-  deskNeed(DESK_DATA).then(deskMergeShared, function () { /* the page runs uncached */ });
-}
-// THE SHARED CURRENT GOAL, MERGED AS deskClient MERGES IT (goal/G41.12, Q6: "same merge as deskClient gets"; box v32-v34):
-// the desk answers this page "ok" first, so what the page knows is what spirit.data holds, from the desk's publishes and
-// from process/js/desk/currentGoal.json, whose rows are the stream's own. Read at open and again whenever its run and
-// version change; an item the page already holds is left as the stream brought it, never painted over by the file.
-var DESK_SHARED_GOAL = 'process/js/desk/currentGoal.json';
-var deskSharedSeen = '';
-function deskMergeShared() {
-  var s = typeof window !== 'undefined' && window.spirit;
-  if (!s || !s.fs || typeof s.fs.loadFile !== 'function' || !s.deskData || !s.data) return Promise.resolve(0);
-  return Promise.resolve(s.fs.loadFile(DESK_SHARED_GOAL)).then(function (text) {
-    var doc = null;
-    try { doc = JSON.parse(text || 'null'); } catch (e) { doc = null; }
-    if (!doc || !Array.isArray(doc.rows)) return 0;
-    var seen = String(doc.run || '') + ':' + String(doc.version || 0);
-    if (seen === deskSharedSeen) return 0;
-    deskSharedSeen = seen;
-    var held = {};
-    Object.keys(s.data.branch('deskItems') || {}).forEach(function (id) { held[id] = true; });
-    var n = 0;
-    doc.rows.forEach(function (row) {
-      if (!row || typeof row !== 'object') return;
-      // A rule, a profile or a seen marker belongs to no item: kept whenever the page has none of it yet.
-      if (row.rule || row.profile || row.seen) {
-        var path = row.rule ? 'deskRules/' + row.rule : row.profile ? 'deskProfiles/' + row.profile : 'deskSeen/' + row.seen;
-        if (s.data.get(path)) return;
-        s.deskData.published(row);
-        n += 1;
-        return;
-      }
-      var id = row.table ? row.id : row.item && row.item.id;
-      if (!id || held[id]) return;
-      s.deskData.published(row);
-      n += 1;
-    });
-    if (n) deskSearchItems();
-    return n;
-  }, function () { return 0; });
+  if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
+  deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ });
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
@@ -811,14 +768,13 @@ function deskFindPlugins() {
     var names = deskFiles.map(function (f) { return String((f && f.relativePath) || ''); })
       .map(function (k) { var m = /^shell\/desk\/plugins\/([^/]+)\/([^/]+)\.js$/.exec(k); return m && m[1] === m[2] ? m[1] : ''; })
       .filter(function (n) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(n) && !deskApps.some(function (a) { return a.name === n; }); });
-    // Each plugin's goal as spirit.data holds it (goal/G41.12): its facts name the plugin, from the shared current goal.
-    var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-    var all = D ? (D.branch('deskItems') || {}) : {};
-    var rows = names.map(function (n) {
-      var id = Object.keys(all).filter(function (k) { return all[k] && all[k].plugin === n; })[0];
-      return id ? all[id] : null;
-    });
-    deskNotePlugins(rows.filter(Boolean));
+    return Promise.all(names.map(function (n) {
+      return deskAsk('item.get', { id: 'plugin/' + n }).then(function (g) {
+        var facts = null;
+        try { facts = typeof g.item === 'string' ? JSON.parse(g.item) : g.item; } catch (e) { facts = null; }
+        return facts && facts.plugin === n ? facts : null;
+      }, function () { return null; });
+    })).then(function (rows) { deskNotePlugins(rows.filter(Boolean)); });
   }).then(null, function () { /* the tabs stay as they are */ });
 }
 // The first time a plugin's tab opens, its private UI is loaded and opened in its pane; later it is only shown.
@@ -925,21 +881,19 @@ function deskMountList() {
   var el = document.getElementById('desk-list');
   if (!el || deskList) return;
   deskLoadSearch(function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.deskSearch;
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     if (!P || typeof P.create !== 'function' || deskList) return;
-    // NO VERB (goal/G41.12): the List is the page's data set (deskSearchItems), ranked against the words here; a toggle
-    // cuts it again from the data set.
     deskList = P.create(el, {
-      api: deskApi, server: 'desk',
-      rows: function () {
-        var want = deskListFilter(deskList && deskList.values ? deskList.values() : {});
-        if (want.currentGoalOnly !== deskFilter.currentGoalOnly || want.goalsOnly !== deskFilter.goalsOnly || want.includeClosed !== deskFilter.includeClosed) {
-          deskFilter.currentGoalOnly = want.currentGoalOnly; deskFilter.goalsOnly = want.goalsOnly; deskFilter.includeClosed = want.includeClosed;
-          deskDrawToggles();
-          deskSearchItems();
-        }
-        return deskItems.map(function (r) { return Object.assign({ key: r.id }, r); });
+      api: deskApi, server: 'desk', verb: 'items.search',
+      args: function (text, values) {
+        var want = deskListFilter(values);
+        var moved = want.currentGoalOnly !== deskFilter.currentGoalOnly || want.goalsOnly !== deskFilter.goalsOnly || want.includeClosed !== deskFilter.includeClosed;
+        deskFilter.currentGoalOnly = want.currentGoalOnly; deskFilter.goalsOnly = want.goalsOnly; deskFilter.includeClosed = want.includeClosed;
+        // A toggle changed: the rows the page holds are read again for it.
+        if (moved) { deskDrawToggles(); deskFilter.text = ''; deskSearchItems(); }
+        return { text: text, currentGoalOnly: want.currentGoalOnly, goalsOnly: want.goalsOnly, includeClosed: want.includeClosed };
       },
+      rows: function () { return deskItems.map(function (r) { return Object.assign({ key: r.id }, r); }); },
       columns: [
         { field: 'mark', label: '' }, { field: 'type', label: '' }, { field: 'todo', label: 'to-do' },
         { field: 'with', label: 'with' }, { field: 'yours', label: 'yours' }, { field: 'blocks', label: 'blocks' },
@@ -1044,12 +998,8 @@ function deskLineHtml(m) {
 var DESK_GROUP = 'goal/G0';
 var deskGroup = null;   // its lines as the server holds them, oldest first; null until read
 function deskSameLine(a, b) { return a.by === b.by && a.at === b.at && a.text === b.text; }
-// The group chat as spirit.data holds it (goal/G41.12): its lines from the shared current goal and the desk's chat rows.
 function deskAskGroup() {
-  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-  var whole = D ? D.get('deskItem/' + DESK_GROUP) : null;
-  deskGroup = whole && Array.isArray(whole.chat) ? whole.chat : [];
-  return Promise.resolve();
+  return deskAsk('item.chat', { id: DESK_GROUP }).then(function (r) { deskGroup = Array.isArray(r.chat) ? r.chat : []; });
 }
 function deskGroupChat() {
   return deskChatLogHtml(deskGroup, 'The group chat has not been read yet.', 'Nothing said yet. What you write here is read by every agent.');
@@ -1237,26 +1187,23 @@ var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
 var deskRulesNote = '';
 var deskRulesList = null;
-// THE DESK'S OWN COPY (goal/G41.12, box v39: "desk uses it's own copy of probabilitySearch, for now"): asks no verb.
-var DESK_SEARCH = '/shell/shared/js/deskSearch.js';
+var DESK_SEARCH = '/shell/js/probabilitySearch.js';
 function deskRulesSearch() {
   if (deskRulesList) { deskRulesList.refresh(); return; }
   var el = document.getElementById('desk-rule-list');
   if (!el) return;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.deskSearch;
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     if (!P || typeof P.create !== 'function' || deskRulesList) return;
     // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
     // presses it off (probabilitySearch's multi filter, which keeps the ones pressed off); all on asks every rule.
     var choices = function (values) { return values.map(function (v) { return { value: v, word: v }; }); };
-    // NO VERB (goal/G41.12): the rules are spirit.data's deskRules, from the desk's rule rows and the shared current goal;
-    // the type and status toggles cut them here.
+    var kept = function (all, off) { var on = all.filter(function (v) { return !(off || {})[v]; }); return on.length === all.length ? [] : on; };
     deskRulesList = P.create(el, {
-      api: deskApi, server: 'desk',
-      rows: function () {
-        var D = window.spirit && window.spirit.data;
-        var all = D ? (D.branch('deskRules') || {}) : {};
-        return Object.keys(all).map(function (k) { return Object.assign({ key: k }, all[k]); });
+      api: deskApi, server: 'desk', verb: 'rules.search',
+      args: function (text, values) {
+        var v = values || {};
+        return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };
       },
       // A RULE ROW IS A ROW ELEMENT (shell/js/rowElement.js, the element's own element(row, key)): it paints its status as
       // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
@@ -1337,17 +1284,10 @@ function deskOpenRow(id) {
 // The List is items.search's answer (deskSearchItems). The chats read their
 // newest page. The old lines under team/chat are read no more: they went with goal/G33.4.
 var deskLoaded = false;
-// FROM THE PAGE'S DATA SET (goal/G41.12, box v39): his seen marker and the group chat are what spirit.data holds, from
-// the desk's rows and the shared current goal; the desk is asked nothing for them.
-function deskKeptSeen(id) {
-  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-  var s = D ? D.get('deskSeen/' + id) : null;
-  return s && s.at ? String(s.at) : '';
-}
 function deskLoad() {
-  var at = deskKeptSeen(DESK_GROUP);
-  var seenRaw = at ? JSON.stringify({ team: Date.parse(at) || 0 }) : '';
+  var seenRaw = '';
   var reads = [
+    deskAsk('seen.get', { id: DESK_GROUP }).then(function (r) { seenRaw = r.at ? JSON.stringify({ team: Date.parse(r.at) || 0 }) : ''; }, function () { seenRaw = ''; }),
     deskAskGroup(),
     deskAskBackup(),
   ];

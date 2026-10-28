@@ -123,10 +123,6 @@ function answer(servers, ask, caller) {
   for (const app of apps) {
     if (ownerFamily(app)) return Promise.resolve(refusal('owner-only', 'the ' + app + ' family is the owner\'s alone'));
     const verbs = ask[app];
-    // A BUNDLE PASSES THE GATE (goal/G41.12; Andy: "The Bundle cannot be refused. only items in it."): {app: [calls]},
-    // known by its shape. The app's spirit/appServer.js grants each call in it against this same grants table
-    // (nodeStore's auth), as this gate grants a verb.
-    if (Array.isArray(verbs)) { named += 1; continue; }
     if (!verbs || typeof verbs !== 'object') return Promise.resolve(refusal('not-granted', String(app) + ' asks nothing grantable'));
     for (const verb of Object.keys(verbs)) {
       named += 1;

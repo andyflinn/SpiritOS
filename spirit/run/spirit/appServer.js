@@ -163,7 +163,6 @@ function checkVerbs(verbs) {
 function createAppServer(verbs, opts) {
   checkVerbs(verbs);
   const fallback = opts && typeof opts.fallback === 'function' ? opts.fallback : null;
-  const bundle = opts && typeof opts.bundle === 'function' ? opts.bundle : null;
   const tree = {};
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
   // Verbs born after start (fileTransfer goal/G1.3): a hash-verb appears when
@@ -171,26 +170,11 @@ function createAppServer(verbs, opts) {
   // fixed verb, DEBUG or DEPENDENCIES never leaves a running server.
   const runtime = Object.create(null);
 
-  // EVERY REQUEST IS ANSWERED "ok" AT ONCE, THEN HANDLED (goal/G41.12, box v26, the server side: "requests from the
-  // OWNER-ID are immediately ansered with "ok" then passed to the appServer implementation (desk) for handling", "for a
-  // bundles and requests from peers, the server always replies first "ok" reply. then processes the bundle"; "the
-  // appServer's implementation API must all be PUT"), in server mode (opts.okFirst). What the handler answers is not
-  // sent: the client has the server's state in its cache, from the stream. 'api' answers its tree as always.
-  const okFirst = !!(opts && opts.okFirst);
-  let handling = Promise.resolve();
-  function route(req, caller) {
-    if (!okFirst || req === 'api') return answerOf(req, caller);
-    // In the order they came, each once the one before it is handled.
-    handling = handling.then(function () { return answerOf(req, caller); }).catch(function () { /* the stream says what changed */ });
-    return Promise.resolve({ status: 200, body: { ok: true } });
-  }
   // One request body, already parsed, to { status, body }. `caller` is
   // who asked (apiAuth/G1.13), handed to the handler as its second
   // argument; a handler that takes (args) alone is unchanged.
-  function answerOf(req, caller) {
+  function route(req, caller) {
     if (req === 'api') return Promise.resolve({ status: 200, body: tree });
-    // A BUNDLE OF REQUESTS (goal/G41.12): one array of calls, taken only where serve() was given its runner (server mode).
-    if (Array.isArray(req)) return bundle ? Promise.resolve(bundle(req, caller)) : Promise.resolve(refusal('bad-request', { why: 'one verb per call, as {verb: {args}}' }));
     if (!isPlain(req) || Object.keys(req).length !== 1) return Promise.resolve(refusal('bad-request', { why: 'one verb per call, as {verb: {args}}' }));
     const name = Object.keys(req)[0];
     if (!Object.prototype.hasOwnProperty.call(verbs, name)) return Promise.resolve(refusal('no-such-verb', { verb: name }));
@@ -283,8 +267,6 @@ function createAppServer(verbs, opts) {
   let server = null;
   return {
     route: route,
-    // A call's own answer, never "ok" first: what a bundle runs each of its calls through, in order.
-    answerOf: answerOf,
     // ── VERBS BORN AND DROPPED AT RUNTIME (fileTransfer goal/G1.3) ────
     //
     // The api answers from the current table, so a change shows at once.
@@ -431,8 +413,9 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
 // one spirit object), so the sender's peerPost passes the node's gate; a grant the node holds already is no fault.
 //
-// THE CACHE (box v24-v26). "Only a client caches": setMode("client") turns it on, at a hard-coded 4 MB per sender
-// (CACHE_LIMIT). "The cache keeps everything the server sends", per sender, in
+// THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
+// sets, 4 MB per sender by default." opts.stream.cache: true, or { limit } in bytes. "The cache keeps everything the
+// server sends, every goal, no filtering on the client side", per sender, in
 // relay-state/process/<client server>/cache-<sender key in hex>.json under the run root, saved as it changes and read
 // back into the data set at the start, before any subscribe. The rows are kept as the sender sent them.
 // THE SENDER'S OWN api.js DOES THE CACHE'S WORK (box v15: "That api.js is the client's own: its appServer takes it from
@@ -444,7 +427,6 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // limit (bytes(rows) is the size of the cache file they make). A family with no cache export keeps every row and sheds
 // the oldest first. What a shed row wrote into the data set goes with it.
 const CACHE_LIMIT = 4 * 1024 * 1024;
-const SHED_TO = 0.9;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
@@ -517,12 +499,9 @@ function keepRow(st, rec) {
   const limit = following.limit;
   let kept = placed;
   if (bytes(rows) > limit) {
-    // PAST THE LIMIT IT SHEDS TO SHED_TO OF IT, not to the limit: what a shed row wrote is written again from the rows that
-    // stay, and doing that on every row past a full cache cost more than a delivery may take (wsl's 4.8 MB run stalled).
-    const to = Math.floor(limit * SHED_TO);
     let left = rows;
-    try { left = st.api && typeof st.api.shed === 'function' ? st.api.shed(rows, to, bytes) : shedOldest(rows, to, bytes); } catch (e) { left = shedOldest(rows, to, bytes); }
-    if (!Array.isArray(left)) left = shedOldest(rows, to, bytes);
+    try { left = st.api && typeof st.api.shed === 'function' ? st.api.shed(rows, limit, bytes) : shedOldest(rows, limit, bytes); } catch (e) { left = shedOldest(rows, limit, bytes); }
+    if (!Array.isArray(left)) left = shedOldest(rows, limit, bytes);
     const stay = new Set(left);
     kept = placed.filter(function (r) { return stay.has(r.row); });
     rewrite(kept, placed.filter(function (r) { return !stay.has(r.row); }));
@@ -534,11 +513,8 @@ function rewrite(kept, gone) {
   const lost = new Set();
   gone.forEach(function (r) { r.paths.forEach(function (p) { lost.add(p); }); });
   if (!lost.size) return;
-  // Counted once at the end (spiritData batch): the rows written again write the same paths over and over.
-  D.batch(function () {
-    lost.forEach(function (p) { D.del(p); });
-    kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(r.row); });
-  });
+  lost.forEach(function (p) { D.del(p); });
+  kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(r.row); });
 }
 // THE PUSH HAS LANDED WHOLE: it replaces what the sender's rows kept. What the old rows wrote and the push did not goes.
 function landed(st) {
@@ -578,52 +554,36 @@ function restoreCaches() {
     if (!st.cached) return;
     st.run = typeof kept.run === 'string' ? kept.run : '';
     st.n = Number.isInteger(kept.n) && kept.n >= 0 ? kept.n : 0;
-    dataSet().batch(function () { kept.rows.filter(isPlain).forEach(function (row) { st.rows.push({ row: row, paths: written(row) }); }); });
+    kept.rows.filter(isPlain).forEach(function (row) { st.rows.push({ row: row, paths: written(row) }); });
   });
 }
-// One entry of a bundle into the cache. Answers the row the implementation is to be handed, or null.
-function heard(st, e) {
+// One entry of a bundle, taken.
+function heard(st, from, e) {
   if (!isPlain(e) || typeof e.run !== 'string' || typeof e.n !== 'number') return null;
   if (e.full === true && !st.pushing) st.pushing = [];
   if (e.end === true) {
     if (st.pushing) landed(st);
     st.run = e.run; st.n = e.n;
+    saveSoon(st);
     return null;
   }
   if (!isPlain(e.row)) return null;
   const rec = { row: e.row, paths: written(e.row) };
   if (e.full === true) st.pushing.push(rec);
-  else { keepRow(st, rec); st.run = e.run; st.n = e.n; }
-  return e.row;
-}
-// THE CLIENT TAKES A BUNDLE (box v26, the client side: "the bundled incoming stream are un-bundled, then, in a loop, each
-// item updates the cache. then the cache is saved. after that, all items in the bundle are passes one-by-one to the
-// appServer implementation (deskClient)"). The delivery is answered once the cache is saved; the implementation is
-// handed the rows after, in order, so its own work never holds the sender's delivery.
-let handing = Promise.resolve();
-function takeBundle(st, from, bundle) {
-  const rows = [];
-  dataSet().batch(function () { bundle.forEach(function (e) { const row = heard(st, e); if (row) rows.push(row); }); });
-  if (st.cached) {
-    if (st.saving) { clearTimeout(st.saving); st.saving = null; }
-    try { saveCache(st); } catch (e) { saveSoon(st); }
-  }
-  rows.forEach(function (row) {
-    handing = handing.then(function () { return following.onRow(row, from); }).catch(function () { /* one row's fault */ });
-  });
+  else { keepRow(st, rec); st.run = e.run; st.n = e.n; saveSoon(st); }
+  // Then the server's own word on it.
+  return following.onRow(e.row, from);
 }
 function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
   dataSet();
   if (stream.translator) require(path.resolve(String(stream.translator)));
-  // THE CACHE IS CLIENT MODE'S (box v24: "A client turns on auto-caching implicitly by calling setMode("client") ...
-  // with a limit of a HARD-CODED, 4 MB per sender").
-  const cache = mode === 'client';
+  const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),
     onRow: typeof stream.onRow === 'function' ? stream.onRow : function () {},
     cache: cache,
-    limit: CACHE_LIMIT,
+    limit: isPlain(stream.cache) && Number(stream.cache.limit) > 0 ? Number(stream.cache.limit) : CACHE_LIMIT,
     name: String(name || 'server'),
   };
   if (cache) restoreCaches();
@@ -636,8 +596,11 @@ function withStreamListener(verbs, stream, followed, name) {
       try { bundle = JSON.parse(String(a.json)); } catch (e) { bundle = null; }
       if (!Array.isArray(bundle)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
       const from = String(caller.key);
-      takeBundle(senderOf(from), from, bundle);
-      return { heard: true };
+      const st = senderOf(from);
+      // In order, each entry once the one before it is taken.
+      let chain = Promise.resolve();
+      bundle.forEach(function (e) { chain = chain.then(function () { return heard(st, from, e); }); });
+      return chain.then(function () { return { heard: true }; });
     },
   };
   return all;
@@ -687,8 +650,6 @@ const createProbabilityBucket = require('./probabilityBucket').createProbability
 const BUNDLE_ROOM = Math.floor(limits.SEALED_MAX / 2) - 512;
 function forKey(row, key) { return !(row && Array.isArray(row.to)) || row.to.map(String).indexOf(key) !== -1; }
 function bundleOf(rows) {
-  // Outside server mode nothing is bundled (box v26): each delivery carries one entry.
-  if (mode !== 'server') return rows.slice(0, 1);
   const bucket = createProbabilityBucket(rows.length);
   // Every row at probability 0, so the queue's order stands; measured as it travels, a string inside the request.
   rows.forEach(function (e) { bucket.seatFor(0, e); });
@@ -758,8 +719,7 @@ function subscribe(key, family, run, since) {
   let rows = [];
   try { rows = (publisher.bootstrap && publisher.bootstrap(k)) || []; } catch (e) { rows = []; }
   const at = published;
-  // A row of the push addressed to others (to) is left out, as a published one is.
-  rows.forEach(function (row) { if (forKey(row, k)) sendTo(k, { run: RUN_ID, n: at, row: row, full: true }); });
+  rows.forEach(function (row) { sendTo(k, { run: RUN_ID, n: at, row: row, full: true }); });
   sendTo(k, { run: RUN_ID, n: at, full: true, end: true });
   return true;
 }
@@ -873,16 +833,7 @@ function serve(verbs, opts) {
     console.error(e.message);
     process.exit(2);
   }
-  // In server mode a peer's bundle of requests is taken (bundleRunner); in any other none is.
-  let routed = null;
-  const made = {};
-  if (opts && typeof opts.fallback === 'function') made.fallback = opts.fallback;
-  if (mode === 'server') {
-    made.bundle = bundleRunner(name, function (req, caller) { return routed(req, caller); });
-    made.okFirst = true;
-  }
-  const s = createAppServer(verbs, made);
-  routed = s.answerOf;
+  const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
@@ -925,8 +876,7 @@ function serve(verbs, opts) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(position);
       }));
-    // A server answers "ok" first (box v26): that is a subscribe taken, as subscribed is from one that answers in full.
-    }).then(function (r) { return !!(r && r.status === 200 && r.body && (r.body.subscribed === true || r.body.ok === true)); }, function () { return false; });
+    }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
     return Promise.race([asked, late]).then(function (ok) { clearTimeout(timer); return ok; });
   };
   // FOLLOW A SENDER'S STREAM (goal/G33.4): heard from now on, and granted the verb on this node. Answers whether the
@@ -940,137 +890,34 @@ function serve(verbs, opts) {
     });
   };
   s.unfollow = function (key) { followed.delete(String(key || '')); };
-  // THE CLIENT QUERIES ITS OWN CACHE THROUGH THE SENDER'S api.js (box v15): query(key, verb, args) answers the sender's
-  // verb from the cache by its family's cache.answer(verb, args, data, room), as the sender would answer it, or null
-  // when the cache does not hold it. It asks nobody (box v24: "the client PUTs and the server STREAMs").
-  s.query = function (key, verb, args) {
+  // THE CLIENT QUERIES ITS OWN CACHE THROUGH THE SENDER'S api.js (box v15): "a query with includeServer goes on to the
+  // server for what the cache lacks." query(key, verb, args, { includeServer }) answers the sender's verb from the cache
+  // by its family's cache.answer(verb, args, data, room), as the sender would answer it; what the cache lacks is null,
+  // or, with includeServer, the sender's own answer, asked through its family under its key and taken into the data set
+  // by the family's cache.took(verb, args, answer, data) when it has one. cached(key, verb, args) is the cache's answer
+  // alone, at once.
+  s.cached = function (key, verb, args) {
     const st = senders.get(String(key || ''));
     if (!st || !st.api || typeof st.api.answer !== 'function') return null;
     try { return st.api.answer(String(verb), args || {}, dataSet(), ANSWER_ROOM) || null; } catch (e) { return null; }
   };
-  // ROWS FROM ELSEWHERE, MERGED (goal/G41.12, box v32: "the desk client MUST use process/js/desk/currentGoal.json to
-  // update it's knowledge"): merge(key, family, rows) takes rows the sender wrote somewhere else (the desk's shared
-  // current goal) into its cache as rows of its stream are taken (kept, shed, saved), handing none to the implementation
-  // and leaving the position where it is. Answers how many it took.
-  s.merge = function (key, family, rows) {
+  s.query = function (key, verb, args, how) {
     const k = String(key || '');
-    if (!k || !following || !Array.isArray(rows)) return 0;
-    const st = senderOf(k, family);
-    let n = 0;
-    dataSet().batch(function () {
-      rows.forEach(function (row) {
-        if (!isPlain(row)) return;
-        // Only a row the family's keep takes (one older than what the cache holds is not) is written at all.
-        if (st.api && typeof st.api.keep === 'function') {
-          let placed = null;
-          try { placed = st.api.keep(st.rows.map(function (r) { return r.row; }), row); } catch (e) { placed = null; }
-          if (Array.isArray(placed) && placed.indexOf(row) === -1) return;
-        }
-        keepRow(st, { row: row, paths: written(row) });
-        n += 1;
-      });
-    });
-    if (n && st.cached) { if (st.saving) { clearTimeout(st.saving); st.saving = null; } try { saveCache(st); } catch (e) { saveSoon(st); } }
-    return n;
-  };
-  // THE CLIENT BUNDLES ITS REQUESTS (box v26, the client side: "requests are bundled like the ServerSide bundles publish
-  // items. if one request is pending, ... the waiting requests are bundled, if there is more than one"). ask(key,
-  // family, verb, args, how) asks a verb of the family on the node of key and answers { status, body }, as
-  // spirit.outcome does. In client mode one request is in flight per key and the ones waiting behind it go together: one
-  // peerPost of { family: [ { verb: args }, ... ] }, a bundle known by its shape, no verb of its own, each request
-  // answered its own. Outside client mode, and for one request alone, each goes as it always went.
-  const lines = new Map();     // key -> { busy, queue: [{ family, verb, args, how, resolve }] }
-  function single(k, q) {
-    return spirit.outcome(spirit.require(familyPath(q.family), k, q.how).then(function (p) {
-      if (!p || typeof p[q.verb] !== 'function') throw Object.assign(new Error('the server serves no verb ' + q.verb), { code: 'no-such-verb' });
-      return p[q.verb](q.args);
-    }));
-  }
-  function together(k, batch) {
-    const body = {};
-    body[batch[0].family] = batch.map(function (q) { const one = {}; one[q.verb] = q.args; return one; });
-    return Promise.resolve(spirit.peerPost(k, 'api', body, batch[0].how)).then(function (got) {
-      if (Array.isArray(got) && got.length === batch.length) return got.map(function (a) { return isPlain(a) && typeof a.status === 'number' ? a : { status: 0, body: null }; });
-      // The bundle as a whole never arrived, or never answered: each request in it ended so.
-      const unreached = isPlain(got) && got.ok === false && (got.code === 'not-posted' || got.code === 'no-answer');
-      return batch.map(function () { return { status: unreached ? 0 : 409, body: got }; });
-    });
-  }
-  function askNext(k) {
-    const line = lines.get(k);
-    if (!line || line.busy || !line.queue.length) return;
-    line.busy = true;
-    const fam = line.queue[0].family;
-    const batch = [];
-    let bytes = 2;
-    while (line.queue.length && line.queue[0].family === fam && batch.length < BUNDLE_MAX) {
-      const one = {}; one[line.queue[0].verb] = line.queue[0].args;
-      const b = Buffer.byteLength(JSON.stringify(one), 'utf8') + 1;
-      if (batch.length && bytes + b > BUNDLE_ROOM / 2) break;
-      bytes += b;
-      batch.push(line.queue.shift());
-    }
-    const asked = batch.length === 1 ? single(k, batch[0]).then(function (r) { return [r]; }) : together(k, batch);
-    asked.then(function (answers) { batch.forEach(function (q, i) { q.resolve(answers[i]); }); }, function (e) {
-      batch.forEach(function (q) { q.resolve({ status: 0, body: { ok: false, code: 'no-answer', error: String((e && e.message) || e) } }); });
-    }).then(function () { line.busy = false; askNext(k); });
-  }
-  s.ask = function (key, family, verb, args, how) {
-    const k = String(key || '');
-    const q = { family: String(family || ''), verb: String(verb || ''), args: isPlain(args) ? args : {}, how: how };
-    if (mode !== 'client') return single(k, q);
-    return new Promise(function (resolve) {
-      q.resolve = resolve;
-      if (!lines.has(k)) lines.set(k, { busy: false, queue: [] });
-      lines.get(k).queue.push(q);
-      askNext(k);
+    const kept = s.cached(k, verb, args);
+    if (kept || !(how && how.includeServer === true)) return Promise.resolve(kept);
+    const st = senders.get(k);
+    if (!st || !st.family) return Promise.resolve(null);
+    const v = String(verb);
+    return spirit.outcome(spirit.require(familyPath(st.family), k, { waitMs: 10000 }).then(function (p) {
+      if (!p || typeof p[v] !== 'function') throw Object.assign(new Error('the sender serves no verb ' + v), { code: 'no-such-verb' });
+      return p[v](args || {});
+    })).then(function (r) {
+      if (r.status !== 200 || !isPlain(r.body)) return null;
+      if (st.api && typeof st.api.took === 'function') { try { st.api.took(v, args || {}, r.body, dataSet()); } catch (e) { /* the answer stands */ } }
+      return r.body;
     });
   };
   return s;
-}
-// THE ROLE (box v26: "the spirit/appServer.js implementation (desk, deskClient), on startup, call a spirit/appServer.js
-// function setMode("client" | "server"). the spirit/appServer.js module then knows it's role and bundles
-// accordingly"; "if an appServer implementation (chatter) does not turn on server or client mode ..., bundling is NOT
-// active"). Called before serve(). "server": its publishes to peers bundle when they back up, and it takes a peer's
-// bundle of requests. "client": its requests bundle when they back up, and its cache is on (CACHE_LIMIT, hard-coded).
-// Anything else, or never called: no bundling and no cache.
-let mode = '';
-function setMode(m) { mode = m === 'client' || m === 'server' ? m : ''; return mode; }
-// THE SERVER TAKES A BUNDLE OF REQUESTS (box v26, the server side), in server mode: a request that is one JSON array of
-// calls, each { verb: args }, each run as that verb's own call would be, in order, and answered one array of
-// { status, body }, one per call. The bundle itself is never refused, only calls in it (Andy: "The Bundle cannot be
-// refused. only items in it."). EACH CALL IS GRANTED ON ITS OWN (Andy, Q4: "appServer can ask the fucking Grants table
-// with an interface module to that table that is shared with the auth module"): the node's gate lets a bundle through,
-// so each call inside it is checked here against the node's grants table (nodeStore's auth, the one apiAuth reads), as
-// the gate checks a verb: the server granted to the caller's key whole, or that verb of it. The owner is granted
-// everything; no key, nothing.
-const BUNDLE_MAX = 50;
-let grantsTable = null;
-function grantedTo(caller, server, verb) {
-  if (caller && caller.owner === true) return true;
-  if (!caller || !caller.key) return false;
-  try {
-    if (!grantsTable) grantsTable = require('./nodeStore').open(RUN_ROOT).auth;
-    return grantsTable.has(caller.key, server) || grantsTable.has(caller.key, server + '.' + verb);
-  } catch (e) { return false; }
-}
-function bundleRunner(server, route) {
-  return function (calls, caller) {
-    const out = [];
-    let chain = Promise.resolve();
-    calls.slice(0, BUNDLE_MAX).forEach(function (c) {
-      chain = chain.then(function () {
-        if (!isPlain(c) || Object.keys(c).length !== 1) return refusal('bad-request', { why: 'a call in a bundle is one {verb: {args}}' });
-        const verb = Object.keys(c)[0];
-        if (!grantedTo(caller, server, verb)) return refusal('not-granted', { verb: verb, why: 'this key is not granted ' + server + '.' + verb });
-        return route(c, caller);
-      }).then(function (r) { out.push({ status: r.status, body: r.body }); });
-    });
-    return chain.then(function () {
-      calls.slice(BUNDLE_MAX).forEach(function () { const r = refusal('bad-request', { why: 'a bundle holds at most ' + BUNDLE_MAX + ' calls' }); out.push({ status: r.status, body: r.body }); });
-      return { status: 200, body: out };
-    });
-  };
 }
 // One answer's room, as a server fills its own (the desk's ANSWER_ROOM): the answer limit less 512 bytes.
 const ANSWER_ROOM = limits.ANSWER_MAX - 512;
@@ -1100,11 +947,6 @@ module.exports = {
   familyPath: familyPath,
   // goal/G41.12: the client's cache, saved now (deskClient's cache.dump).
   saveCaches: saveCaches,
-  // goal/G41.12: the role, "client" or "server", set before serve().
-  setMode: setMode,
-  // goal/G41.12 (box v33: "the server who controls the rolling "count/position" embeds at the top of currentGoal.json"):
-  // this sender's position now, its run and the number of the newest row it published.
-  position: function () { return { run: RUN_ID, version: published }; },
   createAppServer: createAppServer,
   serve: serve,
   matches: matches,

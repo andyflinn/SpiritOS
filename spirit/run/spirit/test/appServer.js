@@ -48,20 +48,6 @@ function post(verb, args, callerKey) {
     req.end(body);
   });
 }
-// A request body as it is, for a bundle: one JSON array of the existing calls (box v26: "a bundle is known by its shape").
-function postRaw(body, callerKey) {
-  return new Promise(function (resolve) {
-    const req = http.request({ socketPath: PIPE, path: '/', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Spirit-Caller': callerKey } }, function (res) {
-      const chunks = [];
-      res.on('data', function (c) { chunks.push(c); });
-      res.on('end', function () { let b = null; try { b = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { b = null; } resolve({ status: res.statusCode, body: b }); });
-    });
-    req.on('error', function (e) { resolve({ status: 0, body: { error: e.message } }); });
-    req.end(JSON.stringify(body));
-  });
-}
-// "ok" (box v26: "the server always replies first \"ok\""), as the word or as { ok: true }.
-const isOk = function (b) { return b === 'ok' || !!(b && typeof b === 'object' && b.ok === true && Object.keys(b).length === 1); };
 // Every delivery the publisher makes, parsed; held while gate.held, refused while gate.refuse.
 const gate = { held: false, refuse: false, waiting: [] };
 const posts = [];
@@ -76,8 +62,6 @@ function deliver(json) {
 }
 function release() { gate.held = false; const w = gate.waiting.splice(0); w.forEach(function (fn) { fn(); }); }
 const asked = [];
-const askCalls = [];
-const askGate = { held: false, waiting: [] };
 const fake = {
   require: function (p, key) {
     const q = String(p);
@@ -90,49 +74,18 @@ const fake = {
     // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
     // by the old name or the new: routing only, this test writes no family path of its own.
     if (key && /(?:^|\/)([^/]+)\/(?:family|\1\.family)\/api\.js$/.test(q)) {
-      const known = {
+      return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
         streamListener: function (a) { return deliver(a.json); },
-      };
-      // Any other call the client half makes of the server's family (its requests, single or bundled), kept, and held
-      // while askGate.held.
-      return Promise.resolve(new Proxy(known, { get: function (t, verb) {
-        if (typeof verb !== 'string' || verb === 'then') return undefined;
-        if (t[verb]) return t[verb];
-        return function (a) {
-          askCalls.push({ verb: verb, args: a });
-          const answer = function () { return { ok: true }; };
-          if (!askGate.held) return Promise.resolve(answer());
-          return new Promise(function (r) { askGate.waiting.push(function () { r(answer()); }); });
-        };
-      } }));
+      });
     }
     return Promise.resolve({});
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },
   events: { publish: function () {}, subscribe: function () {} },
-  // A bundle of requests leaves as one spirit.peerPost(key, 'api', { <family>: [calls] }) (cw, goal/G41.12): kept, held
-  // while askGate.held, answered "ok" (box v26).
-  peerPost: function (key, app, body) {
-    askCalls.push({ peerPost: true, key: key, app: app, body: body });
-    if (!askGate.held) return Promise.resolve('ok');
-    return new Promise(function (r) { askGate.waiting.push(function () { r('ok'); }); });
-  },
-  // spirit.js's own familyPath (goal/G41.12 Q3), taken from its text so the stand-in writes no path of its own.
-  familyPath: (function () {
-    const m = /function familyPath\(name\) \{([^\n]*)\}\r?\n/.exec(fs.readFileSync(path.join(RUN, 'spirit.js'), 'utf8'));
-    return m ? new Function('name', m[1]) : undefined;
-  })(),
 };
-// THE NODE'S GRANTS TABLE, A STAND-IN (box v27: "the server MUST verify that the sender has an entry in the nodes grants
-// table for that family/verb"): spirit/nodeStore.js, open(<run root>).auth.has(key, path), the table spirit/apiAuth.js
-// reads (cw, goal/G41.12); a call is granted when the key holds <server> or <server>.<verb>. The real node.db is never
-// opened here.
-const grants = new Set();
-const fakeStore = { open: function () { return { auth: { has: function (key, p) { return grants.has(String(key) + '|' + String(p)); } } }; } };
 const realLoad = Module._load;
 Module._load = function (request, parent) {
-  if (/(^|[\\/])nodeStore(\.js)?$/.test(request) && parent && String(parent.filename) === FILE) return fakeStore;
   if (/(^|[\\/])spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
   return realLoad.apply(this, arguments);
 };
@@ -150,26 +103,14 @@ const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
 // under the run root, where spirit.js sits.
 const cacheFile = function (name) { return path.join(RUN, 'relay-state', 'process', name, 'cache-' + PUBLISHER_HEX + '.json'); };
 
-// Counts of what the server's own verbs handled: count at once, slow 1.5 s later.
-const handled = { count: 0, slow: 0, secret: 0 };
-// mode: the role the implementation sets at its startup (box v26: setMode("client" | "server")), or none.
-function start(mode, publisherOpts) {
+function start(streamOpts, publisherOpts) {
   const A = require(FILE);
-  if (mode && typeof A.setMode === 'function') A.setMode(mode);
-  const s = A.serve({
-    ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } },
-    count: { request: {}, reply: { counted: 0 }, handler: function () { handled.count += 1; return { counted: handled.count }; } },
-    secret: { request: {}, reply: { done: true }, handler: function () { handled.secret += 1; return { done: true }; } },
-    slow: { request: {}, reply: { done: true }, handler: function () { return new Promise(function (r) { setTimeout(function () { handled.slow += 1; r({ done: true }); }, 1500); }); } },
-  }, {
-    stream: { module: 'process/js/desk', translator: TRANSLATOR },
+  const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {
+    stream: Object.assign({ module: 'process/js/desk', translator: TRANSLATOR }, streamOpts || {}),
     publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
   return { A: A, s: s, D: A.data };
 }
-// Rows a shedding run sends: 800 of 6000 bytes, about 4.8 MB (box v26: the cache HARD-CODED at 4 MB per sender).
-const SHED_N = 800;
-const LIMIT_MAX = 4 * 1024 * 1024;
 const hasIn = function (D, n) { return !!(D && D.get('deskItems/goal/G9.' + n)); };
 
 // ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
@@ -178,7 +119,7 @@ async function child(mode) {
   const FAM = childArgv[6] || 'desk';
   if (mode === 'first') {
     // Cache on: the first run of a client, its push landed.
-    const { s, D } = start('client');
+    const { s, D } = start({ cache: true });
     await tick(100);
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
@@ -186,7 +127,7 @@ async function child(mode) {
     out.one = hasIn(D, 1); out.two = hasIn(D, 2);
   } else if (mode === 'restart') {
     // The same client again, a new process: the publisher in it a new run. Its cache read back before any subscribe.
-    const { s, D } = start('client');
+    const { s, D } = start({ cache: true });
     await tick(300);
     out.readOne = hasIn(D, 1); out.readTwo = hasIn(D, 2);
     bootstrap = [row(GOAL), row(item(1, { title: 'item 1, renamed', version: 2 }))];
@@ -196,14 +137,14 @@ async function child(mode) {
     out.two = hasIn(D, 2);
   } else if (mode === 'off' || mode === 'nofamily') {
     // off: no cache switch; nofamily: the switch on, but the sender's family has no folder on this node.
-    const { s } = start(mode === 'off' ? null : 'client');
+    const { s } = start(mode === 'off' ? {} : { cache: true });
     await tick(100);
     bootstrap = [row(GOAL), row(item(1))];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
   } else if (mode === 'every') {
     // The default limit: two goals, both kept, every row of each (box v15: "every goal, no filtering on the client side").
-    const { A, s, D } = start('client');
+    const { A, s, D } = start({ cache: true });
     await tick(100);
     bootstrap = [row(GOAL)];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
@@ -214,71 +155,50 @@ async function child(mode) {
     await tick(800);
     out.g9 = []; out.g10 = [];
     for (let i = 1; i <= 3; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
-  } else if (mode === 'ask') {
-    const { s } = start('client');
-    await tick(100);
-    out.ask = typeof s.ask;
-    if (typeof s.ask === 'function') {
-      askGate.held = true;
-      let settled = 0;
-      [0, 1, 2, 3, 4].forEach(function (i) { Promise.resolve().then(function () { return s.ask(PUBLISHER, NAME, 'count', { n: i }); }).then(function () { settled += 1; }, function () { settled += 1; }); });
-      await tick(400);
-      out.inFlight = askCalls.length;
-      askGate.held = false;
-      askGate.waiting.splice(0).forEach(function (fn) { fn(); });
-      for (let i = 0; i < 50 && settled < 5; i++) await tick(100);
-      // A held call answered late may free the bundle behind it: let it go and be answered too.
-      for (let i = 0; i < 20 && askGate.waiting.length; i++) { askGate.waiting.splice(0).forEach(function (fn) { fn(); }); await tick(100); }
-      out.sent = askCalls.length;
-      out.settled = settled;
-      out.calls = askCalls;
-    }
-  } else if (mode === 'items' || mode === 'chat' || mode === 'limit') {
-    // The limit is HARD-CODED, 4 MB per sender (box v26): each run below sends about 4.8 MB, past it whether a MB is
-    // 10^6 bytes or 2^20; a half of it alone is within. Rows of 6000 bytes, one bundle each at most.
-    // items, chat: one goal (Andy, Q2: "when there is only one goal, then you shed the longest untouched item, LOCK,
-    // stock and barrel, when there is only one goal with one item you shed the oldest chat line").
-    // limit: two goals of 400 items each, goal/G9 first and untouched since (Andy, Q2: "THE LONGEST UNTOUCHED GOAL
-    // GOES, LOCK, STOCK AND BARREL").
-    const { A, s, D } = start('client');
+  } else if (mode === 'items' || mode === 'chat') {
+    // One goal (Andy, Q2: "when there is only one goal, then you shed the longest untouched item, LOCK, stock and
+    // barrel, when there is only one goal with one item you shed the oldest chat line").
+    const { A, s, D } = start({ cache: { limit: mode === 'items' ? 1500 : 2500 } });
     await tick(100);
     bootstrap = [row(GOAL)];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(200);
-    const long = function (n) { return 'row ' + n + ' ' + 'x'.repeat(6000); };
-    const at = function (n) { return new Date(Date.parse('2026-10-28T05:00:00.000Z') + n * 1000).toISOString(); };
-    const line = function (id, n) { return { table: 'chat', id: id, row: { at: at(n), by: 'andy', text: long(n) } }; };
-    const g10 = function (n) { return { verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + n, goal: 'goal/G10', title: long(n), version: 1 } }; };
-    let landed = function () { return false; };
+    const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
+    const line = function (id, n) { return { table: 'chat', id: id, row: { at: '2026-10-28T05:00:' + String(n).padStart(2, '0') + '.000Z', by: 'andy', text: long(n) } }; };
     if (mode === 'items') {
       A.publish(row(item(1)));
       A.publish(line('goal/G9.1', 0));
-      for (let i = 2; i <= SHED_N; i++) { await tick(2); A.publish(row(item(i, { title: long(i) }))); }
-      landed = function () { return !!D.get('deskItems/goal/G9.' + SHED_N); };
-    } else if (mode === 'chat') {
-      A.publish(row(item(1)));
-      for (let i = 1; i <= SHED_N; i++) { await tick(2); A.publish(line('goal/G9.1', i)); }
-      landed = function () { const w = D.get('deskItem/goal/G9.1'); return !!(w && Array.isArray(w.chat) && w.chat.some(function (l) { return l.at === at(SHED_N); })); };
+      for (let i = 2; i <= 10; i++) { await tick(30); A.publish(row(item(i, { title: long(i) }))); }
     } else {
-      for (let i = 1; i <= SHED_N / 2; i++) A.publish(row(item(i, { title: long(i) })));
-      await tick(300);
-      for (let i = 1; i <= SHED_N / 2; i++) { await tick(2); A.publish(g10(i)); }
-      landed = function () { return !!D.get('deskItems/goal/G10.' + SHED_N / 2); };
+      A.publish(row(item(1)));
+      for (let i = 1; i <= 30; i++) { await tick(10); A.publish(line('goal/G9.1', i)); }
     }
-    for (let i = 0; i < 900 && !landed(); i++) await tick(100);
     await tick(1500);
-    out.landed = landed();
     out.goal = !!D.get('deskItems/goal/G9');
-    out.items = []; out.g10 = [];
-    for (let i = 1; i <= SHED_N; i++) { if (D.get('deskItems/goal/G9.' + i)) out.items.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+    out.items = []; for (let i = 1; i <= 10; i++) if (D.get('deskItems/goal/G9.' + i)) out.items.push(i);
     const whole = D.get('deskItem/goal/G9.1');
-    out.chat = whole && Array.isArray(whole.chat) ? whole.chat.map(function (l) { return Math.round((Date.parse(l.at) - Date.parse('2026-10-28T05:00:00.000Z')) / 1000); }) : [];
+    out.chat = whole && Array.isArray(whole.chat) ? whole.chat.map(function (l) { return Number(String(l.at).slice(17, 19)); }) : [];
+  } else if (mode === 'limit') {
+    // Two goals, ten rows each: goal/G9 first and untouched since, goal/G10 after. Together past the limit, either alone
+    // within it: the desk's family api.js (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL").
+    const { A, s, D } = start({ cache: { limit: 3500 } });
+    await tick(100);
+    bootstrap = [row(GOAL)];
+    out.subscribed = await s.subscribe(PUBLISHER, FAM);
+    await tick(200);
+    const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
+    for (let i = 1; i <= 10; i++) A.publish(row(item(i, { title: long(i) })));
+    await tick(300);
+    for (let i = 1; i <= 10; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: long(i), version: 1 } });
+    await tick(1500);
+    out.g9 = []; out.g10 = [];
+    for (let i = 1; i <= 10; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
   }
   process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
   process.exit(0);
 }
 function runChild(mode, name, fam) {
-  const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || 'desk'], { encoding: 'utf8', timeout: 180000 });
+  const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || 'desk'], { encoding: 'utf8', timeout: 30000 });
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
 }
@@ -323,15 +243,6 @@ if (CHILD) {
     }).map(function (f) { return path.relative(RUN, f); });
     ok(writers.length === 0, 'no file outside appServer\'s familyPath writes a family path', writers.length + ' files write one: ' + writers.join(', '));
 
-    // ── the roles and the server side (box v26) ─────────────────────────────────────────────────────────────────────
-    test.subHeading('setMode: the implementation sets its role at startup, no bundle verb (box v26)');
-    ok(typeof A0.setMode === 'function', 'appServer exports setMode', 'appServer has no setMode export: ' + typeof A0.setMode);
-    const appText = fs.readFileSync(FILE, 'utf8');
-    ok(!/(^|[\s,{.])['"]?bundle['"]?\s*:\s*\{/m.test(appText) && !/\.bundle\s*=\s*\{/.test(appText), 'appServer serves no bundle verb: a bundle is known by its shape', 'appServer.js defines a verb named bundle');
-    const deskText = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');
-    const clientText = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
-    ok(/\.setMode\(\s*['"]server['"]\s*\)/.test(deskText) && /\.setMode\(\s*['"]client['"]\s*\)/.test(clientText), 'the desk calls setMode("server"), deskClient setMode("client")', 'desk ' + /\.setMode\(\s*['"]server['"]\s*\)/.test(deskText) + ', deskClient ' + /\.setMode\(\s*['"]client['"]\s*\)/.test(clientText));
-
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');
     const clientJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
@@ -339,45 +250,11 @@ if (CHILD) {
     ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
 
     // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
-    const { A, s, D } = start('server', { logMax: 5 });
+    const { A, s, D } = start({}, { logMax: 5 });
     await tick(100);
     ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));
     if (!D || !s || typeof s.subscribe !== 'function') return;
     const has = function (n) { return hasIn(D, n); };
-
-    test.subHeading('the server side: every request answered "ok" at once, then handled (box v26)');
-    grants.add('KEY-A-PEER|' + NAME + '.slow');
-    grants.add('KEY-A-PEER|' + NAME + '.count');
-    const tOk = Date.now();
-    const slowAsk = await post('slow', {}, 'KEY-A-PEER');
-    const answeredIn = Date.now() - tOk;
-    ok(slowAsk.status === 200 && isOk(slowAsk.body) && answeredIn < 1000 && handled.slow === 0, 'a slow request is answered "ok" before its handler ends', 'answered ' + short(slowAsk) + ' in ' + answeredIn + ' ms, handled ' + handled.slow);
-    for (let i = 0; i < 30 && handled.slow < 1; i++) await tick(100);
-    ok(handled.slow === 1, 'and then it is handled', 'slow handled ' + handled.slow);
-    const countBefore = handled.count;
-    const secretBefore = handled.secret;
-    const bundled = await postRaw([{ count: {} }, { secret: {} }, { count: {} }, { count: {} }], 'KEY-A-PEER');
-    await tick(300);
-    ok(bundled.status === 200 && isOk(bundled.body), 'a peer\'s bundle, an array of the existing calls, is answered "ok", never refused', 'answered ' + short(bundled));
-    ok(handled.count === countBefore + 3, 'each granted request in it (' + NAME + '.count) is handed to the server as a normal request', 'count handled ' + (handled.count - countBefore) + ' of 3');
-    ok(handled.secret === secretBefore, 'one the grants table does not grant (' + NAME + '.secret) is never handed to it', 'secret handled ' + (handled.secret - secretBefore));
-    grants.add('KEY-OTHER-PEER|' + NAME);
-    const wholeServer = await postRaw([{ secret: {} }], 'KEY-OTHER-PEER');
-    await tick(300);
-    ok(isOk(wholeServer.body) && handled.secret === secretBefore + 1, 'a key granted the whole server (' + NAME + ') has every call handed', 'answered ' + short(wholeServer) + ', secret handled ' + (handled.secret - secretBefore));
-
-    test.subHeading('the client side: requests go through spirit/appServer.js, the ones behind one in flight as one bundle (box v27)');
-    // In client mode (box v26: requests are bundled "under the client side"; v28: "a client implementation ... in
-    // client mode"), a process of its own.
-    const asks = runChild('ask', 'askProbe');
-    ok(asks.ask === 'function', 'its client half asks: server.ask(key, family, verb, args, how)', 'server.ask is ' + short(asks.ask) + (asks.failed ? ', ' + asks.failed : ''));
-    ok(asks.inFlight === 1, 'while one ask is in flight, the four behind it wait', 'calls out while the first was held: ' + short(asks.inFlight));
-    ok(asks.sent === 2 && asks.settled === 5, 'then the four go together: five asks, two calls out, each ask answered', 'calls out ' + short(asks.sent) + ', asks answered ' + short(asks.settled) + ' of 5: ' + short(asks.calls));
-    const bundle = (asks.calls || []).filter(function (c) { return c.peerPost; })[0];
-    // The child serves as askProbe, and asks its own family by that name.
-    const inside = bundle && bundle.body && bundle.body.askProbe;
-    ok(!!bundle && bundle.key === PUBLISHER && bundle.app === 'api' && Array.isArray(inside) && inside.length === 4 && inside.every(function (c) { return c && c.count && typeof c.count.n === 'number'; }),
-      'the bundle is one spirit.peerPost(key, "api", { <family>: [the four calls] }), each call as it would go alone', 'bundle: ' + short(bundle));
 
     test.subHeading('the first subscribe: a full push');
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
@@ -437,48 +314,47 @@ if (CHILD) {
     ok(has(1) && !has(2) && !has(45), 'a full push replaces the sender\'s cache whole', 'item 1 ' + has(1) + ', item 2 ' + has(2) + ', item 45 ' + has(45));
 
     // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
-    test.subHeading('the cache, per sender, saved and read back: setMode("client") turns it on (box v26)');
+    test.subHeading('the cache, per sender, saved and read back (box v15)');
     clearCache('cacheProbe');
     const one = runChild('first', 'cacheProbe');
     const file = cacheFile('cacheProbe');
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
-    ok(one.subscribed === true && one.one && one.two, 'a client (setMode("client")) takes the push', short(one));
+    ok(one.subscribed === true && one.one && one.two, 'a client with the cache switch on takes the push', short(one));
     ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/process/<client>/cache-<sender key in hex>.json', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
     const two = runChild('restart', 'cacheProbe');
     ok(two.readOne && two.readTwo, 'started again, it reads its cache back before it subscribes', short(two));
     ok(two.subscribed === true && two.title === 'item 1, renamed' && !two.two, 'a sender of a new run pushes in full, and the cache is replaced whole', short(two));
     clearCache('cacheOff');
     runChild('off', 'cacheOff');
-    ok(!fs.existsSync(cacheFile('cacheOff')), 'a server that calls no setMode keeps no cache file (box v26: Chatter)', 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff')));
+    ok(!fs.existsSync(cacheFile('cacheOff')), 'without the switch no cache file is kept', 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff')));
     clearCache('cacheNoFam');
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
     ok(!fs.existsSync(cacheFile('cacheNoFam')), 'a sender whose family has no folder on this node is not cached', 'cache file found: ' + path.relative(RUN, cacheFile('cacheNoFam')));
     clearCache('cacheEvery');
     const every = runChild('every', 'cacheEvery');
     ok(Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3,
-      'within its 4 MB the cache keeps every goal the sender sends, no filtering on the client side', short(every));
+      'within the limit the cache keeps every goal the sender sends, no filtering on the client side', short(every));
     clearCache('cacheLimit');
     const full = runChild('limit', 'cacheLimit');
     let size = -1;
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
-    const half = SHED_N / 2;
-    ok(full.landed === true && size > 0 && size <= LIMIT_MAX, 'about 4.8 MB sent, the cache file keeps within the hard-coded 4 MB', 'landed ' + full.landed + ', cache file of ' + size + ' bytes');
-    ok(Array.isArray(full.items) && full.items.length === 0 && Array.isArray(full.g10) && full.g10.length === half,
-      'past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', 'goal/G9 items kept ' + (full.items || []).length + ', goal/G10 ' + (full.g10 || []).length + ' of ' + half + (full.failed ? ', ' + full.failed : ''));
+    ok(size > 0 && size <= 3500, 'the cache keeps to the limit the client sets', 'cache file of ' + size + ' bytes for a limit of 3500');
+    ok(Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10,
+      'past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', short(full));
     // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
     clearCache('cacheItems');
     const items = runChild('items', 'cacheItems');
     const kept = Array.isArray(items.items) ? items.items : [];
-    const prefixGone = kept.length > 0 && kept.length < SHED_N && kept.every(function (n, i) { return n === SHED_N - kept.length + 1 + i; });
-    ok(items.landed === true && items.goal && prefixGone, 'one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', 'landed ' + items.landed + ', goal ' + items.goal + ', kept ' + kept.length + ' from ' + kept[0] + (items.failed ? ', ' + items.failed : ''));
-    ok(kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0, 'an item shed goes lock, stock and barrel: its chat with it', 'item 1 kept ' + (kept.indexOf(1) !== -1) + ', its chat ' + short(items.chat));
+    const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
+    ok(items.goal && prefixGone, 'one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', short(items));
+    ok(kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0, 'an item shed goes lock, stock and barrel: its chat with it', short(items));
     clearCache('cacheChat');
     const chat = runChild('chat', 'cacheChat');
     const lines = Array.isArray(chat.chat) ? chat.chat : [];
-    const newest = lines.length > 0 && lines.length < SHED_N && lines.every(function (n, i) { return n === SHED_N - lines.length + 1 + i; });
-    ok(chat.landed === true && chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest, 'one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', 'landed ' + chat.landed + ', items ' + short(chat.items) + ', lines kept ' + lines.length + ' from ' + lines[0] + (chat.failed ? ', ' + chat.failed : ''));
-    ['askProbe', 'cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
+    const newest = lines.length > 0 && lines.length < 30 && lines.every(function (n, i) { return n === 30 - lines.length + 1 + i; });
+    ok(chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest, 'one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', short(chat));
+    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
   }()).then(function () {
     try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
     test.reportSuccessFailureCount(); process.exit(process.exitCode || 0);

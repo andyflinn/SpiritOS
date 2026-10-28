@@ -274,10 +274,6 @@ function ddButtonsHtml() {
   if ((f.buttons || []).indexOf('make-current') !== -1) {
     html += '<button type="button" id="dd-make-current">Make current goal</button>';
   }
-  // PUSH (goal/G41.12, box v30: "The user get's a "push" button the the detail of every goal or item, to force a server
-  // push of that item. chat's ar only pushed as lines happen."): on every goal and item, never in the List's facts
-  // (buttons), so it marks nothing as waiting on him.
-  html += '<button type="button" id="dd-push">Push</button>';
   // VERIFY WHERE NO DONE IS SHOWN (a goal before its items are done): at the end of the row.
   if (!verifyDrawn && (f.buttons || []).indexOf('verify') !== -1) html += ddVerifyHtml(f);
   if (f.goal === '') {
@@ -658,11 +654,8 @@ var ddFilesAt = -1;
 // item, read only, informational for now."): item.suites.search, asked each time the icon is pressed.
 var ddSuites = null;
 var ddSuitesMore = false;
-// From spirit.data (goal/G41.12): the item's suites as its suite rows taught the desk's translator.
 function ddLoadSuites(id) {
-  var K = ddKept();
-  var whole = K ? K.get('deskItem/' + id) : null;
-  return Promise.resolve({ items: ((whole && whole.suites) || []).map(function (p) { return { key: p, label: JSON.stringify({ path: p }) }; }), more: false }).then(function (r) {
+  return ddAsk('item.suites.search', { id: id, text: '' }).then(function (r) {
     if (ddId !== id) return;
     ddSuites = (r.items || []).map(function (p) { try { return JSON.parse(p.label).path; } catch (e) { return String(p.key); } });
     ddSuitesMore = !!r.more;
@@ -673,8 +666,7 @@ function ddLoadSuites(id) {
 // delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
 // add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
 var ddRuleNames = Object.create(null);
-// THE DESK'S OWN COPY (goal/G41.12, box v39: "desk uses it's own copy of probabilitySearch, for now"): asks no verb.
-var DD_SEARCH = 'shell/shared/js/deskSearch.js';
+var DD_SEARCH = 'shell/js/probabilitySearch.js';
 var ddRulePick = null;
 var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
 // The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
@@ -686,13 +678,11 @@ function ddNeed(p) {
   if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
-// The rules' names from spirit.data's deskRules (goal/G41.12): the desk's rule rows and the shared current goal.
 function ddLoadRuleNames() {
-  var K = ddKept();
-  var all = K ? (K.branch('deskRules') || {}) : {};
-  Object.keys(all).forEach(function (k) { var l = all[k] || {}; if (l.label) ddRuleNames[k] = l.label + ' (' + l.type + ')'; });
-  ddPaint();
-  return Promise.resolve();
+  return ddAsk('rules.search', { text: '', types: [], statuses: [] }).then(function (r) {
+    (r.items || []).forEach(function (i) { try { var l = JSON.parse(i.label); ddRuleNames[i.key] = l.label + ' (' + l.type + ')'; } catch (e) { /* named by its key */ } });
+    ddPaint();
+  }, function () { /* the keys stand for the names */ });
 }
 function ddRulesHtml() {
   var rules = (ddFacts && Array.isArray(ddFacts.rules)) ? ddFacts.rules : [];
@@ -712,12 +702,10 @@ function ddMountRulePick() {
   ddRulePick = null;
   ddRulePickHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.deskSearch;
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
-      // NO VERB (goal/G41.12): the active rules spirit.data holds; the type toggles cut them here.
-      api: ddApi, server: 'desk',
-      rows: function () { var K = ddKept(); var all = K ? (K.branch('deskRules') || {}) : {}; return Object.keys(all).filter(function (k) { return all[k] && all[k].status === 'active'; }).map(function (k) { return Object.assign({ key: k }, all[k]); }); },
+      api: ddApi, server: 'desk', verb: 'rules.search',
       // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
       // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
       // THE SAME TOGGLES AS ON THE RULES LIST (Andy, quoting: "the type toggles (ui, code, design, desk, test) beside the
@@ -738,7 +726,7 @@ function ddMountRulePick() {
     });
     ddRulePick.refresh();
   };
-  if (window.spirit && window.spirit.elements && window.spirit.elements.deskSearch) { make(); return; }
+  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 function ddSuitesHtml() {
@@ -749,37 +737,12 @@ function ddSuitesHtml() {
 }
 
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
-// From spirit.data (goal/G41.12): the file list as its file rows taught the desk's translator.
 function ddLoadFiles(id) {
-  var K = ddKept();
-  var whole = K ? K.get('deskItem/' + id) : null;
-  if (ddId !== id) return Promise.resolve();
-  ddFiles = (whole && Array.isArray(whole.files)) ? whole.files : [];
-  ddFilesMore = !!(whole && whole.filesMore);
-  ddPaint();
-  return Promise.resolve();
+  return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
 }
 
 // THE CHAT SEARCH (goal/G18.5, on the probability search since goal/G40.12): chat.search for the item on screen; on a
 // goal (goal/G29.21) the scope is items, the goal's chat and its items' chats ranked together.
-// The chat lines spirit.data holds (goal/G41.12): the open item's, and on a goal its items' as well, each with its item.
-function ddChatRows() {
-  var K = ddKept();
-  if (!K || !ddId) return [];
-  var ids = [ddId];
-  if (ddFacts && ddFacts.goal === '') {
-    var all = K.branch('deskItems') || {};
-    Object.keys(all).forEach(function (k) { if (all[k] && all[k].goal === ddId) ids.push(k); });
-  }
-  var out = [];
-  ids.forEach(function (id) {
-    var whole = K.get('deskItem/' + id);
-    ((whole && whole.chat) || []).forEach(function (l, i) {
-      out.push({ key: id + '|' + i + '|' + String(l.at || ''), at: String(l.at || ''), by: String(l.by || ''), text: String(l.text || ''), item: id });
-    });
-  });
-  return out;
-}
 var ddChatFind = null;
 var ddChatFindHost = null;   // as the rule dropdown: a frame drawn again is a new box, so it gets its own search
 function ddMountChatFind() {
@@ -790,12 +753,10 @@ function ddMountChatFind() {
   ddChatFind = null;
   ddChatFindHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.deskSearch;
+    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     if (!P || typeof P.create !== 'function' || ddChatFindHost !== el || ddChatFind) return;
     ddChatFind = P.create(el, {
-      // NO VERB (goal/G41.12): the lines spirit.data holds, of this item, or on a goal of its items too, ranked here.
-      api: ddApi, server: 'desk',
-      rows: function () { return ddChatRows(); },
+      api: ddApi, server: 'desk', verb: 'chat.search',
       args: function (text) { return { id: ddId, text: text, by: '', since: '', before: '', scope: ddFacts && ddFacts.goal === '' ? 'items' : '' }; },
       columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'by', label: 'Who', sort: 'text' }, { field: 'text', label: 'Line', sort: 'text' }],
       face: 'dropdown', placeholder: 'search the chat…',
@@ -805,7 +766,7 @@ function ddMountChatFind() {
     });
     ddChatFind.refresh();
   };
-  if (window.spirit && window.spirit.elements && window.spirit.elements.deskSearch) { make(); return; }
+  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 
@@ -904,28 +865,35 @@ function ddRename() {
 // are asked once, when it is first opened, and after a gap.
 function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.del('deskItem/' + id); }
-// DRAWN FROM THE PAGE'S DATA SET ALONE (goal/G41.12, box v36: "the UI of such server apps will have to be adjusted, just
-// like client simplementations", "the UI for desk is updated AND tested fully. it will function flawlessly with all
-// desk-state painted in real-time"): the desk answers every request "ok" first, so the dialog asks it nothing. The
-// item's facts and its parts are what spirit.data holds of it (the desk's translator, fed by the desk's publishes and the
-// shared current goal); a part it does not hold yet is drawn empty, and the publish that brings it paints it.
 function ddLoad() {
   var id = ddId;
-  var K = ddKept();
-  var facts = K ? K.get('deskItems/' + id) : null;
-  var whole = (K ? K.get('deskItem/' + id) : null) || {};
-  ddFacts = facts || null;
-  ddVersion = Number(whole.version) || Number(facts && facts.version) || 0;
-  ddBox = typeof whole.box === 'string' ? whole.box : '';
-  ddBoxLoaded = typeof whole.box === 'string';
-  ddChecks = Array.isArray(whole.checks) ? whole.checks : [];
-  ddChat = Array.isArray(whole.chat) ? whole.chat : [];
-  ddChatMore = !!whole.chatMore;
-  ddFiles = Array.isArray(whole.files) ? whole.files : [];
-  ddFilesMore = !!whole.filesMore;
-  if (!facts) ddNote = 'Nothing of ' + id + ' has reached this page yet: press Push on it, or wait for its next change.';
-  ddPaint();
-  return Promise.resolve(null);
+  return ddAsk('item.get', { id: id }).then(function (got) {
+    if (ddId !== id) return null;
+    try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
+    ddVersion = Number(got.version) || 0;
+    ddLastChange = Number(got.change) || ddLastChange;
+    ddPaint();
+    var K = ddKept();
+    var whole = K ? K.get('deskItem/' + id) : null;
+    if (whole && typeof whole.box === 'string' && Array.isArray(whole.checks) && Array.isArray(whole.chat) && Array.isArray(whole.files)) {
+      ddBox = whole.box; ddVersion = Number(whole.version) || ddVersion; ddBoxLoaded = true;
+      ddChecks = whole.checks; ddChat = whole.chat; ddChatMore = !!whole.chatMore; ddFiles = whole.files; ddFilesMore = !!whole.filesMore;
+      ddPaint();
+      return null;
+    }
+    // block.targets is the blocks panel's, asked when 🪠 is pressed (goal/G30.8).
+    return Promise.all([
+      ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
+      ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
+      ddLoadFiles(id),
+      ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
+    ]).then(function () {
+      if (K && ddId === id) K.set('deskItem/' + id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore, files: ddFiles, filesMore: ddFilesMore });
+    });
+  }).then(null, function (e) {
+    ddNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
+    ddPaint();
+  });
 }
 
 spirit.shell.activateApp({
@@ -985,8 +953,6 @@ spirit.shell.activateApp({
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
-      // goal/G41.12: Push presses at once; the desk sends the item to every client again.
-      if (id === 'dd-push') { ddPress('push'); return; }
       // goal/G33.3: Verify presses at once, whatever the switch says.
       if (id === 'dd-verify') { ddPress('verify'); return; }
       // THE RENAME OPENS HOLDING THE TITLE (goal/G41.11). Andy: "the rename input field on goal/item detail panel MUST

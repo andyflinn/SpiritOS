@@ -53,18 +53,6 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
 
-## Since goal/G41.12 (box v32)
-
-- **The client role**: deskClient calls `setMode("client")` of spirit/appServer.js at its startup, never `"server"`;
-  the cache and its file are spirit/appServer.js's (no cache.json of its own, no renews, no position of its own).
-- **Its asks of the desk go through spirit/appServer.js**: `server.ask(desk key, 'desk', verb, args, how)`, answered
-  `{ status, body }` (cw), so spirit/appServer.js bundles them.
-- **The shared current goal** (Andy: "the desk client MUST use process/js/desk/currentGoal.json to update it's
-  knowledge"): a read of a part its cache lacks, which the desk answers "ok" alone, is answered from the
-  currentGoal.json of its checkout. The test takes an item with a box from that file as it stands.
-- Not asserted yet: the merge format of currentGoal.json with the cache (Andy: "in a format that allows deskClient to
-  merge it with it's cache"); the box names none.
-
 ## What its test must try to break
 
 - A dump written by a stranger, or anywhere but `cache.json`, or not the whole tree.
@@ -85,7 +73,3 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   cannot be seen from inside deskClient: its handler's answer has left. What is tested is its stand-in: a wait that
   names no key, or an older one. The listener's half (its arm, `--read <key>`, passed to `next` as `read`) is
   `deskAgentEar.js`'s, tested beside it.
-- **No cap offer** (box v38: the desk refuses box changes from agents): a desk line addressed to the agent wakes it with
-  no take; box.take and box.write go to the desk as asked, no gate of its own; nothing of the cap offer is left.
-- **Searches from the cache** (found live on 63d88daf: chat.search answered {"ok":true}, no lines): an agent's
-  chat.search, the desk answering ok, finds the line the stream brought in its items.

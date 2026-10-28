@@ -55,12 +55,11 @@ ok(w.D.get('desk/current') === 'goal/G9' && w.item('goal/G0') && w.item('goal/G0
 w.job({ verb: 'item.row', item: it('goal/G7.1', 'goal/G7') });
 ok(w.D.get('desk/current') === 'goal/G9' && w.item('goal/G9.1') && w.item('goal/G7.1'), 'a row that is not goal.whole is kept and drops nothing', 'current ' + w.D.get('desk/current'));
 
-// goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client side".
-test.subHeading('another goal pushed whole: it is current, and every goal kept stays');
+test.subHeading('another goal pushed whole: what was kept of others goes, the group chat stays');
 w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
 w.job(whole(it('goal/G8.1', 'goal/G8')));
-ok(w.D.get('desk/current') === 'goal/G8' && w.item('goal/G9.1') && w.item('goal/G9') && w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && w.item('goal/G7.1'), 'goal/G9\'s rows and parts stay, and so does another goal\'s row',
-  short({ items: Object.keys(w.D.branch('deskItems')), part: w.part('goal/G9.1') }));
+ok(w.D.get('desk/current') === 'goal/G8' && !w.item('goal/G9.1') && !w.item('goal/G9') && !w.part('goal/G9.1') && !w.item('goal/G7.1'), 'goal/G9\'s rows and parts go, and so does another goal\'s row',
+  short(Object.keys(w.D.branch('deskItems'))));
 ok(w.item('goal/G0') && w.item('goal/G0.3') && w.item('goal/G8.1'), 'the group chat and its items stay; the new goal\'s row is kept', short(Object.keys(w.D.branch('deskItems'))));
 w.job({ verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 w.job(whole(it('goal/G6', '')));
@@ -77,16 +76,16 @@ ok(w.D.get('desk/change') === 5, 'desk/change is raised to 5 and not lowered by 
 w.job({ change: '9', verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 ok(w.D.get('desk/change') === 5, 'a change that is not a number is not taken', 'desk/change ' + w.D.get('desk/change'));
 
-// goal/G41.12, box v15: the bundling is appServer's alone, which hands a bundle's rows in one by one; the desk's own
-// bundles are gone, so the translator unpacks none.
-test.subHeading('no bundle of the desk\'s own: appServer hands the rows one by one (goal/G41.12)');
+test.subHeading('a bundle is its rows (goal/G41.11)');
 const wb = world(true);
-wb.job({ rows: [whole(it('goal/G9.1', 'goal/G9', { title: 'A' })), whole(it('goal/G9.2', 'goal/G9', { title: 'B' }))] });
-ok(!wb.item('goal/G9.1') && !wb.item('goal/G9.2') && !wb.D.get('desk/current'), 'a { rows } object is no row: nothing kept, nothing made current', short({ items: Object.keys(wb.D.branch('deskItems')), current: wb.D.get('desk/current') }));
-wb.job(whole(it('goal/G9.1', 'goal/G9', { title: 'A' })));
-wb.job(whole(it('goal/G9.2', 'goal/G9', { title: 'B' })));
-ok(wb.item('goal/G9.1') && wb.item('goal/G9.1').title === 'A' && wb.item('goal/G9.2') && wb.item('goal/G9.2').title === 'B', 'rows handed one by one are each kept (the second goal.whole does not drop the first)',
+wb.job({ change: 7, rows: [whole(it('goal/G9.1', 'goal/G9', { title: 'A' })), whole(it('goal/G9.2', 'goal/G9', { title: 'B' }))] });
+ok(wb.item('goal/G9.1') && wb.item('goal/G9.1').title === 'A' && wb.item('goal/G9.2') && wb.item('goal/G9.2').title === 'B', 'both rows of a bundle are kept (the second goal.whole does not drop the first)',
   short(Object.keys(wb.D.branch('deskItems'))));
+ok(wb.D.get('desk/change') === 7 && wb.D.get('desk/current') === 'goal/G9', 'the bundle\'s change is desk/change, 7, and its goal is current', short({ change: wb.D.get('desk/change'), current: wb.D.get('desk/current') }));
+wb.job({ change: 8, rows: [{ table: 'box', id: 'goal/G9.1', row: { text: 'x' } }, { item: it('goal/G9.2', 'goal/G9'), removed: true }, null] });
+ok(!wb.item('goal/G9.2') && wb.item('goal/G9.1') && wb.D.get('desk/change') === 8, 'side rows and removes in a bundle are taken as single rows; a null one is skipped', short(Object.keys(wb.D.branch('deskItems'))));
+wb.job({ verb: 'goal.whole', item: it('goal/G9.3', 'goal/G9') });
+ok(wb.item('goal/G9.3'), 'a single row still works as before', short(Object.keys(wb.D.branch('deskItems'))));
 
 test.subHeading('took: a part read for an item of the current goal is kept');
 const wt = world(true);
@@ -116,28 +115,17 @@ wn.job({ verb: 'item.row', item: it('goal/G9.1', 'goal/G9') });
 wn.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B' });
 ok(!wn.part('goal/G9.1'), 'before any goal was pushed nothing is kept', short(wn.part('goal/G9.1')));
 
-// goal/G41.12, box v15: the cache keeps everything the server sends. A box row is the whole box and a chat line is the
-// newest, so both are kept unread. Box v39: "checks and file lists learned from rows": a check or a file row starts its
-// list, since reads are gone.
-test.subHeading('side rows: a box, a chat line, a check and a file are each kept unread, starting their lists');
+test.subHeading('side rows keep current a part once read, and only then');
 const ws = world(true);
 ws.job(whole(it('goal/G9.1', 'goal/G9')));
 ws.job(whole(it('goal/G9.2', 'goal/G9')));
-ws.job({ table: 'box', id: 'goal/G9.2', row: { text: 'never read' } });
-ok(ws.part('goal/G9.2') && ws.part('goal/G9.2').box === 'never read' && ws.part('goal/G9.2').version === 0, 'a box row of an item never read is kept, with its version', short(ws.part('goal/G9.2')));
-ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '1', state: 'open' } });
-ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
-const learned = ws.part('goal/G9.1') || {};
-ok(Array.isArray(learned.checks) && learned.checks.length === 1 && learned.checks[0].number === '1', 'a check row of an item never read starts its checks list', short(learned));
-ok(Array.isArray(learned.files) && learned.files.length === 1 && learned.files[0].path === 'a.js', 'a file row starts its file list', short(learned));
-ws.job({ table: 'checks', id: 'goal/G9.1', removed: true, at: '1' });
-ws.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|a.js' });
+ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'never read' } });
+ok(!ws.part('goal/G9.1'), 'a part never read stays unread', short(ws.part('goal/G9.1')));
 ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [] });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'x', version: 2 } });
 ws.job({ table: 'chat', id: 'goal/G9.1', row: { by: 'a', at: '1', text: 't' } });
 ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
-const p91 = ws.part('goal/G9.1');
-ok(p91.box === 'x' && p91.version === 2 && p91.chat.length === 1 && p91.chatMore === true && Array.isArray(p91.files) && p91.files.length === 1, 'beside checks read, a box, a chat line and a file are kept, with chatMore', short(p91));
+ok(!('box' in ws.part('goal/G9.1')) && !('chat' in ws.part('goal/G9.1')) && !('files' in ws.part('goal/G9.1')), 'the box, chat and files of an item whose checks alone were read are not kept', short(ws.part('goal/G9.1')));
 ws.X.took('item.box', { id: 'goal/G9.1' }, { box: 'old', version: 1 });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'new', version: 2 } });
 ok(ws.part('goal/G9.1').box === 'new' && ws.part('goal/G9.1').version === 2, 'a box row replaces the box read, with its version', short(ws.part('goal/G9.1')));
@@ -184,18 +172,6 @@ ok(wf.part('goal/G9.1').files.filter(function (f) { return f.path === 'x.js'; })
 wf.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|x.js' });
 files = wf.part('goal/G9.1').files;
 ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.path === 'x.js'; }), 'a removed file goes by holder|path, the other agent\'s stays', short(files));
-
-// goal/G41.12, box v39: "rows for profiles, his seen marker and agents, so the page keeps them"; cw: profile.set
-// publishes {profile: <key>, row}, seen.set {seen: <id>, at}, kept in deskProfiles and deskSeen.
-test.subHeading('profiles and his seen marker are kept from their rows (box v39)');
-const wp = world(true);
-wp.job({ profile: 'KEY-CW', row: { agent: 'KEY-CW', name: 'Claude Windows', nick: 'cw', included: true } });
-ok(wp.D.get('deskProfiles/KEY-CW') && wp.D.get('deskProfiles/KEY-CW').nick === 'cw', 'a profile row is kept by its key in deskProfiles', short(wp.D.get('deskProfiles/KEY-CW')));
-wp.job({ profile: 'KEY-CW', row: { agent: 'KEY-CW', name: 'Claude Windows', nick: 'cwin', included: true } });
-ok(wp.D.get('deskProfiles/KEY-CW') && wp.D.get('deskProfiles/KEY-CW').nick === 'cwin', 'a later row of the same key replaces it', short(wp.D.get('deskProfiles/KEY-CW')));
-wp.job({ seen: 'goal/G9.1', at: '2026-10-28T11:00:00.000Z' });
-const seenKept = wp.D.get('deskSeen/goal/G9.1');
-ok(seenKept === '2026-10-28T11:00:00.000Z' || !!(seenKept && seenKept.at === '2026-10-28T11:00:00.000Z'), 'his seen marker is kept by its item in deskSeen, with its at', short(seenKept));
 
 test.subHeading('only the desk\'s jobs are read');
 const wm = world(true);

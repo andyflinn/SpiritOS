@@ -70,7 +70,6 @@
   // oldest go, the one just written last of all.
   function counted(path, value) {
     if (capBytes === Infinity) return;
-    if (deferred) { deferred[path] = true; return; }
     if (sizes.has(path)) { total -= sizes.get(path); sizes.delete(path); }
     if (value === undefined) return;
     var n = utf8Bytes(path) + utf8Bytes(JSON.stringify(value) || '');
@@ -113,19 +112,6 @@
   var recorders = [];
   function recorded(path) {
     recorders.forEach(function (r) { if (!r.seen[path]) { r.seen[path] = true; r.paths.push(path); } });
-  }
-  // MANY WRITES, COUNTED ONCE (goal/G41.12): a cache rewritten from its rows writes one path many times over (an item's
-  // chat, line by line), and each write counting its value's JSON cost seconds past a full cache. batch(fn) runs fn and
-  // counts each path it touched once, as it stands at the end.
-  var deferred = null;
-  function batch(fn) {
-    if (deferred) return fn();
-    deferred = Object.create(null);
-    try { return fn(); } finally {
-      var d = deferred;
-      deferred = null;
-      Object.keys(d).forEach(function (p) { counted(p, get(p)); });
-    }
   }
   function recording(fn) {
     var r = { seen: Object.create(null), paths: [] };
@@ -256,7 +242,7 @@
 
   var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
     translate: translate, quietly: quietly, ready: ready, branch: branch, search: search, forget: forget, cap: cap,
-    recording: recording, batch: batch,
+    recording: recording,
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 

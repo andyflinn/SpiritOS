@@ -83,7 +83,8 @@ module.exports = {
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.
-    subscribe: { family: 'id', run: 'text?', since: 'number?' },    unsubscribe: {},
+    subscribe: { family: 'id', run: 'text?', since: 'number?' },
+    unsubscribe: {},
     // goal/G33.7: the door list as a bounded search, and one door's read (stackFrameChecks.doors went).
     'stackFrameChecks.door': { id: 'id' },
     'stackFrameChecks.doors.search': { text: 'text' },
@@ -137,15 +138,10 @@ module.exports = {
       if (row.item && row.item.id) return 'item ' + row.item.id;
       if (row.rule) return 'rule ' + row.rule;
       if (row.plugin) return 'plugin ' + row.plugin;
-      if (row.profile) return 'profile ' + row.profile;
-      if (row.seen) return 'seen ' + row.seen;
       return '';
     }
-    // A row older than the one it would replace (a lower change: the shared current goal merged after the stream brought
-    // newer) is not taken; the rows stay as they were.
     function keep(rows, row) {
       var id = identity(row);
-      if (id && typeof row.change === 'number' && rows.some(function (r) { return identity(r) === id && typeof r.change === 'number' && r.change > row.change; })) return rows;
       return rows.filter(function (r) { return !id || identity(r) !== id; }).concat([row]);
     }
     // Each group's newest row: the one touched last is the one kept longest.

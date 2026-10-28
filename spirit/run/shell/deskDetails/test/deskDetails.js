@@ -170,10 +170,14 @@ function ddWorld(facts, checks) {
   const closed = [];
   const api = { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     setScreenTitle: function () {}, closeDialog: function (x) { closed.push(x); }, onPublished: function () {}, armUntilElsewhere: function () {},
-    // Every desk answer is "ok" (goal/G41.12, box v26: the API is all PUT); what the dialog draws is in spirit.data.
     verb: function (name, args) {
       asked.push({ name: name, args: args });
-      return Promise.resolve({ status: 200, body: 'ok' });
+      if (name === 'desk.item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 1 } });
+      if (name === 'desk.item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
+      if (name === 'desk.item.box') return Promise.resolve({ status: 200, body: { box: 'the box', version: 1 } });
+      if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [] } });
+      if (name === 'desk.item.files') return Promise.resolve({ status: 200, body: { files: [] } });
+      return Promise.resolve({ status: 200, body: { ok: true } });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
     Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Date: Date, Math: Math, RegExp: RegExp, Error: Error,
@@ -182,22 +186,9 @@ function ddWorld(facts, checks) {
   win.spirit = { escapeHtml: api.escapeHtml,
     require: function (p) { required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
-      probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } },
-      // The desk's own copy (box v39; cw: shell/shared/js/deskSearch.js, spirit.elements.deskSearch).
-      deskSearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '', values: function () { return {}; } }; } } },
+      probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
-  // The page's cache: spirit.data and the desk's translator, filled as the stream fills it.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), win, { filename: 'deskData.js' });
-  const fill = win.spirit.deskData ? win.spirit.deskData.published : function () {};
-  const goalId = facts.goal === '' ? facts.id : (facts.goal || 'goal/G9');
-  if (goalId !== facts.id) fill({ verb: 'goal.whole', item: { id: goalId, goal: '', title: 'The goal', version: 1 } });
-  fill({ verb: 'goal.whole', item: Object.assign({ version: 1 }, facts) });
-  fill({ table: 'box', id: facts.id, row: { text: 'the box', version: 1 } });
-  (checks || []).forEach(function (c) { fill({ table: 'checks', id: facts.id, row: c }); });
-  // Every active rule comes on the stream, kept in deskRules (goal/G41.2).
-  (facts.rules || []).forEach(function (r) { fill({ rule: r.key, row: { key: r.key, label: 'Rule ' + r.key, text: 'the text of ' + r.key, type: 'desk', status: 'active', version: r.version || 1 } }); });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win };
   w.open = async function () {
@@ -328,19 +319,11 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     r.searches = [];
     const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
     delete r.win.spirit.elements.probabilitySearch;
-    delete r.win.spirit.elements.deskSearch;
     const req = r.win.spirit.require;
-    // The shell's search, or the desk's own copy (box v39; cw: shell/shared/js/deskSearch.js, spirit.elements.deskSearch).
-    r.win.spirit.require = function (p) {
-      const q = String(p).replace(/^\/+/, '');
-      if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make;
-      if (q === 'shell/shared/js/deskSearch.js') r.win.spirit.elements.deskSearch = make;
-      return req(p);
-    };
+    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make; return req(p); };
     return r;
   };
-  // The rule pick: a dropdown, asking rules.search or, on the desk's own copy, no verb at all (box v39).
-  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.face === 'dropdown' && (x.o.verb === 'rules.search' || !x.o.verb); }).pop() || null; };
+  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
   const rulesIcon = function (r) { return r.document.querySelector('[data-panel="rules"]'); };
   const rw = ruleWorld(); await rw.open();
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
@@ -348,10 +331,10 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const firstRule = rw.document.querySelector('[data-rule-remove]');
   const order = walk(rw.document.root, []);
   ok(!!pick && inPage(rw, pick.host) && shown(pick.host), 'pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require',
-    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch|deskSearch/.test(x); }) }));
+    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch/.test(x); }) }));
   ok(!!pick && !!firstRule && order.indexOf(pick.host) !== -1 && order.indexOf(pick.host) < order.indexOf(firstRule), 'it stands on top of the list of rules (12 rules attached), not below it',
     'dropdown at ' + (pick ? order.indexOf(pick.host) : 'none') + ', first rule at ' + order.indexOf(firstRule));
-  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch|deskSearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
+  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
   ok(!scriptTags.length, 'no hand-rolled script tag loads the search', scriptTags.length + ' script tag(s) for probabilitySearch');
   // Away to the box and back: the dropdown is there again, every time the panel opens.
   const boxIcon = rw.document.querySelector('[data-panel="box"]');
@@ -369,24 +352,19 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const cw = ddWorld(CHATTY, []);
   let heard = null;
   cw.api.onPublished = function (fn, from) { if (from === 'desk' || !heard) heard = fn; return function () {}; };
-  // The two lines are in spirit.data, as the stream brought them (goal/G41.12: the dialog reads nothing from the desk).
-  const feed = cw.win.spirit.deskData ? cw.win.spirit.deskData.published : function () {};
-  [L1, L2].forEach(function (l) { feed({ table: 'chat', id: CHATTY.id, row: l }); });
+  const verbBefore = cw.api.verb;
+  cw.api.verb = function (name, args) { if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(name, args); };
   await cw.open();
   const log = function () { return cw.document.getElementById('dd-chat'); };
   const shownNow = function () { return (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); };
   const before = shownNow();
   ok(before.length === 2 && /second/.test(before[0].textContent), 'it opens with the two lines, newest first', 'shown: ' + JSON.stringify(before.map(function (b) { return b.textContent; })));
-  const l3 = { change: 50, table: 'chat', id: CHATTY.id, row: L3 };
-  feed(l3);
-  if (heard) { heard(l3); await settle(); }
+  if (heard) { heard({ change: 50, table: 'chat', id: CHATTY.id, row: L3 }); await settle(); }
   const afterLine = shownNow();
   ok(afterLine.length === 3 && /third/.test(afterLine[0].textContent), 'a new line on the stream is put in on top', 'shown: ' + JSON.stringify(afterLine.map(function (b) { return b.textContent; })));
   ok(afterLine.length === 3 && afterLine[1] === before[0] && afterLine[2] === before[1], 'the two lines already shown are the same elements as before: not drawn again',
     'drawn again: ' + JSON.stringify({ second: afterLine[1] === before[0], first: afterLine[2] === before[1] }));
-  const g1 = { change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } };
-  feed(g1);
-  if (heard) { heard(g1); await settle(); }
+  if (heard) { heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
   const afterOther = shownNow();
   ok(afterOther.length === 3 && afterOther[0] === afterLine[0] && afterOther[1] === before[0] && afterOther[2] === before[1],
     'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
@@ -401,75 +379,5 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   let bound = null;
   for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
   ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
-
-  // ── goal/G41.12, box v26-v35: THE PAGE READS NOTHING FROM THE DESK ─────────────────────────────────────────────────
-  // Andy: "The client PUTs and the server STREAMs: the client always has all available information about the server's
-  // state in its (persisted) cache, and reads nothing from the server"; every request, "the owner's or a peer's", is
-  // answered "ok"; "the UI for desk is tested fully". The page's cache is spirit.data with the desk's translator.
-  test.subHeading('goal/G41.12: the detail reads nothing from the desk, it draws from spirit.data');
-  const READS = ['item.get', 'item.box', 'item.chat', 'item.checks', 'item.files', 'items.search', 'chat.search', 'rules.search', 'rule.get', 'profile.get', 'item.suites.search', 'item.checks.search', 'item.rules.search', 'log.search', 'changes'];
-  const readsIn = function (text) { return READS.filter(function (v) { return new RegExp('[\'"`](desk\\.)?' + v.replace(/\./g, '\\.') + '[\'"`]').test(text); }); };
-  ok(readsIn(code).length === 0, 'deskDetails.js asks the desk no read verb', 'deskDetails.js names: ' + readsIn(code).join(', '));
-  const put = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item from the stream' }), []);
-  // The desk answers "ok" to everything; what the page knows is what the stream put in spirit.data.
-  put.api.verb = function (name, args) { put.asked.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: 'ok' }); };
-  // The stream as the shell hands it to the app (api.onPublished), and as the translator takes it into spirit.data.
-  const putHearers = [];
-  // The title is painted to the shell's title bar (api.setScreenTitle, goal/G9.6), not into the body.
-  const putTitles = [];
-  put.api.setScreenTitle = function (t) { putTitles.push(String(t)); };
-  const putTitleSays = function (re) { return putTitles.some(function (t) { return re.test(t); }) || re.test(put.document.body.textContent); };
-  put.api.onPublished = function (fn) { putHearers.push(fn); return function () {}; };
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), put.win, { filename: 'spiritData.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), put.win, { filename: 'deskData.js' });
-  const PD = put.win.spirit.data;
-  const fed = !!(PD && put.win.spirit.deskData);
-  if (fed) {
-    put.win.spirit.deskData.published({ verb: 'goal.whole', item: { id: 'goal/G9', goal: '', title: 'The goal', version: 1 } });
-    put.win.spirit.deskData.published({ verb: 'goal.whole', item: Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item from the stream', version: 3 }) });
-    put.win.spirit.deskData.published({ table: 'box', id: 'goal/G9.8', row: { text: 'a box the stream brought', version: 3 } });
-    put.win.spirit.deskData.published({ table: 'chat', id: 'goal/G9.8', row: { by: 'andy', at: '2026-10-28T10:00:00.000Z', text: 'a line the stream brought' } });
-  }
-  ok(fed, 'the stand-in page holds spirit.data with the desk\'s translator', 'spirit.data ' + typeof PD + ', deskData ' + typeof put.win.spirit.deskData);
-  await put.open();
-  const putShown = put.document.body.textContent;
-  ok(putTitleSays(/An item from the stream/) && /a box the stream brought/.test(putShown) && /a line the stream brought/.test(putShown), 'opened on the item, it shows its title, box and chat from spirit.data, though every desk answer is "ok"',
-    'shown: ' + JSON.stringify({ title: putTitleSays(/An item from the stream/), box: /a box the stream brought/.test(putShown), chat: /a line the stream brought/.test(putShown) }));
-  // Andy, box v37: "it will function flawlessly with all desk-state painted in real-time".
-  test.subHeading('goal/G41.12: the open detail is painted in real time from the stream');
-  const streamed = async function (row) { put.win.spirit.deskData.published(row); putHearers.slice().forEach(function (fn) { fn(row); }); await settle(); };
-  if (fed) {
-    await streamed({ table: 'box', id: 'goal/G9.8', row: { text: 'a box written while it is open', version: 4 } });
-    await streamed({ table: 'chat', id: 'goal/G9.8', row: { by: 'claude-windows', at: '2026-10-28T10:05:00.000Z', text: 'a line written while it is open' } });
-    await streamed({ verb: 'item.row', item: Object.assign({}, ITEM, { id: 'goal/G9.8', title: 'An item renamed on the stream', version: 5 }) });
-  }
-  const live = put.document.body.textContent;
-  ok(/a box written while it is open/.test(live), 'a box row on the stream repaints the open detail\'s box', 'box shown: ' + /a box written while it is open/.test(live));
-  ok(/a line written while it is open/.test(live) && /a line the stream brought/.test(live), 'a chat line on the stream joins the open chat', 'chat shown: ' + JSON.stringify({ newLine: /a line written while it is open/.test(live), old: /a line the stream brought/.test(live) }));
-  ok(putTitleSays(/An item renamed on the stream/), 'its facts row on the stream repaints its title', 'titles painted: ' + JSON.stringify(putTitles.slice(-3)));
-  const readsAsked = put.asked.filter(function (a) { return READS.indexOf(String(a.name).replace(/^desk\./, '')) !== -1; });
-  ok(readsAsked.length === 0, 'and asks the desk nothing to draw it', 'asked: ' + JSON.stringify(readsAsked.map(function (a) { return a.name; })));
-
-  // Andy, box v30: "The user get's a \"push\" button the the detail of every goal or item, to force a server push of
-  // that item."
-  test.subHeading('goal/G41.12: the push button in the detail of an item and of a goal');
-  const pushOf = async function (w, id, what) {
-    const find = function () { return w.document.querySelector('[data-press="push"]') || w.document.querySelectorAll('button').filter(function (b) { return /^\W*push\b/i.test(String(b.textContent || '').trim()); })[0] || null; };
-    const before = w.writes().length;
-    const b = find();
-    if (!b) { test.fail(what + ': no push button in the detail'); return; }
-    w.document.click(b); await settle();
-    let sent = w.writes().slice(before);
-    // An are-you-sure takes a second press; either way one press is sent.
-    if (!sent.length && find()) { w.document.click(find()); await settle(); sent = w.writes().slice(before); }
-    ok(sent.length === 1 && sent[0].name === 'desk.press' && sent[0].args && sent[0].args.id === id && sent[0].args.what === 'push', what + ': its push button sends desk.press {id, what: "push"}, once',
-      what + ': sent ' + JSON.stringify(sent));
-  };
-  const pi = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.9' }), []);
-  await pi.open();
-  await pushOf(pi, 'goal/G9.9', 'an item');
-  const pg = ddWorld({ id: 'goal/G9', title: 'The goal', goal: '', status: 'open', buttons: [], design: false, blocked: [], version: 1 }, []);
-  await pg.open();
-  await pushOf(pg, 'goal/G9', 'a goal');
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

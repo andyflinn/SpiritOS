@@ -33,10 +33,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
 
   test.subHeading('its shape: verbs, each argument with its rule, no family name of its own');
   ok(isPlain(verbs) && names.length > 0, 'it exports { verbs } with ' + names.length + ' verbs', 'exports ' + short(Object.keys(api)));
-  // Since goal/G41.12 the family api.js on the client's node keeps the desk's cache too (keep, shed, answer).
-  const cache = api.cache || {};
-  ok(Object.keys(api).sort().join() === 'cache,verbs', 'it exports verbs and cache, nothing else: it names no family of its own', 'exports ' + short(Object.keys(api)));
-  ok(['keep', 'shed', 'answer'].every(function (k) { return typeof cache[k] === 'function'; }), 'its cache is keep, shed and answer, each a function', 'cache holds ' + short(Object.keys(cache)));
+  ok(Object.keys(api).join() === 'verbs', 'it exports nothing but verbs: it names no family of its own', 'exports ' + short(Object.keys(api)));
   const badSpec = names.filter(function (v) { return !isPlain(verbs[v]); });
   ok(badSpec.length === 0, 'every verb\'s arguments are a plain object', 'not an object: ' + short(badSpec));
   const badRule = [];

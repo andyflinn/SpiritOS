@@ -48,9 +48,6 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
-// DESKCLIENT IS A CLIENT (goal/G41.12, box v26: "the spirit/appServer.js implementation (desk, deskClient), on startup,
-// call a spirit/appServer.js function setMode("client" | "server)"): its requests bundle, and its cache of the desk is on.
-appServer.setMode('client');
 const limits = require('../../../spirit/limits.js');
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
@@ -144,13 +141,16 @@ function begin(verb) {
 // key, goal/G40.6), over peerPost with this server's waiting; the call is checked against the desk's own api.js and goes
 // as the packet the far apiDoor takes; nothing here builds one. Answers the desk's body as before, its refusal included,
 // and the kernel's own outcomes (not-posted, no-answer).
-// THROUGH appServer's ask (goal/G41.12, box v15: "Both bundle: the client its requests"): asks that back up behind one in
-// flight go to the desk together, each answered its own.
 const DESK_HOW = { waitMs: WAIT_MS, patienceMs: PATIENCE_MS };
 function askDesk(to, verb, args) {
-  return server.ask(to, 'desk', verb, args, DESK_HOW).then(function (r) {
-    return (r && r.body) || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
-  });
+  return spirit.require(spirit.familyPath('desk'), to, DESK_HOW).then(function (desk) {
+    return spirit.outcome(Promise.resolve().then(function () {
+      if (typeof desk[verb] !== 'function') { const e = new Error('the desk serves no verb ' + verb); e.code = 'no-such-verb'; throw e; }
+      return desk[verb](args);
+    })).then(function (r) {
+      return r.body || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
+    });
+  }, function () { return { ok: false, code: 'no-answer', error: 'the desk family did not answer' }; });
 }
 // The same ask, with its own record: opened as it leaves, ended by what came back.
 function countedAsk(to, verb, args) {
@@ -210,30 +210,6 @@ function heldByMe(row) {
 const DESK_CACHE = require(path.join(__dirname, '..', '..', '..', spirit.familyPath('desk'))).cache;
 function fromKept(name, args) {
   return DESK_CACHE.answer(name, args, dataSet, ANSWER_ROOM);
-}
-function okAlone(got) { return !!got && typeof got === 'object' && got.ok === true && Object.keys(got).length === 1; }
-// THE SHARED CURRENT GOAL, MERGED (goal/G41.12; Andy: "for desk: do NOT forget, that deskClient has also the shared current
-// goal as a resource for knowledge!!!!!", and box v32: "the desk client MUST use process/js/desk/currentGoal.json to
-// update it's knowledge"): the file in this checkout, which the desk commits (goal/G4.21), carries rows, the very rows
-// its stream carries; whenever its version (box v33, with its run) is not the one last merged, they go into the cache
-// of the desk (spirit/appServer.js merge), each only if newer than what the cache holds, so the cache answers it.
-const SHARED_GOAL = path.join(__dirname, '..', 'desk', 'currentGoal.json');
-let sharedAt = -1;
-// The run and version (box v33) of the file last merged: a file of another run, or a higher version, is newer.
-let sharedSeen = '';
-function mergeShared() {
-  let at = -1;
-  try { at = fs.statSync(SHARED_GOAL).mtimeMs; } catch (e) { return 0; }
-  if (at === sharedAt) return 0;
-  let doc = null;
-  try { doc = JSON.parse(fs.readFileSync(SHARED_GOAL, 'utf8')); } catch (e) { return 0; }
-  sharedAt = at;
-  const seen = String((doc && doc.run) || '') + ':' + String((doc && doc.version) || 0);
-  if (!doc || !Array.isArray(doc.rows) || seen === sharedSeen) return 0;
-  let to = '';
-  try { to = deskKey(); } catch (e) { sharedAt = -1; return 0; }
-  sharedSeen = seen;
-  return server.merge(to, 'desk', doc.rows);
 }
 // A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
 // node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
@@ -778,24 +754,16 @@ function rulesOfWake(to, lines) {
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
 // answer decides; no answer refuses.
-// THE BOX IS NO LONGER GATED HERE (goal/G41.12, box v38: "change desk to refuse box changes from agents"; rule/25: "The
-// USER owns the box."): goal/G27.12 gated box.take and box.write here as chat is gated; the desk now refuses both from
-// every agent, so its refusal is the answer and nothing here is asked first.
-const GATED = ['chat.add'];
+// THE BOX IS GATED THE SAME WAY (goal/G27.12, reopened): Andy, 2026-10-17, to gating box.take and box.write in deskClient
+// as chat is gated: "yes, add that". An agent that neither holds the item nor took his line there leaves its box alone.
+const GATED = ['chat.add', 'box.take', 'box.write'];
 // The items where a line of his addressed to this agent entitles it to answer (goal/G33.2, box v6).
 const entitled = {};
 function mayChat(to, verb, args) {
   if (GATED.indexOf(verb) === -1 || !args || !args.id) return Promise.resolve(true);
   const id = String(args.id);
   if (entitled[id]) return Promise.resolve(true);
-  // FROM WHAT IS KNOWN FIRST (goal/G41.12): the cache, the shared current goal merged into it; the desk only for what it lacks
-  // (a desk answering "ok" first gives nothing, and the gate refuses).
-  const known = function (verb, a) {
-    mergeShared();
-    const got = fromKept(verb, a);
-    return got ? Promise.resolve(got) : askDesk(to, verb, a);
-  };
-  return known('item.get', { id: id }).then(function (r) {
+  return askDesk(to, 'item.get', { id: id }).then(function (r) {
     let it = {};
     try { it = JSON.parse((r && r.item) || '{}'); } catch (e) { it = {}; }
     // THE DESK KEEPS HOLDS AND TAKES BY LABEL; ITS NAMES MAP GIVES THE NAME (goal/G27.6: Levant's label is not his name).
@@ -805,7 +773,7 @@ function mayChat(to, verb, args) {
     // AN EARLIER PHASE HOLDER, OR ITS CREATOR (goal/G27.10, R2 and R5): the desk lets them post at any time, so this gate
     // does too.
     if ([it.red, it.builder, it.verifier, it.creator].some(function (l) { return l && nameOf(l) === SELF; })) return true;
-    return known('item.chat', { id: id }).then(function (c) {
+    return askDesk(to, 'item.chat', { id: id }).then(function (c) {
       const lines = (c && Array.isArray(c.chat)) ? c.chat : [];
       return lines.some(function (l) { return l && l.taken && nameOf(l.taken) === SELF; });
     });
@@ -889,15 +857,6 @@ const server = appServer.serve({
         // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
         const answer = one.answer.then(function (got) {
           if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
-          // A READ THE DESK ANSWERED "ok" ALONE (box v26: every request answered ok first): from the cache once the shared
-          // current goal is merged into it, or refused not-kept, saying where it may come from (Andy, Q5: "an agent can
-          // request the push of an item in the chats").
-          if (reading && okAlone(got)) {
-            mergeShared();
-            const kept = fromKept(a.name, args);
-            if (kept) return kept;
-            return { ok: false, code: 'not-kept', why: a.name + ' of ' + String(args.id || '') + ' is in neither the cache nor the shared current goal: ask for a push of it in the chat' };
-          }
           // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
           // into spirit.data through the desk's translator, which the push keeps current from now on.
           if (reading && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(a.name, args, got);
@@ -1078,8 +1037,8 @@ const server = appServer.serve({
 }, {
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
-  // Its cache of the desk's rows is client mode's (setMode, above), 4 MB hard-coded in spirit/appServer.js.
-  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed },
+  // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
+  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, cache: true },
   dependencies: ['deskClient.streamListener'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
@@ -1114,9 +1073,6 @@ setInterval(function resubscribeQuiet() {
   if (!d || !d.value || now - heardAt < QUIET_MS || now - askedAt < QUIET_MS) return;
   subscribeDesk(d.value);
 }, 1000).unref();
-// THE SHARED CURRENT GOAL IS MERGED AS IT CHANGES (box v32), looked at every QUIET_MS and once at the start.
-setImmediate(mergeShared);
-setInterval(mergeShared, QUIET_MS).unref();
 
 // THE CHECKOUT, WATCHED (goal/G33.11). Andy, in the box: "While its agent holds the red or the build of an item, the
 // agent's deskClient watches its checkout and reports each change to the item's status column only, never to the chat.

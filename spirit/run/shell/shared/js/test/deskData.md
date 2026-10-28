@@ -44,9 +44,3 @@ nothing. It writes only through `set`, `merge` and `del`:
 - A bundle that keeps only its last row, or a change number lowered.
 - A part kept for an item of another goal, for a narrower read, or for a part never read.
 - A late file losing its mark, or a mark appearing on a row that had none.
-
-## goal/G41.12, box v39
-
-- **Checks and file lists learned from rows** (Andy: "checks and file lists learned from rows"): a check row or a file
-  row of an item never read starts its list; a file list so started is `filesMore: true`, maybe incomplete (cw). The
-  word that a Push ends with to mark the lists whole is not asserted yet: cw names it.

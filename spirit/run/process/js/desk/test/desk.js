@@ -63,7 +63,7 @@ function familyOf(body) {
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
 // (events.publish, the row as app) into pages; the event stream peerPost reads its answers on (events.subscribe); a
 // family's interface (api {family}); each post to a deskClient's streamListener (peer.post) into posts as {to, json},
-// every entry of it into sent as {to, row, entry}.
+// every row of it into sent as {to, row}.
 function pretendNode() {
   const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set();
   const server = http.createServer(function (req, res) {
@@ -87,9 +87,8 @@ function pretendNode() {
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
-        // Every delivery is a bundle, one array of entries { run, n, row } (spirit/appServer.js, goal/G41.12); a full
-        // push ends in { run, n, full, end }, which carries no row.
-        (Array.isArray(got) ? got : []).forEach(function (e) { sent.push({ to: String(b.to), row: e && e.row, entry: e }); });
+        const rows = Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : [];
+        rows.forEach(function (row) { sent.push({ to: String(b.to), row: row }); });
         answer = { heard: true };
         // A subscriber that is away: its post is seen, and never answered, so the desk's peerPost waits it out.
         if (deaf.has(String(b.to))) return;
@@ -125,39 +124,13 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
   const node = pretendNode();
   await new Promise(function (r) { node.server.listen(0, '127.0.0.1', r); });
   const SERVER = runCopy(path.join(scratch, 'run'), node.server.address().port);
-  // A goal shared (goalRepo, goalPath), so the desk writes its currentGoal.json; the share itself is a job the pretend
-  // node takes and runs nothing for, so nothing is pushed anywhere.
-  fs.mkdirSync(path.join(scratch, 'repo', '.git'), { recursive: true });
-  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ goalRepo: path.join(scratch, 'repo'), goalPath: 'currentGoal.json' }), '--pipe', pipe, '--state', state], {
+  const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job' }),
   });
-  // EVERY ANSWER IS "ok" (goal/G41.12, box v32: "the implementation's API is all PUT"; "The client PUTs and the server
-  // STREAMs"): what a write did is read from what the desk published, as his pages hear it, never from its answer.
-  const factsRows = function (id) {
-    return node.pages.filter(function (o) { return o && o.item && !o.table && !o.removed; }).map(function (o) {
-      let it = o.item; if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } } return it;
-    }).filter(function (it) { return it && String(it.id) === id; });
-  };
-  // The newest facts of an item, waited for until pass holds them (3 s at most).
-  const facts = async function (id, pass) {
-    for (let i = 0; i < 30; i++) { const rows = factsRows(id); const last = rows[rows.length - 1]; if (last && (!pass || pass(last))) return last; await sleep(100); }
-    const rows = factsRows(id); return rows[rows.length - 1] || {};
-  };
-  // An item nothing has published yet is pushed by his push button (box v30), so its facts are known.
-  const known = async function (id) { if (!factsRows(id).length) await call('press', { id: id, what: 'push' }, ANDY); return facts(id); };
-  // An item's file list, rebuilt from the files rows published, one agent's path each, waited for until pass holds it.
-  const filesOf = async function (id, pass) {
-    const now = function () {
-      const out = new Map();
-      node.pages.forEach(function (o) { if (!o || o.table !== 'files' || o.id !== id) return; if (o.removed) { out.delete(String(o.at)); return; } if (o.row) out.set(o.row.by + '|' + o.row.path, o.row); });
-      return Array.from(out.values());
-    };
-    for (let i = 0; i < 30 && !(pass ? pass(now()) : false); i++) await sleep(100);
-    return now();
-  };
-  const boxRows = function (id) { return node.pages.filter(function (o) { return o && o.table === 'box' && o.id === id && o.row; }).map(function (o) { return String(o.row.text || ''); }); };
-  const accepted = function (r) { return r === 'ok' || !!(r && (r.ok === true || r.subscribed === true)); };
+  const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
+  const filesOf = async function (id) { return ((await call('item.files', { id: id }, ANDY)).files) || []; };
+  const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
   // The to list his line was published with, as his pages heard it.
   const toOf = async function (text) {
     for (let i = 0; i < 40; i++) {
@@ -183,55 +156,48 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     test.subHeading('bundles: item.files.add takes a list of paths (Desk only)');
     await call('item.take', { id: 'goal/G100.1' }, CW);
     const paths = ['spirit/run/a.js', 'spirit/run/b.js', 'spirit/run/c.js'];
-    await call('item.files.add', { id: 'goal/G100.1', paths: paths }, CW);
-    const listed = (await filesOf('goal/G100.1', function (fs_) { return paths.every(function (p) { return fs_.some(function (f) { return f.path === p; }); }); })).map(function (f) { return f.path; });
-    ok(paths.every(function (p) { return listed.indexOf(p) !== -1; }), 'item.files.add {id, paths} lands every path of the list on the caller\'s list', 'listed ' + short(listed));
+    const bundle = await call('item.files.add', { id: 'goal/G100.1', paths: paths }, CW);
+    const listed = (await filesOf('goal/G100.1')).map(function (f) { return f.path; });
+    ok(bundle.ok !== false && paths.every(function (p) { return listed.indexOf(p) !== -1; }), 'item.files.add {id, paths} lands every path of the list on the caller\'s list',
+      'the bundle answered ' + short(bundle) + '; listed ' + short(listed));
 
-    // goal/G41.12, box v30: a goal made current publishes its row alone, so the rows that back up are a burst of writes:
-    // spirit/appServer.js bundles them, several to a post.
-    test.subHeading('bundles: rows that back up reach a subscribed client several to a post');
-    await call('press', { id: OTHER.id, what: 'make-current' }, ANDY);
+    test.subHeading('bundles: a goal pushed whole reaches a subscribed client as bundles of rows');
     const before = node.posts.length;
-    const BURST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (i) { return 'a burst line ' + i; });
-    await Promise.all(BURST.map(function (t) { return call('chat.add', { id: 'goal/G100.6', text: t }, ANDY); }));
-    const burstRows = function (p) {
-      const rows = (Array.isArray(p.got) ? p.got : []).map(function (e) { return e && e.row; });
-      return rows.filter(function (r) { return r && r.table === 'chat' && r.row && BURST.indexOf(r.row.text) !== -1; }).length;
+    await call('press', { id: OTHER.id, what: 'make-current' }, ANDY);
+    const wholeRows = function (p) {
+      const rows = Array.isArray(p.got) ? p.got : p.got && Array.isArray(p.got.rows) ? p.got.rows : p.got ? [p.got] : [];
+      return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item && String(r.item.id).indexOf(OTHER.id) === 0; }).length;
     };
     const mine = function () { return node.posts.slice(before).filter(function (p) { return p.to === CW.key; }); };
-    for (let i = 0; i < 60; i++) { await sleep(100); if (mine().reduce(function (m, p) { return m + burstRows(p); }, 0) >= BURST.length) break; }
+    for (let i = 0; i < 60; i++) { await sleep(100); if (mine().reduce(function (m, p) { return m + wholeRows(p); }, 0) >= OTHER_ITEMS.length + 1) break; }
     const pushed = mine();
-    const most = pushed.reduce(function (m, p) { return Math.max(m, burstRows(p)); }, 0);
-    const total = pushed.reduce(function (m, p) { return m + burstRows(p); }, 0);
-    ok(total === BURST.length && most > 1, 'its ' + BURST.length + ' lines come several to a post, not one post a line',
-      'lines ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most);
+    const most = pushed.reduce(function (m, p) { return Math.max(m, wholeRows(p)); }, 0);
+    const total = pushed.reduce(function (m, p) { return m + wholeRows(p); }, 0);
+    ok(total >= OTHER_ITEMS.length + 1 && most > 1, 'its ' + (OTHER_ITEMS.length + 1) + ' rows come several to a post, not one post a row',
+      'rows ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most);
     ok(pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }), 'each post stays within one payload', 'a post of ' + short(pushed.map(function (p) { return Buffer.byteLength(String(p.json), 'utf8'); })) + ' bytes');
     await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
     // Out of design, so his Go is offered: what refuses it below is the file list alone.
-    await call('press', { id: GOAL.id, what: 'end-design' }, ANDY);
-    const ended = await facts(GOAL.id, function (f) { return f.design === false; });
-    ok(ended.design === false, 'the world: the goal leaves design mode', 'its row: ' + short(ended));
+    const ended = await call('press', { id: GOAL.id, what: 'end-design' }, ANDY);
+    ok(!!ended.change, 'the world: the goal leaves design mode', 'End design answered ' + short(ended));
 
     test.subHeading('files known in design: a code item is not green with an empty file list');
     await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
-    const bare = await facts('goal/G100.2', function (f) { return f.code === true; });
+    const bare = await facts('goal/G100.2');
     ok(bare.code === true && bare.green === false, 'a code item with no file listed is not green', 'code ' + short(bare.code) + ', green ' + short(bare.green) + ', files ' + short(bare.fileCount));
-    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
-    await sleep(800);
-    const noGo = await facts('goal/G100.2');
-    ok(noGo.code === true && noGo.go !== true, 'his Go on it does not take: its row never shows go', 'its row: ' + short({ go: noGo.go, green: noGo.green }));
+    const goEmpty = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+    ok(goEmpty.ok === false && /file/i.test(why(goEmpty) + ' ' + String(goEmpty.error || '')), 'his Go on it is refused, the why naming its empty file list', 'Go answered ' + short(goEmpty));
     await call('item.take', { id: 'goal/G100.2' }, UBI);
     await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/early.js' }, UBI);
-    const listedOne = await facts('goal/G100.2', function (f) { return f.green === true; });
+    const listedOne = await facts('goal/G100.2');
     ok(listedOne.green === true, 'with a file listed it is green', 'green ' + short(listedOne.green));
-    await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
-    const goNow = await facts('goal/G100.2', function (f) { return f.go === true; });
-    ok(goNow.go === true, 'and his Go is taken', 'its row: ' + short({ go: goNow.go }));
-    await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/late.js' }, UBI);
-    const entries = await filesOf('goal/G100.2', function (fs_) { return fs_.some(function (f) { return f.path === 'spirit/run/late.js'; }); });
+    const goNow = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
+    ok(!!goNow.change && goNow.ok !== false, 'and his Go is taken', 'Go answered ' + short(goNow));
+    const lateAdd = await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/late.js' }, UBI);
+    const entries = await filesOf('goal/G100.2');
     const early = entries.filter(function (f) { return f.path === 'spirit/run/early.js'; })[0] || {};
     const late = entries.filter(function (f) { return f.path === 'spirit/run/late.js'; })[0] || null;
-    ok(!!late, 'a file added after his Go is allowed', 'files ' + short(entries));
+    ok(!!lateAdd.change && !!late, 'a file added after his Go is allowed', 'the late add answered ' + short(lateAdd));
     ok(!!late && late.late === true && early.late !== true, 'and marked late on the item; the file listed before Go is not', 'late ' + short(late) + ', early ' + short(early));
 
     test.subHeading('addresses: all or a nick counts only when punctuation follows');
@@ -247,169 +213,123 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(to.indexOf(UBI.key) !== -1 && to.indexOf(KEYED.key) !== -1, 'among them one known by its profile alone, and one known by its key alone', 'its to list: ' + short(to));
     ok(to.indexOf(OUT.key) === -1, 'and never one he excluded', 'its to list: ' + short(to));
 
-    // goal/G41.12, box v38: "change desk to refuse box changes from agents" (rule/25: "The USER owns the box"). No agent
-    // takes or writes a box, cap on or off; so no cap is offered when a box turns red.
-    test.subHeading('the box is his: the desk refuses every box change from an agent (box v38)');
-    // One answer's room, as the desk cuts it (desk.js ANSWER_ROOM: limits.ANSWER_MAX - 512).
-    const room = require(path.join(RUN, 'spirit', 'limits.js')).ANSWER_MAX - 512;
-    const v00 = (await known('goal/G100.4')).version || 0;
-    await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(room + 100), version: v00 }, ANDY);
-    await sleep(800);
-    ok(!boxRows('goal/G100.4').some(function (t) { return t.length > room; }), 'a box past one answer (' + room + ' bytes) never lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
-    const v0 = (await facts('goal/G100.4')).version || 0;
-    await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
-    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf('a short box') === -1; i++) await sleep(100);
-    ok(boxRows('goal/G100.4').indexOf('a short box') !== -1, 'his box write lands', 'box rows ' + short(boxRows('goal/G100.4')));
-    for (const agent of [WSL, UBI]) await call('box.take', { id: 'goal/G100.4' }, agent);
-    await sleep(800);
-    const taken = (await facts('goal/G100.4')).boxTaken;
-    ok(taken !== WSL.label && taken !== UBI.label, 'an agent\'s box.take never holds the box, cap off (wsl) or cap on (ubi)', 'boxTaken ' + short(taken));
-    const vA = (await facts('goal/G100.4')).version || 0;
-    for (const agent of [WSL, UBI, CW]) await call('box.write', { id: 'goal/G100.4', text: 'an agent wrote this, as ' + agent.label, version: vA }, agent);
-    await sleep(800);
-    const byAgents = boxRows('goal/G100.4').filter(function (t) { return /^an agent wrote this/.test(t); });
-    ok(byAgents.length === 0, 'an agent\'s box.write never lands, whoever writes it', 'agent box rows: ' + short(byAgents));
-    const red = 'y'.repeat(Math.ceil(room * 0.8));
-    const vR = (await facts('goal/G100.4')).version || 0;
-    const capBefore = node.pages.length;
-    await call('box.write', { id: 'goal/G100.4', text: red, version: vR }, ANDY);
-    for (let i = 0; i < 30 && boxRows('goal/G100.4').indexOf(red) === -1; i++) await sleep(100);
-    ok(boxRows('goal/G100.4').indexOf(red) !== -1, 'his box write to 80% of one answer lands', 'box rows of ' + short(boxRows('goal/G100.4').map(function (t) { return t.length; })));
-    await sleep(500);
-    const offers = node.pages.slice(capBefore).filter(function (o) { return o && o.table === 'chat' && o.row && /cap is offered/.test(String(o.row.text || '')); });
-    ok(offers.length === 0, 'and no cap is offered to the agents: none may take it', 'cap offers: ' + short(offers.map(function (o) { return o.row.text; })));
+    test.subHeading('auto-cap: a box write into red offers the cap to the agents with cap on');
+    const tooBig = await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(20000), version: 0 }, ANDY);
+    const room = tooBig && tooBig.extra && Number(tooBig.extra.max) > 0 ? Number(tooBig.extra.max) : 0;
+    ok(room > 0, 'the desk names the room of one answer (' + room + ' bytes)', 'a box past one answer answered ' + short(tooBig));
+    if (room > 0) {
+      const v0 = (await facts('goal/G100.4')).version || 0;
+      const small = await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
+      const takeSmall = await call('box.take', { id: 'goal/G100.4' }, WSL);
+      ok(!!small.change && !!takeSmall.change, 'a box write below red offers nothing: an agent with cap off takes it plainly', 'write ' + short(small) + ', take ' + short(takeSmall));
+      await call('box.release', { id: 'goal/G100.4' }, WSL);
+      const v1 = (await facts('goal/G100.4')).version || 0;
+      const red = 'y'.repeat(Math.ceil(room * 0.8));
+      const big = await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
+      ok(!!big.change, 'a box write to 80% of one answer lands', 'it answered ' + short(big));
+      const offOff = await call('box.take', { id: 'goal/G100.4' }, WSL);
+      ok(offOff.ok === false && /cap/i.test(why(offOff)), 'then an agent with cap off is refused the box, the cap\'s why', 'wsl\'s take answered ' + short(offOff));
+      const onTake = await call('box.take', { id: 'goal/G100.4' }, UBI);
+      const held = await facts('goal/G100.4');
+      ok(!!onTake.change && held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'ubi\'s take answered ' + short(onTake) + ', boxTaken ' + short(held.boxTaken));
+    }
 
-    // ── THE POSITION IS appServer'S (goal/G41.12, box v15: "Each sender numbers every row it publishes, one count per
-    // sender, kept with its run id"; "The desk's change number as the stream's position" goes). A subscribe carries
-    // (run, since); the desk's own part is what it publishes and its bootstrap ─────────────────────────────────────────
-    const entriesTo = function (key, from) { return node.sent.slice(from).filter(function (x) { return x.to === key; }).map(function (x) { return x.entry || {}; }); };
-    const rowsTo = function (key, from) { return entriesTo(key, from).filter(function (e) { return !e.end; }).map(function (e) { return e.row; }); };
-    const pushEnded = function (key, from) { return entriesTo(key, from).some(function (e) { return e.end === true; }); };
+    // ── THE POSITION (goal/G41.11, 0ebb4abd; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)"
+    // verb do desk, (re-use that verb) with the position number as argument") ─────────────────────────────────────────
+    const rowsTo = function (key, from) { return node.sent.slice(from).filter(function (x) { return x.to === key; }).map(function (x) { return x.row; }); };
+    const pushEnded = function (key, from) { return rowsTo(key, from).some(function (r) { return r && r.bootstrapped === true; }); };
     const waitEnd = async function (key, from, ms) { for (let i = 0; i < (ms || 15000) / 100; i++) { if (pushEnded(key, from)) return true; await sleep(100); } return false; };
-    const waitFor = async function (key, from, test, ms) { for (let i = 0; i < (ms || 15000) / 100; i++) { if (test(rowsTo(key, from))) return true; await sleep(100); } return false; };
-    const textsOf = function (rows) { return rows.filter(function (r) { return r && r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); }); };
     const memberIds = [GOAL.id].concat(ITEMS);
     const wholeOf = function (rows) { return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item; }); };
     const sideOf = function (rows) { return rows.filter(function (r) { return r && typeof r.table === 'string' && !r.verb; }); };
-    // The position a subscriber holds: the run and the newest number of what it took.
-    const positionOf = function (key, from) {
-      const es = entriesTo(key, from).filter(function (e) { return e.run; });
-      return es.length ? { run: es[es.length - 1].run, since: es.reduce(function (m, e) { return Math.max(m, Number(e.n) || 0); }, 0) } : null;
-    };
 
-    // goal/G41.12, box v30: "there is NO initial push for desk server, it will only PUSH the current goal row when an
-    // agent reconnects".
-    test.subHeading('the position: a subscribe without one is a full push of the current goal\'s row alone');
+    test.subHeading('the position: a subscribe without since bootstraps as before');
     const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
     const f0 = node.sent.length;
     const plain = await call('subscribe', { family: 'deskClient' }, FRESH);
     const plainEnded = await waitEnd(FRESH.key, f0);
     const plainRows = rowsTo(FRESH.key, f0);
     const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
-    ok(accepted(plain) && plainEnded && plainIds.indexOf(GOAL.id) !== -1, 'with no position, the current goal\'s row comes', 'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
-    ok(plainEnded && ITEMS.every(function (id) { return plainIds.indexOf(id) === -1; }) && plainRows.every(function (r) { return !r || !r.item || String(r.item.id) === GOAL.id || String(r.item.id) === 'goal/G0'; }),
-      'and none of its items\' rows, nor another goal\'s: no initial push', 'rows of ' + short(plainRows.map(function (r) { return r && (r.item ? r.item.id : r.rule || r.table); })));
-    ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box)', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
-    const plainEntries = entriesTo(FRESH.key, f0);
-    ok(plainEntries.length > 1 && plainEntries.every(function (e) { return e.full === true && typeof e.run === 'string' && e.run && Number.isInteger(e.n); }) && plainEntries[plainEntries.length - 1].end === true && plainEntries.filter(function (e) { return e.end; }).length === 1,
-      'each of its entries is full, of one run and numbered, the last its one end', 'entries: ' + short(plainEntries.slice(-2)));
+    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no since, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
+      'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
+    ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box): nothing after a position it never named', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
     const zero = node.sent.length;
     await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
     await waitEnd(FRESH.key, zero);
-    ok(pushEnded(FRESH.key, zero) && sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).some(function (r) { return String(r.item.id) === GOAL.id; }), 'a since with no run is no position: a full push again, the goal\'s row', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
+    ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'since 0 is the same as none', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
 
-    // Andy, box v34: "the server on every restart, auto-publishes its currentGoal.json", with "which desk-\"run\" and
-    // which \"version\"" on top: the stream's own run and number (cw: run and version, then change, goal, items, rows).
-    test.subHeading('currentGoal.json: written at the start, its run and version the stream\'s (box v34)');
-    let shared = null;
-    try { shared = JSON.parse(fs.readFileSync(path.join(state, 'currentGoal.json'), 'utf8')); } catch (e) { shared = null; }
-    ok(!!shared, 'the desk wrote currentGoal.json on its own, with no press of his', 'no currentGoal.json in its state folder');
-    ok(!!shared && JSON.stringify(Object.keys(shared).slice(0, 2).sort()) === '["run","version"]' && typeof shared.version === 'number' && Array.isArray(shared.rows),
-      'its top is run and version, and it carries the stream\'s rows', 'its keys: ' + short(shared && Object.keys(shared)));
-    ok(!!shared && !!plainEntries[0] && shared.run === plainEntries[0].run, 'its run is the run the stream numbers its rows in', 'file run ' + short(shared && shared.run) + ', stream run ' + short(plainEntries[0] && plainEntries[0].run));
-
-    test.subHeading('the position: a subscribe with one hands what was published after it, oldest first');
-    const pos = positionOf(FRESH.key, f0);
-    const oldLine = 'all agents seem busy';   // written before the position, above
-    const LINES = { nobody: 'after the position, for whoever', ubi: 'ubi, after the position, for you', cw: 'cw, after the position, not for ubi', group: 'after the position, in the group chat', other: 'in another goal, after the position' };
+    test.subHeading('the position: a subscribe with since hands what changed after it, oldest first');
+    await sleep(500);
+    const N = node.pages.reduce(function (m, o) { return Math.max(m, Number(o && o.change) || 0); }, 0);
+    const oldLine = 'all agents seem busy';   // written before N, above
+    const LINES = { nobody: 'after the position, for whoever', ubi: 'ubi, after the position, for you', cw: 'cw, after the position, not for ubi', group: 'after the position, in the group chat' };
     await call('chat.add', { id: 'goal/G100.3', text: LINES.nobody }, ANDY);
     await call('chat.add', { id: 'goal/G100.3', text: LINES.ubi }, ANDY);
     await call('chat.add', { id: 'goal/G100.3', text: LINES.cw }, ANDY);
     await call('chat.add', { id: 'goal/G0', text: LINES.group }, ANDY);
-    const v5 = (await known('goal/G100.5')).version || 0;
-    await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
-    await call('chat.add', { id: 'goal/G200.1', text: LINES.other }, ANDY);
+    const v5 = (await facts('goal/G100.5')).version || 0;
+    const boxed = await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
+    await call('chat.add', { id: 'goal/G200.1', text: 'in another goal, after the position' }, ANDY);
     await sleep(500);
     const u0 = node.sent.length;
-    const caught = await call('subscribe', { family: 'deskClient', run: pos && pos.run, since: pos && pos.since }, UBI);
-    await waitFor(UBI.key, u0, function (rows) { return textsOf(rows).indexOf(LINES.other) !== -1; });
+    const caught = await call('subscribe', { family: 'deskClient', since: N }, UBI);
+    const caughtEnded = await waitEnd(UBI.key, u0);
     const got = rowsTo(UBI.key, u0);
-    const gotEntries = entriesTo(UBI.key, u0);
     const sides = sideOf(got);
-    const texts = textsOf(got);
-    ok(!!pos && accepted(caught) && got.length > 0, 'a subscribe with the position (' + short(pos) + ') is taken and handed rows', 'subscribed ' + short(caught) + ', rows ' + got.length);
+    const texts = sides.filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
+    ok(caught.subscribed === true && caughtEnded, 'a subscribe with since = ' + N + ' is taken, and its push ends', 'subscribed ' + short(caught) + ', ended ' + caughtEnded);
     ok(texts.indexOf(LINES.nobody) !== -1 && texts.indexOf(LINES.group) !== -1, 'it hands the lines written after the position: the current goal\'s and the group chat\'s', 'chat rows handed: ' + short(texts));
-    ok(texts.indexOf(LINES.other) !== -1, 'and another goal\'s: the cache keeps every goal (box v15)', 'chat rows handed: ' + short(texts));
-    ok(texts.indexOf(oldLine) === -1 && gotEntries.every(function (e) { return Number(e.n) > pos.since; }), 'and nothing published at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', numbers ' + short(gotEntries.map(function (e) { return e.n; })));
-    ok(wholeOf(got).length === 0 && !gotEntries.some(function (e) { return e.full || e.end; }), 'no full push: no bootstrap row, no end', 'facts rows ' + wholeOf(got).length + ', full or end entries ' + gotEntries.filter(function (e) { return e.full || e.end; }).length);
-    const order = gotEntries.map(function (e) { return Number(e.n); });
-    ok(order.length > 1 && order.every(function (c, i) { return i === 0 || c > order[i - 1]; }), 'the rows oldest first, each once', 'numbers in order handed: ' + short(order));
-    ok(gotEntries.every(function (e) { return e.run === pos.run; }) && sides.every(function (r) { return r.table && r.id && (r.table !== 'chat' || (r.row && typeof r.row.text === 'string')); }), 'each as the side row its write published (table, id, row), of the same run', 'a row: ' + short(sides[0]));
+    ok(texts.indexOf(oldLine) === -1 && sides.every(function (r) { return Number(r.change) > N; }), 'and nothing written at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', changes ' + short(sides.map(function (r) { return r.change; })));
+    ok(texts.indexOf('in another goal, after the position') === -1, 'a line of another goal is not handed', 'chat rows handed: ' + short(texts));
+    const lastWhole = got.reduce(function (m, r, i) { return r && r.verb === 'goal.whole' ? i : m; }, -1);
+    const firstSide = got.findIndex(function (r) { return r && typeof r.table === 'string' && !r.verb; });
+    ok(lastWhole !== -1 && firstSide !== -1 && lastWhole < firstSide, 'the goal\'s facts come first, the side rows after them', 'last facts row at ' + lastWhole + ', first side row at ' + firstSide);
+    const order = sides.map(function (r) { return Number(r.change); });
+    ok(order.length > 1 && order.every(function (c, i) { return i === 0 || c >= order[i - 1]; }), 'the side rows oldest first', 'changes in order handed: ' + short(order));
+    ok(sides.every(function (r) { return r.table && r.id && Number(r.change) > 0 && (r.table !== 'chat' || (r.row && typeof r.row.text === 'string')); }), 'each as the side row its write published (table, id, change, row)', 'a row: ' + short(sides[0]));
 
-    test.subHeading('the position: a line addressed to another agent never comes back');
+    test.subHeading('the position: a line addressed to another agent never comes back in a catch-up');
     ok(texts.indexOf(LINES.cw) === -1, 'his line to cw is not handed to ubi', 'chat rows handed: ' + short(texts));
     ok(texts.indexOf(LINES.ubi) !== -1, 'his line to ubi is', 'chat rows handed: ' + short(texts));
     const c0 = node.sent.length;
-    await call('subscribe', { family: 'deskClient', run: pos && pos.run, since: pos && pos.since }, CW);
-    await waitFor(CW.key, c0, function (rows) { return textsOf(rows).indexOf(LINES.other) !== -1; });
-    const cwTexts = textsOf(rowsTo(CW.key, c0));
-    ok(cwTexts.indexOf(LINES.cw) !== -1 && cwTexts.indexOf(LINES.ubi) === -1, 'and the same position for cw hands its own line and not ubi\'s', 'cw handed: ' + short(cwTexts));
+    await call('subscribe', { family: 'deskClient', since: N }, CW);
+    await waitEnd(CW.key, c0);
+    const cwTexts = sideOf(rowsTo(CW.key, c0)).filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
+    ok(cwTexts.indexOf(LINES.cw) !== -1 && cwTexts.indexOf(LINES.ubi) === -1, 'and the same catch-up for cw holds its own line and not ubi\'s', 'cw handed: ' + short(cwTexts));
 
-    test.subHeading('the position: a box written after it comes, one before it does not');
+    test.subHeading('the position: an item whose row changed after it hands its box');
     const boxRow = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.5'; })[0];
-    ok(!!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes', 'box row ' + short(boxRow));
+    ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes with the catch-up', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
     const staleBox = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.4'; })[0];
     ok(!staleBox, 'a box written before the position does not', 'G100.4\'s box handed: ' + short(staleBox));
 
-    // goal/G41.12, box v30: "The user get's a \"push\" button the the detail of every goal or item, to force a server push
-    // of that item. chat's ar only pushed as lines happen."
-    test.subHeading('the push button: his press pushes that item to the subscribers');
-    const q0 = node.sent.length;
-    const pushed3 = await call('press', { id: 'goal/G100.3', what: 'push' }, ANDY);
-    await waitFor(CW.key, q0, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }); }, 5000);
-    const after3 = rowsTo(CW.key, q0);
-    ok(after3.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }), 'press push on goal/G100.3 hands its row to a subscribed client', 'press answered ' + short(pushed3) + ', rows ' + short(after3.map(function (r) { return r && (r.item ? r.item.id : r.table + ' ' + r.id); })));
-    ok(!after3.some(function (r) { return r && r.item && String(r.item.id) !== 'goal/G100.3'; }), 'and no other item\'s row', 'rows ' + short(after3.map(function (r) { return r && r.item && r.item.id; })));
-    const q1 = node.sent.length;
-    const pushedGoal = await call('press', { id: GOAL.id, what: 'push' }, ANDY);
-    await waitFor(CW.key, q1, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }); }, 5000);
-    ok(rowsTo(CW.key, q1).some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }), 'and on a goal, the goal\'s row', 'press answered ' + short(pushedGoal));
+    test.subHeading('the position: every push ends with { bootstrapped: true }');
+    const lastOf = function (rows) { return rows[rows.length - 1]; };
+    ok(!!lastOf(got) && lastOf(got).bootstrapped === true && !!lastOf(plainRows) && lastOf(plainRows).bootstrapped === true, 'the last row of each push, with since and without, is { bootstrapped: true }',
+      'last rows: ' + short([lastOf(got), lastOf(plainRows)]));
+    ok(got.filter(function (r) { return r && r.bootstrapped === true; }).length === 1, 'once per push', 'ends in one push: ' + got.filter(function (r) { return r && r.bootstrapped === true; }).length);
 
-    test.subHeading('a subscriber whose delivery failed is dropped, and handed what it missed when it subscribes again');
-    // goal/G41.12, kept: "A subscribe or a delivery not answered in 3 s fails; the sender drops that subscriber until
-    // it subscribes again."
+    test.subHeading('a subscriber whose delivery failed is kept: the row is tried again, not dropped');
+    // A delivery waits the publisher's waitMs (the desk's CLIENT_WAIT_MS, 10 s) for its answer, then waits as long
+    // again before the next try: this section takes about half a minute.
     const AWAY = { key: 'MCowBQYDK2VwAyEAdeskProductTestAWAYAAAAAAAAAAAAAAAAAAAA=', label: 'away' };
-    const a0 = node.sent.length;
-    await call('subscribe', { family: 'deskClient' }, AWAY);
-    await waitEnd(AWAY.key, a0);
-    const awayPos = positionOf(AWAY.key, a0);
     node.deaf.add(AWAY.key);
-    const p0 = node.posts.length;
-    const postsTo = function () { return node.posts.slice(p0).filter(function (p) { return p.to === AWAY.key; }); };
-    await call('chat.add', { id: 'goal/G100.6', text: 'the first while it was away' }, ANDY);
-    for (let i = 0; i < 50 && postsTo().length < 1; i++) await sleep(100);
-    // Past the fast fail (3 s) it is dropped: what is written next is posted to nobody.
-    await sleep(4000);
-    await call('chat.add', { id: 'goal/G100.6', text: 'the second while it was away' }, ANDY);
-    await sleep(2000);
-    ok(postsTo().length === 1, 'the delivery it did not take is posted once, and nothing after it', 'posts to it: ' + postsTo().length);
+    const a0 = node.posts.length;
+    await call('subscribe', { family: 'deskClient' }, AWAY);
+    const attemptsOf = function () { return node.posts.slice(a0).filter(function (p) { return p.to === AWAY.key; }); };
+    for (let i = 0; i < 300 && attemptsOf().length < 2; i++) await sleep(100);
+    const tries = attemptsOf();
+    ok(tries.length >= 2 && tries[0].json === tries[1].json, 'a row it did not take is posted to it again, the same row, after the wait', 'posts to it: ' + tries.length + (tries.length >= 2 ? ', same row: ' + (tries[0].json === tries[1].json) : ''));
+    await call('chat.add', { id: 'goal/G100.6', text: 'written while it was away' }, ANDY);
     node.deaf.delete(AWAY.key);
-    const b0 = node.sent.length;
-    await call('subscribe', { family: 'deskClient', run: awayPos && awayPos.run, since: awayPos && awayPos.since }, AWAY);
-    await waitFor(AWAY.key, b0, function (rows) { return textsOf(rows).indexOf('the second while it was away') !== -1; });
-    const awayTexts = textsOf(rowsTo(AWAY.key, b0));
-    ok(!!awayPos && awayTexts.indexOf('the first while it was away') !== -1 && awayTexts.indexOf('the second while it was away') !== -1 && wholeOf(rowsTo(AWAY.key, b0)).length === 0,
-      'subscribing again with its position, it is handed both lines it missed, and no full push', 'rows it got: ' + short(awayTexts));
+    const back = async function () { for (let i = 0; i < 400; i++) { const t = node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); if (t.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; })) return t; await sleep(100); } return node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); };
+    const awayRows = await back();
+    const awayWhole = wholeOf(awayRows).map(function (r) { return String(r.item.id); });
+    ok(memberIds.every(function (id) { return awayWhole.indexOf(id) !== -1; }) && awayRows.some(function (r) { return r && r.bootstrapped === true; }), 'once it answers, its whole push lands: none of it was dropped', 'facts of ' + short(awayWhole));
+    ok(awayRows.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; }), 'and the line written while it was away follows', 'rows it got: ' + awayRows.length);
+    // QUEUE_MAX (1000, appServer.js) is not driven here: reaching it means over a thousand rows queued behind a row
+    // that waits 10 s each try; the shedding of the oldest is the publisher's own (sendTo), and spirit/test/appServer
+    // is the place to drive it with a small queue.
   } finally {
     try { kid.kill(); } catch (e) { /* gone */ }
     node.server.close();
