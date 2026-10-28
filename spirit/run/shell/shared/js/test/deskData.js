@@ -117,8 +117,9 @@ wn.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B' });
 ok(!wn.part('goal/G9.1'), 'before any goal was pushed nothing is kept', short(wn.part('goal/G9.1')));
 
 // goal/G41.12, box v15: the cache keeps everything the server sends. A box row is the whole box and a chat line is the
-// newest, so both are kept unread; a check or a file alone is no list, so those wait for a read.
-test.subHeading('side rows: a box and a chat line are kept unread, a check or a file waits for a read');
+// newest, so both are kept unread. Box v39: "checks and file lists learned from rows": a check or a file row starts its
+// list, marked as maybe incomplete (cw), since reads are gone.
+test.subHeading('side rows: a box, a chat line, a check and a file are each kept unread, a list it starts marked maybe incomplete');
 const ws = world(true);
 ws.job(whole(it('goal/G9.1', 'goal/G9')));
 ws.job(whole(it('goal/G9.2', 'goal/G9')));
@@ -126,13 +127,17 @@ ws.job({ table: 'box', id: 'goal/G9.2', row: { text: 'never read' } });
 ok(ws.part('goal/G9.2') && ws.part('goal/G9.2').box === 'never read' && ws.part('goal/G9.2').version === 0, 'a box row of an item never read is kept, with its version', short(ws.part('goal/G9.2')));
 ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '1', state: 'open' } });
 ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
-ok(!ws.part('goal/G9.1'), 'a check or a file row of an item never read keeps nothing', short(ws.part('goal/G9.1')));
+const learned = ws.part('goal/G9.1') || {};
+ok(Array.isArray(learned.checks) && learned.checks.length === 1 && learned.checks[0].number === '1', 'a check row of an item never read starts its checks list', short(learned));
+ok(Array.isArray(learned.files) && learned.files.length === 1 && learned.files[0].path === 'a.js' && learned.filesMore === true, 'a file row starts its file list, filesMore: true, as maybe incomplete', short(learned));
+ws.job({ table: 'checks', id: 'goal/G9.1', removed: true, at: '1' });
+ws.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|a.js' });
 ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [] });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'x', version: 2 } });
 ws.job({ table: 'chat', id: 'goal/G9.1', row: { by: 'a', at: '1', text: 't' } });
 ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
 const p91 = ws.part('goal/G9.1');
-ok(p91.box === 'x' && p91.version === 2 && p91.chat.length === 1 && p91.chatMore === true && !('files' in p91), 'beside checks read, a box and a chat line are kept, with chatMore; files are not', short(p91));
+ok(p91.box === 'x' && p91.version === 2 && p91.chat.length === 1 && p91.chatMore === true && Array.isArray(p91.files) && p91.files.length === 1, 'beside checks read, a box, a chat line and a file are kept, with chatMore', short(p91));
 ws.X.took('item.box', { id: 'goal/G9.1' }, { box: 'old', version: 1 });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'new', version: 2 } });
 ok(ws.part('goal/G9.1').box === 'new' && ws.part('goal/G9.1').version === 2, 'a box row replaces the box read, with its version', short(ws.part('goal/G9.1')));
