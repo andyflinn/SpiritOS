@@ -143,4 +143,32 @@ let threw = null;
 try { c1.fire('click', clickOn('one')); tc.select('two'); } catch (e) { threw = e; }
 ok(!threw, 'a click or a select after destroy does nothing and throws nothing', 'threw ' + (threw && threw.message));
 
+// THE CONTENT IS A BUBBLE (goal/G41.13; Andy: "the container pain of the tabs content, must have our standard 0.5em
+// padding", "it must occupy all remaining vertical space, that it must be constrained to", and "it should present as a
+// bubble of of darker green than already is on the page"). Its look is the shell's one sheet, a class, never inline.
+test.subHeading('the content pane: a bubble, padded, taking the height left');
+const c4 = container();
+const tc4 = T.create(c4, { tabs: [tab('u'), tab('v')] });
+const contentTag = (/<div\b[^>]*\bid="[^"]*content"[^>]*>/.exec(c4.innerHTML) || [''])[0];
+const cls = (/class="([^"]*)"/.exec(contentTag) || [])[1] || '';
+ok(/\btab-content\b/.test(cls) && /\bfill\b/.test(cls), 'the content area takes the classes tab-content and fill', 'content: ' + contentTag);
+ok(!/style="[^"]*(padding|background|overflow)/.test(contentTag), 'and carries no look of its own inline: the sheet gives it', 'content: ' + contentTag);
+const boxU = (mounted.filter(function (m) { return m.name === 'u'; })[0] || {}).box;
+ok(boxU && /\bfill\b/.test(String(boxU.className || '')), 'each tab\'s box takes fill, so what a tab holds gets the height left', 'box class: ' + (boxU && boxU.className));
+tc4.destroy();
+const RUN_DIR = require('path').resolve(__dirname, '../../..');
+const sheet = fs.readFileSync(require('path').join(RUN_DIR, 'shell.css'), 'utf8');
+const face = fs.readFileSync(require('path').join(RUN_DIR, 'shell', 'face.css'), 'utf8');
+const rule = (/\.tab-content\s*\{([^}]*)\}/.exec(sheet) || [])[1] || '';
+ok(/padding:\s*0\.5em/.test(rule), 'shell.css pads .tab-content 0.5em, the standard', '.tab-content: ' + rule.trim());
+ok(/min-height:\s*0/.test(rule) && /overflow:\s*auto/.test(rule), 'and holds it to the height left: min-height 0, scrolling inside itself', '.tab-content: ' + rule.trim());
+ok(/border-radius:/.test(rule) && /background:\s*var\(--shell-well\)/.test(rule), 'a bubble: rounded, its background the shell\'s --shell-well', '.tab-content: ' + rule.trim());
+function hexOf(css, name) { const m = new RegExp(name + ':\\s*(#[0-9a-fA-F]{6})').exec(css); return m ? m[1] : null; }
+function light(hex) { const n = parseInt(hex.slice(1), 16); return 0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255); }
+const greens = [['shell.css', sheet], ['face.css', face]].map(function (p) { return { file: p[0], well: hexOf(p[1], '--shell-well'), pane: hexOf(p[1], '--shell-pane') }; });
+ok(greens.every(function (g) { return g.well && g.pane && light(g.well) < light(g.pane); }),
+  '--shell-well is set in shell.css and face.css, darker than each one\'s --shell-pane: on the face a darker green than the page has', 'colours: ' + JSON.stringify(greens));
+const fw = greens[1].well;
+ok(fw && (parseInt(fw.slice(3, 5), 16) > parseInt(fw.slice(1, 3), 16)) && (parseInt(fw.slice(3, 5), 16) > parseInt(fw.slice(5, 7), 16)), 'and on the face it is a green', 'face well: ' + fw);
+
 test.reportSuccessFailureCount();

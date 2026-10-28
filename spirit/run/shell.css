@@ -9,6 +9,8 @@
   --shell-accent: #0f3460;
   --shell-accent-strong: #16487a;
   --shell-link: #8ec9ff;
+  /* A well: darker than the pane, what a tab container's content sits in (goal/G41.13). */
+  --shell-well: #0f1830;
 }
 
 * { box-sizing: border-box; }
@@ -1176,3 +1178,7 @@ details.stat-tile > summary {
    Hidden stays hidden. */
 .fill { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .fill[hidden] { display: none; }
+/* A TAB CONTAINER'S CONTENT (shell/js/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
+   all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
+   page"): the height left, scrolling inside itself, in a rounded well. */
+.tab-content { padding: 0.5em; min-height: 0; overflow: auto; border-radius: 8px; background: var(--shell-well); }

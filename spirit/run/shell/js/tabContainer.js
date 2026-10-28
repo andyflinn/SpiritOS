@@ -8,6 +8,10 @@
 //                of its own inside the content area; the box is kept, and only the selected tab's box shows
 //     selected   the tab shown first; the first tab when it names none
 //
+// THE CONTENT IS A BUBBLE (goal/G41.13; Andy: "the container pain of the tabs content, must have our standard 0.5em
+// padding", "it must occupy all remaining vertical space, that it must be constrained to", "it should present as a bubble
+// of of darker green than already is on the page"): the class tab-content, its look in shell.css.
+//
 // SPACE IS GRANTED TOP-DOWN (rule/16): the root and the content area take the shell's fill class, so the content gets
 // the height the row leaves; the container is never sized here. One listener, on the container.
 (function () {
@@ -29,7 +33,7 @@
       }).join(' ');
     }
     container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" style="display:flex;gap:6px">' + rowHtml() + '</div>' +
-      '<div id="' + pre + 'content" class="fill" style="overflow:auto"></div></div>';
+      '<div id="' + pre + 'content" class="tab-content fill"></div></div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 
     // The row is drawn again for its marks; the content area and the boxes in it stay as they are.
@@ -42,6 +46,8 @@
       markRow();
       if (!boxes[name]) {
         var box = document.createElement('div');
+        // The tab's box takes the height the content area holds, so a list in it fills it (rule/16).
+        box.className = 'fill';
         boxes[name] = box;
         var content = part('content');
         if (content) content.appendChild(box);
