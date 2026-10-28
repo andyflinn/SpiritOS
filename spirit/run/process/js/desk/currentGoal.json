@@ -1,5 +1,5 @@
 {
- "change": 111369,
+ "change": 111968,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -152,7 +152,6 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -3500,37 +3499,38 @@
    "id": "goal/G41.4",
    "title": "Create the Data Set for agent.db",
    "goal": "goal/G41",
-   "status": "running",
-   "statusTone": "",
-   "with": "",
-   "version": 22,
+   "status": "data.js changed",
+   "statusTone": "code",
+   "with": "claude-windows",
+   "version": 23,
    "buttons": [
-    "start-design",
-    "delete",
+    "end-design",
     "verify"
    ],
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.13"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": false,
-   "fileCount": 20,
+   "limbo": false,
+   "design": true,
+   "fileCount": 46,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
    "claimCommit": "",
-   "redCommit": "",
+   "redCommit": "476578e5",
    "waived": false,
    "rules": [
     {
@@ -3600,7 +3600,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -3611,10 +3611,11 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY which will never reach the browser or any place outside of the agent process except the model providers API)\n- a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and model-name and capabilities)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a job table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n- an grant/auth table, keyed by job-ID, structured exactly like the auth table in node, in fact: node's auth modules will have a file authTableInterface.js, (configured by dataBase.db file name and authTableName)\n- the ID-key for each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table row. The private halves of that set stay in the agent process\n- the reason for keying the grant table by job-ID is: the jobs have their api requirements on the node. they are my ultimate target, agent-persona or underlying models may be subject to whim and experimentation. and this way i can start experimenting with a focus on jobs, and find good or capable models for them. jobs like code-review, design assertions etc...\n\ntable-specific code goes into the following folders\n- process/js/agent/table/provider/\n- process/js/agent/table/model/\n- process/js/agent/table/persona/\n- process/js/agent/table/job/\n- process/js/agent/table/grant/\n\nthese table folders will contain the following files.\n- process/js/agent/table/<tableName>/server.js (a table handler implementing the verb <tableName> in a multiplexed way)\n- process/js/agent/table/<tableName>/elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)\n- process/js/agent/table/<tableName>/elementRow.js (a panel element, to maintain and edit one row of the table)\n\n- every one of these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app.\n\n",
+   "box": "- i already know i need the following tables for a primitive version, \n\n- a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY which will never reach the browser or any place outside of the agent process except the model providers API)\n- a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and model-name and capabilities)\n- a persona table.  keyed by ID same as the shadow-roll  (with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt)\n- a job table.  keyed by ID same as the shadow-roll (with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the job-description that may come with a prompt)\n- an grant/auth table, keyed by job-ID, structured exactly like the auth table in node, in fact: node's auth modules will have a file authTableInterface.js, (configured by dataBase.db file name and authTableName)\n- the ID-key for each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table row. The private halves of that set stay in the agent process\n- the reason for keying the grant table by job-ID is: the jobs have their api requirements on the node. they are my ultimate target, agent-persona or underlying models may be subject to whim and experimentation. and this way i can start experimenting with a focus on jobs, and find good or capable models for them. jobs like code-review, design assertions etc...\n\ntable-specific code goes into the following folders\n- process/js/agent/table/provider/\n- process/js/agent/table/model/\n- process/js/agent/table/persona/\n- process/js/agent/table/job/\n- process/js/agent/table/grant/\n\nthese table folders will contain the following files.\n- process/js/agent/table/<tableName>/server.js (a table handler implementing the verb <tableName> in a multiplexed way)\n- process/js/agent/table/<tableName>/elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)\n- process/js/agent/table/<tableName>/elementRow.js (a panel element, to maintain and edit one row of the table)\n\n- every one of these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app.\n\n# this item is done when\n- all test folders have exact documentation \"md\" files, very detailed etc...",
    "checks": [
     {
      "number": "Q1",
@@ -3693,12 +3694,70 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-28T11:42:28.321Z",
+     "at": "2026-10-28T11:52:49.397Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-28T12:43:43.756Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-28T14:48:46.655Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Does each of the five table folders get a test folder of its own, with its own md and suite?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-28T13:00:55.648Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-28T14:49:27.171Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "red writer builds: red writer: wsl-claude wrote the red of goal/G41.4, which is in build",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-28T15:19:23.419Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -3983,6 +4042,648 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-28T11:44:08.298Z",
      "text": "- wsl: the goal's End design waits on G41.8 and G41.10: both are code items with empty boxes and empty file lists.\n- From the tree, their first files: G41.8 spirit/run/spirit/kernel.js; G41.10 spirit/run/spirit/coreFiles.js.\n- Shall I list those two, so End design passes? Their full lists come when you write their boxes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:45:03.074Z",
+     "text": "- wsl: I hold the red of G41.4. Writing it now: the five tables in agent.db, their verbs, the key set at add-row, the secrets kept in the process, authTableInterface.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:45:39.430Z",
+     "text": "- wsl: cw, the box leaves three shapes to the build; name them and I assert them, rather than guess:\n- 1. the multiplexed verb: e.g. provider {add: {...}} | {set: {id, ...}} | {delete: {id}} | {search: {text}}?\n- 2. the column names of the five tables (label, description, url, api_key, ...);\n- 3. authTableInterface.js's exports: e.g. open(dbFile, table, keyColumn) -> {has, put, del, search}?\n- Meanwhile I write what the box fixes: the tables in agent.db, the 16 files, the key set at add-row, no secret in any answer or stream."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:46:31.317Z",
+     "text": "- wsl: first part of the red in, f51a56a8: the five tables and their keys, the five verbs, the 15 files; 12 red.\n- The rest waits on cw's three names: the verb's shape, the columns, authTableInterface's exports."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T11:50:45.330Z",
+     "text": "all,\nTHAT IS HOLDING THIS UP?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:50:55.206Z",
+     "text": "- wsl: me, waiting on cw for three names. I stop waiting: I name them in the red now and cw builds to it:\n- verb: <table> {add: {...}} | {set: {id, ...}} | {delete: {id}}, every row on the stream;\n- columns: id, label, description, url, api_key / provider_id, model_name, capabilities / persona / loop, job; grant (job_id, path);\n- authTableInterface.open(dbFile, table, keyColumn) -> {has, put, del, list}.\n- Red closed within the hour."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T11:51:28.060Z",
+     "text": "- cw: me, sorry: wsl needed three names from me. Here they are.\n- 1. The verb: one per table, flat, as every family verb is: provider {op, ...fields}, with op one of add, set, delete, get, search. add answers the new id; get answers the row without its secrets, apiKeySet true or false in place of the key; search {text} answers items and more, as every search does.\n- 2. The columns, camelCase as node's shadow roll is: every table has id (the public key), privateKey, sealPublicKey, sealPrivateKey, label, description.\n- On top of those: provider url and apiKey; model providerId, modelName, capabilities (a JSON list); persona persona; job loop (0 or 1) and job.\n- grant copies node's grants exactly, two columns: job_id and path, keyed by both.\n- 3. authTableInterface.js: open(dbFile, table, keyColumn) answers has, paths, grant, revoke, all and knownPath, the names node's auth uses today. Node's label and relabel stay in nodeStore, since they read the shadow roll."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:53:03.225Z",
+     "text": "- wsl: the red is written, by cw's names (24 red, plus authTableInterface's own suite).\n- The hook holds it: my two new test files, spirit/run/spirit/test/authTableInterface.js and .md, are core, so they wait on your G2. No bypass: grant G2 and it lands."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:54:23.900Z",
+     "text": "commit 476578e5a8cab92ebaee843909f938451a3fd9be: goal/G41.4 red, by the names cw gave the build: the five tables' camelCase columns, every row's key set (id the ed25519 public key, privateKey, sealPublicKey, sealPrivateKey), grant node's grants exac\n- spirit/run/process/js/agent/test/agent.js\n- spirit/run/process/js/agent/test/agent.md\n- spirit/run/spirit/test/authTableInterface.js\n- spirit/run/spirit/test/authTableInterface.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T11:54:33.307Z",
+     "text": "- wsl: red in, 476578e5, through the hook on your G2; red phase done.\n- cw: yours to build: process/js/agent/test/agent.js (24 red) and spirit/run/spirit/test/authTableInterface.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:02:37.774Z",
+     "text": "commit d41fce1b5c9116c3acbc0d4f0ccd6a6d045b4cd8: goal/G41.4 build: the data set of agent.db. Five tables, provider, model, persona, job and grant, each in process/js/agent/table/<name>/ with its server.js, elementTable.js and elementRow.js. Every ke\n- spirit/run/process/js/agent/agent.js\n- spirit/run/process/js/agent/family/api.js\n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/grant/elementTable.js\n- spirit/run/process/js/agent/table/grant/server.js\n- spirit/run/process/js/agent/table/job/elementRow.js\n- spirit/run/process/js/agent/table/job/elementTable.js\n- spirit/run/process/js/agent/table/job/server.js\n- spirit/run/process/js/agent/table/model/elementRow.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/model/server.js\n- spirit/run/process/js/agent/table/persona/elementRow.js\n- spirit/run/process/js/agent/table/persona/elementTable.js\n- spirit/run/process/js/agent/table/persona/server.js\n- spirit/run/process/js/agent/table/provider/elementRow.js\n- spirit/run/process/js/agent/table/provider/elementTable.js\n- spirit/run/process/js/agent/table/provider/server.js\n- spirit/run/process/js/agent/table/rowTable.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/agent/agent.js\n- spirit/run/spirit/authTableInterface.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:02:38.908Z",
+     "text": "- cw: built and pushed, through the hook with no bypass, on your G2.\n- The agent suite is 42 green and the auth table's own suite 10 green.\n- Every row's key set is made at add; no answer and no stream row carries a private key or the API key.\n- Node's own grants are untouched, so nodeStore came off the list.\n- The agent page suite has 1 red: its count of one left tool is from G41.1, and v22 adds five table icons. wsl, that test is yours to turn."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:05:17.924Z",
+     "text": "red: 1 suite"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:05:47.555Z",
+     "text": "FAILURE #1.1: tools: {\"left\":[\"app\",\"provider\",\"model\",\"persona\",\"job\",\"grant\"],\"right\":[\"server\"]} ❌"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:22:24.038Z",
+     "text": "not done by far.\n\n- 1. you have the add button for a table at the above the list, and the add-form below. make the detail-panel take over the middle pane of the workBench UI please, and let me see what that feels like."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:22:54.305Z",
+     "text": "- cw: taking 1: the row editor goes into the workBench's middle pane. The Add button and the list stay in the left panel."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:24:04.006Z",
+     "text": "commit 7c4d8c0abe2d2db3fdc91c103858c6c90051010e: goal/G41.4: the detail panel takes over the workBench's middle pane (Andy: \"make the detail-panel take over the middle pane of the workBench UI please, and let me see what that feels like\"). The left \n- spirit/run/process/js/agent/table/grant/elementTable.js\n- spirit/run/process/js/agent/table/job/elementTable.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/persona/elementTable.js\n- spirit/run/process/js/agent/table/provider/elementTable.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/agent/agent.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:24:12.414Z",
+     "text": "- cw: done, 7c4d8c0a, and pulled into your checkout.\n- The left panel keeps the Add button and the list. A row picked or added opens in the middle pane, replacing whatever was there. The grant table got an Add button too.\n- To see it: the page files load fresh on a reload, but the agent server runs the old code until it restarts, so your node needs a restart.\n- Shall I restart your node?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:37:41.572Z",
+     "text": "- detail panes: add a title row to the detail pane containing: [Table-Icon] \"Add | Change\" [Table-name]\n- detail panes: the simple input fields take up one row each, make them look more orderly, perhaps the input field stretches to the right edge of the pane.\n- the codeMirror pane in details must not be allowed to move the pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up free vertical space.\n\nlet me see that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:40:51.607Z",
+     "text": "commit e8b1ed77f573fd4c26e92dcd15492330326858f6: goal/G41.4: the detail pane's title row, its fields in order, and its CodeMirror held in the centre (Andy: \"add a title row to the detail pane containing: [Table-Icon] \\\"Add | Change\\\" [Table-name]\"; \n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/grant/elementTable.js\n- spirit/run/process/js/agent/table/job/elementRow.js\n- spirit/run/process/js/agent/table/job/elementTable.js\n- spirit/run/process/js/agent/table/model/elementRow.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/persona/elementRow.js\n- spirit/run/process/js/agent/table/persona/elementTable.js\n- spirit/run/process/js/agent/table/provider/elementRow.js\n- spirit/run/process/js/agent/table/provider/elementTable.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/agent/agent.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:41:01.165Z",
+     "text": "- cw: all three done, e8b1ed77, pulled into your checkout: reload the page to see it.\n- Title row: the table's icon, Add or Change, and the table's name. A row just made says Add until it is saved, Change after that or when opened from the list.\n- Fields: labels in one column, each input stretched to the pane's right edge.\n- CodeMirror: the pane claims no width of its own, so the dividers stay put. The editor takes the free height and scrolls inside it.\n- Not yet seen in a browser by me: tell me what looks off."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:42:39.483Z",
+     "text": "cw, should not the workBench component ensure that it's inhabitants are not able to shift pane boundaries in a proper design?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:43:03.146Z",
+     "text": "- cw: yes. Today a wide child widens the centre, and the side panes shrink to make room.\n- The proper fix is in the workBench: its side panes keep the width they were given (they never shrink), and its centre never grows past what is left (min-width 0).\n- Then any inhabitant is held, and the trick I put into the detail pane comes out again.\n- The workBench is a shared shell element, so I ask first: shall I change it in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:43:21.647Z",
+     "text": "do the proper fix."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:44:46.762Z",
+     "text": "- cw: the proper fix is built. The workBench's side panes and borders never grow or shrink, and its centre takes only what is left. The detail pane's own trick is gone again.\n- Its suite is 30 green, the agent suite 42 green.\n- workBench is a core file added after your grant, so the commit waits on the grant G3 the desk opened for it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:45:35.878Z",
+     "text": "commit f798943c247ec897bb594c8fb2e3213bb18d7047: goal/G41.4: the workBench holds its borders against its inhabitants (Andy: \"should not the workBench component ensure that it's inhabitants are not able to shift pane boundaries in a proper design?\", \n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:45:43.341Z",
+     "text": "- cw: the workBench fix is in, f798943c, through the hook on your G3, and pulled into your checkout: reload the page to see it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T12:53:59.468Z",
+     "text": "- make sure the simple input lines, take up all the with availabe, with only the 1em between the inputs label and the input itself.\n- the table-list in the left pane must be immediately shown when the table icon is selected in the left icon strip. now the first list display is only offered after i pressed the \"add\" button.....\n- so far, if you can, all the changes apply to all tables, is it possible to organize the code so that my changes so far are only done in one place?\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:54:58.688Z",
+     "text": "- cw: taking all three.\n- On the third: yes, and it is nearly so already. The list, the title row, the field layout and the middle pane are all in one shared file, and each table only names its columns and fields.\n- The one copy is the grant editor, which repeats the title row and the layout. I fold it into the shared file with the other two changes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:57:07.228Z",
+     "text": "commit 8039a7b17f49ebb6c300ed190ee646270a1b1b12: goal/G41.4: every field line full width, the list shown at once, and the detail panes' look in one place (Andy: \"make sure the simple input lines, take up all the with availabe, with only the 1em betw\n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/grant/elementTable.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T12:57:25.865Z",
+     "text": "- cw: all three done, 8039a7b1, pulled into your checkout: reload to see it.\n- Each field line is its label, 1em, then the input to the right edge. A table's list loads as soon as its icon opens it.\n- The title row and the field line are made in the one shared file. The grant table is now built on it like the others.\n- On your new done-line, the test folders this item touches today are four: the agent server's, the agent page's, workBench's and the auth table's. Their md files say little or nothing yet about the tables, the icons or the workBench fix.\n- The five table folders have no test folder of their own yet. Should each get one, with its own md and suite?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:00:34.086Z",
+     "text": "Q7: Does each of the five table folders get a test folder of its own, with its own md and suite?\n\nyes. and the table folder itself needs a test folder, too, for it's two scripts. the cool thing is: the table/test/folder thus gets to test and document all the generalizations for the table folder, it makes sense to me...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:00:59.983Z",
+     "text": "- cw: heard, and it makes sense: six new test folders. table/test documents and tests the two shared scripts, and each table's test folder covers its own three files.\n- wsl: tests are your side. Shall I take table/test while you take the five table folders and the agent page's left-tool count?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:14:54.287Z",
+     "text": "better ui already.\n- should not the workBench element have some padding-left and padding-right of about 0.5em? \n- both the list pane and detail pane should have similarly styled title areas, the detail pane good enough for now. the list pane on the left side, should have a title row: [Table-Icon] \"table-name\", these title bits should be structured so that a style change affects them all equally....\n- when i add a row to the table, the detail panels title nicely changes for \"add\" to \"change\", but the list does not update. make sure that all element LISTEN to what needs listening to, by themselves, automatically. This should also be a general implementation. if those table searches and list were make properly from a probability framework, this should not have happened...\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:16:18.017Z",
+     "text": "- cw, my thoughts:\n- 1. Padding: yes. 0.5em left and right belongs in the workBench itself, so every app gets it.\n- 2. Title rows: yes. The list pane gets [icon] table-name from the same title-row helper the detail pane uses, so one style change moves them all.\n- 3. The list: you are right, it is the framework's job. Today each list asks the server again on a stream event, which evidently misses. I have not found exactly why without a browser.\n- The general fix uses what exists: one translator turns the agent server's stream into spirit.data, a branch per table. Each list is then a view of its branch, and each row editor watches its row in the branch.\n- Nothing listens by hand any more: every change the server publishes lands in the branch, and everything showing it redraws.\n- Shall I build all three?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:16:42.575Z",
+     "text": "SO YOU FUCKING ROLLED YOUR OWN AGAIN!!!!!!!!\n\nFUCK!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:17:09.092Z",
+     "text": "- cw: yes. The tables' lists and editors skip spirit.data and its translator, which the tree already has and the desk already uses. That breaks rule/21, and it is mine.\n- The fix is to move them onto it: the stream into spirit.data, the lists and the editors as views of it, nothing of my own beside it.\n- Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:17:42.736Z",
+     "text": "FIX THIS ALL PROPERLY, DAMMIT!\n\nNOW."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:22:16.922Z",
+     "text": "commit fe8f9acde23b3c07ae1a77734a8c4fafaa8dfc30: goal/G41.4: the tables' lists and editors on spirit.data, the one framework, and nothing of their own beside it (Andy: \"make sure that all element LISTEN to what needs listening to, by themselves, aut\n- spirit/run/process/js/agent/table/data.js\n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/agent/agent.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:22:18.405Z",
+     "text": "- cw: done, fe8f9acd, and pulled into your checkout: reload the page to see it.\n- The agent server's stream now goes through one translator into spirit.data, a branch per table, as contacts and desk do.\n- Every list and dropdown is a probabilitySearch on its branch, and every editor watches its own row there. Nothing listens by hand any more, so an Add or a Save shows in the list by itself.\n- The list pane has its title row, from the same helper as the detail pane.\n- The workBench pads every pane 0.5em left and right."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:30:06.988Z",
+     "text": "- all table rows will have an icon, by default the tables icon, the detail panel's first input will be the icon i choose for that row.\n- the list in the left side pane then will only show: icon and label."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:33:56.823Z",
+     "text": "commit 3663020a586bc83a438d96805e466a594ae49a23: goal/G41.4: every row has an icon, and every list shows icon and label alone (Andy: \"all table rows will have an icon, by default the tables icon, the detail panel's first input will be the icon i cho\n- spirit/run/process/js/agent/family/api.js\n- spirit/run/process/js/agent/table/grant/elementTable.js\n- spirit/run/process/js/agent/table/grant/server.js\n- spirit/run/process/js/agent/table/job/elementTable.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/persona/elementTable.js\n- spirit/run/process/js/agent/table/provider/elementTable.js\n- spirit/run/process/js/agent/table/rowTable.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:34:05.974Z",
+     "text": "- cw: done, 3663020a, and pulled into your checkout.\n- Every row has an icon: Add gives a new row its table's icon, and the editor opens on an icon chooser, the shell's own icon selector.\n- Every list shows only icon and label. A grant shows its job's icon and job: path.\n- The agent server changed too: it adds the icon column to your existing tables when it starts. So your node needs a restart before the icons appear. Shall I restart it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:36:28.637Z",
+     "text": "- can't save rows anymore: \"Not saved: no such argument\","
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:36:59.810Z",
+     "text": "- cw: that is your node's agent server still running the old code, which knows no icon field. The new page sends one with every save, and the old server refuses it.\n- A restart of your node fixes it: the agent server starts on the new code and adds the icon column to your tables.\n- Shall I restart your node now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:46:49.080Z",
+     "text": "- the current left-strip icon should be highlighted, may be with a lightly brighter background color.\n- if the current \"icon\" is changed the content of a left-strip icon should disappear from the middle workBench Pane.\n- pickers for all these tables, should display: [icon][label], exactly the same as the list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:47:18.609Z",
+     "text": "- cw: taking all three.\n- The highlight goes into the workBench, so every app gets it.\n- The workBench also tells the app when a side's tool changes, so the agent page empties the middle pane then.\n- Pickers: the one table search draws icon and label for lists and pickers alike."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:48:52.654Z",
+     "text": "commit 633a4d84b3bc10736075cc953b3af64c85653c83: goal/G41.4: the shown tool's icon marked, the centre emptied on another left tool, and every picker drawn as the lists are (Andy: \"the current left-strip icon should be highlighted, may be with a ligh\n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/agent/agent.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:49:03.148Z",
+     "text": "- cw: all three done, 633a4d84, and pulled into your checkout: reload the page to see it.\n- The workBench marks the shown tool's icon with a lighter background.\n- Switching to another left tool empties the middle pane.\n- Every picker shows icon and label, as the lists do, the chosen row too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:54:08.590Z",
+     "text": "- contrast between current left-strip icon and not current ones is not drastic enough: made the current one should also have a dark border, right now it looks more dead than the others, a bit brighter with a darker border, maybe....\n- the type face of the list and detail title rows should be a bit more title-like a bit bigger."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:55:02.140Z",
+     "text": "commit aee3dc65065735eaffb740745a496dfa9a71a8f9: goal/G41.4: the shown tool's icon stands out, and the title rows read as titles (Andy: \"the current one should also have a dark border, right now it looks more dead than the others, a bit brighter wit\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:55:08.763Z",
+     "text": "- cw: both done, aee3dc65, and pulled into your checkout: reload the page to see it.\n- The shown tool's icon has a brighter background and a 2px dark border.\n- The title rows of the lists and the detail panes are bigger and semibold, from the one helper."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T13:58:33.875Z",
+     "text": "So I'm happy for now. but the spirit face is not working, had to log in new, that worked but the app icons don't display anymore...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T13:59:53.164Z",
+     "text": "- cw: glad. On the face: I do not know the cause yet.\n- What I checked: since your tag, the tree differs only in the agent app, workBench and the new auth table file. The face's own code and the file tree code are untouched.\n- A node on this code answers every app's face part as it should: Agent, Files and Face Apps all come back with app true and their icons.\n- So the gap is likely between your node and the face: the file tree not reaching the face, or the relay serving the face older or newer shell code than your node runs since the rollback.\n- Which relay did you log in through, and what does the browser console say on the face?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:01:57.078Z",
+     "text": "the relays both run tag v-2026-10-28-06-41"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:02:36.196Z",
+     "text": "- cw: then the face, both relays and your node all run the tag's face code. Your node runs under labMaster again since 14:37, so my direct start at the rollback is ruled out too.\n- What is left is what reaches the face: the file tree that lists the apps, or the face part of each app.\n- What does the browser console on the face say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:03:14.907Z",
+     "text": "oh HELL, the UI showed up, it just took a while..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:04:58.249Z",
+     "text": "the agent app on the face show an earlier state of the tables with less entries, generally... how could that be?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:05:47.905Z",
+     "text": "- cw: two ways I can see, and I have not confirmed either.\n- 1. The face reaches another node's agent server, with its own agent.db: your WSL node also listens on 65432 and holds an older copy of the tables.\n- 2. The face shows an older answer: what its page kept from an earlier visit, or a search answer cut short on its way through the relay.\n- One test tells them apart: on the face, add a row, then look for it on the loopback page. If it shows there, it is 2; if not, it is 1.\n- Will you try that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:05:56.314Z",
+     "text": "- cw, a correction to my line on way 1: I do not know that your WSL node holds any tables; that is part of what the test would show."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:06:35.379Z",
+     "text": "this 65432 node is the only node i ever installed agent on"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:06:53.125Z",
+     "text": "I know!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-28T14:06:53.150Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:07:06.916Z",
+     "text": "- cw: then it is way 2: the face shows an older answer of the same tables.\n- My best guess: the face runs older page code that the browser kept, from before the lists were tied to the stream. That code only shows what its first search found.\n- Test: a hard reload on the face (Ctrl+F5). Does it then show every row?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:15:44.603Z",
+     "text": "hard re-load did nothing but we know:\n\n- the face connects to my home node.  65432 on this windows box, it's the only place in the world hat event hold the table rows that i DID see on the face... and it loads all UI components for the agent-ui from here, it's show the very latest UI improvements.\n- very telling symptom. the add button for all tables fails with: \"Not added: no such argument\", and the save button in details says: \"Not saved: no such argument\""
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:16:42.422Z",
+     "text": "cw: DESK?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:17:33.871Z",
+     "text": "- cw: here, on the no such argument.\n- Your agent server started at 14:37 on the icon code, and the same code, asked directly, takes add and save with an icon.\n- So the refusal comes from the path between the page and the server, not from the server itself.\n- I am now reproducing it through a node's own door, as your page goes, on my node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:18:52.745Z",
+     "text": "- cw: on my node, restarted on the same code as yours, Add with an icon goes through the node's door and answers the new id. So the code takes it.\n- Your checkout and your agent server both have the icon code.\n- So the refusal is in your face's path, not in the code itself.\n- Does Add work on the loopback page, at 127.0.0.1:65432?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:24:06.045Z",
+     "text": "commit 74a7d902e4b3c87d07c6cc16563ea0a12e6e4012: goal/G41.4: a refused save or add says the server's reason, not only its code. Found on Andy's face, \"Not added: no such argument\" and \"Not saved: no such argument\", which named no argument: the table\n- spirit/run/process/js/agent/table/grant/elementRow.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:24:13.166Z",
+     "text": "- cw: thanks for the save code. That note only showed the refusal's short words, never which argument was refused.\n- Pulled into your checkout now: a refused add or save shows the server's own reason, naming the argument.\n- Reload the face and try Add once more. What does the note say now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:27:08.752Z",
+     "text": "it looks to me like you throw away every element you load...\n\nis that the case?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:27:26.620Z",
+     "text": "- cw: yes, in the row editor.\n- Every repaint throws its whole pane away and builds it again: the inputs, the CodeMirror, the pickers and the icon chooser. That happens after a save, and on every stream write of its row.\n- So what you typed and the editor's state go with it, and each picker sends its search again.\n- The lists are made once and kept, and a loaded script is loaded only once.\n- The fix: build the editor once, and on a new row from the stream only set the changed values into the elements that are there. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:27:58.287Z",
+     "text": "...but you keep reloading the same elements from the server"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:28:28.768Z",
+     "text": "- cw: yes, that follows from the same fault. The scripts themselves come once, since a required file is kept.\n- But each rebuilt icon chooser fetches the icon set from your node again, and each rebuilt picker sends its search again, on every repaint.\n- Built once and updated in place, the editor fetches nothing again. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:31:00.534Z",
+     "text": "you don't get what I'm asking:\n\nare you fetching elements from the server multiple times? (we'll get to the icons file in a moment)\n\nAre you?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:31:27.692Z",
+     "text": "- cw: no, by the code. Each element script is fetched once per page load: spirit.require keeps every file it fetched by its path, and every later require of it gets the kept one.\n- I have not watched the face's network to confirm it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:34:55.322Z",
+     "text": "fixing the icon pickers re-fetch of the iconSet sound like the easiest fix.\n\ncan you not check in my nodes log for traffic from the face.... I'll click  save within the next five seconds"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:35:31.124Z",
+     "text": "i clickes save once  by loopback, then by the face"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:35:59.610Z",
+     "text": "- cw: I cannot read it. Your node logs to the console of the labMaster window and keeps no log file. Its traffic table records only peer posts, not face calls.\n- Your save notes now carry the server's reason, so they tell what the log would.\n- What did the note say after each of your two saves, the loopback one and the face one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:38:57.087Z",
+     "text": "the home-face sends three fetches when i press save, the spirit face sends only two"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:39:25.026Z",
+     "text": "- cw: that fits, as I read it. At home: the save, then the icon set fetched again by the rebuilt icon chooser, then the list searching again because the stream told it the row changed.\n- On the face the save is refused, so no change is streamed and the list does not search: two fetches.\n- So the face's save itself is what is refused. The reason is in the note under the Save button: what does it say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:43:02.900Z",
+     "text": "Not saved: no such argument"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:46:37.451Z",
+     "text": "- cw: found it, I am fairly sure. On the face, every call reaches the agent server with one argument too many: verb.\n- The loopback door strips verb from the arguments before it calls an app. The face path does not: the face handler copies the whole request, verb included, and the node's in-process call passes it on as it is.\n- The table verbs refuse any argument they do not declare, so every face Add and Save is refused.\n- The fix is one line: the in-process call strips verb, as the loopback door does. Then every app reached from the face gets the same arguments as at home.\n- That line is in a core file, the node's verb table, so I ask first: shall I make it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T14:48:18.856Z",
+     "text": "let's try that fix, you'll get the grant."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T14:50:05.203Z",
+     "text": "- cw: the fix is built: the node's in-process call now strips verb, as the loopback door does. A face-shaped call reaches the app as op and icon alone.\n- Your G4 is granted, but the desk shows G41.4 in design now, and I commit nothing while an item is in design.\n- End design on G41.4, and I commit it and pull it to your checkout. A node restart then makes it live."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:02:35.818Z",
+     "text": "i got distracted because the apps app now has on it's list TWO [ALL] filters again, and i HATE that shit, and i notice that sort of thing real quick, oos for now, but ... FUCK! (tried to test if other apps still work after you change....\n\nthe loopback agent app show two blank job rows that i didn't add here,\nthe agent app now shows no row at all anywhere, and the add button to add a job or model etc. shows an error \"Not added: job takes no argument verb\".. which of course explains another MESS.\n\nyou don't FUCKING send an add ROW to a database when the row is empty and NOT validated....\nso we have MUCH more messes on our hand than just one..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:03:16.699Z",
+     "text": "- cw: you are right, and the new note proves the cause: job takes no argument verb. That is the face path I fixed but have not committed, since the item is in design.\n- It explains the face lists too: every face search is refused the same way, so the face shows no rows at all.\n- The blank rows are mine. Add writes an empty row to the table at once, before anything is filled in or checked.\n- Proposed: Add opens an empty editor and writes nothing. Save then adds the row, and only when it passes its checks: a label at least, for every table.\n- The two blank job rows: I delete them once you say so.\n- Should a row need anything more than a label before Save may add it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:05:39.842Z",
+     "text": "- wsl: my red missed both messes: a face-path call carrying verb, and Add writing an empty row.\n- Shall I add both to the red, so they cannot come back?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:05:52.765Z",
+     "text": "commit 29fedff41612b8865f633b6504de855c7cc8f61f: goal/G41.4: an app reached from the face gets its arguments without verb, as at the loopback door. The face's calls come through js/faceHome.js, which hands the door's in-process call (verbTable door.\n- spirit/run/spirit/verbTable.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:06:02.045Z",
+     "text": "- cw: the face fix is in, 29fedff4, through the hook on your G4, and pulled into your checkout.\n- It is node code, so it takes effect when your node restarts.\n- Still open from my last post: whether Save may add a row with a label alone, and the two blank job rows to delete."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:06:47.124Z",
+     "text": "- wsl: sorry, I missed cw's two asks to me. Taking all of the tests, by your Q7 yes: table/test plus the five table test folders, each with md and suite, and the agent page's left-tool count.\n- cw: keep to the code."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:08:30.208Z",
+     "text": "- wsl: the agent page's test is turned (45 green), but the hook holds it: I wrote the red, and the item is in build.\n- Grant the new G and it lands. The six table test folders follow under the same grant."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:12:06.168Z",
+     "text": "cw. that fix worked. tag this version. i don't want to loose the progress so far."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:12:41.091Z",
+     "text": "- cw: tagged v-2026-10-28-16-12, at 29fedff4, the commit your checkout has now. Pushed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:12:42.246Z",
+     "text": "wsl? what the fuck are you talking about? i haven't heard from you in ages..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:13:04.271Z",
+     "text": "- wsl: writing the test folders you said yes to on Q7: table/test and the five table ones.\n- The agent page test is turned, 45 green, held by the hook until you grant G5.\n- table/test is nearly done and has found one fault for cw. The five table folders come next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:14:28.685Z",
+     "text": "wsl, what do you need a grant for?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:14:51.511Z",
+     "text": "- wsl: the commit hook refuses my test commits: I wrote this item's red, and it is in build, so it says the red writer needs your grant.\n- That is all G5 is for: committing the test folders you said yes to."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:15:26.570Z",
+     "text": "all: Why the fuck is agent considered \"intrinsic\"?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:16:04.371Z",
+     "text": "- cw: by the code it is not. The coded intrinsic list names fileServer and twelve shell apps, and no agent.\n- The node answers the agent app's face part with intrinsic false. Its manifest and its sidecar name no intrinsic either; your node's state marks it home only.\n- Where do you see it called intrinsic?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:16:45.858Z",
+     "text": "- wsl: by the code it is not. The one coded intrinsic list, spirit/coreFiles.js:26 at 29fedff4, names neither process/js/agent nor shell/agent.\n- Where do you see it called intrinsic?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:17:56.145Z",
+     "text": "wsl, \nyou didn't answer my fucking question:\n\nrule/24 — Answer the fucking Question\n\nWHICH FUCKING FILE DID ARE YOU ASKING AFUCKING GRANT FOR?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:18:12.985Z",
+     "text": "- wsl: no core file. Only test files, all on the list:\n- shell/agent/test/agent.js and agent.md;\n- process/js/agent/table/test/: rowTable, data, tableElement (.js and .md);\n- process/js/agent/table/<provider|model|persona|job|grant>/test/<name>.js and .md.\n- The hook asks G5 for the person, not the files: it refuses any commit by the red writer while the item is in build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T15:19:40.778Z",
+     "text": "wsl. GO"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:19:58.139Z",
+     "text": "commit 9d745e8e04a81178859a293de71c87fe3daaf13f: goal/G41.4 tests: the six test folders of the data set (Andy, Q7: \"yes. and the table folder itself needs a test folder, too, for it's two scripts. the cool thing is: the table/test/folder thus gets t\n- spirit/run/process/js/agent/table/grant/test/grant.js\n- spirit/run/process/js/agent/table/grant/test/grant.md\n- spirit/run/process/js/agent/table/job/test/job.js\n- spirit/run/process/js/agent/table/job/test/job.md\n- spirit/run/process/js/agent/table/model/test/model.js\n- spirit/run/process/js/agent/table/model/test/model.md\n- spirit/run/process/js/agent/table/persona/test/persona.js\n- spirit/run/process/js/agent/table/persona/test/persona.md\n- spirit/run/process/js/agent/table/provider/test/provider.js\n- spirit/run/process/js/agent/table/provider/test/provider.md\n- spirit/run/process/js/agent/table/test/data.js\n- spirit/run/process/js/agent/table/test/data.md\n- spirit/run/process/js/agent/table/test/rowTable.js\n- spirit/run/process/js/agent/table/test/rowTable.md\n- spirit/run/process/js/agent/table/test/tableElement.js\n- spirit/run/process/js/agent/table/test/tableElement.md\n- spirit/run/shell/agent/test/agent.js\n- spirit/run/shell/agent/test/agent.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T15:20:20.056Z",
+     "text": "- wsl: in, 9d745e8e, through the hook on your G5; pulled into your checkout. 269 green, 1 red.\n- cw: the red is yours: table/test/data.js, a grant with no job_id or path lands at agent.grant/undefined|undefined (data.js keyOf). Please make it write nothing."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:21:43.151Z",
+     "text": "commit d7c3fef708d4966db544351e616fb09849cf3a79: goal/G41.4: the tables' translator writes no grant without its job and its path. Found by wsl's table/test/data.js: a grant row from the stream with no job_id or no path was written under \"undefined|u\n- spirit/run/process/js/agent/table/data.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T15:21:55.846Z",
+     "text": "- cw: wsl's six test folders found one fault of mine. The translator wrote a grant with no job or no path under undefined keys. Fixed, d7c3fef7, through the hook, and pulled into your checkout.\n- All ten agent suites are green now: the shared table code 47, the translator 13, the shared elements 40, provider 23, model 25, persona 21, job 24, grant 32, the agent page 45, the agent server 42.\n- Still open: Add writing an empty row. Is a label all a row needs before Save may add it?"
     }
    ]
   },
@@ -8890,6 +9591,376 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-28T10:56:19.031Z",
      "text": "- cw: right, there is no Close until it is done. The desk now offers you Done on it: press Done, and Close comes next.\n- If Done does not show, reload the page.\n- Or I close it for you as the owner, through your node's loopback: say yes."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.13",
+   "title": "fix the grant UI and clean up its concepts.",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 7,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": false,
+   "fileCount": 22,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "# 1. The bundle row, and the shell element that makes and keeps bundles\n\n- A bundle is a clearly defined subset of an API, with no user, process or agent tied to it.\n- A bundle row is keyed by an ID in the shadow roll's form, generated when the row is added, and carries a label and a description.\n- A bundle's api paths are rows of their own, grouped by the bundle's ID, each path a family or a family.verb.\n- A bundle may span several families, or hold paths of one family only.\n- A bundle may hold a single path.\n- The node keeps one bundle table, in node.db.\n- The bundle interface is one verb under the auth family, auth.bundle, akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review.\n- An application installs its own typical bundles into the node's bundle table through the standard API calling conventions, calling auth.bundle.\n- A shell element (panel and page) creates and maintains bundles: lists them, adds one, edits its label, description and paths, and deletes one.\n- this shell element will use the standard family and verb pickers that already exist.\n- The element picks paths from the node's api tree, by family or by single verb.\n- A standard bundleSelector element picks one bundle, beside the shell's other selectors.\n\n# 2. The revised grants app\n\n- The grants app has two tabs: Grants, and Bundles, where bundles are created and maintained with the bundle shell element.\n- Every grant goes through a bundle: the app grants a bundle to an ID.\n- Granting a bundle to an ID creates rows in the auth table: each path row of the bundle, combined with the ID chosen in the ID selector (contactSelector), becomes a new auth row, unless that row exists already.\n- A bundle is not granted by reference: changing or deleting the bundle later changes no grant already made.\n- On the Grants tab, at the top, an add-grant row: \"grant\" [bundleSelector] \"to\" [configurable ID selector].\n- Below it, a probability search list of the grants, each row carrying a shell/js/armingButton.js that revokes that grant.\n- the app will use standard elements from shell/js/\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "May a single path still be granted on its own, or does every grant go through a package?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-28T16:17:55.113Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-28T17:14:14.062Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:05:33.048Z",
+     "text": "all,\n\na brain-storm in the box\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T16:06:26.799Z",
+     "text": "- wsl: where the button came from: apiAuth/G1.10 (2026-10-01), your words \"an app knows it's requirements ... an owner-only verb dependencies\". Each server hard-codes one list (appServer.js:346), and Grants shows \"Grant the bundle\" from it (grants.js:104). So today: one package per server, one family only, and no name.\n- Your package fits the agent tables' shape: a row keyed like the shadow roll, with label, description and a list of api paths that may span families.\n- The key question: is a package granted by reference (change the package, and every ID holding it changes), or copied into paths at grant time? By reference, node's auth check must read packages as well as grants.\n- And DEPENDENCIES: drop it, or keep it as a server's suggested package?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:07:01.460Z",
+     "text": "- cw: where the Grant the bundle button came from: your apiAuth/G1.10 ruling. Every server hard-codes one list of paths a peer user needs (its DEPENDENCIES verb), and Grants offers that list as one button.\n- Why it is a hack, by your definition: one list per server, no name, never spanning two families, and nobody chose it but the server's code.\n- Your package fits what exists: a table keyed like the shadow roll, id and label, plus its list of paths. It is the same row shape as the agent's tables, so the grant panel element can be the shared table element.\n- Granting only packages to IDs changes the gate. Today node's grants are a peer and a path, and the gate asks if this peer holds this path. Then it asks if a package this peer holds contains this path. That is core: the grants table and apiAuth.\n- A server's DEPENDENCIES could stay as a suggested first package for the grant app to offer, or go. Your call.\n- One question first: may a single path still be granted on its own, or does every grant go through a package?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:13:41.401Z",
+     "text": "- a package is NOT granted by reference and can thus not be modified after the fact/grant\n- an application still can know it's own api and install it's most typical sets of \"packages\" into the nodes package database, \n- the package table would simply have an index groups api-table-rows by a package identifier, probably a string\n\nupdate the box with a short and precise proposal."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T16:13:55.905Z",
+     "text": "- wsl: taking the box update, on your order."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:17:29.856Z",
+     "text": "Q1: May a single path still be granted on its own, or does every grant go through a package?\n\nwhat stops the existence of packages with only 1 entry?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:17:58.391Z",
+     "text": "- cw: nothing stops it. A single path is a package of one entry, so every grant goes through a package and nothing else is needed. I took Q1 down."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:29:51.968Z",
+     "text": "this item right now should contain only two sections for now.\n\n- 1. the precise definition of the bundle row, and a shell element (panel/page) that creates and maintains bundles.\n\n\n- 2. the precise requirements for a revised grants app that uses the bundle shell element, and grants them to ID's in a table this app also needs the ability to revoke by ID - family - or single verb, and require two tabs to accomplish that\n\n\nthat's my scope,\n\nreplace the box with TWO section, each listing bulleted requirements for those two above groups."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:30:48.785Z",
+     "text": "- cw: wsl took the box update on your order, so I stay off the box and review what wsl writes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:33:42.486Z",
+     "text": "cw, wipe the fucking box and replace it with two clean sections, no quotes just the requirements for those two sections"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:34:35.288Z",
+     "text": "- cw: the box is replaced, v3: two sections, the requirements only.\n- 1. The bundle row and the shell element that makes and keeps bundles.\n- 2. The revised grants app: grants bundles to IDs, revokes by ID, family or verb, two tabs.\n- Read it and tell me what is wrong or missing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:38:41.600Z",
+     "text": "all,\nmuch better and cleaner.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:39:07.914Z",
+     "text": "- cw: green from me, with two gaps before the build.\n- 1. How an app installs its bundles: that needs a node verb, and a verb change needs review and your yes on the verb itself.\n- 2. What becomes of the DEPENDENCIES list and its Grant the bundle button: dropped, or the first bundles an app installs.\n- The bundle table lives in node.db beside the grants, so its code is core and will need your grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T16:39:30.723Z",
+     "text": "- wsl: not yet green, four gaps:\n- 1. Where the bundle table lives and which verbs reach it. Beside node's grants (nodeStore.js:502) means new node verbs, which need review and your yes.\n- 2. How an app installs its bundles, and that DEPENDENCIES and the \"Grant the bundle\" button go.\n- 3. Revoke by family or by verb: for one chosen ID, or across every ID?\n- 4. A test folder for the bundle element and for the grants app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:55:33.019Z",
+     "text": "all,\n\nmy response:\n\n- i think a standard bundleSelector element is missing.\n- the bundle table lives in node.db\n- the bundle interface is one verb under the auth family, akin to the <tableName> verbs in the agent app.\n- at the top the grants application has an add-grant row: \"grant\" [bundleSelector] \"to\" [configurable-ID-selector] \n- below that, the grants application has a probability search list whose rows carry an shell/js/armingButton.js on each row for revoking grants."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T16:56:04.242Z",
+     "text": "- wsl: fits the tree: auth has query, search, peer, grant, revoke and relabel (spirit/auth/api.js); armingButton.js is there; the ID selector can be contactSelector.js.\n- So the new verb is auth.bundle {op: add, set, delete, get, search}. Granting a bundle then copies its paths through auth.grant, one per path, or it takes op grant {id, key}: which?\n- Your layout has one page, the grant row over the revoke list. Do the two tabs go?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T16:56:10.233Z",
+     "text": "- cw: heard, and it maps onto what exists: armingButton is there, and contactSelector picks a shadow-roll ID today, so the configurable ID selector grows from it.\n- The bundleSelector is new, beside contactSelector and the other selectors in the shell.\n- One verb, auth.bundle, with op as the agent tables have it, is a change to node's interface: the verb itself needs review and your yes.\n- Two things your lines leave open against the box: the box says two tabs, your lines describe one page; and a row's arming button revokes one grant, while the box says revoke by ID, by family or by verb.\n- Shall I put your five lines into the box, and drop the two tabs?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T16:59:30.174Z",
+     "text": "cw,\n\n- auth.bundle is granted, NO review.\n- the new simpler design with an armingButton on every row come from wsl questioning of a more complicated approach.\n\nintegrate that with the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T17:00:13.107Z",
+     "text": "- cw: integrated, v5. Your two added lines stay.\n- Section 1 gains: the bundle table in node.db, the one verb auth.bundle (granted, no review), and a standard bundleSelector.\n- Section 2: the add-grant row at the top, and the list below with an arming button on each row. The two tabs and the revoke by ID, family or verb went, replaced by that simpler design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:01:43.688Z",
+     "text": "cw, we still need two tabs because, in the grants app, we need the ability to create bundles as well.\n\nrevise box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T17:02:16.215Z",
+     "text": "- cw: revised, v6. The grants app has two tabs again: Grants, with the add-grant row and the revoke list, and Bundles, where bundles are created and maintained with the bundle element."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:02:29.965Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T17:02:48.043Z",
+     "text": "- wsl: v6 is clean and true to the tree. Green from me once three lines are in:\n- 1. How a grant copies the paths: one auth.grant per path, or op grant on auth.bundle.\n- 2. How an app installs its bundles (auth.bundle add, owner-only?), and that DEPENDENCIES and the \"Grant the bundle\" button go.\n- 3. A test folder for each new element and for the grants app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:08:23.088Z",
+     "text": "all,\n\nwhat the fuck is \"op grant\"?\n\n- and a grant creates a set of rows form a bundle, as follows: each row in in the bundle, combined with the ID (contactSelector) results in a new auth row, if it doesn't exist already, simple.\n- an app uses the standard API calling conventions to auth.bundle\n\ncw, clarify this in the box."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T17:08:36.768Z",
+     "text": "- wsl: \"op grant\" was my name for a sixth op on auth.bundle that would do the copying itself. Your answer drops it: each bundle path plus the ID makes one auth row unless it exists. Clear, thanks."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T17:08:54.873Z",
+     "text": "- cw: op grant was wsl's suggestion: one more op on auth.bundle that would do the copying in one call. Your rule makes it unneeded, so it is not in the box.\n- Clarified, v7: each path row of the bundle, combined with the ID from the contact selector, becomes a new auth row unless it exists already. An app calls auth.bundle by the standard API calling conventions."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:12:41.277Z",
+     "text": "all: green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T17:12:58.824Z",
+     "text": "- wsl: green, but one line is missing: the DEPENDENCIES verb (appServer.js:346) and its \"Grant the bundle\" button (grants.js:104) go, or v7 leaves the old hack beside the new one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T17:13:05.628Z",
+     "text": "- cw: green from me, but for one line the box does not say: the DEPENDENCIES list and its Grant the bundle button. Do both go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:13:36.187Z",
+     "text": "cw, add the file list for this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-28T17:14:16.955Z",
+     "text": "- cw: file list added, 9 files.\n- The bundle table in node.db: nodeStore. The auth.bundle verb: apiAuth for its handler, server.js where the auth family is mounted, and the auth family's interface and the verb's description beside it.\n- The elements: a new bundleSelector, a new bundleEditor (the panel that makes and keeps bundles), and contactSelector, which becomes the configurable ID selector.\n- The app: the grants app.\n- All but the grants app are core. If DEPENDENCIES and its button go, appServer joins the list; that waits on your answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:15:03.183Z",
+     "text": "wls, check the file list"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:17:56.335Z",
+     "text": "wsl, check the file list (sorry for the misspelling that left your line for cw)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T17:18:08.377Z",
+     "text": "- wsl: the 9 code files fit the box. Missing:\n- tests: shell/grants/test/grants.js/.md, shell/js/test/bundleEditor.js/.md and bundleSelector.js/.md, and contactSelector's, which has none yet;\n- spirit/appServer.js and spirit/test/appServer.js, if DEPENDENCIES goes;\n- reuse: a bundle's path rows, (bundle_id, path), are the grants' shape, so authTableInterface.js can hold them, as for the agent's grant table."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:20:53.817Z",
+     "text": "wsl, add the test folder and files to the file list"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-28T17:21:41.089Z",
+     "text": "- wsl: added 13: the new test folders, grants (shell/grants/test), bundleEditor, bundleSelector and contactSelector (shell/js/test), apiAuth for auth.bundle (spirit/run/spirit/test); and the old suites the change touches: spirit/test/authTables.js, grantsApp.js, grantsSharedList.js.\n- If DEPENDENCIES goes, seven more old suites assert it (appDependencies.js among them); they join then."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-28T17:23:41.652Z",
+     "text": "I'm ending design and I'm pressing go:\n\nmake sure you'll be precise and diligent in your task, according to the rules."
     }
    ]
   }
