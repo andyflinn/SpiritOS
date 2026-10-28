@@ -63,7 +63,7 @@ function familyOf(body) {
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
 // (events.publish, the row as app) into pages; the event stream peerPost reads its answers on (events.subscribe); a
 // family's interface (api {family}); each post to a deskClient's streamListener (peer.post) into posts as {to, json},
-// every row of it into sent as {to, row}.
+// every entry of it into sent as {to, row, entry}.
 function pretendNode() {
   const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set();
   const server = http.createServer(function (req, res) {
@@ -87,8 +87,9 @@ function pretendNode() {
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
-        const rows = Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : [];
-        rows.forEach(function (row) { sent.push({ to: String(b.to), row: row }); });
+        // Every delivery is a bundle, one array of entries { run, n, row } (spirit/appServer.js, goal/G41.12); a full
+        // push ends in { run, n, full, end }, which carries no row.
+        (Array.isArray(got) ? got : []).forEach(function (e) { sent.push({ to: String(b.to), row: e && e.row, entry: e }); });
         answer = { heard: true };
         // A subscriber that is away: its post is seen, and never answered, so the desk's peerPost waits it out.
         if (deaf.has(String(b.to))) return;
@@ -165,7 +166,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const before = node.posts.length;
     await call('press', { id: OTHER.id, what: 'make-current' }, ANDY);
     const wholeRows = function (p) {
-      const rows = Array.isArray(p.got) ? p.got : p.got && Array.isArray(p.got.rows) ? p.got.rows : p.got ? [p.got] : [];
+      const rows = (Array.isArray(p.got) ? p.got : []).map(function (e) { return e && e.row; });
       return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item && String(r.item.id).indexOf(OTHER.id) === 0; }).length;
     };
     const mine = function () { return node.posts.slice(before).filter(function (p) { return p.to === CW.key; }); };
@@ -234,102 +235,110 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       ok(!!onTake.change && held.boxTaken === UBI.label, 'and an agent with cap on takes it, held for one write', 'ubi\'s take answered ' + short(onTake) + ', boxTaken ' + short(held.boxTaken));
     }
 
-    // ── THE POSITION (goal/G41.11, 0ebb4abd; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)"
-    // verb do desk, (re-use that verb) with the position number as argument") ─────────────────────────────────────────
-    const rowsTo = function (key, from) { return node.sent.slice(from).filter(function (x) { return x.to === key; }).map(function (x) { return x.row; }); };
-    const pushEnded = function (key, from) { return rowsTo(key, from).some(function (r) { return r && r.bootstrapped === true; }); };
+    // ── THE POSITION IS appServer'S (goal/G41.12, box v15: "Each sender numbers every row it publishes, one count per
+    // sender, kept with its run id"; "The desk's change number as the stream's position" goes). A subscribe carries
+    // (run, since); the desk's own part is what it publishes and its bootstrap ─────────────────────────────────────────
+    const entriesTo = function (key, from) { return node.sent.slice(from).filter(function (x) { return x.to === key; }).map(function (x) { return x.entry || {}; }); };
+    const rowsTo = function (key, from) { return entriesTo(key, from).filter(function (e) { return !e.end; }).map(function (e) { return e.row; }); };
+    const pushEnded = function (key, from) { return entriesTo(key, from).some(function (e) { return e.end === true; }); };
     const waitEnd = async function (key, from, ms) { for (let i = 0; i < (ms || 15000) / 100; i++) { if (pushEnded(key, from)) return true; await sleep(100); } return false; };
+    const waitFor = async function (key, from, test, ms) { for (let i = 0; i < (ms || 15000) / 100; i++) { if (test(rowsTo(key, from))) return true; await sleep(100); } return false; };
+    const textsOf = function (rows) { return rows.filter(function (r) { return r && r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); }); };
     const memberIds = [GOAL.id].concat(ITEMS);
     const wholeOf = function (rows) { return rows.filter(function (r) { return r && r.verb === 'goal.whole' && r.item; }); };
     const sideOf = function (rows) { return rows.filter(function (r) { return r && typeof r.table === 'string' && !r.verb; }); };
+    // The position a subscriber holds: the run and the newest number of what it took.
+    const positionOf = function (key, from) {
+      const es = entriesTo(key, from).filter(function (e) { return e.run; });
+      return es.length ? { run: es[es.length - 1].run, since: es.reduce(function (m, e) { return Math.max(m, Number(e.n) || 0); }, 0) } : null;
+    };
 
-    test.subHeading('the position: a subscribe without since bootstraps as before');
+    test.subHeading('the position: a subscribe without one is a full push of the desk\'s bootstrap');
     const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
     const f0 = node.sent.length;
     const plain = await call('subscribe', { family: 'deskClient' }, FRESH);
     const plainEnded = await waitEnd(FRESH.key, f0);
     const plainRows = rowsTo(FRESH.key, f0);
     const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
-    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no since, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
+    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no position, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
       'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
-    ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box): nothing after a position it never named', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
+    ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box)', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
+    const plainEntries = entriesTo(FRESH.key, f0);
+    ok(plainEntries.length > 1 && plainEntries.every(function (e) { return e.full === true && typeof e.run === 'string' && e.run && Number.isInteger(e.n); }) && plainEntries[plainEntries.length - 1].end === true && plainEntries.filter(function (e) { return e.end; }).length === 1,
+      'each of its entries is full, of one run and numbered, the last its one end', 'entries: ' + short(plainEntries.slice(-2)));
     const zero = node.sent.length;
     await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
     await waitEnd(FRESH.key, zero);
-    ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'since 0 is the same as none', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
+    ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'a since with no run is no position: a full push again', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
 
-    test.subHeading('the position: a subscribe with since hands what changed after it, oldest first');
-    await sleep(500);
-    const N = node.pages.reduce(function (m, o) { return Math.max(m, Number(o && o.change) || 0); }, 0);
-    const oldLine = 'all agents seem busy';   // written before N, above
-    const LINES = { nobody: 'after the position, for whoever', ubi: 'ubi, after the position, for you', cw: 'cw, after the position, not for ubi', group: 'after the position, in the group chat' };
+    test.subHeading('the position: a subscribe with one hands what was published after it, oldest first');
+    const pos = positionOf(FRESH.key, f0);
+    const oldLine = 'all agents seem busy';   // written before the position, above
+    const LINES = { nobody: 'after the position, for whoever', ubi: 'ubi, after the position, for you', cw: 'cw, after the position, not for ubi', group: 'after the position, in the group chat', other: 'in another goal, after the position' };
     await call('chat.add', { id: 'goal/G100.3', text: LINES.nobody }, ANDY);
     await call('chat.add', { id: 'goal/G100.3', text: LINES.ubi }, ANDY);
     await call('chat.add', { id: 'goal/G100.3', text: LINES.cw }, ANDY);
     await call('chat.add', { id: 'goal/G0', text: LINES.group }, ANDY);
     const v5 = (await facts('goal/G100.5')).version || 0;
     const boxed = await call('box.write', { id: 'goal/G100.5', text: 'a box written after the position', version: v5 }, ANDY);
-    await call('chat.add', { id: 'goal/G200.1', text: 'in another goal, after the position' }, ANDY);
+    await call('chat.add', { id: 'goal/G200.1', text: LINES.other }, ANDY);
     await sleep(500);
     const u0 = node.sent.length;
-    const caught = await call('subscribe', { family: 'deskClient', since: N }, UBI);
-    const caughtEnded = await waitEnd(UBI.key, u0);
+    const caught = await call('subscribe', { family: 'deskClient', run: pos && pos.run, since: pos && pos.since }, UBI);
+    await waitFor(UBI.key, u0, function (rows) { return textsOf(rows).indexOf(LINES.other) !== -1; });
     const got = rowsTo(UBI.key, u0);
+    const gotEntries = entriesTo(UBI.key, u0);
     const sides = sideOf(got);
-    const texts = sides.filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
-    ok(caught.subscribed === true && caughtEnded, 'a subscribe with since = ' + N + ' is taken, and its push ends', 'subscribed ' + short(caught) + ', ended ' + caughtEnded);
+    const texts = textsOf(got);
+    ok(!!pos && caught.subscribed === true && got.length > 0, 'a subscribe with the position (' + short(pos) + ') is taken and handed rows', 'subscribed ' + short(caught) + ', rows ' + got.length);
     ok(texts.indexOf(LINES.nobody) !== -1 && texts.indexOf(LINES.group) !== -1, 'it hands the lines written after the position: the current goal\'s and the group chat\'s', 'chat rows handed: ' + short(texts));
-    ok(texts.indexOf(oldLine) === -1 && sides.every(function (r) { return Number(r.change) > N; }), 'and nothing written at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', changes ' + short(sides.map(function (r) { return r.change; })));
-    ok(texts.indexOf('in another goal, after the position') === -1, 'a line of another goal is not handed', 'chat rows handed: ' + short(texts));
-    const lastWhole = got.reduce(function (m, r, i) { return r && r.verb === 'goal.whole' ? i : m; }, -1);
-    const firstSide = got.findIndex(function (r) { return r && typeof r.table === 'string' && !r.verb; });
-    ok(lastWhole !== -1 && firstSide !== -1 && lastWhole < firstSide, 'the goal\'s facts come first, the side rows after them', 'last facts row at ' + lastWhole + ', first side row at ' + firstSide);
-    const order = sides.map(function (r) { return Number(r.change); });
-    ok(order.length > 1 && order.every(function (c, i) { return i === 0 || c >= order[i - 1]; }), 'the side rows oldest first', 'changes in order handed: ' + short(order));
-    ok(sides.every(function (r) { return r.table && r.id && Number(r.change) > 0 && (r.table !== 'chat' || (r.row && typeof r.row.text === 'string')); }), 'each as the side row its write published (table, id, change, row)', 'a row: ' + short(sides[0]));
+    ok(texts.indexOf(LINES.other) !== -1, 'and another goal\'s: the cache keeps every goal (box v15)', 'chat rows handed: ' + short(texts));
+    ok(texts.indexOf(oldLine) === -1 && gotEntries.every(function (e) { return Number(e.n) > pos.since; }), 'and nothing published at or before it', 'old line handed: ' + (texts.indexOf(oldLine) !== -1) + ', numbers ' + short(gotEntries.map(function (e) { return e.n; })));
+    ok(wholeOf(got).length === 0 && !gotEntries.some(function (e) { return e.full || e.end; }), 'no full push: no bootstrap row, no end', 'facts rows ' + wholeOf(got).length + ', full or end entries ' + gotEntries.filter(function (e) { return e.full || e.end; }).length);
+    const order = gotEntries.map(function (e) { return Number(e.n); });
+    ok(order.length > 1 && order.every(function (c, i) { return i === 0 || c > order[i - 1]; }), 'the rows oldest first, each once', 'numbers in order handed: ' + short(order));
+    ok(gotEntries.every(function (e) { return e.run === pos.run; }) && sides.every(function (r) { return r.table && r.id && (r.table !== 'chat' || (r.row && typeof r.row.text === 'string')); }), 'each as the side row its write published (table, id, row), of the same run', 'a row: ' + short(sides[0]));
 
-    test.subHeading('the position: a line addressed to another agent never comes back in a catch-up');
+    test.subHeading('the position: a line addressed to another agent never comes back');
     ok(texts.indexOf(LINES.cw) === -1, 'his line to cw is not handed to ubi', 'chat rows handed: ' + short(texts));
     ok(texts.indexOf(LINES.ubi) !== -1, 'his line to ubi is', 'chat rows handed: ' + short(texts));
     const c0 = node.sent.length;
-    await call('subscribe', { family: 'deskClient', since: N }, CW);
-    await waitEnd(CW.key, c0);
-    const cwTexts = sideOf(rowsTo(CW.key, c0)).filter(function (r) { return r.table === 'chat'; }).map(function (r) { return String((r.row && r.row.text) || ''); });
-    ok(cwTexts.indexOf(LINES.cw) !== -1 && cwTexts.indexOf(LINES.ubi) === -1, 'and the same catch-up for cw holds its own line and not ubi\'s', 'cw handed: ' + short(cwTexts));
+    await call('subscribe', { family: 'deskClient', run: pos && pos.run, since: pos && pos.since }, CW);
+    await waitFor(CW.key, c0, function (rows) { return textsOf(rows).indexOf(LINES.other) !== -1; });
+    const cwTexts = textsOf(rowsTo(CW.key, c0));
+    ok(cwTexts.indexOf(LINES.cw) !== -1 && cwTexts.indexOf(LINES.ubi) === -1, 'and the same position for cw hands its own line and not ubi\'s', 'cw handed: ' + short(cwTexts));
 
-    test.subHeading('the position: an item whose row changed after it hands its box');
+    test.subHeading('the position: a box written after it comes, one before it does not');
     const boxRow = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.5'; })[0];
-    ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes with the catch-up', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
+    ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
     const staleBox = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.4'; })[0];
     ok(!staleBox, 'a box written before the position does not', 'G100.4\'s box handed: ' + short(staleBox));
 
-    test.subHeading('the position: every push ends with { bootstrapped: true }');
-    const lastOf = function (rows) { return rows[rows.length - 1]; };
-    ok(!!lastOf(got) && lastOf(got).bootstrapped === true && !!lastOf(plainRows) && lastOf(plainRows).bootstrapped === true, 'the last row of each push, with since and without, is { bootstrapped: true }',
-      'last rows: ' + short([lastOf(got), lastOf(plainRows)]));
-    ok(got.filter(function (r) { return r && r.bootstrapped === true; }).length === 1, 'once per push', 'ends in one push: ' + got.filter(function (r) { return r && r.bootstrapped === true; }).length);
-
-    test.subHeading('a subscriber whose delivery failed is kept: the row is tried again, not dropped');
-    // A delivery waits the publisher's waitMs (the desk's CLIENT_WAIT_MS, 10 s) for its answer, then waits as long
-    // again before the next try: this section takes about half a minute.
+    test.subHeading('a subscriber whose delivery failed is dropped, and handed what it missed when it subscribes again');
+    // goal/G41.12, kept: "A subscribe or a delivery not answered in 3 s fails; the sender drops that subscriber until
+    // it subscribes again."
     const AWAY = { key: 'MCowBQYDK2VwAyEAdeskProductTestAWAYAAAAAAAAAAAAAAAAAAAA=', label: 'away' };
-    node.deaf.add(AWAY.key);
-    const a0 = node.posts.length;
+    const a0 = node.sent.length;
     await call('subscribe', { family: 'deskClient' }, AWAY);
-    const attemptsOf = function () { return node.posts.slice(a0).filter(function (p) { return p.to === AWAY.key; }); };
-    for (let i = 0; i < 300 && attemptsOf().length < 2; i++) await sleep(100);
-    const tries = attemptsOf();
-    ok(tries.length >= 2 && tries[0].json === tries[1].json, 'a row it did not take is posted to it again, the same row, after the wait', 'posts to it: ' + tries.length + (tries.length >= 2 ? ', same row: ' + (tries[0].json === tries[1].json) : ''));
-    await call('chat.add', { id: 'goal/G100.6', text: 'written while it was away' }, ANDY);
+    await waitEnd(AWAY.key, a0);
+    const awayPos = positionOf(AWAY.key, a0);
+    node.deaf.add(AWAY.key);
+    const p0 = node.posts.length;
+    const postsTo = function () { return node.posts.slice(p0).filter(function (p) { return p.to === AWAY.key; }); };
+    await call('chat.add', { id: 'goal/G100.6', text: 'the first while it was away' }, ANDY);
+    for (let i = 0; i < 50 && postsTo().length < 1; i++) await sleep(100);
+    // Past the fast fail (3 s) it is dropped: what is written next is posted to nobody.
+    await sleep(4000);
+    await call('chat.add', { id: 'goal/G100.6', text: 'the second while it was away' }, ANDY);
+    await sleep(2000);
+    ok(postsTo().length === 1, 'the delivery it did not take is posted once, and nothing after it', 'posts to it: ' + postsTo().length);
     node.deaf.delete(AWAY.key);
-    const back = async function () { for (let i = 0; i < 400; i++) { const t = node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); if (t.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; })) return t; await sleep(100); } return node.sent.filter(function (x) { return x.to === AWAY.key; }).map(function (x) { return x.row; }); };
-    const awayRows = await back();
-    const awayWhole = wholeOf(awayRows).map(function (r) { return String(r.item.id); });
-    ok(memberIds.every(function (id) { return awayWhole.indexOf(id) !== -1; }) && awayRows.some(function (r) { return r && r.bootstrapped === true; }), 'once it answers, its whole push lands: none of it was dropped', 'facts of ' + short(awayWhole));
-    ok(awayRows.some(function (r) { return r && r.table === 'chat' && r.row && r.row.text === 'written while it was away'; }), 'and the line written while it was away follows', 'rows it got: ' + awayRows.length);
-    // QUEUE_MAX (1000, appServer.js) is not driven here: reaching it means over a thousand rows queued behind a row
-    // that waits 10 s each try; the shedding of the oldest is the publisher's own (sendTo), and spirit/test/appServer
-    // is the place to drive it with a small queue.
+    const b0 = node.sent.length;
+    await call('subscribe', { family: 'deskClient', run: awayPos && awayPos.run, since: awayPos && awayPos.since }, AWAY);
+    await waitFor(AWAY.key, b0, function (rows) { return textsOf(rows).indexOf('the second while it was away') !== -1; });
+    const awayTexts = textsOf(rowsTo(AWAY.key, b0));
+    ok(!!awayPos && awayTexts.indexOf('the first while it was away') !== -1 && awayTexts.indexOf('the second while it was away') !== -1 && wholeOf(rowsTo(AWAY.key, b0)).length === 0,
+      'subscribing again with its position, it is handed both lines it missed, and no full push', 'rows it got: ' + short(awayTexts));
   } finally {
     try { kid.kill(); } catch (e) { /* gone */ }
     node.server.close();
