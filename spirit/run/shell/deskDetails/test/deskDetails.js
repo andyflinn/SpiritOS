@@ -328,11 +328,19 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     r.searches = [];
     const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
     delete r.win.spirit.elements.probabilitySearch;
+    delete r.win.spirit.elements.deskSearch;
     const req = r.win.spirit.require;
-    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make; return req(p); };
+    // The shell's search, or the desk's own copy (box v39; cw: shell/shared/js/deskSearch.js, spirit.elements.deskSearch).
+    r.win.spirit.require = function (p) {
+      const q = String(p).replace(/^\/+/, '');
+      if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make;
+      if (q === 'shell/shared/js/deskSearch.js') r.win.spirit.elements.deskSearch = make;
+      return req(p);
+    };
     return r;
   };
-  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
+  // The rule pick: a dropdown, asking rules.search or, on the desk's own copy, no verb at all (box v39).
+  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.face === 'dropdown' && (x.o.verb === 'rules.search' || !x.o.verb); }).pop() || null; };
   const rulesIcon = function (r) { return r.document.querySelector('[data-panel="rules"]'); };
   const rw = ruleWorld(); await rw.open();
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
@@ -340,10 +348,10 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const firstRule = rw.document.querySelector('[data-rule-remove]');
   const order = walk(rw.document.root, []);
   ok(!!pick && inPage(rw, pick.host) && shown(pick.host), 'pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require',
-    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch/.test(x); }) }));
+    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch|deskSearch/.test(x); }) }));
   ok(!!pick && !!firstRule && order.indexOf(pick.host) !== -1 && order.indexOf(pick.host) < order.indexOf(firstRule), 'it stands on top of the list of rules (12 rules attached), not below it',
     'dropdown at ' + (pick ? order.indexOf(pick.host) : 'none') + ', first rule at ' + order.indexOf(firstRule));
-  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
+  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch|deskSearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
   ok(!scriptTags.length, 'no hand-rolled script tag loads the search', scriptTags.length + ' script tag(s) for probabilitySearch');
   // Away to the box and back: the dropdown is there again, every time the panel opens.
   const boxIcon = rw.document.querySelector('[data-panel="box"]');
@@ -402,6 +410,10 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   put.api.verb = function (name, args) { put.asked.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: 'ok' }); };
   // The stream as the shell hands it to the app (api.onPublished), and as the translator takes it into spirit.data.
   const putHearers = [];
+  // The title is painted to the shell's title bar (api.setScreenTitle, goal/G9.6), not into the body.
+  const putTitles = [];
+  put.api.setScreenTitle = function (t) { putTitles.push(String(t)); };
+  const putTitleSays = function (re) { return putTitles.some(function (t) { return re.test(t); }) || re.test(put.document.body.textContent); };
   put.api.onPublished = function (fn) { putHearers.push(fn); return function () {}; };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), put.win, { filename: 'spiritData.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js'), 'utf8'), put.win, { filename: 'deskData.js' });
@@ -416,8 +428,8 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   ok(fed, 'the stand-in page holds spirit.data with the desk\'s translator', 'spirit.data ' + typeof PD + ', deskData ' + typeof put.win.spirit.deskData);
   await put.open();
   const putShown = put.document.body.textContent;
-  ok(/An item from the stream/.test(putShown) && /a box the stream brought/.test(putShown) && /a line the stream brought/.test(putShown), 'opened on the item, it shows its title, box and chat from spirit.data, though every desk answer is "ok"',
-    'shown: ' + JSON.stringify({ title: /An item from the stream/.test(putShown), box: /a box the stream brought/.test(putShown), chat: /a line the stream brought/.test(putShown) }));
+  ok(putTitleSays(/An item from the stream/) && /a box the stream brought/.test(putShown) && /a line the stream brought/.test(putShown), 'opened on the item, it shows its title, box and chat from spirit.data, though every desk answer is "ok"',
+    'shown: ' + JSON.stringify({ title: putTitleSays(/An item from the stream/), box: /a box the stream brought/.test(putShown), chat: /a line the stream brought/.test(putShown) }));
   // Andy, box v37: "it will function flawlessly with all desk-state painted in real-time".
   test.subHeading('goal/G41.12: the open detail is painted in real time from the stream');
   const streamed = async function (row) { put.win.spirit.deskData.published(row); putHearers.slice().forEach(function (fn) { fn(row); }); await settle(); };
@@ -429,7 +441,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const live = put.document.body.textContent;
   ok(/a box written while it is open/.test(live), 'a box row on the stream repaints the open detail\'s box', 'box shown: ' + /a box written while it is open/.test(live));
   ok(/a line written while it is open/.test(live) && /a line the stream brought/.test(live), 'a chat line on the stream joins the open chat', 'chat shown: ' + JSON.stringify({ newLine: /a line written while it is open/.test(live), old: /a line the stream brought/.test(live) }));
-  ok(/An item renamed on the stream/.test(live), 'its facts row on the stream repaints its title', 'title shown: ' + /An item renamed on the stream/.test(live));
+  ok(putTitleSays(/An item renamed on the stream/), 'its facts row on the stream repaints its title', 'titles painted: ' + JSON.stringify(putTitles.slice(-3)));
   const readsAsked = put.asked.filter(function (a) { return READS.indexOf(String(a.name).replace(/^desk\./, '')) !== -1; });
   ok(readsAsked.length === 0, 'and asks the desk nothing to draw it', 'asked: ' + JSON.stringify(readsAsked.map(function (a) { return a.name; })));
 
