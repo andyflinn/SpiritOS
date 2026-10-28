@@ -41,6 +41,19 @@ folders").
   whole push and what was written meanwhile land, none dropped. Past QUEUE_MAX (1000) the oldest go; that cap is not
   driven here (over a thousand rows behind a 10 s wait), it is the publisher's own (spirit/appServer.js).
 
+## Since goal/G41.12 (box v30), where it differs from the above
+
+- **The position is spirit/appServer.js's** (run, since), not the desk's change number: a subscribe with it is handed
+  what was published after it, every goal's, never a line addressed to another agent, no full push.
+- **No initial push** (Andy: "there is NO initial push for desk server, it will only PUSH the current goal row when an
+  agent reconnects"): a subscribe without a position is a full push of the current goal's row alone (and the group
+  chat's), none of its items' rows; it ends in one end entry.
+- **The push button** (Andy: "The user get's a \"push\" button the the detail of every goal or item, to force a server
+  push of that item. chat's ar only pushed as lines happen."): his `press {id, what: 'push'}` hands that item's row, or
+  the goal's, to the subscribers, and no other item's.
+- **A delivery not answered in 3 s drops its subscriber** until it subscribes again with its position, then it is
+  handed what it missed.
+
 ## What its test must try to break
 
 - A list of paths refused, or only its first path landing.

@@ -253,15 +253,18 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       return es.length ? { run: es[es.length - 1].run, since: es.reduce(function (m, e) { return Math.max(m, Number(e.n) || 0); }, 0) } : null;
     };
 
-    test.subHeading('the position: a subscribe without one is a full push of the desk\'s bootstrap');
+    // goal/G41.12, box v30: "there is NO initial push for desk server, it will only PUSH the current goal row when an
+    // agent reconnects".
+    test.subHeading('the position: a subscribe without one is a full push of the current goal\'s row alone');
     const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
     const f0 = node.sent.length;
     const plain = await call('subscribe', { family: 'deskClient' }, FRESH);
     const plainEnded = await waitEnd(FRESH.key, f0);
     const plainRows = rowsTo(FRESH.key, f0);
     const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
-    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no position, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
-      'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
+    ok(plain.subscribed === true && plainEnded && plainIds.indexOf(GOAL.id) !== -1, 'with no position, the current goal\'s row comes', 'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
+    ok(plainEnded && ITEMS.every(function (id) { return plainIds.indexOf(id) === -1; }) && plainRows.every(function (r) { return !r || !r.item || String(r.item.id) === GOAL.id || String(r.item.id) === 'goal/G0'; }),
+      'and none of its items\' rows, nor another goal\'s: no initial push', 'rows of ' + short(plainRows.map(function (r) { return r && (r.item ? r.item.id : r.rule || r.table); })));
     ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box)', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
     const plainEntries = entriesTo(FRESH.key, f0);
     ok(plainEntries.length > 1 && plainEntries.every(function (e) { return e.full === true && typeof e.run === 'string' && e.run && Number.isInteger(e.n); }) && plainEntries[plainEntries.length - 1].end === true && plainEntries.filter(function (e) { return e.end; }).length === 1,
@@ -269,7 +272,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const zero = node.sent.length;
     await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
     await waitEnd(FRESH.key, zero);
-    ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'a since with no run is no position: a full push again', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
+    ok(pushEnded(FRESH.key, zero) && sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).some(function (r) { return String(r.item.id) === GOAL.id; }), 'a since with no run is no position: a full push again, the goal\'s row', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
 
     test.subHeading('the position: a subscribe with one hands what was published after it, oldest first');
     const pos = positionOf(FRESH.key, f0);
@@ -313,6 +316,20 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     ok(!!boxed.change && !!boxRow && boxRow.row && /after the position/.test(String(boxRow.row.text || '')), 'the box written after the position comes', 'box write ' + short(boxed) + ', box row ' + short(boxRow));
     const staleBox = sides.filter(function (r) { return r.table === 'box' && r.id === 'goal/G100.4'; })[0];
     ok(!staleBox, 'a box written before the position does not', 'G100.4\'s box handed: ' + short(staleBox));
+
+    // goal/G41.12, box v30: "The user get's a \"push\" button the the detail of every goal or item, to force a server push
+    // of that item. chat's ar only pushed as lines happen."
+    test.subHeading('the push button: his press pushes that item to the subscribers');
+    const q0 = node.sent.length;
+    const pushed3 = await call('press', { id: 'goal/G100.3', what: 'push' }, ANDY);
+    await waitFor(CW.key, q0, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }); }, 5000);
+    const after3 = rowsTo(CW.key, q0);
+    ok(pushed3.ok !== false && after3.some(function (r) { return r && r.item && String(r.item.id) === 'goal/G100.3'; }), 'press push on goal/G100.3 hands its row to a subscribed client', 'press answered ' + short(pushed3) + ', rows ' + short(after3.map(function (r) { return r && (r.item ? r.item.id : r.table + ' ' + r.id); })));
+    ok(!after3.some(function (r) { return r && r.item && String(r.item.id) !== 'goal/G100.3'; }), 'and no other item\'s row', 'rows ' + short(after3.map(function (r) { return r && r.item && r.item.id; })));
+    const q1 = node.sent.length;
+    const pushedGoal = await call('press', { id: GOAL.id, what: 'push' }, ANDY);
+    await waitFor(CW.key, q1, function (rows) { return rows.some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }); }, 5000);
+    ok(pushedGoal.ok !== false && rowsTo(CW.key, q1).some(function (r) { return r && r.item && String(r.item.id) === GOAL.id; }), 'and on a goal, the goal\'s row', 'press answered ' + short(pushedGoal));
 
     test.subHeading('a subscriber whose delivery failed is dropped, and handed what it missed when it subscribes again');
     // goal/G41.12, kept: "A subscribe or a delivery not answered in 3 s fails; the sender drops that subscriber until
