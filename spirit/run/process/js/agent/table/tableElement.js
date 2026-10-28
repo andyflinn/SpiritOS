@@ -40,9 +40,14 @@
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function agent() { return Promise.resolve(spirit.require(AGENT)); }
-  // One call of a table's verb; a refusal comes back as { refused: why }.
+  // One call of a table's verb; a refusal comes back as { refused: why }, the server's own reason when it gave one (its
+  // answer's extra.why: which argument, which row), else the refusal's words.
+  function whyOf(e) {
+    var why = e && e.body && e.body.extra && e.body.extra.why;
+    return String(why || (e && e.message) || 'refused');
+  }
   function call(table, args) {
-    return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: (e && e.message) || 'refused' }; });
+    return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: whyOf(e) }; });
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
   // The table's branch of spirit.data, which ./data.js keeps: required with this file, so it is there before any table.
@@ -88,7 +93,7 @@
     s.refresh();
     return s;
   }
-  E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf };
+  E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf, whyOf: whyOf };
 
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
   // chosen with the shell's icon selector (shell/js/iconSelector.js).

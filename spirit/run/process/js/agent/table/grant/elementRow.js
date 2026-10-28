@@ -13,7 +13,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function call(args) {
     return Promise.resolve(spirit.require(AGENT)).then(function (a) { return a.grant(args); })
-      .then(function (body) { return body || {}; }, function (e) { return { refused: (e && e.message) || 'refused' }; });
+      .then(function (body) { return body || {}; }, function (e) { return { refused: window.spirit.elements.agentDetail.whyOf(e) }; });
   }
   E.grantRow = {
     create: function (container, api, grant, detail) {
