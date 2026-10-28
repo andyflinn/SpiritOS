@@ -15,7 +15,7 @@
         '<div class="fill grant-list" style="min-height:12em"></div></div>';
       var listBox = container.querySelector('.grant-list');
       function open(grant) {
-        if (detail) detail.open(function (box) { return window.spirit.elements.grantRow.create(box, api, grant); });
+        if (detail) detail.open(function (box) { return window.spirit.elements.grantRow.create(box, api, grant, detail); });
       }
       Promise.all([spirit.require('shell/js/probabilitySearch.js'), spirit.require('process/js/agent/table/grant/elementRow.js')]).then(function () {
         if (gone) return;

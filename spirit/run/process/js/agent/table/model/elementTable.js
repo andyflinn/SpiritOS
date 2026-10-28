@@ -14,7 +14,7 @@
         E = window.spirit.elements;
         made = E.agentTable.create(container, {
           api: api, table: 'model', columns: COLUMNS, detail: detail,
-          row: function (box, id) { return E.modelRow.create(box, api, id); },
+          row: function (box, id, added) { return E.modelRow.create(box, api, id, added, detail); },
         });
       });
       return {

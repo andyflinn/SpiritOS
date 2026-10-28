@@ -1,8 +1,10 @@
 // spirit/run/process/js/agent/table/grant/elementRow.js
 // ONE GRANT IN THE PAGE (goal/G41.4): a grant is a job and a path (the grant table, keyed as node's grants are), so its
 // panel either shows one, with Delete, or makes one: a job picked from a dropdown search of the jobs, a path typed, Add.
-// What it shows after either is the server's answer (rule/19).
-//   spirit.elements.grantRow.create(container, api, grant) -> { destroy }   grant { job_id, job, path }, or null for a new one
+// What it shows after either is the server's answer (rule/19). Its title row and its one-field-a-row layout are the
+// other tables' editors' (../tableElement.js): Add for a new grant, Change for one shown.
+//   spirit.elements.grantRow.create(container, api, grant, detail) -> { destroy }   grant { job_id, job, path }, or null
+//   for a new one; detail: the page's detail pane, whose look('grant') gives the title row its icon and name
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var AGENT = spirit.familyPath('agent');
@@ -13,15 +15,22 @@
       .then(function (body) { return body || {}; }, function (e) { return { refused: (e && e.message) || 'refused' }; });
   }
   E.grantRow = {
-    create: function (container, api, grant) {
+    create: function (container, api, grant, detail) {
       var pre = 'gr' + (++made) + '-';
       var gone = false;
       var pickJob = null;
+      var look = detail && detail.look ? detail.look('grant') : {};
       function note(text) { var n = container.querySelector('#' + pre + 'note'); if (n) n.textContent = text; }
+      function head(word) {
+        return '<div style="display:flex;align-items:center;gap:1em"><span style="font-size:20px">' + esc(look.icon || '') + '</span>' +
+          '<b>' + word + '</b><span>' + esc(look.name || 'grant') + '</span></div>';
+      }
+      var GRID = 'margin-top:1em;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1em;align-items:center';
       function shown(g) {
         if (pickJob) { pickJob.destroy(); pickJob = null; }
-        container.innerHTML = '<div><div>' + esc(g.job || g.job_id) + ' may use <b>' + esc(g.path) + '</b></div>' +
-          '<div><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note"></span></div></div>';
+        container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head('Change') +
+          '<div style="' + GRID + '"><span>Job</span><span>' + esc(g.job || g.job_id) + '</span><span>Path</span><b>' + esc(g.path) + '</b></div>' +
+          '<div style="margin-top:1em"><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note"></span></div></div>';
         container.querySelector('#' + pre + 'delete').addEventListener('click', function () {
           call({ op: 'delete', job_id: g.job_id, path: g.path }).then(function (r) {
             if (gone) return;
@@ -31,9 +40,10 @@
         });
       }
       function fresh(said) {
-        container.innerHTML = '<div><div>A new grant</div><div id="' + pre + 'job"></div>' +
-          '<div><label for="' + pre + 'path">Path</label> <input type="text" id="' + pre + 'path" placeholder="server.verb"></div>' +
-          '<div><button type="button" id="' + pre + 'add">Add</button> <span id="' + pre + 'note">' + esc(said || '') + '</span></div></div>';
+        container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head('Add') +
+          '<div style="' + GRID + '"><span>Job</span><div id="' + pre + 'job"></div>' +
+          '<label for="' + pre + 'path">Path</label><input type="text" id="' + pre + 'path" style="width:100%;box-sizing:border-box" placeholder="server.verb"></div>' +
+          '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add</button> <span id="' + pre + 'note">' + esc(said || '') + '</span></div></div>';
         Promise.resolve(spirit.require('shell/js/probabilitySearch.js')).then(function () {
           if (gone) return;
           pickJob = window.spirit.elements.probabilitySearch.create(container.querySelector('#' + pre + 'job'), {

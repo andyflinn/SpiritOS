@@ -9,8 +9,9 @@
 //     row, or adding one, opens it in row(box, id) in the detail pane. detail is the page's: detail.open(make) empties
 //     the pane, destroys what was in it and puts make(box) there. Andy, on G41.4: "make the detail-panel take over the
 //     middle pane of the workBench UI please", so the agent page hands its workBench's centre.
-//   spirit.elements.agentRow.create(container, { api, table, id, fields }) -> { destroy }
-//     one row's fields as inputs, Save and Delete; fields [{ field, label, kind }], kind one of
+//   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields }) -> { destroy }
+//     one row's fields as inputs, Save and Delete, under a title row: look { icon, name } is the page's for the table
+//     (detail.look(table)), added says the row was just made by Add; fields [{ field, label, kind }], kind one of
 //       text, url, name, description   one line (name and description stop at their field rules' limits)
 //       secret                          a password box: what is typed replaces the secret, left empty it stays; the
 //                                       row says only whether it is set ("<field>Set"), the secret never reaches a page
@@ -41,14 +42,15 @@
     container.innerHTML = '<div class="fill">' +
       '<div><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> <span id="' + pre + 'note"></span></div>' +
       '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';
-    function open(id) {
-      if (id && typeof o.row === 'function' && o.detail) o.detail.open(function (box) { return o.row(box, id); });
+    // added: the row was just made by Add, so its editor says Add until it is saved.
+    function open(id, added) {
+      if (id && typeof o.row === 'function' && o.detail) o.detail.open(function (box) { return o.row(box, id, added === true); });
     }
     container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       call(o.table, { op: 'add' }).then(function (r) {
         if (gone) return;
         container.querySelector('#' + pre + 'note').textContent = r.refused ? 'Not added: ' + r.refused : '';
-        if (r.id) { open(r.id); if (list) list.refresh(); }
+        if (r.id) { open(r.id, true); if (list) list.refresh(); }
       });
     });
     needs(['shell/js/probabilitySearch.js']).then(function () {
@@ -74,23 +76,45 @@
     var editors = {};
     var picks = {};
     var off = null;
+    var added = o.added === true;
     function input(f) { return container.querySelector('#' + pre + f.field); }
+    // THE TITLE ROW (Andy, on G41.4: "add a title row to the detail pane containing: [Table-Icon] \"Add | Change\"
+    // [Table-name]"): Add while the row is new, Change once it was saved or when it was opened from the list.
+    function head() {
+      var look = o.look || {};
+      return '<div style="display:flex;align-items:center;gap:1em"><span style="font-size:20px">' + esc(look.icon || '') + '</span>' +
+        '<b>' + (added ? 'Add' : 'Change') + '</b><span>' + esc(look.name || o.table) + '</span></div>';
+    }
+    // ONE FIELD A ROW, ORDERLY (Andy: "the simple input fields take up one row each, make them look more orderly, perhaps
+    // the input field stretches to the right edge of the pane"): the labels in one column, each input stretched to the
+    // pane's right edge in the other.
+    var STRETCH = 'width:100%;box-sizing:border-box';
+    function cell(f, v) {
+      var id = pre + f.field;
+      if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
+      if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
+      if (f.kind === 'pick') return '<div id="' + id + '"></div>';
+      if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
+      return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
+    }
     function paint(note) {
       if (gone) return;
       if (!row) { container.innerHTML = '<div>' + esc(note || 'Loading…') + '</div>'; return; }
       Object.keys(picks).forEach(function (k) { picks[k].destroy(); });
       picks = {};
       editors = {};
-      container.innerHTML = '<div>' + o.fields.map(function (f) {
-        var v = row[f.field];
-        var label = '<label for="' + pre + f.field + '">' + esc(f.label) + '</label> ';
-        if (f.kind === 'bool') return '<div><label><input type="checkbox" id="' + pre + f.field + '"' + (v ? ' checked' : '') + '> ' + esc(f.label) + '</label></div>';
-        if (f.kind === 'secret') return '<div>' + label + '<input type="password" id="' + pre + f.field + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '"></div>';
-        if (f.kind === 'code' || f.kind === 'pick') return '<div>' + label + '<div id="' + pre + f.field + '"></div></div>';
-        if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
-        return '<div>' + label + '<input type="text" id="' + pre + f.field + '" value="' + esc(v) + '"></div>';
-      }).join('') +
-        '<div><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note || '') + '</span></div></div>';
+      var simple = o.fields.filter(function (f) { return f.kind !== 'code'; });
+      var code = o.fields.filter(function (f) { return f.kind === 'code'; });
+      // THE PANE NEVER WIDENS THE CENTRE (Andy: "the codeMirror pane in details must not be allowed to move the
+      // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
+      // free vertical space"): the whole pane claims no width of its own (contain: inline-size), so the centre's width
+      // is the workBench's to give; the code field is a fill box and its CodeMirror takes the free height (shell.css
+      // .text-view.fill), scrolling inside it.
+      container.innerHTML = '<div class="fill" style="contain:inline-size;min-width:0">' + head() +
+        '<div style="margin-top:1em;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1em;align-items:center">' +
+        simple.map(function (f) { return '<label for="' + pre + f.field + '">' + esc(f.label) + '</label>' + cell(f, row[f.field]); }).join('') + '</div>' +
+        code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
+        '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note || '') + '</span></div></div>';
       o.fields.forEach(function (f) {
         var el = input(f);
         if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
@@ -143,7 +167,11 @@
       });
     }
     function save() {
-      call(o.table, changes()).then(function (r) { if (!gone) load(r.refused ? 'Not saved: ' + r.refused : 'Saved.'); });
+      call(o.table, changes()).then(function (r) {
+        if (gone) return;
+        if (!r.refused) added = false;
+        load(r.refused ? 'Not saved: ' + r.refused : 'Saved.');
+      });
     }
     function remove() {
       call(o.table, { op: 'delete', id: o.id }).then(function (r) {

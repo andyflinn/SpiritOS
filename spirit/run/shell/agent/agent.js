@@ -21,12 +21,13 @@
   var AGENT = spirit.familyPath('agent');
   var NAME = 'Agent';
   var BUG = '🐞';
+  // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
-    { name: 'provider', icon: '🏢', title: 'Model providers' },
-    { name: 'model', icon: '🧠', title: 'Models' },
-    { name: 'persona', icon: '🎭', title: 'Personas' },
-    { name: 'job', icon: '📋', title: 'Jobs' },
-    { name: 'grant', icon: '🔑', title: 'Grants, by job' },
+    { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider' },
+    { name: 'model', icon: '🧠', title: 'Models', one: 'Model' },
+    { name: 'persona', icon: '🎭', title: 'Personas', one: 'Persona' },
+    { name: 'job', icon: '📋', title: 'Jobs', one: 'Job' },
+    { name: 'grant', icon: '🔑', title: 'Grants, by job', one: 'Grant' },
   ];
 
   spirit.shell.activateApp({
@@ -58,6 +59,11 @@
           if (inCentre && typeof inCentre.destroy === 'function') inCentre.destroy();
           bench.center.innerHTML = '';
           inCentre = make(bench.center);
+        },
+        // A table's icon and name, for the pane's title row.
+        look: function (table) {
+          var t = TABLES.filter(function (x) { return x.name === table; })[0];
+          return t ? { icon: t.icon, name: t.one } : { icon: '', name: table };
         },
       };
       function build() {
