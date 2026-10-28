@@ -372,6 +372,9 @@ function createVerbTable() {
     // What the owner door (puppetDoor) runs: one verb by name, as /api/spirit takes it, answered {ok, status, body}.
     // A node family verb through the table's call, 'api' the flat table, family.verb through ask; a family nobody
     // serves is no-such-verb, as the loopback door says it.
+    // AN APP GETS THE ARGUMENTS WITHOUT verb, AS AT THE LOOPBACK DOOR (goal/G41.4): a caller that hands the whole request
+    // (js/faceHome.js, the face's calls) left verb among them, and an app that refuses an argument it does not declare
+    // refused every call from the face, "no such argument".
     d.call = function (verb, args) {
       var name = String(verb || '');
       if (handlerFor(name)) return call(name, args);
@@ -380,9 +383,11 @@ function createVerbTable() {
       var asked = name;
       if (name === 'api' && args && typeof args.family === 'string') asked = { api: { family: args.family } };
       else if (name !== 'api') {
+        var given = {};
+        if (args && typeof args === 'object' && !Array.isArray(args)) Object.keys(args).forEach(function (k) { if (k !== 'verb') given[k] = args[k]; });
         asked = {};
         asked[name.slice(0, dot)] = {};
-        asked[name.slice(0, dot)][name.slice(dot + 1)] = args && typeof args === 'object' ? args : {};
+        asked[name.slice(0, dot)][name.slice(dot + 1)] = given;
       }
       return Promise.resolve(d.ask(asked, ownerOf())).then(function (a) {
         var status = (a && a.status) || 500;
