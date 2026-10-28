@@ -17,7 +17,11 @@
   var D = (root.spirit || {}).data;
   if (!D || typeof D.translate !== 'function') return;
   function branchOf(table) { return 'agent.' + table; }
-  function keyOf(table, row) { return table === 'grant' ? String(row.job_id) + '|' + String(row.path) : String(row.id || ''); }
+  // A grant without its job or its path, or a row without its id, has no key ('') and is not written.
+  function keyOf(table, row) {
+    if (table === 'grant') return row.job_id && row.path ? String(row.job_id) + '|' + String(row.path) : '';
+    return String(row.id || '');
+  }
   function published(a) {
     if (!a || typeof a !== 'object' || typeof a.table !== 'string' || !a.table) return;
     var b = branchOf(a.table);
@@ -28,7 +32,7 @@
     }
     if (!a.row || typeof a.row !== 'object') return;
     var key = keyOf(a.table, a.row);
-    if (!key || key === '|') return;
+    if (!key) return;
     // A grant's row from the stream lacks its job's label; the label a search seated stays.
     D.merge(b + '/' + key, a.row);
   }
