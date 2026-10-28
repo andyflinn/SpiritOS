@@ -2,6 +2,12 @@
 
 ## ui
 
+### rule/26 (version 64): every shell element loads its own stuff
+
+- every shell element loads its own elements dynamically through the fucking apirit.require functionality.
+- there will be NOTHING pre-loaded after the relays-supplied boot scripts for a SpiritOS page.
+
+
 ### rule/1 (version 52): Horizonal Spacing in UI Rows
 
 horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
