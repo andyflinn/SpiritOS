@@ -48,7 +48,10 @@
       element: function (row, key) {
         return window.spirit.elements.bundleElement.create(row, { editable: o.editable === true, api: o.api });
       },
-      // Matched on its label alone: its number is hidden (Andy, box: "a hidden numeric key").
+      // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
+      // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").
+      name: function (row) { return String((row && row.label) || ''); },
+      // Matched on its label alone.
       matched: function (row) { return { label: String((row && row.label) || '') }; },
       empty: o.empty || 'No bundle matches.',
     });
