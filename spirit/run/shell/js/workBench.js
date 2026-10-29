@@ -49,7 +49,9 @@
     var drag = null;
 
     function strip(side) {
-      return '<div id="' + pre + 'strip-' + side + '" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:4px">' +
+      // A strip is a box of a stated size too (Andy, on G41.18: "fix workBench for all 3 panes AND the icon strips"): as
+      // tall as the bench, its own width, a strip of many tools scrolling inside it.
+      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;overflow:auto;gap:6px;padding:4px">' +
         sides[side].map(function (t) {
           return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="font-size:20px">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
