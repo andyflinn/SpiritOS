@@ -36,6 +36,12 @@
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
 (function () {
+  // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
+  // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
+  // the list is answered once they are in.
+  if (window.spirit && typeof window.spirit.require === 'function') {
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js'].forEach(function (p) { window.spirit.require(p); });
+  }
   function P() { return window.spirit.probability || {}; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -23,10 +23,15 @@
 //
 // NO I/O, NO CLOCK, NO STATE.
 
-// In node the module beside it; in a page the shell's own, loaded first by index.html (goal/G27.14).
-var probabilityStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
+// In node the module beside it; in a page the one on window.spirit.probability, read when it is called (goal/G41.18): a
+// part that loads both itself may have this one run first, so nothing is read from the page as this file loads.
+var nodeStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
   ? require('./probabilityStringMatch').probabilityStringMatch
-  : window.spirit.probability.probabilityStringMatch;
+  : null;
+function probabilityStringMatch(a, b) {
+  var f = nodeStringMatch || (window.spirit && window.spirit.probability && window.spirit.probability.probabilityStringMatch);
+  return f(a, b);
+}
 
 function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
