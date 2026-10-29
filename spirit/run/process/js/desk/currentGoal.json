@@ -1,5 +1,5 @@
 {
- "change": 114141,
+ "change": 114142,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -3497,12 +3497,11 @@
    "id": "goal/G41.4",
    "title": "Create the Data Set for agent.db",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 23,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -4868,7 +4867,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -5192,7 +5191,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -5589,7 +5588,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -6035,7 +6034,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -6135,7 +6134,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -6468,7 +6467,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -6568,7 +6567,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -7650,7 +7649,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -9775,7 +9774,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -10814,7 +10813,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -12185,7 +12184,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -12791,7 +12790,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -13304,7 +13303,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.4"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
