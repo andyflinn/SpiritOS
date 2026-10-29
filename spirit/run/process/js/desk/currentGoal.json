@@ -1,5 +1,5 @@
 {
- "change": 114064,
+ "change": 114065,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -12659,12 +12659,11 @@
    "id": "goal/G41.16",
    "title": "Make shell/grants/grants.js wrap element shell/js/grants.js",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 5,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
