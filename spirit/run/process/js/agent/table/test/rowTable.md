@@ -27,8 +27,12 @@ Its test is `./rowTable.js`.
   - `set {id, fields}` changes what it names and keeps the rest; it answers `{ id }`.
   - `delete {id}` removes the row, tells `def.deleted(id)`, and answers `{ id }`.
   - `get {id}` answers the row: bools as bools, lists as lists, no secret.
-  - `search {text}` answers `{ items, more }`, one answer at most. Each item is `{ key: id, label: the row as JSON }`,
-    ranked best first. With no words it answers every row.
+  - `search {text}` answers `{ items, more }`, one answer at most. Each item is `{ key: id, label: JSON }`, ranked
+    best first. With no words it answers every row that fits.
+  - **A search answers only what a list shows** (goal/G41.18; Andy: *"only the ID and the fields shown in a table,
+    that's all it needs."*, and *"that exactly what GET is for, to bring in the rest for detail panels etc..."*): the
+    label is the id and the fields the table names in `def.shows`, by default `icon` and `label`. It still ranks by
+    every text field, so a word of a field it does not answer finds its row. `get` answers the whole row.
 - Every change is published:
   - add and set publish `{ agent: { table, row } }`, the row as get shows it;
   - delete publishes `{ agent: { table, id, removed: true } }`.

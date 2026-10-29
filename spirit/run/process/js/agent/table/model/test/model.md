@@ -19,7 +19,9 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   where the [icon] will be the provider-icon, associated with the provider-key on the model row"*): every row the server
   shows, by get, search or the stream, carries `providerIcon`, the icon of its provider row, empty for a model with no
   provider. It is shown, not kept: the table has no such column. The server says it with the row as the grant server
-  says a grant's job (goal/G41.16), so the list draws only what the server sends (rule/19). Not asserted: a model shown
+  says a grant's job (goal/G41.16), so the list draws only what the server sends (rule/19).
+- **A search answers the id and what the list shows, nothing else** (goal/G41.18; Andy: *"only the ID and the fields
+  shown in a table, that's all it needs."*): `id`, `modelName` and `providerIcon`. The editor reads the rest by get. Not asserted: a model shown
   again when its provider's icon changes.
 - `elementTable.js` registers `spirit.elements.modelTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.

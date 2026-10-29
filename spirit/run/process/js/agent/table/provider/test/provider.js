@@ -174,6 +174,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(JSON.stringify([first, local, failed, published]).indexOf(SECRET) === -1, 'no answer of ask, and no row it publishes, carries the API key', 'the key left the process');
   await new Promise(function (r) { server.close(r); });
 
+  test.subHeading('server.js: a search answers what the list shows (goal/G41.18)');
+  // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
+  // the rest for detail panels etc...". The list shows a row by its icon and its label.
+  {
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search' }).id;
+    let listedRow = null;
+    try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
+    ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
+      'a search answers the id, the icon and the label of a row, nothing else', 'found: ' + short(listedRow));
+    call(t.verb, { op: 'delete', id: listedId });
+  }
+
   test.subHeading('the page: elementTable.js and elementRow.js');
   const made = { tables: [], rows: [], required: [] };
   global.window = { spirit: { elements: {

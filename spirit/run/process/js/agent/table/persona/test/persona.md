@@ -13,6 +13,8 @@ codeMirror-field for the persona-description i give it with every prompt)"*.
   icon, label and description, then `persona`, and nothing else.
 - `persona` is its text, kept as typed, lines and all. A set of another field keeps it.
 - A persona deleted takes no grants: grants are a job's.
+- **A search answers the id, the icon and the label of a row, nothing else** (goal/G41.18; Andy: *"only the ID and
+  the fields shown in a table, that's all it needs."*): what its list shows. The editor reads the rest by get.
 - `elementTable.js` registers `spirit.elements.personaTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
   - It builds on `agentTable` for the persona table, with the shared Add.

@@ -48,6 +48,8 @@ which will never reach the browser or any place outside of the agent process exc
     removes no model. An ask answered again clears the flag. The box names the OpenAI plugin failing, and that is the
     failure the test makes.
   - No answer of ask, and no row it publishes, carries the API key.
+- **A search answers the id, the icon and the label of a row, nothing else** (goal/G41.18; Andy: *"only the ID and
+  the fields shown in a table, that's all it needs."*): what its list shows. The editor reads the rest by get.
 - `elementTable.js` registers `spirit.elements.providerTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
   - It builds on `agentTable` for the provider table, in its box, with the page's api and detail pane, and the shared

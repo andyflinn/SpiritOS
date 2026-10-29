@@ -40,8 +40,9 @@ the table)"*.
     `<prefix>button<i>`; pressed, it calls its `press()` (goal/G41.18: the model table's *"provider models"*).
   - `destroy` destroys the list and empties the box.
 - **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields })`:
-  - Its row is the one at `agent.<table>/<id>` in spirit.data. With none there, it asks `{ op: 'get', id }` and puts the
-    answer there.
+  - Its row is the one at `agent.<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
+    branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
+    slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
   - The icon is its first field (*"the detail panel's first input will be the icon i choose for that row"*). It is
     chosen with the shell's icon selector, on the table's icon while the row has none.

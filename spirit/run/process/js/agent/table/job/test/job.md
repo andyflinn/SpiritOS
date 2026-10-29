@@ -14,6 +14,8 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
 - `loop` is a bool, kept as an INTEGER. `job` is its text, kept as typed. A set of one keeps the other.
 - A job's grants are keyed by its id (the grant table). So deleting a job asks the grant table to drop that job's
   grants, once. An add or a set drops nothing.
+- **A search answers the id, the icon and the label of a row, nothing else** (goal/G41.18; Andy: *"only the ID and
+  the fields shown in a table, that's all it needs."*): what its list shows. The editor reads the rest by get.
 - `elementTable.js` registers `spirit.elements.jobTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
   - It builds on `agentTable` for the job table, with the shared Add.

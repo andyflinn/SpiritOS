@@ -102,9 +102,24 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
   ok(found && Array.isArray(found.items) && typeof found.more === 'boolean' && found.items.length === 2, 'search with no words answers { items, more }, every row', 'search: ' + short(found));
   const item = found.items[0] || {};
   let shownRow = null; try { shownRow = JSON.parse(item.label); } catch (e) { shownRow = null; }
-  ok(isKey(item.key) && shownRow && shownRow.id === item.key, 'each item is keyed by the row\'s id, its label the row as get shows it', 'item: ' + short(item));
+  // goal/G41.18, Andy: "we talked about sending whole fucking rows in search, THAT IS NOT NEEDED for a table. only the ID
+  // and the fields shown in a table, that's all it needs."; "that exactly what GET is for, to bring in the rest for detail
+  // panels etc...". A whole row cost some 480 bytes, and one answer held 17 of them.
+  ok(isKey(item.key) && shownRow && shownRow.id === item.key, 'each item is keyed by the row\'s id, its label carrying the id', 'item: ' + short(item));
+  ok(shownRow && JSON.stringify(Object.keys(shownRow).sort()) === '["icon","id","label"]', 'and only what its list shows: by default the id, the icon and the label (goal/G41.18)', 'item: ' + short(shownRow && Object.keys(shownRow)));
   const hit = call(verb, { op: 'search', text: 'Renamed' });
   ok(hit.items.length >= 1 && hit.items[0].key === id, 'a search of words ranks the row that has them first', 'search Renamed: ' + short(hit.items.map(function (i) { return i.key; })));
+  const byUrl = call(verb, { op: 'search', text: 'one.example' });
+  ok(byUrl.items.length >= 1 && byUrl.items[0].key === id, 'it still ranks by the fields it does not answer: a word of the url finds its row', 'search one.example: ' + short(byUrl.items.map(function (i) { return i.key; })));
+  {
+    // A table names what its list shows (def.listed); its search answers the id and those fields alone. (def.shows is
+    // another thing: fields computed onto every row shown, as the model's providerIcon.)
+    const slim = mod.rowTable(db, { name: 'slim', fields: { url: 'url?', apiKey: 'text?' }, secret: ['apiKey'], listed: ['url'] }, function () {});
+    const sid = call(slim.verb, { op: 'add', label: 'Hidden label', url: 'https://slim.example', apiKey: SECRET }).id;
+    let row = null; try { row = JSON.parse((call(slim.verb, { op: 'search', text: '' }).items || [])[0].label); } catch (e) { row = null; }
+    ok(row && row.id === sid && row.url === 'https://slim.example' && JSON.stringify(Object.keys(row).sort()) === '["id","url"]', 'a table naming listed: [url] answers the id and the url, nothing else', 'item: ' + short(row));
+    ok(call(slim.verb, { op: 'get', id: sid }).label === 'Hidden label', 'and get still answers the whole row', 'get: ' + short(call(slim.verb, { op: 'get', id: sid })));
+  }
 
   test.subHeading('a refusal says why');
   const unknownOp = call(verb, { op: 'fly' });

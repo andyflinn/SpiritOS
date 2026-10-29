@@ -70,6 +70,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   let found = null;
   try { found = JSON.parse((call(t.verb, { op: 'search', text: 'Opus' }).items || [])[0].label); } catch (e) { found = null; }
   ok(found && found.providerIcon === '🅰', 'and so does each row a search finds', 'found: ' + short(found));
+  // goal/G41.18, Andy: "only the ID and the fields shown in a table, that's all it needs": the model list shows the
+  // provider's icon and the model name.
+  ok(found && JSON.stringify(Object.keys(found).sort()) === '["id","modelName","providerIcon"]', 'a search answers the id and what the model list shows, the model name and the provider\'s icon, nothing else', 'found: ' + short(found && Object.keys(found)));
   published.length = 0;
   call(t.verb, { op: 'add', label: 'Sonnet', providerId: provider.id, modelName: 'claude-sonnet-5-5' });
   const pub = published.filter(function (x) { return x.agent && x.agent.table === 'model' && x.agent.row; })[0];

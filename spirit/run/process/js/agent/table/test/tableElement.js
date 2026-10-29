@@ -255,14 +255,20 @@ test.startTest('tableElement.js: what the tables\' elements share');
   D.del('agent.provider/KR'); await settle();
   ok(/Deleted\./.test(ed.innerHTML), 'and once the row is deleted from its branch, the editor says Deleted.', 'editor: ' + short(ed.innerHTML));
 
-  test.subHeading('a row already in its branch asks nothing');
+  test.subHeading('a row already in its branch is read whole by get (goal/G41.18)');
+  // A search answers only what a list shows (Andy: "only the ID and the fields shown in a table"), so a row in the branch
+  // may be that slim row: the editor asks get as it opens, whatever the branch holds (Andy: "that exactly what GET is
+  // for, to bring in the rest for detail panels etc...").
   w.calls.length = 0;
+  w.answer = function (table, a) { return a.op === 'get' ? { id: 'KS', icon: '🧪', label: 'Seated', url: 'https://whole.example', apiKeySet: false } : { id: 'KS' }; };
   D.set('agent.provider/KS', { id: 'KS', icon: '🧪', label: 'Seated' });
   const ed2 = box('editor2');
   const r2 = E.agentRow.create(ed2, { api: {}, table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
-  ok(w.calls.length === 0 && the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML), 'it shows the branch\'s row with no get, and says Change when opened from the list',
-    'calls ' + short(w.calls) + ', label ' + short(the(ed2, 'label') && the(ed2, 'label').value));
+  ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }), 'it asks provider { op: get, id }, though the branch holds a row', 'calls ' + short(w.calls));
+  ok(D.get('agent.provider/KS') && D.get('agent.provider/KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
+    'and the whole row goes where the stream writes it, its fields shown', 'branch: ' + short(D.get('agent.provider/KS')));
+  ok(the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML), 'it says Change when opened from the list', 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value));
   ok(w.icons[w.icons.length - 1].value === '🧪', 'the icon chooser shows the row\'s own icon', 'icon: ' + short(w.icons[w.icons.length - 1].value));
   r2.destroy();
   D.merge('agent.provider/KS', { label: 'After' }); await settle();
