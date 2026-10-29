@@ -10,7 +10,7 @@ const os = require('os');
 const net = require('net');
 const http = require('http');
 const path = require('path');
-const { spawn, execSync } = require('child_process');
+const { spawn, execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const REPO = path.join(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
@@ -102,7 +102,8 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
   // serveCommon requires it: loaded in a child, DEBUG.js is among the modules loaded.
   let loaded = '';
   try {
-    loaded = execSync(process.execPath + ' -e ' + JSON.stringify('require("./spirit/serveCommon.js"); console.log(Object.keys(require.cache).join("\\n"))'), { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
+    // Started by its path as an argument, not through a shell: on Windows node lives under "Program Files".
+    loaded = execFileSync(process.execPath, ['-e', 'require("./spirit/serveCommon.js"); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
   } catch (e) { loaded = String(e.stdout || ''); }
   ok(loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG.js'); }), 'serveCommon.js requires DEBUG.js', 'serveCommon.js does not load DEBUG.js');
 
