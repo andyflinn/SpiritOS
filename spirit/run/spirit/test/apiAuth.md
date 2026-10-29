@@ -43,12 +43,21 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 - A family that later leaves the node leaves its branches as they are (Andy: *"no unauthorized access will result from
   such a thing"*).
 - A bundle is not granted by reference: a grant made from it stays when the bundle goes.
+- Every change is told, row by row, for the node to publish on its stream (goal/G41.14, Andy: *"EVERY FUCKING element
+  MUST FUCKING LISTING to anything that changes their data set"*): `onChange(fn)`, `fn({ table, row })` for a bundle or
+  branch added or set, `fn({ table, row: { id }, gone: true })` for one deleted, a bundle's branches each told gone with
+  it; a refused add tells nothing.
+- So is a grant (*"SO THE MOTHERFUCKING GRANS TABLE DOES NOT BUPLISH EITHER????"*): one made is told
+  `{ table: 'grant', row: { key, path, label } }`, one revoked `{ table: 'grant', row: { key, path }, gone: true }`; a
+  grant refused `already-granted` or a revoke refused `not-granted` tells nothing.
 - The bundles and branches persist in `node.db`.
 
 Who may call the two verbs is the gate's: the owner, and whoever the owner grants them (Andy: *"can only be the node
 owner, until the node owner grants access to those tables to someone else"*). That is `spirit/test/apiGate.js`.
 
 ## What its test must try to break
+
+- A change, or a grant, not told; a refused one told.
 
 - A branch naming a bundle, family or verb that is not there, on add or on set.
 - A duplicate family and verb in one bundle, on add or on set.

@@ -75,6 +75,7 @@ travel?").
 - A grant made from a bundle's old paths, or a branch of every verb granted as `family.`.
 - A Revoke that revokes on a single press, or arms by hand instead of through armingButton.
 - A chosen ID that does not narrow the list.
-- A grant made of anything but a bundle's paths, or one path left out of it.
+- A grant made of anything but the bundle's branches, or one branch left out of it.
 - An already-granted path reported as an error.
 - The old line's api-branch selector, contacts list or Grant the bundle button left on the page.
+- A grant change that reads every grant again, or a list that keeps rows of its own instead of `data.grants`.
