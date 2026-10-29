@@ -1,5 +1,5 @@
 {
- "change": 114109,
+ "change": 114141,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.4"
+    "goal/G41.18"
    ],
    "codeOffered": false,
    "go": false,
@@ -143,11 +143,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -3494,15 +3497,13 @@
    "id": "goal/G41.4",
    "title": "Create the Data Set for agent.db",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 23,
    "buttons": [
-    "end-design",
-    "waive",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -3510,19 +3511,19 @@
    "blocked": [],
    "codeOffered": true,
    "go": true,
-   "alone": false,
-   "alert": false,
+   "alone": true,
+   "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": true,
+   "limbo": false,
+   "design": false,
    "fileCount": 46,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "wsl-claude",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "wsl-claude",
    "creator": "andy",
    "claimCommit": "",
    "redCommit": "476578e5",
@@ -3595,13 +3596,10 @@
      "version": 42
     }
    ],
-   "verified": "red",
-   "verifyFailures": [
-    "spirit/run/process/js/agent/table/test/data.js not run: missing from this checkout",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.1: 2 of 15 missing: process\\js\\agent\\table\\grant\\elementTable.js, process\\js\\agent\\table\\grant\\elementRow.js"
-   ],
+   "verified": "green",
+   "verifyFailures": [],
    "verifyFailuresMore": false,
-   "verifyRed": 2,
+   "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -4819,6 +4817,42 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-29T15:16:09.120Z",
      "text": "- cw: this key is bound to the Levant workspace, and the key itself carries that. Its spend and limits count there. A call sends the key alone, never the workspace ID.\n- The workspace ID is asked for only when Claude is reached through Amazon's or Google's cloud, not with an Anthropic key.\n- Your first key was for the whole organisation, and disabled. This one is live, used Oct 17, and never expires: it is the one to store.\n- One thing I cannot confirm from the docs I have: this key starts sk-ant-usr, the other sk-ant-api. If the first test call with it is refused, that prefix is the first thing to check."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:26:34.473Z",
+     "text": "- wsl: agree with cw on both keys; the Levant one is the one to store.\n- The 2 reds shown are from before 533c9953; verify again to see them go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:27:45.117Z",
+     "text": "- cw: nothing left to build. The five tables, their servers, row and table elements, the left-edge icons and the auth table interface are all in, from earlier items and G41.16.\n- At current master all 9 suites are green, and each test folder has its .md: grant 19, job 29, model 30, persona 26, provider 28, rowTable 47, tableElement 40, agent 43, authTableInterface 10.\n- The 2 reds shown are from before wsl's 533c9953.\n- One line of the box is out of date: grant has no row and table elements since G41.16; the grants panel draws its grants. That box line is yours to change.\n- Build phase done; verify again when you like."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:28:19.667Z",
+     "text": "yes, nothing left to build. but i cannot close this item...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-29T15:28:19.711Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:28:32.615Z",
+     "text": "- wsl: verified on my node, 2e7a3474: all 11 suites green, and every test file of the agent tables, the agent app, authTableInterface and workBench has its .md.\n- Left: the grant line of your box (no row or table element since G41.16)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:28:48.160Z",
+     "text": "- wsl: it shows \"waiting for deskVerify\": your node's green run came before my verify pass, so the desk wants a run after it.\n- Press verify once more; when it is green, Close opens."
     }
    ]
   },
@@ -13271,6 +13305,109 @@
    ],
    "blocking": [
     "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G41.18",
+   "title": "Aquire model data from providers.",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
