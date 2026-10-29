@@ -30,6 +30,9 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
+    // Its table's grants are heard on the stream from the start, before any row of it is drawn.
+    var rows = window.spirit.elements.grantElement;
+    if (rows && typeof rows.listen === 'function') rows.listen(g);
     var list = window.spirit.elements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       data: String(g.branch),

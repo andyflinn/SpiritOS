@@ -32,12 +32,14 @@
   function whenData(fn) {
     dataSet.then(function (D) { if (D && typeof D.translate === 'function') fn(D); }, function () { /* no data set: the lists still search */ });
   }
-  // PER GRANTS TABLE, BY ITS BRANCH: its translation and its index, made once, on its first row.
+  // PER GRANTS TABLE, BY ITS BRANCH: its translation, made once, when its list listens or its first row is made, and its
+  // index, made on its first row (the shared row element is on the page by then).
   // <branch>/<id>\n<path> is the grant row, or nothing once it is gone.
   var tables = {};
   function tableOf(g) {
     var b = String(g.branch);
     if (tables[b]) return tables[b];
+    tables[b] = { index: null, dispatch: dispatch };
     whenData(function (D) {
       D.translate({
         onJob: function (job) {
@@ -59,8 +61,12 @@
         });
       });
     }
-    tables[b] = { index: E.rowElement.index(dispatch) };
     return tables[b];
+  }
+  function indexOf(g) {
+    var t = tableOf(g);
+    t.index = t.index || E.rowElement.index(t.dispatch);
+    return t.index;
   }
 
   function esc(s) {
@@ -78,7 +84,7 @@
     var el = E.rowElement.create({
       kind: 'grant',
       key: keyOf(r[g.key], r.path),
-      index: tableOf(g).index,
+      index: indexOf(g),
       row: { key: String(r[g.key] || ''), path: String(r.path || ''), label: String(r[g.label] || '') },
       fields: [
         { name: 'name', from: ['label'], paint: function (v) { return '<span style="white-space:nowrap">' + esc(v.label) + '</span>'; } },
@@ -109,5 +115,13 @@
     return el;
   }
 
-  E.grantElement = { create: create };
+  // listen(grants): its table's grants taken from the stream from now on, before any row of it is made, so a list with
+  // no rows yet still hears its first grant (found live on G41.16: an empty agent grant list never filled).
+  function listen(grants) {
+    var g = grants;
+    if (!g || !g.branch || !g.key || !g.label || typeof g.stream !== 'function') throw new Error('grantElement: a grants table is required');
+    tableOf(g);
+  }
+
+  E.grantElement = { create: create, listen: listen };
 }());

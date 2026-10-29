@@ -27,10 +27,17 @@ var GR_GRANTS = {
   branch: 'grants',
   key: 'key',
   label: 'label',
+  // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
+  // panel reads one field.
   search: function (text) {
     return grApi.verb('auth.search', { text: String(text || '') }).then(function (a) {
       var b = (a && a.body) || {};
-      return { items: b.items || [], more: !!b.more };
+      var items = (b.items || []).map(function (i) {
+        var r = null;
+        try { r = JSON.parse(i.label); } catch (e) { r = null; }
+        return r && typeof r === 'object' && r.label === undefined && r.name !== undefined ? { key: i.key, label: JSON.stringify(Object.assign({}, r, { label: r.name })) } : i;
+      });
+      return { items: items, more: !!b.more };
     });
   },
   grant: function (id, path) { return grApi.verb('auth.grant', { key: id, path: path }).then(grAnswer); },
