@@ -148,5 +148,23 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   ok(required.indexOf('shell/js/branchEditor.js') !== -1 && opened.length === 1 && opened[0].bundle === 7 && opened[0].label === 'Mover',
     'Edit requires the branch editor, then opens it on this bundle: { bundle: id, label }', 'opened: ' + short(opened) + ', required ' + short(required));
+
+  test.subHeading('the type\'s own element takes the node\'s bundle rows from the stream (goal/G41.14)');
+  // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
+  // for real-time updates"); it is loaded with every list of its kind. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+  // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
+  // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
+  ok(JSON.stringify(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in data.bundles by its id, through the row element\'s own translation (its kind\'s index, shell/js/rowElement.js, G30.18)', 'data: ' + short(DATA.branch('bundles')));
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
+  const again = DATA.get('bundles/' + { id: 7, label: 'Reader' }.id);
+  ok(again && again.label === 'Lister', 'a row published again replaces the one kept', 'data: ' + short(again));
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
+  ok(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('bundles')));
+  const before = JSON.stringify(DATA.branch('bundles'));
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
+  ok(JSON.stringify(DATA.branch('bundles')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.bundles', 'data: ' + short(DATA.branch('bundles')));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

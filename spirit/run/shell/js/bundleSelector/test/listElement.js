@@ -71,22 +71,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // view of data.bundles, so a bundle added anywhere on the page shows in every bundle list (probabilitySearch's data).
   ok(o.data === 'bundles', 'it is a view of data.bundles, the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data));
 
-  test.subHeading('it takes the node\'s bundle rows from the stream itself (goal/G41.14)');
-  // Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
-  // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
-  // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
-  ok(JSON.stringify(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in data.bundles by its id, through the list element\'s own translation', 'data: ' + short(DATA.branch('bundles')));
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
-  const again = DATA.get('bundles/' + { id: 7, label: 'Reader' }.id);
-  ok(again && again.label === 'Lister', 'a row published again replaces the one kept', 'data: ' + short(again));
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
-  ok(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('bundles')));
-  const before = JSON.stringify(DATA.branch('bundles'));
-  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
-  DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
-  ok(JSON.stringify(DATA.branch('bundles')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.bundles', 'data: ' + short(DATA.branch('bundles')));
   const got = await o.api.verb(o.server + '.' + o.verb, o.args('  rea ', {}));
   ok(o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea',
     'its search asks auth.bundle { op: search, text } through the spirit object, the text trimmed', 'asked: ' + short(asked) + ', at ' + o.server + '.' + o.verb);

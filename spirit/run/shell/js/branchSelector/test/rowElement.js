@@ -92,5 +92,23 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   DATA.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
   await settle();
   ok(live.row.family === 'files', 'another branch\'s row changes nothing here', 'row: ' + short(live.row));
+
+  test.subHeading('the type\'s own element takes the node\'s branch rows from the stream (goal/G41.14)');
+  // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
+  // for real-time updates"); it is loaded with every list of its kind. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+  // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
+  // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
+  ok(JSON.stringify(DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }), 'a branch row published lands in data.branches by its id, through the row element\'s own translation (its kind\'s index, shell/js/rowElement.js, G30.18)', 'data: ' + short(DATA.branch('branches')));
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
+  const again = DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
+  ok(again && again.verb === '', 'a row published again replaces the one kept', 'data: ' + short(again));
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
+  ok(DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('branches')));
+  const before = JSON.stringify(DATA.branch('branches'));
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { label: 'no id' } } });
+  ok(JSON.stringify(DATA.branch('branches')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.branches', 'data: ' + short(DATA.branch('branches')));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

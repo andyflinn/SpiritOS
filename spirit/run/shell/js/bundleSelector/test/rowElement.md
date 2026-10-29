@@ -23,10 +23,15 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   - an empty label, or one `fieldRules.js` refuses, asks nothing, and the input shows the label the table holds again;
     so does one the node refuses.
 - It repaints from the data set (goal/G41.14, Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that
-  changes their data set"*): when `data.bundles/<its id>` changes, as the list element sets it from the node's stream, its label
+  changes their data set"*): when `data.bundles/<its id>` changes, as it sets it from the node's stream, its label
   repaints, the input with it; another bundle's row changes nothing.
 - Delete is an `armingButton`; its second press asks `auth.bundle { op: 'delete', id }`.
 - Edit requires `shell/js/branchEditor.js`, then opens it on this bundle: `branchEditor.open({ bundle: id, label })`.
+
+- It takes the node's bundle rows from the stream itself, its kind's index (`shell/js/rowElement.js`, G30.18: the data type's code is its row element), into `data.bundles`: the node publishes each changed row of its two
+  bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
+  published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
+  a row with no id write nothing. It requires no data script.
 
 ## What its test must try to break
 
