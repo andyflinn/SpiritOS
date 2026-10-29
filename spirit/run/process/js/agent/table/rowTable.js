@@ -43,7 +43,7 @@ function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra
 // The table's SQL type of a field from its rule: a bool is 0 or 1, a list is kept as JSON text.
 function sqlType(rule) { return String(rule).replace(/\?$/, '') === 'bool' ? 'INTEGER' : 'TEXT'; }
 
-// def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '' }
+// def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '', shows(row) -> fields shown too }
 function rowTable(db, def, publish) {
   const name = def.name;
   const fields = Object.assign({}, COMMON, def.fields);
@@ -76,6 +76,8 @@ function rowTable(db, def, publish) {
       out[k] = rule === 'bool' ? r[k] === 1 : rule === 'list' ? JSON.parse(r[k] || '[]') : r[k];
     });
     secret.forEach(function (k) { out[k + 'Set'] = !!r[k]; });
+    // What the table says with each row and keeps nowhere (the model's providerIcon, goal/G41.18).
+    if (def.shows) Object.assign(out, def.shows(out));
     return out;
   }
   // A field as the table keeps it.

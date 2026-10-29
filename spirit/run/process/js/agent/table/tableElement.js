@@ -86,7 +86,7 @@
     var s = E.probabilitySearch.create(host, Object.assign({
       api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
-      columns: LIST_COLUMNS,
+      columns: o.columns || LIST_COLUMNS,
       name: function (r) { return (r && r.icon ? r.icon + ' ' : '') + String((r && (r.label || r.key)) || ''); },
     }, more));
     s.refresh();
@@ -99,15 +99,23 @@
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
 
   // o.add(open): what Add does instead of an empty row (the grant table's: an empty editor, since a grant is made from a
-  // job and a path). o.row(box, key, added, row): the editor of the row picked or added.
+  // job and a path). o.row(box, key, added, row): the editor of the row picked or added. o.buttons [{ label, press }]:
+  // the table's own buttons on the Add line, Add kept; o.columns: what its list shows in place of icon and label (the
+  // model table's "provider models" and its provider's icon with the model name, goal/G41.18).
   function createTable(container, o) {
     var pre = 'at' + (++made) + '-';
     var gone = false;
     var list = null;
     var look = o.detail && o.detail.look ? o.detail.look(o.table) : { name: o.table };
+    var buttons = Array.isArray(o.buttons) ? o.buttons : [];
     container.innerHTML = '<div class="fill">' + titleRow(look, [look.title || look.name || o.table]) +
-      '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> <span id="' + pre + 'note"></span></div>' +
+      '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ' +
+      buttons.map(function (b, i) { return '<button type="button" id="' + pre + 'button' + i + '">' + esc(b.label) + '</button> '; }).join('') +
+      '<span id="' + pre + 'note"></span></div>' +
       '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';
+    buttons.forEach(function (b, i) {
+      container.querySelector('#' + pre + 'button' + i).addEventListener('click', function () { if (typeof b.press === 'function') b.press(); });
+    });
     // added: the row was just made by Add, so its editor says Add until it is saved.
     function open(key, added, row) {
       if (typeof o.row === 'function' && o.detail) o.detail.open(function (box) { return o.row(box, key, added === true, row || null); });

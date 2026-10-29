@@ -9,6 +9,9 @@ module.exports = {
     // (table/rowTable.js, table/grant/server.js). Which arguments an op takes the server checks per op: id for set,
     // delete and get, text for search, the fields for add and set. A secret (apiKey) goes in and never comes out. Every
     // row has an icon, a glyph.
+    // The provider verb also takes op ask, with id (goal/G41.18; Andy, box v17: "the provider table gets a new verb:
+    // \"ask\", which does the model-list fetching and model-table updating"): it answers { models, updated }. Its
+    // unusable flag is the server's to set when a provider fails, so the page sends no such argument.
     provider: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', url: 'url?', apiKey: 'text?', text: 'text?' },
     model: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', providerId: 'key?', modelName: 'text?', capabilities: 'list?', text: 'text?' },
     persona: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', persona: 'text?', text: 'text?' },
