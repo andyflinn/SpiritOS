@@ -14,6 +14,9 @@
         made = E.agentTable.create(container, {
           api: api, table: 'model', detail: detail,
           row: function (box, id, added) { return E.modelRow.create(box, api, id, added, detail); },
+          // NO ADD: a model comes from its provider's list (Andy, on G41.18: "get RID of [Add a Model] button in the left
+          // panes model mode. NOT required.").
+          add: false,
           // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon the server sends with the
           // row; and the button row holds "provider models", opening the Update model list pane in the centre.
           columns: [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }],

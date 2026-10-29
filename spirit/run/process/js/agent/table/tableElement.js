@@ -99,7 +99,8 @@
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
 
   // o.add(open): what Add does instead of an empty row (the grant table's: an empty editor, since a grant is made from a
-  // job and a path). o.row(box, key, added, row): the editor of the row picked or added. o.buttons [{ label, press }]:
+  // job and a path); o.add false: no Add at all (the model table's, whose rows come from the providers: Andy, on
+  // G41.18, "get RID of [Add a Model] button in the left panes model mode. NOT required."). o.row(box, key, added, row): the editor of the row picked or added. o.buttons [{ label, press }]:
   // the table's own buttons on the Add line, Add kept; o.columns: what its list shows in place of icon and label (the
   // model table's "provider models" and its provider's icon with the model name, goal/G41.18).
   function createTable(container, o) {
@@ -109,7 +110,7 @@
     var look = o.detail && o.detail.look ? o.detail.look(o.table) : { name: o.table };
     var buttons = Array.isArray(o.buttons) ? o.buttons : [];
     container.innerHTML = '<div class="fill">' + titleRow(look, [look.title || look.name || o.table]) +
-      '<div style="margin-top:1em"><button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ' +
+      '<div style="margin-top:1em">' + (o.add === false ? '' : '<button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ') +
       buttons.map(function (b, i) { return '<button type="button" id="' + pre + 'button' + i + '">' + esc(b.label) + '</button> '; }).join('') +
       '<span id="' + pre + 'note"></span></div>' +
       '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';
@@ -120,7 +121,7 @@
     function open(key, added, row) {
       if (typeof o.row === 'function' && o.detail) o.detail.open(function (box) { return o.row(box, key, added === true, row || null); });
     }
-    container.querySelector('#' + pre + 'add').addEventListener('click', function () {
+    if (o.add !== false) container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       if (typeof o.add === 'function') { o.add(open); return; }
       // The new row reaches the list by the stream, as every change does.
       // A NEW ROW TAKES ITS TABLE'S ICON (Andy: "all table rows will have an icon, by default the tables icon").

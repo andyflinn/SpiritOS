@@ -13,6 +13,10 @@
 
 function base(url) { return String(url || '').replace(/\/+$/, ''); }
 
+// A provider that keeps quiet is given up inside the node's own wait for the agent (appClient's DOOR_WAIT_MS, 12 s), so
+// the page reads why, not that the app server did not answer in time (found live on Unsloth).
+const WAIT_MS = 10000;
+
 function scrub(text, key) { return key ? String(text).split(String(key)).join('…') : String(text); }
 
 async function models(provider) {
@@ -21,7 +25,8 @@ async function models(provider) {
   const headers = { accept: 'application/json' };
   if (key) headers.authorization = 'Bearer ' + key;
   let res = null;
-  try { res = await fetch(base(p.url) + '/models', { method: 'GET', headers: headers }); } catch (e) {
+  try { res = await fetch(base(p.url) + '/models', { method: 'GET', headers: headers, signal: AbortSignal.timeout(WAIT_MS) }); } catch (e) {
+    if (e && e.name === 'TimeoutError') throw new Error('the provider did not answer within ' + (WAIT_MS / 1000) + ' seconds');
     throw new Error(scrub('the provider could not be reached: ' + ((e && e.cause && e.cause.code) || (e && e.message) || e), key));
   }
   if (res.status < 200 || res.status > 299) throw new Error('the provider answered ' + res.status);

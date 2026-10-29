@@ -65,7 +65,9 @@ const verbs = {
 TABLES.forEach(function (name) { verbs[name] = tables[name].verb; });
 
 appServer.serve(verbs, {
-  codes: { 'no-such-row': { status: 404, text: 'no such row' } },
+  // provider-failed: a provider's ask that got no model list (goal/G41.18); its extra.why says what the provider did. A
+  // code the server does not declare reaches the page as "the handler failed", the reason lost (found live).
+  codes: { 'no-such-row': { status: 404, text: 'no such row' }, 'provider-failed': { status: 502, text: 'the provider gave no model list' } },
   publisher: { family: 'agent', bootstrap: function () { return [stateOf()]; } },
 });
 
