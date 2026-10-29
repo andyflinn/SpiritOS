@@ -4,7 +4,8 @@
 `./model.js`. What every table shares is specified in `../../test/`.
 
 Andy, box v22: *"a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and
-model-name and capabilities)"*.
+model-name and capabilities)"*. goal/G41.18 fills it from the providers: the provider table's ask
+(`../../provider/test/provider.md`), opened from this table's Update model list pane (`./updatePanel.md`).
 
 ## Requirements
 
@@ -14,9 +15,21 @@ model-name and capabilities)"*.
 - `providerId` is a provider row's id. An add or a set naming a provider that is not there is refused, saying so, and
   the provider kept.
 - `capabilities` is a list.
+- **A model is shown with its provider's icon** (goal/G41.18; Andy, box v17: *"the model will [icon] \"model-name\",
+  where the [icon] will be the provider-icon, associated with the provider-key on the model row"*): every row the server
+  shows, by get, search or the stream, carries `providerIcon`, the icon of its provider row, empty for a model with no
+  provider. It is shown, not kept: the table has no such column. The server says it with the row as the grant server
+  says a grant's job (goal/G41.16), so the list draws only what the server sends (rule/19). Not asserted: a model shown
+  again when its provider's icon changes.
 - `elementTable.js` registers `spirit.elements.modelTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
   - It builds on `agentTable` for the model table, with the page's api and detail pane, and the shared Add.
+  - Its list shows each model by its provider's icon and its model name: the columns it hands are `providerIcon`, then
+    `modelName` (goal/G41.18).
+  - It hands the shared element one button, `provider models` (box v17: *"a button row with the following button
+    \"provider models\", which will open a panel in the center pane of the workBench"*). Pressed, it opens
+    `spirit.elements.modelUpdate` (`./updatePanel.js`, which it requires) in the detail pane, the centre, with the
+    page's api and detail pane.
   - A row it opens is a `modelRow`.
 - `elementRow.js` registers `spirit.elements.modelRow.create(container, api, id, added, detail)`:
   - It builds on `agentRow` with the model table's look.
@@ -32,3 +45,5 @@ model-name and capabilities)"*.
 
 - A model naming a provider that is not there, by add or by set.
 - Capabilities that come back as text instead of a list.
+- A model shown without its provider's icon, or the icon kept in the table.
+- A list showing the label where the model name belongs; a provider models button that opens nothing.

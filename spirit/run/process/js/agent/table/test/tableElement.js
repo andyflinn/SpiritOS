@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/process/js/agent/table/test/tableElement.js
-// The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4).
+// The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
 // The browser file runs in node on a window of its own, over the real spirit.data (shell/js/spiritData.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
@@ -166,6 +166,24 @@ test.startTest('tableElement.js: what the tables\' elements share');
   await settle();
   the(left2, 'add').click(); await settle();
   ok(own.length === 1 && typeof own[0] === 'function' && w.calls.length === 0, 'given add(open), Add calls it and asks the server nothing', 'add called ' + own.length + ', calls ' + short(w.calls));
+
+  test.subHeading('a table may hand its own buttons, and its own columns (goal/G41.18)');
+  // The model table's button row holds "provider models" (box v17), and its list shows "[icon] \"model-name\"", the
+  // provider's icon: what a table hands, the shared element draws.
+  const pressed = [];
+  const left3 = box('left3');
+  const COLS = [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }];
+  const n3 = w.searches.length;
+  E.agentTable.create(left3, { api: {}, table: 'model', detail: detail, row: function () { return {}; }, columns: COLS,
+    buttons: [{ label: 'provider models', press: function () { pressed.push('provider models'); } }] });
+  await settle();
+  const b0 = the(left3, 'button0');
+  ok(!!b0 && left3.innerHTML.indexOf('provider models') !== -1 && !!the(left3, 'add'), 'each button is drawn on the Add line, by its label, Add kept', 'left3: ' + short(left3.innerHTML));
+  if (b0) b0.click();
+  ok(pressed.length === 1, 'a button pressed calls its press()', 'pressed: ' + short(pressed));
+  const l3 = w.searches[n3];
+  ok(l3 && l3.o.columns === COLS, 'the columns a table hands are the list\'s, in place of icon and label', 'columns: ' + short(l3 && l3.o.columns));
+  ok(JSON.stringify((list.o.columns || []).map(function (c) { return c.field; })) === '["icon","label"]', 'a table that hands none keeps icon and label', 'columns: ' + short(list.o.columns));
 
   test.subHeading('destroy');
   t.destroy();

@@ -20,7 +20,7 @@ the table)"*.
   - `search(host, o, more)`: the one table search, for lists and pickers alike.
   - `branchOf(table)` is `agent.<table>`.
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
-- **A table**, `agentTable.create(container, { api, table, detail, row, add, matched })`:
+- **A table**, `agentTable.create(container, { api, table, detail, row, add, matched, buttons, columns })`:
   - Its title row is the table's icon and title, from `detail.look(table)`.
   - It has an Add button.
   - Its list is a `probabilitySearch` over the agent server's verb for that table, seated in the branch
@@ -28,10 +28,14 @@ the table)"*.
     `{ op: 'search', text }`.
   - Every row is shown by its icon and its label alone (*"will only show: icon and label"*). A picker names a row the
     same way.
+  - Given `columns`, the list shows those in place of icon and label (goal/G41.18: the model table shows its provider's
+    icon and its model name). A table that hands none keeps icon and label.
   - A row picked opens `row(box, key, false, row)` in the detail pane.
   - Add calls `<table> { op: 'add', icon }` through the agent's interface, the new row taking its table's icon. It then
     opens the new row's editor, added. A refused Add says `Not added: <the server's reason>` and opens nothing.
   - Given `add(open)`, Add calls that instead and asks the server nothing (the grant table's).
+  - Given `buttons`, `[{ label, press }]`, each is drawn on the Add line by its label, Add kept, its id
+    `<prefix>button<i>`; pressed, it calls its `press()` (goal/G41.18: the model table's *"provider models"*).
   - `destroy` destroys the list and empties the box.
 - **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields })`:
   - Its row is the one at `agent.<table>/<id>` in spirit.data. With none there, it asks `{ op: 'get', id }` and puts the
@@ -56,7 +60,8 @@ the table)"*.
 
 ## What its test must try to break
 
-- A list that waits for a click before it shows, or shows more than icon and label.
+- A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
+- A table's own button not drawn, or drawn in place of Add; columns handed and not used.
 - A Save that sends the whole row, an empty secret, or draws what was typed before the stream says it.
 - A refusal shown as its bare code ("no such argument") instead of the server's reason.
 - An editor that does not follow its row in spirit.data, or keeps hearing it after destroy.

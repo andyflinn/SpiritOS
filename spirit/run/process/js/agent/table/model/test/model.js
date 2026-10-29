@@ -2,9 +2,10 @@
 
 // spirit/run/process/js/agent/table/model/test/model.js
 // The tests of process/js/agent/table/model/, its server.js, elementTable.js and elementRow.js, and of no other module
-// (spec: ./model.md; goal/G41.4). What the tables share is tested in ../../test/. The server is made on a scratch
-// agent.db as agent.js makes it, beside the provider table it names; the page files run in node on a window of their
-// own, the shared elements stubs that keep what they were handed.
+// (spec: ./model.md; goal/G41.4, goal/G41.18). What the tables share is tested in ../../test/; the Update model list
+// pane, ./updatePanel.js, in ./updatePanel.js beside this file. The server is made on a scratch agent.db as agent.js
+// makes it, beside the provider table it names; the page files run in node on a window of their own, the shared
+// elements stubs that keep what they were handed.
 
 const fs = require('fs');
 const os = require('os');
@@ -23,6 +24,7 @@ const tick = function () { return new Promise(function (r) { setImmediate(r); })
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 
 test.startTest('model/: the model table');
+process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
   test.subHeading('its files');
@@ -34,7 +36,8 @@ test.startTest('model/: the model table');
   test.subHeading('server.js: the table in agent.db');
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-model-'));
   const db = new DatabaseSync(path.join(scratch, 'agent.db'));
-  const ctx = { db: db, dbFile: path.join(scratch, 'agent.db'), tables: {}, publish: function () {} };
+  const published = [];
+  const ctx = { db: db, dbFile: path.join(scratch, 'agent.db'), tables: {}, publish: function (x) { published.push(x); } };
   ctx.tables.provider = require(path.join(DIR, '..', 'provider', 'server.js'))(ctx);
   const t = ctx.tables.model = require(path.join(DIR, 'server.js'))(ctx);
   ok(t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function', 'server.js(ctx) answers the table, its verb and has', 'answered: ' + short(t && Object.keys(t)));
@@ -57,9 +60,29 @@ test.startTest('model/: the model table');
   ok(call(t.verb, { op: 'set', id: added.id, providerId: gone }).refusal === 'bad-request' && call(t.verb, { op: 'get', id: added.id }).providerId === provider.id,
     'and so is a set to one, the provider kept', 'set answered');
 
+  test.subHeading('server.js: a model is shown with its provider\'s icon (goal/G41.18)');
+  // Andy, box v17: "the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the
+  // provider-key on the model row". The server says it with the row, as the grant server says a grant's job
+  // (goal/G41.16), so the list draws only what the server sends (rule/19).
+  call(ctx.tables.provider.verb, { op: 'set', id: provider.id, icon: '🅰' });
+  const shownGet = call(t.verb, { op: 'get', id: added.id });
+  ok(shownGet && shownGet.providerIcon === '🅰', 'a model\'s get carries providerIcon, the icon of its provider row', 'get: ' + short(shownGet));
+  let found = null;
+  try { found = JSON.parse((call(t.verb, { op: 'search', text: 'Opus' }).items || [])[0].label); } catch (e) { found = null; }
+  ok(found && found.providerIcon === '🅰', 'and so does each row a search finds', 'found: ' + short(found));
+  published.length = 0;
+  call(t.verb, { op: 'add', label: 'Sonnet', providerId: provider.id, modelName: 'claude-sonnet-5-5' });
+  const pub = published.filter(function (x) { return x.agent && x.agent.table === 'model' && x.agent.row; })[0];
+  ok(pub && pub.agent.row.providerIcon === '🅰', 'and each model row the server publishes', 'published: ' + short(published));
+  const bare = call(t.verb, { op: 'add', label: 'Bare' });
+  ok(bare.id && call(t.verb, { op: 'get', id: bare.id }).providerIcon === '', 'a model with no provider has an empty providerIcon', 'get: ' + short(bare.id && call(t.verb, { op: 'get', id: bare.id })));
+  const cols2 = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
+  ok(cols2.indexOf('providerIcon') === -1, 'it is shown, not kept: the model table has no providerIcon column', 'columns: ' + short(cols2));
+
   test.subHeading('the page: elementTable.js and elementRow.js');
-  const made = { tables: [], rows: [], required: [] };
+  const made = { tables: [], rows: [], required: [], updates: [] };
   global.window = { spirit: { elements: {
+    modelUpdate: { create: function (c, a, d) { made.updates.push({ c: c, api: a, detail: d }); return { destroy: function () {} }; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   } } };
@@ -73,7 +96,8 @@ test.startTest('model/: the model table');
     'they register spirit.elements.modelTable and modelRow', 'elements: ' + short(Object.keys(E)));
   if (!E.modelTable || !E.modelRow) return;
   const api = { stub: true };
-  const detail = { open: function () {}, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
+  const opened = [];
+  const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
   const box = { innerHTML: '' };
   const list = E.modelTable.create(box, api, detail);
   await settle();
@@ -82,6 +106,20 @@ test.startTest('model/: the model table');
   const o = made.tables[0] && made.tables[0].o;
   ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'model' && o.api === api && o.detail === detail && !o.add,
     'it builds on agentTable, in its box, for the model table, with the page\'s api and detail pane, and the shared Add', 'agentTable: ' + short(o && { table: o.table, add: !!o.add }));
+  // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon, and its button row "the following
+  // button \"provider models\", which will open a panel in the center pane of the workBench".
+  const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });
+  ok(JSON.stringify(shownBy) === '["providerIcon","modelName"]', 'its list shows each model by its provider\'s icon and its model name (goal/G41.18)', 'columns: ' + short(o && o.columns));
+  const btn = ((o && o.buttons) || []).filter(function (b) { return b && b.label === 'provider models'; })[0];
+  ok(!!btn && typeof btn.press === 'function', 'it hands the shared element a button, provider models', 'buttons: ' + short(o && o.buttons));
+  if (btn && typeof btn.press === 'function') {
+    btn.press();
+    const centre = { innerHTML: '' };
+    if (typeof opened[0] === 'function') opened[0](centre);
+    await settle();
+    ok(opened.length === 1 && made.required.indexOf('process/js/agent/table/model/updatePanel.js') !== -1 && made.updates.length === 1 && made.updates[0].c === centre && made.updates[0].api === api && made.updates[0].detail === detail,
+      'pressed, it opens the Update model list pane (./updatePanel.js) in the detail pane, the centre, with the page\'s api', 'opened ' + opened.length + ', updates ' + short(made.updates.map(function (u) { return u.c === centre; })) + ', required ' + short(made.required));
+  }
   list.refresh(); list.destroy();
   ok(made.refreshed && made.destroyed, 'its refresh and destroy are the shared element\'s', 'refreshed ' + made.refreshed + ', destroyed ' + made.destroyed);
   const into = { innerHTML: '' };
