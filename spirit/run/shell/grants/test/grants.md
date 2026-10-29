@@ -41,7 +41,9 @@ with them.
 - **A deprecated filter, off by default** (Andy: *"your allowed to keep the deprecated, BUT you must provide a filter for
   deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."*): the list has a toggle
   filter named `deprecated`. Off, the default, a grant the tree does not serve is left out; on, every grant is listed,
-  the deprecated ones marked.
+  the deprecated ones marked. Its button, `data-grants="deprecated"`, stands in the app's filter row with the ID and
+  family selectors (Andy: *"put the fucking deprecated filter on the same fucking line as all other filters"*), and the
+  list draws none of its own; pressed, it turns on and reads pressed, the list redraws; pressed again, it is off.
 - **Grant copies the bundle's branches** (box v7: *"each path row of the bundle, combined with the ID chosen in the ID
   selector (contactSelector), becomes a new auth row, unless that row exists already"*; since goal/G41.14 a bundle's rows
   are its branches):

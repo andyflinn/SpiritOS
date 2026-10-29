@@ -171,7 +171,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(Array.isArray(gl.opts.filters) && gl.opts.filters.length >= 2, 'the app hands the list its filters, the ID and the family', 'filters: ' + short(gl.opts.filters));
 
   test.subHeading('the list\'s filters narrow it');
-  const pass = function (row) { return (gl.opts.filters || []).every(function (f) { return typeof f.test !== 'function' || f.test(row) > 0; }); };
+  // The ID and family filters alone: the deprecated filter is judged below, on its own.
+  const pass = function (row) { return (gl.opts.filters || []).every(function (f) { return !f || f.name === 'deprecated' || typeof f.test !== 'function' || f.test(row) > 0; }); };
   const BOB = { key: 'K1', path: 'fs.search', label: 'Bob' };
   const ANN = { key: 'K2', path: 'gone.verb', label: 'Ann' };
   ok(pass(BOB) && pass(ANN), 'nothing chosen: every grant passes', 'passed: ' + [pass(BOB), pass(ANN)].join(' '));
@@ -222,6 +223,25 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(dep.test(ANN, false) === 0 && dep.test(BOB, false) === 1, 'off, the default: a grant no server serves is left out, a served one listed', 'off: Ann ' + dep.test(ANN, false) + ', Bob ' + dep.test(BOB, false));
     ok(dep.test(ANN, true) === 1 && dep.test(BOB, true) === 1, 'on: every grant is listed, the deprecated ones among them', 'on: Ann ' + dep.test(ANN, true) + ', Bob ' + dep.test(BOB, true));
     ok(!dep.on && !dep.value && dep.initial !== true, 'it starts off', 'filter: ' + short(dep));
+    // Andy: "put the fucking deprecated filter on the same fucking line as all other filters": its button stands in the
+    // app's filter row beside the ID and family selectors, and the list draws none of its own.
+    // The filter row's own markup, up to its close: the row holds no box of its own, so its first </div> ends it.
+    const html = box.innerHTML;
+    const rowStart = html.indexOf('data-grants="filters"');
+    const row = rowStart === -1 ? '' : html.slice(rowStart, html.indexOf('</div>', rowStart));
+    ok(/data-grants="filter-id"/.test(row) && /data-grants="filter-family"/.test(row) && /<button[^>]*data-grants="deprecated"/.test(row),
+      'its button, data-grants="deprecated", stands in the filter row with the ID and family selectors', 'filter row: ' + short(row));
+    ok(typeof dep.when === 'function' && dep.when([]) === false, 'and the list draws no deprecated button of its own', 'when: ' + short(typeof dep.when === 'function' ? dep.when([]) : dep.when));
+    const r0 = gl.redrawn;
+    const btn = box.querySelector('[data-grants="deprecated"]');
+    if (btn) btn.fire('click', { target: btn });
+    await settle();
+    const btn2 = box.querySelector('[data-grants="deprecated"]');
+    ok(dep.test(ANN, undefined) === 1 && gl.redrawn > r0 && btn2 && btn2.getAttribute('aria-pressed') === 'true', 'pressed, it turns on: the deprecated grants are listed, the list redraws, the button reads pressed',
+      'Ann ' + dep.test(ANN, undefined) + ', redrawn ' + (gl.redrawn - r0) + ', pressed ' + (btn2 && btn2.getAttribute('aria-pressed')));
+    if (btn2) btn2.fire('click', { target: btn2 });
+    await settle();
+    ok(dep.test(ANN, undefined) === 0, 'pressed again, it is off', 'Ann ' + dep.test(ANN, undefined));
   }
 
   test.subHeading('Grant copies the bundle\'s branches to the ID, one auth.grant per branch (goal/G41.14)');
