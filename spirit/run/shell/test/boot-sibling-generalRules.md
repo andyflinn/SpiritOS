@@ -13,9 +13,18 @@ table's page files in `process/js/agent/table/`, is not in its reach.
 
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 
-**Given no file, it judges every file in its reach** (goal/G41.19): an item's suite row names no file, so a run of
-this test alone takes every shell module `testModule.js` gives it (56 on 2026-10-29), on one scratch node, each file in
-a run of its own so each is recorded under its own module. That run records one line per file, named by the address
+**What is mounted is known by its path** (goal/G41.19, box v17; Andy: *"the test knows bloody fucking well if a scripts
+is an app (from the path pattern), why the fuck would would it need manifests for standard patterns?"*, *"the test knows
+fucking well, which are elements scripts in ./shell/js/"*):
+
+- an **app** is `shell/<app>/<app>.js`;
+- an **element** is any script under `shell/js/`;
+- anything else in its reach (`shell/boot.js`, `shell/seal.js`, a Desk plugin, `shell/shared/js/`) is neither, is not
+  mounted, and its run says so.
+
+**Given no file, it judges every app and element in its reach** (goal/G41.19): an item's suite row names no file, so a
+run of this test alone takes every shell module `testModule.js` gives it that is an app or an element, on one scratch
+node, each file in a run of its own so each is recorded under its own module. That run records one line per file, named by the address
 it opened: green when the file's own run had no red.
 
     node shell/test/boot-sibling-generalRules.js
@@ -57,7 +66,12 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
   Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that uses a part it
   did not require fails here.
 - **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with the api a face gives an app.
-- **An element** is mounted by the file beside its tests that names how (Andy: *"so the test folder needs a
+- **An element** mounts by itself: the page creates the element the file registers on `spirit.elements`, in the box,
+  with no options. If the page cannot tell which element the file registered, or it registered none with a `create`,
+  the page fails and says what it found. A mount file is for a special case only (Andy, box v17: *"a mount test or any
+  other test type only needs a manifest for special cases, like a grants panel that needs configuring with and ID
+  table."*).
+- **A special case** is mounted by the file beside its tests that names how (Andy: *"so the test folder needs a
   <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?"*, and *"i proposed
   making it a json file."*): `<its folder>/test/<its name>-headLessBrowser.json`, named after the module and the
   generator that reads it. It is JSON, not a script: `testModule.js` runs every `.js` in a test folder as a test.
@@ -65,7 +79,6 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
     `spirit.elements[create].create(box, options)` and keeps what it answered (its destroy).
   - JSON holds no function, so in the options `{ "answers": X }` is a function that answers X (the grants panel's
     search, grant, revoke and stream), and `{ "page": "api" }` is the page's api.
-  - An element without such a file does not mount, and says so.
   - The grants panel's is `shell/js/test/grantsPanel-headLessBrowser.json`; its old name,
     `grantsPanel-boot-sibling-generalRules.json`, is gone.
 - It reports on `window.spiritMount`:

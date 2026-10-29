@@ -42,6 +42,16 @@ const rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
 // WITH THE MUTHERCUCKING PATH"): each section is named by the address this file's page is opened at, /DEBUG left off.
 const ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
 const NAMED = ADDRESS.slice('/DEBUG'.length);
+// WHAT IS MOUNTED IS KNOWN BY ITS PATH (goal/G41.19, box v17; Andy: "the test knows bloody fucking well if a scripts is
+// an app (from the path pattern), why the fuck would would it need manifests for standard patterns?", "the test knows
+// fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
+// under shell/js/. Anything else in its reach is neither, and is not mounted.
+function kindOf(file) {
+  const f = String(file || '');
+  if (/^shell\/js\/.+\.js$/.test(f)) return 'element';
+  const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
+  return m && m[1] === m[2] ? 'app' : '';
+}
 const WAIT = 20000;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -123,8 +133,9 @@ async function chromePage(chrome) {
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
 // recorded under its own module (test/testReport.js). This run records one line per file, named by its address.
 async function every() {
-  const files = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'shell/test/boot-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
-  test.comment('every shell module in its reach: ' + files.length);
+  const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'shell/test/boot-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
+  const files = reach.filter(kindOf);
+  test.comment('every app and element in its reach: ' + files.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
   if (!files.length) { test.fail('testModule.js gives it no file to judge'); return; }
   const node = await scratchNode();
   try {
@@ -156,6 +167,7 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
 (async function () {
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
+  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under shell/js/): not mounted'); return; }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
   const node = await scratchNode();
