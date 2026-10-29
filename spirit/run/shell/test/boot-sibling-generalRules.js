@@ -11,10 +11,12 @@
 // tests?"; "add that test: shell-child-generalRules.js". Each file is its own test id; a rule a file breaks fails that
 // file's test.
 //
-// HOW: a scratch copy of spirit/run (the tracked files) on a node of its own, on a free port, so neither Andy's node nor
-// an agent's is touched. Headless Chrome, driven over its debugging port with node's own WebSocket, opens the node's
-// bare mount page, shell/mount.html?file=<file>: spirit.js alone, then the one app or element, mounted by itself into a
-// box of the whole page. What the page reports, and the real layout it drew, are judged here.
+// HOW: a scratch copy of spirit/run (the tracked files) on a node of its own, on a free port, its DEBUG switched on, so
+// neither Andy's node nor an agent's is touched. Headless Chrome, driven over its debugging port with node's own
+// WebSocket, opens the node's DEBUG page for the file (goal/G41.19, ../../spirit/test/DEBUG.md; Andy: "wsl's element
+// mount tests must be the first user of this DEBUG feature"), /DEBUG/<path>/<module>/headLessBrowser.html: spirit.js
+// alone, then the one app or element, mounted by itself into a box of the whole page. What the page reports, and the
+// real layout it drew, are judged here.
 
 const fs = require('fs');
 const os = require('os');
@@ -66,7 +68,10 @@ async function scratchNode() {
   const up = await until(function () {
     return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
   }, 60000);
-  return { root: root, base: base, child: child, up: up };
+  // ITS DEBUG ON, by the node's own verb: the DEBUG page is answered only then.
+  const debug = up ? await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
+    .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.debug === true); }, function () { return false; }) : false;
+  return { root: root, base: base, child: child, up: up, debug: debug };
 }
 
 // Headless Chrome on a scratch profile, and one page of it over the debugging protocol.
@@ -114,16 +119,18 @@ test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
   let page = null;
   try {
     if (!node.up) { test.fail('the scratch node did not come up: every rule here would blame the wrong thing'); return; }
+    if (!node.debug) { test.fail('the scratch node\'s DEBUG could not be switched on (node.debug)'); return; }
     page = await chromePage(chrome);
     if (page.error) { test.fail(page.error); return; }
 
     test.subHeading('it loads by itself');
     // THE BARE MOUNT PAGE: spirit.js alone, then this one file, mounted by itself (rule/26: "every element loads its own
-    // parts via spirit.require; nothing is preloaded"). shell/mount.html is the node's own page for it.
-    const mountPage = await fetch(node.base + '/shell/mount.html');
-    ok(mountPage.status === 200, 'the node serves its bare mount page, shell/mount.html', 'shell/mount.html answered ' + mountPage.status);
+    // parts via spirit.require; nothing is preloaded"). The node's DEBUG page for it, made from its address.
+    const address = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
+    const mountPage = await fetch(node.base + address);
+    ok(mountPage.status === 200, 'the node answers its DEBUG page for it, ' + address, address + ' answered ' + mountPage.status);
     if (mountPage.status !== 200) return;
-    await page.send('Page.navigate', { url: node.base + '/shell/mount.html?file=' + encodeURIComponent(rel) });
+    await page.send('Page.navigate', { url: node.base + address });
     let report = null;
     await until(function () {
       return page.evaluate('JSON.stringify(window.spiritMount ? { state: window.spiritMount.state, error: String(window.spiritMount.error || "") } : null)').then(function (s) {
@@ -150,19 +157,31 @@ test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
     ok(drew === true, 'it draws something into its box', 'its box is empty');
 
     test.subHeading('every list in a box of a stated size (rule/16)');
-    // Every tool and tab it draws is pressed in turn, so each list it can show is made and judged.
-    const pressed = await page.evaluate('(async function () { var bs = Array.prototype.slice.call(window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]")); ' +
-      'for (var i = 0; i < bs.length; i++) { bs[i].click(); await new Promise(function (r) { setTimeout(r, 400); }); } return bs.length; }())');
-    test.comment('pressed ' + pressed + ' tool and tab buttons');
-    // rule/16: every probabilitySearch in a box of class fill, inside a pane that fills its app; a dropdown stands inline
-    // and is not asked. The page keeps the box of each list it made (window.spiritMount.panes); every box from it to the
-    // mount box is fill, and the list lies inside the mount box, not below it.
-    const panes = await page.evaluate('JSON.stringify((window.spiritMount.panes || []).map(function (h) {' +
-      ' var box = window.spiritMount.box; var gaps = []; for (var n = h; n && n !== box; n = n.parentNode) { if (!n.classList || !n.classList.contains("fill")) gaps.push((n.tagName || "?").toLowerCase() + (n.id ? "#" + n.id : "")); }' +
-      ' var r = h.getBoundingClientRect(), bx = box.getBoundingClientRect(); return { gaps: gaps, inside: r.bottom <= bx.bottom + 1 }; }))');
-    const list = panes ? JSON.parse(panes) : [];
-    const bad = list.filter(function (p) { return p.gaps.length || !p.inside; });
-    ok(!bad.length, list.length ? 'each of its ' + list.length + ' lists stands in fill boxes up to its box, inside it' : 'it draws no list pane', 'not so: ' + short(bad));
+    // rule/16: a list scrolls inside a box of a stated size. Judged by the layout itself, so the page names no element
+    // (Andy: "why are there elements hard-coded in there?"): every box it drew that scrolls (overflow auto or scroll),
+    // shown, is given far more than it can hold, and must keep its height, inside the mount box. A box only as tall as
+    // its content, anywhere above a list, lets the list grow with it. A dropdown's list is hidden until it opens, and is
+    // not asked. It is judged as drawn, and again after each tool and tab button it draws is pressed in turn, so each
+    // list it can show is judged while it shows.
+    const PROBE = '(function () { var box = window.spiritMount.box; var out = [];' +
+      ' Array.prototype.forEach.call(box.querySelectorAll("*"), function (el) { var cs = getComputedStyle(el); if (!/auto|scroll/.test(cs.overflowY) || !el.getClientRects().length) return;' +
+      '  var before = el.getBoundingClientRect().height; var tall = document.createElement("div"); tall.style.height = "5000px"; tall.style.flex = "none"; el.appendChild(tall);' +
+      '  var after = el.getBoundingClientRect(); var bx = box.getBoundingClientRect(); var spilt = box.scrollHeight > box.clientHeight + 1; el.removeChild(tall);' +
+      '  var name = el.tagName.toLowerCase() + (el.id ? "#" + el.id : ""); for (var n = el.parentNode; n && n !== box && !el.id; n = n.parentNode) { if (n.id) { name = n.tagName.toLowerCase() + "#" + n.id + " " + name; break; } }' +
+      '  out.push({ box: name, kept: Math.abs(after.height - before) <= 1, inside: after.bottom <= bx.bottom + 1, spilt: spilt }); }); return out; }())';
+    const seen = {};
+    const probe = async function () { const s = await page.evaluate('JSON.stringify(' + PROBE + ')'); (s ? JSON.parse(s) : []).forEach(function (p) { if (!seen[p.box] || seen[p.box].kept) seen[p.box] = p; }); };
+    await probe();
+    const count = await page.evaluate('window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]").length');
+    for (let i = 0; i < count; i++) {
+      await page.evaluate('(function () { var b = window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]")[' + i + ']; if (b) b.click(); }())');
+      await sleep(400);
+      await probe();
+    }
+    test.comment('pressed ' + count + ' tool and tab buttons');
+    const list = Object.keys(seen).map(function (k) { return seen[k]; });
+    const bad = list.filter(function (p) { return !p.kept || !p.inside || p.spilt; });
+    ok(!bad.length, list.length ? 'each of its ' + list.length + ' scrolling boxes keeps its height when given too much, inside its box' : 'it draws no scrolling box', 'not so: ' + short(bad));
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
 

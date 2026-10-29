@@ -28,39 +28,44 @@ Andy, on G41.18:
   agent's is touched. A working-tree change to a tracked file is in the copy; a new file is in it once git knows it.
 - Headless Chrome, found where the machine keeps it (by name on Linux, in its usual folders on Windows, or
   `SPIRIT_CHROME`). It is driven over its debugging port with node's own WebSocket: no package.
-- It opens the node's **bare mount page**, `shell/mount.html?file=<file>`, and judges what the page reports and the real
-  layout it drew. It takes seconds per file, so it belongs to the general rules and not to an item's red.
+- Its node's DEBUG is switched on (`node.debug { debug: { on: true } }`), and it opens the node's **DEBUG page** for
+  the file, `/DEBUG/<path>/<module>/headLessBrowser.html` (goal/G41.19; `../../spirit/test/DEBUG.md`). Andy: *"i want
+  to specify that wsl's element mount tests must be the first user of this DEBUG feature."* It judges what the page
+  reports and the real layout it drew. It takes seconds per file, so it belongs to the general rules and not to an
+  item's red.
 
-## The bare mount page it needs: `shell/mount.html`
+## The page it needs: the DEBUG page, `headLessBrowser`
 
-The node's own page for mounting one shell file alone. Not built yet: today every file is red on its first check.
+Made by the node from the address (`spirit/run/spirit/DEBUG/headLessBrowser.js`); there is no page file of its own, and
+it names no element (Andy, of the `shell/mount.html` it replaces: *"why are there elements hard-coded in there?"*).
 
-- It loads `/shell.css` and `/spirit.js`, and nothing else of the shell. Its body holds one box of the whole page,
-  `#mount-box`, of class `fill`.
-- It starts the spirit object (`spirit.start()`), then requires the one file named by `?file=` through
-  `spirit.require`. Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that
-  uses a part it did not require fails here.
-- **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with an api as the face gives an app.
+- It loads `/spirit.js` and nothing else of the shell by a tag. Its body holds one box of the whole page, of class
+  `fill`.
+- It starts the spirit object (`spirit.start()`), then requires the one module of the address through `spirit.require`.
+  Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that uses a part it
+  did not require fails here.
+- **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with the api a face gives an app.
 - **An element** is mounted by the file beside its tests that names how (Andy: *"so the test folder needs a
   <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?"*, and *"i proposed
-  making it a json file."*): `<its folder>/test/<its name>-boot-sibling-generalRules.json`, named after the module and
-  the general test that reads it. It is JSON, not a script: `testModule.js` runs every `.js` in a test folder as a test.
+  making it a json file."*): `<its folder>/test/<its name>-headLessBrowser.json`, named after the module and the
+  generator that reads it. It is JSON, not a script: `testModule.js` runs every `.js` in a test folder as a test.
   - `{ "create": "<the element's name on spirit.elements>", "options": { ... } }`: the page calls
     `spirit.elements[create].create(box, options)` and keeps what it answered (its destroy).
   - JSON holds no function, so in the options `{ "answers": X }` is a function that answers X (the grants panel's
     search, grant, revoke and stream), and `{ "page": "api" }` is the page's api.
   - An element without such a file does not mount, and says so.
+  - The grants panel's is `shell/js/test/grantsPanel-headLessBrowser.json`; its old name,
+    `grantsPanel-boot-sibling-generalRules.json`, is gone.
 - It reports on `window.spiritMount`:
   - `state`: `loading`, then `mounted` or `failed`;
   - `error`: why it failed;
   - `box`: the mount box;
-  - `panes`: the box of every list made in pane mode (each `probabilitySearch.create` that is not a dropdown);
   - `destroy`: for an element, what its create answered as destroy.
 
 ## Requirements: what it judges per file
 
 - **It loads by itself:**
-  - the node serves `shell/mount.html`;
+  - the node answers the DEBUG page for the file;
   - the file mounts on the bare page;
   - nothing it runs throws;
   - every file it asks for is there: no file request answers 4xx or fails. The door's answers and the browser's own
@@ -70,8 +75,10 @@ The node's own page for mounting one shell file alone. Not built yet: today ever
 - **Every list in a box of a stated size (rule/16)**:
   - every tool and tab button it draws (`[data-tool]`, `[data-tab]`) is pressed in turn, so each list it can show is
     made;
-  - every list box the page kept, and each box from it up to the mount box, is of class `fill`;
-  - the list lies inside the mount box;
+  - judged by the layout, not by names: every box it drew that scrolls (overflow `auto` or `scroll`) and is shown is
+    given far more than it can hold (a child 5000px tall, taken out again), and keeps its height, inside the mount box,
+    the mount box not overflowing. A box only as tall as its content, anywhere above a list, lets the list grow with it.
+    A dropdown's list is hidden until it opens, and is not asked;
   - the box never grows past its height, and the page never scrolls sideways.
 - **Destroy**: an element's destroy leaves its box empty. An app is closed by the face and has none of its own.
 
@@ -79,7 +86,5 @@ The node's own page for mounting one shell file alone. Not built yet: today ever
 
 - A file that mounts only because the page preloaded something.
 - A file that asks for a file that is not there, throws, or logs an error.
-- A list in a box only as tall as its content, anywhere between it and the app. Tried on `shell/agent/agent.js` with a
-  throwaway mount page: green on all 9. With the workBench's side pane without `fill`, the five lists went red at
-  `div#wb1-pane-left`.
+- A list in a box only as tall as its content, anywhere between it and the app.
 - A destroy that leaves what it drew.
