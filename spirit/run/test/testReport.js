@@ -51,11 +51,15 @@ function record(title, outcome, failure) {
     // THE TEST'S OWN SPIRIT OBJECT STAYS THE GLOBAL (goal/G41.11; found: under the verifier the deskClient suite went 19
     // red: spirit.js, loaded here, writes itself onto the global object it finds, so it wrote over the stand-in the suite
     // runs on). The real one is loaded for the record alone, onto no object of the test's, and whatever the test had set
-    // is put back.
+    // is put back. A test's bare window is hidden too (goal/G41.16; found: under the verifier the files list and the
+    // contacts row went red): spirit.js loads the data set, which puts itself on window.spirit when there is a window,
+    // and wrote a fresh one over the data set the test runs on.
     const own = globalThis.spirit;
+    const ownWindow = globalThis.window;
     globalThis.spirit = undefined;
+    globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; }
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(name));
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ });
   } catch (e) { /* a test whose verifier cannot be reached still reports on its lines */ }
