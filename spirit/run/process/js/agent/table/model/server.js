@@ -20,6 +20,8 @@ module.exports = function (ctx) {
     fields: { providerId: 'key?', modelName: 'text?', capabilities: 'list?' },
     check: function (a) { return a.providerId !== undefined && !ctx.tables.provider.has(a.providerId) ? 'no provider ' + a.providerId : ''; },
     shows: function (row) { return { providerIcon: row.providerId ? ctx.tables.provider.icon(row.providerId) : '' }; },
+    // Its list shows the provider's icon and the model name (./elementTable.js), so a search answers those.
+    listed: ['providerIcon', 'modelName'],
   }, ctx.publish);
 
   table.update = function (providerId, models) {

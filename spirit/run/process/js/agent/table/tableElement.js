@@ -257,16 +257,18 @@
       row = value;
       paint();
     });
-    // Its first state: what the branch holds, else the server's get, put where the stream writes it.
-    row = D().get(path) || null;
+    // ITS FIRST STATE IS ALWAYS THE SERVER'S get (Andy, on G41.18: "that exactly what GET is for, to bring in the rest for
+    // detail panels etc..."): a search answers only the fields its list shows, so what the branch holds may be a slim
+    // row. The whole row is put where the stream writes it, and the editor draws from there.
+    row = null;
     paint();
-    if (!row) {
-      call(o.table, { op: 'get', id: o.id }).then(function (r) {
-        if (gone) return;
-        if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
-        D().set(path, r);
-      });
-    }
+    call(o.table, { op: 'get', id: o.id }).then(function (r) {
+      if (gone) return;
+      if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
+      D().set(path, r);
+      // A set that changes nothing tells no watcher: the editor takes the answer itself.
+      if (!row) { row = D().get(path) || r; paint(); }
+    });
     return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); container.innerHTML = ''; } };
   }
 

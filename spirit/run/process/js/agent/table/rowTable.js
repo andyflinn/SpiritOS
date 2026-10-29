@@ -43,11 +43,14 @@ function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra
 // The table's SQL type of a field from its rule: a bool is 0 or 1, a list is kept as JSON text.
 function sqlType(rule) { return String(rule).replace(/\?$/, '') === 'bool' ? 'INTEGER' : 'TEXT'; }
 
-// def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '', shows(row) -> fields shown too }
+// def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '', shows(row) -> fields shown too,
+//   listed: [field] the fields its list shows, which alone a search answers beside the id (icon and label by default) }
 function rowTable(db, def, publish) {
   const name = def.name;
   const fields = Object.assign({}, COMMON, def.fields);
   const secret = def.secret || [];
+  // The fields its list shows, all a search answers beside the id: icon and label, unless the table names its own.
+  const listed = Array.isArray(def.listed) ? def.listed : ['icon', 'label'];
   const t = '"' + name + '"';
   db.exec('CREATE TABLE IF NOT EXISTS ' + t + ' (id TEXT PRIMARY KEY, privateKey TEXT NOT NULL, sealPublicKey TEXT NOT NULL, ' +
     'sealPrivateKey TEXT NOT NULL, ' + Object.keys(fields).map(function (f) {
@@ -148,7 +151,12 @@ function rowTable(db, def, publish) {
         Object.keys(row).forEach(function (k) { if (typeof row[k] === 'string' && k !== 'id' && k !== 'sealPublicKey') flat[k] = row[k]; });
         const score = words ? Number(probabilityStringObjectMatch(words, flat)) || 0 : 1;
         n += 1;
-        if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: row.id, label: JSON.stringify(row) });
+        // A FOUND ROW CARRIES ITS ID AND WHAT ITS LIST SHOWS, NOTHING MORE (Andy, on G41.18: "only the ID and the fields
+        // shown in a table, that's all it needs"): the keys and the rest stay for get, so one answer holds four times
+        // the rows. It is ranked by all it shows, above.
+        const slim = { id: row.id };
+        listed.forEach(function (k) { if (row[k] !== undefined) slim[k] = row[k]; });
+        if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: row.id, label: JSON.stringify(slim) });
       });
       const r = bucket.serialize(null, SEARCH_ROOM);
       return { items: r.items, more: !!r.more };
