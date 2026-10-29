@@ -26,15 +26,13 @@
   function keyOf(key, path) { return String(key) + '\n' + String(path); }
 
   // WHAT A GRANT ROW ON THE STREAM MEANS: data.grants/<key>\n<path> is the row, or nothing once it is revoked.
-  // THE DATA SET MAY COME AFTER THIS FILE (spirit.js loads it once the page's families are bound, spirit.ready): what
-  // needs it waits for it, so a row element loaded first still says what its rows mean.
+  // THE DATA SET IT WRITES TO, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically
+  // through the fucking apirit.require functionality"): the page's one spirit.data (shell/js/spiritData.js), which may
+  // not be on the page yet when an app loads this file. spirit.require loads a file once, so it is the page's one cache.
+  var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
+    : Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/spiritData.js') : null).then(function () { return window.spirit.data; });
   function whenData(fn) {
-    var now = window.spirit.data;
-    if (now && typeof now.translate === 'function') { fn(now); return; }
-    Promise.resolve(window.spirit.ready).then(function () {
-      var D = window.spirit.data;
-      if (D && typeof D.translate === 'function') fn(D);
-    }, function () { /* no data set: the lists still search */ });
+    dataSet.then(function (D) { if (D && typeof D.translate === 'function') fn(D); }, function () { /* no data set: the lists still search */ });
   }
   whenData(function (D) {
     D.translate({
