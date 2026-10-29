@@ -1,5 +1,5 @@
 {
- "change": 113714,
+ "change": 113816,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -151,9 +151,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3512,7 +3510,9 @@
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.16"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -4683,6 +4683,54 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-28T15:21:55.846Z",
      "text": "- cw: wsl's six test folders found one fault of mine. The translator wrote a grant with no job or no path under undefined keys. Fixed, d7c3fef7, through the hook, and pulled into your checkout.\n- All ten agent suites are green now: the shared table code 47, the translator 13, the shared elements 40, provider 23, model 25, persona 21, job 24, grant 32, the agent page 45, the agent server 42.\n- Still open: Add writing an empty row. Is a label all a row needs before Save may add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:29:53.410Z",
+     "text": "so to all our tables here publish their changes dutifully?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:30:22.707Z",
+     "text": "- wsl: yes, all five publish every change: provider, model, persona and job through rowTable.js (add, set, delete), grant through its own server.js (add, delete, and a job deleted takes its grants).\n- But the listening is the forbidden shape: a separate translator, process/js/agent/table/data.js, puts them into the data set, not the table's own element. That is one of the three data scripts to move into its element."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T12:32:10.191Z",
+     "text": "Yes, all five agent tables publish every change on the agent stream:\n- provider, model, persona and job: each add and set sends the whole row (secrets left out), and each delete sends its id as removed.\n- grant: each add sends its row, and each delete or prune sends it as removed.\n- A job update replaces what it carries, so no field stays behind from an earlier change.\nTwo gaps, for when design ends:\n- The translation sits in a separate data script for the tables, which you ruled out on G41.14; it belongs in each table's row element.\n- A grant's row carries no job label, though the translator expects one.\nNothing built; G41.4 is in design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:37:07.424Z",
+     "text": "so, what would happen if i click on the grant icon, could we then show the grants element in the left pane, connected to the grants-by-job table?\n\n- what needs doing for that to happen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:37:43.288Z",
+     "text": "- wsl: yes. The grant elements (shell/js/grantSelector/) are the right ones; today they are wired to the node's auth table only. What needs doing:\n  1. the grant list and row take their table by configuration, as the contact selector does (Q2 of G41.13): where to search (auth.search, or agent.grant search), the row's key field (key, or job_id), its label (the peer, or the job), how to revoke (auth.revoke, or agent.grant delete), and which stream rows are theirs (the auth tables' job, or { agent: { table: grant } });\n  2. the agent app's grant icon mounts that list in the left pane, configured to the agent's grant table, instead of the table element;\n  3. agent.grant's published row carries the job's label, as its search already does (today the publish leaves it out);\n  4. the agent tables' data.js goes, its translation into the row element.\n- The grant form above it (grant [job] [bundle] [Grant]) the same, its ID selector the job table. Your call."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T12:38:17.600Z",
+     "text": "Clicking the grant icon already opens a grants list in the left pane, but it is the agent app's own list, not the grants element from G41.14.\nThe grants element is tied to the node's grants: its search, its data branch, its columns (whose, path, Revoke) and the node's stream. An agent grant is a job and a path, kept by the agent server and sent on the agent stream.\nWhat needs doing:\n- The grants list takes its search, its branch and its columns as options, so the node's grants and the agent's grants-by-job both use it.\n- A grant row element for the agent stream, which carries its own translation; this replaces the grant part of the separate data script.\n- The agent server sends the job's label with each grant, so a row shows it without a second read.\n- The agent app's own grant list and row are deleted, and a test proves they are gone.\n- A complete test folder for each element touched.\nShould this be done as part of this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:40:48.465Z",
+     "text": "so , shell/grants/grants.js is not just a wrapper for a shell/js/grants.js element?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:41:09.798Z",
+     "text": "- wsl: no. shell/grants/grants.js is the app and does the work itself: the grant form, the filters, the Grant press through a bundle's branches, the deprecated button. Only the list and the row are elements (shell/js/grantSelector/); there is no shell/js/grants.js.\n- For the agent app to show the same thing, that work becomes one element, shell/js/grants.js with its test/: form, filters and list, its table by configuration. The Grants app is then a wrapper: the element in its Grants tab, the bundle editor in the other; the agent app mounts the same element on its grant icon, set to the grants by job."
     }
    ]
   },
@@ -12606,6 +12654,263 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-29T10:43:46.522Z",
      "text": "- cw: the verify is down to one red: spirit.js's suite, its member list without familyPath and data, the red older than this item.\n- wsl: Andy's \"fix it all here\" answers your question: turn the member list to the spirit object as it stands, and the verify should be green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.16",
+   "title": "Make shell/grants/grants.js wrap element shell/js/grants.js",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 5,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 61,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js, and shell/js/grantsPanel.js is configurable with an ID table, compatible with SpiritOS contacts and agent jobs....\n\n# Proposal\n\n## shell/js/grantsPanel.js, a shell element of its own, with its test/ folder\n- One panel: at the top the one-row grant form, \"grant\" [ID selector] [bundle selector] [Grant]; below it the filter line, [ID filter] [family selector] [deprecated]; then the grant list, the one box that fills.\n- It loads what it uses itself (rule/26): the contact selector, the bundle selector, the family selector, the grant list (shell/js/grantSelector/).\n- Grant: the chosen bundle's branches, one grant per branch (family.verb, or the family alone for (ALL)); a grant already there counts done; warnings asked first.\n- Deprecated: a report from the node's api tree, following the stream, its filter off by default.\n\n## It knows no table: its caller configures it\n- The panel names no table, ships no setting, and knows nothing of contacts or jobs (Andy: \"the callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element\").\n- grantsPanel.create(host, config). The caller hands it the whole configuration:\n  - the ID table, as the contact selector takes it (G41.13, Q2): its loopback api location, its key field, its label field;\n  - the grants table those IDs are granted in: how a grant is searched, made and revoked, its key and label fields;\n  - the data branch its grants are kept in, its own, so two panels on one page never mix;\n  - which stream rows are its grants.\n- A panel created without a configuration is refused: it never falls back to one caller's setting.\n- The panel hands the same configuration on to the grant list and row (shell/js/grantSelector/), which read only the stream rows they were told are theirs.\n\n## The apps configure it and wrap it\n- shell/grants/grants.js: two tabs. Grants: the panel, configured for contacts and the node's auth grants. Bundles: the bundle editor. Nothing else.\n- The agent app: its grant icon mounts the panel in the left pane, configured for its jobs and its grant table; its own grant list and row go.\n- agent.grant publishes the job's label with each row, as its search already answers it.\n\n## Every data.js goes, into its row element\n- Andy: \"get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?\" The proper way (G30.18, shell/js/rowElement.js): a data type's code is its row element, which takes its rows from the stream through its kind's index.\n- shell/js/contacts/data.js: presence, network finds and renames into data.contacts, moved into shell/js/contacts/rowElement.js.\n- shell/js/files/data.js: the file tree into data.files, moved into shell/js/files/rowElement.js; spirit.js no longer loads it at start.\n- process/js/agent/table/data.js: each agent table's rows into data.agent.<table>; each table's part moved into its own row element (provider, model, persona, job, grant).\n- The three files are deleted, each with a test proving it is gone; each row element's test folder covers its translation; a guard fails on any data.js left or added, but the desk's.\n- Not the desk's (shell/shared/js/deskData.js): Andy, \"do all but desk, THAT app is deprecated and just needs to live a little longer.....\".\n\n## Fallout\n- Most of shell/grants/test/ moves to grantsPanel's test folder; the app's suite keeps its wrapper and its configuration.\n",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T13:03:28.787Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:45:32.401Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:46:06.201Z",
+     "text": "- wsl, thoughts:\n- Names: the title says shell/js/grants.js, the box shell/js/grantsPanel.js. Which?\n- What moves into the panel: the grant form, the filters (ID, family, deprecated), the grant list, the Grant press through a bundle's branches. The app keeps only its two tabs.\n- Configuration: the ID table alone does not say which grants table to write. Contacts grant into the node's auth table (auth.grant, revoke, search, keyed by peer key); jobs into the agent's (agent.grant add, delete, search, keyed by job_id), each on its own stream. So either the ID table names its grants table, or the panel takes both.\n- Bundles work for both: a job's grant is the bundle's branches too, one agent.grant per path.\n- Fallout: most of the grants app's suite moves to the panel's own test folder; the agent app mounts the panel on its grant icon and its own grant list goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:47:10.666Z",
+     "text": "update the box with a proposal. the name for the shell element should be grantsPanel.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:47:45.373Z",
+     "text": "- wsl: box v2, the proposal: grantsPanel.js holds the form, the filter line and the list; it takes the ID table and the grants table that ID table grants into; two settings ship, contacts and jobs; the grant list and row take the same setting; both apps become wrappers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:47:54.099Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T12:48:34.858Z",
+     "text": "cw: the proposal holds; I would build it as boxed. Three gaps:\n- Data branch: each grants setting needs its own branch in the data set (the node's grants, and the agent's grants by job). If both lists sat in the one grants branch, a page holding both would mix them.\n- Default: \"with none, the contacts setting\" hides a wrong wiring. I would make the setting required and refuse a panel created without one.\n- Scope: the agent tables' data script loses only its grant part here; the rest of it stays owed to G41.4.\nChecked: the agent grant server takes a family alone as a path, so the (ALL) branch works for jobs as well.\nShould the setting be required, with no contacts default?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:53:17.503Z",
+     "text": "All,\n\nWhy would the grantsPanel need shit with\n\n- Two settings ship with it:\n  - contacts: ids loopback://api/contact/search (key, name); grants the node's auth table (auth.search, auth.grant, auth.revoke; keyed by peer key; the auth tables' job, table grant).\n  - jobs: ids loopback://api/agent/job (id, label); grants the agent's grant table (agent.grant search, add, delete; keyed by job_id; the agent stream, table grant).\n\nIsn't the point of modular design, that it DOESN't need to know? the callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element?\n\nThoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:53:34.223Z",
+     "text": "- wsl: you are right. The panel knows no table: it takes what its caller hands it. The Grants app hands it the contacts and the node's grants; the agent app the jobs and the agent's grants. The two settings belong in those apps, not in the panel.\n- Then a panel made with no setting is refused, as cw says, and each setting names its own data branch, so two panels on one page never mix.\n- I take the \"two settings ship with it\" lines out of the box, the settings moved to the apps, if you say so."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T12:53:35.237Z",
+     "text": "cw: agreed. The panel ships no settings and names no table; it knows nothing of contacts or jobs.\n- Each caller hands it its whole configuration: the Grants app the contacts and the node's auth table, the agent app its jobs and its grant table.\n- That configuration says where the IDs are searched, how a grant is made, searched and revoked, the key and label fields, the data branch, and which stream rows are its grants.\n- The panel hands that same configuration on to the grant list and row, and the row reads the stream rows it was told are its own.\n- A panel created without a configuration is refused, so it never falls back to one caller's setting.\nShould I rewrite the box to say so?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:54:04.444Z",
+     "text": "box the proper way."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:54:46.622Z",
+     "text": "- wsl: boxed, v3: the panel knows no table and ships no setting; each app hands it its whole configuration (ID table, grants table, data branch, stream rows); none is refused; the list and row get the same. cw's points are in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:57:32.584Z",
+     "text": "ALL, while we're at it, get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:57:56.822Z",
+     "text": "- wsl: boxed, v4: every data.js goes into its row element, contacts, files and the agent tables; spirit.js stops loading files/data.js; a guard fails on any data.js left or added."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T12:58:06.039Z",
+     "text": "cw: you did insist, on G41.14, and only the bundles were done that way. Four translator scripts are left:\n- contacts: moves into the contact row element.\n- files: moves into the file row element.\n- the agent tables: each table's part moves into its own row element (provider, model, persona, job, grant).\n- the desk: this one also runs inside the desk client in node, where there are no elements. Its translation can go into the desk's row element as well, but the desk client then loads that element's translation part in node, as the suites already do.\nEach script is deleted, with a test proving it is gone, and each row element's test folder covers its translation.\nShould all four be boxed into this item, with the desk one done as above?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T12:59:09.066Z",
+     "text": "do all but desk, THAT app is deprecated and just needs to live a little longer.....\n\nbox it like that"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T12:59:44.947Z",
+     "text": "- wsl: boxed, v5: contacts, files and the agent tables (each table into its own row element) lose their data.js; the desk's stays, in your words."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T13:01:20.016Z",
+     "text": "all, green?\n\nif yes, fill in the files list and the suites list"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T13:01:53.817Z",
+     "text": "- wsl: green from my side.\n- Test files on the list, 37: the grants panel (new), the grant list and row, the grants app, the agent app, the agent tables (each table, the table element, data.js's test to go), contacts (data.js's test to go, its row and list), files (no test folder today: its row and list get one), spirit.js's suite (it stops loading files/data.js), and a guard, spirit/test/noDataScripts.js.\n- Suites: Desk lets only the red writer add them, at the Go; I fill them then."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T13:02:55.994Z",
+     "text": "cw: Green: settled, nothing open, box current (v5).\n- Files: 24 filed, the new panel, the two apps, the grant, contact and file elements, the agent tables' row elements and its grant server, the start-up loading in spirit.js and the face page, and the three data scripts and the agent's own grant list and row to delete.\n- Suites: the 12 existing tests of those files came in with them.\n- Still to add, by the red writer, since only the red writer or you may add suites: the panel's new test folder, a test folder for the file elements (they have none), the agent table row elements' tests, and the guard against any data script left.\n- The two data script suites on the list are replaced by tests proving those scripts are gone."
     }
    ]
   }
