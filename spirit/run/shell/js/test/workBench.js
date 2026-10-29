@@ -112,6 +112,11 @@ test.subHeading('every box from the app to a tool states its size (rule/16; goal
 const tagOf = function (c, name) { const m = new RegExp('<[^>]*\\bid="[^"]*' + name + '"[^>]*>').exec(c.innerHTML); return m ? m[0] : ''; };
 ok(/class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-left')) && /class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-right')), 'each side pane is a fill box', 'panes: ' + tagOf(c1, 'pane-left') + ' ' + tagOf(c1, 'pane-right'));
 ok(/class="[^"]*\bfill\b/.test(tagOf(c1, 'center')), 'and so is the centre', 'centre: ' + tagOf(c1, 'center'));
+// Andy: "fix workBench for all 3 panes AND the icon strips"; "ALL lists, otherwise my took bars at the top of a container
+// keep scrolling away....". A strip of many tools scrolls inside its own height, never the app's.
+ok(/class="[^"]*\bfill\b/.test(tagOf(c1, 'strip-left')) && /class="[^"]*\bfill\b/.test(tagOf(c1, 'strip-right')), 'and so is each icon strip', 'strips: ' + tagOf(c1, 'strip-left') + ' ' + tagOf(c1, 'strip-right'));
+ok(['strip-left', 'pane-left', 'center', 'pane-right', 'strip-right'].every(function (n) { return /overflow(-y)?:auto/.test(tagOf(c1, n)); }),
+  'each of the five scrolls inside its own height (overflow auto), so what stands above a list in a pane stays put', 'parts: ' + ['strip-left', 'pane-left', 'center', 'pane-right', 'strip-right'].map(function (n) { return tagOf(c1, n); }).join(' '));
 const boxA = mounted.filter(function (m) { return m.name === 'a'; })[0];
 ok(boxA && (' ' + boxA.box.className + ' ').indexOf(' fill ') !== -1, 'the box a tool is mounted in is a fill box, given before its mount', 'tool box class: ' + JSON.stringify(boxA && boxA.box.className));
 
