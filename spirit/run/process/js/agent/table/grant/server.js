@@ -42,7 +42,9 @@ module.exports = function (ctx) {
       if (a.op === 'add') {
         if (!ctx.tables.job.has(a.job_id)) throw refuse('no-such-row', 'job has no row ' + a.job_id);
         grants.grant(a.job_id, a.path);
-        ctx.publish({ agent: { table: 'grant', row: { job_id: a.job_id, path: a.path } } });
+        // The job's label rides with the row, as the search answers it, so a grants panel shows it straight from the stream
+        // (goal/G41.16: its grants table's label field is job).
+        ctx.publish({ agent: { table: 'grant', row: { job_id: a.job_id, job: ctx.tables.job.label(a.job_id), path: a.path } } });
         return { job_id: a.job_id, path: a.path };
       }
       if (a.op === 'delete') {

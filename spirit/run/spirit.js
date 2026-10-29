@@ -708,12 +708,13 @@
     started = tree().then(function (names) {
       return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
     }).then(function () {
-      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own
-      // translator, which its type loads. A page without it still runs, uncached. Asked once the page is parsed, so a
-      // page that loads it by tag keeps the one cache it made.
-      // The file tree is cached too (Q2: "the file tree must be cached."): its translator comes with the cache.
+      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own row
+      // element, which takes its type's stream itself (goal/G41.16: no data script). A page without it still runs,
+      // uncached. Asked once the page is parsed, so a page that loads it by tag keeps the one cache it made.
+      // The file tree is cached too (Q2: "the file tree must be cached."): it comes as updates of one job, so the files
+      // row element, its translation, comes with the cache and hears it from the start.
       return parsed().then(function () { return requireOne('shell/js/spiritData.js'); })
-        .then(function () { return requireOne('shell/js/files/data.js'); }).then(null, function () { /* no cache served here */ });
+        .then(function () { return requireOne('shell/js/files/rowElement.js'); }).then(null, function () { /* no cache served here */ });
     }).then(function () { return self; });
     self.ready = started;
     return started;

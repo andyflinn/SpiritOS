@@ -134,7 +134,7 @@ function appsPanelDraw(host, api, path) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var appsParts = Promise.all(['shell/js/files/data.js', 'shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
+var appsParts = Promise.all(['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
   'shell/js/icons/listElement.js', 'shell/js/appInstaller.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({

@@ -15,6 +15,36 @@
   if (window.spirit.require) ['shell/js/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
+  // WHAT THE FS-WATCHER'S STREAM MEANS FOR data.files, IN THE TYPE'S OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of
+  // thos FUCKING data.js scripts"): the page's mirror of the node's tree (shell/js/spiritData.js). A connecting page is
+  // handed the tree as create commands, then treeComplete: the branch fills quietly and its watchers hear one word at
+  // the end; after that each change is told by path. Every event ends in set or del. The tree comes as updates of one
+  // job, so it is heard from the start: spirit.js loads this file with the cache (Q2: "the file tree must be cached.").
+  function translate(D) {
+    if (!D || typeof D.translate !== 'function') return;
+    D.translate({
+      onJob: function (job) {
+        if (job.type !== 'fs-watcher') return;
+        if (job.data.treeComplete) { D.ready('files', true); return; }
+        var cmd = job.data.command;
+        if (!cmd || !cmd.path) return;
+        if (!D.ready('files')) D.quietly('files', true);
+        var p = String(cmd.path);
+        if (cmd.op === 'deleteFile') D.del('files/' + p);
+        else if (cmd.op === 'deleteDirectory') {
+          D.del('files/' + p);
+          Object.keys(D.branch('files')).forEach(function (k) { if (k.indexOf(p + '/') === 0) D.del('files/' + k); });
+        } else {
+          var was = D.branch('files')[p] || {};
+          // core: the node's word that the file is core (goal/G30.21), painted yellow by its row.
+          D.set('files/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true });
+        }
+      },
+    });
+  }
+  if (window.spirit.data) translate(window.spirit.data);
+  else if (window.spirit.require) Promise.resolve(window.spirit.require('shell/js/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
+
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
     var f = window.spirit && spirit.escapeHtml;

@@ -15,7 +15,7 @@
 //   ready(type)     true once the stream has handed the whole branch over (files: the watcher's treeComplete)
 //   seat(type, items)  a search answer's items ({ key, label: json }) merged into the tree like any event
 //
-//   translate(t)    a type's translator, registered by its data.js (goal/G30.20): t.onJob(job, D), t.onRename(d, D);
+//   translate(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D);
 //                   every one ends in set, merge or del. This file knows no type.
 //
 //   forget()        everything kept goes, each type told once (type, undefined): a connect, the partner pushes it whole
@@ -139,7 +139,7 @@
   }
 
   // ── THE TRANSLATORS ARE THE TYPES' (goal/G30.20) ─────────────────────────────────────────────────────────────
-  // Each type's folder has its data.js (shell/js/files/data.js, shell/js/contacts/data.js), which registers here what it
+  // Each type's row element (shell/js/files/rowElement.js, shell/js/contacts/rowElement.js; goal/G41.16) registers here what it
   // makes of the stream's events: translate({ onJob(job, D), onRename(d, D) }). This file knows no type.
   // A TYPE LOADED LATE IS HANDED ITS DATA WHOLE (goal/G41.3, Q4: the translators are lazy, each loading with its app):
   // on a page every job as it now stands and every rename are kept as the stream hands them, and a translator registered

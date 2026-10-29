@@ -27,7 +27,8 @@
 // EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
 // needs listening to, by themselves, automatically. This should also be a general implementation. if those table
 // searches and list were make properly from a probability framework, this should not have happened"): a table is its
-// branch of spirit.data, agent.<table>, which the stream keeps current through ./data.js. A list is probabilitySearch
+// branch of spirit.data, agent.<table>, which the stream keeps current through that table's own row element
+// (<table>/elementRow.js, goal/G41.16). A list is probabilitySearch
 // with that branch as its data, so a search's answer is seated there and any write redraws it; an editor watches its
 // row's path there. Nothing here hears the stream by hand.
 //
@@ -50,8 +51,6 @@
     return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: whyOf(e) }; });
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
-  // The table's branch of spirit.data, which ./data.js keeps: required with this file, so it is there before any table.
-  spirit.require('process/js/agent/table/data.js');
   function branchOf(table) { return 'agent.' + table; }
   function D() { return window.spirit.data; }
 
