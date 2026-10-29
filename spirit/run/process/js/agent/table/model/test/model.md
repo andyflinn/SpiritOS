@@ -23,7 +23,9 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   again when its provider's icon changes.
 - `elementTable.js` registers `spirit.elements.modelTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
-  - It builds on `agentTable` for the model table, with the page's api and detail pane, and the shared Add.
+  - It builds on `agentTable` for the model table, with the page's api and detail pane, and no Add (`add: false`;
+    Andy, on G41.18: *"get RID of [Add a Model] button in the left panes model mode. NOT required."*): its rows come
+    from the providers.
   - Its list shows each model by its provider's icon and its model name: the columns it hands are `providerIcon`, then
     `modelName` (goal/G41.18).
   - It hands the shared element one button, `provider models` (box v17: *"a button row with the following button
@@ -46,4 +48,4 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 - A model naming a provider that is not there, by add or by set.
 - Capabilities that come back as text instead of a list.
 - A model shown without its provider's icon, or the icon kept in the table.
-- A list showing the label where the model name belongs; a provider models button that opens nothing.
+- A list showing the label where the model name belongs; a provider models button that opens nothing; an Add button.

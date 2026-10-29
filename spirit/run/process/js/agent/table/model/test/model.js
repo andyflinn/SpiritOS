@@ -104,8 +104,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(made.required.indexOf('process/js/agent/table/tableElement.js') !== -1 && made.required.indexOf('process/js/agent/table/model/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
-  ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'model' && o.api === api && o.detail === detail && !o.add,
-    'it builds on agentTable, in its box, for the model table, with the page\'s api and detail pane, and the shared Add', 'agentTable: ' + short(o && { table: o.table, add: !!o.add }));
+  ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'model' && o.api === api && o.detail === detail && o.add === false,
+    'it builds on agentTable, in its box, for the model table, with the page\'s api and detail pane, and no Add (Andy, on G41.18: "get RID of [Add a Model] button ... NOT required")', 'agentTable: ' + short(o && { table: o.table, add: o.add }));
   // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon, and its button row "the following
   // button \"provider models\", which will open a panel in the center pane of the workBench".
   const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });

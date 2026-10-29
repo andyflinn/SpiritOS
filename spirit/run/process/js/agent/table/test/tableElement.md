@@ -34,6 +34,8 @@ the table)"*.
   - Add calls `<table> { op: 'add', icon }` through the agent's interface, the new row taking its table's icon. It then
     opens the new row's editor, added. A refused Add says `Not added: <the server's reason>` and opens nothing.
   - Given `add(open)`, Add calls that instead and asks the server nothing (the grant table's).
+  - Given `add: false`, no Add is drawn; its buttons and title row are (goal/G41.18: the model table's, whose rows come
+    from the providers).
   - Given `buttons`, `[{ label, press }]`, each is drawn on the Add line by its label, Add kept, its id
     `<prefix>button<i>`; pressed, it calls its `press()` (goal/G41.18: the model table's *"provider models"*).
   - `destroy` destroys the list and empties the box.

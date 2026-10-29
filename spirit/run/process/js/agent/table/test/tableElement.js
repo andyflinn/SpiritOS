@@ -185,6 +185,15 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(l3 && l3.o.columns === COLS, 'the columns a table hands are the list\'s, in place of icon and label', 'columns: ' + short(l3 && l3.o.columns));
   ok(JSON.stringify((list.o.columns || []).map(function (c) { return c.field; })) === '["icon","label"]', 'a table that hands none keeps icon and label', 'columns: ' + short(list.o.columns));
 
+  test.subHeading('a table may have no Add (goal/G41.18)');
+  w.calls.length = 0;
+  const left4 = box('left4');
+  E.agentTable.create(left4, { api: {}, table: 'model', detail: detail, add: false, row: function () { return {}; },
+    buttons: [{ label: 'provider models', press: function () {} }] });
+  await settle();
+  ok(!the(left4, 'add') && !/Add a model/.test(left4.innerHTML) && !!the(left4, 'button0') && /class="agent-title"/.test(left4.innerHTML),
+    'given add false, no Add is drawn; its buttons and title row are', 'left4: ' + short(left4.innerHTML));
+
   test.subHeading('destroy');
   t.destroy();
   ok(list.destroyed && left.innerHTML === '', 'destroy destroys the list and empties the box', 'destroyed ' + list.destroyed + ', box ' + short(left.innerHTML));
