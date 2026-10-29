@@ -1,5 +1,5 @@
 {
- "change": 114065,
+ "change": 114109,
  "goal": "goal/G41",
  "items": [
   {
@@ -147,10 +147,7 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -3598,10 +3595,13 @@
      "version": 42
     }
    ],
-   "verified": "green",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/process/js/agent/table/test/data.js not run: missing from this checkout",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.1: 2 of 15 missing: process\\js\\agent\\table\\grant\\elementTable.js, process\\js\\agent\\table\\grant\\elementRow.js"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 2,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -4729,6 +4729,96 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-29T12:41:09.798Z",
      "text": "- wsl: no. shell/grants/grants.js is the app and does the work itself: the grant form, the filters, the Grant press through a bundle's branches, the deprecated button. Only the list and the row are elements (shell/js/grantSelector/); there is no shell/js/grants.js.\n- For the agent app to show the same thing, that work becomes one element, shell/js/grants.js with its test/: form, filters and list, its table by configuration. The Grants app is then a wrapper: the element in its Grants tab, the bundle editor in the other; the agent app mounts the same element on its grant icon, set to the grants by job."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:03:18.051Z",
+     "text": "red: 2 suites"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:04:01.346Z",
+     "text": "- cw: both reds are this item's own red, written before G41.16, and G41.16 changed what they test.\n- One suite tests the agent tables' data script, which G41.16 deleted: there is no such file now.\n- The other expects the agent's own grant list and row files, which G41.16 replaced with the grants panel.\n- So the red has to be redone against the tree as it is now. That is wsl's, once this item's design settles."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:04:47.010Z",
+     "text": "wsl? fix the suites of 41.4?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:06:16.302Z",
+     "text": "commit 533c9953606fa9f90203848ad13c383b6966809d: goal/G41.4: its red redone against the tree after G41.16. The agent process suite asked each of the five table folders for elementTable.js and elementRow.js; grant's went in G41.16, the grants panel d\n- spirit/run/process/js/agent/test/agent.js\n- spirit/run/process/js/agent/test/agent.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:06:23.151Z",
+     "text": "- wsl: fixed, 533c9953, on origin; your checkout is pulled.\n- The agent suite now takes grant with server.js only, its page files gone since G41.16. The deleted data.js suite is off the item.\n- Your box still lists elementTable.js and elementRow.js for grant too: yours to cap, if you want it to match."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:10:20.846Z",
+     "text": "ALL, \nagent now has the capability to add and remove grants for jobs.... sweet.\nnow the provider table has a problem: Anthropic requires two keys to access their models using my API key\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:10:43.254Z",
+     "text": "- wsl: Anthropic takes one secret, x-api-key. The second is the header anthropic-version (2023-06-01), a fixed version string, not a key.\n- Proposal: the provider row gets a plain headers field, not secret, for such headers. apiKey stays the one secret.\n? Or is your second key something else? Name it and I check."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:10:56.239Z",
+     "text": "- cw: a call to an Anthropic model needs one secret, the API key. The provider table already keeps that key in the agent process alone.\n- The second thing it needs is a version header, anthropic-version. That is not a secret: it is the same for every user and names the API version.\n- An admin key is a separate key for managing an organisation: members, keys and spend. A model call never uses it.\n- Through Amazon or Google Cloud there is no Anthropic key at all, only that cloud's own login.\n- So my proposal: the provider row keeps one secret key, and gets a plain field for fixed request headers, which carries the version.\n? What is the second key you were asked for, and where did it show?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:11:45.772Z",
+     "text": "ALL, \n\nwhat about the workspace key?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:11:59.618Z",
+     "text": "- wsl: a workspace is not a second key. In the Anthropic console each API key is made inside one workspace, and the key itself says which; a call sends no workspace ID.\n- So: make the key in the workspace you want its spend and limits counted under, and store that one key. The row needs nothing more for it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:12:03.339Z",
+     "text": "- cw: a workspace is not a second key. An API key is made inside a workspace and belongs to it, so the key alone already says which workspace pays and which limits apply.\n- A workspace id is only asked for with federated login, where a cloud identity stands in for a key. The agent does not use that.\n- So for your API key: one secret, plus the fixed version header. Nothing else."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:14:29.933Z",
+     "text": "API key\napikey_01Bgb8x1ofGkJfstcXHnAr6f\nCLAUDE_API_KEY\nDisabled\nKey\nsk-ant-api03-Kqu...RQAA\nCreated\nSep 24, 2026\nCreated by\nUser\nAndreas Thut\ncountinn@gmail.com\nLinked account\nUser\nAndreas Thut\ncountinn@gmail.com\n (you)\nScope\nOrganization\nLast used\n30+ days ago\nExpires\nDec 31, 2026"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:14:49.897Z",
+     "text": "- cw: that page shows one key with two names. The apikey_01... is the console's id for the key; it is never sent. The secret is the sk-ant-api03-... value, shown masked here.\n- The key is Disabled, so every call with it is refused until you enable it, or make a new one.\n- The full sk-ant value is shown only once, when the key is made. If you do not have it stored, make a new key and paste that into the provider row.\n- It expires Dec 31, 2026; after that the provider row needs a new key."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:15:43.927Z",
+     "text": "API key\napikey_01RTFH8A4s66qSF4p1Hge4Na\nLevant Key\nKey\nsk-ant-usr-1Fc...BwAA\nCreated\nOct 16, 2026\nCreated by\nUser\nAndreas Thut\ncountinn@gmail.com\nLinked account\nUser\nAndreas Thut\ncountinn@gmail.com\n (you)\nScope\nLevant Work Space\nWorkspace ID\nwrkspc_01Ga9rMfncye57cVEumqY2TJ\nLast used\nOct 17, 2026\nExpires\nNone"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:16:09.120Z",
+     "text": "- cw: this key is bound to the Levant workspace, and the key itself carries that. Its spend and limits count there. A call sends the key alone, never the workspace ID.\n- The workspace ID is asked for only when Claude is reached through Amazon's or Google's cloud, not with an Anthropic key.\n- Your first key was for the whole organisation, and disabled. This one is live, used Oct 17, and never expires: it is the one to store.\n- One thing I cannot confirm from the docs I have: this key starts sk-ant-usr, the other sk-ant-api. If the first test call with it is refused, that prefix is the first thing to check."
     }
    ]
   },
@@ -13167,6 +13257,106 @@
      "text": "Q1: clear"
     }
    ]
+  },
+  {
+   "id": "goal/G41.17",
+   "title": "Aquire data for the model table.",
+   "goal": "goal/G41",
+   "status": "closed",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G41.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
