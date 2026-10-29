@@ -47,6 +47,9 @@ subject to whim and experimentation"*.
     - Delete calls `grant { op: 'delete', job_id, path }`. A refusal says the server's reason.
     - Once the delete is taken, it says `Deleted.` and is the Add form again.
 
+- The row it publishes on an add carries the job's label, `job`, as its search answers it (goal/G41.16: the grants panel
+  shows a grant by its job's label, straight from the stream).
+
 ## What its test must try to break
 
 - A grant to a job that is not there.

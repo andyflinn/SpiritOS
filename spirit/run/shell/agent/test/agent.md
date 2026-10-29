@@ -46,6 +46,16 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - The title bar (`api.setScreenTitle`) shows the bug icon 🐞 while `showDebug` is true and the server's DEBUG state is on,
   and does not show it otherwise. It follows both as they change.
 
+- **The grant tool mounts the grants panel** (goal/G41.16; Andy: *"could we then show the grants element in the left
+  pane, connected to the grants-by-job table?"*): it requires `shell/js/grantsPanel.js` into a fill box, and the agent's
+  own grant table element no more, and creates the panel once with the app's api, configured by this app:
+  - `ids`: the agent's jobs, `loopback://api/agent/job`, with their key and label fields;
+  - `grants`: branch `agent.grant`, keyed `job_id`, labelled `job`; `search(text)` asks the agent's grant verb
+    `{ op: 'search', text }`; `grant(id, path)` asks `{ op: 'add', job_id, path }`, answering `{ ok: true }` or a refusal
+    as `{ ok: false, code, error }`; `revoke(id, path)` asks `{ op: 'delete', job_id, path }`; `stream(job)` takes the agent
+    stream's grant rows (`{ agent: { table: 'grant', row } }`, removed when revoked), and no job row nor the node's own
+    grants.
+
 ## What its test must try to break
 
 - A title that shows the bug with only one of the two on.

@@ -79,6 +79,9 @@ test.startTest('grant/: the grant table');
   ok(added.job_id === job.id && added.path === 'files.read', 'add {job_id, path} answers { job_id, path }', 'add: ' + short(added));
   const p0 = published[0] && published[0].agent;
   ok(published.length === 1 && p0.table === 'grant' && p0.row.job_id === job.id && p0.row.path === 'files.read' && !p0.removed, 'and publishes { agent: { table: grant, row } }', 'published: ' + short(published));
+  // goal/G41.16: the grants panel shows a grant by its job's label (its grants table's label field, job), straight from the
+  // stream: the published row carries it, as the search answers it.
+  ok(p0 && p0.row.job === 'Reader', 'the published row carries the job\'s label, job, as the search answers it (goal/G41.16)', 'published row: ' + short(p0 && p0.row));
   call(t.verb, { op: 'add', job_id: job.id, path: 'files.list' });
   const got = call(t.verb, { op: 'get', job_id: job.id });
   ok(got.job_id === job.id && JSON.stringify((got.paths || []).slice().sort()) === '["files.list","files.read"]', 'get {job_id} answers that job\'s paths', 'get: ' + short(got));

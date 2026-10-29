@@ -99,7 +99,13 @@ function world(configText) {
   w.api.ui.elements.workBench = w.workBench;
   // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
-  w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
+  w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
+    // goal/G41.16: the agent's grant table, its one flat verb (table/grant/server.js), each ask recorded.
+    grant: function (args) { w.grantAsks.push(args);
+      if (args && args.op === 'add' && args.path === 'fs.search') return Promise.reject(Object.assign(new Error('already granted'), { code: 'already-granted', refusal: 'already-granted' }));
+      if (args && args.op === 'search') return Promise.resolve({ items: [{ key: 'J1|fs.search', label: '{}' }], more: false });
+      return Promise.resolve({ job_id: args && args.job_id, path: args && args.path }); } };
+  w.grantAsks = [];
   w.stream = function (debug) { const job = { id: 'job-agent', app: { agent: { debug: debug } } }; const all = { 'job-agent': job }; w.onJobs.forEach(function (fn) { fn(all, job, { visible: true }); }); };
   // What the shell hands a new reader at once: the whole set of jobs, and no single job that changed.
   w.snapshot = function (debug) { const all = { 'job-agent': { id: 'job-agent', app: { agent: { debug: debug } } } }; w.onJobs.forEach(function (fn) { fn(all, null, { visible: true }); }); };
@@ -117,6 +123,8 @@ function load(w) {
 }
 
 test.startTest('agent.js: the agent face app');
+// An app that counts on what it did not load throws inside a promise: that is a failure said, not a silent exit.
+process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
   test.subHeading('its files');
@@ -153,7 +161,7 @@ test.startTest('agent.js: the agent face app');
   if (L.length !== LEFT.length || R.length !== 1) return;
 
   test.subHeading('each table\'s tool mounts that table\'s own element');
-  for (const name of TABLES) {
+  for (const name of TABLES.filter(function (n) { return n !== 'grant'; })) {
     const t = L.filter(function (x) { return x.name === name; })[0];
     const before = w.required.length;
     const made = [];
@@ -167,6 +175,47 @@ test.startTest('agent.js: the agent face app');
       'and creates ' + name + 'Table once in that box, with the app\'s api and its detail pane', 'created: ' + made.length);
     const look = d && d.look(name);
     ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
+  }
+
+  test.subHeading('the grant tool mounts the grants panel, configured for its jobs (goal/G41.16)');
+  // Andy: "so, what would happen if i click on the grant icon, could we then show the grants element in the left pane,
+  // connected to the grants-by-job table?", and on G41.16: "the callers (Grants and agent shell apps should boody well know
+  // how to configure the damn grantsPanel element".
+  {
+    const t = L.filter(function (x) { return x.name === 'grant'; })[0];
+    const before = w.required.length;
+    const panels = [];
+    global.window.spirit.elements.grantsPanel = { create: function (into, cfg) { panels.push({ into: into, cfg: cfg || {} }); return {}; } };
+    delete global.window.spirit.elements.grantTable;
+    const gb = box('table-grant'); t.mount(gb); await settle();
+    const asked = w.required.slice(before);
+    ok(asked.indexOf('shell/js/grantsPanel.js') !== -1 && asked.indexOf('process/js/agent/table/grant/elementTable.js') === -1 && /\bfill\b/.test(gb.className),
+      'the grant tool requires shell/js/grantsPanel.js into a fill box, and the agent\'s own grant table element no more', 'required ' + short(asked) + ', class ' + short(gb.className));
+    const p = panels[0];
+    ok(panels.length === 1 && p.into === gb && p.cfg.api === w.api, 'and creates the panel once in that box, with the app\'s api', 'panels: ' + panels.length);
+    const ids = (p && p.cfg.ids) || {};
+    ok(ids.table === 'loopback://api/agent/job' && ids.key && ids.label, 'its ID table is the agent\'s jobs, loopback://api/agent/job, with their key and label fields', 'ids: ' + short(ids));
+    const g = (p && p.cfg.grants) || {};
+    ok(g.branch === 'agent.grant' && g.key === 'job_id' && g.label === 'job' && ['search', 'grant', 'revoke', 'stream'].every(function (f) { return typeof g[f] === 'function'; }),
+      'its grants table is the agent\'s: branch agent.grant, keyed job_id, labelled job, with search, grant, revoke and stream', 'grants: ' + short({ branch: g.branch, key: g.key, label: g.label, fns: Object.keys(g) }));
+    if (typeof g.search === 'function') {
+      const found = await g.search('ni');
+      const s0 = w.grantAsks[w.grantAsks.length - 1];
+      ok(s0 && s0.op === 'search' && s0.text === 'ni' && found && Array.isArray(found.items), 'search(text) asks the agent\'s grant verb { op: search, text }', 'asked ' + short(s0));
+      const made = await g.grant('J3', 'jobs.list');
+      const a0 = w.grantAsks[w.grantAsks.length - 1];
+      ok(a0 && a0.op === 'add' && a0.job_id === 'J3' && a0.path === 'jobs.list' && made && made.ok !== false, 'grant(id, path) asks { op: add, job_id, path } and answers ok', 'asked ' + short(a0) + ', answered ' + short(made));
+      const already = await g.grant('J3', 'fs.search');
+      ok(already && already.ok === false && already.code === 'already-granted', 'a refusal answers { ok: false, code, error }', 'answered ' + short(already));
+      await g.revoke('J3', 'jobs.list');
+      const r0 = w.grantAsks[w.grantAsks.length - 1];
+      ok(r0 && r0.op === 'delete' && r0.job_id === 'J3' && r0.path === 'jobs.list', 'revoke(id, path) asks { op: delete, job_id, path }', 'asked ' + short(r0));
+      const one = g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list', job: 'Night' } } } });
+      const gone = g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list' }, removed: true } } });
+      ok(one && one.row.job_id === 'J9' && !one.gone && gone && gone.gone === true, 'stream(job): the agent stream\'s grant rows are its grants, removed when revoked', 'stream: ' + short([one, gone]));
+      ok(!g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'job', row: { id: 'J9' } } } }) && !g.stream({ type: 'bundles', data: { table: 'grant', row: {} } }),
+        'a job row, or the node\'s own grants, is none of its grants', 'stream answered a non-grant');
+    }
   }
 
   test.subHeading('the left tool keeps the app\'s own config');
