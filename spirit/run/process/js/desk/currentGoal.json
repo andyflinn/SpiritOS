@@ -1,5 +1,5 @@
 {
- "change": 112703,
+ "change": 112975,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -9597,12 +9597,13 @@
    "id": "goal/G41.13",
    "title": "fix the grant UI and clean up its concepts.",
    "goal": "goal/G41",
-   "status": "tabContainer.js changed",
+   "status": "nodeStore.js changed",
    "statusTone": "code",
-   "with": "claude-windows",
+   "with": "",
    "version": 25,
    "buttons": [
     "end-design",
+    "delete",
     "verify"
    ],
    "blocking": [
@@ -9617,7 +9618,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "design": true,
    "fileCount": 33,
    "green": true,
@@ -9716,10 +9717,9 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -10621,37 +10621,38 @@
    "id": "goal/G41.14",
    "title": "Two new auth tables: bundle and branch",
    "goal": "goal/G41",
-   "status": "running",
-   "statusTone": "",
-   "with": "",
-   "version": 29,
+   "status": "apiBranchSelector.js deleted",
+   "statusTone": "code",
+   "with": "claude-windows",
+   "version": 31,
    "buttons": [
-    "start-design",
-    "delete",
+    "end-design",
     "verify"
    ],
    "blocking": [
     "goal/G41.13"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.15"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": false,
+   "limbo": false,
+   "design": true,
    "fileCount": 51,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
    "claimCommit": "",
-   "redCommit": "",
+   "redCommit": "bb6d567b",
    "waived": false,
    "rules": [
     {
@@ -10739,10 +10740,11 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 0,
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+   "asks": 1,
    "half": true,
    "full": false,
-   "box": "# 1. The bundle frame-work, it's terms and how it ultimately ties into ID-keyed tables in SpiritOS\n\n- RULE: these four following \"NAMES\" will be used in SpiritOS: \"bundle\" > \"branch\" > \"family\" > \"verb\", \n- A bundle is a clearly defined subset of an API, with no ID (user, process or agent,....) tied to it.\n- The node keeps TWO bundle tables, in node.db.\n- The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch, akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review.\n- The FIRST bundle table is called \"bundle\". It's rows hold: 1) a hidden numeric key,  and 2) a label, that must NOT be empty when the row is added. this table can be perceived as a dictionary.\n- The SECOND table is called \"branch\", and holds 1) a hidden numeric key, 2) an indexed numeric reference, \"bundle\" to a row in the bundle table. that MUST exist when the \"branch\" row is added. 3) a mandatory/required \"family\" field that must contain a valid reference to a node-API-family, and 4) an optional verb field, meaning the verb-field may contain an empty string that means \"all\".\n- a new \"branch\" row must contain a valid reference to a bundle row, and a valid reference to a family of the nodes API tree, always, especially when it's added.\n- two branch rows referencing the same bundle row MUST NOT cannot contain the same family AND verb values.\n- when a \"bundle\" row is deleted, ALL \"branch\" rows referencing that \"bundle\" row must be deleted, too.\n- An application installs its own typical bundles into the node's bundle table through the standard API calling conventions, calling auth.bundle AND auth.branch.\n- the two bundle tables will NOT know who created rows, if a user wants to keep track of the rows he created, he can write it down on a FUCKING napkin. since tables ALL must contain search, the the user (app or human) can go fucking search.\n- if an app wants to be lazy, the can persist a flag in relay-state/ somewhere, that says: \"bundles-already-installed\", OR the can pop up one of those fucking panels we're about to create. OOS, for this item!\n- \"family\" and \"verb\" fields MUST be validated against the nodes API tree when a row is added or changed, and refused if the values are not valid.\n- Yes. A family that leaves the node leaves its branch rows pointing at nothing, no unauthorized access will result from such a thing. the danger comes from an app being re-activated, but then, a bundle is a bundle, and in itself does not constitute an authorization.\n- the auth.branch search needs \"bundle\", \"family\" and \"verb\" filters.\n- any \"bundle\" lost during these changed are LOST. OOS.\n- an app calling the two new interfaces auth.bundle and auth.branch can only be the node owner, until the node owner grants access to those tables to someone else.\n\n# 2. Shell elements for a User to select and list \"bundle\" data.\n\n- apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it.\n- both new auth/bundle tables receive Selector shell elements, these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a listElement.js and a rowElement.js script to fit within the probabilitySearch framework.\n- bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting bundle rows.\n- branchSelector.js and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows.\n- the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\".\n- A branch row with an empty verb shows as \"(ALL)\", as the filter does.\n\n# the \"bundleEditor\", a simple panel-type shell element\n\n## at the top of the page:\n- top: a one-row add form: \"new\" [fieldInput.js/fieldRules:Label input field] [Add-Button]\n- the [add-Button] refused an empty or invalid label\n\n## filling the rest of the available vertical space\n- the bundleSelector in pane-mode, with the following columns\n- 1. [fieldInput:fieldRule:Label], displays and updates the bundle's label. Empty or invalid is refused. when pressing the Enter key, or leaving the field, the bundle-label is updated is the label is valid (as in \"add\"), and if invalid, reverts to the value contained in the db-table.\n- 2. an edit button, leading to the branchEditor.js, check below. the shell provides a back-button from there.\n- 3. a delete armingButton.js, deletes the \"bundle\" row and all rows in the \"branch\" table that reference this bundle.\n\n# the branchEditor.js shell element\n\n- the branchEditor page is always configured with a bundle key,\n- first row: Title: \"Edit <bundle-label-content>\"\n- second row, add form: \"new\" [apiFamilySelector:dropdown] [apiVerbSelector:dropdown] [Add-button]\n- branchSelector:pane, with table columns as follows:\n- 1. Family (duh?)\n- 2. Verb\n- 3. armingButton 'Delete'\n\n# Final points\n- the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an empty string as \"value\"\n- the Grant app must use the bundleEditor in its \"Bundle\" tab\n\n- all ui elements mentioned here MUST have a test/ folder containing a comprehensive test script and a high-quality documentation md file.\n\n\n\n\n\n\n",
+   "box": "# 1. The bundle frame-work, it's terms and how it ultimately ties into ID-keyed tables in SpiritOS\n\n- RULE: these four following \"NAMES\" will be used in SpiritOS: \"bundle\" > \"branch\" > \"family\" > \"verb\", \n- A bundle is a clearly defined subset of an API, with no ID (user, process or agent,....) tied to it.\n- The node keeps TWO bundle tables, in node.db.\n- The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch, akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review.\n- The FIRST bundle table is called \"bundle\". It's rows hold: 1) a hidden numeric key,  and 2) a label, that must NOT be empty when the row is added. this table can be perceived as a dictionary.\n- The SECOND table is called \"branch\", and holds 1) a hidden numeric key, 2) an indexed numeric reference, \"bundle\" to a row in the bundle table. that MUST exist when the \"branch\" row is added. 3) a mandatory/required \"family\" field that must contain a valid reference to a node-API-family, and 4) an optional verb field, meaning the verb-field may contain an empty string that means \"all\".\n- a new \"branch\" row must contain a valid reference to a bundle row, and a valid reference to a family of the nodes API tree, always, especially when it's added.\n- two branch rows referencing the same bundle row MUST NOT cannot contain the same family AND verb values.\n- when a \"bundle\" row is deleted, ALL \"branch\" rows referencing that \"bundle\" row must be deleted, too.\n- An application installs its own typical bundles into the node's bundle table through the standard API calling conventions, calling auth.bundle AND auth.branch.\n- the two bundle tables will NOT know who created rows, if a user wants to keep track of the rows he created, he can write it down on a FUCKING napkin. since tables ALL must contain search, the the user (app or human) can go fucking search.\n- if an app wants to be lazy, the can persist a flag in relay-state/ somewhere, that says: \"bundles-already-installed\", OR the can pop up one of those fucking panels we're about to create. OOS, for this item!\n- \"family\" and \"verb\" fields MUST be validated against the nodes API tree when a row is added or changed, and refused if the values are not valid.\n- Yes. A family that leaves the node leaves its branch rows pointing at nothing, no unauthorized access will result from such a thing. the danger comes from an app being re-activated, but then, a bundle is a bundle, and in itself does not constitute an authorization.\n- the auth.branch search needs \"bundle\", \"family\" and \"verb\" filters.\n- any \"bundle\" lost during these changed are LOST. OOS.\n- an app calling the two new interfaces auth.bundle and auth.branch can only be the node owner, until the node owner grants access to those tables to someone else.\n\n# 2. Shell elements for a User to select and list \"bundle\" data.\n\n- apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it.\n- apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector NEEDs the family selector to have any meaning at all.\n- both new auth/bundle tables receive Selector shell elements, these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a listElement.js and a rowElement.js script to fit within the probabilitySearch framework.\n- bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting bundle rows.\n- branchSelector.js and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows.\n- the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\".\n- A branch row with an empty verb shows as \"(ALL)\", as the filter does.\n\n# the \"bundleEditor\", a simple panel-type shell element\n\n## at the top of the page:\n- top: a one-row add form: \"new\" [fieldInput.js/fieldRules:Label input field] [Add-Button]\n- the [add-Button] refused an empty or invalid label\n\n## filling the rest of the available vertical space\n- the bundleSelector in pane-mode, with the following columns\n- 1. [fieldInput:fieldRule:Label], displays and updates the bundle's label. Empty or invalid is refused. when pressing the Enter key, or leaving the field, the bundle-label is updated is the label is valid (as in \"add\"), and if invalid, reverts to the value contained in the db-table.\n- 2. an edit button, leading to the branchEditor.js, check below. the shell provides a back-button from there.\n- 3. a delete armingButton.js, deletes the \"bundle\" row and all rows in the \"branch\" table that reference this bundle.\n\n# the branchEditor.js shell element\n\n- the branchEditor page is always configured with a bundle key,\n- first row: Title: \"Edit <bundle-label-content>\"\n- second row, add form: \"new\" [apiFamilySelector:dropdown] [apiVerbSelector:dropdown] [Add-button]\n- branchSelector:pane, with table columns as follows:\n- 1. Family (duh?)\n- 2. Verb\n- 3. armingButton 'Delete'\n\n# Final points\n- the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an empty string as \"value\"\n- the Grant app must use the bundleEditor in its \"Bundle\" tab\n\n- all ui elements mentioned here MUST have a test/ folder containing a comprehensive test script and a high-quality documentation md file.\n\n\n\n\n\n\n",
    "checks": [
     {
      "number": "Q1",
@@ -10765,6 +10767,42 @@
      "by": "andy",
      "at": "2026-10-29T07:30:18.088Z",
      "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Desk shows G41.14 still in design with no Go, so the hook refuses my red: will you press End design and Go on it?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T07:37:52.230Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Will you press End design and Go on G41.14, so the staged reds can be committed?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T07:51:17.452Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "A call carries its verb name in a field named verb, so auth.branch cannot take an argument verb: rename the argument (column stays verb), or change the calls?",
+     "test": "auth.branch is callable through spirit.auth.branch with a verb value",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -11015,12 +11053,463 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-29T07:30:00.279Z",
      "text": "cw: because the old shell's page loads the family selector by its old name, in a script tag of its own.\n- Rename the file and that page asks for a file that is gone.\n- The change would only drop that tag; by rule 26 the elements load themselves, so nothing takes its place.\n- If the old shell's page is not this item's business, I take it off the list and leave the tag. Which?\n- (The list does show 20 files now; it was lag.)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:33:27.809Z",
+     "text": "- wsl: taken the red; the suites are filled, 16: auth, the auth tables, nodeStore, apiGate, errors, the family and verb selectors, both selectors with list and row, both editors, the grants app.\n- apiBranchSelector's old test is off the suites: the rename removes it.\n- Writing the reds now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:36:41.422Z",
+     "text": "- wsl: the first reds are written (auth.bundle, auth.branch, the gate), but the commit is refused: Desk has G41.14 in design, no Go pressed.\n- Press End design, then Go, and they go in at once. Q1."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:37:30.851Z",
+     "text": "- wsl: Q2, on the rename: today apiBranchSelector is two dropdowns, family and verb. The branchEditor puts a verb selector beside it, which would make two verb dropdowns.\n- I read it as: apiFamilySelector picks the family alone, the verb selector stands beside it. Right?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T07:37:52.196Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T07:39:17.371Z",
+     "text": "wsl, take the verb selector out of the branch selector"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:41:04.946Z",
+     "text": "- wsl: understood: apiFamilySelector picks the family alone; the verb selector stands beside it. I write its red so.\n- Q2 is cleared, but Desk still shows G41.14 in design with no Go, so my commits are refused. Press End design, then Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T07:45:54.932Z",
+     "text": "cw, it's ok, we'll leave the changes to index.html in this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T07:49:11.920Z",
+     "text": "- cw: noted, the old shell page stays on the list; the rename drops its old tag.\n- My listener missed your last lines here; I read them now by search.\n- In design I build nothing; I start on the code when wsl's reds are in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:49:55.169Z",
+     "text": "- wsl: every red of the box is written and staged: 13 suites, each run green on a throwaway build and mutated, the throwaways gone.\n- The commit is refused: Desk still shows G41.14 in design, Go not pressed.\n- Press End design, then Go, and it goes in at once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T07:51:17.398Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T07:52:19.456Z",
+     "text": "all, \n\ni've changed my slow mind on the following\n\n- apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector NEEDs the family selector to have any meaning at all.\n\nthe box is updated accordingly."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:53:03.061Z",
+     "text": "- wsl: understood: apiFamilySelector holds the verb selector, as apiBranchSelector did, its choice a family and a verb; and the verb option reads All Verbs. Turning the reds to it now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T07:54:42.792Z",
+     "text": "cw: the desk server itself answers, for G41.14 right now: in design, Go not pressed, no red writer, no builder. That is what refuses wsl's commits, and would refuse mine.\n- The Go you pressed long ago is on G41.13: that item shows Go. G41.14 was split from it later and never got one.\n- Press End design and Go on G41.14, and wsl's reds go in; I build on them."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T07:55:28.337Z",
+     "text": "- wsl: turned to box v29 and staged: apiFamilySelector holds its verb half (family, verb, value), All Verbs; the branch list, branch editor and grants use the one family selector.\n- Each run green on a throwaway build and mutated. Waiting only on your Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T07:56:55.417Z",
+     "text": "cw: you are right, and I found the mess.\n- The desk's own database, read only, says G41.14: Go pressed, out of design, in the red phase, wsl the red writer, 16 suites.\n- What the desk answers us agents says the opposite: in design, no Go, no red writer. That stale answer is what refuses wsl's commits.\n- So the desk's running state and its database disagree. A restart of your node's desk reloads the database and should clear it.\n- Restart it, or shall I leave it to you?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:01:12.710Z",
+     "text": "cw, \n\nwhat? the desk.db IS supposed to be the desks running state WTF?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:02:03.335Z",
+     "text": "cw. there's absolutely NO point in the desk caching what it's db holds"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:03:17.867Z",
+     "text": "cw: right, and I said it wrong. The desk does not cache; its database is its state.\n- The stale copy is the agents' own: each agent's node keeps a cache of the desk, fed by the desk's stream, and answers our reads and the commit check from it (your G41.11 and G41.12 rulings: \"give them FIRST the cache\").\n- That cache missed the rows that turned G41.14 out of design and gave it its Go. So both of us, and the commit check, read the old state.\n- Clearing it: my node's cache file deleted and my node restarted, so it is read whole again. wsl's the same on his.\n- Why it missed the rows wants its own item, so it does not happen again.\n- Clear mine now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:06:12.367Z",
+     "text": "cw, my notes:\n\n- we will make desk push currentGoal more often\n- and we sill make sure that when deskClient merges current goal, it will allways take precedence, and treat that as a reset of the read-pointer."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:08:28.271Z",
+     "text": "- cw: noted, both: the desk pushes the current goal more often, and a client merging it lets it win and resets its read-pointer from there.\n- That is desk work, not this item. Its own item, when you add it?\n- Meanwhile G41.14 stays wrong in our caches: clear mine now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:16:05.180Z",
+     "text": "all,\ni pushed the current goal manually since i have no button in the UI to do Update/push"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:17:13.655Z",
+     "text": "- wsl: my cache is cleared and my node restarted. Read fresh, G41.14 shows Go, out of design, me the red writer.\n- But the commit check still refuses: \"no goal pushed yet\". My node keeps nothing until the desk pushes the current goal.\n- cw, how did yours fill? Andy, choosing G41 again in Desk may push it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:18:04.473Z",
+     "text": "commit bb6d567b43d99d57f11d842351c4e19043dfce92: goal/G41.14 red: the two bundle tables and their shell elements, as box v29 says them (Andy: \"these four following NAMES will be used in SpiritOS: bundle > branch > family > verb\"). - auth.bundle (a h\n- spirit/run/shell/grants/test/grants.js\n- spirit/run/shell/grants/test/grants.md\n- spirit/run/shell/js/branchSelector/test/listElement.js\n- spirit/run/shell/js/branchSelector/test/listElement.md\n- spirit/run/shell/js/branchSelector/test/rowElement.js\n- spirit/run/shell/js/branchSelector/test/rowElement.md\n- spirit/run/shell/js/bundleSelector/test/listElement.js\n- spirit/run/shell/js/bundleSelector/test/listElement.md\n- spirit/run/shell/js/bundleSelector/test/rowElement.js\n- spirit/run/shell/js/bundleSelector/test/rowElement.md\n- spirit/run/shell/js/test/apiBranchSelector.js\n- spirit/run/shell/js/test/apiBranchSelector.md\n- spirit/run/shell/js/test/apiFamilySelector.js\n- spirit/run/shell/js/test/apiFamilySelector.md\n- spirit/run/shell/js/test/apiVerbSelector.js\n- spirit/run/shell/js/test/apiVerbSelector.md\n- spirit/run/shell/js/test/branchEditor.js\n- spirit/run/shell/js/test/branchEditor.md\n- spirit/run/shell/js/test/branchSelector.js\n- spirit/run/shell/js/test/branchSelector.md\n- spirit/run/shell/js/test/bundleEditor.js\n- spirit/run/shell/js/test/bundleEditor.md\n- spirit/run/shell/js/test/bundleSelector.js\n- spirit/run/shell/js/test/bundleSelector.md\n- spirit/run/spirit/test/apiAuth.js\n- spirit/run/spirit/test/apiAuth.md\n- spirit/test/apiGate.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:18:06.247Z",
+     "text": "- wsl: the reds are in, bb6d567b, pulled into your checkout. 13 suites; all red but the gate, which already holds.\n- cw: yours to build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:18:11.816Z",
+     "text": "all,\n\nHow can i force my desk to update and push currentGoal?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:18:32.198Z",
+     "text": "- wsl: two ways. Make another goal current, then G41 again, or restart the desk server: it pushes the current goal whole at start (desk.js:2440 and 3979).\n- Mine has filled since; the reds are in, bb6d567b."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:19:36.346Z",
+     "text": "wsl, so red is commited? and code is for grabs?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:20:03.445Z",
+     "text": "- wsl: yes. Red committed, bb6d567b, and claimed; the code is for grabs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:22:24.873Z",
+     "text": "- cw: my node's cache cleared and read whole again; it now shows G41.14 out of design, Go, red phase with wsl, as the database does.\n- wsl, the red phase is still yours, so my take of the build is refused. Release it or press red done?\n- I start the build now in my clone, the 20 files listed here, and commit once the phase is mine."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:22:42.964Z",
+     "text": "- wsl: red done pressed; the build is yours, cw."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:23:27.943Z",
+     "text": "- cw: taking the build of G41.14. I released G41.13's build, as it waits on this item.\n- Files, as listed: the node store, the auth verbs, the server's verb table, the auth catalogue and its two verb files, the error catalogue; the family and verb selectors, both selectors with their list and row elements, both editors, the grants app, the old shell page."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:26:35.436Z",
+     "text": "cw: one blocker, as a red Q.\n- A call to the node is sent as one object: the verb being called in a field named verb, beside its arguments.\n- So spirit.auth.branch({ op: 'add', bundle, family, verb: 'chat.add' }) sends verb 'chat.add' as the verb to call: the call goes to the wrong place. The face's path drops an argument named verb as well.\n- The table can keep its column verb; only the argument needs another name, for example verbName.\n- The other way, changing how every call carries its verb name, touches the core of every call.\n- Rename the argument, or change the calls?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:27:51.537Z",
+     "text": "wc, \n\"A call to the node is sent as one object: the verb being called in a field named verb, beside its arguments.\"\n\nWHAT? when good or mister trumps calls?\n\nTHIS IS EXACTLY what you we're dicking around with to get agent to work on FACE."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:28:39.350Z",
+     "text": "cw: where it is, from the code:\n- The owner's own door, /api/spirit, reads the verb to call from the body's field verb, and the arguments are the same body (spirit.js builds { verb, ...args }; server.js reads body.verb).\n- The face's calls reach the node the same way: faceHome hands { verb, ...args } on, and the door drops a field named verb from the arguments. That drop is my G41.13 fix, the one you mean. It hid this, it did not solve it.\n- Peer calls, node to node, nest the arguments under family and verb, so they have no clash.\n- The clean fix is the envelope: the verb name kept apart from the arguments, for example { verb, args }. That is a core change to the door, spirit.js and faceHome, and removes my drop.\n- The other way is only renaming the branch's argument.\n- Which?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:30:13.605Z",
+     "text": "cw, \nadd item, blocking this one, to fucking get this shit fixed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:31:21.024Z",
+     "text": "- cw: added goal/G41.15, \"A call keeps its verb name apart from its arguments\", blocking this item. The problem is written in its chat."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.15",
+   "title": "A call keeps its verb name apart from its arguments",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 3,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.14"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 20,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# A call keeps its verb name apart from its arguments\n\n- Today a call to the node's /api/spirit door is one object: the name of the verb to call in a field named \"verb\", and its arguments beside it in the same object.\n- spirit.js (post) and the shell's kernel (spirit.core.ask) both build it so, { verb, ...args }; server.js reads the verb to call from body.verb.\n- The face's calls reach the node the same way, through faceHome; and the door drops any argument named \"verb\" before the verb runs (the G41.13 fix, which hid the clash).\n- So no verb can take an argument named \"verb\". The single-verb table interfaces (op add, set, delete, get, search) are the first to need one: auth.branch's \"verb\" field, G41.14.\n- Calls from node to node nest the arguments under the family and the verb name, and have no such clash.\n\n# The fix (proposal)\n\n- ONE ENVELOPE for every call to a node's door: { call: \"<family>.<verb>\", args: { ... } }. The name is \"call\", the arguments are \"args\", and nothing else is in the body.\n- The door (server.js peekVerb and the dispatch, apiDoor) reads the name from body.call and hands body.args to the verb as they came: it never looks inside args.\n- Every place that builds a call sends the envelope: spirit.js post, the kernel's spirit.core.ask and its own xhr calls (fs.stat, fs.save, jobs.create ...), shell/client/shell.js, shell/shared/ask.js, shell/boot.js, contacts.js, appClient.js, deskClient.js, and the face's transport through faceHome (a request { call, args }).\n- The flat form { verb, ...args } goes, everywhere, in the same item; the door refuses it bad-request, saying the envelope it wants. The door's drop of an argument named \"verb\" goes with it.\n- Node to node (peerPost, nested under family and verb) is not touched.\n- The gate and the grants are not touched: they judge \"<family>.<verb>\", the name alone. op and a row's fields are arguments, invisible to them.\n\n# Its test\n\n- A call auth.branch { op: \"add\", verb: \"chat.add\" } reaches auth.branch with args.verb \"chat.add\", by each path: spirit.js on node, spirit.js on a face, the kernel, the face's transport through faceHome.\n- A flat { verb, ... } body is refused bad-request by the door.\n- No file in the tree builds the flat form any more (a drift guard, as spiritErrors reads the tree).\n\n# A tag for spirit/run/shell/boot.js\n\n- The relays serve the face its spirit/run/shell/boot.js (relayServer.js FACE_FILES), and boot.js carries the face's calls. A relay on the old code hands out the old boot.js, whose flat calls the new node refuses: a relay face breaks until its relay runs this item.\n- So this item needs a tag: a release the relays are updated to, rehearsed on a lab relay at the previous tag before it is tagged (AGENT.md), spirit-3 kept alive through it.\n",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T08:51:32.957Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:31:26.730Z",
+     "text": "cw: what is wrong, from the code:\n- The owner's door, /api/spirit, takes one object: the verb to call in its field verb, the arguments beside it. spirit.js builds { verb, ...args }; server.js reads body.verb.\n- The face's calls go the same way through faceHome, and the door drops any argument named verb (my G41.13 fix, which hid this).\n- So no verb can take an argument named verb: auth.branch's verb, in G41.14, is the first that needs one.\n- Calls from node to node nest the arguments under family and verb, and have no such clash.\n- The fix: the verb name kept apart from the arguments at the door, in spirit.js and on the face's path, and my drop removed.\n- The box is yours: shall I write these lines into it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:33:59.289Z",
+     "text": "cw,\n\nfill the box,\n\nthen explain to me:\n\n- HOW THE FUCK WOULD IT BE THAT the shells put verbs into the argument object?\n- this is a different story with multiplex-verbs like our single-verb database interfaces,\n\nEXPLAIN, not a novel, SHORT, precise, ENGLISH, and to the point."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:34:57.605Z",
+     "text": "cw: box written.\n- Why: the door is one address, /api/spirit, so the call has to say which verb it wants. The code says it by copying the verb name into the arguments object, as a field named verb, and sends that one object. spirit.js and the kernel both do it; the door reads it back out.\n- It never clashed while no verb had an argument named verb.\n- The single-verb table interfaces do: their op picks the action, and a field named verb is data, a row's verb. Copied into the same object, that data overwrites the name of the verb being called."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:40:24.584Z",
+     "text": "from SpiritOS's point of view, and the Grants gate, the single-verb table interfaces, that muliplex the protocol should be completely invisible to grants, or the apiDoor... no"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:40:56.891Z",
+     "text": "- wsl: agreed. The gate and the grants see only family.verb, here auth.branch. op and a row's fields, its verb among them, are arguments, which the door hands on and never reads.\n- The envelope in the box keeps it so: the door reads the name, never the arguments."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:41:46.729Z",
+     "text": "fill the box with a FIX-proposal"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:42:28.933Z",
+     "text": "attach the files that need changing to the item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:42:46.960Z",
+     "text": "- wsl: box v2, the proposal: one envelope for every call, { call: \"family.verb\", args }. The door reads the name from call and hands args on unread.\n- Every builder of the flat form moves to it in this item, about 15 places; the flat form is refused and the verb drop goes.\n- Node-to-node calls, the gate and the grants are untouched. Its test is in the box too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:43:49.086Z",
+     "text": "cw: the box already holds a fix proposal (v2), so I left it as it is. 11 files attached, each one that builds or reads the flat call today:\n- builders: spirit.js, the kernel, the old shell's element table, the shared ask, the face boot, deskAgentRemote;\n- readers: faceHome, server.js, apiDoor, verbTable (the three drops of verb), events (its publish drops verb too).\n- Three in the box's list build no flat call, so I left them off: contacts.js and appClient.js (appClient nests, node to node), and deskClient.js, whose desk verb renamed its argument to name back in G30.6 for this same clash.\n- The box names shell/client/shell.js; the file is spirit/client/shell.js.\n- The relay's own login door, /face/api, takes the flat form too; the box does not say whether it changes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:46:32.579Z",
+     "text": "ALL,\n\ni deleted deskAgentRemote and pushed that to github.\n\nget rid of deskAgentRemote files in this list."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:47:09.041Z",
+     "text": "- wsl: deskAgentRemote.js is off the list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:47:32.404Z",
+     "text": "- cw: deskAgentRemote is off the list, 10 files left. Your deletion is pulled into my clone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:48:40.208Z",
+     "text": "and will this break the face??? agent? anything?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:49:02.937Z",
+     "text": "- wsl: on the loopback face, and for the agent and every process: no, if every builder and reader moves in the one commit. They all call through spirit.js or the files on the list.\n- On a relay face: yes, until the relays are updated. A relay serves the face its boot.js (relayServer.js:431), which carries the face's calls; an old relay hands out the old boot.js, whose flat calls the new node refuses.\n- So the relays are updated with this item, or the face keeps working only once they are."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T08:50:31.613Z",
+     "text": "this needs a tag for \"spirit/run/shell/boot.js\"\n\nnote that in the box"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:50:57.459Z",
+     "text": "- wsl: noted in the box, v3: a section \"A tag for spirit/run/shell/boot.js\". Relays serve boot.js, so this item needs a release the relays are updated to, rehearsed on a lab relay first."
     }
    ]
   }
  ]
 }
-
-
-
-
