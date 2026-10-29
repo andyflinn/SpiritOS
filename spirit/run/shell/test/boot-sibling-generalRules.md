@@ -41,9 +41,15 @@ The node's own page for mounting one shell file alone. Not built yet: today ever
   `spirit.require`. Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that
   uses a part it did not require fails here.
 - **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with an api as the face gives an app.
-- **An element** is mounted by the sample beside its tests: `<its folder>/test/<its name>.mount.js`, a page script
-  that sets `window.spiritMountSample(box)`, making the element in the box with the options it needs (the grants panel
-  its two tables) and answering what create answered. An element without a sample does not mount.
+- **An element** is mounted by the file beside its tests that names how (Andy: *"so the test folder needs a
+  <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?"*, and *"i proposed
+  making it a json file."*): `<its folder>/test/<its name>-boot-sibling-generalRules.json`, named after the module and
+  the general test that reads it. It is JSON, not a script: `testModule.js` runs every `.js` in a test folder as a test.
+  - `{ "create": "<the element's name on spirit.elements>", "options": { ... } }`: the page calls
+    `spirit.elements[create].create(box, options)` and keeps what it answered (its destroy).
+  - JSON holds no function, so in the options `{ "answers": X }` is a function that answers X (the grants panel's
+    search, grant, revoke and stream), and `{ "page": "api" }` is the page's api.
+  - An element without such a file does not mount, and says so.
 - It reports on `window.spiritMount`:
   - `state`: `loading`, then `mounted` or `failed`;
   - `error`: why it failed;

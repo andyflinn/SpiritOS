@@ -1,0 +1,16 @@
+{
+  "create": "grantsPanel",
+  "options": {
+    "ids": { "table": "loopback://api/contact/search", "key": "key", "label": "label" },
+    "grants": {
+      "branch": "grants",
+      "key": "key",
+      "label": "label",
+      "search": { "answers": { "items": [], "more": false } },
+      "grant": { "answers": { "ok": true } },
+      "revoke": { "answers": { "ok": true } },
+      "stream": { "answers": null }
+    },
+    "api": { "page": "api" }
+  }
+}
