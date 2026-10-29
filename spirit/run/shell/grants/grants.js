@@ -71,8 +71,10 @@ var GR_FILTERS = [
   // A DEPRECATED FILTER, OFF BY DEFAULT (Andy: "your allowed to keep the deprecated, BUT you must provide a filter for
   // deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."): off, a grant no
   // server here serves today is left out; on, it is listed, marked.
-  { name: 'deprecated', word: 'deprecated', toggle: true,
-    test: function (row, on) { return on || grServes(String((row && row.path) || '')) ? 1 : 0; } },
+  // Its button stands on the app's filter line with the others (Andy: "put the fucking deprecated filter on the same
+  // fucking line as all other filters"), so the list draws none of its own.
+  { name: 'deprecated', word: 'deprecated', toggle: true, when: function () { return false; },
+    test: function (row, on) { return on === true || grShowDeprecated || grServes(String((row && row.path) || '')) ? 1 : 0; } },
 ];
 // Deprecated is a REPORT: the server is away or the verb is gone, and the grant waits for the owner, intact
 // (suspend/repair, G1.4). The grant row asks this of each path (shell/js/grantSelector/rowElement.js).
@@ -81,6 +83,7 @@ function grServes(path) { return !grTree || window.spirit.apiTreeIndex.serves(gr
 // node's servers are jobs of kind server on its stream, their status changing as each starts and ends; such a job
 // changed, the tree is read again and the list redraws, so a grant's mark follows what the node serves. One read at a
 // time: a change while one is out asks once more when it lands.
+var grShowDeprecated = false;   // the deprecated filter's button, off by default
 var grTreeBusy = false;
 var grTreeAgain = false;
 function grTreeChanged() {
@@ -227,12 +230,20 @@ function grGrantsTab(box) {
         '<div data-grants="said" class="' + (grSaidError ? 'job-refusal' : 'job-manifest-note') + '">' + grEsc(grSaid) + '</div>' +
         '<div data-grants="filters" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em">' +
           '<span data-grants="filter-id"></span><span data-grants="filter-family"></span>' +
+          // Drawn as the search element draws a toggle: bold and outlined when on.
+          '<button type="button" data-grants="deprecated" aria-pressed="' + (grShowDeprecated ? 'true' : 'false') + '" style="' +
+            (grShowDeprecated ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">deprecated</button>' +
         '</div>' +
       '</div>';
     box.querySelector('[data-grants="id"]').appendChild(grIdSel);
     box.querySelector('[data-grants="bundle"]').appendChild(grBundleSel);
     box.querySelector('[data-grants="filter-id"]').appendChild(grFilterId);
     box.querySelector('[data-grants="filter-family"]').appendChild(grFilterFamily);
+    box.querySelector('[data-grants="deprecated"]').addEventListener('click', function () {
+      grShowDeprecated = !grShowDeprecated;
+      grPaint();
+      if (grList) grList.list.redraw();
+    });
     box.querySelector('#gr-grant').addEventListener('click', function () { grGrantBundle(); });
     box.appendChild(listHost);
   };
