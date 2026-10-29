@@ -34,12 +34,14 @@ var grSaid = '';        // what the page says a press did
 var grSaidError = false;
 var grPaint = null;     // draws the Grants tab again with what it says
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
-// The owner's api tree, once per paint: what serves() judges against.
+// The owner's api tree, once per paint: what serves() judges against. Through the one spirit object, spirit.tree(), which
+// answers on the home node and on a face alike (goal/G41.14: asked as the verb 'api', the face's home path refused it,
+// the tree came back empty, and every grant read deprecated).
 function grLoadTree() {
-  return grApi.verb('api').then(function (a) {
-    grTree = (a && a.body) || {};
+  return Promise.resolve(spirit.tree()).then(function (t) {
+    grTree = t && typeof t === 'object' ? t : {};
     return grTree;
-  });
+  }, function () { grTree = null; return grTree; });
 }
 function grSay(text, isError) {
   grSaid = String(text || '');
