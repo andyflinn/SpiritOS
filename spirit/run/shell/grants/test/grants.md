@@ -34,6 +34,10 @@ with them.
   report deprecated branches"*): the app reads the api tree through the spirit object, `spirit.tree()`, and tells the list
   what it serves (`serves(path)`): a path whose family no server on this node serves today reads deprecated. Nothing is
   pruned by it.
+- **Deprecated follows the stream** (Andy: *"so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE."*): a
+  node's servers are jobs of kind `server` on its stream (`spirit/jobs.js`); such a job changed, the app reads the tree
+  again and the list redraws, so a grant reads deprecated only while no server serves it. A job that is no server changes
+  nothing.
 - **A deprecated filter, off by default** (Andy: *"your allowed to keep the deprecated, BUT you must provide a filter for
   deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."*): the list has a toggle
   filter named `deprecated`. Off, the default, a grant the tree does not serve is left out; on, every grant is listed,
@@ -55,6 +59,7 @@ with them.
 - The form out of order, or the filters above it.
 - A filter that does not narrow, or a change that does not redraw the list.
 - A fill box above the list, or the list's host not one.
+- A mark that does not follow a server starting or ending.
 - A deprecated filter missing, on by default, or hiding a served grant.
 - A tree read anywhere but `spirit.tree()`; a served path reported deprecated, or an unserved one not.
 - A grant made of anything but the bundle's branches, or one branch left out of it; an already-granted path reported as

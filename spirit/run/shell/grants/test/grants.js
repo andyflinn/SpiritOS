@@ -89,7 +89,7 @@ function world() {
     spirit: { elements: page,
       require: function (p) { w.required.push(String(p)); (FILES[p] || []).forEach(function (k) { page[k] = E[k]; }); return Promise.resolve(true); },
       // The api tree through the one spirit object (goal/G41.14: asked as the verb 'api', a face's home path refused it).
-      tree: function () { w.treeAsked += 1; return Promise.resolve(TREE); },
+      tree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
       shell: { activateApp: function (d) { w.def = d; } }, escapeHtml: api.escapeHtml },
     document: { createElement: function (t) { return node('<' + t + '>'); }, getElementById: function (id) { return byId[id] || null; } },
     Event: function (type) { this.type = type; },
@@ -99,6 +99,8 @@ function world() {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
+  // The page's one data set, which spirit.js brings with the client: the node's stream lands there.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   w.api = api;
@@ -188,6 +190,27 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(w.treeAsked >= 1, 'the app reads the api tree through the spirit object, spirit.tree()', 'spirit.tree asked ' + w.treeAsked);
   ok(typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false,
     'the list is told what the tree serves: fs.search yes, a family the node does not serve no', 'serves: ' + short(typeof gl.opts.serves === 'function' ? [gl.opts.serves('fs.search'), gl.opts.serves('gone.verb')] : gl.opts.serves));
+
+  test.subHeading('deprecated follows the stream');
+  // Andy, goal/G41.14: "so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE." A node's servers are jobs
+  // of kind server on its stream (spirit/jobs.js), their status changing as each starts and ends: such a job changed, the
+  // app reads the tree again (spirit.tree()) and the list redraws, so a grant's mark follows the tree.
+  const D = w.win.spirit.data;
+  const asked0 = w.treeAsked;
+  const redrawn0 = gl.redrawn;
+  D.take({ id: 'job_77', kind: 'permanent', type: 'server-stats', status: 'running', data: {} });
+  await settle();
+  ok(w.treeAsked === asked0, 'a job that is no server changes nothing', 'tree asked ' + (w.treeAsked - asked0) + ' more');
+  w.tree = Object.assign({}, TREE, { gone: { verb: {} } });
+  D.take({ id: 'job_78', kind: 'server', type: 'gone', status: 'running', module: 'process/js/gone', data: {} });
+  await settle();
+  ok(w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true && gl.redrawn > redrawn0, 'a server job changed: the app reads the tree again, the grant it now serves is no longer deprecated, and the list redraws',
+    'tree asked ' + (w.treeAsked - asked0) + ' more, serves gone.verb ' + gl.opts.serves('gone.verb') + ', redrawn ' + (gl.redrawn - redrawn0));
+  w.tree = TREE;
+  const asked1 = w.treeAsked;
+  D.take({ id: 'job_78', kind: 'server', type: 'gone', status: 'exited', module: 'process/js/gone', data: {} });
+  await settle();
+  ok(w.treeAsked > asked1 && gl.opts.serves('gone.verb') === false, 'and when that server ends, its grants read deprecated again', 'serves gone.verb ' + gl.opts.serves('gone.verb'));
 
   test.subHeading('a deprecated filter, off by default');
   // Andy, goal/G41.14: "your allowed to keep the deprecated, BUT you must provide a filter for deprecated that is OFF by
