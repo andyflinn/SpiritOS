@@ -11,14 +11,15 @@
 // ./test/grants.js.
 //   - GRANTS: the one-row grant form, "grant" [ID selector] [bundle selector] [Grant] (shell/js/contactSelector.js,
 //     shell/js/bundleSelector.js); below it every grant, held by the page (auth.search with no words) and ranked by
-//     probabilitySearch, narrowed by its own filters, an ID and a server with its verb (shell/js/apiBranchSelector.js):
+//     probabilitySearch, narrowed by its own filters, an ID and a family with its verb (shell/js/apiFamilySelector.js):
 //     the peer's name, the path, deprecated when spiritApiTreeIndex.serves says no server serves it today (a REPORT:
 //     pruning is the owner's press, one Revoke at a time), and in the rightmost column each row's Revoke, an
 //     armingButton that revokes that grant.
 //   - BUNDLES: the bundle editor (shell/js/bundleEditor.js), "where bundles are created and maintained with the bundle
 //     shell element".
 // A BUNDLE IS NOT GRANTED BY REFERENCE (box v7): "each path row of the bundle, combined with the ID chosen in the ID
-// selector (contactSelector), becomes a new auth row, unless that row exists already": one auth.grant per path, a path
+// selector (contactSelector), becomes a new auth row, unless that row exists already": since goal/G41.14 a bundle's rows
+// are its branches (auth.branch), one auth.grant per branch, its path family.verb or the family alone for (ALL), a path
 // already granted counted done. The old line, its api-branch selector, its contacts list and the Grant the bundle button
 // of a server's DEPENDENCIES are gone with it.
 // Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
@@ -28,8 +29,8 @@ var grGrants = [];      // every grant, {name, key, path}, as auth.search answer
 var grList = null;      // the probabilitySearch over them
 var grBundleSel = null; // the grant form's bundle selector
 var grIdSel = null;     // and its ID selector
-var grFilterId = null;  // the list's filters: an ID, and a server with its verb (the api-branch selector)
-var grFilterBranch = null;
+var grFilterId = null;  // the list's filters: an ID, and a family with its verb (the family selector)
+var grFilterFamily = null;
 var grSaid = '';        // what the page says a press did
 var grSaidError = false;
 var grPaint = null;     // draws the Grants tab again with what it says
@@ -61,17 +62,18 @@ function grLoadGrants() {
   });
 }
 // THE LIST'S FILTERS NARROW IT (goal/G41.13, Andy: "a probabilitySearch for grants. with the normal filters,
-// (idSelector, apiBranchSelector, apiVerbSelector)"): the ID chosen, the server chosen and its verb; one left unchosen
+// (idSelector, apiBranchSelector, apiVerbSelector)", the branch selector since renamed the family selector, goal/G41.14):
+// the ID chosen, the family chosen and its verb; one left unchosen
 // means all. A row is one grant, keyed by its peer and path.
 function grRows() {
   var peer = grFilterId ? grFilterId.value : '';
-  var server = grFilterBranch ? grFilterBranch.server : '';
-  var verb = grFilterBranch ? grFilterBranch.verb : '';
+  var family = grFilterFamily ? grFilterFamily.family : '';
+  var verb = grFilterFamily ? grFilterFamily.verb : '';
   return grGrants.filter(function (g) {
     if (peer && g.key !== peer) return false;
     var dot = g.path.indexOf('.');
     var app = dot === -1 ? g.path : g.path.slice(0, dot);
-    if (server && app !== server) return false;
+    if (family && app !== family) return false;
     if (verb && g.path !== app + '.' + verb) return false;
     return true;
   }).map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
@@ -126,14 +128,32 @@ function grWarnings(path) {
   })).then(function (all) { return all.filter(Boolean); });
 }
 
-// GRANT: the chosen bundle's paths to the chosen ID, one auth.grant per path, after the warnings of every path it
+// A BUNDLE'S PATHS, from its branches (goal/G41.14): auth.branch's search on that bundle, each branch family.verb, or
+// the family alone for the empty verb, all of it (the node's grant takes a family as every verb of it).
+function grBundlePaths(bundle) {
+  return grApi.verb('auth.branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
+    if (a.status !== 200) throw new Error(grRefusal(a.body));
+    if (a.body && a.body.more) grSay('more branches than fit one answer: only the first are granted');
+    return ((a.body && a.body.items) || []).map(function (i) {
+      var b = null;
+      try { b = JSON.parse(i.label); } catch (e) { b = null; }
+      return b && b.family ? (b.verb ? b.family + '.' + b.verb : b.family) : '';
+    }).filter(Boolean);
+  });
+}
+
+// GRANT: the chosen bundle's branches to the chosen ID, one auth.grant per branch, after the warnings of every path it
 // reaches; a path the ID holds already is counted done; any other refusal is said. Then the grants are read again.
 function grGrantBundle() {
   var key = grIdSel ? grIdSel.value : '';
   var bundle = grBundleSel ? grBundleSel.row : null;
   if (!key || !bundle || !grBundleSel.value) return Promise.resolve();
-  var paths = Array.isArray(bundle.paths) ? bundle.paths.slice() : [];
-  return Promise.all(paths.map(grWarnings)).then(function (lists) {
+  var paths = [];
+  return grBundlePaths(bundle).then(function (got) {
+    paths = got;
+    return Promise.all(paths.map(grWarnings));
+  }, function (e) { grSay('the bundle could not be read: ' + ((e && e.message) || e), true); return null; }).then(function (lists) {
+    if (!lists) return null;
     var warnings = [].concat.apply([], lists);
     if (warnings.length && !window.confirm('Before you grant ' + (bundle.label || 'this bundle') + ':\n\n' + warnings.join('\n\n') + '\n\nGrant it anyway?')) {
       grSay('not granted: ' + (bundle.label || 'the bundle'));
@@ -169,7 +189,7 @@ function grRevoke(key, path) {
 // tree...."): through spirit.require, each element bringing its own. Nothing of the old shell's list search is left.
 var grParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/armingButton.js',
   'shell/js/tabContainer.js', 'shell/js/bundleSelector.js', 'shell/js/contactSelector.js', 'shell/js/bundleEditor.js',
-  'shell/js/apiBranchSelector.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/apiFamilySelector.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -194,10 +214,10 @@ function grGrantsTab(box) {
   // [bundleSelector] [grantButton]").
   grIdSel = E.createContactSelector({ placeholder: 'choose an ID…' });
   grBundleSel = E.createBundleSelector({ placeholder: 'choose a bundle…' });
-  // THE LIST'S FILTERS, their own selectors: an ID, and a server with its verb.
+  // THE LIST'S FILTERS, their own selectors: an ID, and a family with its verb.
   grFilterId = E.createContactSelector({ placeholder: 'every ID', all: 'every ID' });
-  grFilterBranch = E.createApiBranchSelector({ all: 'every server' });
-  [grFilterId, grFilterBranch].forEach(function (f) { f.addEventListener('change', function () { if (grList) grList.redraw(); }); });
+  grFilterFamily = E.createApiFamilySelector({ all: 'every family' });
+  [grFilterId, grFilterFamily].forEach(function (f) { f.addEventListener('change', function () { if (grList) grList.redraw(); }); });
   var listHost = document.createElement('div');
   listHost.className = 'fill';
   grPaint = function () {
@@ -212,13 +232,13 @@ function grGrantsTab(box) {
         '</div>' +
         '<div data-grants="said" class="' + (grSaidError ? 'job-refusal' : 'job-manifest-note') + '">' + grEsc(grSaid) + '</div>' +
         '<div data-grants="filters" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em">' +
-          '<span data-grants="filter-id"></span><span data-grants="filter-branch"></span>' +
+          '<span data-grants="filter-id"></span><span data-grants="filter-family"></span>' +
         '</div>' +
       '</div>';
     box.querySelector('[data-grants="id"]').appendChild(grIdSel);
     box.querySelector('[data-grants="bundle"]').appendChild(grBundleSel);
     box.querySelector('[data-grants="filter-id"]').appendChild(grFilterId);
-    box.querySelector('[data-grants="filter-branch"]').appendChild(grFilterBranch);
+    box.querySelector('[data-grants="filter-family"]').appendChild(grFilterFamily);
     box.querySelector('#gr-grant').addEventListener('click', function () { grGrantBundle(); });
     box.appendChild(listHost);
   };

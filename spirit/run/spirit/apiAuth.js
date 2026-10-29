@@ -27,14 +27,13 @@ const PATH = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
 const refuse = function (code) { return { refusal: code }; };
 const text = function (v) { return typeof v === 'string' && v !== ''; };
 
-// THE BUNDLES (goal/G41.13; Andy, box v7): "A bundle is a clearly defined subset of an API, with no user, process or
-// agent tied to it", keyed "by an ID in the shadow roll's form, generated when the row is added", its paths "rows of
-// their own, grouped by the bundle's ID". Its row is nodeStore's (bundles); its paths are bundle_paths (bundle_id,
-// path), the grants' shape, through the one interface to such a table (authTableInterface.js). A BUNDLE IS NOT GRANTED
-// BY REFERENCE (Andy, box v7): the grants app copies its paths, one auth.grant per path, so nothing here touches a grant.
-const authTable = require('./authTableInterface');
-const { generateIdentity } = require('./relayAuth');
+// THE BUNDLES (goal/G41.14; Andy, box): "A bundle is a clearly defined subset of an API, with no ID (user, process or
+// agent,....) tied to it", kept in TWO tables, nodeStore's: bundle (a hidden number, a label never empty) and branch (a
+// number, the bundle it belongs to, a family, a verb or '' for all of it). "a bundle is a bundle, and in itself does
+// not constitute an authorization": the grants app copies a bundle's branches into grants, so nothing here touches one.
+// The two verbs are the owner's until he grants them (apiGate), as every auth verb is.
 const BUNDLE_OPS = ['add', 'set', 'delete', 'get', 'search'];
+const isId = function (v) { return typeof v === 'number' && Number.isInteger(v) && v > 0; };
 
 function createApiAuth(opts) {
   const o = opts || {};
@@ -42,24 +41,30 @@ function createApiAuth(opts) {
   // The live tree, to tell a served path: (appClient.ask('api')).body. Only grant needs it.
   const servedTree = typeof o.tree === 'function' ? o.tree : function () { return Promise.resolve({}); };
   const store = function () { return nodeStore.open(rootDir).auth; };
-  // The bundle rows, and their paths, opened once in node.db beside them (the store opens node.db first).
-  let paths = null;
+  // The two bundle tables, nodeStore's.
   function bundles() { return nodeStore.open(rootDir).bundles; }
-  function bundlePaths() { if (!paths) { bundles(); paths = authTable.open(nodeStore.dbPath(rootDir), 'bundle_paths', 'bundle_id'); } return paths; }
-  // A bundle as get answers it, and as a search item's label carries it.
-  function shown(row) { return { id: row.id, label: row.label, description: row.description, paths: bundlePaths().paths(row.id) }; }
-  // The paths a bundle may hold, as a grant may: each a family or family.verb, never the owner's fs family. '' when
-  // they pass, else the refusal's code.
-  function pathsWhy(list) {
-    if (!Array.isArray(list) || !list.every(function (p) { return typeof p === 'string'; })) return 'bad-request';
-    if (list.some(function (p) { return !PATH.test(p); })) return 'not-a-path';
-    if (list.some(function (p) { return p.split('.')[0] === 'fs'; })) return 'owner-only';
-    return '';
+  function branches() { return nodeStore.open(rootDir).branches; }
+  // One search answer: rows ranked by the probability modules over their words, best first; no words is every row in
+  // the table's order. Each item is keyed by the row's id, its label the row as get shows it.
+  function ranked(rows, words, wordsOf) {
+    const bucket = createProbabilityBucket(Infinity);
+    rows.forEach(function (row, i) {
+      const score = words ? probabilityStringObjectMatch(words, wordsOf(row)) : 0;
+      if (words && !(score > 0)) return;
+      bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (2 + i) : 1 / (2 + i), { key: String(row.id), label: JSON.stringify(row) });
+    });
+    const res = bucket.serialize(null, SEARCH_ROOM);
+    return { items: res.items, more: !!res.more };
   }
-  function setPaths(id, list) {
-    const t = bundlePaths();
-    t.paths(id).forEach(function (p) { t.revoke(id, p); });
-    list.forEach(function (p) { t.grant(id, p); });
+  // A branch's family and verb against the live tree (Andy, box: "MUST be validated against the nodes API tree when a
+  // row is added or changed, and refused if the values are not valid"). '' when they pass, else the refusal's code.
+  function branchWhy(family, verb) {
+    return Promise.resolve(servedTree()).then(function (tree) {
+      const branch = tree && tree[family];
+      if (!branch || typeof branch !== 'object' || branch.ok === false) return 'no-such-family';
+      if (verb !== '' && !Object.prototype.hasOwnProperty.call(branch, verb)) return 'no-such-verb';
+      return '';
+    });
   }
 
   // A path the live tree serves: its app answered a tree, and the verb, if one is named, is in it.
@@ -144,55 +149,82 @@ function createApiAuth(opts) {
       return store().relabel(a.key, a.label) ? { key: a.key, label: a.label } : refuse('no-such-peer');
     },
 
-    // THE BUNDLE VERB (goal/G41.13; Andy, box v7: "one verb under the auth family, auth.bundle, akin to the <tableName>
-    // verbs of the agent app: op add, set, delete, get and search. Granted, no review."), flat as those are:
-    //   add {label, description, paths}  answers { id }, a new key set's public key
-    //   set {id, ...}                    changes what it names and keeps the rest; paths replaces the whole list
-    //   delete {id}                      removes the bundle and its paths; answers { id }
-    //   get {id}                         answers { id, label, description, paths }
-    //   search {text}                    answers { items, more }, each keyed by the bundle's id, its label the bundle as
-    //                                    get shows it, best first; no words is every bundle
+    // THE TWO BUNDLE VERBS (goal/G41.14; Andy, box: "TWO verbs under the auth family, auth.bundle and auth.branch, akin
+    // to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review."), flat as
+    // those are. auth.bundle:
+    //   add {label}        answers { id }, the number the table gives it; a label never empty
+    //   set {id, label}    renames it, never to an empty label
+    //   delete {id}        removes the bundle and every branch that names it; answers { id }
+    //   get {id}           answers { id, label }
+    //   search {text}      answers { items, more }, each keyed by the bundle's id, its label the bundle as get shows it,
+    //                      best first; no words is every bundle
     bundle: function (a) {
       const op = a && a.op;
       if (BUNDLE_OPS.indexOf(op) === -1) return refuse('bad-request');
       const B = bundles();
       if (op === 'add') {
-        const why = pathsWhy(a.paths === undefined ? [] : a.paths);
-        if (why) return refuse(why);
-        const id = generateIdentity('').publicKey;
-        B.add(id, a.label, a.description);
-        setPaths(id, a.paths || []);
-        return { id: id };
+        if (!text(a.label)) return refuse('bad-request');
+        return { id: B.add(a.label) };
       }
       if (op === 'search') {
         if (a.text !== undefined && typeof a.text !== 'string') return refuse('bad-request');
-        const words = String(a.text || '').trim();
-        const bucket = createProbabilityBucket(Infinity);
-        let i = 0;
-        for (const r of B.all()) {
-          i += 1;
-          const row = shown(r);
-          const score = words ? probabilityStringObjectMatch(words, { label: row.label, description: row.description, paths: row.paths.join(' ').split('.').join(' ') }) : 0;
-          if (words && !(score > 0)) continue;
-          bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i), { key: row.id, label: JSON.stringify(row) });
-        }
-        const res = bucket.serialize(null, SEARCH_ROOM);
-        return { items: res.items, more: !!res.more };
+        return ranked(B.all(), String(a.text || '').trim(), function (row) { return { label: row.label }; });
       }
-      if (!text(a.id)) return refuse('bad-request');
+      if (!isId(a.id)) return refuse('bad-request');
       const was = B.get(a.id);
       if (!was) return refuse('no-such-bundle');
-      if (op === 'get') return shown(was);
-      if (op === 'delete') {
-        setPaths(a.id, []);
-        B.del(a.id);
-        return { id: a.id };
-      }
-      // set: what it names, the rest kept.
-      if (a.paths !== undefined) { const why = pathsWhy(a.paths); if (why) return refuse(why); }
-      B.set(a.id, a.label !== undefined ? a.label : was.label, a.description !== undefined ? a.description : was.description);
-      if (a.paths !== undefined) setPaths(a.id, a.paths);
+      if (op === 'get') return was;
+      if (op === 'delete') { B.del(a.id); return { id: a.id }; }
+      // set: the label, never an empty one; nothing else is a bundle's.
+      if (a.label !== undefined && !text(a.label)) return refuse('bad-request');
+      if (a.label !== undefined) B.set(a.id, a.label);
       return { id: a.id };
+    },
+
+    // auth.branch, a bundle's family, and one verb of it or all of it:
+    //   add {bundle, family, verb}  answers { id }; the bundle must be there, the family and verb in the live tree
+    //                               (verb '' or left out: all of the family), and not in that bundle already
+    //   set {id, family?, verb?}    changes what it names and keeps the rest, checked as an add is
+    //   delete {id}                 removes that branch alone; answers { id }
+    //   get {id}                    answers { id, bundle, family, verb }
+    //   search {text, bundle?, family?, verb?}
+    //                               answers { items, more }, narrowed by each filter given that is not empty
+    branch: function (a) {
+      const op = a && a.op;
+      if (BUNDLE_OPS.indexOf(op) === -1) return Promise.resolve(refuse('bad-request'));
+      const R = branches();
+      if (op === 'search') {
+        if (a.text !== undefined && typeof a.text !== 'string') return Promise.resolve(refuse('bad-request'));
+        const rows = R.all().filter(function (r) {
+          return (!a.bundle || r.bundle === a.bundle) && (!a.family || r.family === a.family) && (!a.verb || r.verb === a.verb);
+        });
+        return Promise.resolve(ranked(rows, String(a.text || '').trim(), function (r) { return { family: r.family, verb: r.verb.split('.').join(' ') }; }));
+      }
+      if (op === 'add') {
+        if (!isId(a.bundle) || !text(a.family) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
+        if (!bundles().get(a.bundle)) return Promise.resolve(refuse('no-such-bundle'));
+        const verb = a.verb || '';
+        return branchWhy(a.family, verb).then(function (why) {
+          if (why) return refuse(why);
+          if (R.same(a.bundle, a.family, verb, 0)) return refuse('already-in-bundle');
+          return { id: R.add(a.bundle, a.family, verb) };
+        });
+      }
+      if (!isId(a.id)) return Promise.resolve(refuse('bad-request'));
+      const was = R.get(a.id);
+      if (!was) return Promise.resolve(refuse('no-such-branch'));
+      if (op === 'get') return Promise.resolve(was);
+      if (op === 'delete') { R.del(a.id); return Promise.resolve({ id: a.id }); }
+      // set: the family and verb it names, the rest kept; the bundle a branch belongs to is not changed.
+      if ((a.family !== undefined && !text(a.family)) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
+      const family = a.family !== undefined ? a.family : was.family;
+      const verb = a.verb !== undefined ? a.verb : was.verb;
+      return branchWhy(family, verb).then(function (why) {
+        if (why) return refuse(why);
+        if (R.same(was.bundle, family, verb, was.id)) return refuse('already-in-bundle');
+        R.set(was.id, family, verb);
+        return { id: was.id };
+      });
     },
   };
 }

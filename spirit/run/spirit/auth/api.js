@@ -11,8 +11,9 @@ module.exports = {
     grant: { key: 'key', path: 'text' },
     revoke: { key: 'key', path: 'text' },
     relabel: { key: 'key', label: 'name' },
-    // goal/G41.13: the node's bundles, one flat verb as the agent tables' are, op one of add, set, delete, get and
-    // search; which arguments an op takes the node checks per op (apiAuth.js).
-    bundle: { op: 'id', id: 'key?', label: 'name?', description: 'description?', paths: 'list?', text: 'text?' },
+    // goal/G41.14: the node's bundles and their branches, one flat verb per table as the agent tables' are, op one of
+    // add, set, delete, get and search; which arguments an op takes the node checks per op (apiAuth.js).
+    bundle: { op: 'id', id: 'number?', label: 'name?', text: 'text?' },
+    branch: { op: 'id', id: 'number?', bundle: 'number?', family: 'text?', verb: 'text?', text: 'text?' },
   },
 };

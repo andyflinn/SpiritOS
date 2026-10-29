@@ -1700,8 +1700,10 @@ catch (e) {
     'grant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
     'revoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },
     'relabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
-    // goal/G41.13: the bundles (Andy, box v7: "one verb under the auth family, auth.bundle ... Granted, no review.").
-    'bundle': { request: { op: '', id: '', label: '', description: '', paths: [''], text: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
+    // goal/G41.14: the bundles and their branches (Andy, box: "TWO verbs under the auth family, auth.bundle and
+    // auth.branch ... Granted, no review.").
+    'bundle': { request: { op: '', id: 0, label: '', text: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
+    'branch': { request: { op: '', id: 0, bundle: 0, family: '', verb: '', text: '' }, reply: {}, handler: authVerb(apiAuth.branch) },
   }, { wire: false, by: 'server.js' });
   loopbackVerbs.mount('jobs', path.join(__dirname, 'jobs'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },

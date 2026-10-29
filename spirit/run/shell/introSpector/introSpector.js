@@ -96,8 +96,8 @@ function isShow(answer) {
 function isPaintForm(branch) {
   var form = document.getElementById('is-form');
   var tree = branch.tree || {};
-  var entry = branch.server && branch.verb && tree[branch.server] ? tree[branch.server][branch.verb] : null;
-  if (!entry) { form.innerHTML = '<div class="job-manifest-note">' + (branch.server ? 'choose a verb' : 'choose a family') + '</div>'; return; }
+  var entry = branch.family && branch.verb && tree[branch.family] ? tree[branch.family][branch.verb] : null;
+  if (!entry) { form.innerHTML = '<div class="job-manifest-note">' + (branch.family ? 'choose a verb' : 'choose a family') + '</div>'; return; }
   isFields = isFieldsOf(entry.request);
   form.innerHTML =
     (entry.description ? '<div class="job-manifest-note">' + isEsc(entry.description) + '</div>' : '') +
@@ -119,8 +119,8 @@ function isPaintForm(branch) {
     var args;
     try { args = isArgsOf(isFields, texts); }
     catch (e) { isShow({ ok: false, error: e.message }); return; }
-    isShow({ calling: branch.server + '.' + branch.verb });
-    isCall(isParty, branch.server, branch.verb, args).then(isShow, function (e) { isShow({ ok: false, error: String(e && e.message || e) }); });
+    isShow({ calling: branch.family + '.' + branch.verb });
+    isCall(isParty, branch.family, branch.verb, args).then(isShow, function (e) { isShow({ ok: false, error: String(e && e.message || e) }); });
   });
 }
 
@@ -135,7 +135,7 @@ spirit.shell.activateApp({
       '</div>';
     var line = document.getElementById('is-line');
     var party = document.createElement('span');
-    var branch = api.ui.elements.createApiBranchSelector({ serverPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
+    var branch = api.ui.elements.createApiFamilySelector({ familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     line.appendChild(party);
     line.appendChild(branch);
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js), the book and this

@@ -765,8 +765,12 @@ define('already-granted', { status: 409, texts: ['already granted'] });
 define('owner-only', { status: 403, texts: ['the owner\'s alone'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
 define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
-// goal/G41.13: auth.bundle's, a bundle id the bundle table does not hold.
+// goal/G41.14: auth.bundle's and auth.branch's. A bundle or branch id its table does not hold; a branch's family the
+// node's api tree does not serve (a verb the family does not serve is no-such-verb); a family and verb the bundle holds.
 define('no-such-bundle', { status: 404, texts: ['no such bundle'] });
+define('no-such-branch', { status: 404, texts: ['no such branch'] });
+define('no-such-family', { status: 404, texts: ['no such family on this node'] });
+define('already-in-bundle', { status: 409, texts: ['that family and verb are in the bundle already'] });
 define('store-unavailable', { status: 503, texts: ['the grants cannot be read'], fault: 'node' });
 define('no-governor', { status: 404, texts: ['no Governor'] });
 define('no-such-lever', { status: 404, texts: ['no such lever'] });

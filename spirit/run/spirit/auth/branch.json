@@ -1,0 +1,4 @@
+{
+  "description": "A bundle's branches, each a family of the node's API and one verb of it, or '' for all of it, keyed by a number: op add {bundle, family, verb} answers {id}; set {id, family, verb} changes what it names; delete {id}; get {id} answers {id, bundle, family, verb}; search {text, bundle, family, verb} answers {items, more}, narrowed by each filter that is not empty. The bundle must exist, the family and verb must be served by this node, and a bundle holds a family and verb once.",
+  "request": { "op": "", "id": 0, "bundle": 0, "family": "", "verb": "", "text": "" }
+}

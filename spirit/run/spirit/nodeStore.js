@@ -505,16 +505,25 @@ function open(rootDir, opts) {
       PRIMARY KEY (peer_id, path)
     );
   `);
-  // THE BUNDLES (goal/G41.13; Andy, box v7: "A bundle is a clearly defined subset of an API, with no user, process or
-  // agent tied to it", "The node keeps one bundle table, in node.db"): one row per bundle, keyed by an ID in the shadow
-  // roll's form. Its paths are rows of their own, bundle_paths (bundle_id, path), the grants' shape, kept through
-  // authTableInterface.js (apiAuth.js), which makes that table.
+  // THE BUNDLES (goal/G41.14; Andy, box: "The node keeps TWO bundle tables, in node.db"). bundle: "a hidden numeric
+  // key, and a label", "a dictionary". branch: "a hidden numeric key", "an indexed numeric reference, bundle", "a
+  // mandatory family field" and "an optional verb field", '' meaning all of the family. Deleting a bundle deletes its
+  // branches (apiAuth.js does both in one transaction). The tables of goal/G41.13 go: "any bundle lost during these
+  // changes are LOST. OOS."
   db.exec(`
-    CREATE TABLE IF NOT EXISTS bundles (
-      id          TEXT PRIMARY KEY,
-      label       TEXT NOT NULL DEFAULT '',
-      description TEXT NOT NULL DEFAULT ''
+    DROP TABLE IF EXISTS bundles;
+    DROP TABLE IF EXISTS bundle_paths;
+    CREATE TABLE IF NOT EXISTS bundle (
+      id    INTEGER PRIMARY KEY,
+      label TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS branch (
+      id     INTEGER PRIMARY KEY,
+      bundle INTEGER NOT NULL,
+      family TEXT NOT NULL,
+      verb   TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS branch_bundle ON branch (bundle);
   `);
 
   // ── THE MOVE, ON EACH NODE'S FIRST START ON THIS CODE (goal/G40.11) ──
@@ -722,12 +731,19 @@ function open(rootDir, opts) {
     aGranted: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? LIMIT 1'),
     aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
     aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
-    // goal/G41.13: the bundles, by id; all of them in label order.
-    bundleGet: db.prepare('SELECT id, label, description FROM bundles WHERE id = ?'),
-    bundleAll: db.prepare('SELECT id, label, description FROM bundles ORDER BY label, id'),
-    bundlePut: db.prepare('INSERT INTO bundles (id, label, description) VALUES (?, ?, ?)'),
-    bundleSet: db.prepare('UPDATE bundles SET label = ?, description = ? WHERE id = ?'),
-    bundleDel: db.prepare('DELETE FROM bundles WHERE id = ?'),
+    // goal/G41.14: the bundles, by id; all of them in label order. Their branches, by id or by bundle.
+    bundleGet: db.prepare('SELECT id, label FROM bundle WHERE id = ?'),
+    bundleAll: db.prepare('SELECT id, label FROM bundle ORDER BY label, id'),
+    bundlePut: db.prepare('INSERT INTO bundle (label) VALUES (?)'),
+    bundleSet: db.prepare('UPDATE bundle SET label = ? WHERE id = ?'),
+    bundleDel: db.prepare('DELETE FROM bundle WHERE id = ?'),
+    branchGet: db.prepare('SELECT id, bundle, family, verb FROM branch WHERE id = ?'),
+    branchAll: db.prepare('SELECT id, bundle, family, verb FROM branch ORDER BY bundle, family, verb, id'),
+    branchSame: db.prepare('SELECT id FROM branch WHERE bundle = ? AND family = ? AND verb = ? AND id != ?'),
+    branchPut: db.prepare('INSERT INTO branch (bundle, family, verb) VALUES (?, ?, ?)'),
+    branchSet: db.prepare('UPDATE branch SET family = ?, verb = ? WHERE id = ?'),
+    branchDel: db.prepare('DELETE FROM branch WHERE id = ?'),
+    branchDelOf: db.prepare('DELETE FROM branch WHERE bundle = ?'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
@@ -1426,13 +1442,27 @@ function open(rootDir, opts) {
       },
     },
 
-    // goal/G41.13's bundle rows, for apiAuth.js alone; a bundle's paths are its bundle_paths rows, kept there.
+    // goal/G41.14's two tables, for apiAuth.js alone: the bundles and their branches, each keyed by a number.
     bundles: {
-      get: function (id) { const r = q.bundleGet.get(String(id)); return r ? { id: r.id, label: r.label, description: r.description } : null; },
-      all: function () { return q.bundleAll.all().map(function (r) { return { id: r.id, label: r.label, description: r.description }; }); },
-      add: function (id, label, description) { q.bundlePut.run(String(id), String(label || ''), String(description || '')); },
-      set: function (id, label, description) { return q.bundleSet.run(String(label || ''), String(description || ''), String(id)).changes > 0; },
-      del: function (id) { return q.bundleDel.run(String(id)).changes > 0; },
+      get: function (id) { const r = q.bundleGet.get(Number(id)); return r ? { id: Number(r.id), label: r.label } : null; },
+      all: function () { return q.bundleAll.all().map(function (r) { return { id: Number(r.id), label: r.label }; }); },
+      add: function (label) { return Number(q.bundlePut.run(String(label)).lastInsertRowid); },
+      set: function (id, label) { return q.bundleSet.run(String(label), Number(id)).changes > 0; },
+      // A bundle goes with every branch that names it, in one transaction.
+      del: function (id) {
+        db.exec('BEGIN');
+        try { q.branchDelOf.run(Number(id)); const gone = q.bundleDel.run(Number(id)).changes > 0; db.exec('COMMIT'); return gone; }
+        catch (e) { db.exec('ROLLBACK'); throw e; }
+      },
+    },
+    branches: {
+      get: function (id) { const r = q.branchGet.get(Number(id)); return r ? { id: Number(r.id), bundle: Number(r.bundle), family: r.family, verb: r.verb } : null; },
+      all: function () { return q.branchAll.all().map(function (r) { return { id: Number(r.id), bundle: Number(r.bundle), family: r.family, verb: r.verb }; }); },
+      // Another branch of the same bundle naming the same family and verb (id: the branch itself, left out).
+      same: function (bundle, family, verb, id) { return !!q.branchSame.get(Number(bundle), String(family), String(verb), Number(id || 0)); },
+      add: function (bundle, family, verb) { return Number(q.branchPut.run(Number(bundle), String(family), String(verb)).lastInsertRowid); },
+      set: function (id, family, verb) { return q.branchSet.run(String(family), String(verb), Number(id)).changes > 0; },
+      del: function (id) { return q.branchDel.run(Number(id)).changes > 0; },
     },
 
     transaction: function (fn) {

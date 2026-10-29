@@ -3,10 +3,11 @@
 //
 //   Andy, 2026-10-27: "the Dropdowns for family and verb MUST be new or updated shell elements for those data types.
 //   including test folders." The family half is the app-server selector (shell/js/appServerSelector.js); this is the
-//   verb half, and the api-branch selector (shell/js/apiBranchSelector.js) puts the two side by side.
+//   verb half, and the family selector (shell/js/apiFamilySelector.js) holds the two side by side.
 //
-// createApiVerbSelector(options) -> root, the control: root.value is the chosen verb, '' when none (its None reads all
-// verbs and means every verb); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
+// createApiVerbSelector(options) -> root, the control: root.value is the chosen verb, '' for its first option, All
+// Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
+// results in an empty string as value"); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
 // apiTreeIndex.verbs, so DEBUG and DEPENDENCIES are never offered (Andy: "DEBUG/DEPENDENCIES are owner only and will
 // never be offered to peerPost clients."); with no server it hides, lists nothing and clears the choice.
 (function () {
@@ -31,8 +32,8 @@
     parts.then(function () {
       list = window.spirit.elements.probabilitySearch.create(root, {
         face: 'dropdown',
-        placeholder: options.placeholder || 'all verbs',
-        all: 'all verbs',
+        placeholder: options.placeholder || 'All Verbs',
+        all: 'All Verbs',
         rows: rows,
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
