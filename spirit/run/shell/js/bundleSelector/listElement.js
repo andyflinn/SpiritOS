@@ -11,8 +11,9 @@
 //     opts.editable  each row edits its label in place (the editor's pane)
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
-// Its rows are auth.bundle's search, through the spirit object; nothing streams a bundle, so a row's rename or delete
-// asks the list again.
+// A VIEW OF data.bundles (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
+// data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the bundle
+// row element (./rowElement.js, the type's own), so a bundle added, renamed or deleted anywhere shows in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['shell/js/probabilitySearch.js', 'shell/js/bundleSelector/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
@@ -35,6 +36,7 @@
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label'];
     list = window.spirit.elements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
+      data: 'bundles',
       server: 'auth',
       verb: 'bundle',
       face: o.face,
@@ -44,7 +46,7 @@
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.elements.bundleElement.create(row, { editable: o.editable === true, api: o.api, changed: function () { list.refresh(); } });
+        return window.spirit.elements.bundleElement.create(row, { editable: o.editable === true, api: o.api });
       },
       // Matched on its label alone: its number is hidden (Andy, box: "a hidden numeric key").
       matched: function (row) { return { label: String((row && row.label) || '') }; },

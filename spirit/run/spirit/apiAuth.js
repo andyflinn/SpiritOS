@@ -44,6 +44,11 @@ function createApiAuth(opts) {
   // The two bundle tables, nodeStore's.
   function bundles() { return nodeStore.open(rootDir).bundles; }
   function branches() { return nodeStore.open(rootDir).branches; }
+  // EVERY CHANGE TOLD, ROW BY ROW (goal/G41.14): fn({ table, row }) for a row added or set, the row as get shows it, and
+  // fn({ table, row: { id }, gone: true }) for one deleted; the node publishes them on its stream (server.js, the bundles
+  // job). A refused ask tells nothing.
+  const listeners = [];
+  function told(change) { listeners.forEach(function (fn) { try { fn(change); } catch (e) { /* one listener's fault */ } }); }
   // One search answer: rows ranked by the probability modules over their words, best first; no words is every row in
   // the table's order. Each item is keyed by the row's id, its label the row as get shows it.
   function ranked(rows, words, wordsOf) {
@@ -84,6 +89,9 @@ function createApiAuth(opts) {
   }
 
   return {
+    // goal/G41.14: fn(change) for each bundle and branch row added, set or deleted (told, above).
+    onChange: function (fn) { if (typeof fn === 'function') listeners.push(fn); },
+
     // THE GATE'S READ (G1.2): the paths granted to a key. Throws when node.db cannot be read; the gate fails closed.
     pathsOf: function (key) { return store().paths(key); },
 
@@ -164,7 +172,9 @@ function createApiAuth(opts) {
       const B = bundles();
       if (op === 'add') {
         if (!text(a.label)) return refuse('bad-request');
-        return { id: B.add(a.label) };
+        const made = B.add(a.label);
+        told({ table: 'bundle', row: B.get(made) });
+        return { id: made };
       }
       if (op === 'search') {
         if (a.text !== undefined && typeof a.text !== 'string') return refuse('bad-request');
@@ -174,10 +184,17 @@ function createApiAuth(opts) {
       const was = B.get(a.id);
       if (!was) return refuse('no-such-bundle');
       if (op === 'get') return was;
-      if (op === 'delete') { B.del(a.id); return { id: a.id }; }
+      if (op === 'delete') {
+        // The bundle and its branches go in one transaction; each is told gone.
+        const its = branches().all().filter(function (r) { return r.bundle === a.id; });
+        B.del(a.id);
+        its.forEach(function (r) { told({ table: 'branch', row: { id: r.id }, gone: true }); });
+        told({ table: 'bundle', row: { id: a.id }, gone: true });
+        return { id: a.id };
+      }
       // set: the label, never an empty one; nothing else is a bundle's.
       if (a.label !== undefined && !text(a.label)) return refuse('bad-request');
-      if (a.label !== undefined) B.set(a.id, a.label);
+      if (a.label !== undefined) { B.set(a.id, a.label); told({ table: 'bundle', row: B.get(a.id) }); }
       return { id: a.id };
     },
 
@@ -207,14 +224,16 @@ function createApiAuth(opts) {
         return branchWhy(a.family, verb).then(function (why) {
           if (why) return refuse(why);
           if (R.same(a.bundle, a.family, verb, 0)) return refuse('already-in-bundle');
-          return { id: R.add(a.bundle, a.family, verb) };
+          const made = R.add(a.bundle, a.family, verb);
+          told({ table: 'branch', row: R.get(made) });
+          return { id: made };
         });
       }
       if (!isId(a.id)) return Promise.resolve(refuse('bad-request'));
       const was = R.get(a.id);
       if (!was) return Promise.resolve(refuse('no-such-branch'));
       if (op === 'get') return Promise.resolve(was);
-      if (op === 'delete') { R.del(a.id); return Promise.resolve({ id: a.id }); }
+      if (op === 'delete') { R.del(a.id); told({ table: 'branch', row: { id: a.id }, gone: true }); return Promise.resolve({ id: a.id }); }
       // set: the family and verb it names, the rest kept; the bundle a branch belongs to is not changed.
       if ((a.family !== undefined && !text(a.family)) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
       const family = a.family !== undefined ? a.family : was.family;
@@ -223,6 +242,7 @@ function createApiAuth(opts) {
         if (why) return refuse(why);
         if (R.same(was.bundle, family, verb, was.id)) return refuse('already-in-bundle');
         R.set(was.id, family, verb);
+        told({ table: 'branch', row: R.get(was.id) });
         return { id: was.id };
       });
     },

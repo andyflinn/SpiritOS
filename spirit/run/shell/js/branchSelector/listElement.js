@@ -11,8 +11,9 @@
 //     opts.columns   the row's fields it shows, in order, of family, verb and delete; family and verb by default
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
-// Its rows are auth.branch's search, through the spirit object; nothing streams a branch, so a row's delete asks the
-// list again.
+// A VIEW OF data.branches (goal/G41.14): auth.branch's search seats its rows there, and the node's stream keeps them
+// current through the branch row element (./rowElement.js, the type's own), so a branch added or deleted anywhere shows
+// in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   var parts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/branchSelector/rowElement.js', 'shell/js/apiFamilySelector.js'].map(function (p) {
@@ -51,6 +52,7 @@
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
     list = E.probabilitySearch.create(box, {
       api: { verb: function (name, args) { return search(args); } },
+      data: 'branches',
       server: 'auth',
       verb: 'branch',
       face: o.face,
@@ -59,9 +61,21 @@
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
-      element: function (row) { return E.branchElement.create(row, { api: o.api, changed: function () { list.refresh(); } }); },
+      element: function (row) { return E.branchElement.create(row, { api: o.api }); },
       // Matched on its family and verb alone: its numbers are hidden.
       matched: function (row) { return { family: String((row && row.family) || ''), verb: String((row && row.verb) || '') }; },
+      // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as
+      // its search asks the node. No button: they always hold.
+      filters: [
+        { name: 'bundle', when: function () { return false; },
+          test: function (row) { return !o.bundle || (row && Number(row.bundle) === Number(o.bundle)) ? 1 : 0; } },
+        { name: 'family', when: function () { return false; },
+          test: function (row) {
+            if (!family.family) return 1;
+            if (!row || row.family !== family.family) return 0;
+            return !family.verb || row.verb === family.verb ? 1 : 0;
+          } },
+      ],
       empty: o.empty || 'No branch matches.',
     });
     family.addEventListener('change', function () { list.refresh(); });

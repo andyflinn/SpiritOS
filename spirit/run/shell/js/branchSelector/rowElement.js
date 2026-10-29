@@ -8,7 +8,11 @@
 //   branchElement.create(row, opts) -> a rowElement of kind branch
 //     row            { id, bundle, family, verb }, as auth.branch answers it
 //     opts.api       the app's shell api, for the arming button's are-you-sure
-//     opts.changed() after a delete was answered, so the list that shows it can ask again
+// THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
+// that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
+// job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); this file puts it
+// into data.branches of the spirit object, and every branch row on the page repaints from there through its kind's
+// index. A row asks and draws nothing of its own (rule/19).
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
@@ -16,6 +20,34 @@
     return window.spirit.require ? window.spirit.require(p) : null;
   }));
   var ALL = '(ALL)';
+
+  // WHAT A BRANCH ROW ON THE STREAM MEANS: data.branches/<id> is the row, or nothing once it is gone.
+  var D = window.spirit.data;
+  if (D && typeof D.translate === 'function') {
+    D.translate({
+      onJob: function (job) {
+        var d = job && job.type === 'bundles' ? job.data : null;
+        if (!d || d.table !== 'branch' || !d.row || d.row.id == null) return;
+        var path = 'branches/' + Number(d.row.id);
+        if (d.gone === true) D.del(path);
+        else D.set(path, { id: Number(d.row.id), bundle: Number(d.row.bundle), family: String(d.row.family || ''), verb: String(d.row.verb || '') });
+      },
+    });
+  }
+  // THE KIND'S INDEX: one watch on data.branches for every branch row on the page, each change to the rows of that key.
+  var branches = null;
+  function dispatch(idx) {
+    if (!D || typeof D.watch !== 'function') return;
+    D.watch('branches', function (path, v) {
+      var key = String(path).slice('branches/'.length);
+      if (!key || !v) return;
+      idx.forKey(key).forEach(function (el) { el.apply({ family: String(v.family || ''), verb: String(v.verb || '') }); });
+    });
+  }
+  function index() {
+    branches = branches || E.rowElement.index(dispatch);
+    return branches;
+  }
 
   function esc(s) {
     var f = window.spirit && spirit.escapeHtml;
@@ -28,6 +60,7 @@
     var el = E.rowElement.create({
       kind: 'branch',
       key: String(Number(r.id)),
+      index: index(),
       row: { id: Number(r.id), bundle: Number(r.bundle), family: String(r.family || ''), verb: String(r.verb || '') },
       fields: [
         { name: 'family', paint: function (v) { return esc(v.family); } },
@@ -36,10 +69,7 @@
       ],
       actions: [
         { name: 'delete', label: 'Delete', run: function (it) {
-          return spirit.ready.then(function (s) { return s.auth.branch({ op: 'delete', id: it.row.id }); }).then(function (a) {
-            if (typeof o.changed === 'function') o.changed();
-            return a;
-          });
+          return spirit.ready.then(function (s) { return s.auth.branch({ op: 'delete', id: it.row.id }); });
         } },
       ],
     });

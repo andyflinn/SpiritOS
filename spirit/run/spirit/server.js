@@ -1666,6 +1666,17 @@ catch (e) {
     rootDir: ROOT_DIR,
     tree: function () { return nodeDoor.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); },
   });
+  // THE BUNDLES ON THE STREAM (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes
+  // their data set. and the SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to
+  // the fucking elements"): the permanent job 'bundles', published with each changed row of the bundle and branch tables
+  // ({ table, row }, and { table, row: { id }, gone: true } for one deleted), as the shadow job publishes each contact
+  // row. The bundle and branch list elements take them into the spirit object's data themselves.
+  try {
+    const bundlesJob = jobs.createJob('permanent', 'bundles', {});
+    apiAuth.onChange(function (change) {
+      try { jobs.updateJob(bundlesJob.id, { data: change }); } catch (e) { /* the next change publishes again */ }
+    });
+  } catch (e) { /* no job, no stream: the lists still search */ }
   function authVerb(work) {
     return function (rq, rs) {
       const send = function (status, body) {
