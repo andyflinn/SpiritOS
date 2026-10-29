@@ -189,6 +189,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false,
     'the list is told what the tree serves: fs.search yes, a family the node does not serve no', 'serves: ' + short(typeof gl.opts.serves === 'function' ? [gl.opts.serves('fs.search'), gl.opts.serves('gone.verb')] : gl.opts.serves));
 
+  test.subHeading('a deprecated filter, off by default');
+  // Andy, goal/G41.14: "your allowed to keep the deprecated, BUT you must provide a filter for deprecated that is OFF by
+  // default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....." Off, a grant the tree does not serve is not
+  // listed; on, it is, marked.
+  const dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
+  ok(!!dep && dep.toggle === true && typeof dep.test === 'function', 'the list has a deprecated filter, a toggle', 'filters: ' + short((gl.opts.filters || []).map(function (f) { return f && f.name; })));
+  if (dep) {
+    ok(dep.test(ANN, false) === 0 && dep.test(BOB, false) === 1, 'off, the default: a grant no server serves is left out, a served one listed', 'off: Ann ' + dep.test(ANN, false) + ', Bob ' + dep.test(BOB, false));
+    ok(dep.test(ANN, true) === 1 && dep.test(BOB, true) === 1, 'on: every grant is listed, the deprecated ones among them', 'on: Ann ' + dep.test(ANN, true) + ', Bob ' + dep.test(BOB, true));
+    ok(!dep.on && !dep.value && dep.initial !== true, 'it starts off', 'filter: ' + short(dep));
+  }
+
   test.subHeading('Grant copies the bundle\'s branches to the ID, one auth.grant per branch (goal/G41.14)');
   const grantBtn = box.nodes.filter(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || ''); })[0];
   const press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
