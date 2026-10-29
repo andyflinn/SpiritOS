@@ -33,3 +33,22 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 
 Two rows of one key and one of another under one write; a flag that only the status draws from; a destroyed row; an
 HTML name; a blank name; a relay that is also kept; acting a verb the row lacks; expanding twice; a row added while it is on the page, then taken out of the book.
+
+## What the stream means for contacts (goal/G41.16)
+
+The contacts' translation, `shell/js/contacts/data.js` until G41.16, is this element's (Andy: *"get rid of thos FUCKING
+data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*; G30.18: rowElements carry the listeners a subject
+needs). It registers one translation with `spirit.data.translate` as it loads, requires no data script, and writes only
+through `merge` and `seat`.
+
+- **relay-presence**: for each key in `data.presence` whose value is an object, the row's `present` becomes
+  `proof.present === true`, written only when it changes. A key the table spoke of and no longer names goes back to
+  not known (`present: undefined`), its row kept. An entry that is not an object writes nothing.
+- **peer-search**: `data.item` ({ key, label: JSON }) is seated into its row by key, merged over what is there. An
+  update with no item seats nothing; a label that is not JSON seats nothing.
+- **contact.rename** `{ key, caption }`: the row's `name` becomes the caption as text, every other field kept; a key
+  with no row gets one.
+- Any other job type leaves `data.contacts` alone.
+
+Its test must also try to break: The same presence twice (no second write), a dropped key, garbage entries and labels, a rename of an unknown key, and
+a foreign job carrying contact-shaped data.

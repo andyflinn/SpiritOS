@@ -28,8 +28,8 @@ a view of `data.contacts` drawn by `probabilitySearch`, each row a `contactEleme
   or blocked, searches again; presence alone, an unlisted row and other jobs do not. Once the host is off the page it
   unsubscribes.
 - `refresh` and `destroy` are the search element's.
-- **It loads what it uses** (goal/G41.3): loading, it requires `shell/js/contacts/data.js`, `contacts/rowElement.js` and
-  `probabilitySearch.js` through `spirit.require`.
+- **It loads what it uses** (goal/G41.3): loading, it requires `contacts/rowElement.js` and `probabilitySearch.js`
+  through `spirit.require`, and no data script (goal/G41.16): what the stream means for contacts is the row element's.
 
 ## What its test must try to break
 

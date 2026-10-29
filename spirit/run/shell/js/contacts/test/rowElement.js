@@ -152,5 +152,57 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (nothing[0] === null && nothing[1] === null && asked.length === m + 1) test.check('a held row and a relay expand to nothing, asking nothing');
   else test.fail('held/relay expand: ' + JSON.stringify(nothing));
 
+  // ── WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; Andy: "get rid of thos FUCKING data.js
+  // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, shell/js/contacts/data.js
+  // until now, is the row element's (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
+  // updates"): loaded with it, no data script required.
+  test.subHeading('the type\'s own element takes the contacts\' stream: no data script');
+  if (!required.some(function (p) { return /data\.js$/.test(p); })) test.check('the contact row element requires no data script');
+  else test.fail('the contact row element still requires ' + required.filter(function (p) { return /data\.js$/.test(p); }).join(', '));
+  const row = function (k) { return D.get('contacts/' + k); };
+  test.subHeading('relay-presence sets present, by key');
+  D.take({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
+  if (row('KA') && row('KA').present === true && row('KB') && row('KB').present === false) test.check('a present key reads present, an absent one absent');
+  else test.fail('presence: ' + JSON.stringify({ a: row('KA'), b: row('KB') }));
+  let writes = 0;
+  const stop = D.watch('contacts/KA', function () { writes += 1; });
+  D.take({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
+  if (writes === 0) test.check('the same table again writes nothing');
+  else test.fail('an unchanged presence wrote ' + writes + ' times');
+  stop();
+  D.take({ type: 'relay-presence', data: { presence: { KB: { present: false } } } });
+  if (row('KA') && row('KA').present === undefined && (row('KB') || {}).present === false) test.check('a key the table drops goes back to not known; the others stand');
+  else test.fail('a dropped key: ' + JSON.stringify(row('KA')));
+  D.take({ type: 'relay-presence', data: { presence: { KC: 'not a proof', KD: null } } });
+  if (row('KC') === undefined && row('KD') === undefined) test.check('an entry that is no proof writes nothing');
+  else test.fail('a bad entry wrote: ' + JSON.stringify({ c: row('KC'), d: row('KD') }));
+
+  test.subHeading('peer-search seats the row the network found');
+  D.take({ type: 'peer-search', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', held: true }) } } });
+  if (row('KE') && row('KE').name === 'bert' && row('KE').held === true) test.check('the item\'s label is merged into its row, by key');
+  else test.fail('the network row: ' + JSON.stringify(row('KE')));
+  const seated = JSON.stringify(D.branch('contacts'));
+  D.take({ type: 'peer-search', data: { q: 'be' } });
+  if (JSON.stringify(D.branch('contacts')) === seated) test.check('a peer-search update with no item seats nothing');
+  else test.fail('rows after an empty update: ' + Object.keys(D.branch('contacts')).join(','));
+  D.take({ type: 'peer-search', data: { item: { key: 'KF', label: 'not json' } } });
+  if (row('KF') === undefined) test.check('a label that is not JSON seats nothing');
+  else test.fail('a bad label seated ' + JSON.stringify(row('KF')));
+
+  test.subHeading('a rename sets the name, and keeps the rest');
+  D.rename({ key: 'KE', caption: 'Bertie' });
+  if ((row('KE') || {}).name === 'Bertie' && (row('KE') || {}).held === true) test.check('contact.rename sets name on the row, its other fields kept');
+  else test.fail('after a rename: ' + JSON.stringify(row('KE')));
+  D.rename({ key: 'KG', caption: 7 });
+  if (row('KG') && row('KG').name === '7') test.check('a rename of a key never seen makes its row, the caption as text');
+  else test.fail('a rename of a new key: ' + JSON.stringify(row('KG')));
+
+  test.subHeading('other jobs are not contacts\' business');
+  const beforeC = JSON.stringify(D.branch('contacts'));
+  D.take({ type: 'fs-watcher', data: { presence: { KZ: { present: true } }, item: { key: 'KZ', label: '{"name":"z"}' } } });
+  if (JSON.stringify(D.branch('contacts')) === beforeC) test.check('a job of another type changes no contact');
+  else test.fail('another job changed contacts');
+
+
   test.reportSuccessFailureCount();
 }());

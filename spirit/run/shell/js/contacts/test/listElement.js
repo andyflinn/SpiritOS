@@ -47,8 +47,9 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   test.startTest('contacts/listElement.js: the contacts list');
 
   test.subHeading('it loads what it uses');
-  const own = ['shell/js/contacts/data.js', 'shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'];
-  if (own.every(function (p) { return required.indexOf(p) !== -1; })) test.check('loading, it requires its data, its row and the search element through spirit.require');
+  // goal/G41.16: no data script; what the stream means for contacts is the row element's, loaded with it.
+  const own = ['shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'];
+  if (own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); })) test.check('loading, it requires its row and the search element through spirit.require, and no data script');
   else test.fail('as it loaded, the list required: ' + JSON.stringify(required));
 
   test.subHeading('the show filter: all, then each kind the list holds');

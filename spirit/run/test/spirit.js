@@ -245,8 +245,9 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')))
     test.check('nothing in spirit.js but isNode() and isBrowser() asks where it runs');
   else test.fail('spirit.js asks where it runs outside isNode() and isBrowser()');
-  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'debug', 'error', 'escapeHtml', 'events', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
-  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'events', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
+  // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12).
+  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'data', 'debug', 'error', 'escapeHtml', 'events', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'events', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
     test.check('in node the instance holds exactly its members: ' + MEMBERS.join(', ') + ' (and the families it binds)');
   else test.fail('in node the instance holds ' + short(Object.keys(s).sort()));
   const factories = ['createSpirit', 'assemble', 'forNode', 'forPeer', 'nodeTransport', 'pageTransport', 'peerTransport', 'loadInterface', 'spiritObject', 'call', 'port'];
@@ -510,10 +511,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
   if (isCache(cq.spirit.data)) test.check('on a page: once spirit.js has started, spirit.data is the cache, nothing else loading it');
   else test.fail('on a page spirit.js does not load the cache: spirit.data is ' + short(cq.spirit.data && Object.keys(cq.spirit.data)));
-  // The file tree is cached too (Q2: "the file tree must be cached."): its translator comes with the cache, so boot finds
-  // the face's apps in it with no part of its own.
-  if (JSON.stringify(cq.fetched).indexOf('shell/js/files/data.js') !== -1) test.check('on a page spirit.js loads the file tree\'s translator with the cache');
-  else test.fail('on a page spirit.js does not load the file tree\'s translator (shell/js/files/data.js) with the cache');
+  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
+  // loads with a files element (rule/26); spirit.js loads the cache and no data script.
+  if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/spiritData\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no shell/js/files/data.js (goal/G41.16)');
+  else test.fail('on a page spirit.js still loads a data script: ' + short(cq.fetched.map(function (f) { return f.url; }).filter(function (u) { return /data\.js/.test(u) && !/spiritData/.test(u); })));
   const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
   else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));
