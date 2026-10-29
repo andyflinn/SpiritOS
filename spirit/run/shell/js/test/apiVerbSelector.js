@@ -37,12 +37,13 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   const SRC = fs.readFileSync(FILE, 'utf8');
   ok(!/shellCreateListSearch/.test(SRC), 'it names no shellCreateListSearch (goal/G40.8)', 'it names shellCreateListSearch');
 
+  // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   const w = { lists: [], required: [] };
+  const STAND = function (E) { E.probabilitySearch = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
+    redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }; };
   const win = {
-    spirit: { escapeHtml: function (s) { return String(s); },
-      elements: { probabilitySearch: { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
-        redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } } },
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); } },
+    spirit: { escapeHtml: function (s) { return String(s); }, elements: {},
+      require: function (p) { w.required.push(String(p)); if (p === 'shell/js/probabilitySearch.js' && !w.stood) { w.stood = true; STAND(win.spirit.elements); } return Promise.resolve(true); } },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
@@ -65,7 +66,9 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   const l = w.lists[0];
   ok(!!l && l.opts.face === 'dropdown', 'it draws one probabilitySearch dropdown', 'lists: ' + short(w.lists.map(function (x) { return x.opts.face; })));
   if (!l) return;
-  ok(l.opts.all === 'all verbs', 'its None reads all verbs', 'all: ' + l.opts.all);
+  // Andy, goal/G41.14: "the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an
+  // empty string as \"value\"".
+  ok(l.opts.all === 'All Verbs', 'its first option, at the top, reads All Verbs', 'all: ' + l.opts.all);
   const rows = function () { return (typeof l.opts.rows === 'function' ? l.opts.rows() : []).map(function (r) { return r.key; }); };
 
   test.subHeading('one server\'s verbs');
@@ -75,7 +78,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   ok(verbs.value === 'search' && seen[seen.length - 1] === 'search', 'a pick sets its value and fires change', 'value ' + verbs.value + ', seen ' + short(seen));
   l.opts.pick(null, '');
-  ok(verbs.value === '', 'None means all verbs: its value is empty', 'value ' + verbs.value);
+  ok(verbs.value === '' && seen[seen.length - 1] === '', 'All Verbs is a valid choice: its value is the empty string, and change says so', 'value ' + verbs.value + ', seen ' + short(seen));
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   verbs.show(TREE, '');
   ok(verbs.hidden === true && verbs.value === '' && rows().length === 0, 'show with no server hides it and clears the choice', 'hidden ' + verbs.hidden + ', value ' + verbs.value);

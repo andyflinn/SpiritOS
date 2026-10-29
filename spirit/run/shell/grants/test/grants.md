@@ -1,6 +1,6 @@
 # shell/grants/grants.js
 
-The Grants app (apiAuth/G1.6; goal/G41.5; goal/G41.13): the owner's screen for who may call which api. Two tabs:
+The Grants app (apiAuth/G1.6; goal/G41.5; goal/G41.13; goal/G41.14): the owner's screen for who may call which api. Two tabs:
 Grants, the add-grant row (grant a bundle to an ID) and below it every grant, each with its Revoke; and Bundles, where
 bundles are made and kept. Intrinsic, so it shows on every face, the
 loopback face's and a relay face's alike (Andy, Q1: "Of course on both, how else can i give someone access when i
@@ -11,7 +11,9 @@ travel?").
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `shell/js/probabilitySearch.js`,
   `shell/js/rowElement.js`, (goal/G41.9) `shell/js/armingButton.js`, and (goal/G41.13) `shell/js/tabContainer.js`,
-  `shell/js/bundleSelector.js`, `shell/js/contactSelector.js` and `shell/js/bundleEditor.js`. It takes them from
+  `shell/js/bundleSelector.js`, `shell/js/contactSelector.js` and `shell/js/bundleEditor.js`, and (goal/G41.14)
+  `shell/js/apiFamilySelector.js`. It names `apiBranchSelector` no more: it was renamed `apiFamilySelector`, its verb
+  half with it (Andy: *"apiFamiliySelector.js will use apiVerbSelector as part of itself"*). It takes them from
   `window.spirit.elements`, never from the old shell's `api.ui.elements`.
 - **Nothing of `shellCreateListSearch`** is left in it (deprecated and forbidden on the face, goal/G40.8).
 - **Two tabs** (goal/G41.13, box v7: "The grants app has two tabs: Grants, and Bundles"): the app is one
@@ -36,17 +38,20 @@ travel?").
   the Grant button, found by an id or data-action naming grant. There is no contacts list, and no server is asked for
   its DEPENDENCIES: every grant goes through a bundle.
 - **The list's filters** (*"a probabilitySearch for grants. with the normal filters, (idSelector, apiBranchSelector,
-  apiVerbSelector)"*), below the form: an ID selector of their own and the api-branch selector (server, then verb).
-  The ID narrows the list to that ID's grants; a server to its paths; a verb to that verb; nothing chosen shows every
-  grant.
+  apiVerbSelector)"*), below the form: an ID selector of their own, and the family selector with its verb half. The ID
+  narrows the list to that ID's grants; a family (`family`) to its paths; a verb (`verb`) to that verb. Nothing chosen
+  shows every grant.
 - **Revoke is the rightmost column** (*"the rows of the grant list show in the rightmost column a armingButton
   [Revoke]"*).
 - **It loads every element it uses itself** (rule/26). Its test runs on a bare page: a stand-in is put there only
   once the app requires its file.
-- **Grant copies the bundle's paths** (box v7: *"each path row of the bundle, combined with the ID chosen in the ID
-  selector (contactSelector), becomes a new auth row, unless that row exists already"*):
+- **Grant copies the bundle's branches** (box v7: *"each path row of the bundle, combined with the ID chosen in the ID
+  selector (contactSelector), becomes a new auth row, unless that row exists already"*; since goal/G41.14 a bundle's
+  rows are its branches):
   - With no bundle or no ID chosen, Grant asks nothing.
-  - It asks `auth.grant { key, path }` once for each path of the chosen bundle, the key the ID chosen.
+  - It reads the chosen bundle's branches, `auth.branch { op: 'search', bundle }`, the bundle selector's value.
+  - It asks `auth.grant { key, path }` once per branch, the key the ID chosen, the path `family.verb`, or the family
+    alone for a branch of every verb (`(ALL)`).
   - A path the ID holds already (`already-granted`) is counted done, never said as a refusal. Any other refusal is
     said.
   - Then it reads the grants again, drawing only what the node answers (rule/19).
@@ -58,6 +63,7 @@ travel?").
 - A component it uses not loaded by itself.
 - A row without its Revoke, or a dead grant not marked deprecated (or a live one marked).
 - A Revoke that changes the list without asking the node, or asks for the wrong key or path.
+- A grant made from a bundle's old paths, or a branch of every verb granted as `family.`.
 - A Revoke that revokes on a single press, or arms by hand instead of through armingButton.
 - A chosen ID that does not narrow the list.
 - A grant made of anything but a bundle's paths, or one path left out of it.

@@ -36,6 +36,7 @@ const VERB = { request: {}, reply: { ok: true } };
 const TREE = {
   desk: { 'item.get': VERB, 'items.search': VERB, 'chat.add': VERB, AGENTS: VERB, DEBUG: VERB, DEPENDENCIES: VERB },
   backup: { 'status.get': VERB, DEBUG: VERB, DEPENDENCIES: VERB },
+  auth: { bundle: VERB, branch: VERB, grant: VERB },
 };
 
 const asked = [];
@@ -135,6 +136,24 @@ const refusedAs = function (r, code) { return r && r.ok === false && r.code === 
   r = await ask(d, call('desk', 'item.get'));
   if (refusedAs(r, 'store-unavailable') && asked.length === 0) test.check('the grants cannot be read: refused store-unavailable, nothing asked');
   else test.fail(OWED + 'an unreadable store answered ' + JSON.stringify(r) + ', asked ' + asked.length);
+
+  // goal/G41.14, Andy: "an app calling the two new interfaces auth.bundle and auth.branch can only be the node owner,
+  // until the node owner grants access to those tables to someone else."
+  test.subHeading('7. auth.bundle and auth.branch are the owner\'s until he grants them');
+  d = door(['desk']);
+  r = await ask(d, call('auth', 'bundle'));
+  const bundleShut = refusedAs(r, 'not-granted') && asked.length === 0;
+  d = door(['desk']);
+  r = await ask(d, call('auth', 'branch'));
+  if (bundleShut && refusedAs(r, 'not-granted') && asked.length === 0) test.check('not granted: auth.bundle and auth.branch refused not-granted, nothing asked');
+  else test.fail('an ungranted member reached the bundle tables: bundle refused ' + bundleShut + ', branch answered ' + JSON.stringify(r));
+  d = door(['auth.bundle', 'auth.branch']);
+  r = await ask(d, call('auth', 'branch'));
+  const branchRan = asked.length === 1 && r && r.ok === true;
+  d = door(['auth.bundle', 'auth.branch']);
+  r = await ask(d, call('auth', 'grant'));
+  if (branchRan && refusedAs(r, 'not-granted') && asked.length === 0) test.check('granted them by the owner: they run, and open nothing else of auth');
+  else test.fail('granted the two: branch ran ' + branchRan + ', auth.grant answered ' + JSON.stringify(r));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);
