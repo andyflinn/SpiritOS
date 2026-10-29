@@ -26,8 +26,17 @@
   function keyOf(key, path) { return String(key) + '\n' + String(path); }
 
   // WHAT A GRANT ROW ON THE STREAM MEANS: data.grants/<key>\n<path> is the row, or nothing once it is revoked.
-  var D = window.spirit.data;
-  if (D && typeof D.translate === 'function') {
+  // THE DATA SET MAY COME AFTER THIS FILE (spirit.js loads it once the page's families are bound, spirit.ready): what
+  // needs it waits for it, so a row element loaded first still says what its rows mean.
+  function whenData(fn) {
+    var now = window.spirit.data;
+    if (now && typeof now.translate === 'function') { fn(now); return; }
+    Promise.resolve(window.spirit.ready).then(function () {
+      var D = window.spirit.data;
+      if (D && typeof D.translate === 'function') fn(D);
+    }, function () { /* no data set: the lists still search */ });
+  }
+  whenData(function (D) {
     D.translate({
       onJob: function (job) {
         var d = job && job.type === 'bundles' ? job.data : null;
@@ -37,15 +46,16 @@
         else D.set(path, { key: String(d.row.key), path: String(d.row.path), label: String(d.row.label || '') });
       },
     });
-  }
+  });
   // THE KIND'S INDEX: one watch on data.grants for every grant row on the page, each change to the rows of that key.
   var grants = null;
   function dispatch(idx) {
-    if (!D || typeof D.watch !== 'function') return;
-    D.watch('grants', function (p, v) {
-      var key = String(p).slice('grants/'.length);
-      if (!key || !v) return;
-      idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || v.name || '') }); });
+    whenData(function (D) {
+      D.watch('grants', function (p, v) {
+        var key = String(p).slice('grants/'.length);
+        if (!key || !v) return;
+        idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || v.name || '') }); });
+      });
     });
   }
   function index() {
