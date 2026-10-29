@@ -1,5 +1,5 @@
 {
- "change": 113712,
+ "change": 113714,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,7 +143,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -151,7 +151,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -10634,12 +10636,11 @@
    "id": "goal/G41.14",
    "title": "Two new auth tables: bundle and branch",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 31,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -12014,7 +12015,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.14"
+    "goal/G41.4"
    ],
    "blocked": [],
    "codeOffered": true,
