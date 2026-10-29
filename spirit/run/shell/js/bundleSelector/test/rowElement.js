@@ -74,6 +74,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')), ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
+  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client: the stream's rows land there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  const DATA = global.window.spirit.data;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -112,8 +115,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   input.dispatchEvent({ type: 'blur' });
   await settle();
   ok(asked.length === 2 && asked[1].label === 'Mover', 'and so does leaving the field', 'asked: ' + short(asked));
-  // Nothing streams a bundle back (the two selectors never share a page), so an answered set is the row's new label.
-  ok(ed.row.label === 'Mover', 'an answered set is the row\'s label from then on', 'row: ' + short(ed.row));
+  // rule/19: a ui only draws what the server's stream says; goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING
+  // LISTING to anything that changes their data set". The row draws no answer of its own: it repaints from data.bundles.
+  ok(ed.row.label === 'Reader', 'an answered set draws nothing by itself: the row waits for the stream', 'row: ' + short(ed.row));
+  DATA.set('bundles/7', { id: 7, label: 'Mover' });
+  await settle();
+  ok(ed.row.label === 'Mover' && input.value === 'Mover', 'the bundle\'s row in data.bundles changed, the row repaints its label, the input with it', 'row: ' + short(ed.row) + ', input ' + short(input.value));
+  DATA.set('bundles/8', { id: 8, label: 'Someone else' });
+  await settle();
+  ok(ed.row.label === 'Mover', 'another bundle\'s row changes nothing here', 'row: ' + short(ed.row));
   input.value = '   ';
   input.dispatchEvent({ type: 'blur' });
   await settle();

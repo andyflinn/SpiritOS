@@ -5,8 +5,9 @@
 dropdown. Its test is `./listElement.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
-selecting bundle rows."* No `data.js` beside it: the bundle and branch selectors never share a page (Andy: *"nothing on
-this page says that any of those two tables/Selectors will be on the same page."*).
+selecting bundle rows."* Since goal/G41.14 it is a view of `data.bundles`, kept current by the node's stream, which the element itself takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+list of bundles on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
+their data set"*).
 
 ## Requirements
 
@@ -21,6 +22,13 @@ this page says that any of those two tables/Selectors will be on the same page."
 - By default its one column is the label. `opts.columns` names the row's fields it shows, in order (the bundle editor:
   `label`, `edit`, `delete`). `opts.editable` makes each row edit its label in place.
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
+
+- It takes the node's bundle rows from the stream itself, into `data.bundles`: the node publishes each changed row of its two
+  bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
+  published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
+  a row with no id write nothing. It requires no data script.
+- Its probabilitySearch's `data` is `bundles`: the search's answers are seated there, and a row the stream changes redraws
+  the list.
 
 ## What its test must try to break
 

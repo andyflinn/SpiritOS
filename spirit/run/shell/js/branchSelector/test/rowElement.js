@@ -46,6 +46,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
+  // The page's one data set (shell/js/spiritData.js): the stream's branch rows land there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  const DATA = global.window.spirit.data;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -77,5 +80,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!del && typeof del.o.run === 'function' && asked.length === 0, 'mounted, its Delete is an armingButton, and nothing is asked yet', 'armed: ' + short(armed.length) + ', asked ' + short(asked));
   if (del) { await del.o.run(); await settle(); }
   ok(asked.length === 1 && asked[0].op === 'delete' && asked[0].id === 3, 'its second press asks auth.branch { op: delete, id }', 'asked: ' + short(asked));
+
+  test.subHeading('it repaints from data.branches (goal/G41.14)');
+  // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
+  const live = E.branchElement.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
+  const lh = { family: cell(), verb: cell(), delete: cell() };
+  live.mount(lh);
+  DATA.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });
+  await settle();
+  ok(live.row.verb === '' && lh.verb.innerHTML === '(ALL)', 'its row in data.branches changed, the row repaints: the verb now (ALL)', 'row: ' + short(live.row) + ', verb cell ' + short(lh.verb.innerHTML));
+  DATA.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
+  await settle();
+  ok(live.row.family === 'files', 'another branch\'s row changes nothing here', 'row: ' + short(live.row));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

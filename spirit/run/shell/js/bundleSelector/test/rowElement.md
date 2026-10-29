@@ -18,10 +18,13 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
 - With `opts.editable`, the label is edited in place (Andy: *"[fieldInput:fieldRule:Label], displays and updates the
   bundle's label"*):
   - mounted, its label cell holds an input showing the label, a `fieldInput` held to the label's rule;
-  - Enter, or leaving the field, with a valid label asks `auth.bundle { op: 'set', id, label }`; an answered set is the
-    row's label from then on (nothing streams a bundle back);
+  - Enter, or leaving the field, with a valid label asks `auth.bundle { op: 'set', id, label }`; the answer draws nothing
+    by itself (rule/19);
   - an empty label, or one `fieldRules.js` refuses, asks nothing, and the input shows the label the table holds again;
     so does one the node refuses.
+- It repaints from the data set (goal/G41.14, Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that
+  changes their data set"*): when `data.bundles/<its id>` changes, as the list element sets it from the node's stream, its label
+  repaints, the input with it; another bundle's row changes nothing.
 - Delete is an `armingButton`; its second press asks `auth.bundle { op: 'delete', id }`.
 - Edit requires `shell/js/branchEditor.js`, then opens it on this bundle: `branchEditor.open({ bundle: id, label })`.
 

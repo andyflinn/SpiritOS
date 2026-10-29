@@ -39,6 +39,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
+  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  const DATA = global.window.spirit.data;
   global.document = { createElement: function () { return {}; } };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -46,8 +49,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = global.window.spirit.elements;
 
   test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['shell/js/probabilitySearch.js', 'shell/js/bundleSelector/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }),
-    'it requires the search element and its row element through spirit.require', 'required: ' + short(required));
+  ok(['shell/js/probabilitySearch.js', 'shell/js/bundleSelector/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
+    'it requires the search element and its row element through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 'required: ' + short(required));
   ok(E.bundleList && typeof E.bundleList.create === 'function', 'it registers spirit.elements.bundleList.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleList || typeof E.bundleList.create !== 'function') return;
 
@@ -64,6 +67,26 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   o.pick({ id: 7 }, '7');
   ok(picked.length === 1 && picked[0] === '7', 'a pick reaches opts.pick', 'picked: ' + short(picked));
   ok(l.refreshes === 1, 'it fills as soon as it is drawn: one refresh at create', 'refreshes: ' + l.refreshes);
+  // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
+  // view of data.bundles, so a bundle added anywhere on the page shows in every bundle list (probabilitySearch's data).
+  ok(o.data === 'bundles', 'it is a view of data.bundles, the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data));
+
+  test.subHeading('it takes the node\'s bundle rows from the stream itself (goal/G41.14)');
+  // Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+  // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
+  // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
+  ok(JSON.stringify(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in data.bundles by its id, through the list element\'s own translation', 'data: ' + short(DATA.branch('bundles')));
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
+  const again = DATA.get('bundles/' + { id: 7, label: 'Reader' }.id);
+  ok(again && again.label === 'Lister', 'a row published again replaces the one kept', 'data: ' + short(again));
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
+  ok(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('bundles')));
+  const before = JSON.stringify(DATA.branch('bundles'));
+  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
+  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
+  ok(JSON.stringify(DATA.branch('bundles')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.bundles', 'data: ' + short(DATA.branch('bundles')));
   const got = await o.api.verb(o.server + '.' + o.verb, o.args('  rea ', {}));
   ok(o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea',
     'its search asks auth.bundle { op: search, text } through the spirit object, the text trimmed', 'asked: ' + short(asked) + ', at ' + o.server + '.' + o.verb);

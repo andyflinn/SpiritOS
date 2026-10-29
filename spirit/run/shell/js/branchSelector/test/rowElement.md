@@ -13,6 +13,8 @@ and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*
   Its row is the branch as `auth.branch` answers it, `{ id, bundle, family, verb }`.
 - Its fields are `family`, `verb` and `delete`, in that order. Family and verb are drawn escaped; an empty verb shows as
   `(ALL)`. Delete is a button naming its action.
+- It repaints from the data set (goal/G41.14): when `data.branches/<its id>` changes, as the node's stream sets it
+  (the list element takes it from the node's stream), its fields repaint; another branch's row changes nothing.
 - Mounted, its Delete is an `armingButton`: the first press asks nothing, the second asks
   `auth.branch { op: 'delete', id }`.
 

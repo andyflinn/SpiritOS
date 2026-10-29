@@ -143,6 +143,36 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   await call(auth, 'bundle', { op: 'delete', id: kept.id });
   ok(JSON.stringify(auth.pathsOf(PEER)) === '["files.read"]', 'a grant made from a bundle stays when the bundle goes', 'paths of the peer: ' + short(auth.pathsOf(PEER)));
 
+  test.subHeading('every change is told, row by row, for the stream');
+  // Andy, goal/G41.14: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set. and the
+  // SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the fucking elements".
+  // The node publishes each changed row on one permanent job, as it does each contact row (server.js, the shadow job);
+  // apiAuth tells it: onChange(fn), fn({ table, row }) for a row added or set, fn({ table, row: { id }, gone: true }) for
+  // one deleted, a bundle's branches each told gone with it.
+  ok(typeof auth.onChange === 'function', 'createApiAuth answers onChange(fn), what the node publishes from', 'verbs: ' + short(Object.keys(auth)));
+  if (typeof auth.onChange === 'function') {
+    const told = [];
+    auth.onChange(function (c) { told.push(JSON.parse(JSON.stringify(c))); });
+    const tb = await call(auth, 'bundle', { op: 'add', label: 'Told' });
+    ok(told.length === 1 && told[0].table === 'bundle' && told[0].row.id === tb.id && told[0].row.label === 'Told' && !told[0].gone, 'a bundle added is told { table: bundle, row }, the row as get shows it', 'told: ' + short(told));
+    await call(auth, 'bundle', { op: 'set', id: tb.id, label: 'Told again' });
+    ok(told.length === 2 && told[1].table === 'bundle' && told[1].row.label === 'Told again', 'a bundle set is told with its new row', 'told: ' + short(told.slice(1)));
+    const tr = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'files', verb: 'read' });
+    ok(told.length === 3 && told[2].table === 'branch' && told[2].row.id === tr.id && told[2].row.bundle === tb.id && told[2].row.family === 'files' && told[2].row.verb === 'read', 'a branch added is told { table: branch, row }', 'told: ' + short(told.slice(2)));
+    await call(auth, 'branch', { op: 'set', id: tr.id, verb: 'list' });
+    ok(told.length === 4 && told[3].table === 'branch' && told[3].row.verb === 'list', 'a branch set is told with its new row', 'told: ' + short(told.slice(3)));
+    const tr2 = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'desk', verb: '' });
+    await call(auth, 'bundle', { op: 'delete', id: tb.id });
+    const gone = told.slice(5);
+    ok(gone.some(function (c) { return c.table === 'bundle' && c.gone === true && c.row.id === tb.id; }) &&
+      [tr.id, tr2.id].every(function (id) { return gone.some(function (c) { return c.table === 'branch' && c.gone === true && c.row.id === id; }); }),
+      'a bundle deleted is told gone, and each of its branches with it', 'told: ' + short(gone));
+    const n = told.length;
+    await call(auth, 'bundle', { op: 'add', label: '' });
+    await call(auth, 'branch', { op: 'add', bundle: 99999, family: 'files', verb: '' });
+    ok(told.length === n, 'a refused add tells nothing', 'told: ' + short(told.slice(n)));
+  }
+
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
   ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Lister' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
