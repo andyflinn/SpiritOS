@@ -114,7 +114,7 @@ test.startTest('the page hears again after its node restarts');
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, ddoc, {});
   b.mount(el('c'), {
     escapeHtml: kernel.core.util.escapeHtml,
-    verb: function (name, body) { const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk; if (a) asked.push(Object.keys(a)[0]); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); },
+    verb: function (name, body) { const a = (test.foldAsk({ call: name, args: body || {} }) || {}).desk; if (a) asked.push(Object.keys(a)[0]); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); },
     onPublished: function () {}, onPacket: function () {}, onReconnect: function (fn) { reconnect = fn; },
     peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },

@@ -180,7 +180,7 @@ function mountFace(answers) {
     onFiles: function (fn) { if (Array.isArray(answers.files)) fn(answers.files, { visible: true }); return function () {}; },
     verb: function (name, body) {
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v) asked.push([v, ask[v]]);
       const a = answers[v];
@@ -942,7 +942,7 @@ function clickTab(el, tab) {
       escapeHtml: kernel.core.util.escapeHtml,
       verb: function (name, body) {
         // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-        const q = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+        const q = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
         const v = q && Object.keys(q)[0];
         dAsked.push([v, q && q[v]]);
         let out = { change: 1 };

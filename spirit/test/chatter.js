@@ -260,7 +260,7 @@ function mount(opts) {
       // The clerver's verbs by name on the flat apiDoor (chatClerver.<verb>, goal/G30.6); anything else is recorded
       // and refused.
       if (String(name).indexOf('chatClerver.') !== 0) { asked.push({ via: 'verb', verb: name, body: args }); return Promise.resolve({ status: 404, body: { ok: false } }); }
-      const ask = test.foldAsk(Object.assign({}, args, { verb: name })).chatClerver;
+      const ask = test.foldAsk({ call: name, args: args || {} }).chatClerver;
       const v = Object.keys(ask)[0];
       // AS STRICT AS THE REAL SERVER: a call with any key more or less than the verb's request is refused. A fake that
       // took short asks let chatter ship chats.search {text} and chat.read {peer}, refused on a real node

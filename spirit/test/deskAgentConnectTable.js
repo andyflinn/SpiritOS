@@ -68,7 +68,7 @@ async function mount(answers) {
     armUntilElsewhere: function (fn) { armed.push(fn); },
     verb: function (name, body) {
       // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
-      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
+      const a = (test.foldAsk({ call: name, args: body || {} }) || {}).deskAgent;
       if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });

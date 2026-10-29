@@ -158,7 +158,7 @@ async function dialogHalf() {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if ((v === 'item.add' || v === 'item.rename') && refuseWith) return Promise.resolve({ status: 400, body: refuseWith });

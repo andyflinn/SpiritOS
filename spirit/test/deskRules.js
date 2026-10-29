@@ -243,7 +243,7 @@ function dialog(facts) {
   const presses = [];
   dd.mount(fakeElement('dd'), common(function (name, body) {
     // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+    const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
     const v = ask && Object.keys(ask)[0];
     if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 3 } });
     if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'BOX', version: 1 } });
@@ -266,7 +266,7 @@ function list(rows) {
   new Function('spirit', 'document', 'window', fs.readFileSync(PAGE, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
   b.mount(fakeElement('c'), common(function (name, body) {
     // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+    const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
     const v = ask && Object.keys(ask)[0];
     if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: rows.map(function (r) { return { key: r.id, label: JSON.stringify(r) }; }), more: false } });
     if (v === 'log.search' || v === 'chat.search') return Promise.resolve({ status: 200, body: { items: [], more: false } });

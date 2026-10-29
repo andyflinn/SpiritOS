@@ -363,7 +363,7 @@ async function historyHalf() {
     escapeHtml: require('../run/spirit/kernel.js').core.util.escapeHtml,
     verb: function (name, body) {
       // A server's verb by name (<server>.<verb>, goal/G30.6), folded back to {server: {verb: args}}.
-      const ask = test.foldAsk(Object.assign({}, body, { verb: name })) || {};
+      const ask = test.foldAsk({ call: name, args: body || {} }) || {};
       const server = Object.keys(ask)[0];
       const q = server && ask[server];
       const v = q && Object.keys(q)[0];

@@ -261,7 +261,7 @@ async function dialogHalf() {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'goal/G102.2', title: 'Second', goal: 'goal/G102', status: 'running', with: '', buttons: [], blocking: ['goal/G102'], blocked: [], asks: 0 }), version: 1, change: 1 } });

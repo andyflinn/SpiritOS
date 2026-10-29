@@ -86,7 +86,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
     { key: 'goal/G100.2', label: JSON.stringify({ id: 'goal/G100.2', changedAt: at(1) }) }], more: false };
   const verb = function (name, body) {
     // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+    const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
     if (ask && ask['fresh.get']) return Promise.resolve({ status: 200, body: answerFresh });
     return fake.verb(name, body);
   };

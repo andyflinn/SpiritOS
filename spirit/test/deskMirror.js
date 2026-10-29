@@ -214,7 +214,7 @@ async function dialogHalf() {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       asked.push(v);
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(item), version: 1, change: 1 } });

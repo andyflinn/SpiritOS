@@ -41,9 +41,9 @@ function record(title, outcome, failure) {
   if (outcome === 'red' && failure) rec.failure = String(failure);
   pending.add(rec);
   send('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, // the verb by name with its args beside it, as kernel.core.ask sends it: a node answers a body with no
-    // verb 'no such verb' (found by claude-windows verifying c3935558, on a real node). deskVerify.record on the flat apiDoor (goal/G30.6).
-    body: JSON.stringify(Object.assign({ verb: 'deskVerify.record' }, rec)),
+    method: 'POST', headers: { 'content-type': 'application/json' }, // deskVerify.record on the flat apiDoor (goal/G30.6), in
+    // the door's one envelope (goal/G41.15: "{ call: \"<family>.<verb>\", args: { ... } }"), as kernel.core.ask sends it.
+    body: JSON.stringify({ call: 'deskVerify.record', args: rec }),
   }).then(function () { pending.delete(rec); }, function () { pending.delete(rec); });
 }
 // A suite's last words are its report, and then it exits. Whatever is still in the air is posted by a child this
@@ -474,17 +474,17 @@ const test = {
         };
     },
     // THE FLAT apiDoor's CALL, FOLDED (goal/G30.6), for a suite's pretend node. The node hears a server's verb by
-    // name on /api/spirit, {verb: '<server>.<verb>', ...args}, as kernel.core.ask sends it; the family is the part
-    // before the FIRST dot (desk.item.get is desk's item.get), and the args are the body without verb, as
-    // verbTable's door takes them. This hands back {<server>: {<verb>: args}}, the shape the server's pipe takes;
-    // 'api' for the tree; null for a body with no dotted verb.
+    // name on /api/spirit in the door's one envelope (goal/G41.15), {call: '<server>.<verb>', args: {...}}, as
+    // kernel.core.ask sends it; the family is the part before the FIRST dot (desk.item.get is desk's item.get), and the
+    // args are args, as they came. This hands back {<server>: {<verb>: args}}, the shape the server's pipe takes;
+    // 'api' for the tree; null for anything else, the old flat form among it, as the door refuses it.
     foldAsk: function (b) {
-        const name = b && typeof b === 'object' ? String(b.verb || '') : '';
+        const envelope = !!b && typeof b === 'object' && typeof b.call === 'string' && !!b.args && typeof b.args === 'object' && !Array.isArray(b.args);
+        const name = envelope ? b.call : '';
         if (name === 'api') return 'api';
         const dot = name.indexOf('.');
         if (dot < 1 || dot === name.length - 1) return null;
-        const args = {};
-        Object.keys(b).forEach(function (k) { if (k !== 'verb') args[k] = b[k]; });
+        const args = Object.assign({}, b.args);
         const inner = {};
         inner[name.slice(dot + 1)] = args;
         const outer = {};
@@ -493,8 +493,8 @@ const test = {
     },
     browserAsk: function (fetchImpl) {
         return function (verb, args) {
-            const payload = { verb: String(verb) };
-            if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+            // The door's one envelope (goal/G41.15).
+            const payload = { call: String(verb), args: args || {} };
             return fetchImpl('/api/spirit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

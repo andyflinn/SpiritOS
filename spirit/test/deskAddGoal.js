@@ -91,7 +91,7 @@ test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is 
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'goal.add' || v === 'press') added.push({ verb: v, args: ask[v] });
       if (v === 'goal.add') return Promise.resolve({ status: 200, body: { id: 'goal/G101', change: 7 } });

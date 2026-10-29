@@ -125,7 +125,7 @@ function bootPage(desk) {
     core: {
       ask: function (verb, args) {
         // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-        const asked = test.foldAsk(Object.assign({}, args, { verb: verb }));
+        const asked = test.foldAsk({ call: verb, args: args || {} });
         const body = asked && asked.desk ? desk.answer(asked.desk) : {};
         return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
       },

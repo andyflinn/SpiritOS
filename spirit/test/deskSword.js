@@ -107,7 +107,7 @@ test.startTest('goal/G9.1: a sword marks make-current in the List; the button li
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
       // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 'goal/G101', title: 'Another', status: 'running', buttons: ['close', 'make-current'] })), box: 'BOX', version: 1, change: 1, chatMore: false, checks: [], chat: [] } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, checks: [], chat: [], box: '', version: 1 } });

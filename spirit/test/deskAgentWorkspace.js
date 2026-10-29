@@ -228,7 +228,7 @@ async function mount(answer) {
     verb: function (name, body) {
       if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
       // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
-      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
+      const a = (test.foldAsk({ call: name, args: body || {} }) || {}).deskAgent;
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
       return Promise.resolve(answer(v, a ? a[v] : {}));

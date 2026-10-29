@@ -29,17 +29,27 @@ async function refusedWith(promise) { try { await promise; return 'answered'; } 
 
 // A family's api.js as the node hands it: two verbs, one dotted, and a name of its own.
 const DEMO = 'module.exports = { verbs: { hello: { name: "text" }, "line.write": { text: "text" } }, names: function (call) { return { hi: function (n) { return call("hello", { name: n }); } }; } };';
+// A call as the node's door takes it (goal/G41.15): { call: "<family>.<verb>", args: { ... } }, nothing beside them.
+// Anything else is refused 400 bad-request, as the door refuses it.
+function isCall(b) {
+  return !!b && typeof b === 'object' && typeof b.call === 'string' && !!b.args && typeof b.args === 'object' && !Array.isArray(b.args) &&
+    Object.keys(b).every(function (k) { return k === 'call' || k === 'args'; });
+}
+const FLAT = [400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }];
 // The node's answers, the same at the loopback door and at a page's /api/spirit.
 function answer(b) {
-  if (b.verb === 'api' && b.family === 'demo') return [200, { interface: DEMO }];
-  if (b.verb === 'api' && b.family) return [404, { ok: false, code: 'no-family', error: 'no family ' + b.family }];
-  if (b.verb === 'api') return [200, { demo: { hello: {} }, gone: {} }];
-  if (b.verb === 'demo.hello' && b.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
-  if (b.verb === 'demo.hello' && b.name === 'slow') return [504, 'the app server did not answer'];
-  if (b.verb === 'demo.hello') return [200, { ok: true, said: 'hello ' + b.name }];
-  if (b.verb === 'demo.line.write') return [200, { ok: true, wrote: b.text }];
-  if (b.verb === 'demo.FS.loadFile') return [200, { text: 'x' }];
-  return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + b.verb }];
+  if (!isCall(b)) return FLAT;
+  const c = b.call;
+  const a = b.args;
+  if (c === 'api' && a.family === 'demo') return [200, { interface: DEMO }];
+  if (c === 'api' && a.family) return [404, { ok: false, code: 'no-family', error: 'no family ' + a.family }];
+  if (c === 'api') return [200, { demo: { hello: {} }, gone: {} }];
+  if (c === 'demo.hello' && a.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
+  if (c === 'demo.hello' && a.name === 'slow') return [504, 'the app server did not answer'];
+  if (c === 'demo.hello') return [200, { ok: true, said: 'hello ' + a.name }];
+  if (c === 'demo.line.write') return [200, { ok: true, wrote: a.text }];
+  if (c === 'demo.FS.loadFile') return [200, { text: 'x' }];
+  return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
 // It also serves the node's events family: events.subscribe is a stream, as the real node's (a page is handed a snapshot
 // and then a job update; a server, which says X-Spirit-Reader: server, only the packets); a peer.post is answered with its
@@ -55,7 +65,8 @@ function fakeNode() {
       let b = {};
       try { b = JSON.parse(body || '{}'); } catch (e) { b = {}; }
       asked.push(b);
-      if (b.verb === 'events.subscribe') {
+      if (!isCall(b)) { res.writeHead(FLAT[0], { 'Content-Type': 'application/json' }); res.end(JSON.stringify(FLAT[1])); return; }
+      if (b.call === 'events.subscribe') {
         const reader = req.headers['x-spirit-reader'] || '';
         res.writeHead(200, { 'Content-Type': 'text/event-stream' });
         res.write(': open\n\n');
@@ -66,14 +77,14 @@ function fakeNode() {
         }
         return;
       }
-      if (b.verb === 'peer.post') {
+      if (b.call === 'peer.post') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, hash: 'h1' }));
-        const reply = packet.encode('api', { said: 'answered by ' + b.to }, { re: 'h1' });
-        setTimeout(function () { streams.forEach(function (st) { st.res.write('event: packet\ndata: ' + JSON.stringify({ from: b.to, text: reply.text }) + '\n\n'); }); }, 30);
+        const reply = packet.encode('api', { said: 'answered by ' + b.args.to }, { re: 'h1' });
+        setTimeout(function () { streams.forEach(function (st) { st.res.write('event: packet\ndata: ' + JSON.stringify({ from: b.args.to, text: reply.text }) + '\n\n'); }); }, 30);
         return;
       }
-      if (b.verb === 'events.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
+      if (b.call === 'events.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
       const [status, out] = answer(b);
       res.writeHead(status, { 'Content-Type': typeof out === 'string' ? 'text/plain' : 'application/json' });
       res.end(typeof out === 'string' ? out : JSON.stringify(out));
@@ -178,8 +189,8 @@ function page() {
       fetched.push({ url: url, body: init && init.body });
       if (url === '/api/spirit') {
         const b = JSON.parse(init.body);
-        if (b.verb === 'peer.post') {
-          const inner = JSON.parse(b.to ? b.text : '{}').body;
+        if (isCall(b) && b.call === 'peer.post') {
+          const inner = JSON.parse(b.args.to ? b.args.text : '{}').body;
           const reply = inner && inner.api ? { interface: DEMO } : { said: 'hello page peer' };
           return Promise.resolve({ status: 200, text: function () { return Promise.resolve(JSON.stringify(reply)); } });
         }
@@ -303,9 +314,9 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     else {
       if (o.same) test.check('the scratch run root\'s instance is its process\'s one global');
       else test.fail('the scratch instance is not its process\'s global');
-      if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.verb === 'api' && b.family === 'demo'; }).length === 1)
+      if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 1)
         test.check('spirit.require of the demo interface binds it on the one instance as spirit.demo, from 127.0.0.1:<its port>, asked once by two callers at once');
-      else test.fail('binding demo: ' + short([o.two, o.bound, node.asked.filter(function (b) { return b.verb === 'api'; }).length]));
+      else test.fail('binding demo: ' + short([o.two, o.bound, node.asked.filter(function (b) { return b.call === 'api'; }).length]));
       if (o.hi === 'hello dave' && o.dotted === 't' && o.fs === 'x') test.check('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and the folder verbs (FS.loadFile)');
       else test.fail('the bound family: ' + short([o.hi, o.dotted, o.fs]));
       const askedBefore = node.asked.length;
@@ -327,19 +338,19 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       const f = o.facts || {};
       if (f.port === node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') test.check('spirit.node: its port from environment.json, and the name, key and owner the node handed it as --node');
       else test.fail('spirit.node: ' + short(f));
-      const updates = node.asked.filter(function (b) { return b.verb === 'events.publish'; });
+      const updates = node.asked.filter(function (b) { return b.call === 'events.publish'; }).map(function (b) { return b.args; });
       const states = updates.map(function (u) { return u.app && u.app.job && u.app.job.state; }).filter(Boolean);
       const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
       if (o.publish === true && o.tooBig === false && updates.length && updates.every(function (u) { return u.id === 'job_7'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
           && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open'
-          && o.noJobsPublish === true && !node.asked.some(function (b) { return b.verb === 'jobs.update'; }))
+          && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'jobs.update'; }))
         test.check('spirit.events.publish and spirit.jobs start, progress and end publish by events.publish with the job\'s own id, the one path (no jobs.update, no spirit.jobs.publish); one over the payload cap is said as dropped; a second start while one is open refuses job-open');
       else test.fail('publishing: ' + short([o.publish, o.tooBig, updates.length, states, dropped.length, o.startAgain, o.noJobsPublish]));
       if (JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']))
         test.check('spirit.events.subscribe: the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed');
       else test.fail('spirit.events.subscribe heard ' + short(o.heard));
       const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
-      if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.verb === 'peer.post' && b.to === 'peerKey9'; }))
+      if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; }))
         test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (events.subscribe) as a server, as it always worked');
       else test.fail('spirit.peerPost: ' + short([o.peerAnswer, viaStream]));
       if (o.peer && o.peer[0] === true && o.peer[1] === 1 && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777)
@@ -365,7 +376,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('spirit.start: ' + short([started === again, wq.spirit.ready === started, Object.keys(wq.spirit)]));
   const pc = await wq.spirit.demo.hello({ name: 'hal' });
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
-  if (pc.said === 'hello hal' && toDoor.length && JSON.parse(toDoor[toDoor.length - 1].body).verb === 'demo.hello') test.check('on a page with no link: calls go to the page\'s own origin, /api/spirit, as {verb, ...args}');
+  if (pc.said === 'hello hal' && toDoor.length && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') test.check('on a page with no link: calls go to the page\'s own origin, /api/spirit, as { call, args } (goal/G41.15)');
   else test.fail('on a page: ' + short([pc, toDoor.length]));
   const linked = [];
   wq.spirit.transport = { ask: function (v) { linked.push(v); return { status: 200, body: { said: 'via link' } }; }, file: function (p) { linked.push('file ' + p); return { status: 200, bytes: new Uint8Array(fs.readFileSync(path.join(RUN, p))) }; } };
@@ -467,7 +478,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('on a page: an interface answered another member');
   const pp = await wq.spirit.require(wq.spirit.familyPath('demo'), 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
-  if (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).verb === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo)
+  if (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo)
     test.check('on a page: with a key, the peer\'s family through the home node\'s peer.post, not its own node\'s');
   else test.fail('on a page: a peer\'s family answered ' + short(ppa));
 

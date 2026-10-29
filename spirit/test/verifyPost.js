@@ -24,8 +24,8 @@ if (!Number.isInteger(port) || port <= 0 || !Array.isArray(records) || !records.
     // The failure text of a red goes along when the suite sent one (goal/G21.3).
     const rec = { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || '') };
     if (typeof r.failure === 'string' && r.failure) rec.failure = r.failure;
-    // deskVerify.record by name on the node's flat apiDoor (goal/G30.6), the record's fields beside the verb.
-    const body = JSON.stringify(Object.assign({ verb: 'deskVerify.record' }, rec));
+    // deskVerify.record by name on the node's flat apiDoor (goal/G30.6), in the door's one envelope (goal/G41.15).
+    const body = JSON.stringify({ call: 'deskVerify.record', args: rec });
     try {
       await fetch('http://127.0.0.1:' + port + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: body });
     } catch (e) { /* the node is gone; a record nobody could take is not a suite's problem */ }

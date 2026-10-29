@@ -62,7 +62,7 @@ function dialog(answer) {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
       if (ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
