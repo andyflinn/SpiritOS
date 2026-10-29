@@ -255,7 +255,8 @@ function createVerbTable() {
     return new Promise(function (resolve) {
       var handler = handlerFor(verb);
       if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
-      var text = JSON.stringify(Object.assign({}, args && typeof args === 'object' ? args : {}, { verb: verb }));
+      // The handler reads the call's args as its body, as behind the door (goal/G41.15); the name is not among them.
+      var text = JSON.stringify(args && typeof args === 'object' && !Array.isArray(args) ? args : {});
       var req = require('stream').Readable.from([text]);
       req.headers = { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(text, 'utf8')) };
       var status = 200;
@@ -336,7 +337,7 @@ function createVerbTable() {
     //
     // The loopback door (/api/spirit) asks this for the handler of a verb, as it asked the table. A node family verb
     // keeps its own (req, res) handler, unchanged; 'api' answers the flat table; 'family.verb' (the family is the part
-    // before the first dot) goes through ask as {family: {verb: args}}, args the body without verb. The caller is the
+    // before the first dot) goes through ask as {family: {verb: args}}, args the call's own (goal/G41.15). The caller is the
     // owner: the loopback door is the owner's own machine.
     d.handlerFor = function (verb) {
       var name = String(verb || '');
@@ -348,8 +349,8 @@ function createVerbTable() {
       if (name !== 'api' && apps && typeof apps.apps === 'function' && apps.apps().indexOf(name.slice(0, dot)) === -1) return null;
       return function (rq, rs) {
         return readBody(rq).then(function (body) {
-          var args = {};
-          if (body && typeof body === 'object' && !Array.isArray(body)) Object.keys(body).forEach(function (k) { if (k !== 'verb') args[k] = body[k]; });
+          // The call's args, as the door handed them on (goal/G41.15): read as they came, never sifted.
+          var args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
           var asked = name;
           if (name === 'api' && typeof args.family === 'string') asked = { api: { family: args.family } };
           else if (name !== 'api') {
@@ -372,9 +373,8 @@ function createVerbTable() {
     // What the owner door (puppetDoor) runs: one verb by name, as /api/spirit takes it, answered {ok, status, body}.
     // A node family verb through the table's call, 'api' the flat table, family.verb through ask; a family nobody
     // serves is no-such-verb, as the loopback door says it.
-    // AN APP GETS THE ARGUMENTS WITHOUT verb, AS AT THE LOOPBACK DOOR (goal/G41.4): a caller that hands the whole request
-    // (js/faceHome.js, the face's calls) left verb among them, and an app that refuses an argument it does not declare
-    // refused every call from the face, "no such argument".
+    // AN APP GETS THE CALL'S ARGUMENTS AS THEY CAME (goal/G41.15): the name travels apart, { call, args }, so an
+    // argument named verb is the verb's own and nothing is sifted out.
     d.call = function (verb, args) {
       var name = String(verb || '');
       if (handlerFor(name)) return call(name, args);
@@ -383,8 +383,7 @@ function createVerbTable() {
       var asked = name;
       if (name === 'api' && args && typeof args.family === 'string') asked = { api: { family: args.family } };
       else if (name !== 'api') {
-        var given = {};
-        if (args && typeof args === 'object' && !Array.isArray(args)) Object.keys(args).forEach(function (k) { if (k !== 'verb') given[k] = args[k]; });
+        var given = args && typeof args === 'object' && !Array.isArray(args) ? args : {};
         asked = {};
         asked[name.slice(0, dot)] = {};
         asked[name.slice(0, dot)][name.slice(dot + 1)] = given;
@@ -428,8 +427,7 @@ function asDoorHandler(name, decl) {
       rs.end(JSON.stringify(body));
     }
     return readBody(rq).then(function (body) {
-      var args = {};
-      if (body && typeof body === 'object' && !Array.isArray(body)) Object.keys(body).forEach(function (k) { if (k !== 'verb') args[k] = body[k]; });
+      var args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
       return Promise.resolve().then(function () { return decl.handler(args); });
     }).then(function (reply) {
       send(200, reply);

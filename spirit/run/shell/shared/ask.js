@@ -34,7 +34,8 @@ export async function ask(verb, args) {
   const r = await fetch(DOOR, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ verb: String(verb) }, args || {})),
+    // The name and the arguments apart (goal/G41.15): { call, args }, so an argument named verb is the verb's own.
+    body: JSON.stringify({ call: String(verb), args: args || {} }),
   });
   return r.json().catch(() => ({ ok: false, error: 'unreadable answer' }));
 }

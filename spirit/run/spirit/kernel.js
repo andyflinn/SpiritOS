@@ -69,8 +69,9 @@ spirit.core.ask = function (verb, args, base) {
   if (!base && typeof window !== 'undefined' && window.spirit && window.spirit.transport && typeof window.spirit.transport.ask === 'function') {
     return window.spirit.transport.ask(String(verb), args || {});
   }
-  const payload = { verb: String(verb) };
-  if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+  // THE NAME AND THE ARGUMENTS APART (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door: { call:
+  // "<family>.<verb>", args: { ... } }"), so an argument named verb is the verb's own.
+  const payload = { call: String(verb), args: args || {} };
   return fetch((base || '') + '/api/spirit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -307,7 +308,7 @@ if (isNode()) {
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", "/api/spirit", false);
     xmlhttp.setRequestHeader("Content-Type", "application/json");
-    xmlhttp.send(JSON.stringify({ verb: "fs.stat", path: filePath }));
+    xmlhttp.send(JSON.stringify({ call: "fs.stat", args: { path: filePath } }));
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = null; }
     }
@@ -325,7 +326,7 @@ if (isNode()) {
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", "/api/spirit", false);
     xmlhttp.setRequestHeader("Content-Type", "application/json");
-    xmlhttp.send(JSON.stringify({ verb: "fs.annotations", path: filePath }));
+    xmlhttp.send(JSON.stringify({ call: "fs.annotations", args: { path: filePath } }));
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = {}; }
     }
@@ -342,7 +343,7 @@ if (isNode()) {
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to save file: ' + xhr.status));
       };
-      xhr.send(JSON.stringify({ verb: 'fs.save', path: filePath, content: content }));
+      xhr.send(JSON.stringify({ call: 'fs.save', args: { path: filePath, content: content } }));
     });
   };
 
@@ -361,7 +362,7 @@ if (isNode()) {
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to delete file: ' + xhr.status));
       };
-      xhr.send(JSON.stringify({ verb: 'fs.delete', path: filePath }));
+      xhr.send(JSON.stringify({ call: 'fs.delete', args: { path: filePath } }));
     });
   };
 
@@ -425,7 +426,7 @@ if (isNode()) {
             reject(new Error('failed to start job: ' + xhr.status));
           }
         };
-        xhr.send(JSON.stringify(Object.assign({ verb: 'jobs.create' }, options || {})));
+        xhr.send(JSON.stringify({ call: 'jobs.create', args: options || {} }));
       });
     },
     // jobs.list is gone (puppets/G2): search(q) answers key/label pairs,
@@ -449,7 +450,7 @@ if (isNode()) {
             reject(new Error('failed to cancel job: ' + xhr.status));
           }
         };
-        xhr.send(JSON.stringify({ verb: 'jobs.cancel', id: id }));
+        xhr.send(JSON.stringify({ call: 'jobs.cancel', args: { id: id } }));
       });
     },
     delete: function(id) {
@@ -465,7 +466,7 @@ if (isNode()) {
             reject(new Error('failed to delete job: ' + xhr.status));
           }
         };
-        xhr.send(JSON.stringify({ verb: 'jobs.delete', id: id }));
+        xhr.send(JSON.stringify({ call: 'jobs.delete', args: { id: id } }));
       });
     },
   };

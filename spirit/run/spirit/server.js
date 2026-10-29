@@ -217,15 +217,24 @@ const readJsonBody = common.readJsonBody;
 const fsPath = fileSystem.fsPath;
 
 // Which verb this is, for the one door that has to know before it can
-// choose. A body that will not parse is not a verb — the handler that
-// would have been chosen is the one that reports that, so this answers
-// empty and lets the dispatch below say "no such verb".
+// choose. A CALL IS { call, args } (goal/G41.15; the box: "ONE ENVELOPE
+// for every call to a node's door ... The door reads the name from
+// body.call and hands body.args to the verb as they came: it never looks
+// inside args"): answers the name, and from here on the handler behind
+// the door reads args as its body (serveCommon.useBody). Anything else,
+// the flat { verb, ...args } among it, answers null: the door refuses it.
 // Read with NO bound, so the verb is known before the body is judged;
 // the door then holds every verb but net.fetch to BODY_MAX (below).
-function peekVerb(req) {
+function peekCall(req) {
   return readJsonBody(req, { max: Infinity })
-    .then(function (body) { return String((body && body.verb) || ''); })
-    .catch(function () { return ''; });
+    .then(function (body) {
+      const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
+      const a = keys.length === 2 && keys.indexOf('call') !== -1 && keys.indexOf('args') !== -1 ? body.args : null;
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof body.call !== 'string' || body.call === '') return null;
+      common.useBody(req, a);
+      return body.call;
+    })
+    .catch(function () { return null; });
 }
 
 // clientKeyFor, nodeRefusal, handleDeviceOffer and handleRelayClaim
@@ -892,7 +901,12 @@ const server = http.createServer((req, res) => {
       // The verb is read off the body without consuming it: each handler
       // still reads the body it was written to read, so a handler moving
       // under this door needs no change of its own.
-      peekVerb(req).then(function (verb) {
+      peekCall(req).then(function (verb) {
+        if (verb === null) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }));
+          return;
+        }
         // Every verb but the proxy and the owner's fs.save and fs.load keeps the packet's bound (goal/G33.10).
         if (['net.fetch', 'fs.save', 'fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > require('./limits').BODY_MAX) {
           res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });

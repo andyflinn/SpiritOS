@@ -104,13 +104,12 @@ function createEvents(o) {
   }
 
   // events.publish, a process's state or object on its own job (was server.js handleJobUpdate, jobs.update). The id is
-  // a field, and the rest of the body is the patch.
+  // a field, and the rest of the call's args is the patch (the door hands the args on as the body, goal/G41.15).
   function handlePublish(req, res) {
     o.readJsonBody(req).then(function (whole) {
       const id = String((whole && whole.id) || '');
       const body = Object.assign({}, whole);
       delete body.id;
-      delete body.verb;
       // An object over MAX_PAYLOAD is refused here by name, with its size and the limit, never kept or streamed.
       const appBytes = body.app && typeof body.app === 'object' ? Buffer.byteLength(JSON.stringify(body.app), 'utf8') : 0;
       if (appBytes > limits.PAYLOAD_MAX) {

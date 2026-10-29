@@ -40,12 +40,19 @@ const FACE_PIECE = 64 * 1024;
 // other than that the face uses the same door as a puppeteer would use on the home node", and "i can see the point of
 // refusing to change the face name for the face I'm calling from"). Only a face-name change on the relay this face is
 // called through: relay.face for that relay, or a post carrying { face } to that relay's key. relay.join, and a face
-// name on any other relay, go through. here: { url, key } of the relay the request came through.
+// name on any other relay, go through. request: the face's call, { call, args } (goal/G41.15); here: { url, key } of
+// the relay the request came through.
+// A call as the door takes it (goal/G41.15): exactly { call, args }, call a name, args a plain object.
+function isCall(x) {
+  return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
+    typeof x.call === 'string' && x.call !== '' && !!x.args && typeof x.args === 'object' && !Array.isArray(x.args);
+}
 function faceRefuses(request, here) {
-  const r = request || {};
+  const q = request || {};
+  const r = q.args && typeof q.args === 'object' ? q.args : {};
   const h = here || {};
   const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
-  const verb = String(r.verb || '');
+  const verb = String(q.call || '');
   if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
   if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
     let packet = null;
@@ -274,20 +281,23 @@ function createFaceHome(opts) {
       json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || '') });
       return;
     }
-    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '' });
-    if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
     if (r.upload && typeof r.upload === 'object') { uploadPart(r.upload, res); return; }
-    const verb = String(r.verb || '');
+    // A CALL IS { call, args } (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"): the name and the
+    // arguments apart, and nothing else beside them; the arguments go to the verb as they came.
+    if (!isCall(r)) { json(res, 400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }); return; }
+    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '' });
+    if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
+    const verb = r.call;
+    const args = r.args;
     // THE FACE'S OWN PART OF A SIDECAR (goal/G30.21). The node knows this request came from the face, so its fs.annotate
     // writes the face part and never reaches the door, whose fs.annotate writes the client part.
     if (verb === 'fs.annotate' && typeof o.annotateFace === 'function') {
-      const out = (r.payload && typeof r.payload === 'object') ? o.annotateFace(String(r.path || ''), r.payload) : { ok: false, reason: 'bad-payload' };
+      const out = (args.payload && typeof args.payload === 'object') ? o.annotateFace(String(args.path || ''), args.payload) : { ok: false, reason: 'bad-payload' };
       if (out && out.ok) json(res, 200, { ok: true });
       else json(res, out && out.reason === 'file-not-found' ? 404 : 400, { ok: false, code: (out && out.reason) || 'refused', error: 'the face part was not written: ' + ((out && out.reason) || 'refused') });
       return;
     }
-    const args = Object.assign({}, r);
     Promise.resolve(o.call(verb, args)).then(function (a) {
       const status = (a && a.status) || 500;
       if (a && a.body !== undefined && a.body !== null) json(res, status, a.body);

@@ -505,8 +505,10 @@ function faceDoor(req, res, url, pathname) {
     return true;
   }
   if (req.method === 'POST' && pathname === '/face/api') {
-    readJsonBody(req).then(function (body) {
-      const verb = String((body && body.verb) || '');
+    readJsonBody(req).then(function (whole) {
+      // A CALL IS { call, args } here too (goal/G41.15): the face's boot.js sends its login calls as it sends every call.
+      const verb = String((whole && whole.call) || '');
+      const body = whole && whole.args && typeof whole.args === 'object' ? whole.args : {};
       const sid = faceCookie(req);
       if (verb === 'state') {
         const s = relay.faceSession(sid);

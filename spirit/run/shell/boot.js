@@ -43,15 +43,14 @@
   var link = { up: null, sealed: false, key: null, node: null, loaded: false, starting: false };   // up: null until first known
 
   // ── THE RELAY'S OWN API: login, state, logout ───────────────────────────────────────────────────────────────────
+  // Every call here is { call, args }, the name and the arguments apart (goal/G41.15), the relay's own door and the node's.
   function post(verb, body) {
-    var payload = { verb: verb };
-    Object.keys(body || {}).forEach(function (k) { payload[k] = body[k]; });
-    return fetch('/face/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) })
+    return fetch('/face/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ call: String(verb), args: body || {} }) })
       .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
   }
   // On the home node: no relay login, the node says who it is, and its owner is the one at this screen.
   function homeState() {
-    return fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ verb: 'node.card' }) })
+    return fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'node.card', args: {} }) })
       .then(function (r) { return r.json(); })
       .then(function (b) { return { loggedIn: true, face: String((b && b.name) || 'this node'), home: true }; });
   }
@@ -228,9 +227,8 @@
         return { status: r.status, text: text, body: body };
       });
     }
-    var request = { verb: String(verb) };
-    Object.keys(args || {}).forEach(function (k) { request[k] = args[k]; });
-    return call(request).then(function (r) {
+    // The name and the arguments apart (goal/G41.15): faceHome hands args to the verb as they came.
+    return call({ call: String(verb), args: args || {} }).then(function (r) {
       var text = bytesText(r.bytes);
       var body = null;
       try { body = JSON.parse(text); } catch (e) { body = null; }

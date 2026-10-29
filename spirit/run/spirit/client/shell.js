@@ -1045,19 +1045,17 @@
   // in the page the transport lives in kernel.js and nowhere else, so this
   // holds the shell's *policy* (which verbs an app may name, what an app
   // gets back) and none of the plumbing.
-  function postToNode(payload) {
-    var verb = payload.verb;
-    var args = {};
-    Object.keys(payload).forEach(function (k) { if (k !== 'verb') args[k] = payload[k]; });
-    return spirit.core.ask(verb, args);
+  // The verb's name and its arguments apart (goal/G41.15): the kernel sends them as { call, args }.
+  function postToNode(verb, args) {
+    return spirit.core.ask(String(verb), args || {});
   }
 
   function buildApiFor(app) {
     var api = {
       escapeHtml: escapeHtml,
-      // ASK THE NODE FOR SOMETHING, BY NAME. `args` are folded into the
-      // envelope beside the verb, so a caller says WHAT IT WANTS and
-      // nothing about where that lives.
+      // ASK THE NODE FOR SOMETHING, BY NAME. `args` travel beside the
+      // name, never mixed into it (goal/G41.15), so a caller says WHAT IT
+      // WANTS and nothing about where that lives.
       //
       // Answers `{ status, text, body }` — all three, because the wrappers
       // this replaces disagreed about which they wanted: ndPost and cdPost
@@ -1065,9 +1063,7 @@
       // has to pick a helper by return shape picks wrong eventually.
       // `body` is null when the answer was not JSON.
       verb: function (name, args) {
-        var payload = { verb: String(name) };
-        if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
-        return postToNode(payload);
+        return postToNode(name, args);
       },
       // ONE DOOR, AND THE VERB IS IN THE BODY (2026-09-15). This posted
       // to /api/proxy; that route is gone, and the shape it hid is
@@ -1076,8 +1072,7 @@
       // here: a verb moving under the single door is not an app's news.
       fetchExternal: function (url, options) {
         options = options || {};
-        return postToNode({
-          verb: 'net.fetch',
+        return postToNode('net.fetch', {
           url: url,
           method: options.method || 'GET',
           headers: options.headers || {},
@@ -1413,9 +1408,9 @@
         }
         // An app may ask the node to retry a busy target (puppets/G2,
         // Andy's go on peer.post's optional patienceMs; the node caps it).
-        var ask = { verb: 'peer.post', to: toId, text: made.text };
+        var ask = { to: toId, text: made.text };
         if (opts && Number(opts.patienceMs) > 0) ask.patienceMs = Number(opts.patienceMs);
-        return postToNode(ask);
+        return postToNode('peer.post', ask);
       },
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },

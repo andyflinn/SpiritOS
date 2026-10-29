@@ -277,6 +277,10 @@ function readJsonBody(req, opts) {
 // How many bytes of this request's body were read (0 before any).
 function bodyBytes(req) { return req[BODY_BYTES] || 0; }
 
+// THE BODY A HANDLER READS, SET BY THE DOOR (goal/G41.15). The node's door takes a call as { call, args } and reads it
+// once; each handler behind it reads its body as it always did, and gets the call's args as that body, unchanged.
+function useBody(req, value) { req[BODY_PROMISE] = Promise.resolve(value); }
+
 // The connection's own address, used only as a rate-limiting bucket key —
 // never as authority for anything. Rate limits used to key on the name in
 // the request body, which the sender chooses, so rotating it reset the
@@ -480,6 +484,7 @@ module.exports = {
   sendFile: sendFile,
   readBody: readBody,
   readJsonBody: readJsonBody,
+  useBody: useBody,
   clientKeyFor: clientKeyFor,
   nodeRefusal: nodeRefusal,
   refuseTooBig: refuseTooBig,

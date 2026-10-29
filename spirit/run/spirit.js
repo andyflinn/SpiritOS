@@ -161,14 +161,15 @@
   function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
   // The face's link to its home node (window.spirit.transport), on a page only.
   function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
-  // post(verb, args) -> {status, text, body}: {verb, ...args} to the node's /api/spirit. post(verb, args, {stream: true,
-  // headers}) answers the response itself, read as it comes: the events family's subscribe (below).
+  // post(verb, args) -> {status, text, body}: { call: verb, args } to the node's /api/spirit, the name and the arguments
+  // apart (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"), so an argument named verb is the
+  // verb's own. post(verb, args, {stream: true, headers}) answers the response itself, read as it comes: the events
+  // family's subscribe (below).
   function post(verb, args, how) {
     var l = link();
     if (l && typeof l.ask === 'function') return Promise.resolve(l.ask(verb, args || {}));
     if (isNode() && !PORT) return Promise.reject(noNode());
-    var payload = { verb: verb };
-    Object.keys(args || {}).forEach(function (k) { payload[k] = args[k]; });
+    var payload = { call: String(verb), args: args || {} };
     var headers = { 'Content-Type': 'application/json' };
     Object.keys((how && how.headers) || {}).forEach(function (k) { headers[k] = how.headers[k]; });
     var asked = fetch(door() + '/api/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload) });
