@@ -392,9 +392,9 @@ function withDependencies(verbs, paths) {
 // THE POSITION (box v15): each sender numbers every row it publishes, one count per run of it, and keeps a bounded log
 // of them. The client keeps the last (run, n) it took per sender and subscribes with it; the sender hands what came
 // after it, oldest first, leaving out rows addressed to others. A different run (the sender restarted), or a number
-// older than its log, means a full push, and only a full push replaces a sender's cache whole. The position moves only
-// with what landed: a row's own number once it is taken, a push's only at its end, so a push cut short is asked for
-// again from where the client stood.
+// older than its log, means a full push, whose rows take precedence over the kept ones and drop none (goal/G41.15).
+// The position moves only with what landed: a row's own number once it is taken, a push's only at its end, so a push
+// cut short is asked for again from where the client stood.
 const crypto = require('crypto');
 // The run root, where spirit.js sits: a family folder and a cache are found from here, never from the working folder.
 const RUN_ROOT = path.resolve(__dirname, '..');
@@ -516,15 +516,14 @@ function rewrite(kept, gone) {
   lost.forEach(function (p) { D.del(p); });
   kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(r.row); });
 }
-// THE PUSH HAS LANDED WHOLE: it replaces what the sender's rows kept. What the old rows wrote and the push did not goes.
+// THE PUSH HAS LANDED WHOLE: its rows take precedence over what was kept, and nothing kept is dropped (goal/G41.15;
+// Andy: "make sure the deskClient doesn't loose cached info outside the current goal", and Q1: "nothing drops from the
+// cache, unless the api.js from the server says so"). A push carries the sender's current state, the desk's the current
+// goal alone, so a push replacing the cache whole lost every other goal. Each fresh row is placed by the family's keep,
+// which replaces the rows it makes old; the position moves to the push (heard, below), so no older row is waited for.
 function landed(st) {
   const fresh = st.pushing || [];
   st.pushing = null;
-  const now = new Set();
-  fresh.forEach(function (r) { r.paths.forEach(function (p) { now.add(p); }); });
-  const D = dataSet();
-  st.rows.forEach(function (r) { r.paths.forEach(function (p) { if (!now.has(p)) D.del(p); }); });
-  st.rows = [];
   fresh.forEach(function (r) { keepRow(st, r); });
 }
 function saveSoon(st) {
