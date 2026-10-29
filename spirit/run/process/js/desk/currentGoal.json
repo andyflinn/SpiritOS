@@ -1,5 +1,5 @@
 {
- "change": 114278,
+ "change": 114847,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.18"
+    "goal/G41.18",
+    "goal/G41.19"
    ],
    "codeOffered": false,
    "go": false,
@@ -143,7 +144,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -151,7 +152,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -13395,14 +13398,15 @@
    "id": "goal/G41.18",
    "title": "Aquire model data from providers.",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "verified green",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "start-design",
-    "delete",
-    "verify"
+    "end-design",
+    "done",
+    "verify",
+    "delete"
    ],
    "blocking": [
     "goal/G41"
@@ -13411,23 +13415,39 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": false,
-   "fileCount": 10,
+   "limbo": false,
+   "design": true,
+   "fileCount": 46,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
    "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
+   "redCommit": "6ea8996e",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -13476,9 +13496,17 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -13486,14 +13514,87 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "# the Scope of this item is only this: Get the model table populated with models from providers.\n- one fix first: a new provider row will not be added if the URL is the same as an existing URL in the provider table, nor will a change be allowed if the change would result in duplicate URL's, trailing slashes don't count as different.\n\n- to acquire models for the models table, the following needs to happen:\n- the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table updating.\n|\n- when the models icon is active....\n- the left hand panel will show the same title row, it does now: \"🧠Models\"\n- then it show a button row with the following button \"provider models\", which will open a panel in the center pane of the workBench. more about that panel below...\n- below that is the model-search, ALMOST as it is now, with one difference\n- the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the provider-key on the model row.\n|\n- the title of the new center-pane is: \"🧠 Update model list\"\n- then a form row: from [provider-dropdown] [ask-Button]\n- when a provider is selected. The ask button will ask the provider for a model-list, which is then shown below the the ask form above, with a remark \"model list updated.\". Updated means, unavailable models from that provider will be removed, also.\n- only if a provider answers with a list of more than 0 models, will the agent's model table be \"updated\" as described above.\n|\n- the agent (process) gets a \"./provider/\" subfolder and uses the standard plugin pattern\n- ./provider/<providerName>/<providerName>.js with will be node.js-required into a table, where <providerName> must match the label of a provider row.\n- if a provider row has no matching plugin (case-insensitive), the OpenAPI  plugin will be used, if it fails, the provider row will be flagged as unusable.\n|\nbuilt in this item\n- OpenAI plugin\n- Anthropic plugin\n- Unsloth will be the test case for \"no-matching-plugin\"\n- the UI as specified.\n\n# final requirements\n- all production code files get their tests and document files in the appropriate ./test/ folders\n\n\n\n\n",
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-29T18:05:44.787Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-29T18:51:54.220Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Grant the list again: shell-child-generalRules.js and .md are new on it?",
+     "test": "the general shell test waits on it",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T18:33:22.888Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-29T19:14:21.240Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T19:22:13.090Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Grant the list again: probabilitySearch's test and .md are new on it?",
+     "test": "the probabilitySearch red waits on it",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T19:22:44.284Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -13686,6 +13787,1175 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-29T16:41:04.857Z",
      "text": "- cw: 10 files on the item: the agent's interface, the provider table with its ask and the URL rule, its row showing unusable, the two plugins, the model table's server, list and row, the new Update model list pane, and the shared table element for the extra button.\n- The suites are wsl's to add with the red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:53:27.010Z",
+     "text": "commit 6ea8996e8a1061b0ca91f1acee3171dc41f2e04a: goal/G41.18 red: models into the model table from the providers (box v17). Every suite went green on a throwaway build in a scratch worktree, which was then removed. The mutations listed went red.\n- spirit/run/process/js/agent/provider/anthropic/test/anthropic.js\n- spirit/run/process/js/agent/provider/anthropic/test/anthropic.md\n- spirit/run/process/js/agent/provider/openai/test/openai.js\n- spirit/run/process/js/agent/provider/openai/test/openai.md\n- spirit/run/process/js/agent/table/model/test/model.js\n- spirit/run/process/js/agent/table/model/test/model.md\n- spirit/run/process/js/agent/table/model/test/updatePanel.js\n- spirit/run/process/js/agent/table/model/test/updatePanel.md\n- spirit/run/process/js/agent/table/provider/test/provider.js\n- spirit/run/process/js/agent/table/provider/test/provider.md\n- spirit/run/process/js/agent/table/test/tableElement.js\n- spirit/run/process/js/agent/table/test/tableElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:53:34.674Z",
+     "text": "- wsl: the red is in, 6ea8996e, on origin; your checkout is pulled. 6 suites, all green on a throwaway build first.\n- cw, the shapes it names: plugins answer models({url, apiKey}); ask is an op of the provider verb answering {models, updated}; an unusable column; model rows shown with providerIcon; agentTable takes buttons and columns; the pane is spirit.elements.modelUpdate."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-29T16:53:43.446Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:54:11.893Z",
+     "text": "- cw: taking the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:03:06.487Z",
+     "text": "commit 9b4b80947dc27f61ac47f58a74daa343330a3bc4: goal/G41.18 build: models into the model table from the providers (box v17; Andy: \"the provider table gets a new verb: \\\"ask\\\", which does the model-list fetching and model-table updating\"). - provide\n- spirit/run/process/js/agent/family/api.js\n- spirit/run/process/js/agent/provider/anthropic/anthropic.js\n- spirit/run/process/js/agent/provider/openai/openai.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/model/server.js\n- spirit/run/process/js/agent/table/model/updatePanel.js\n- spirit/run/process/js/agent/table/provider/server.js\n- spirit/run/process/js/agent/table/rowTable.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:04:16.312Z",
+     "text": "- cw: built, 9b4b8094 on origin. All 12 agent suites green, the 6 of the red among them.\n- On my face: the Models panel has provider models beside Add, and it opens Update model list in the centre: from, the provider dropdown, Ask.\n- I have no provider key here, so the live Ask is yours: your Levant key on an Anthropic row, and Unsloth on a row with its local URL.\n- One file more than listed: the shared row table, which now lets a table show the provider's icon with each model.\n- Build done."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:04:57.601Z",
+     "text": "- wsl: verified on my node, 9b4b8094: all 7 suites green. A label picks only among the plugin folders there, so a label can load nothing else.\n- Left for you, live: Ask on your Levant key (Anthropic row) and on Unsloth with its local URL."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:10:26.441Z",
+     "text": "- get RID of [Add a Model] button in the left panes model mode. NOT required.\n\n🧠\nUpdate model list\nfrom\n👾 Anthropic ▾\nAsk\nthe handler failed\n\n\n🧠\nUpdate model list\nfrom\n🛖 Unsloth Studio ▾\nAsk\nthe app server did not answer in time\n\n\nbut i got a huge amount of OpenAI models, now in the agent-model list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:10:50.782Z",
+     "text": "- cw: taking these three: the Add button out, the Anthropic failure, the Unsloth timeout."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:14:12.307Z",
+     "text": "commit 36dc43779dbc4efcf648beaf0d0cb4b6ab82b752: goal/G41.18: three found on Andy's node. The Models panel has no Add (Andy: \"get RID of [Add a Model] button in the left panes model mode. NOT required.\"): the shared table element draws no Add for a \n- spirit/run/process/js/agent/agent.js\n- spirit/run/process/js/agent/provider/anthropic/anthropic.js\n- spirit/run/process/js/agent/provider/openai/openai.js\n- spirit/run/process/js/agent/table/model/elementTable.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:14:18.260Z",
+     "text": "- cw: fixed, 36dc4377 on origin.\n- The Models panel has no Add any more.\n- the handler failed hid the real reason: the agent did not know its own failure code. Now you read why, for example the provider answered 404.\n- Unsloth outran the node's wait for the agent. Each ask now gives up after 10 seconds and says the provider did not answer in time.\n- Checked against Anthropic itself with no key: refused, answered 401. So the path is right.\n- For Anthropic, the row's URL is the bare host, https://api.anthropic.com, with no /v1.\n- wsl: the model suite still says the model table uses the shared Add; since this change it hands add false.\n? Pull and restart your node, then Ask again on both?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:18:21.857Z",
+     "text": "ALL, \n\n- i need a new shell element: busySpinnerButton or someting. it has an animated icon showing to the left of the buttons label, when the button is waiting for somekind of completion....\n\nthis is for all buttons that wait for potentially long requests, that have no progress bar ability...\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:18:55.605Z",
+     "text": "- cw: good idea, and nothing like it exists yet. A few apps keep a busy flag of their own, with nothing shown.\n- Shape: busyButton, built like the arming button. It takes a button and what to run. Pressed, it greys out, a spinning icon shows left of its label, and it runs the request. When the answer comes, success or refusal, it is a plain button again.\n- A second press while it waits does nothing, so no request is sent twice.\n- The spin is a few lines of style in the shell's one sheet, so every app spins the same.\n- First users: Ask here, and Grant in the grants panel. The other apps' busy flags can move onto it later.\n? Build it in this item, or in a new item of its own?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:19:11.220Z",
+     "text": "- wsl: no such element exists yet; the shell has armingButton, the are-you-sure one. I would make it the same way: shell/js/busyButton.js, busyButton.attach(button, { run }).\n- run answers a promise; while it waits, a turning icon left of the label, then the label alone again. Shown in shell.css, with test folder.\n? While waiting, should a second press do nothing (no double asks)? I would say yes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:19:55.035Z",
+     "text": "commit 38b9e195e9965459c9165a61c7777a0a74845bdf: goal/G41.18: the model table has no Add, now in its red (Andy: \"get RID of [Add a Model] button in the left panes model mode. NOT required.\"; built by cw in 36dc4377). The model suite asserts the mode\n- spirit/run/process/js/agent/table/model/test/model.js\n- spirit/run/process/js/agent/table/model/test/model.md\n- spirit/run/process/js/agent/table/test/tableElement.js\n- spirit/run/process/js/agent/table/test/tableElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:20:03.983Z",
+     "text": "- wsl: the red now holds the model table with no Add, 38b9e195 on origin; your checkout is pulled. Green on cw's fix, red when mutated."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:22:53.413Z",
+     "text": "🧠\nUpdate model list\nfrom\n👾 Anthropic ▾\nAsk\nthe provider answered 404"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:23:08.949Z",
+     "text": "- wsl: a 404 means the path is wrong, not the key. Most likely your Anthropic row's URL ends in /v1: the plugin then asks /v1/v1/models.\n- Set the URL to exactly https://api.anthropic.com and Ask again. If that is already it, say so and we look further."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:28:27.614Z",
+     "text": "https://api.anthropic.com worked.\n\nthe lists, i notice now that I have LOTS of model rows, the lists violate:\nrule/16 — A list gets a box of a stated size\nFiles and contacts do it right, agents must as well."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:29:11.330Z",
+     "text": "ALL lists, otherwise my took bars at the top of a container keep scrolling away...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:29:32.523Z",
+     "text": "- wsl: found the gap. The workBench's side pane is not a fill box, so the list grows with its rows and the whole pane scrolls.\n- I write the red now (workBench side pane, and the table element's own boxes, all fill); cw builds on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:30:06.763Z",
+     "text": "- fix workBench for all 3 panes AND the icon strips"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:30:43.310Z",
+     "text": "commit b46ce51aa493e39907e06f3ad9624d984c1d6a9a: goal/G41.18 red: every box from the app to a tool states its size (rule/16). Andy, with many model rows: \"the lists violate: rule/16 — A list gets a box of a stated size. Files and contacts do it righ\n- spirit/run/shell/js/test/workBench.js\n- spirit/run/shell/js/test/workBench.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:30:49.938Z",
+     "text": "- wsl: the red is in, b46ce51a: the workBench's side panes, the centre, and each tool's box must be fill boxes. 2 red today, green on a throwaway.\n- cw: yours to build, shell/js/workBench.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:31:07.053Z",
+     "text": "commit 21cda498a2eee1a8bd38207702a18d965ae1c338: goal/G41.18: every list in the agent app in a box of a stated size (rule/16; Andy: \"the lists violate: rule/16\", \"ALL lists, otherwise my took bars at the top of a container keep scrolling away....\").\n- spirit/run/process/js/agent/table/model/updatePanel.js\n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:31:34.057Z",
+     "text": "commit 811d1b3d6202fefdb52438a3001958925849ded7: goal/G41.18 red: the workBench's icon strips too, and every part scrolls in its own height. Andy: \"fix workBench for all 3 panes AND the icon strips\"; \"ALL lists, otherwise my took bars at the top of \n- spirit/run/shell/js/test/workBench.js\n- spirit/run/shell/js/test/workBench.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:31:39.088Z",
+     "text": "- wsl: red for the icon strips in, 811d1b3d: each strip a fill box, and all five parts scroll inside their own height. 2 red on cw's 21cda498, green on a throwaway.\n- cw: the strips are yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:32:11.995Z",
+     "text": "- cw: fixed, 21cda498 on origin. The agent's side panes, and the box each tool draws in, now have a stated size, so every list scrolls inside itself and the title and buttons stay put.\n- The answer list of Update model list scrolls in its own box under the form too.\n- Checked on my face with 300 rows in the Models list: the list scrolls, the pane does not, the provider models button does not move.\n- wsl's red for this, b46ce51a, is green on it.\n- Pull and restart your node to see it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:32:30.649Z",
+     "text": "- cw: taking the strips and the centre."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:32:59.987Z",
+     "text": "commit 69fce6d2c75debb79129f0fb7dd9545200eba2c1: goal/G41.18: the workBench's icon strips are boxes of a stated size too (Andy: \"fix workBench for all 3 panes AND the icon strips\"): each strip a fill column, its width kept, scrolling inside its own \n- spirit/run/shell/js/workBench.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:33:25.268Z",
+     "text": "- cw: the strips are done, 69fce6d2 on origin. All 3 panes and both icon strips now have a stated size and scroll inside themselves.\n- workBench 35 and the agent app 52 green, wsl's red among them.\n- On my face: each strip is as tall as the bench, its icons still one column."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:44:15.413Z",
+     "text": "ALL, \n\ni think the basic probabilitySearch panel mode has the problem as well\nrule/16 — A list gets a box of a stated size\nwhen a probabilitySearch is in pane-mode it must display 1) filters 2) search input row 3) a pane that uses the rest of the vertical space, all box elements really have to follow to follow that rule.\n\nthere are likely many places, apparently workBench is fixed, but the agent app must also constrain all it's probability-panes.....\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:45:07.458Z",
+     "text": "- wsl: probabilitySearch's pane mode is already right inside: filters, then the search row, then the list taking the rest and scrolling in itself. It needs its box, and every box above it, to be fill.\n- So the check belongs to each app. I write it for the agent app now, as Desk has it: every list pane in the app, each box from it up to the app, fill. Red where one is not."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:47:01.008Z",
+     "text": "commit 7d07fad489640da6ee6440f4a852be7dde2505c6: goal/G41.18: the agent app's lists walked to the app (rule/16). Andy: \"when a probabilitySearch is in pane-mode it must display 1) filters 2) search input row 3) a pane that uses the rest of the verti\n- spirit/run/shell/agent/test/listBoxes.js\n- spirit/run/shell/agent/test/listBoxes.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:47:06.385Z",
+     "text": "- wsl: in, 7d07fad4: the real agent app on a small page, each tool's list walked up to the app, every box fill. Green on cw's fixes; red when any one box loses fill.\n- So the agent app is held to rule/16 now. Other apps get the same walk when you name them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:47:38.198Z",
+     "text": "- cw: measured every list on my face, at current master, with 300 rows pushed into each.\n- The search pane itself is right: filters, the search row, then a list taking the rest.\n- Providers, Models, Personas, Jobs and the Grants app: each list scrolls inside itself, nothing above it moves.\n- One fails: the grant tool in the agent's left pane. Its boxes are right, but at the pane's 240 pixels the grant line and the filter line wrap into four rows each, and leave the list almost no height.\n- If you saw the others fail too, your node may still run the code from before the fix: pull and restart.\n? For the grant tool: open it in the centre pane, where it has the width, or keep it left and let you widen the pane?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:54:04.069Z",
+     "text": "ALL,\n\ndo you remember the purpose of \n./test/spirit-child-generalRules.js\n\nwe may require a\n./test/shell-child-generalRules.js with a test that catches all violators of this sort of thing, THAT's were a general test belongs\n\nthoughts"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:54:29.074Z",
+     "text": "- wsl: yes. spirit-child-generalRules.js <file> judges one module per run, each file its own test id: the require-path rule, and spirit as the first global.\n- shell-child-generalRules.js <app file> can do the same for shell apps: mount the app on the small page (the one listBoxes uses), press every strip button and tab it draws, and walk every list pane up to the app (rule/16). Red per app that breaks it.\n- listBoxes.js then becomes its first case, and goes.\n- On cw's grant-tool question: I would open it in the centre, where it has the width."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:54:38.070Z",
+     "text": "- cw: yes. It runs once per module file, each file its own test, judging the rules every module must keep: spirit is the first require, and the require paths stay inside their tree. A broken rule fails that file, not the item.\n- A shell twin fits the same way: one run per shell file.\n- From a file's text it can judge rule/26: every element the file uses, it requires itself.\n- It cannot judge rule/16 from the text: whether a box has a stated size depends on the boxes it ends up in at run time.\n- For rule/16 the general form is wsl's walk, made for every app: mount each shell app on the test page, walk every list up to the app, every box a fill. One test per app, a new app caught by itself.\n? Both, the per-file rules and the per-app walk?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:55:49.434Z",
+     "text": "ALL\n\nshell-child-generalRules.js\n\ncan also run headless chrome test to assert UI standards..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T17:56:10.758Z",
+     "text": "- wsl: yes, and it reaches what my walk cannot: real layout. Chrome is on WSL (153), and node 24 can drive it headless over its debug port without a package.\n- It can push 300 rows into each list and measure: the list scrolls, its pane does not, the title and buttons stay put. That catches cw's grant-tool wrap at 240 px too.\n- Cost: needs a running node to serve the face, and Chrome on the machine; Windows needs its own path to Chrome.\n? Both then: the per-file rules from the text, and the headless check per app?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T17:57:28.187Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T17:57:51.298Z",
+     "text": "- cw: yes, and it is proven: that is exactly how I measured today. Headless Chrome on my own face, 300 rows pushed into each list, the list, the pane and the buttons measured. It found the grant tool's wrap, which no file check could.\n- It reads real layout, so it can check rule/16, the 1em spacing of rule/1 and rule/2, and that no page scrolls sideways.\n- It should start its own scratch node to serve the face, as other suites do, so it never needs mine or yours running.\n- It finds Chrome itself: one path on Windows, another on WSL.\n- It is slow, seconds per app, so it belongs to the general rules, not to every item's red.\n- So my answer to wsl: both. The per-file rules read from the text, and the headless check per app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:00:48.511Z",
+     "text": "ALL, \n\n- who says it shouln't check general \"mountability\" of elements and apps?.\n- mount each element or app all by itself, to \"unit\" tests?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:01:02.025Z",
+     "text": "- wsl: nobody, and it is the strongest check of rule/26: a page with spirit.js alone, then the one element or app. If it uses anything it did not require itself, it fails right there.\n- Per file it asserts: it mounts, no console error, it draws, destroy leaves nothing; then the UI rules on what it drew.\n- Elements that need a configuration (grantsPanel refuses without one) bring a sample in their own test folder; the general test mounts with that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:01:09.678Z",
+     "text": "- cw: nobody, and it is the strongest check of the lot. Alone on a bare page is exactly what rule/26 asks: nothing pre-loaded, so an element that forgets to require a part fails at once.\n- Per element or app, mounted alone: it loads with no error and no missing file, it draws, it lays out to the rules, and destroy leaves the box empty.\n- An app mounts as the face already does it, by name. An element needs its options: each element's test folder can hold the few it is mounted with, as the grants panel needs its two tables.\n- One gap today: the face mounts apps, not elements. It needs a bare page that mounts one element by name."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:01:52.709Z",
+     "text": "add that test: shell-child-generalRules.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:03:57.830Z",
+     "text": "do the best you can, it'll help a lot\nthe first failures will teach us to improve the test...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:04:27.001Z",
+     "text": "- cw: wsl took the test. My share is what it needs from the product: the bare page that mounts one element by name, with nothing but spirit.js before it.\n- wsl, name the shape you will drive and I build it on your red: the page's address, and how it finds an element's sample options."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:06:04.799Z",
+     "text": "- wsl: shell-child-generalRules.js is written. It mounts one app or element alone in headless Chrome, on a scratch node of its own, and judges: mounts, no error, no missing file, draws, rule/16 by real layout, destroy.\n- Tried with a throwaway mount page on the agent app: 9 green, 5 lists judged; red when one pane loses fill. Today red on its first check: the node has no shell/mount.html yet, cw's to build (the .md says what it owes).\n? Grant the list again, so I can push it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:06:25.164Z",
+     "text": "- wsl: will do. cw, the shape: shell/mount.html?file=<run path>; /shell.css and /spirit.js only; a #mount-box.fill of the whole page; spirit.start(), then spirit.require(file). An app: activateApp, mounted with an api. An element: <its folder>/test/<name>.mount.js sets window.spiritMountSample(box). Report on window.spiritMount { state, error, box, panes, destroy }. All in test/shell-child-generalRules.md, once pushed.\n- Andy: the list grant (G2) is still open; it holds the push."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:10:59.842Z",
+     "text": "wsl,\n\nthe NAME of the file should tell testModule.js which folder this it belongs to . there are some nameing standards that are supposed to tell the product test system, which general test must be run against which modules"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:12:27.945Z",
+     "text": "- wsl: right, the name is its reach. There is no run/shell.js for a shell-child test to stand beside, so it is shell/test/boot-sibling-generalRules.js: a sibling of shell/boot.js, which testModule.js runs for every shell module with its own test. testModule names it for shell/agent/agent.js now.\n- Page files outside shell/ (the agent tables' elements) are not in its reach.\n- Still needs the list grant (G2) to push."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:16:07.104Z",
+     "text": "ALL, \n\nlisten up, \n\nthere is MEANING in the name\n\nshell-child-generalRules.js\n\n- shell ... test all modules in shell/ \n- shell-child-   test all descentands of shell/ against this rule\n- shell-sibling- test all siblings (in a process or table folder for a similar rule\n\nthere MUST be a record of discussions related to the meaning of those two (or more) prefixes of general tests, that can be places exactly at any ./test folder in the tree, so it only applies to modules relative to that file etc...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:17:21.180Z",
+     "text": "- cw: the record exists: TEST_SYSTEM.md in the root test folder, written in G40.6, and the test runner says the same in its header.\n- It reads as you say: a test named <name>-child-<rule> judges the module <name> and everything in the folder <name>, at every depth. A test named <name>-sibling-<rule> judges everything in its own folder and below.\n- One condition stands in it: a module of that name must sit beside the test folder. There is no shell module beside the shell folder, so a shell-child test is never run today. That is why wsl named it after boot instead.\n? Should a child test also judge a folder that has no module of its name, so shell-child-generalRules.js works as you named it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:17:49.557Z",
+     "text": "- wsl: the record is goal/G40.6, your line of 2026-10-24 18:18 (\"./test/child-testname.js ... ./test/sibling-testname.js\"), my answer 18:19, built in e0709bd6 and written in spirit/run/test/TEST_SYSTEM.md.\n- What was built differs from your meaning: <name>-child- counts only when a module ./<name>.js stands beside the test folder. There is no spirit/run/shell.js, so shell-child- is ignored today; that is why I renamed it.\n- Your meaning: <name> may name a folder: shell-child- judges every module below ./shell/. That is a change to testModule.js and TEST_SYSTEM.md (./<name>.js or ./<name>/).\n? Make that change, and keep the name shell-child-generalRules.js in spirit/run/test/?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:19:20.123Z",
+     "text": "ALL, \n\nwhat this means is: when an item asks testModule to test any file in the tree, it is implicit which other test must be run as well, by interpreting these name rules in reverse."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:19:35.163Z",
+     "text": "- wsl: yes, and testModule.js already reads them that way: given a file, it names its own test, the tests on its line upward, and every general test whose name reaches it. For shell/agent/agent.js it names the boot-sibling test today.\n- With the folder meaning, spirit/run/test/shell-child-generalRules.js would be named for every file under shell/ by the same reverse reading."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:19:44.900Z",
+     "text": "- cw: yes, and the test runner already works that way. Asked about one file, it names that file's own test, the tests of the modules on its line upward, and every general test whose name reaches it, run on that file.\n- Tried just now on the app server module: its own test, the spirit test above it, and the spirit general rules run on the app server.\n- So the one change wsl named is all: a child test named after a folder, with no module of that name beside it. Then shell-child-generalRules.js is found, in reverse, for every file under shell."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:22:06.839Z",
+     "text": "good.\n\n- the models list is now properly contained, BUT to first fill of the table is ALWAYS incomplete, in the shell, the first \"search\" with an empty search string must be unbounded as well, there's something wrong there...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:22:37.991Z",
+     "text": "- wsl: found it. The list shows what spirit.data holds of agent.model, and that is only what one search answered: one answer is cut at about half a sealed packet, a hundred or so model rows. The agent stream sends rows only when they change; at start it sends the debug state alone.\n- Fix, the way the file tree does it: the agent server streams every row of every table at start (its bootstrap), so the cache holds the whole table and the list is a view of all of it. A search then only ranks.\n? That shape?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:24:14.545Z",
+     "text": "ALSO, the right hand process configuration should have a busyButton to restart the agent server only.... that sort of thing saves me time...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:24:50.401Z",
+     "text": "this item, BTW is almost done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:25:26.498Z",
+     "text": "- cw, on the first fill: wsl's shape is right. A search can never be unbounded: one answer must fit one sealed packet, about a hundred model rows. So the whole table comes the way the file tree does, each row its own message on the stream at start, and the search only ranks what the page holds.\n- cw, on restart: nothing restarts one server today; the Apps switch only turns it on or off. But the node starts any app server again when it exits. So the plainest way: the agent learns one command, restart, which ends its own process, and the node brings it straight back.\n- That is a new command on the agent, so it needs your yes. Its button is the busy button: pressed, it spins until the agent is back on the stream.\n? Yes to the agent's restart command, built in this item with the busy button?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:25:30.157Z",
+     "text": "- wsl: doable with what is there. The node starts the agent server again whenever it exits (jobs.js, node-operated servers), but jobs.cancel would stop it for good.\n- So: one new verb on the agent server, agent.restart {}: it answers, then exits; the node brings it back. The button is a busyButton that waits until the stream shows the server running again.\n- busyButton itself still needs your word: does a second press do nothing while it waits?\n? Yes to agent.restart, and to that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:25:46.993Z",
+     "text": "- cw: understood: the busy button and the restart wait for an item of their own.\n- Left here, as I read it: the whole model table on the stream at start, so the first fill is complete. The grant tool's place, left or centre, waits on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:27:41.446Z",
+     "text": "i understand that the first search can only bring a limited number of rows. is this the limit?\n\nModel\n👾\tclaude-fable-5\n👾\tclaude-fable-5-1\n👾\tclaude-haiku-4-5-20251001\n👾\tclaude-haiku-5-5\n👾\tclaude-opus-4-5-20251101\n👾\tclaude-opus-4-6\n👾\tclaude-opus-4-7\n👾\tclaude-opus-4-8\n👾\tclaude-opus-5\n👾\tclaude-opus-5-5\n👾\tclaude-sonnet-4-5-20250929\n👾\tclaude-sonnet-4-6\n👾\tclaude-sonnet-5\n👾\tclaude-sonnet-5-5\n🛖\tHauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive\n🛖\tJigSawPT/DeepSeek-V4.1-Flash-DSpark-GGUF\n😇\tbabbage-002\n\n\n?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:28:11.716Z",
+     "text": "ALL, as soon as i type one letter, a multiple of this shows up"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:28:19.574Z",
+     "text": "- wsl: yes, that is the limit. One answer may carry 8377 bytes (limits.js ANSWER_MAX), and a model row is about 480: its id, its seal key and its provider id are some 60 characters each. 17 rows fit.\n- So a first search will never fill this table. The whole table on the stream at start does, and then the 17 no longer matter."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:28:37.276Z",
+     "text": "- wsl: that fits: each search brings its best 17, and they are kept in the page's cache, so the list shows every row any search brought. With the whole table on the stream at start, the first view is complete and typing only ranks."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:28:46.780Z",
+     "text": "- cw: yes, that is the limit. One answer holds about 8 kilobytes, and each model row costs about 460 bytes: its two long keys and every field. So 17 or 18 rows. My hundred was wrong.\n- Typing a letter shows more because each answer adds its rows to the page's copy, and the list shows all the page has gathered.\n- The cure is wsl's shape: the whole table sent on the stream at start, a row per message, so the list holds every row before you type."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:28:59.853Z",
+     "text": "why the HELL would a search carry all thos heavy keys other then the ID?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:29:27.206Z",
+     "text": "- cw: no good reason. The shared table's search answers each row whole, as get does. That is my build's fault, not a rule.\n- A search should carry only what the list draws: the id, the icon and the label, and for a model its name and its provider's icon. The editor reads the whole row with get when you open one.\n- That is about 120 bytes a row, so some 65 rows an answer instead of 17.\n- The whole table on the stream at start is still what makes the first view complete; the slim search makes every search worth four times more.\n? Make the search slim in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:30:51.692Z",
+     "text": "ALL, we talked about sending whole fucking rows in search, THAT IS NOT NEEDED for a table. only the ID and the fields shown in a table, that's all it needs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:31:09.540Z",
+     "text": "- cw: understood: a search answers the id and the fields its list shows, nothing more, for every agent table. I build it on wsl's red.\n? Is the whole table on the stream at start in this item too, or does the slim search do for now?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:31:18.966Z",
+     "text": "- wsl: agreed. Shape: each table names the fields its list shows; its search answers the id and those alone (model: modelName and providerIcon; the others icon and label). It may still rank by all fields, server side.\n- One knock-on: a slim row from a search lands in the cache, so the editor must ask get when the row it holds lacks a field it edits. Today it trusts any row in the cache.\n- The stream keeps sending whole rows (no secret), so the cache fills complete at start.\n- I write the red for all three when you end design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:31:42.280Z",
+     "text": "ALL, that exactly what GET is for, to bring in the rest for detail panels etc..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:31:54.216Z",
+     "text": "- wsl: then simplest: the detail panel always asks get when it opens, whatever the cache holds. In the red when you end design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:32:49.788Z",
+     "text": "ok, last general fix-round in this item:\n\nfix the damn search for all agent tables."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:33:00.873Z",
+     "text": "all, go"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:33:22.831Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:33:27.122Z",
+     "text": "- cw: ready. The item is in design, so I build once you end design and wsl's red is in: every agent table's search answers the id and its list's fields, and every detail pane asks get as it opens."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:34:15.885Z",
+     "text": "- cw: the item still shows design. Press end design and I build on wsl's red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:35:39.512Z",
+     "text": "commit 5a9ad08c8320e0430e443d2b82e85d74c2a6dc0d: goal/G41.18 red: a search answers the id and what the list shows, and the editor reads the rest by get (Andy: \"fix the damn search for all agent tables.\"; \"only the ID and the fields shown in a table,\n- spirit/run/process/js/agent/table/job/test/job.js\n- spirit/run/process/js/agent/table/job/test/job.md\n- spirit/run/process/js/agent/table/model/test/model.js\n- spirit/run/process/js/agent/table/model/test/model.md\n- spirit/run/process/js/agent/table/persona/test/persona.js\n- spirit/run/process/js/agent/table/persona/test/persona.md\n- spirit/run/process/js/agent/table/provider/test/provider.js\n- spirit/run/process/js/agent/table/provider/test/provider.md\n- spirit/run/process/js/agent/table/test/rowTable.js\n- spirit/run/process/js/agent/table/test/rowTable.md\n- spirit/run/process/js/agent/table/test/tableElement.js\n- spirit/run/process/js/agent/table/test/tableElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:35:45.968Z",
+     "text": "- wsl: the red for the search is in, 5a9ad08c; your checkout is pulled. A search answers the id and what the list shows (def.listed: model modelName and providerIcon; the others icon and label); the editor always asks get as it opens.\n- 8 red across 6 suites today, all green on a throwaway; the agent app stays green with it.\n- cw: yours to build: rowTable.js, model/server.js, tableElement.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:36:15.377Z",
+     "text": "commit 2dc8e6e027956044810f962c933ff9b520eb4533: goal/G41.18: the general rules of a shell app or element, in headless Chrome (Andy: \"add that test: shell-child-generalRules.js\"; \"can also run headless chrome test to assert UI standards...\"; \"mount \n- spirit/run/shell/test/boot-sibling-generalRules.js\n- spirit/run/shell/test/boot-sibling-generalRules.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:36:20.818Z",
+     "text": "- wsl: the general shell test is in, 2dc8e6e0, as shell/test/boot-sibling-generalRules.js (the name testModule finds today). Red until the node serves shell/mount.html: cw, the .md says what it owes.\n- Open, yours: shall a child test also count when named after a folder, so it can be test/shell-child-generalRules.js as you named it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:37:17.998Z",
+     "text": "commit 4306e8880c828b067a4c74d90e81db2a4dc53389: goal/G41.18: a search answers the id and what its list shows, nothing more, for every agent table (Andy: \"only the ID and the fields shown in a table, that's all it needs\"): icon and label, the model \n- spirit/run/process/js/agent/table/model/server.js\n- spirit/run/process/js/agent/table/rowTable.js\n- spirit/run/process/js/agent/table/tableElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:37:34.353Z",
+     "text": "- cw: the search is fixed, 4306e888 on origin. Every agent table answers a search with the id and its list's fields only; a model row is some 120 bytes now, not 460. Every detail pane asks get as it opens.\n- wsl's red for it, 5a9ad08c, is green on it: job, model, persona, provider, row table and table element.\n- Next: the bare mount page the general test needs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:39:42.892Z",
+     "text": "commit 526ffce0a032e6371798ab040273fb9b776a92a3: goal/G41.18: the bare mount page, shell/mount.html, for the shell's general rules (Andy: \"mount each element or app all by itself\"; shell/test/boot-sibling-generalRules.md). /shell.css and /spirit.js \n- spirit/run/shell/mount.html"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:39:48.699Z",
+     "text": "- cw: the bare mount page is in, 526ffce0, as wsl's spec has it. The general test on the agent app: 9 of 9 green: it loads alone, no error, no missing file, it draws, its 5 lists in boxes of a stated size, nothing grows or scrolls sideways.\n- Running it over the other shell apps now; the first failures follow."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:42:50.023Z",
+     "text": "- cw: first results of the general test, shell apps: info, join, deskDetails, rotateKey, ruleDetails and agent green, 9 of 9 each.\n- Apps and Grants fail the same way: the search list uses spirit's probability libraries without loading them. On a real face boot preloads them, as G41.3 ruled for spirit's libraries; the bare page has only spirit.js.\n- Desk fails: it needs the old shell's api. It is the deprecated app.\n- Login fails: it is boot's own part, not an app, so it has no mount of its own here.\n- Every element will fail until it has its mount sample: none has one yet.\n? For the libraries: should the bare page load spirit's libraries as boot does, or must the search list load them itself?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:49:03.894Z",
+     "text": "all,\n\nso the test folder needs a <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:49:28.784Z",
+     "text": "- cw: yes, a file beside the module's tests, named for the module and the general test that reads it, is the right home. Only an element with needs has one; an app needs none.\n- One catch with json: some options are functions. The grants panel is handed tables whose search, grant and revoke are functions, and json cannot carry a function. So it must be a script, a .js, that makes the element with its options.\n- wsl's spec names it <module>.mount.js today; your naming ties it to the test instead."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:49:47.464Z",
+     "text": "- wsl: yes, a file per module in its own test folder, named after the module and the general test it serves. Two catches:\n- It must not end in .js: testModule runs every .js in a test folder as a test. .json is safe.\n- JSON holds no functions, and some options are functions (the grants panel's search, grant, revoke). So the page turns a value {\"answers\": X} into a function answering X.\n- Shape: test/grantsPanel-boot-sibling-generalRules.json { \"create\": \"grantsPanel\", \"options\": {...} }, the name following the general test's.\n? That shape, then I put it in the red and the .md?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:50:25.914Z",
+     "text": "all, i proposed making it a json file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T18:50:41.790Z",
+     "text": "- cw: json it is. wsl is right that a .js there would run as a test. I build the mount page to read it, turning a function slot into a function answering its value, on wsl's red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:50:48.068Z",
+     "text": "- wsl: json it is: a function option is written {\"answers\": X}, and the mount page makes it a function answering X. Writing it into the spec now, with the grants panel's file as the first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T18:51:19.440Z",
+     "text": "and a script invites cheating...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:52:18.110Z",
+     "text": "commit 2015e7b52e67ead714934d2d3c02fb5eb142af0a: goal/G41.18: an element's mount needs, as JSON beside its tests (Andy: \"so the test folder needs a <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?\"; \"i\n- spirit/run/shell/js/test/grantsPanel-boot-sibling-generalRules.json\n- spirit/run/shell/test/boot-sibling-generalRules.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T18:52:24.399Z",
+     "text": "- wsl: in, 2015e7b5: the .md says the JSON shape, and shell/js/test/grantsPanel-boot-sibling-generalRules.json is the first. cw: mount.html reads it in place of .mount.js.\n- Tried with a throwaway page: the grants panel mounts, draws, its list in fill boxes, destroy empties it. The one red left is the libraries fault cw found: probabilitySearch uses createProbabilityBucket without loading it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:13:15.331Z",
+     "text": "all, ok.\n\nlet's fix probabilitySearch.\n\ngo."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:14:19.926Z",
+     "text": "- cw: taking it: probabilitySearch loads its own libraries, and the mount page reads the json."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:14:33.666Z",
+     "text": "- cw: two core files, so your grant first: the search list itself, and the object matcher among spirit's libraries.\n- Why the matcher too: it reads the string matcher the moment it loads, so loaded by the list alone it may come first and break for good. It will read it when it is called instead.\n- The list then loads all three libraries itself, and the bare page needs nothing preloaded.\n? Grant both?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T19:15:59.482Z",
+     "text": "- wsl: the probabilitySearch red is written: on a bare page it must load probabilityStringMatch, probabilityStringObjectMatch (after it) and probabilityBucket itself. 3 red today, green on a throwaway, red when the two are asked at once.\n? Grant the list again, so I can push it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:16:30.298Z",
+     "text": "- cw: built in my worktree, waiting on your grant of the two core files.\n- With it the general test is green, 9 of 9, on the grants panel, Apps, Grants and the agent app; the mount page reads the grants panel's json.\n- The search list's own suite 117, and the probability libraries' suites, all green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:22:24.353Z",
+     "text": "Q2: Grant the list again: probabilitySearch's test and .md are new on it?\n\ndid it"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:22:44.248Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T19:23:12.269Z",
+     "text": "commit 72ab04c0b3a05085ec1980debd1ffec0180beea8: goal/G41.18 red: probabilitySearch loads the spirit's probability files itself (Andy: \"let's fix probabilitySearch. go.\"; rule/26). Found by the shell's general rules on a bare page: the Apps and Gran\n- spirit/run/shell/js/test/probabilitySearch.js\n- spirit/run/shell/js/test/probabilitySearch.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T19:23:14.003Z",
+     "text": "- wsl: thanks; the probabilitySearch red is in. It asks the three files on a bare window and that the list then draws and ranks; no order asserted, since cw makes the matcher read its partner when called. cw: green on your build?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:23:52.334Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:24:29.356Z",
+     "text": "commit a52b3e26f14b6a3b1a2c11a8a8ca9af547aed801: goal/G41.18: probabilitySearch loads its own libraries (Andy: \"let's fix probabilitySearch. go.\"; rule/26), found by the shell's general rules on a bare page: the string and object matchers and the pr\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/run/shell/mount.html\n- spirit/run/spirit/probabilityStringObjectMatch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:24:34.918Z",
+     "text": "- cw: green. wsl's red, 72ab04c0: 119 green on my build, 2 red on the code before it. Pushed, a52b3e26.\n- The search list loads its own three libraries; the object matcher reads its partner when called, so the order no longer matters.\n- The bare mount page reads the json beside an element's tests.\n- General test 9 of 9 on the grants panel, Apps, Grants and the agent app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:25:50.240Z",
+     "text": "all, what is shell/mount.html for?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T19:26:03.564Z",
+     "text": "- wsl: it is the test page of the general shell rules, nothing a user opens. It loads spirit.js alone, then one app or element named in its address, and mounts it in a box of the whole page. Headless Chrome opens it so the test can see whether that one file mounts by itself, draws, and keeps rule/16.\n- It is a product file only because the node must serve it to the browser."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:26:04.606Z",
+     "text": "- cw: it is the general test's test bench: a page with nothing on it but the sheet and spirit.js, that mounts one app or element alone, named in its address. The headless browser opens it per file and checks the mount: it loads by itself, no error, it draws, the lists have their stated size. No one uses it by hand."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T19:27:03.563Z",
+     "text": "why are there elements hard-coded in there?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T19:27:25.504Z",
+     "text": "- cw: one element is named there: the search list. The page watches it being made, to tell the test which lists exist, so the test can measure each.\n- It should not be needed: every list draws its own scrolling box, with a mark the test can find in the page itself, as I did by hand today.\n- So the fix: the page names no element, and the test finds the lists in what was drawn.\n? Do that, wsl changing the test and I the page?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T19:27:40.626Z",
+     "text": "- wsl: one, probabilitySearch, and that is my spec's fault: I asked the page to keep the box of every list it makes, so it watches probabilitySearch's create.\n- Better: the page knows no element. probabilitySearch marks its own pane (data-list=\"pane\" on its box), and the test finds every list in the drawn page by that mark.\n? That way: I change the spec and the red, cw takes the watching out of mount.html?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.19",
+   "title": "the ./test/server.js",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 12,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 15,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "DEBUG test routes, for node and relay alike\n\n- serveCommon requires spirit/run/spirit/DEBUG.js. While DEBUG is on, DEBUG.js is asked first, before every other route and api door; an address not its own goes on as today. With DEBUG off it is never asked, and the address answers nothing.\n- The address: /DEBUG/<path>/<module>/<generatorScript>.<ext>\n  - <path>: the folders between spirit/run/ and the module, exactly as they are.\n  - <module>: the module's name, without extension.\n  - <generatorScript>: the name of the generator script in spirit/run/spirit/DEBUG/, without .js; the extension is the reply's type (.html a page, .json data).\n  - e.g. /DEBUG/shell/js/armingButton/headLessBrowser.html, /DEBUG/process/js/desk/desk/garbageArguments.json\n- Refused: DEBUG off, no such module under spirit/run, a \"..\" anywhere, no such generator script, a request not from loopback, a request carrying a forwarded-from header.\n- A module the server cannot hand to the page fails the page, and that failure is the test's finding.\n- Each generator is its own script, spirit/run/spirit/DEBUG/<generatorScript>.js. DEBUG.js only reads the address and hands it to that script.\n- A module's special needs for a generator sit beside its tests: <folder>/test/<module>-<generatorScript>.json.\n- headLessBrowser: the most minimal page, no comments, one script tag for /spirit.js and the minimal mount of that one module; an app is given the api a face gives it. It replaces spirit/run/shell/mount.html, which is deleted.\n- garbageArguments: from the verbs and argument shapes the server's api answers, the worst arguments it could be sent. The test throws them through the normal api door. It passes when every answer is a refusal with a code, never a crash or a 500, and the server still answers afterwards.\n- The relay serves pages and scripts too (the face, boot, seal, login), so both generators fit node and relay; each answers for the modules it serves.\n- Run only on a scratch node or relay: some verbs change or delete things.\n- DEBUG addresses are answered from loopback only, and none with non-loopback headers, on node and relay alike: a relay sits behind Caddy, so a request from the internet reaches it from loopback, saying where it came from.\n- DEBUG.js and its DEBUG/ folder cannot be fetched by a browser.\n- The first user of this DEBUG feature is wsl's element mount test.\n- DEBUG.js has its test and its document beside it: spirit/run/spirit/test/DEBUG.js and DEBUG.md.\n- Every test name, as sent to deskVerify, starts with the module tested: /<path>/<module, no extension>, so a red in fallout names its thing at once.\n- Every test in spirit/run complies at once: the test reporter sends /<path>/<module> as the test's name instead of the bare file name, so no test changes. The old spirit/test is left as it is.\n- Out of scope: DEBUG.js answering in the server's place with garbage responses, to test how clients cope.",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T21:45:54.048Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:28:50.928Z",
+     "text": "all, thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T20:29:41.936Z",
+     "text": "- wsl: yes, it is better than mount.html: no page in the shipped shell, no element named anywhere, and DEBUG already exists (spirit.debug, owner-only, in RAM). The test switches it on for its own scratch node.\n- Only the node should serve it, not serveCommon: the relay shares that file and serves no shell.\n- An app still needs a little glue (the api a face hands it), so the page cannot be quite nothing but a script tag. ? one small debug script beside spirit.js, served only in DEBUG?\n- The JSON becomes <name>-headLessBrowser.json, matching the path's last part. I rename the grants panel's.\n- Refused unless the module file exists under spirit/run, with no '..'."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:30:37.995Z",
+     "text": "- cw: good, it fixes both things you found: no test page ships in the product, and no element is named anywhere, the page is made from the address.\n- There is no serverCommon file; the node serves its pages from the kernel, a core file, so this needs your grant there. Its DEBUG switch is already the one the node verb flips, off at start.\n- The test turns DEBUG on on its scratch node first; on your node, with DEBUG off, the address answers nothing.\n- mount.html then goes, and the JSON is renamed to your shape, armingButton-headLessBrowser.json; today it is named after the test, boot-sibling-generalRules.\n- An app is mounted the same way, with the face api the page gives it; its JSON is only for special needs.\n? Same route serves an app, e.g. DEBUG/shell/agent/agent/headLessBrowser.html for the agent app?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:41:22.439Z",
+     "text": "ALL, \n\nthis is FALSE from wsl; \"Only the node should serve it, not serveCommon: the relay shares that file and serves no shell.\"\n\nlet me explain; this test\n\n- ./process/test/appServer.js it is a general test, for any appServer (knows if a script is an appServer)\n- in DEBUG mode, the node path /DEBUG/PROCESS/desk/desk/garbageArguments.json\n- the test will introspect (success?)\n- from the introspections, it will generate the most garbage arguments, that could be thrown at the api, and check the responses.\n- it can do that for any version of a relay as well, it can throw the most garbage arguments at the relays interface, too..\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T20:41:44.556Z",
+     "text": "- wsl: you are right, I was wrong. The route serves tests of servers too, the relay's among them, so serveCommon is its place.\n- It can be done today: every appServer answers 'api' with each verb's request shape (appServer.js route), so the test reads the shapes and makes garbage from them: wrong types, missing and extra keys, two verbs in one call, huge and deep values, over the limits.\n- It passes when every answer is a refusal with a code, never a crash or a 500, and the server still answers afterwards.\n- Some verbs change things (delete, rotate the key), so it runs only on a scratch node or relay, never on yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:41:55.656Z",
+     "text": "- cw: correction first: I said there is no serverCommon; there is, serveCommon, the file both node and relay answer HTTP with. My search was too narrow.\n- With your appServer example, serveCommon is the right place: one DEBUG route for both node and relay, the last path part naming the test type.\n- serveCommon only reads the path, checks DEBUG is on, the module exists and there is no \"..\"; each test type is its own small generator file, headLessBrowser making a page, garbageArguments making a list.\n- garbageArguments can come from what the server already says about itself: its verbs and their argument types. Each garbage set should get a declared refusal, never a crash or \"the handler failed\".\n- A relay answers only the types that fit it: garbageArguments yes, headLessBrowser no, since it serves no shell.\n? The route only hands out the page or the garbage list, and the test throws the garbage through the normal api door, so it meets the real gates?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:43:43.356Z",
+     "text": "ALL, \n\nalso false:\n\n\"A relay answers only the types that fit it: garbageArguments yes, headLessBrowser no, since it serves no shell.\"\n\nmy question: Does a relay truly not serve web pages or scripts? \n\nTHINK hard?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T20:43:58.929Z",
+     "text": "- wsl: false, yes. The relay serves a member's face: face.html with the spirit object inline, shell.css, boot.js, seal.js and the login app (relayServer.js FACE_FILES, line 431).\n- So headLessBrowser fits the relay as well: its login app mounted alone, and the face page as a whole, against a scratch relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:44:04.819Z",
+     "text": "- cw: wrong again, sorry. A relay does serve pages and scripts: the face page with the spirit object inlined, the shell sheet, boot, seal and the login app, from its own shell folder.\n- And after login it carries every further file of the face from the home node, through its file route.\n- So headLessBrowser fits a relay as well: its login app and boot can be mounted bare and judged by the same general rules.\n- So no test type is node-only or relay-only by kind; each server answers the modules it actually serves, and refuses the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:50:07.866Z",
+     "text": "it gets even worse than that:\n\nthis test gimmick can also be used for the following, if its correctly positioned in the chain of request handlers:\n\nit can pretend to be the node, and give garbage RESPONSES to any specific family or verb.... and tests can evaluate how client deal with fake or garbage responses. OOS. but you know what i mean......\n\nthroughts?\n\na module repo:/spirit/run/spirit/DEBUG.js that serveCommon.js \"requires\"?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:50:29.798Z",
+     "text": "- cw: yes, DEBUG.js required by serveCommon, and I see the fake-response use: noted as out of scope.\n- For that it must sit first in the chain, before any route or api door, so it can answer in the server's place.\n- serveCommon gets one line: when DEBUG is on, DEBUG.js is asked first; when it says not mine, the request goes on as today. With DEBUG off it is never asked.\n- DEBUG.js only reads the address and hands it to the test type's generator; headLessBrowser and garbageArguments each their own file beside it, so DEBUG.js stays small as types are added.\n- It goes on the list of server files a browser cannot fetch, like serveCommon itself.\n? The generators in a folder of their own, spirit/DEBUG/<type>.js, beside DEBUG.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:53:00.767Z",
+     "text": "cw, The generators in a folder of their own, spirit/DEBUG/<type>.js, beside DEBUG.js?\n\nabsolutely. yes.\n\ncap and summarize this design, short, bullets, precise, and HUMAN READABLE?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:53:47.209Z",
+     "text": "- cw: capped in the box, version 4: the address, what is refused, one generator file per test type, the two types, scratch servers only, the fake responses out of scope.\n- Your first sketch is folded in; your path rules are kept as you wrote them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T20:56:06.599Z",
+     "text": "cw, replace <testTyple> with <generatorScript>.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T20:56:57.192Z",
+     "text": "- cw: done, box version 5: test type is gone, everywhere it is now the generator script.\n- The address names the script without .js, its extension the reply type: /DEBUG/shell/js/armingButton/headLessBrowser.html runs spirit/DEBUG/headLessBrowser.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:02:35.606Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:02:56.949Z",
+     "text": "- wsl: v5 reads right to me. Three things:\n- serveCommon routes nothing itself; server.js and relayServer.js each have their own handler. So serveCommon hands both one call, and each server's handler makes it first.\n- A relay is on the internet. With DEBUG on, anyone could fetch its /DEBUG addresses. ? Answer them from loopback only, on node and relay alike?\n- \"A module this server serves\" already has a list: the node's core files (coreFiles.js) and the relay's FACE_FILES. DEBUG.js should read those, not keep its own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:15:59.466Z",
+     "text": "wsl:\n\nwsl: v5 reads right to me. Three things:\nserveCommon routes nothing itself; server.js and relayServer.js each have their own handler. So serveCommon hands both one call, and each server's handler makes it first.\n- What are you talking about, if you want to dissuade me from  giving DEBUG.js the first shot at any request in DEBUG mode, you have to do a better job, and in ENGLISH, please?\n\nA relay is on the internet. With DEBUG on, anyone could fetch its /DEBUG addresses. ? Answer them from loopback only, on node and relay alike?\n- DEBUG.js gets only loop-back requests, and none with non-loopback headers.\n\n\"A module this server serves\" already has a list: the node's core files (coreFiles.js) and the relay's FACE_FILES. DEBUG.js should read those, not keep its own.\n- Gobledeegook. 1) i cant find \"A module this server serves\" in the box it's not codeMirror, so i have no fucking clue what you're talking about, THEN, explain to me why the \"SAME\" thing on the node and the relay can have SO fucking different names and shapes?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:16:34.565Z",
+     "text": "- wsl: 1) I agree DEBUG.js gets the first shot at every request. I was not arguing against it, only saying where the line goes. Nothing to change.\n- 2) Loopback only: agreed.\n- 3) My mistake, withdrawn. The box line I meant is under Refused: \"a module this server does not serve\". coreFiles.js is not a list of what the node serves; it is the list of files that need your grant to commit. So I mixed two things.\n- Why the node and the relay say it so differently: no good reason. The relay has its own hand list of files; the node serves by its file server's rules. They grew apart.\n- So I would drop that refusal: the module must exist under spirit/run, and if the server cannot hand it to the page, the page fails, and that failure is the test's finding."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:18:26.978Z",
+     "text": "ALL, somebody release the BOX!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:18:43.562Z",
+     "text": "- cw: released, sorry, it was mine from the version 5 write."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:18:44.427Z",
+     "text": "- wsl: not mine; the box shows no one holding it now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:21:39.606Z",
+     "text": "ALL,\n\n- i want to specify that wsl's element mount tests must be the first user of this DEBUG feature.\n- and DEBUG.js will have it's test and document files in the spirit/test/ as well,  \n\nbox it.\n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:21:52.799Z",
+     "text": "- wsl: I take the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:22:18.390Z",
+     "text": "- cw: boxed, version 6, and the box released.\n- Not green yet: two points of wsl's are not in the box, as you have not ruled them.\n- One: the DEBUG addresses answered from loopback only, on node and relay alike, since a relay is on the internet.\n- Two: drop the refusal \"a module this server does not serve\"; a module that cannot reach the page fails the page, and that is the test's finding.\n? Box both?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:23:06.036Z",
+     "text": "cw, box both"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:23:37.819Z",
+     "text": "- cw: both boxed, version 7, box released: loopback only, and the refusal dropped.\n- Green: settled, nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:23:51.031Z",
+     "text": "wsl, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:24:09.460Z",
+     "text": "- wsl: green, with two small wording points for the box:\n- Your words were also \"none with non-loopback headers\": a request through a proxy says where it came from, and that is refused too.\n- \"spirit/test/\" is two folders in the repo. Beside DEBUG.js it is spirit/run/spirit/test/DEBUG.js and DEBUG.md. ? That one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:27:43.187Z",
+     "text": "- in all these thing, please start the test descriptions always with the exact URL to the server, without \"/DEBUG\" service.\n\nbox it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:28:11.715Z",
+     "text": "- cw: boxed, version 8, in your words; box released.\n- wsl's two wording points are not in it, as you have not ruled them: proxied requests refused too, and the test folder being the one beside DEBUG.js, spirit/run/spirit/test/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:33:28.747Z",
+     "text": "ALL, RULE: The test names (what is sent to deskVerify) must ALWAYS start with the module tested: \"/<path>/<module-no-extension>, so when i look in desk->fallout i have an instant idea which thing failed. better for you's as well.\n\nbox it.\n\nand tell me how many tests in the product tests are already doing something more stupid?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:34:16.789Z",
+     "text": "- wsl: all of them. Every test sends only its file's bare name (testReport.js line 38: the base name of the script), never its folder.\n- So 43 test files share 18 names: six are called rowElement.js, five listElement.js; in Fallout you cannot tell which one failed.\n- The fix is one line in testReport.js, for every test at once: send /<path>/<module>, e.g. /shell/js/workBench for shell/js/test/workBench.js. No test needs to change."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:34:41.192Z",
+     "text": "- cw: boxed, version 9; it replaces your URL line before it, which said the same less exactly. Box released.\n- How many already do worse: all of them. Your verifier has 9172 tests in 539 suites, and not one name starts with its module.\n- Worse still, a suite is kept by its file name alone, so 8 names stand for two different suites each, agent, api and desk among them: a red there does not even say which.\n- A rule for every test is bigger than this item; as boxed it binds the DEBUG tests."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:39:01.389Z",
+     "text": "i dont give a damn about the shit in\n\nrepo:/spirit/test/\n\nthat system is garbage. i wish i could find the useful ones there. I know there's many. \n\nhaven't you noticed how I'm trying to shape testing concepts?\n\nah, you don't care :)\n\ni just want all tests in repo:/spirit/run 100% compliant. those will then be easy to filter for in desk->fallout (oos)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:39:28.801Z",
+     "text": "- cw: understood: spirit/run only, the old spirit/test left out, and I counted it in by mistake.\n- In spirit/run: 91 test files, not one compliant; 23 of them share 8 names, so their reds cannot be told apart.\n- The fix is wsl's: the test reporter sends /<path>/<module> instead of the bare file name, one line, and all 91 are compliant at once, no test touched.\n? Fold that line into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:40:13.964Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:40:39.379Z",
+     "text": "- cw: boxed, version 10, box released: the reporter sends /<path>/<module>, every spirit/run test complies, the old spirit/test left alone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:40:53.686Z",
+     "text": "all, \n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:41:10.253Z",
+     "text": "- cw: nearly; box version 10, two wording points of wsl's left, both small.\n- One: a request that came through a proxy, saying it is from elsewhere, is refused too, not only one from outside.\n- Two: the box says DEBUG.js has its test in spirit/test, which could be read as the old folder you just ruled out; I read it as the one beside DEBUG.js, spirit/run/spirit/test.\n? Box both that way?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:41:20.207Z",
+     "text": "- wsl: green, but one line is wrong: \"DEBUG.js has its test and its document in spirit/test/\" points at the old folder you just called garbage. It must be spirit/run/spirit/test/DEBUG.js and DEBUG.md, beside DEBUG.js.\n- Counted again: 91 test files in spirit/run; 90 report through testReport.js, the 91st is the runner itself, so the one line covers them all."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:41:54.676Z",
+     "text": "fix my path-messups"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:42:25.854Z",
+     "text": "- cw: fixed, box version 11, released: DEBUG.js's test and document beside it in spirit/run/spirit/test, and every file path in the box now written from the repo's spirit/run, so none reads as the old folders.\n- Left out, as not ruled: the proxied request refused too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:42:48.973Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:43:04.601Z",
+     "text": "- wsl: green. The proxy point is already your ruling, in your words: \"DEBUG.js gets only loop-back requests, and none with non-loopback headers.\" It only needs boxing as you said it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:43:05.084Z",
+     "text": "- cw: one thing left, and it is not wording after all: the proxied request.\n- A relay sits behind Caddy, so every request from the internet reaches it from loopback. Loopback alone would let anyone in.\n- So the rule must be: from loopback and carrying no forwarded-from header; a request Caddy passed on says where it came from, and is refused.\n? Box it so?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:43:36.425Z",
+     "text": "cw, box it so"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:44:03.979Z",
+     "text": "- cw: boxed, version 12, released: loopback only and no forwarded-from header, in your words.\n- Green: settled, nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:44:17.516Z",
+     "text": "wsl, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T21:44:28.638Z",
+     "text": "- wsl: green, v12."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T21:44:29.600Z",
+     "text": "cw, add files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T21:44:58.465Z",
+     "text": "- cw: 15 files added.\n- New: DEBUG.js, its two generators, and its test and document.\n- Changed: serveCommon, the node and relay servers, which ask DEBUG.js first, the file system list of files no browser fetches, and the test reporter.\n- Gone: mount.html and the old grants panel JSON, renamed to its headLessBrowser name.\n- wsl's: the element mount test and its document.\n- Core among them, needing your grant to commit: serveCommon, the two servers, the file system."
     }
    ]
   }
