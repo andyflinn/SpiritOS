@@ -202,7 +202,7 @@ async function bootedNode() {
     // anything, so a claim aimed at a port nobody holds walks the whole of
     // the node's half and then fails at the wire.
     const dead = await freePort();
-    const claimed = await post(two.port, { verb: 'relay.claim', url: 'http://127.0.0.1:' + dead, name: 'idboot-claim' });
+    const claimed = await post(two.port, { call: 'relay.claim', args: { url: 'http://127.0.0.1:' + dead, name: 'idboot-claim' } });
     const afterClaim = readIdentity(run);
     if (id && afterClaim && afterClaim.publicKey === id.publicKey && afterClaim.privateKey === id.privateKey) {
       test.check('a claim keeps the key the node booted with', 'claim answered ' + claimed.status);

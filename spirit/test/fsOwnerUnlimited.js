@@ -153,7 +153,7 @@ function waitForBoot(port) {
   child.stderr.on('data', function (c) { said = (said + c).slice(-4096); });
   try {
     await waitForBoot(port);
-    const saved = await call(port, { verb: 'fs.save', path: rel, content: big });
+    const saved = await call(port, { call: 'fs.save', args: { path: rel, content: big } });
     let onDisk = null;
     try { onDisk = fs.readFileSync(path.join(home, rel), 'utf8'); } catch (e) { onDisk = null; }
     if (saved.status >= 200 && saved.status < 300 && onDisk === big) test.check('fs.save of ' + big.length + ' bytes (' + Math.round(big.length / BODY_MAX) + ' times one request) is taken and lands whole');
@@ -162,7 +162,7 @@ function waitForBoot(port) {
     const rel2 = 'shell/fsOwnerUnlimited/planted.txt';
     fs.mkdirSync(path.join(home, 'shell', 'fsOwnerUnlimited'), { recursive: true });
     fs.writeFileSync(path.join(home, rel2), big, 'utf8');
-    const loaded = await call(port, { verb: 'fs.load', path: rel2 });
+    const loaded = await call(port, { call: 'fs.load', args: { path: rel2 } });
     let text = null;
     try { text = JSON.parse(loaded.text).text; } catch (e) { text = null; }
     if (loaded.status === 200 && text === big) test.check('fs.load answers a ' + big.length + '-byte file whole');

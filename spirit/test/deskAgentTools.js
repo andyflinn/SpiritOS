@@ -70,7 +70,8 @@ const node = http.createServer(function (req, res) {
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
-    nodeAsks.push(b);
+    // Recorded as the verb asked with its arguments beside it, the form the checks below read.
+    nodeAsks.push(Object.assign({}, b.args || {}, { verb: String(b.call || '') }));
     function answer(status, body, type) { res.writeHead(status, { 'Content-Type': type || 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as deskAgent.<verb> (by name, goal/G30.6), and
     // the node answers them here as it answered fs.load before (recorded as verb file.load), so the loop is the same.
@@ -89,17 +90,20 @@ const node = http.createServer(function (req, res) {
     if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     // The node's verbs from the flat table (the verb api), each verb's file through its family's FS (goal/G30.4).
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
-    if (b.verb === 'api') return answer(200, { net: Object.assign({ 'FS.loadJsonValue': { request: { path: '' }, reply: {} } }, netVerbs) });
-    if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} } });
-    if (b.verb === 'net.fetch') {
-      if (!b.url) return answer(400, { error: 'url is required' });
-      if (/closed\.test/.test(b.url)) return answer(403, { error: 'closed.test is closed by the owner', closed: true });
-      if (/big\.test/.test(b.url)) return answer(200, BIG_PAGE);
+    // The door's envelope (goal/G41.15): the name in call, the arguments in args.
+    const c = String(b.call || '');
+    const a = b.args || {};
+    if (c === 'api') return answer(200, { net: Object.assign({ 'FS.loadJsonValue': { request: { path: '' }, reply: {} } }, netVerbs) });
+    if (c === 'net.FS.loadJsonValue' && a.path === 'fetch.json') return answer(200, { value: { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} } });
+    if (c === 'net.fetch') {
+      if (!a.url) return answer(400, { error: 'url is required' });
+      if (/closed\.test/.test(a.url)) return answer(403, { error: 'closed.test is closed by the owner', closed: true });
+      if (/big\.test/.test(a.url)) return answer(200, BIG_PAGE);
       return answer(200, PAGE);
     }
-    if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
+    if (c === 'jobs.update') { if (a.app && typeof a.app === 'object') published.push(a.app); return answer(200, { ok: true }); }
     const dc = ask && ask.deskClient;
-    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
+    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + c });
     if (dc.next) { if (nextQueue.length) return answer(200, { lines: nextQueue.shift() }); return setTimeout(function () { answer(200, { lines: [] }); }, 100); }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
@@ -211,7 +215,7 @@ async function suite() {
   else {
     // The ask tools.js is given: one loopback ask of the node, {status, text, body}, as spirit.core.ask answers.
     const ask = function (verb, args) { return new Promise(function (resolve, reject) {
-      const text = JSON.stringify(Object.assign({ verb: verb }, args || {}));
+      const text = JSON.stringify({ call: verb, args: args || {} });
       const req = http.request(NODE_URL + '/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) } }, function (res) {
         let t = ''; res.on('data', function (c) { t += c; }); res.on('end', function () { let body = null; try { body = JSON.parse(t); } catch (e) { body = null; } resolve({ status: res.statusCode, text: t, body: body }); });
       });

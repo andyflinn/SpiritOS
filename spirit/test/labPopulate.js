@@ -182,9 +182,7 @@ async function postToRelay(relayUrl, body, tries) {
 
   for (let n = 0; n < attempts; n += 1) {
     /* eslint-disable no-await-in-loop */
-    const sent = await post(WORK_URL + '/api/spirit', {
-      verb: 'peer.post', to: key, app: 'relay', body: body,
-    });
+    const sent = await post(WORK_URL + '/api/spirit', { call: 'peer.post', args: { to: key, app: 'relay', body: body } });
     let answer = null;
     try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
     catch (e) { answer = null; }
@@ -532,7 +530,7 @@ async function up(scenarioName) {
   // rather than writing contactBook by hand.
   let added = 0;
   for (const peer of world.peers()) {
-    const done = await post(WORK_URL + '/api/spirit', { verb: 'peer.acquire', publicKey: peer.id.publicKey });
+    const done = await post(WORK_URL + '/api/spirit', { call: 'peer.acquire', args: { publicKey: peer.id.publicKey } });
     if (done.ok) added += 1;
     else console.log('  contact ' + peer.name + ': ' + JSON.stringify(done.body));
   }
@@ -617,8 +615,8 @@ async function up(scenarioName) {
     const one = world.peer(NAME_PREFIX + pair[0]);
     const two = world.peer(NAME_PREFIX + pair[1]);
     if (!one || !two) continue;
-    const there = await post(one.url + '/api/spirit', { verb: 'peer.acquire', publicKey: two.id.publicKey });
-    const back = await post(two.url + '/api/spirit', { verb: 'peer.acquire', publicKey: one.id.publicKey });
+    const there = await post(one.url + '/api/spirit', { call: 'peer.acquire', args: { publicKey: two.id.publicKey } });
+    const back = await post(two.url + '/api/spirit', { call: 'peer.acquire', args: { publicKey: one.id.publicKey } });
     if (there.ok && back.ok) friendships += 1;
     else console.log('  ' + one.name + ' <-> ' + two.name + ': ' +
       JSON.stringify((there.ok ? back : there).body));

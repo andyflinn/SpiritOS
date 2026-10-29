@@ -62,7 +62,13 @@ function deliver(json) {
 }
 function release() { gate.held = false; const w = gate.waiting.splice(0); w.forEach(function (fn) { fn(); }); }
 const asked = [];
+// The one family path function (goal/G41.12), spirit.js's own, read before the stand-in takes spirit.js's place. spirit.js
+// loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
+// puts it on the stand-in, where the desk's translator finds it.
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+delete require.cache[require.resolve(path.join(RUN, 'shell', 'js', 'spiritData.js'))];
 const fake = {
+  familyPath: familyPath,
   require: function (p, key) {
     const q = String(p);
     if (/spirit\/auth\/api\.js$/.test(q)) {
@@ -239,7 +245,9 @@ if (CHILD) {
     const SPIRIT_JS = path.join(RUN, 'spirit.js');
     const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
-      return /\.family(?=['"`\/\\]|$)/m.test(t) || /(^|[^\\])\/?family\/api\.js/.test(t) || /['"`]family['"`]\s*[),]/.test(t);
+      // A join onto 'family' is a path; a bare 'family' is no path since goal/G41.14, where it names a column and a field
+      // (Andy: "these four following NAMES will be used in SpiritOS: bundle > branch > family > verb").
+      return /\.family(?=['"`\/\\]|$)/m.test(t) || /(^|[^\\])\/?family\/api\.js/.test(t) || /join\([^)]*['"`]family['"`]\s*[),]/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
     ok(writers.length === 0, 'no file outside appServer\'s familyPath writes a family path', writers.length + ' files write one: ' + writers.join(', '));
 
@@ -299,7 +307,10 @@ if (CHILD) {
     const last = subArgs[subArgs.length - 1] || {};
     ok(subArgs.length >= 2 && JSON.stringify(last) !== JSON.stringify(subArgs[0]), 'the subscribe again carries the position the client holds', 'subscribes: ' + short(subArgs));
 
-    test.subHeading('older than the bounded log: a full push, the cache replaced whole (box v15)');
+    // goal/G41.15, Andy: "make sure the deskClient doesn't loose cached info outside the current goal", Q1: "nothing
+    // drops from the cache, unless the api.js from the server says so", and the box: "a goal pushed whole takes
+    // precedence, and the client's place in the stream moves to that push".
+    test.subHeading('older than the bounded log: a full push takes precedence and drops nothing (goal/G41.15)');
     before = bootstraps;
     gate.refuse = true;
     A.publish(row(item(40)));
@@ -307,11 +318,26 @@ if (CHILD) {
     gate.refuse = false;
     for (let i = 41; i < 50; i++) A.publish(row(item(i)));
     await tick(100);
-    bootstrap = [row(GOAL), row(item(1))];
+    bootstrap = [row(GOAL), row(item(1, { title: 'item 1, pushed' }))];
     await s.subscribe(PUBLISHER, NAME);
     await tick(600);
     ok(bootstraps === before + 1, 'nine rows missed past a log of five: the sender pushes in full', 'bootstraps ' + before + ' -> ' + bootstraps);
-    ok(has(1) && !has(2) && !has(45), 'a full push replaces the sender\'s cache whole', 'item 1 ' + has(1) + ', item 2 ' + has(2) + ', item 45 ' + has(45));
+    const one1 = D.get('deskItems/goal/G9.1');
+    ok(one1 && one1.title === 'item 1, pushed', 'the push takes precedence: a row it carries replaces the one kept', 'item 1: ' + short(one1));
+    ok(has(2) && has(30), 'and drops nothing it does not carry: items the push leaves out stay kept', 'item 2 ' + has(2) + ', item 30 ' + has(30));
+    ok(!has(45), 'a row never delivered is not invented by the push', 'item 45 ' + has(45));
+    // The read-pointer: the push landed, so the client stands at the push's number; a subscribe again is answered from
+    // the log, with no second push and nothing from before it.
+    const pushedAt = bootstraps;
+    const subsBefore = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
+    await s.subscribe(PUBLISHER, NAME);
+    await tick(400);
+    const lastSub = asked.filter(function (a) { return a.verb === 'subscribe'; }).map(function (a) { return a.args; }).pop() || {};
+    // The push's own end, as the sender sent it: { run, n, full, end }.
+    const ends = [].concat.apply([], posts.filter(Array.isArray)).filter(function (e) { return e && e.full === true && e.end === true; });
+    const pushEnd = ends[ends.length - 1] || {};
+    ok(asked.filter(function (a) { return a.verb === 'subscribe'; }).length === subsBefore + 1 && bootstraps === pushedAt && lastSub.since === pushEnd.n && lastSub.run === pushEnd.run,
+      'its place in the stream moved to the push: subscribed again, it is handed nothing older and pushed nothing again', 'bootstraps ' + pushedAt + ' -> ' + bootstraps + ', subscribed with ' + short(lastSub) + ', the push ended at ' + short(pushEnd));
 
     // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
     test.subHeading('the cache, per sender, saved and read back (box v15)');
@@ -324,7 +350,7 @@ if (CHILD) {
     ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/process/<client>/cache-<sender key in hex>.json', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
     const two = runChild('restart', 'cacheProbe');
     ok(two.readOne && two.readTwo, 'started again, it reads its cache back before it subscribes', short(two));
-    ok(two.subscribed === true && two.title === 'item 1, renamed' && !two.two, 'a sender of a new run pushes in full, and the cache is replaced whole', short(two));
+    ok(two.subscribed === true && two.title === 'item 1, renamed' && two.two, 'a sender of a new run pushes in full: its rows take precedence, and a kept row it does not carry stays (goal/G41.15)', short(two));
     clearCache('cacheOff');
     runChild('off', 'cacheOff');
     ok(!fs.existsSync(cacheFile('cacheOff')), 'without the switch no cache file is kept', 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff')));

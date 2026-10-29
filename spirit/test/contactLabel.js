@@ -99,7 +99,7 @@ async function theNode() {
   kids.push(node);
   let said = '';
   node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
-  const up = await waitFor(function () { return post(port, { verb: 'contact.get', key: PEER }).then(function (r) { return r.status === 200; }); }, 15000);
+  const up = await waitFor(function () { return post(port, { call: 'contact.get', args: { key: PEER } }).then(function (r) { return r.status === 200; }); }, 15000);
   if (!up) { test.fail('the planted node did not answer contact.get' + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : '')); return; }
 
   const events = [];
@@ -120,7 +120,7 @@ async function theNode() {
   await waitFor(function () { return events.some(function (e) { return e.event === 'snapshot'; }); }, 5000);
 
   const renames = function () { return events.filter(function (e) { return e.event === 'contact.rename'; }); };
-  const kept = await post(port, { verb: 'contact.label', publicKey: PEER, myLabel: 'Pete' });
+  const kept = await post(port, { call: 'contact.label', args: { publicKey: PEER, myLabel: 'Pete' } });
   await waitFor(function () { return renames().length > 0; }, 3000);
   let first = null;
   try { first = renames()[0] ? JSON.parse(renames()[0].data) : null; } catch (e) { first = null; }
@@ -128,7 +128,7 @@ async function theNode() {
     test.check('contact.label Pete: one contact.rename {key, caption: "Pete"}, the caption contact.label answered');
   } else test.fail(OWED + 'contact.label answered ' + kept.status + ' ' + JSON.stringify(kept.body) + '; the stream carried ' + JSON.stringify(renames()));
 
-  const cleared = await post(port, { verb: 'contact.label', publicKey: PEER, myLabel: '' });
+  const cleared = await post(port, { call: 'contact.label', args: { publicKey: PEER, myLabel: '' } });
   await waitFor(function () { return renames().length > 1; }, 3000);
   let second = null;
   try { second = renames()[1] ? JSON.parse(renames()[1].data) : null; } catch (e) { second = null; }
@@ -136,7 +136,7 @@ async function theNode() {
   else test.fail(OWED + 'clearing answered ' + cleared.status + '; the second contact.rename was ' + JSON.stringify(second));
 
   const before = renames().length;
-  const refused = await post(port, { verb: 'contact.label', publicKey: PEER, myLabel: 'a'.repeat(65) });
+  const refused = await post(port, { call: 'contact.label', args: { publicKey: PEER, myLabel: 'a'.repeat(65) } });
   await sleep(600);
   if (refused.status >= 400 && renames().length === before) test.check('a refused contact.label writes none');
   else test.fail('a refused contact.label answered ' + refused.status + ', and the stream carried ' + (renames().length - before) + ' more');

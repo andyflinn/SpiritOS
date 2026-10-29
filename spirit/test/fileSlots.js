@@ -130,17 +130,17 @@ async function grants() {
       return { status: r.status, body: b };
     }, function () { return { status: 0, body: {} }; });
   };
-  const files = function (verb, args) { return ask(Object.assign({ verb: 'fileServer.' + verb }, args)); };
+  const files = function (verb, args) { return ask({ call: 'fileServer.' + verb, args: args }); };
   const ready = await waitFor(function () { return files('push', { path: write('warm.txt', 'warm up\n') }).then(function (r) { return r.status === 200 && r.body && r.body.hash; }); }, 30000);
   if (!ready) { test.fail('the node\'s fileServer did not answer push on the loopback'); return; }
   const first = await files('fill', { slot: SLOT, path: write('me.jpg', 'node picture one\n') });
   const old = first.body && first.body.hash;
   if (!old) { test.fail(OWED + 'fill on the node answered ' + first.status + ' ' + short(first.body) + '; grants cannot be followed'); return; }
-  const granted = await ask({ verb: 'auth.grant', key: PEER.key, path: 'fileServer.' + old });
+  const granted = await ask({ call: 'auth.grant', args: { key: PEER.key, path: 'fileServer.' + old } });
   const second = await files('fill', { slot: SLOT, path: write('me2.jpg', 'node picture two\n') });
   const neu = second.body && second.body.hash;
-  const onNew = neu ? (await ask({ verb: 'auth.query', key: PEER.key, path: 'fileServer.' + neu })).body : {};
-  const onOld = (await ask({ verb: 'auth.query', key: PEER.key, path: 'fileServer.' + old })).body;
+  const onNew = neu ? (await ask({ call: 'auth.query', args: { key: PEER.key, path: 'fileServer.' + neu } })).body : {};
+  const onOld = (await ask({ call: 'auth.query', args: { key: PEER.key, path: 'fileServer.' + old } })).body;
   if (granted.status === 200 && neu && onNew && onNew.allowed === true && onOld && onOld.allowed === false) test.check('a peer granted the old picture is granted the new one, and no longer the old');
   else test.fail(OWED + 'grant ' + granted.status + ' ' + short(granted.body) + '; after fill: new ' + short(onNew) + ', old ' + short(onOld));
 }

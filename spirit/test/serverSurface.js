@@ -273,26 +273,16 @@ freePort()
     // commit hooks as "core""), so the non-canonical spelling of the entry
     // script must LAND, at the canonical place, and the refusal asked for
     // is a non-canonical spelling that escapes the writable roots.
-    return request(port, 'POST', '/api/spirit', {
-      verb: 'fs.save',
-      path: 'shell/natter/serverSurface-probe.json',
-      content: '{"written":"by serverSurface, and deleted again below"}',
-    }).then(function (ok) {
+    return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: 'shell/natter/serverSurface-probe.json', content: '{"written":"by serverSurface, and deleted again below"}' } }).then(function (ok) {
       if (ok.status >= 200 && ok.status < 300) {
         test.check('fs.save is reachable and writes where it is allowed to');
       } else {
         test.fail('fs.save could not write an ALLOWED path (HTTP ' + ok.status + '), so the ' +
           'refusal below proves nothing — the verb is not wired.' + lastWords());
       }
-      return request(port, 'POST', '/api/spirit', {
-        verb: 'fs.delete', path: 'shell/natter/serverSurface-probe.json',
-      });
+      return request(port, 'POST', '/api/spirit', { call: 'fs.delete', args: { path: 'shell/natter/serverSurface-probe.json' } });
     }).then(function () {
-      return request(port, 'POST', '/api/spirit', {
-        verb: 'fs.save',
-        path: 'shell/./textEditor/textEditor.js',
-        content: '// serverSurface.js probe — the fakes\' copy, restored at once',
-      });
+      return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: 'shell/./textEditor/textEditor.js', content: '// serverSurface.js probe — the fakes\' copy, restored at once' } });
     }).then(function (r) {
       const after = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
       if (r.status >= 200 && r.status < 300 && /serverSurface\.js probe/.test(after)) {
@@ -301,11 +291,7 @@ freePort()
         test.fail('fs.save of the entry script answered HTTP ' + r.status + ', on disk changed ' + (after !== before) + lastWords());
       }
       fs.writeFileSync(ENTRY_SCRIPT, before, 'utf8');
-      return request(port, 'POST', '/api/spirit', {
-        verb: 'fs.save',
-        path: 'shell/../spirit/serverSurface-probe.js',
-        content: '// serverSurface.js probe — must never reach disk',
-      });
+      return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: 'shell/../spirit/serverSurface-probe.js', content: '// serverSurface.js probe — must never reach disk' } });
     }).then(function (r) {
       const escaped = fs.existsSync(path.join(nodeRoot, 'spirit', 'serverSurface-probe.js'));
       if (r.status === 403 && !escaped) {
@@ -330,7 +316,7 @@ freePort()
       // its 2026-09-15 note named): the 403 and its code are asserted first. Which key goes to which host is
       // gone with goal/G29.20: net.fetch fills no key at all.
       const ask = function (url, headers) {
-        return request(port, 'POST', '/api/spirit', { verb: 'net.fetch', url: url, method: 'POST', headers: headers, body: { hello: 'world' } });
+        return request(port, 'POST', '/api/spirit', { call: 'net.fetch', args: { url: url, method: 'POST', headers: headers, body: { hello: 'world' } } });
       };
       return ask('http://127.0.0.1:' + s.port + '/v1/messages', { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}' }).then(function (r) {
         let body = null;
@@ -351,7 +337,7 @@ freePort()
   // ---- 5. a web page on another site cannot make the node act ----------
   .then(function (port) {
     test.subHeading('A page on another site cannot make the node act');
-    const verb = JSON.stringify({ verb: 'node.card' });
+    const verb = JSON.stringify({ call: 'node.card', args: {} });
     const own = 'http://127.0.0.1:' + port;
     return requestAs(port, 'POST', '/api/spirit', verb, {
       'Content-Type': 'text/plain', Origin: 'https://evil.example', 'Sec-Fetch-Site': 'cross-site',
@@ -604,7 +590,7 @@ freePort()
       // waiting, and the same thing proved — handlePartnerCheck catches
       // the failure and ANSWERS rather than throwing, which is exactly
       // what this sweep exists to check.
-      ['POST', '/api/spirit', { verb: 'relay.partnerCheck', publicKey: 'NOPE', url: 'https://127.0.0.1:1' }],
+      ['POST', '/api/spirit', { call: 'relay.partnerCheck', args: { publicKey: 'NOPE', url: 'https://127.0.0.1:1' } }],
       ['POST', '/api/spirit', { verb: 'contact.block', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.unblock', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.accept', publicKey: 'NOPE' }],
@@ -825,7 +811,7 @@ freePort()
 
     const over = 'x'.repeat(limits.BODY_MAX + 1024);
 
-    return request(port, 'POST', '/api/spirit', { verb: 'contact.search', pad: over })
+    return request(port, 'POST', '/api/spirit', { call: 'contact.search', args: { pad: over } })
       .then(function (r) {
         if (r.status === 413) {
           test.check('an oversized POST is answered 413, not parsed');

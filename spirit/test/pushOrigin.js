@@ -191,7 +191,7 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
       return { status: r.status, body: b };
     }, function () { return { status: 0, body: {} }; });
   };
-  await waitFor(function () { return ask({ verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 20000);
+  await waitFor(function () { return ask({ call: 'node.debug', args: { debug: {} } }).then(function (r) { return r.status === 200; }); }, 20000);
   const j = world();
   commitFile(j.theirs, 'theirs.txt', 'theirs\n', 'theirs pushed first');
   git(['push', '-q', 'origin', 'master'], j.theirs);

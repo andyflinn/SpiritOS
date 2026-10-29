@@ -80,9 +80,9 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   };
   try {
     let up = false;
-    for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ verb: 'node.info' })).status > 0; }
+    for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ call: 'node.info', args: {} })).status > 0; }
     if (!up) test.fail('the node did not boot');
-    const fetch = function (url) { return post({ verb: 'net.fetch', url: url, method: 'GET', headers: {}, body: '', timeoutMs: 3000 }); };
+    const fetch = function (url) { return post({ call: 'net.fetch', args: { url: url, method: 'GET', headers: {}, body: '', timeoutMs: 3000 } }); };
     for (const url of ['http://127.0.0.1:' + baitPort + '/', 'http://localhost:' + baitPort + '/', 'http://[::1]:' + baitPort + '/', 'http://0.0.0.0:' + baitPort + '/', 'http://127.0.0.1:' + port + '/api/spirit']) {
       const r = await fetch(url);
       if (r.status === 403 && r.body && r.body.code === 'this-machine') test.check(url + ' refused 403, this-machine');

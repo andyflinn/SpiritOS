@@ -131,9 +131,9 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
     }, function (e) { return { status: 0, error: String(e && e.message || e) }; });
   };
   let up = false;
-  for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ verb: 'node.info' })).status > 0; }
+  for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ call: 'node.info', args: {} })).status > 0; }
   if (!up) test.fail('the node did not boot');
-  const door = await post({ verb: 'jobs.update', id: 'job_1', app: { big: OVER } });
+  const door = await post({ call: 'jobs.update', args: { id: 'job_1', app: { big: OVER } } });
   if (door.status >= 400 && door.status < 500 && door.body && /too-large$/.test(String(door.body.code || door.body.error))) test.check('jobs.update with an oversized body answered ' + door.status + ' ' + (door.body.code || door.body.error));
   else test.fail(OWED + 'jobs.update with an oversized body answered ' + JSON.stringify({ status: door.status, body: door.body }).slice(0, 200));
   node.kill();

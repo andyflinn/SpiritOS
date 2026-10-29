@@ -9,11 +9,11 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 ## Requirements
 
 - **The cache dump** (Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/<fixedFileName>.json"):
-  the verb `cache.dump`, owner-only, writes the whole cache, its spirit.data tree, as JSON to `<state>/cache.json`
-  (the node's state folder for deskClient, `relay-state/process/deskClient/`), and nowhere else, whatever the caller
-  names: no file but `cache.json` appears in the state folder. A caller who is not the owner is refused `not-owner`.
-  (Since the cache is saved on every update, `cache.json` may stand before any dump.) Its family interface
-  (`deskClient.family/api.js`) names it. For looking, never for deciding.
+  since goal/G41.12 the cache is appServer's, `relay-state/process/deskClient/cache-<desk key in hex>.json`, and
+  deskClient keeps no file of its own. The verb `cache.dump`, owner-only, asks appServer to save its cache now
+  (`saveCaches`) and answers appServer's file and its bytes. With no cache kept yet it is refused `not-saved`. It
+  takes no path, and deskClient writes no file at all, `cache.json` or anywhere a caller names. A caller who is not the
+  owner is refused `not-owner`, and nothing is saved. Its family interface names it. For looking, never for deciding.
 - **The cache, whole from the first push**: the file list and the checks of every item of the current goal are kept
   from the first push of its facts, whole, so the agent's `item.files` and `item.checks` of such an item are answered
   from the cache and the desk is not asked.
@@ -38,33 +38,35 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   naming its key drops it, and the next wait hands only what came after, under a new key.
 - **The news cap sheds only news never handed**, by bytes (Andy's standing rule: every store sheds past a cap), and
   the next wake says how many went; a line of a wake not yet read is never shed.
-- **The cache is saved on every update** (Andy: "on every update the deskClient receives, it saves the cache,
-  (10ms?)"): within `CACHE_SAVE_MS` (10 ms) of a row, `<state>/cache.json` holds the whole cache as it stands.
-- **A restart reads the cache back and subscribes from its position** (Andy: "(if it restarts or similar) it calls the
-  \"subscribe/(connect)\" verb do desk, (re-use that verb) with the position number as argument"): a deskClient started
-  on the same state folder holds what it kept before any push, and subscribes with `since` = the newest change it
-  heard (`desk/change`). `setDesk` naming the same desk subscribes from there; naming another desk, from 0.
+- **The cache is appServer's** (goal/G41.12): deskClient follows the desk's stream with the cache switch on
+  (`stream.cache: true`); saving within 10 ms of a row, and reading the cache back at a start, are appServer's
+  (`spirit/test/appServer.js`). deskClient writes no `cache.json`.
+- **A restart subscribes to its desk** (Andy: "(if it restarts or similar) it calls the \"subscribe/(connect)\" verb
+  do desk"): a restarted deskClient subscribes to the desk it knew, family `desk`, and names no position of its own: the
+  position is appServer's. `setDesk` naming the same desk subscribes to it again; naming another, to that one.
 - **The catch-up**: rows the desk hands after such a subscribe are taken as any row: a line addressed to this agent
   wakes it; a line addressed to another agent is neither its own nor its news.
-- **A push replaces the items and rules whole** (Q5, Andy: "YES"): deskClient names `renews: ['deskItems',
-  'deskRules']`; once a push has landed (`{ bootstrapped: true }`), an item it no longer holds is gone, while the
-  position (`desk/current`, `desk/change`) and the parts read (`deskItem`, a kept file list) are never swept.
-- **A bundle is its rows**: a publish `{ change, rows: [...] }` is taken row by row, as each row alone would be.
+- **A push drops nothing deskClient kept** (goal/G41.15, Andy: "deskClient keeps what it cached outside the current
+  goal; a push of one goal never drops another's", and Q1: "nothing drops from the cache, unless the api.js from the
+  server says so"): deskClient names nothing for a push to replace (no `renews`) and sweeps nothing itself. After the
+  current goal is pushed whole again, an item the push leaves out stays kept, and so do another goal's items; the push
+  makes its goal current; `desk/change` and a kept file list are never swept. Landing a push is appServer's.
+- A delivery of several rows is appServer's bundle (goal/G41.12); deskClient sees each row alone.
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
 
 ## What its test must try to break
 
-- A dump written by a stranger, or anywhere but `cache.json`, or not the whole tree.
+- A dump by a stranger, a dump that does not ask appServer, or a file deskClient writes itself.
 - A kept read that asks the desk, or a cache miss answered with something other than `not-kept`.
 - A current-goal item whose files or checks are asked of the desk after the push.
 - A grant on an item the agent holds, placed by another, that does not wake it.
 - A take with no answer that wakes the agent.
 - Lines cut from an answer, or past a cap, that never come.
 - A wake dropped before its key comes back, or an unread wake not handed again at once.
-- A cache not saved after a row, or not read back after a restart.
-- A restarted client that subscribes from 0, or from a position it did not hear.
-- A push that leaves a deleted item's facts, or sweeps the position or a kept file list.
+- A cache switch left off, or a cache file of deskClient's own.
+- A restarted client that does not subscribe to its desk, or names a position appServer keeps.
+- A push that drops an item it leaves out, another goal's items, the position or a kept file list.
 - A line for another agent that comes back in a catch-up as this agent's.
 
 ## Not testable as written here

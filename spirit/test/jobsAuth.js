@@ -77,10 +77,10 @@ const ask = function (verb, args) { const b = Object.assign({ verb: verb }, args
 async function boot() {
   port = await freePort();
   child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
-  const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
+  const up = await until(function () { return post({ call: 'node.info', args: {} }).then(function (r) { return r.status > 0; }); }, 15000);
   // The node boots waiting for its servers (Andy's rule), but give desk a moment regardless.
   // The tree by the verb api on the flat apiDoor (goal/G30.6).
-  const served = await until(function () { return post({ verb: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
+  const served = await until(function () { return post({ call: 'api', args: {} }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;
 }
 function down() {
@@ -173,7 +173,7 @@ function down() {
   (function () { const f = path.join(root, 'process', 'js', 'desk', 'desk.json'); const m = JSON.parse(fs.readFileSync(f, 'utf8')); m.runs = []; fs.writeFileSync(f, JSON.stringify(m, null, 2)); }());
   port = await freePort();
   child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
-  const up2 = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
+  const up2 = await until(function () { return post({ call: 'node.info', args: {} }).then(function (r) { return r.status > 0; }); }, 15000);
   if (!up2) test.fail('the node did not reboot without the desk server');
   const qKept = (await ask('auth.query', { key: KEYA, path: 'desk' })).body;
   const gKnown = (await ask('auth.grant', { key: KEYC, path: 'desk' })).body;

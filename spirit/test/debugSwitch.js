@@ -138,20 +138,20 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   const boot = async function () {
     const port = await freePort();
     const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
-    const ok = await until(function () { return post(port, { verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 10000);
+    const ok = await until(function () { return post(port, { call: 'node.info', args: {} }).then(function (r) { return r.status > 0; }); }, 10000);
     return { port: port, node: node, ok: ok };
   };
   let n = await boot();
   if (!n.ok) test.fail('the node did not boot');
-  const r0 = (await post(n.port, { verb: 'node.debug', debug: {} })).body || {};
-  const r1 = (await post(n.port, { verb: 'node.debug', debug: { on: true } })).body || {};
-  const r2 = (await post(n.port, { verb: 'node.debug', debug: {} })).body || {};
+  const r0 = (await post(n.port, { call: 'node.debug', args: { debug: {} } })).body || {};
+  const r1 = (await post(n.port, { call: 'node.debug', args: { debug: { on: true } } })).body || {};
+  const r2 = (await post(n.port, { call: 'node.debug', args: { debug: {} } })).body || {};
   if (r0.debug === false && r1.debug === true && r2.debug === true) test.check('node.debug reads false, sets true, reads true');
   else test.fail(OWED + 'node.debug answered ' + JSON.stringify([r0, r1, r2]));
   n.node.kill();
   await sleep(500);
   n = await boot();
-  const r3 = (await post(n.port, { verb: 'node.debug', debug: {} })).body || {};
+  const r3 = (await post(n.port, { call: 'node.debug', args: { debug: {} } })).body || {};
   if (r3.debug === false) test.check('after a restart it reads false again: RAM only');
   else test.fail(OWED + 'after a restart node.debug answered ' + JSON.stringify(r3));
   n.node.kill();

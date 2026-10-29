@@ -13,7 +13,7 @@
 //      own node; none, or one that is no number, ends it with exit 2 and its usage. No default: Andy's door is
 //      never an agent's.
 //   2. THE WAIT, node deskAgentEar.js <port>: it asks its own node's deskClient.next again and again, each ask the verb
-//      by name on the node's flat apiDoor through the kernel's ask ({verb: 'deskClient.next'} to that port; goal/G30.6). An
+//      by name on the node's flat apiDoor through the kernel's ask ({ call: 'deskClient.next', args: {} } to that port; goal/G30.6). An
 //      answer with lines is printed, one line each, and it exits 0: the exit wakes the agent. An answer without
 //      is asked again.
 //   3. A wait that cannot go on ends: a refusal of its node's (deskClient not running, no desk set) or a node
@@ -71,7 +71,7 @@ function run(args) {
     kid.on('exit', function (code) { clearTimeout(timer); resolve({ code: code, out: out, err: err }); });
   });
 }
-const nextAsks = function () { return asked.filter(function (a) { return a.method === 'POST' && a.url === '/api/spirit' && JSON.stringify(a.body) === JSON.stringify({ verb: 'deskClient.next' }); }); };
+const nextAsks = function () { return asked.filter(function (a) { return a.method === 'POST' && a.url === '/api/spirit' && JSON.stringify(a.body) === JSON.stringify({ call: 'deskClient.next', args: {} }); }); };
 
 test.startTest('goal/G3.6: deskAgentEar.js is the few lines that wait');
 
@@ -116,7 +116,7 @@ async function main() {
     script = [{ status: 200, body: JSON.parse(ANSWER) }];
     const read = await run([port, 'items.search', SEARCH]);
     const sent = asked[0] ? asked[0].body : {};
-    if (read.code === 0 && read.out.trim() === ANSWER && asked.length === 1 && JSON.stringify(sent) === JSON.stringify({ verb: 'deskClient.desk', name: 'items.search', json: SEARCH })) {
+    if (read.code === 0 && read.out.trim() === ANSWER && asked.length === 1 && JSON.stringify(sent) === JSON.stringify({ call: 'deskClient.desk', args: { name: 'items.search', json: SEARCH } })) {
       test.check('items.search went as deskClient.desk {name, json}; the desk\'s answer was printed as it came, exit 0');
     } else test.fail(OWED + 'the ask exited ' + read.code + ', printed ' + JSON.stringify(read.out.slice(0, 160)) + ', having sent ' + JSON.stringify(sent).slice(0, 200));
     const NO = '{"ok":false,"code":"no-such-item","error":"no such item"}';
@@ -137,8 +137,8 @@ async function main() {
     script = [{ status: 200, body: { items: [], more: false } }];
     const hist = await run([port, 'deskClient.history.search', '{"text":""}']);
     const sentHist = asked[1] ? asked[1].body : {};
-    if (setDesk.code === 0 && setDesk.out.trim() === '{"set":true}' && JSON.stringify(sentSet) === JSON.stringify({ verb: 'deskClient.setDesk', key: 'MCowBQYDK2VwAyEAdeskAgentEarThinSetDeskKeyAAAAAAAAAAAAAAAAA=' })
-      && hist.code === 0 && hist.out.trim() === '{"items":[],"more":false}' && JSON.stringify(sentHist) === JSON.stringify({ verb: 'deskClient.history.search', text: '' })) {
+    if (setDesk.code === 0 && setDesk.out.trim() === '{"set":true}' && JSON.stringify(sentSet) === JSON.stringify({ call: 'deskClient.setDesk', args: { key: 'MCowBQYDK2VwAyEAdeskAgentEarThinSetDeskKeyAAAAAAAAAAAAAAAAA=' } })
+      && hist.code === 0 && hist.out.trim() === '{"items":[],"more":false}' && JSON.stringify(sentHist) === JSON.stringify({ call: 'deskClient.history.search', args: { text: '' } })) {
       test.check('deskClient.setDesk and deskClient.history.search went to its own deskClient as named, answers printed, exit 0');
     } else test.fail(OWED + 'setDesk exited ' + setDesk.code + ' having sent ' + JSON.stringify(sentSet) + '; history.search exited ' + hist.code + ' having sent ' + JSON.stringify(sentHist));
 

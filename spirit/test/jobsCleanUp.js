@@ -98,13 +98,13 @@ const kids = [];
       return { status: r.status, body: b };
     }, function () { return { status: 0, body: {} }; });
   };
-  await waitFor(function () { return ask({ verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
+  await waitFor(function () { return ask({ call: 'node.debug', args: { debug: {} } }).then(function (r) { return r.status === 200; }); }, 15000);
   const slow = path.join(scratch, 'slow.js');
   fs.writeFileSync(slow, 'setTimeout(function () { process.exit(0); }, 1500);');
   const made = await ask({ verb: 'jobs.create', command: process.execPath, args: [slow], type: 'utility' });
   const id = (made.body && (made.body.id || (made.body.job && made.body.job.id))) || '';
-  const seen = id ? (await ask({ verb: 'jobs.get', key: id })).status : 0;
-  const removed = id && await waitFor(function () { return ask({ verb: 'jobs.get', key: id }).then(function (r) { return r.status === 404; }); }, 10000);
+  const seen = id ? (await ask({ call: 'jobs.get', args: { key: id } })).status : 0;
+  const removed = id && await waitFor(function () { return ask({ call: 'jobs.get', args: { key: id } }).then(function (r) { return r.status === 404; }); }, 10000);
   if (made.status >= 200 && made.status < 300 && seen === 200 && removed) test.check('jobs.create {command, args, type}: jobs.get finds the job while it runs, 404 once it ended');
   else test.fail(OWED + 'jobs.create answered ' + made.status + '; jobs.get while running ' + seen + '; gone after ' + !!removed);
   // A job that says complete() and is still alive: removed on its word, not only on its exit.
@@ -113,7 +113,7 @@ const kids = [];
     'spirit.core.jobs.complete({ done: true }).then(function () { setTimeout(function () { process.exit(0); }, 4000); });');
   const told = await ask({ verb: 'jobs.create', command: process.execPath, args: [says], type: 'utility' });
   const tid = (told.body && (told.body.id || (told.body.job && told.body.job.id))) || '';
-  const tGone = tid && await waitFor(function () { return ask({ verb: 'jobs.get', key: tid }).then(function (r) { return r.status === 404; }); }, 3000);
+  const tGone = tid && await waitFor(function () { return ask({ call: 'jobs.get', args: { key: tid } }).then(function (r) { return r.status === 404; }); }, 3000);
   if (tGone) test.check('a job that reports complete() is removed at its word, before its process exits');
   else test.fail(OWED + 'a job that reported complete() is still listed 3 s later (' + (tid || 'no id') + ')');
 

@@ -243,9 +243,9 @@ function freePort() {
   };
   let whole = null;
   await waitFor(function () {
-    return flatAsk({ verb: 'desk.seen.get', id: 'goal/G0' }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.at === 'string'; });
+    return flatAsk({ call: 'desk.seen.get', args: { id: 'goal/G0' } }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.at === 'string'; });
   }, 15000);
-  const listed = await flatAsk({ verb: 'api' }).catch(function () { return null; });
+  const listed = await flatAsk({ call: 'api', args: {} }).catch(function () { return null; });
   if (whole && whole.status === 200 && whole.body && typeof whole.body.at === 'string' &&
       listed && listed.body && listed.body.desk && verbsOf(listed.body.desk).join(',') === VERBS.join(',') && familyNamesVerbs(listed.body.desk)) {
     test.check('a planted node started its desk server; the verb api listed its verbs and desk.seen.get answered');

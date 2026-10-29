@@ -207,7 +207,7 @@ async function theNode() {
     node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
     let said = '';
     node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
-    const up = await waitFor(function () { return post(port, { verb: 'fs.search', q: 'spirit/server.js' }).then(function (r) { return r.status === 200; }); }, 20000);
+    const up = await waitFor(function () { return post(port, { call: 'fs.search', args: { q: 'spirit/server.js' } }).then(function (r) { return r.status === 200; }); }, 20000);
     if (!up) { test.fail('the planted node did not answer' + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : '')); return; }
     const events = [];
     let buf = '';
@@ -237,7 +237,7 @@ async function theNode() {
     if (has('d:spirit') && has('f:spirit/client/shell.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit/client/shell.js'; })[0])) {
       test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, spirit before spirit/client/shell.js');
     } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds spirit ' + has('d:spirit') + ', spirit/client/shell.js ' + has('f:spirit/client/shell.js'));
-    const found = await post(port, { verb: 'fs.search', q: 'fswatch-probe-g425.txt' });
+    const found = await post(port, { call: 'fs.search', args: { q: 'fswatch-probe-g425.txt' } });
     const keys = ((found.body || {}).items || []).map(function (x) { return x.key; });
     if (found.status === 200 && keys.indexOf('fswatch-probe-g425.txt') !== -1) test.check('fs.search still finds a file by its path');
     else test.fail('fs.search fswatch-probe-g425.txt answered ' + found.status + ' ' + short(found.body));

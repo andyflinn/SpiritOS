@@ -589,13 +589,14 @@ const test = {
     },
     peerFamily: function (body) {
       if (!body || typeof body !== 'object' || !body.api || typeof body.api !== 'object' || typeof body.api.family !== 'string') return null;
-      const r = this.nodeApi({ verb: 'api', family: body.api.family });
+      const r = this.nodeApi({ call: 'api', args: { family: body.api.family } });
       return r ? r.body : null;
     },
+    // api {family} in the door's envelope (goal/G41.15): { call: 'api', args: { family } }.
     nodeApi: function (body) {
-      if (!body || body.verb !== 'api' || typeof body.family !== 'string') return null;
+      if (!body || body.call !== 'api' || !body.args || typeof body.args.family !== 'string') return null;
       const run = require('path').join(__dirname, '..', 'run');
-      const f = body.family;
+      const f = body.args.family;
       const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, 'process', 'js', f, f + '.family', 'api.js')];
       for (const file of tried) {
         if (/^[A-Za-z]\w*$/.test(f) && require('fs').existsSync(file)) return { status: 200, body: { family: f, interface: require('fs').readFileSync(file, 'utf8') } };

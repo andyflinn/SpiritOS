@@ -58,12 +58,12 @@ function post(body) {
     return { status: r.status, body: j || {} };
   }, function () { return { status: 0, body: {} }; });
 }
-const ask = function (verb, args) { return post(Object.assign({ verb: verb }, args || {})); };
+const ask = function (verb, args) { return post({ call: verb, args: args || {} }); };
 async function boot() {
   port = await freePort();
   child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
-  const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
-  const served = await until(function () { return post({ verb: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
+  const up = await until(function () { return post({ call: 'node.info', args: {} }).then(function (r) { return r.status > 0; }); }, 15000);
+  const served = await until(function () { return post({ call: 'api', args: {} }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;
 }
 function down() {
@@ -98,14 +98,14 @@ async function readDb(fn) {
   }
 
   test.subHeading('the member surface answers none of it');
-  const tree = await post({ verb: 'api' });
+  const tree = await post({ call: 'api', args: {} });
   const treeText = JSON.stringify(tree.body);
   if (treeText.indexOf(KEYA) === -1 && treeText.indexOf(KEYB) === -1 && treeText.indexOf('alice') === -1) {
     test.check('the api tree (the same answer a member\'s packet gets, apiDoor.answer) carries no key and no label');
   } else test.fail(OWED + 'the api tree leaks the table: ' + treeText.slice(0, 220));
   // auth is a node family of its own since goal/G30.6 (Andy, 2026-10-20: "move auth stuff into its own node
   // family."): the owner asks it by name on the loopback door; a member reaches it only through the grant gate.
-  const reach = await post({ verb: 'auth.query', key: KEYA, path: 'desk' });
+  const reach = await post({ call: 'auth.query', args: { key: KEYA, path: 'desk' } });
   if (reach.status === 200 && reach.body && reach.body.allowed === true) {
     test.check('the owner\'s auth.query on the loopback door answers the table (allowed: true for the planted grant)');
   } else test.fail(OWED + 'auth.query answered ' + JSON.stringify(reach.body).slice(0, 220));

@@ -28,8 +28,15 @@ stream"); Desk and deskClient move onto it.
   it took).
 - **The sender's bounded log answers it**: what came after that number, oldest first, with no bootstrap and no
   replacing of the cache. A row addressed to other keys (`to`) is left out.
-- **A number older than the log, or a different run id, means a full push**, and only a full push replaces the
-  sender's cache whole. The log's size is the publisher's `logMax` option (the test uses 5).
+- **A number older than the log, or a different run id, means a full push**. The log's size is the publisher's
+  `logMax` option (the test uses 5).
+- **A full push takes precedence and drops nothing** (goal/G41.15, Andy: "make sure the deskClient doesn't loose
+  cached info outside the current goal", Q1: "nothing drops from the cache, unless the api.js from the server says so"):
+  a row it carries replaces the one kept; a kept row it leaves out stays; a row never delivered is not invented. The
+  same holds for a sender of a new run, after a restart.
+- **Its place moves to the push** (the box: "a goal pushed whole takes precedence, and the client's place in the stream
+  moves to that push"): once it lands, a subscribe again carries the push's own end (`run`, `n`), and is answered from
+  the log, with no second push.
 
 ### The cache (goal/G41.12)
 

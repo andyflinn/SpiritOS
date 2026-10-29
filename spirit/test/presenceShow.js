@@ -166,12 +166,7 @@ async function removeFromLab(label) {
   // needs a door wired for it.
   const relayKey = await relayKeyOf(url);
   if (!relayKey) return 'the lab relay has not said what its key is';
-  const done = await post(WORK_URL + '/api/spirit', {
-    verb: 'peer.post',
-    to: relayKey,
-    app: 'relay',
-    body: { removePeer: { key: row.publicKey } },
-  });
+  const done = await post(WORK_URL + '/api/spirit', { call: 'peer.post', args: { to: relayKey, app: 'relay', body: { removePeer: { key: row.publicKey } } } });
   return done.ok
     ? 'removed ' + label + " from the lab relay — they stay in your contacts"
     : 'could not remove ' + label + ': ' + (done.error || done.status);
@@ -331,9 +326,9 @@ async function preflight(s) {
       });
       return r.json();
     };
-    const found = await ask({ verb: 'jobs.search', q: 'relay-presence' });
+    const found = await ask({ call: 'jobs.search', args: { q: 'relay-presence' } });
     const hit = ((found && found.items) || []).filter(function (i) { return i.label.split(' (')[0] === 'relay-presence'; })[0];
-    const job = hit ? ((await ask({ verb: 'jobs.get', key: hit.key })).job || null) : null;
+    const job = hit ? ((await ask({ call: 'jobs.get', args: { key: hit.key } })).job || null) : null;
     if (!job) {
       console.log('');
       console.log('  Your node publishes no relay-presence job, so every dot would be white.');
