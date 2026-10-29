@@ -70,6 +70,13 @@ The same answers and refusals on a relay with DEBUG on: its login app's page
 a JSON list), the forwarded-from header and a non-loopback request refused. With DEBUG off the relay answers the
 address as no route.
 
+## Its test names
+
+Every section starts with the address it asks, `/DEBUG` left off, or the file it reads (Andy: *"please start the test
+descriptions always with the exact URL to the server, without \"/DEBUG\" service"*; box v13: *"EVERY MOTHERFUCKING
+TEST NAME in the product three STARTS WITH THE MUTHERCUCKING PATH"*): `/shell/js/workBench/headLessBrowser.html, the
+node, DEBUG on`.
+
 ## How it is tried
 
 A scratch copy of the tracked files of `spirit/run`, on servers of their own, on free ports: some verbs change or

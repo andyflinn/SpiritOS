@@ -60,8 +60,14 @@ test.subHeading('the rest of a record as before');
 const recs = sent('shell/js/test/workBench.js', [], true);
 const green = recs.filter(function (r) { return r.outcome === 'green'; })[0];
 const red = recs.filter(function (r) { return r.outcome === 'red'; })[0];
-ok(green && green.title === 'a case #1', 'a green is sent with its title, "<section> #<n>"', 'the green record: ' + short(green));
-ok(red && red.title === 'a case #2' && /one red/.test(String(red.failure)), 'a red is sent with its title and its failure', 'the red record: ' + short(red));
+// EVERY TEST NAME STARTS WITH THE PATH (Andy, box v13: "EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH
+// THE MUTHERCUCKING PATH!!!!!!!!!!"): the title is "/<path>/<module> <section> #<n>", so a title read alone names its
+// module.
+ok(green && green.title === '/shell/js/workBench a case #1', 'a green\'s title starts with its path: "/<path>/<module> <section> #<n>"', 'the green record: ' + short(green));
+ok(red && red.title === '/shell/js/workBench a case #2' && /one red/.test(String(red.failure)), 'a red\'s title starts with its path, and it carries its failure', 'the red record: ' + short(red));
+const twinTitles = CASES.slice(1, 3).map(function (c) { return (sent(c[0], [], true)[0] || {}).title; });
+ok(twinTitles[0] && twinTitles[1] && twinTitles[0] !== twinTitles[1] && twinTitles.every(function (t, i) { return t.indexOf(CASES[i + 1][1] + ' ') === 0; }),
+  'the titles of the two rowElement.js tests start with their own paths', 'their titles: ' + short(twinTitles));
 ok(!sent('shell/js/test/workBench.js', [], false).length, 'nothing is sent when the verifier did not start the run', 'a record was sent with no --verify-port');
 
 test.reportSuccessFailureCount();

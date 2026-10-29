@@ -28,12 +28,20 @@ const test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const arg = String(process.argv[2] || '');
+// Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
+const ARGS = process.argv.slice(2);
+const VERIFY = ARGS.indexOf('--verify-port') !== -1 ? ARGS.slice(ARGS.indexOf('--verify-port'), ARGS.indexOf('--verify-port') + 2) : [];
+const arg = String(ARGS.filter(function (a) { return VERIFY.indexOf(a) === -1; })[0] || '');
 let full = '';
 for (const p of [path.resolve(arg), path.join(RUN, arg), path.join(REPO, arg)]) {
   if (arg && fs.existsSync(p) && fs.statSync(p).isFile()) { full = p; break; }
 }
 const rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
+// EVERY TEST NAME STARTS WITH THE PATH (goal/G41.19; Andy: "please start the test descriptions always with the exact URL
+// to the server, without \"/DEBUG\" service", and, box v13, "EVERY MOTHERFUCKING TEST NAME in the product three STARTS
+// WITH THE MUTHERCUCKING PATH"): each section is named by the address this file's page is opened at, /DEBUG left off.
+const ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
+const NAMED = ADDRESS.slice('/DEBUG'.length);
 const WAIT = 20000;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -57,6 +65,8 @@ function findChrome() {
 
 // A scratch copy of the tracked files of spirit/run, its node started on a free port.
 async function scratchNode() {
+  // One node for a whole run of every file (below): the run that started this one hands its address on.
+  if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shell-child-'));
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
@@ -109,9 +119,42 @@ async function chromePage(chrome) {
   return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
 }
 
-test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
+// GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
+// judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
+// recorded under its own module (test/testReport.js). This run records one line per file, named by its address.
+async function every() {
+  const files = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'shell/test/boot-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
+  test.comment('every shell module in its reach: ' + files.length);
+  if (!files.length) { test.fail('testModule.js gives it no file to judge'); return; }
+  const node = await scratchNode();
+  try {
+    if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on: every file would blame the wrong thing'); return; }
+    for (const f of files) {
+      const out = await new Promise(function (resolve) {
+        const kid = spawn(process.execPath, [__filename, f].concat(VERIFY), { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
+        let text = '';
+        kid.stdout.on('data', function (d) { text += d; });
+        kid.stderr.on('data', function (d) { text += d; });
+        kid.on('close', function () { resolve(text); });
+      });
+      const greens = Number((/✅:(\d+)/.exec(out) || [])[1] || 0);
+      const reds = Number((/❌:(\d+)/.exec(out) || [])[1] || 0);
+      const first = (/FAILURE #[\d.]+: ([^\n]*)/.exec(out) || [])[1] || '';
+      const at = '/' + f.replace(/\.js$/, '') + '/headLessBrowser.html';
+      test.subHeading(at);
+      ok(reds === 0 && greens > 0, at + ': ' + greens + ' green', at + ': ' + reds + ' red, ' + greens + ' green; first: ' + first.slice(0, 200));
+    }
+  } finally {
+    try { node.child.kill(); } catch (e) { /* gone */ }
+    await sleep(300);
+    try { fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  }
+}
+
+test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a shell app or element');
 
 (async function () {
+  if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
@@ -123,10 +166,10 @@ test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
     page = await chromePage(chrome);
     if (page.error) { test.fail(page.error); return; }
 
-    test.subHeading('it loads by itself');
+    test.subHeading(NAMED + ': ' + 'it loads by itself');
     // THE BARE MOUNT PAGE: spirit.js alone, then this one file, mounted by itself (rule/26: "every element loads its own
     // parts via spirit.require; nothing is preloaded"). The node's DEBUG page for it, made from its address.
-    const address = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
+    const address = ADDRESS;
     const mountPage = await fetch(node.base + address);
     ok(mountPage.status === 200, 'the node answers its DEBUG page for it, ' + address, address + ' answered ' + mountPage.status);
     if (mountPage.status !== 200) return;
@@ -152,11 +195,11 @@ test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
     ok(!errors.length, 'and it says no error on the console', 'console: ' + short(errors));
     if (!report || report.state !== 'mounted') return;
 
-    test.subHeading('it draws, in the box it is given');
+    test.subHeading(NAMED + ': ' + 'it draws, in the box it is given');
     const drew = await page.evaluate('(function () { var b = window.spiritMount.box; return !!b && b.childElementCount > 0 && b.getBoundingClientRect().height > 0; }())');
     ok(drew === true, 'it draws something into its box', 'its box is empty');
 
-    test.subHeading('every list in a box of a stated size (rule/16)');
+    test.subHeading(NAMED + ': ' + 'every list in a box of a stated size (rule/16)');
     // rule/16: a list scrolls inside a box of a stated size. Judged by the layout itself, so the page names no element
     // (Andy: "why are there elements hard-coded in there?"): every box it drew that scrolls (overflow auto or scroll),
     // shown, is given far more than it can hold, and must keep its height, inside the mount box. A box only as tall as
@@ -185,15 +228,15 @@ test.startTest('boot-sibling-generalRules: ' + (rel || '(no file given)'));
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
 
-    test.subHeading('destroy leaves its box empty');
+    test.subHeading(NAMED + ': ' + 'destroy leaves its box empty');
     const destroyed = await page.evaluate('(function () { var m = window.spiritMount; if (typeof m.destroy !== "function") return "none"; m.destroy(); return m.box.childElementCount === 0 ? "empty" : "left"; }())');
     ok(destroyed === 'empty' || destroyed === 'none', destroyed === 'none' ? 'it has no destroy of its own (an app is closed by the face)' : 'destroyed, its box is empty', 'after destroy its box still holds what it drew');
   } finally {
     if (page && page.sock) try { page.sock.close(); } catch (e) { /* gone */ }
     if (page && page.kid) try { page.kid.kill(); } catch (e) { /* gone */ }
-    try { node.child.kill(); } catch (e) { /* gone */ }
+    if (!node.shared) try { node.child.kill(); } catch (e) { /* gone */ }
     await sleep(300);
-    [node.root, page && page.profile].forEach(function (d) { if (d) try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+    [node.shared ? '' : node.root, page && page.profile].forEach(function (d) { if (d) try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
   }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

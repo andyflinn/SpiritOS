@@ -20,7 +20,11 @@ test files went by 8 names (six were `rowElement.js`), and a red in Fallout did 
 - **A general test is sent by the file it judges.** A `-child-` or `-sibling-` test runs once per file, the file its
   argument (`TEST_SYSTEM.md`), so the module tested is that file:
   `spirit/run/shell/test/boot-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`.
-- The title and the outcome are sent as before.
+- **Every test name starts with the path** (Andy, box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS
+  WITH THE MUTHERCUCKING PATH!!!!!!!!!!"*): a record's `title` is `/<path>/<module> <section> #<n>`, the same path as
+  its `suite`, so a title read alone in Fallout names its module. The two `rowElement.js` tests' titles start with
+  their own paths.
+- The outcome, and a red's failure, are sent as before.
 - Nothing is sent when the verifier did not start the run (no `--verify-port`).
 
 ## How it is tried

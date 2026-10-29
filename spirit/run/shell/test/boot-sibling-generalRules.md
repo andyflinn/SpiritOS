@@ -13,6 +13,18 @@ table's page files in `process/js/agent/table/`, is not in its reach.
 
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 
+**Given no file, it judges every file in its reach** (goal/G41.19): an item's suite row names no file, so a run of
+this test alone takes every shell module `testModule.js` gives it (56 on 2026-10-29), on one scratch node, each file in
+a run of its own so each is recorded under its own module. That run records one line per file, named by the address
+it opened: green when the file's own run had no red.
+
+    node shell/test/boot-sibling-generalRules.js
+
+**Every test name starts with the path** (Andy: *"please start the test descriptions always with the exact URL to the
+server, without \"/DEBUG\" service"*; box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH THE
+MUTHERCUCKING PATH"*): each section is named by the address the file's page is opened at, `/DEBUG` left off, such as
+`/shell/agent/agent/headLessBrowser.html: it loads by itself`.
+
 Andy, on G41.18:
 
 - *"we may require a ./test/shell-child-generalRules.js with a test that catches all violators of this sort of thing,

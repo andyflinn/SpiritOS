@@ -72,6 +72,10 @@ function outsideAddress() {
   return '';
 }
 
+// EVERY TEST NAME STARTS WITH THE PATH (Andy: "please start the test descriptions always with the exact URL to the
+// server, without \"/DEBUG\" service"; box v13: "EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH THE
+// MUTHERCUCKING PATH"): each section is named by the address it asks, /DEBUG left off, or the file it reads.
+function named(p) { return p.indexOf('/DEBUG/') === 0 ? p.slice('/DEBUG'.length) : p; }
 const PAGE = '/DEBUG/shell/js/workBench/headLessBrowser.html';
 const GARBAGE = '/DEBUG/process/js/fileServer/fileServer/garbageArguments.json';
 
@@ -87,10 +91,10 @@ function judgePage(r, module, where) {
   ok(r.text.indexOf(module) !== -1, where + ': it names the module it mounts, ' + module, where + ': ' + module + ' is not named in the page');
 }
 
-test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike');
+test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alike');
 
 (async function () {
-  test.subHeading('its files');
+  test.subHeading('/spirit/DEBUG.js, /spirit/DEBUG/, /shell/mount.html: its files');
   ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG.js')), 'spirit/run/spirit/DEBUG.js is there', 'spirit/run/spirit/DEBUG.js is not there');
   ['headLessBrowser', 'garbageArguments'].forEach(function (g) {
     ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', g + '.js')), 'its generator script spirit/run/spirit/DEBUG/' + g + '.js is there', 'spirit/run/spirit/DEBUG/' + g + '.js is not there');
@@ -114,7 +118,7 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
     if (!node.up) { test.fail('the scratch node did not come up: every check here would blame the wrong thing'); return; }
     const N = node.port;
 
-    test.subHeading('the node, DEBUG off');
+    test.subHeading(named(PAGE) + ', the node, DEBUG off');
     const off = await ask('127.0.0.1', N, PAGE);
     const none = await ask('127.0.0.1', N, PAGE.replace('/DEBUG/', '/NODEBUG/'));
     ok(off.status === none.status && off.text === none.text, 'its DEBUG address answers as an address of no route (' + none.status + ')', 'DEBUG off it answered ' + off.status + ' ' + short(off.text));
@@ -124,10 +128,10 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
     const on = json(await call(N, 'node.debug', { debug: { on: true } }));
     ok(on && on.debug === true, 'the scratch node\'s DEBUG is switched on, by node.debug', 'node.debug answered ' + short(on));
 
-    test.subHeading('the node, DEBUG on: the page');
+    test.subHeading(named(PAGE) + ', the node, DEBUG on');
     judgePage(await ask('127.0.0.1', N, PAGE), 'shell/js/workBench', 'the node');
 
-    test.subHeading('the node, DEBUG on: the garbage');
+    test.subHeading(named(GARBAGE) + ', the node, DEBUG on');
     const g = await ask('127.0.0.1', N, GARBAGE);
     const list = json(g);
     ok(g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0, 'the garbage is answered, 200, a JSON list of ' + (Array.isArray(list) ? list.length : 0), 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text));
@@ -149,8 +153,8 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
       ok(still.status === 200, 'and the node still answers its api afterwards', 'afterwards its api answered ' + still.status);
     }
 
-    test.subHeading('the node, DEBUG on: what it refuses');
     const refused = async function (p, headers, why) {
+      test.subHeading(named(p) + ', the node, DEBUG on: refused, ' + why);
       const r = await ask('127.0.0.1', N, p, { headers: headers });
       ok(r.status >= 400 && r.status < 500, 'refused: ' + why, why + ': answered ' + r.status + ' ' + short(r.text.slice(0, 120)));
     };
@@ -160,12 +164,13 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
     await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For');
     await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded');
     for (const p of ['/spirit/DEBUG.js', '/spirit/DEBUG/headLessBrowser.js', '/spirit/DEBUG/garbageArguments.js']) {
+      test.subHeading(p + ', the node, DEBUG on');
       const r = await ask('127.0.0.1', N, p);
       ok(r.status >= 400, p + ' cannot be fetched', p + ' was fetched: ' + r.status);
     }
     await stop(node); node = null;
 
-    test.subHeading('a relay, DEBUG off');
+    test.subHeading('/shell/login/login/headLessBrowser.html, a relay, DEBUG off');
     relay = await startRelay(copy.run, false);
     if (!relay.up) { test.fail('the scratch relay did not come up'); return; }
     const rOff = await ask('127.0.0.1', relay.port, '/DEBUG/shell/login/login/headLessBrowser.html');
@@ -173,15 +178,17 @@ test.startTest('spirit/DEBUG.js: the DEBUG test routes, for node and relay alike
     ok(rOff.status === rNone.status && rOff.text === rNone.text, 'its DEBUG address answers as an address of no route (' + rNone.status + ')', 'DEBUG off the relay answered ' + rOff.status + ' ' + short(rOff.text));
     await stop(relay); relay = null;
 
-    test.subHeading('a relay, DEBUG on');
+    test.subHeading('/shell/login/login/headLessBrowser.html, a relay, DEBUG on');
     relay = await startRelay(copy.run, true);
     if (!relay.up) { test.fail('the scratch relay did not come up'); return; }
     const R = relay.port;
     const loginPage = '/DEBUG/shell/login/login/headLessBrowser.html';
     judgePage(await ask('127.0.0.1', R, loginPage), 'shell/login/login', 'the relay');
+    test.subHeading('/spirit/relay/garbageArguments.json, a relay, DEBUG on');
     const rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/garbageArguments.json');
     const rlist = json(rg);
     ok(rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0, 'the relay answers its own api\'s garbage, a JSON list of ' + (Array.isArray(rlist) ? rlist.length : 0), 'it answered ' + rg.status + ' ' + rg.type + ' ' + short(rg.text));
+    test.subHeading(named(loginPage) + ', a relay, DEBUG on: refused');
     const fwd = await ask('127.0.0.1', R, loginPage, { headers: { 'X-Forwarded-For': '203.0.113.9' } });
     ok(fwd.status >= 400 && fwd.status < 500, 'refused: a request Caddy would pass on, carrying X-Forwarded-For', 'with X-Forwarded-For it answered ' + fwd.status);
     const outside = outsideAddress();
