@@ -1027,7 +1027,7 @@ async function postToRelayVia(nodeUrl, relayUrl, body) {
   if (!key) return { ok: false, status: 0, body: null, text: 'relay did not say what its key is' };
 
   const sent = await livePost(nodeUrl + '/api/spirit', {
-    verb: 'peer.post', to: key, app: 'relay', body: body,
+    call: 'peer.post', args: { to: key, app: 'relay', body: body },
   });
   let answer = null;
   try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
@@ -1411,10 +1411,10 @@ async function buildLiveWorld(body) {
   //    settling is correct but looks wrong in the panel a second later.
   await napFor(2000);
   const there = await livePost('http://127.0.0.1:' + peer.port + '/api/spirit', {
-    verb: 'peer.acquire', publicKey: me.publicKey,
+    call: 'peer.acquire', args: { publicKey: me.publicKey },
   });
   const back = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/spirit', {
-    verb: 'peer.acquire', publicKey: peerId.publicKey,
+    call: 'peer.acquire', args: { publicKey: peerId.publicKey },
   });
   steps.push(there.ok && back.ok
     ? 'the two nodes have each other in their address books'
@@ -1521,10 +1521,10 @@ const server = http.createServer(function (req, res) {
           body: JSON.stringify(body),
         }).then(function (res) { return res.json(); });
       };
-      return ask({ verb: 'jobs.search', q: 'relay-presence' })
+      return ask({ call: 'jobs.search', args: { q: 'relay-presence' } })
         .then(function (found) {
           const hit = ((found && found.items) || []).filter(function (i) { return i.label.split(' (')[0] === 'relay-presence'; })[0];
-          return hit ? ask({ verb: 'jobs.get', key: hit.key }).then(function (g) { return (g && g.job) || null; }) : null;
+          return hit ? ask({ call: 'jobs.get', args: { key: hit.key } }).then(function (g) { return (g && g.job) || null; }) : null;
         })
         .then(function (job) {
           if (!job) return [n.id, null];
