@@ -1,28 +1,27 @@
 # grantSelector/listElement.js
 
-`spirit/run/shell/js/grantSelector/listElement.js` is the grant list (goal/G41.14), as
-`shell/js/bundleSelector/listElement.js` is the bundle list. It was the grants app's own list; the app draws it. Its test
-is `./listElement.js`.
-
-Andy: *"WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING FUCKING ROW?"*, *"INCLUDING COMPLETE TEST FOLDER FOR THE
-COMPONENTS INVOLVED!!!!"*.
+`spirit/run/shell/js/grantSelector/listElement.js` is the grant list (goal/G41.14), of whichever grants table its caller
+hands it (goal/G41.16). The grants panel draws it. Its test is `./listElement.js`.
 
 ## Requirements
 
 - It loads what it uses itself (rule/26): `shell/js/probabilitySearch.js` and `shell/js/grantSelector/rowElement.js`; no
   data script.
-- It registers `spirit.elements.grantList.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
+- It names no table and no branch of its own. `grantList.create(host, { grants, filters, serves, api })`: `grants` the
+  caller's grants table, as the row element takes it, with `search(text)` beside it, answering `{ items, more }`. Made
+  with no grants table, it is refused and draws nothing.
 - It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn.
-- It is a view of `data.grants`, which the grant row element keeps from the node's stream: one grant appears or goes.
-- Its search asks `auth.search { text }` through the spirit object, the text trimmed, and answers as a reply.
-- Its columns are `name` (whose grant), `path` and `revoke`, Revoke the rightmost. Each row is a `grantElement`.
-- A row is matched on whose grant it is and the words of its path, never the key.
-- `opts.filters` are its own: the grants app hands it its ID and family filters.
+- It is a view of the branch its table names (`grants.branch`), which the row element keeps from the stream.
+- Its search is the table's `search(text)`, the text trimmed, answered as a reply.
+- Its columns are `name` (whose grant), `path` and `revoke`, Revoke the rightmost. Each row is a `grantElement`, handed
+  the same table and `serves`.
+- A row is matched on its table's label field and the words of its path, never its id.
+- `filters` are its own: the page hands them.
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
 
 ## What its test must try to break
 
-- A part counted on that the list did not load itself, or a data script.
-- A list that keeps rows of its own instead of being a view of data.grants.
+- A table or branch named in the list itself, or a list made with no table.
+- A search asked anywhere but the table's.
+- A row handed another table, or matched on its id.
 - Revoke anywhere but the rightmost column.
-- A row matched on its key.
