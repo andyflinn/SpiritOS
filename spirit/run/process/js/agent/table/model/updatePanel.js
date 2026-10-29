@@ -24,7 +24,8 @@
         container.innerHTML = '<div class="fill">' + D.titleRow(look, ['Update model list']) +
           '<div style="margin-top:1em;display:flex;align-items:center;gap:1em"><span>from</span><div id="' + pre + 'from" style="flex:1 1 0;min-width:0"></div>' +
           '<button type="button" id="' + pre + 'ask">Ask</button></div>' +
-          '<div id="' + pre + 'said" style="margin-top:1em"></div></div>';
+          // The answered list scrolls in its own box, the title and the form staying in view (rule/16).
+          '<div id="' + pre + 'said" class="fill" style="margin-top:1em;overflow:auto"></div></div>';
         drop = D.search(container.querySelector('#' + pre + 'from'), { api: api, table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         var said = container.querySelector('#' + pre + 'said');
         container.querySelector('#' + pre + 'ask').addEventListener('click', function () {

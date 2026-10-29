@@ -55,7 +55,11 @@
         }).join('') + '</div>';
     }
     var PAD = 'box-sizing:border-box;padding-left:0.5em;padding-right:0.5em';
-    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
+    // A PANE IS A BOX OF A STATED SIZE (rule/16; Andy, on G41.18: "ALL lists, otherwise my took bars at the top of a
+    // container keep scrolling away...."): a side pane is a column as tall as the bench (class fill, its own width kept
+    // by flex: none), and each tool's box in it a fill too, so a list inside scrolls in itself under its title and
+    // buttons. What overflows a tool that is no list still scrolls the pane.
+    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" class="fill" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
     function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="flex:none;width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
     container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
@@ -91,6 +95,7 @@
       p.style.width = widths[side] + 'px';
       if (!boxes[side][name]) {
         var box = document.createElement('div');
+        box.className = 'fill';
         boxes[side][name] = box;
         p.appendChild(box);
         try { t.mount(box); } catch (e) { /* one tool's fault */ }
