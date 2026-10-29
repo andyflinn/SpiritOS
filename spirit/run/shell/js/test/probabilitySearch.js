@@ -433,5 +433,40 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   PS.create(c9, { face: 'dropdown', placeholder: 'pick one' });
   ok(/pick one/.test(c9.get('field').innerHTML), 'without all the field shows the placeholder', 'field: ' + c9.get('field').innerHTML);
 
+  test.subHeading('it loads the spirit\'s probability files itself (rule/26; goal/G41.18)');
+  // Found by the shell's general rules on a bare page (shell/test/boot-sibling-generalRules.js): the Apps and Grants
+  // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
+  // loads its own parts via spirit.require; nothing is preloaded. This loader answers in the reverse of the order it was
+  // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.
+  {
+    const asked = [];
+    global.window = { spirit: { elements: {} } };
+    let wait = 60;
+    global.window.spirit.require = function (p) {
+      const rel = String(p).replace(/^\/+/, '');
+      asked.push(rel);
+      const delay = (wait = Math.max(0, wait - 20));
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          if (/^spirit\/probability\w*\.js$/.test(rel)) vm.runInThisContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), { filename: rel });
+          resolve(true);
+        }, delay);
+      });
+    };
+    vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+    await new Promise(function (r) { setTimeout(r, 300); });
+    const NEED = ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js'];
+    ok(NEED.every(function (n) { return asked.indexOf(n) !== -1; }), 'it requires probabilityStringMatch.js, probabilityStringObjectMatch.js and probabilityBucket.js', 'asked: ' + JSON.stringify(asked));
+    const P2 = window.spirit.elements.probabilitySearch;
+    let made = null; let threw = null;
+    const c10 = container();
+    try {
+      made = P2.create(c10, { api: api(), server: 'srv', verb: 'search', rows: function () { return [{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]; },
+        columns: [{ field: 'name', label: 'Name', sort: 'text' }], args: function (t) { return { q: t }; } });
+      c10.type('ze');
+    } catch (e) { threw = e && e.message; }
+    ok(!threw && made && c10.shown()[0] === 'z', 'once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 'threw ' + JSON.stringify(threw) + ', shown ' + (made ? c10.shown() : ''));
+  }
+
   test.reportSuccessFailureCount();
 }()).catch(function (err) { test.fail('the test itself threw', String(err && err.stack || err)); test.reportSuccessFailureCount(); });
