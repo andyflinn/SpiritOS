@@ -1671,6 +1671,9 @@ catch (e) {
   // the fucking elements"): the permanent job 'bundles', published with each changed row of the bundle and branch tables
   // ({ table, row }, and { table, row: { id }, gone: true } for one deleted), as the shadow job publishes each contact
   // row. The bundle and branch list elements take them into the spirit object's data themselves.
+  // THE GRANTS ON THE SAME JOB (Andy: "SO THE MOTHERFUCKING GRANS TABLE DOES NOT BUPLISH EITHER????", "FIX THAT FUCKING
+  // SHIT NOW"): each grant row given or revoked, { table: 'grant', row }, gone when revoked; the job carries the auth
+  // tables' rows, the table names which.
   try {
     const bundlesJob = jobs.createJob('permanent', 'bundles', {});
     apiAuth.onChange(function (change) {

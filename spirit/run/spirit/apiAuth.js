@@ -46,7 +46,8 @@ function createApiAuth(opts) {
   function branches() { return nodeStore.open(rootDir).branches; }
   // EVERY CHANGE TOLD, ROW BY ROW (goal/G41.14): fn({ table, row }) for a row added or set, the row as get shows it, and
   // fn({ table, row: { id }, gone: true }) for one deleted; the node publishes them on its stream (server.js, the bundles
-  // job). A refused ask tells nothing.
+  // job). A grant is told the same way, table 'grant', its row { key, path, label }, gone with { key, path }. A refused
+  // ask tells nothing.
   const listeners = [];
   function told(change) { listeners.forEach(function (fn) { try { fn(change); } catch (e) { /* one listener's fault */ } }); }
   // One search answer: rows ranked by the probability modules over their words, best first; no words is every row in
@@ -143,18 +144,25 @@ function createApiAuth(opts) {
         const label = s.label(a.key);
         const use = label === null ? labelFor(a.key) : label;
         s.grant(a.key, a.path, use);
+        // Told as the table holds it: { key, path, label } (goal/G41.14, the grants on the stream).
+        told({ table: 'grant', row: { key: a.key, path: a.path, label: use } });
         return { key: a.key, label: use, path: a.path };
       });
     },
 
     revoke: function (a) {
       if (!text(a.key) || !text(a.path)) return refuse('bad-request');
-      return store().revoke(a.key, a.path) ? { revoked: true } : refuse('not-granted');
+      if (!store().revoke(a.key, a.path)) return refuse('not-granted');
+      told({ table: 'grant', row: { key: a.key, path: a.path }, gone: true });
+      return { revoked: true };
     },
 
     relabel: function (a) {
       if (!text(a.key) || !text(a.label)) return refuse('bad-request');
-      return store().relabel(a.key, a.label) ? { key: a.key, label: a.label } : refuse('no-such-peer');
+      if (!store().relabel(a.key, a.label)) return refuse('no-such-peer');
+      // Every grant of that ID shows the new name.
+      store().paths(a.key).forEach(function (p) { told({ table: 'grant', row: { key: a.key, path: p, label: a.label } }); });
+      return { key: a.key, label: a.label };
     },
 
     // THE TWO BUNDLE VERBS (goal/G41.14; Andy, box: "TWO verbs under the auth family, auth.bundle and auth.branch, akin
