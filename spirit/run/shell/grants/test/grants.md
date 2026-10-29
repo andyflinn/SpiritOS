@@ -63,6 +63,9 @@ travel?").
   `{ row: { key, path }, gone: true }` when revoked. The grant row element takes it into `data.grants`, keyed
   `<key>\n<path>`; a bundle row or another job's writes nothing there. The list is a view of `data.grants`.
 
+- **The grant list and row are elements of their own** (goal/G41.14): `shell/js/grantSelector/listElement.js` and
+  `rowElement.js`, each with its test folder; the app requires the list and keeps no grant row element of its own.
+
 ## What its test must try to break
 
 - An old shell list made, or `api.ui.elements` reached.

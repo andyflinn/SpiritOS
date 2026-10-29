@@ -139,6 +139,9 @@ test.startTest('grants.js: the Grants app');
     'shell/js/contactSelector.js', 'shell/js/bundleEditor.js', 'shell/js/apiFamilySelector.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
+  // goal/G41.14, Andy: "INCLUDING COMPLETE TEST FOLDER FOR THE COMPONENTS INVOLVED!!!!": the grant list and row are shell
+  // elements of their own now (shell/js/grantSelector/, each with its test/), and the app draws them.
+  ok(w.required.indexOf('shell/js/grantSelector/listElement.js') !== -1 && !/function grElement\b/.test(SRC), 'it requires the grant list, shell/js/grantSelector/listElement.js, and keeps no grant row element of its own', 'required: ' + short(w.required));
   ok(!/apiBranchSelector/.test(SRC.replace(/\/\/.*$/gm, '')), 'and names apiBranchSelector no more: it is apiFamilySelector (goal/G41.14)', 'grants.js still names apiBranchSelector');
 
   const app = node('container');
