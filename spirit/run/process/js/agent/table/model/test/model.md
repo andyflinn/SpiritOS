@@ -23,6 +23,11 @@ model-name and capabilities)"*.
   - Its fields are the label, the description, the provider, the model name, and the capabilities as a list.
   - The provider is picked from a search of the provider table.
 
+- **elementRow.js takes the model table's rows from the stream itself** (goal/G41.16; Andy: *"get rid of thos FUCKING data.js
+  scripts"*): its page files require no data script; a row of the agent stream (`{ agent: { table: 'model', row } }`,
+  module `process/js/agent`) lands at `agent.model/<id>` and the branch's watcher hears it; a changed row is merged; one
+  removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
+
 ## What its test must try to break
 
 - A model naming a provider that is not there, by add or by set.

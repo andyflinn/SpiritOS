@@ -25,6 +25,11 @@ which will never reach the browser or any place outside of the agent process exc
   - It builds on `agentRow` with the row's id, added, and the provider table's look.
   - Its fields are the label (name), the description, the url, and the API key as a secret.
 
+- **elementRow.js takes the provider table's rows from the stream itself** (goal/G41.16; Andy: *"get rid of thos FUCKING data.js
+  scripts"*): its page files require no data script; a row of the agent stream (`{ agent: { table: 'provider', row } }`,
+  module `process/js/agent`) lands at `agent.provider/<id>` and the branch's watcher hears it; a changed row is merged; one
+  removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
+
 ## What its test must try to break
 
 - The API key in any answer or published row.

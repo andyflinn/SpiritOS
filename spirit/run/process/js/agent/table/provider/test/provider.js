@@ -66,6 +66,8 @@ test.startTest('provider/: the provider table');
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client: the stream lands there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.providerTable && typeof E.providerTable.create === 'function' && E.providerRow && typeof E.providerRow.create === 'function',
@@ -94,5 +96,28 @@ test.startTest('provider/: the provider table');
   ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['url', 'url'], ['apiKey', 'secret']]),
     'its fields are the label, the description, the url, and the API key as a secret', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
+  test.subHeading('elementRow.js takes the provider table\'s rows from the stream itself (goal/G41.16)');
+  // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
+  // means for this table, process/js/agent/table/data.js until G41.16, is its row element's, loaded with it.
+  {
+    const DATA = global.window.spirit.data;
+    ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
+    const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+    const heard = [];
+    const off = DATA.watch('agent.provider', function (p) { heard.push(p); });
+    DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
+    ok(DATA.get('agent.provider/KT') && DATA.get('agent.provider/KT').label === 'First' && heard.indexOf('agent.provider/KT') !== -1, 'a provider row on the stream lands at agent.provider/<id>, and the branch\'s watcher hears it', 'agent.provider: ' + short(DATA.branch('agent.provider')));
+    DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
+    ok(DATA.get('agent.provider/KT') && DATA.get('agent.provider/KT').label === 'Renamed' && DATA.get('agent.provider/KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(DATA.get('agent.provider/KT')));
+    DATA.take(job({ table: 'provider', id: 'KT', removed: true }));
+    ok(!DATA.get('agent.provider/KT'), 'a row removed, by its id, is gone', 'row: ' + short(DATA.get('agent.provider/KT')));
+    const before = JSON.stringify(DATA.branch('agent.provider'));
+    DATA.take(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
+    DATA.take(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+    DATA.take(job({ table: 'provider', row: { label: 'no id' } }));
+    ok(JSON.stringify(DATA.branch('agent.provider')) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'agent.provider: ' + short(DATA.branch('agent.provider')));
+    off();
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

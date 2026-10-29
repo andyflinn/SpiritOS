@@ -21,6 +21,11 @@ codeMirror-field for the persona-description i give it with every prompt)"*.
   - It builds on `agentRow` with the persona table's look.
   - Its fields are the label, the description, and the persona in a CodeMirror editor.
 
+- **elementRow.js takes the persona table's rows from the stream itself** (goal/G41.16; Andy: *"get rid of thos FUCKING data.js
+  scripts"*): its page files require no data script; a row of the agent stream (`{ agent: { table: 'persona', row } }`,
+  module `process/js/agent`) lands at `agent.persona/<id>` and the branch's watcher hears it; a changed row is merged; one
+  removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
+
 ## What its test must try to break
 
 - A persona text that loses its lines, or is emptied by a set of its label.

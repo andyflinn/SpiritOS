@@ -71,6 +71,8 @@ test.startTest('job/: the job table');
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client: the stream lands there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.jobTable && typeof E.jobTable.create === 'function' && E.jobRow && typeof E.jobRow.create === 'function',
@@ -98,5 +100,28 @@ test.startTest('job/: the job table');
   ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['loop', 'bool'], ['job', 'code']]),
     'its fields are the label, the description, the loop flag as a checkbox, and the job in a CodeMirror editor', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
+  test.subHeading('elementRow.js takes the job table\'s rows from the stream itself (goal/G41.16)');
+  // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
+  // means for this table, process/js/agent/table/data.js until G41.16, is its row element's, loaded with it.
+  {
+    const DATA = global.window.spirit.data;
+    ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
+    const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+    const heard = [];
+    const off = DATA.watch('agent.job', function (p) { heard.push(p); });
+    DATA.take(job({ table: 'job', row: { id: 'KT', label: 'First', extra: 1 } }));
+    ok(DATA.get('agent.job/KT') && DATA.get('agent.job/KT').label === 'First' && heard.indexOf('agent.job/KT') !== -1, 'a job row on the stream lands at agent.job/<id>, and the branch\'s watcher hears it', 'agent.job: ' + short(DATA.branch('agent.job')));
+    DATA.take(job({ table: 'job', row: { id: 'KT', label: 'Renamed' } }));
+    ok(DATA.get('agent.job/KT') && DATA.get('agent.job/KT').label === 'Renamed' && DATA.get('agent.job/KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(DATA.get('agent.job/KT')));
+    DATA.take(job({ table: 'job', id: 'KT', removed: true }));
+    ok(!DATA.get('agent.job/KT'), 'a row removed, by its id, is gone', 'row: ' + short(DATA.get('agent.job/KT')));
+    const before = JSON.stringify(DATA.branch('agent.job'));
+    DATA.take(job({ table: 'model', row: { id: 'KO', label: 'another table' } }));
+    DATA.take(job({ table: 'job', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+    DATA.take(job({ table: 'job', row: { label: 'no id' } }));
+    ok(JSON.stringify(DATA.branch('agent.job')) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'agent.job: ' + short(DATA.branch('agent.job')));
+    off();
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

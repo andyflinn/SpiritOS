@@ -84,7 +84,6 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const D = global.window.spirit.data;
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
-    if (p === 'process/js/agent/table/data.js') { if (!global.window.spirit.agentData) load(path.join(__dirname, '..', 'data.js')); return Promise.resolve(true); }
     return Promise.resolve(p === AGENT ? w.family : true);
   };
   global.window.spirit.elements.probabilitySearch = { create: function (host, o) {
@@ -100,7 +99,9 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const AD = E.agentDetail || {};
   ok(['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string',
     'and spirit.elements.agentDetail { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 'agentDetail: ' + short(Object.keys(AD)));
-  ok(w.required.indexOf('process/js/agent/table/data.js') !== -1, 'it requires the tables\' translator with itself, process/js/agent/table/data.js', 'required: ' + short(w.required));
+  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": each table's row element takes its own rows from the
+  // stream; the shared element loads no data script.
+  ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'it requires no data script: each table\'s row element takes its own rows from the stream (goal/G41.16)', 'required: ' + short(w.required));
   if (!E.agentTable || !E.agentRow || !AD.titleRow) return;
 
   test.subHeading('the shared pieces');

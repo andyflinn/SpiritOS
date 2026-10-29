@@ -11,7 +11,6 @@ the table)"*.
 ## Requirements
 
 - It registers `spirit.elements.agentTable`, `spirit.elements.agentRow` and `spirit.elements.agentDetail`.
-- It requires the tables' translator, `process/js/agent/table/data.js`, with itself.
 - **Every pane's look is in one place** (Andy: *"is it possible to organize the code so that my changes so far are only
   done in one place?"*). `agentDetail` holds:
   - `titleRow(look, words)`: the `agent-title` row, the icon, then the words, each in a part of its own. It is set as a
@@ -51,6 +50,9 @@ the table)"*.
     - A Save taken says `Saved.` and Change. A refused one says `Not saved: <the server's reason>`.
     - Delete calls `{ op: 'delete', id }`.
   - `destroy` empties its box, and it hears its row no more.
+
+- It requires no data script (goal/G41.16): each table's row element (`<table>/elementRow.js`) takes its own rows
+  from the stream into `agent.<table>`.
 
 ## What its test must try to break
 
