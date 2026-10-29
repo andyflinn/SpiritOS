@@ -20,7 +20,8 @@ panel draws and does is the panel's (`shell/js/test/grantsPanel.md`).
 - It configures the panel for contacts and the node's grants:
   - `ids`: the contacts' table, `loopback://api/contact/search`;
   - `grants`: branch `grants`, keyed `key`, labelled `label`;
-    - `search(text)` asks `auth.search { text }` and answers its `{ items, more }`;
+    - `search(text)` asks `auth.search { text }` and answers its `{ items, more }`, each found grant carrying whose it
+      is in the label field, `label` (auth.search says it as `name`; found live by cw, goal/G41.16);
     - `grant(id, path)` asks `auth.grant { key, path }`, answering `{ ok: true }`, or a refusal as
       `{ ok: false, code, error }` in the node's words (`already-granted` among them);
     - `revoke(id, path)` asks `auth.revoke { key, path }`;

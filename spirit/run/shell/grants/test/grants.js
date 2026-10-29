@@ -66,7 +66,8 @@ function world() {
   const api = {
     escapeHtml: function (s) { return String(s); },
     verb: function (name, args) { w.calls.push({ name: name, args: args });
-      if (name === 'auth.search') return Promise.resolve({ status: 200, body: { ok: true, items: [{ key: 'K1\nfs.search', label: '{}' }], more: false } });
+      // auth.search answers whose grant it is as name (apiAuth.js search), the stream as label.
+      if (name === 'auth.search') return Promise.resolve({ status: 200, body: { ok: true, items: [{ key: 'K1\nfs.search', label: JSON.stringify({ name: 'Bob', key: 'K1', path: 'fs.search' }) }], more: false } });
       if (name === 'auth.grant' && args && args.path === 'fs.search') return Promise.resolve({ status: 409, body: { ok: false, code: 'already-granted', error: 'already granted' } });
       return Promise.resolve({ status: 200, body: { ok: true } }); },
     ui: { elements: {} },
@@ -137,6 +138,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const found = await g.search('bo');
   const s = w.calls.slice(at)[0];
   ok(s && s.name === 'auth.search' && s.args.text === 'bo' && found && Array.isArray(found.items), 'search(text) asks auth.search { text } and answers its { items, more }', 'asked ' + short(s) + ', found ' + short(found));
+  // Found by cw live (goal/G41.16): the whose column of the node's grants was empty, auth.search saying it as name and the
+  // panel reading its table's label field. A found grant carries whose it is in that field.
+  let hit = null; try { hit = JSON.parse(found.items[0].label); } catch (e) { hit = null; }
+  ok(hit && hit[g.label] === 'Bob' && hit.key === 'K1' && hit.path === 'fs.search', 'a found grant carries whose it is in the table\'s label field, label', 'found row: ' + short(hit));
   at = w.calls.length;
   const made = await g.grant('K3', 'jobs.list');
   const gr = w.calls.slice(at)[0];

@@ -77,6 +77,27 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(m && m.name === 'Night' && /fs search/.test(m.path || '') && !('job_id' in m) && !('key' in m), 'a row is matched on its table\'s label field and the words of its path, never the id', 'matched: ' + short(m));
   ok(o.filters === filters, 'the filters the page hands it are its own', 'filters: ' + short(o.filters));
 
+  test.subHeading('an empty list hears its first grant (goal/G41.16)');
+  // Found by cw live: a list with no rows drawn never heard its first grant, its table's stream heard only once a row of
+  // it was made. Here the real row element and the page's data set: a list is made for a table no row was ever drawn of,
+  // and its first grant arrives on the stream.
+  {
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+    const DATA = global.window.spirit.data;
+    global.window.spirit.elements.armingButton = { attach: function (b) { return b; } };
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'grantSelector', 'rowElement.js'), 'utf8'), { filename: 'grantSelector/rowElement.js' });
+    await settle();
+    const FRESH = { branch: 'fresh.grant', key: 'job_id', label: 'job', search: function () { return Promise.resolve({ items: [], more: false }); },
+      revoke: function () { return Promise.resolve({}); },
+      stream: function (job) { const a = job && job.module === 'process/js/fresh' && job.app && job.app.fresh; return a ? { row: a.row, gone: a.removed === true } : null; } };
+    E.grantList.create({}, { grants: FRESH });
+    await settle();
+    DATA.take({ id: 'job-fresh', module: 'process/js/fresh', data: {}, app: { fresh: { row: { job_id: 'J7', path: 'jobs.list', job: 'First' } } } });
+    await settle();
+    ok(DATA.get('fresh.grant/J7\njobs.list') && DATA.get('fresh.grant/J7\njobs.list').job === 'First', 'a list made with no row drawn hears its table\'s first grant from the stream, into its branch', 'fresh.grant: ' + short(DATA.branch('fresh.grant')));
+  }
+
   test.subHeading('refresh and destroy are the search element\'s');
   const r0 = l.refreshes;
   made.refresh(); made.destroy();
