@@ -135,9 +135,13 @@ test.startTest('agent.js: the agent server');
     const verbs = (fam && fam.verbs) || {};
     ok(TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }), 'its interface declares the five verbs, provider, model, persona, job and grant', 'verbs: ' + short(Object.keys(verbs)));
     const files = [];
-    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
+    // goal/G41.16: the grant table's page files went, the grants panel drawing the grants by job (shell/js/grantsPanel.js,
+    // configured by the agent app); its folder keeps its server.
+    TABLES.forEach(function (t) { (t === 'grant' ? ['server.js'] : ['server.js', 'elementTable.js', 'elementRow.js']).forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
     const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
-    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 15 missing: ' + absent.join(', '));
+    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, the four but grant with elementTable.js and elementRow.js', absent.length + ' of 13 missing: ' + absent.join(', '));
+    const kept = ['elementTable.js', 'elementRow.js'].filter(function (f) { return fs.existsSync(path.join(RUN, 'process', 'js', 'agent', 'table', 'grant', f)); });
+    ok(!kept.length, 'the grant folder has no page files of its own: the grants panel draws its grants (goal/G41.16)', 'grant still has: ' + kept.join(', '));
     const served = (await ask('DEBUG', {})).status === 200;
     const answers = {};
     for (const t of TABLES) answers[t] = await ask(t, {});

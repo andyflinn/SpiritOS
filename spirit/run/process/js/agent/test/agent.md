@@ -54,6 +54,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - **No secret leaves the process** (Andy: API_KEY "will never reach the browser or any place outside of the agent
   process except the model providers API"; "The private halves of that set stay in the agent process"): no answer of
   add, set, get or search carries the API key or a private key.
-- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for each table;
-  the table servers publish their rows.
+- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
+  model, persona and job; grant with server.js alone, its page files gone since goal/G41.16 (the grants panel,
+  shell/js/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
