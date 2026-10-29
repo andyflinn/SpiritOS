@@ -63,7 +63,26 @@ const RECORD = 'deskVerify.record';
 
 // Each result to the verifier, through the spirit object: its family by its name, then its record verb. Never waited
 // on; what is still in the air when the test ends keeps the process up until it lands.
+// A TEST THAT ENDS ITS OWN PROCESS WAITS FOR ITS RECORDS (goal/G41.19; found: the shell's general test failed at once and
+// called process.exit, and its red never reached the verifier). While records are in the air, process.exit waits for
+// them, at most RECORD_WAIT_MS, then exits with the code it was given.
+const RECORD_WAIT_MS = 10000;
 let family = null;
+let inTheAir = 0;
+let exitWith = null;
+if (VERIFY_PORT) {
+  const exitNow = process.exit.bind(process);
+  process.exit = function (code) {
+    if (!inTheAir) return exitNow(code);
+    if (exitWith !== null) return;
+    exitWith = { code: code, now: exitNow };
+    setTimeout(function () { exitNow(code); }, RECORD_WAIT_MS);
+  };
+}
+function landed() {
+  inTheAir--;
+  if (!inTheAir && exitWith) exitWith.now(exitWith.code);
+}
 function record(title, outcome, failure) {
   if (!VERIFY_PORT || !title) return;
   const rec = { suite: SUITE, title: String(title), outcome: outcome };
@@ -84,7 +103,8 @@ function record(title, outcome, failure) {
     let real = null;
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(name));
-    family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ });
+    inTheAir++;
+    family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ }).then(landed);
   } catch (e) { /* a test whose verifier cannot be reached still reports on its lines */ }
 }
 
