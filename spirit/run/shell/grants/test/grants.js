@@ -114,6 +114,8 @@ function world() {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
+  // The page's one data set, which spirit.js brings with the client: the node's stream lands there.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -205,7 +207,10 @@ test.startTest('grants.js: the Grants app');
     if (asked && asked.args.key === 'K1') { mine = { asked: asked, after: w.calls.slice(at) }; break; }
   }
   ok(mine && mine.asked.args.path === 'fs.search', 'the row\'s run asks auth.revoke for that key and path', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
-  ok(mine && mine.after.some(function (c) { return c.name === 'auth.search'; }), 'and reads the grants again, drawing only what the node answers', 'no auth.search after the revoke');
+  // goal/G41.14, Andy: "WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING FUCKING ROW?", "SO THE MOTHERFUCKING GRANS
+  // TABLE DOES NOT BUPLISH EITHER????", "FIX THEN NOW!!!": the revoke's row goes when the stream says so; nothing reads
+  // every grant again.
+  ok(mine && !mine.after.some(function (c) { return c.name === 'auth.search'; }), 'and reads no grant again: the stream takes the row out (rule/19)', 'auth.search asked after the revoke');
 
   test.subHeading('the grant form, one row: grant [ID] [bundle] [Grant] (goal/G41.13)');
   // Andy, on G41.13: "the grants tab should have one-row grant form: \"grant\" [idSelector] [bundleSelector] [grantButton]",
@@ -247,7 +252,7 @@ test.startTest('grants.js: the Grants app');
   ok(grants.length === 3 && grants.every(function (c) { return c.args.key === 'K3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]',
     'and asks auth.grant { key, path } once per branch, the path family.verb, or the family alone for (ALL)', 'grants: ' + short(grants.map(function (c) { return c.args; })));
   ok(!/already-granted|already granted|not granted|refused/i.test(box.innerHTML.replace(/<[^>]*>/g, ' ')), 'a path the ID holds already is counted done, never said as a refusal ("unless that row exists already")', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
-  ok(w.calls.slice(at0).some(function (c) { return c.name === 'auth.search'; }), 'and the grants are read again, drawing only what the node answers (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
+  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'auth.search'; }), 'and reads no grant again: each new grant arrives on the stream, one row (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
   w.grantAnswer = function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner only' } }; };
   at0 = w.calls.length;
   press(); await settle();
@@ -269,5 +274,21 @@ test.startTest('grants.js: the Grants app');
   ok(narrowed().length === 2, 'nothing chosen, every grant', 'rows: ' + short(narrowed()));
   const lastCol = (o.columns || [])[(o.columns || []).length - 1];
   ok(lastCol && lastCol.field === 'revoke', 'Revoke is the rightmost column', 'columns: ' + short((o.columns || []).map(function (c) { return c.field; })));
+
+  test.subHeading('the grants list hears every grant change (goal/G41.14)');
+  // The node publishes each grant row as it changes on the auth tables' job (type bundles, table grant), { row: { key,
+  // path, label } }, gone when revoked; the grant row element takes it into data.grants, keyed by key and path, and the
+  // list is a view of that data, so one grant appears or goes and nothing is read again.
+  const DG = w.win.spirit.data;
+  ok(o.data === 'grants', 'the list is a view of data.grants', 'data: ' + short(o.data));
+  DG.take({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
+  const kept = DG.get('grants/K9\njobs.list');
+  ok(kept && kept.key === 'K9' && kept.path === 'jobs.list' && kept.label === 'Zed', 'a grant published lands in data.grants by its key and path', 'grants: ' + short(DG.branch('grants')));
+  DG.take({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
+  ok(DG.get('grants/K9\njobs.list') === undefined, 'a grant published gone is taken out', 'grants: ' + short(DG.branch('grants')));
+  const beforeG = JSON.stringify(DG.branch('grants'));
+  DG.take({ type: 'bundles', data: { table: 'bundle', row: { id: 1, label: 'not a grant' } } });
+  DG.take({ type: 'shadow', data: { row: { publicKey: 'K8' } } });
+  ok(JSON.stringify(DG.branch('grants')) === beforeG, 'a bundle row, or another job\'s, writes nothing in data.grants', 'grants: ' + short(DG.branch('grants')));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

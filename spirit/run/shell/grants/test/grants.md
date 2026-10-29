@@ -31,8 +31,8 @@ travel?").
   through `spirit.require('shell/js/armingButton.js')` and handed the app's api. The first press arms it, the second
   runs it, a click elsewhere puts it back. Nothing of a hand-rolled confirm is in grants.js: no `data-armed`, no
   `armUntilElsewhere`, no `armed` class.
-- **Revoke's run asks the node** (`auth.revoke` with the row's key and path) and then reads the grants again: what the list
-  shows is only what the node answered (rule/19).
+- **Revoke's run asks the node** (`auth.revoke` with the row's key and path) and reads no grant again: the row goes when
+  the node's stream says so (rule/19).
 - **The grant form, one row** (Andy, on G41.13: *"the grants tab should have one-row grant form: \"grant\" [idSelector]
   [bundleSelector] [grantButton]"*): "grant", the ID selector (`createContactSelector`), the bundle selector, then
   the Grant button, found by an id or data-action naming grant. There is no contacts list, and no server is asked for
@@ -54,8 +54,14 @@ travel?").
     alone for a branch of every verb (`(ALL)`).
   - A path the ID holds already (`already-granted`) is counted done, never said as a refusal. Any other refusal is
     said.
-  - Then it reads the grants again, drawing only what the node answers (rule/19).
+  - It reads no grant again: each new grant arrives on the node's stream, one row (rule/19).
   - A grant reaching a verb with a warning file asks first.
+
+- **The list hears every grant change** (goal/G41.14, Andy: *"WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING
+  FUCKING ROW?"*, *"SO THE MOTHERFUCKING GRANS TABLE DOES NOT BUPLISH EITHER????"*): the node publishes each grant row
+  as it changes on the auth tables' job (type `bundles`, table `grant`), `{ row: { key, path, label } }`, and
+  `{ row: { key, path }, gone: true }` when revoked. The grant row element takes it into `data.grants`, keyed
+  `<key>\n<path>`; a bundle row or another job's writes nothing there. The list is a view of `data.grants`.
 
 ## What its test must try to break
 

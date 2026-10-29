@@ -173,6 +173,25 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     ok(told.length === n, 'a refused add tells nothing', 'told: ' + short(told.slice(n)));
   }
 
+  test.subHeading('a grant made or revoked is told too');
+  // Andy, goal/G41.14: "SO THE MOTHERFUCKING GRANS TABLE DOES NOT BUPLISH EITHER????", "FIX THEN NOW!!!". A grant row is
+  // { key, path, label }, one per peer and path, told { table: grant, row } when made and { table, row: { key, path },
+  // gone: true } when revoked.
+  if (typeof auth.onChange === 'function') {
+    const toldG = [];
+    auth.onChange(function (c) { if (c && c.table === 'grant') toldG.push(JSON.parse(JSON.stringify(c))); });
+    const GPEER = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
+    await auth.grant({ key: GPEER, path: 'files.list' });
+    ok(toldG.length === 1 && toldG[0].row.key === GPEER && toldG[0].row.path === 'files.list' && typeof toldG[0].row.label === 'string' && !toldG[0].gone,
+      'a grant made is told { table: grant, row: { key, path, label } }', 'told: ' + short(toldG));
+    await auth.grant({ key: GPEER, path: 'files.list' });
+    ok(toldG.length === 1, 'a grant refused already-granted tells nothing', 'told: ' + short(toldG));
+    await auth.revoke({ key: GPEER, path: 'files.list' });
+    ok(toldG.length === 2 && toldG[1].gone === true && toldG[1].row.key === GPEER && toldG[1].row.path === 'files.list', 'a grant revoked is told gone, by key and path', 'told: ' + short(toldG));
+    await auth.revoke({ key: GPEER, path: 'files.list' });
+    ok(toldG.length === 2, 'a revoke refused not-granted tells nothing', 'told: ' + short(toldG));
+  }
+
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
   ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Lister' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
