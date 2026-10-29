@@ -85,7 +85,9 @@ function landed() {
 }
 function record(title, outcome, failure) {
   if (!VERIFY_PORT || !title) return;
-  const rec = { suite: SUITE, title: String(title), outcome: outcome };
+  // EVERY TEST NAME STARTS WITH THE PATH (Andy, G41.19 box v13: "EVERY MOTHERFUCKING TEST NAME in the product three
+  // STARTS WITH THE MUTHERCUCKING PATH"): the title is "/<path>/<module> <section> #<n>", read alone it names its module.
+  const rec = { suite: SUITE, title: SUITE + ' ' + String(title), outcome: outcome };
   if (outcome === 'red' && failure) rec.failure = String(failure);
   const name = RECORD.split('.')[0];
   const verb = RECORD.split('.')[1];
