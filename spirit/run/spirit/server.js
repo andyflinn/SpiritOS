@@ -1677,7 +1677,11 @@ catch (e) {
   try {
     const bundlesJob = jobs.createJob('permanent', 'bundles', {});
     apiAuth.onChange(function (change) {
-      try { jobs.updateJob(bundlesJob.id, { data: change }); } catch (e) { /* the next change publishes again */ }
+      // EVERY FIELD, EVERY TIME: a job's update merges into what the job holds (jobs.updateJob), so a field left out
+      // keeps its last value. Found on cw's face: after one revoke, gone stayed true, and every later grant was taken out.
+      const c = change || {};
+      const data = { table: String(c.table || ''), row: c.row || {}, gone: c.gone === true };
+      try { jobs.updateJob(bundlesJob.id, { data: data }); } catch (e) { /* the next change publishes again */ }
     });
   } catch (e) { /* no job, no stream: the lists still search */ }
   function authVerb(work) {
