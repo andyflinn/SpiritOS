@@ -125,7 +125,9 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // relayServer.js and serveCommon.js joined the list with cycle 0, when
 // the relay got its own startup module: same kind of file as server.js.
 // fileSystem.js, this file, joined it when it was lifted out of kernel.js (goal/G40.6).
-const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js'];
+// DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
+const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'];
+const UNSERVABLE_FOLDERS = ['spirit/DEBUG/'];
 
 // Path-only, caller-independent by design: nothing server-side can verify
 // which app is really asking, only whether the path itself is allowed.
@@ -178,6 +180,7 @@ function fileServable(filePath) {
   // getAnnotations, and server.js's static route alike).
   if (canonical === null) return false;
   if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
+  if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
   // AT ANY DEPTH, not only the node's own: every app server keeps its
   // identity at app-state/<name>/relay-state/identity.json

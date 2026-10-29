@@ -35,7 +35,30 @@ const VERIFY_PORT = (function () {
   const p = at !== -1 ? Number(process.argv[at + 1]) : 0;
   return Number.isInteger(p) && p > 0 ? p : 0;
 }());
-const SUITE = path.basename(String(process.argv[1] || ''));
+// A TEST IS SENT BY THE MODULE IT TESTS, /<path>/<module> (goal/G41.19; Andy: "The test names (what is sent to
+// deskVerify) must ALWAYS start with the module tested: "/<path>/<module-no-extension>, so when i look in desk->fallout
+// i have an instant idea which thing failed"): <path>/test/<module>.js is /<path>/<module>, and a general test
+// (-child- or -sibling-) is sent by the file it judges, its argument. A file outside spirit/run keeps its bare name.
+const SUITE = (function () {
+  const run = path.join(__dirname, '..');
+  const runRel = function (f) {
+    const r = path.relative(run, f);
+    return r && r.indexOf('..') !== 0 && !path.isAbsolute(r) ? r.split(path.sep).join('/') : '';
+  };
+  const file = path.resolve(String(process.argv[1] || ''));
+  const rel = runRel(file);
+  if (!rel) return path.basename(file);
+  const judged = String(process.argv[2] || '');
+  if (/-(child|sibling)-/.test(path.basename(rel)) && judged && judged.indexOf('--') !== 0) {
+    for (const p of [path.resolve(judged), path.join(run, judged), path.join(run, '..', '..', judged)]) {
+      const r = runRel(p);
+      if (r && require('fs').existsSync(p)) return '/' + r.replace(/\.js$/, '');
+    }
+  }
+  const dir = path.posix.dirname(rel);
+  const above = path.posix.basename(dir) === 'test' ? path.posix.dirname(dir) : dir;
+  return '/' + (above === '.' ? '' : above + '/') + path.posix.basename(rel).replace(/\.js$/, '');
+}());
 const RECORD = 'deskVerify.record';
 
 // Each result to the verifier, through the spirit object: its family by its name, then its record verb. Never waited

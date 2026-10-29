@@ -16,6 +16,9 @@ require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const limits = require('./limits.js');
+// THE DEBUG TEST ROUTES (goal/G41.19, spirit/test/DEBUG.md): both servers hand every request to DEBUG.js first, as
+// debugFirst below; with DEBUG off it answers nothing.
+const DEBUG = require('./DEBUG.js');
 
 const MIME_TYPES = spirit.MIME_TYPES;
 
@@ -491,4 +494,7 @@ module.exports = {
   parseRequestPath: parseRequestPath,
   sendVersion: sendVersion,
   refuseListenError: refuseListenError,
+  // debugFirst(req, res, server): true when DEBUG.js answered, and the caller must stop. server.api() answers the
+  // server's api tree, { <family>: { <verb>: { request, reply } } }.
+  debugFirst: DEBUG.answer,
 };

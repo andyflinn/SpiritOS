@@ -536,6 +536,18 @@ function faceDoor(req, res, url, pathname) {
   return true;
 }
 
+// { relay: { <verb>: { request, reply } } }, from relaySelf/<verb>.json, for DEBUG.js's garbageArguments.
+function relayApiTree() {
+  const dir = path.join(__dirname, 'relaySelf');
+  const out = {};
+  fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
+    let file = {};
+    try { file = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) || {}; } catch (e) { file = {}; }
+    out[f.slice(0, -5)] = { request: file.request && typeof file.request === 'object' ? file.request : {}, reply: file.reply || {} };
+  });
+  return { relay: out };
+}
+
 const server = http.createServer((req, res) => {
   // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
   // one's: a relay is meant to be reached from the internet, and a
@@ -545,6 +557,10 @@ const server = http.createServer((req, res) => {
   // stream, and both are gated by signature checks in relayAuth.js.
   // The home node's uploads to its face are not posts: faceStream has no size cap (goal/G30.14, Andy's yes), and
   // they are piped through as they arrive, never held whole.
+  // THE DEBUG TEST ROUTES FIRST, before the face and the door (goal/G41.19, spirit/test/DEBUG.md): with DEBUG off they
+  // answer nothing. The relay's api tree is its verbs' own files in relaySelf/, as relay.js answers 'api' to the owner.
+  if (common.debugFirst(req, res, { kind: 'relay', api: relayApiTree })) return;
+
   const faceUpload = req.method === 'POST' && /^\/api\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
   if (!faceUpload && common.refuseTooBig(req, res)) return;
 

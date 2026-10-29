@@ -695,6 +695,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // THE DEBUG TEST ROUTES FIRST, before every route and the api door (goal/G41.19, spirit/test/DEBUG.md): with DEBUG off
+  // they answer nothing. The node's api tree is what its door answers to 'api'.
+  if (common.debugFirst(req, res, {
+    kind: 'node',
+    api: function () { return nodeDoor ? nodeDoor.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }) : {}; },
+  })) return;
+
   // Too big is answered once, before any route — see serveCommon.js.
   // THE PROXY CARRIES WHAT IT IS GIVEN (2026-09-22). Andy: "no limit on
   // size for proxy request, yes" — the 17 KB bound is the peer packet's,
