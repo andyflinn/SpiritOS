@@ -68,10 +68,47 @@ var GR_FILTERS = [
       if (app !== family) return 0;
       return !verb || p === app + '.' + verb ? 1 : 0;
     } },
+  // A DEPRECATED FILTER, OFF BY DEFAULT (Andy: "your allowed to keep the deprecated, BUT you must provide a filter for
+  // deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."): off, a grant no
+  // server here serves today is left out; on, it is listed, marked.
+  { name: 'deprecated', word: 'deprecated', toggle: true,
+    test: function (row, on) { return on || grServes(String((row && row.path) || '')) ? 1 : 0; } },
 ];
 // Deprecated is a REPORT: the server is away or the verb is gone, and the grant waits for the owner, intact
 // (suspend/repair, G1.4). The grant row asks this of each path (shell/js/grantSelector/rowElement.js).
 function grServes(path) { return !grTree || window.spirit.apiTreeIndex.serves(grTree, path); }
+// DEPRECATED FOLLOWS THE STREAM (Andy: "so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE."): a
+// node's servers are jobs of kind server on its stream, their status changing as each starts and ends; such a job
+// changed, the tree is read again and the list redraws, so a grant's mark follows what the node serves. One read at a
+// time: a change while one is out asks once more when it lands.
+var grTreeBusy = false;
+var grTreeAgain = false;
+function grTreeChanged() {
+  if (grTreeBusy) { grTreeAgain = true; return; }
+  grTreeBusy = true;
+  grLoadTree().then(function () {
+    grTreeBusy = false;
+    if (grList) grList.list.redraw();
+    if (grTreeAgain) { grTreeAgain = false; grTreeChanged(); }
+  });
+}
+function grFollowServers() {
+  var D = window.spirit.data;
+  if (!D || typeof D.translate !== 'function') return;
+  var seen = Object.create(null);   // job id -> its last status, so a replay of the same says nothing new
+  D.translate({
+    onJob: function (job) {
+      if (!job || job.kind !== 'server' || !job.id) return;
+      var status = String(job.status || '');
+      if (seen[job.id] === status) return;
+      var first = !(job.id in seen);
+      seen[job.id] = status;
+      // A server the page first hears of as it registers was in the tree already read.
+      if (first && grList === null) return;
+      grTreeChanged();
+    },
+  });
+}
 
 // THE WARNINGS BEFORE A GRANT (goal/G30.4; Andy, 2026-10-20: "the grant screen warns when a grant reaches a verb that
 // carries a warning"). A warning is a file in the family's folder, <verb>.warning.txt, read through that family's FS
@@ -176,8 +213,10 @@ function grGrantsTab(box) {
   var listHost = document.createElement('div');
   listHost.className = 'fill';
   grPaint = function () {
+    // Only the list fills (Andy: "and what about the HUGE vertical space in the grants tab, between the search filters and
+    // the search input???"): the heading, the form and the filters take their own height.
     box.innerHTML =
-      '<div class="fill">' +
+      '<div>' +
         '<div class="label">Who may call which api</div>' +
         '<div class="job-manifest-note">A member calls only what you have granted, a bundle at a time. ' +
           'Denial is the absence of a row, so an empty table means only you.</div>' +
@@ -201,6 +240,8 @@ function grGrantsTab(box) {
 
   // THE GRANTS LIST (goal/G41.14): the grant list element, a view of data.grants the node's stream keeps current, each
   // row a grant row element with its Revoke; this app hands it its filters and what the tree serves.
+  // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
+  grFollowServers();
   return grLoadTree().then(function () {
     grList = E.grantList.create(listHost, { filters: GR_FILTERS, serves: grServes, api: grApi });
   });
