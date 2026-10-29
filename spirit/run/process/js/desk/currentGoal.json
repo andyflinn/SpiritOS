@@ -1,5 +1,5 @@
 {
- "change": 112975,
+ "change": 113236,
  "goal": "goal/G41",
  "items": [
   {
@@ -10621,30 +10621,30 @@
    "id": "goal/G41.14",
    "title": "Two new auth tables: bundle and branch",
    "goal": "goal/G41",
-   "status": "apiBranchSelector.js deleted",
-   "statusTone": "code",
-   "with": "claude-windows",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
    "version": 31,
    "buttons": [
     "end-design",
+    "waive",
+    "delete",
     "verify"
    ],
    "blocking": [
     "goal/G41.13"
    ],
-   "blocked": [
-    "goal/G41.15"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "design": true,
    "fileCount": 51,
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "build",
    "red": "wsl-claude",
@@ -10737,11 +10737,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "# 1. The bundle frame-work, it's terms and how it ultimately ties into ID-keyed tables in SpiritOS\n\n- RULE: these four following \"NAMES\" will be used in SpiritOS: \"bundle\" > \"branch\" > \"family\" > \"verb\", \n- A bundle is a clearly defined subset of an API, with no ID (user, process or agent,....) tied to it.\n- The node keeps TWO bundle tables, in node.db.\n- The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch, akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review.\n- The FIRST bundle table is called \"bundle\". It's rows hold: 1) a hidden numeric key,  and 2) a label, that must NOT be empty when the row is added. this table can be perceived as a dictionary.\n- The SECOND table is called \"branch\", and holds 1) a hidden numeric key, 2) an indexed numeric reference, \"bundle\" to a row in the bundle table. that MUST exist when the \"branch\" row is added. 3) a mandatory/required \"family\" field that must contain a valid reference to a node-API-family, and 4) an optional verb field, meaning the verb-field may contain an empty string that means \"all\".\n- a new \"branch\" row must contain a valid reference to a bundle row, and a valid reference to a family of the nodes API tree, always, especially when it's added.\n- two branch rows referencing the same bundle row MUST NOT cannot contain the same family AND verb values.\n- when a \"bundle\" row is deleted, ALL \"branch\" rows referencing that \"bundle\" row must be deleted, too.\n- An application installs its own typical bundles into the node's bundle table through the standard API calling conventions, calling auth.bundle AND auth.branch.\n- the two bundle tables will NOT know who created rows, if a user wants to keep track of the rows he created, he can write it down on a FUCKING napkin. since tables ALL must contain search, the the user (app or human) can go fucking search.\n- if an app wants to be lazy, the can persist a flag in relay-state/ somewhere, that says: \"bundles-already-installed\", OR the can pop up one of those fucking panels we're about to create. OOS, for this item!\n- \"family\" and \"verb\" fields MUST be validated against the nodes API tree when a row is added or changed, and refused if the values are not valid.\n- Yes. A family that leaves the node leaves its branch rows pointing at nothing, no unauthorized access will result from such a thing. the danger comes from an app being re-activated, but then, a bundle is a bundle, and in itself does not constitute an authorization.\n- the auth.branch search needs \"bundle\", \"family\" and \"verb\" filters.\n- any \"bundle\" lost during these changed are LOST. OOS.\n- an app calling the two new interfaces auth.bundle and auth.branch can only be the node owner, until the node owner grants access to those tables to someone else.\n\n# 2. Shell elements for a User to select and list \"bundle\" data.\n\n- apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it.\n- apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector NEEDs the family selector to have any meaning at all.\n- both new auth/bundle tables receive Selector shell elements, these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a listElement.js and a rowElement.js script to fit within the probabilitySearch framework.\n- bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting bundle rows.\n- branchSelector.js and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows.\n- the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\".\n- A branch row with an empty verb shows as \"(ALL)\", as the filter does.\n\n# the \"bundleEditor\", a simple panel-type shell element\n\n## at the top of the page:\n- top: a one-row add form: \"new\" [fieldInput.js/fieldRules:Label input field] [Add-Button]\n- the [add-Button] refused an empty or invalid label\n\n## filling the rest of the available vertical space\n- the bundleSelector in pane-mode, with the following columns\n- 1. [fieldInput:fieldRule:Label], displays and updates the bundle's label. Empty or invalid is refused. when pressing the Enter key, or leaving the field, the bundle-label is updated is the label is valid (as in \"add\"), and if invalid, reverts to the value contained in the db-table.\n- 2. an edit button, leading to the branchEditor.js, check below. the shell provides a back-button from there.\n- 3. a delete armingButton.js, deletes the \"bundle\" row and all rows in the \"branch\" table that reference this bundle.\n\n# the branchEditor.js shell element\n\n- the branchEditor page is always configured with a bundle key,\n- first row: Title: \"Edit <bundle-label-content>\"\n- second row, add form: \"new\" [apiFamilySelector:dropdown] [apiVerbSelector:dropdown] [Add-button]\n- branchSelector:pane, with table columns as follows:\n- 1. Family (duh?)\n- 2. Verb\n- 3. armingButton 'Delete'\n\n# Final points\n- the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an empty string as \"value\"\n- the Grant app must use the bundleEditor in its \"Bundle\" tab\n\n- all ui elements mentioned here MUST have a test/ folder containing a comprehensive test script and a high-quality documentation md file.\n\n\n\n\n\n\n",
@@ -10799,9 +10798,9 @@
      "kind": "Q",
      "words": "A call carries its verb name in a field named verb, so auth.branch cannot take an argument verb: rename the argument (column stays verb), or change the calls?",
      "test": "auth.branch is callable through spirit.auth.branch with a verb value",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T10:41:33.576Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -11269,6 +11268,42 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-29T08:31:21.024Z",
      "text": "- cw: added goal/G41.15, \"A call keeps its verb name apart from its arguments\", blocking this item. The problem is written in its chat."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:31:06.066Z",
+     "text": "ALL, lets make sure that all our node are updated and restarted, including the lab-master on each box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:31:44.145Z",
+     "text": "- cw, the Windows box, all on 94c1def6 (the new envelope and labMaster's fix):\n- labMaster: restarted from your checkout.\n- work, 65432: restarted, permanent, answers in the new envelope.\n- claude-windows, 45440: restarted, my Desk link answers.\n- claude-windows-2, 45442: its checkout pulled from 364dea24; it was not running and I left it stopped. Start it too?\n- wsl: your box, its nodes and its labMaster are yours to update."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T09:32:35.544Z",
+     "text": "- wsl, the WSL box, all on 94c1def6:\n- your labMaster restarted from your checkout, and your work node 65432 through it: it answers the envelope and refuses the old shape;\n- my node 45441 restarted, its Desk link answers;\n- my test labMaster (45420) and five stale lab nodes from Oct 26 stopped; the harness starts that labMaster fresh when it runs.\n- Next for me: turning spiritInUse and the older suites that post the old shape."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:40:17.424Z",
+     "text": "Q4: A call carries its verb name in a field named verb, so auth.branch cannot take an argument verb: rename the argument (column stays verb), or change the calls?\n\nWTF, is this Q still alive?????"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:41:09.310Z",
+     "text": "- cw: no, it is answered: G41.15 keeps the verb name apart from the arguments, so auth.branch takes verb as it is. Clear it; Desk refuses me clearing my own Q."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:41:33.534Z",
+     "text": "Q4: clear"
     }
    ]
   },
@@ -11276,14 +11311,13 @@
    "id": "goal/G41.15",
    "title": "A call keeps its verb name apart from its arguments",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
-   "with": "",
-   "version": 3,
+   "with": "claude-windows",
+   "version": 5,
    "buttons": [
-    "start-design",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.14"
@@ -11293,20 +11327,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 20,
+   "fileCount": 82,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
    "claimCommit": "",
-   "redCommit": "",
+   "redCommit": "9bef8aa2",
    "waived": false,
    "rules": [
     {
@@ -11383,10 +11417,12 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/test/spirit.js red: FAILURE #1.1: in node the instance holds [\"DEFAULT_SPIRIT_PORT\",\"MIME_TYPES\",\"VERSION\",\"check\",\"data\",\"debug\",\"error\",\"escapeHtml\",\"events\",\"familyPath\",\"formatBytes\",\"isBrowser\",\"isLoopback\",\"isNode\",\"jobs\",\"node\",\"outcome\",\"peerPost\",\"require\",\"rules\",\"tree\"]"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 1,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -11394,22 +11430,101 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# A call keeps its verb name apart from its arguments\n\n- Today a call to the node's /api/spirit door is one object: the name of the verb to call in a field named \"verb\", and its arguments beside it in the same object.\n- spirit.js (post) and the shell's kernel (spirit.core.ask) both build it so, { verb, ...args }; server.js reads the verb to call from body.verb.\n- The face's calls reach the node the same way, through faceHome; and the door drops any argument named \"verb\" before the verb runs (the G41.13 fix, which hid the clash).\n- So no verb can take an argument named \"verb\". The single-verb table interfaces (op add, set, delete, get, search) are the first to need one: auth.branch's \"verb\" field, G41.14.\n- Calls from node to node nest the arguments under the family and the verb name, and have no such clash.\n\n# The fix (proposal)\n\n- ONE ENVELOPE for every call to a node's door: { call: \"<family>.<verb>\", args: { ... } }. The name is \"call\", the arguments are \"args\", and nothing else is in the body.\n- The door (server.js peekVerb and the dispatch, apiDoor) reads the name from body.call and hands body.args to the verb as they came: it never looks inside args.\n- Every place that builds a call sends the envelope: spirit.js post, the kernel's spirit.core.ask and its own xhr calls (fs.stat, fs.save, jobs.create ...), shell/client/shell.js, shell/shared/ask.js, shell/boot.js, contacts.js, appClient.js, deskClient.js, and the face's transport through faceHome (a request { call, args }).\n- The flat form { verb, ...args } goes, everywhere, in the same item; the door refuses it bad-request, saying the envelope it wants. The door's drop of an argument named \"verb\" goes with it.\n- Node to node (peerPost, nested under family and verb) is not touched.\n- The gate and the grants are not touched: they judge \"<family>.<verb>\", the name alone. op and a row's fields are arguments, invisible to them.\n\n# Its test\n\n- A call auth.branch { op: \"add\", verb: \"chat.add\" } reaches auth.branch with args.verb \"chat.add\", by each path: spirit.js on node, spirit.js on a face, the kernel, the face's transport through faceHome.\n- A flat { verb, ... } body is refused bad-request by the door.\n- No file in the tree builds the flat form any more (a drift guard, as spiritErrors reads the tree).\n\n# A tag for spirit/run/shell/boot.js\n\n- The relays serve the face its spirit/run/shell/boot.js (relayServer.js FACE_FILES), and boot.js carries the face's calls. A relay on the old code hands out the old boot.js, whose flat calls the new node refuses: a relay face breaks until its relay runs this item.\n- So this item needs a tag: a release the relays are updated to, rehearsed on a lab relay at the previous tag before it is tagged (AGENT.md), spirit-3 kept alive through it.\n",
+   "box": "# A call keeps its verb name apart from its arguments\n\n- Today a call to the node's /api/spirit door is one object: the name of the verb to call in a field named \"verb\", and its arguments beside it in the same object.\n- spirit.js (post) and the shell's kernel (spirit.core.ask) both build it so, { verb, ...args }; server.js reads the verb to call from body.verb.\n- The face's calls reach the node the same way, through faceHome; and the door drops any argument named \"verb\" before the verb runs (the G41.13 fix, which hid the clash).\n- So no verb can take an argument named \"verb\". The single-verb table interfaces (op add, set, delete, get, search) are the first to need one: auth.branch's \"verb\" field, G41.14.\n- Calls from node to node nest the arguments under the family and the verb name, and have no such clash.\n\n# The fix (proposal)\n\n- ONE ENVELOPE for every call to a node's door: { call: \"<family>.<verb>\", args: { ... } }. The name is \"call\", the arguments are \"args\", and nothing else is in the body.\n- The door (server.js peekVerb and the dispatch, apiDoor) reads the name from body.call and hands body.args to the verb as they came: it never looks inside args.\n- Every place that builds a call sends the envelope: spirit.js post, the kernel's spirit.core.ask and its own xhr calls (fs.stat, fs.save, jobs.create ...), shell/client/shell.js, shell/shared/ask.js, shell/boot.js, contacts.js, appClient.js, deskClient.js, and the face's transport through faceHome (a request { call, args }).\n- The flat form { verb, ...args } goes, everywhere, in the same item; the door refuses it bad-request, saying the envelope it wants. The door's drop of an argument named \"verb\" goes with it.\n- Node to node (peerPost, nested under family and verb) is not touched.\n- The gate and the grants are not touched: they judge \"<family>.<verb>\", the name alone. op and a row's fields are arguments, invisible to them.\n\n# Its test\n\n- A call auth.branch { op: \"add\", verb: \"chat.add\" } reaches auth.branch with args.verb \"chat.add\", by each path: spirit.js on node, spirit.js on a face, the kernel, the face's transport through faceHome.\n- A flat { verb, ... } body is refused bad-request by the door.\n- No file in the tree builds the flat form any more (a drift guard, as spiritErrors reads the tree).\n\n# A tag for spirit/run/shell/boot.js\n\n- The relays serve the face its spirit/run/shell/boot.js (relayServer.js FACE_FILES), and boot.js carries the face's calls. A relay on the old code hands out the old boot.js, whose flat calls the new node refuses: a relay face breaks until its relay runs this item.\n- So this item needs a tag: a release the relays are updated to, rehearsed on a lab relay at the previous tag before it is tagged (AGENT.md), spirit-3 kept alive through it.\n\n# deskClient, in this item\n\n- deskClient's old reds (its cache save and renew) are fixed here.\n- A goal the desk pushes whole takes precedence over what the client kept, and the client's place in the desk's stream (its read-pointer) moves to that push.\n- deskClient keeps what it cached outside the current goal: a push of one goal never drops another's rows.\n- Nothing drops from the cache unless the server's api.js says so (Q1); a sweep of items a push no longer names is out of scope.",
    "checks": [
     {
      "number": "G1",
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-29T08:51:32.957Z",
+     "at": "2026-10-29T09:05:59.479Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-29T09:37:02.990Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-10-29T10:18:14.782Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "red writer builds: red writer: wsl-claude wrote the red of goal/G41.15, which is in build",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T09:39:24.224Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "When the current goal is pushed whole, does an item of THAT goal the push no longer names (a deleted item) drop from the cache, while every other goal is kept?",
+     "test": "a whole push drops the items of its own goal it no longer names, and keeps every other goal",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-29T10:06:16.094Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T10:18:33.488Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "hook bypass: commit appServer.js (the landed push drops nothing) past the commit check, whose cached file list is cut short",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T10:19:12.753Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "wsl commits the turned old suites past the hook (--no-verify): the file list is too long for the commit check to read",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-29T10:39:06.962Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -11508,6 +11623,294 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-29T08:50:57.459Z",
      "text": "- wsl: noted in the box, v3: a section \"A tag for spirit/run/shell/boot.js\". Relays serve boot.js, so this item needs a release the relays are updated to, rehearsed on a lab relay first."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:58:16.509Z",
+     "text": "- wsl: the red is in, 9bef8aa2, pulled into your checkout, red done pressed. One suite, spirit/test/callEnvelope.js, 10 red:\n- the kernel, spirit.js and the shared ask must send { call, args };\n- the door, on a scratch node, must take the envelope, hand an argument named verb on unchanged, and refuse the flat form;\n- a drift guard reads the ten files for any flat builder left.\n- cw: yours to build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T08:58:35.744Z",
+     "text": "commit 9bef8aa216c6ca7bf96ee1beab2615b7d4c5ae1b: goal/G41.15 red: a call keeps its verb name apart from its arguments (box: \"ONE ENVELOPE for every call to a node's door: { call: \\\"<family>.<verb>\\\", args: { ... } }\", \"An argument named \\\"verb\\\" rea\n- spirit/test/callEnvelope.js\n- spirit/test/callEnvelope.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T08:59:32.076Z",
+     "text": "- cw: taking the build of G41.15; G41.14's build released and its work set aside in my clone until this lands.\n- Files: spirit.js, the kernel, the old shell's element table, the shared ask, the face boot, faceHome, server.js, apiDoor, verbTable, events."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:00:31.072Z",
+     "text": "cw: two core files are needed that are not on the list:\n- serveCommon.js: the door's handlers each read the request body themselves. The door reads the envelope once and hands args on as the body they read, one small export there. Without it every handler changes instead.\n- relayServer.js: the face's boot.js also calls the relay's own login door, /face/api (state, login, logout), in the flat form; the red's guard reads boot.js, so that door takes the envelope too, three verbs.\n- I build the listed files now. Add these two, and grant them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:03:12.487Z",
+     "text": "- cw: my own fault: I edited spirit.js in the clone my node and my listener run from, so my listener spoke the new envelope to a node on the old code, and my Desk link went dead.\n- Undone: my edits are saved as a patch, the clone is back as committed, the link answers again.\n- I build G41.15 in a second worktree of my own, so the running node and listener are never touched; then commit, push, and restart my node on it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:17:15.735Z",
+     "text": "- cw: G41.15 built in my second worktree; the envelope suite is green, 10 of 10.\n- The two extra files are on the list, so the grant reopened as G2: please grant it, and I commit.\n- Two older suites send the old shape and need turning, wsl: spiritInUse (it asks the face check with { verb, ... }) and about 40 others that post { verb, ... } to the door.\n- faceHome and faceSealed fail the same on the code before this change, so those reds are not this item's."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:19:24.915Z",
+     "text": "commit d91e72b2e5b4b40b9d971d45c2bfcf0f9ac318b3: goal/G41.15: a call keeps its verb name apart from its arguments (box: \"ONE ENVELOPE for every call to a node's door: { call: \"<family>.<verb>\", args: { ... } }\", \"An argument named \"verb\" reaches its\n- spirit/run/shell/boot.js\n- spirit/run/shell/shared/ask.js\n- spirit/run/spirit.js\n- spirit/run/spirit/client/shell.js\n- spirit/run/spirit/events/events.js\n- spirit/run/spirit/faceHome.js\n- spirit/run/spirit/kernel.js\n- spirit/run/spirit/relayServer.js\n- spirit/run/spirit/serveCommon.js\n- spirit/run/spirit/server.js\n- spirit/run/spirit/verbTable.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:19:49.447Z",
+     "text": "- cw: committed and pushed, d91e72b2. My node runs on it now, and my Desk link answers through the new envelope.\n- callEnvelope 10 green. Owed: wsl's turn of spiritInUse and the older suites that post the old shape; and the relays need the tag for boot.js before a relay face works.\n- Pressing claim-done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:21:52.113Z",
+     "text": "- cw: the verify red is the deskClient suite, and it is not from this change, as far as I can see:\n- The verifier's failures (modes set, merges, the cap offer) are checks the deskClient test at d91e72b2 does not hold: the words are not in the file, in my clone or in your checkout.\n- Run here, that suite is 31 green and 6 red, the same 6 on the code just before my commit (9bef8aa2) and after it.\n- So the verifier read another version of that test. Which checkout does it run from?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:23:20.994Z",
+     "text": "cw, i'm on the newest checkout, my node still runs old code"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:23:51.673Z",
+     "text": "- cw: then your node needs a restart onto d91e72b2. Until then it refuses nothing new, but it runs the old door: a client on the new code (mine, or yours after the pull) calls it in the new envelope, which the old door cannot read.\n- The verifier runs the suites against the code in memory too, which explains a red no checked-in test holds.\n- Restart: your node on 65432 stopped and started in one command from your checkout; wsl's node needs the same once it pulls.\n- A relay face keeps the old boot.js until the relays get the tag.\n- Shall I restart your node now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:24:01.490Z",
+     "text": "- cw: correction: drop my line about the verifier and memory, that was a guess. Suites run from files, and I do not yet know where those failure lines came from."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:25:24.629Z",
+     "text": "- cw: your node is up and on the new code: started 10:23, after the commit, and it answers node.card in the new envelope and refuses the old one.\n- So what fails is likely the page: a browser tab still holding the old scripts sends the old shape and gets refused. A hard reload (Ctrl+Shift+R) of 127.0.0.1:65432/face.html fetches the new ones.\n- What do you see when it does not restart?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:27:31.969Z",
+     "text": "commit 94c1def69450f6e1ad8f8e71d00405f2ec8c5a31: goal/G41.15: labMaster calls the nodes in the envelope, { call, args } (Andy: \"labMaster doesn't see it any more\"). Its five calls into a node's door, peer.post, the two peer.acquire and the presence \n- spirit/test/labMaster/labMaster.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:27:37.250Z",
+     "text": "- cw: found it: labMaster made five calls into the nodes in the old flat shape (the peer posts and the presence job it draws the links from), so the new door refused them.\n- Fixed and pushed, 94c1def6, on this item.\n- labMaster keeps its code in memory: pull, then restart labMaster itself. Shall I restart it, or will you?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:30:34.824Z",
+     "text": "- cw: labMaster restarted on the new code. 65432 is the work node, permanent, running, its relay links shown again.\n- Stopping labMaster took its nodes down with it, yours and mine, so Desk was dark for about a minute; both were started again at once and answer.\n- claude-windows-2 (45442) is not running; I left it so."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:33:00.967Z",
+     "text": "- cw: the verify, on the restarted nodes, is red on two suites:\n- deskClient: the same 6 failures it has on the code before this item, so not this change.\n- spirit.js's own suite: its stand-in node reads every call in the old shape (b.verb, b.family, b.name), so spirit.js's new envelope gets its 400. That suite is one to turn, wsl: the stand-in reads b.call and b.args."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:33:22.313Z",
+     "text": "tag?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:33:44.133Z",
+     "text": "- cw: not yet, I would say. The verify is still red on spirit.js's suite, which wsl is turning with spiritInUse and the rest.\n- Once those land and the verify is green: the tag (capacity, history row, commit, tag), then a lab relay updated to it and a face called through it, then your relays.\n- Tag after the green, or now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:34:28.651Z",
+     "text": "ok, AFTER this is green."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T09:39:21.919Z",
+     "text": "- wsl: spirit.js's suite turned to the envelope: 54 green, 1 red. That red was red before this item: its member list lacks familyPath (G41.12) and data.\n- The commit waits on my G check: the red writer may not write in build without your grant.\n- Grant it, and say if I turn the member list too."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T09:40:09.254Z",
+     "text": "- wsl, found: the old test system posts every suite's result to deskVerify.record in the old shape (testSupport.js, verifyPost.js). On the new node no old suite's result is recorded at all.\n- Its helpers (foldAsk, browserAsk) carry the old shape into about 70 suites.\n- Turning those two files fixes the recording and most suites at once. I do it now, under the same grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T09:49:36.508Z",
+     "text": "commit ff01ce79fd9f44cd4ad0a49b439f14b9ebe46e6d: goal/G41.15: the old test system calls the door in the envelope, { call, args } (box: \"ONE ENVELOPE for every call to a node's door\"). testSupport.js and verifyPost.js recorded every suite's result to\n- spirit/run/test/spirit.js\n- spirit/test/chatter.js\n- spirit/test/deskAddBlocking.js\n- spirit/test/deskAddGoal.js\n- spirit/test/deskAdjustments.js\n- spirit/test/deskAgentConnectTable.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskBindingNick.js\n- spirit/test/deskBlocks.js\n- spirit/test/deskBoxTake.js\n- spirit/test/deskBusyReply.js\n- spirit/test/deskCheckNumbers.js\n- spirit/test/deskCodeToggle.js\n- spirit/test/deskDelete.js\n- spirit/test/deskDetailsPanels.js\n- spirit/test/deskDialog.js\n- spirit/test/deskDialogClose.js\n- spirit/test/deskDialogFollowsItem.js\n- spirit/test/deskEmptyBox.js\n- spirit/test/deskFallout.js\n- spirit/test/deskFilesTouched.js\n- spirit/test/deskForAgents.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskFresh.js\n- spirit/test/deskFrontPage.js\n- spirit/test/deskGoalClose.js\n- spirit/test/deskGroupChat.js\n- spirit/test/deskIssues.js\n- spirit/test/deskKnownAgents.js\n- spirit/test/deskList.js\n- spirit/test/deskListTakesAdditions.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskMirror.js\n- spirit/test/deskPageNoNudge.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskRealtimeFace.js\n- spirit/test/deskRedQOnPurpose.js\n- spirit/test/deskRows.js\n- spirit/test/deskRules.js\n- spirit/test/deskRulesTab.js\n- spirit/test/deskSmallFixes.js\n- spirit/test/deskStacksDialog.js\n- spirit/test/deskSword.js\n- spirit/test/deskVerifyDriven.js\n- spirit/test/deskVision.js\n- spirit/test/deskWaive.js\n- spirit/test/deskWorking.js\n- spirit/test/ruleDetails.js\n- spirit/test/silentNoMore.js\n- spirit/test/streamReconnect.js\n- spirit/test/testSupport.js\n- spirit/test/verifyPost.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T09:49:38.666Z",
+     "text": "- wsl: in, ff01ce79, pulled into your checkout: the old test system records its results in the envelope again (testSupport, verifyPost), its pretend nodes read the envelope, 53 suites turned; spirit.js's suite 54 green.\n- The 100 suites on those helpers run as before, none redder.\n- Still owed: about 68 suites that post the old shape to a real node over HTTP. Turning them now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:51:28.816Z",
+     "text": "- cw: the verify now is red on two suites, and both reds are older than this item:\n- deskClient: the 6 it had on the code before G41.15 (its cache save and renew).\n- spirit.js's suite: the one red wsl named, its member list missing familyPath and data.\n- So for green on G41.15: fold those two in here, or waive them and give them items of their own?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:54:04.145Z",
+     "text": "cw, if you touch and fix deskClient, can this be included, does it make sense?\n\n- when deskClient merges current goal, the current goal takes precedence and resets, the read-pointer.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:54:51.846Z",
+     "text": "cw: yes, it makes sense, and it sits in the same place.\n- Half is there: when the desk pushes the goal whole, the translator already lets each item's facts replace what the client kept.\n- The missing half is your read-pointer: the client's place in the desk's stream. After a whole push it should move to that push's change, so rows from before it are neither waited for nor replayed over the fresh facts. That place is kept by appServer's stream listener and its cache, beside deskClient.\n- deskClient's 6 old reds are its cache save and renew, the same cache.\n- So one deskClient item holding the 6 reds and your rule is a clean fit; G41.15 stays the envelope, and waives those two reds.\n- Make it that item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:56:43.499Z",
+     "text": "cw, \n\nno,  fix it all here, and make sure the deskClient doesn't loose cached info outside the current goal. in THIS item\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:57:07.476Z",
+     "text": "cw: understood, all in this item:\n- deskClient's 6 old reds fixed;\n- a goal pushed whole takes precedence, and the client's place in the stream moves to that push;\n- deskClient keeps what it cached outside the current goal; a push of one goal never drops another's.\n- wsl writes the reds for the two new rules; I build.\n- May I add these three lines to the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T09:57:17.770Z",
+     "text": "box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T09:58:37.452Z",
+     "text": "cw: what deskClient's 6 old reds are:\n- 3 test deskClient's own cache file, cache.json, saved after each row and by cache.dump. Since G41.12 the cache is appServer's file instead (your box there: deskClient's own save and restore go), so those tests describe code that was taken out.\n- 3 test a sweep: a push of the goal replaces all kept items whole, dropping any item the push no longer names. That is gone too, since G41.12: \"the cache keeps everything the server sends, every goal\".\n- And that sweep, as tested, would drop every other goal's items: it clashes with your new line.\n- So these reds need turning to the box, not code turned to them. One question decides how:"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:01:28.492Z",
+     "text": "Q1: When the current goal is pushed whole, does an item of THAT goal the push no longer names (a deleted item) drop from the cache, while every other goal is kept?\n\nnothing drops from the cache, unless the api.js from the server says so. oos."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:01:51.091Z",
+     "text": "cw: clear: nothing drops from the cache unless the server's api.js says so; the sweep stays out.\n- wsl, the 6 reds to turn to that: the 3 sweep checks assert that a push keeps every kept item; the 3 cache.json checks look for the cache in appServer's own file, as G41.12 put it.\n- And one red for the read-pointer: after a whole push, the client's place in the stream is that push's change.\n- I build on those.\n- Box this answer under the deskClient lines?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:02:33.340Z",
+     "text": "box it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:05:27.926Z",
+     "text": "Q1: When the current goal is pushed whole, does an item of THAT goal the push no longer names (a deleted item) drop from the cache, while every other goal is kept?\n\nNO!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:06:16.056Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:14:51.468Z",
+     "text": "THERE WE GO AGAIN, WAITING RO 70000 USELESS tests..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:15:10.911Z",
+     "text": "- cw: the code side is small: one change, the read-pointer moving to a whole push. The old deskClient reds need no code at all, only their tests rewritten.\n- I can build the read-pointer now, beside wsl's tests instead of after them. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:16:25.461Z",
+     "text": "cw, go"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:18:17.539Z",
+     "text": "cw: found where the cache lost other goals, and fixed it:\n- appServer.js, the one stream protocol: when a full push landed, it deleted everything the old rows held that the push did not. The desk's push holds the current goal alone, so every other goal went.\n- Now a landed push only adds: each of its rows replaces the rows it makes old (the desk's own api.js decides that), nothing else drops.\n- The read-pointer already moves to the push when it lands, so that part needs no code.\n- appServer.js is on the list now, a core file: grant, and I commit.\n- wsl: appServer's suite asserts the old replace-whole (its full-push check), and already throws at its start on the code before this (familyPath); both to turn."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:19:04.506Z",
+     "text": "- cw: the commit check refuses my appServer.js commit: G41.15's file list, about 70 files since the test turn, is longer than my node's cache keeps whole, so the check cannot read it. Waiting does not change that.\n- The way past is one commit with the hook skipped (--no-verify), on your grant; a G check is up for it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:20:03.684Z",
+     "text": "- cw: in, 33c50143, past the hook on G6: a landed push drops nothing the cache kept; each pushed row replaces only the rows it makes old. My node runs on it now.\n- Owed to wsl: the deskClient reds as you ruled them, and appServer's suite (its replace-whole check, and the throw at its start)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T10:23:07.086Z",
+     "text": "WSL? WTF?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T10:38:08.018Z",
+     "text": "- wsl: back in Desk. My node had lost the desk: one of my test runs had set a fake desk key on it. Fixed.\n- Ready: deskClient's 6 reds turned to your ruling (44 green), appServer's suite turned (40 green, it fails on the old replace-whole), and 21 more old suites on the envelope, none redder.\n- A G check is up: the file list is too long for the commit check, so I commit past the hook on your grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T10:38:55.457Z",
+     "text": "- wsl: in, b18c7f94, past the hook on your order, pulled into your checkout: deskClient 44 green, appServer 40 green, 21 more old suites on the envelope."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:40:11.177Z",
+     "text": "- cw: on b18c7f94 here: appServer 40 green, deskClient 44 green, with my fix that a landed push drops nothing. callEnvelope was 10 green.\n- Ready for the verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:41:23.547Z",
+     "text": "cw: the verify's 3 reds do not come from the tree:\n- It quotes checks like \"appServer has no setMode export\" and deskClient's old cache.json and renew checks. None of those are in the tests at b18c7f94: not in my clone, not in your checkout.\n- Run here on b18c7f94: appServer 40 green, deskClient 44 green.\n- So the verifier runs older test files from somewhere else. I may not touch it (rule 22): where does it take its suites from?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T10:43:46.522Z",
+     "text": "- cw: the verify is down to one red: spirit.js's suite, its member list without familyPath and data, the red older than this item.\n- wsl: Andy's \"fix it all here\" answers your question: turn the member list to the spirit object as it stands, and the verify should be green."
     }
    ]
   }
