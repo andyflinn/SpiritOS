@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/shell/js/test/workBench.js
-// The tests of shell/js/workBench.js, and of no other module (spec: ./workBench.md; goal/G41.1). The browser file runs
+// The tests of shell/js/workBench.js, and of no other module (spec: ./workBench.md; goal/G41.1, goal/G41.18). The browser file runs
 // in node on a window of its own; the container is a stub that keeps a node per id it draws and hears its listeners,
 // and the document a stub that hears the moves of a drag.
 
@@ -104,6 +104,16 @@ ok(/class="[^"]*\bfill\b/.test(c1.innerHTML) && !c1.style.width && !c1.style.hei
   'its root takes the shell\'s fill class, and it sets no size on the container it is given', 'root: ' + c1.innerHTML.slice(0, 200) + ' style ' + JSON.stringify(c1.style));
 ok(wb && typeof wb.center === 'object' && wb.center !== null && wb.center === c1.part('center'), 'center is the centre pane\'s box',
   'center: ' + typeof (wb && wb.center));
+
+test.subHeading('every box from the app to a tool states its size (rule/16; goal/G41.18)');
+// Andy, on G41.18, with many model rows: "the lists violate: rule/16 — A list gets a box of a stated size. Files and
+// contacts do it right, agents must as well." rule/16: every list stands in a box of class fill, inside a pane that fills
+// its app. A side pane that is not one lets its tool grow with its rows, and the whole pane scrolls with it.
+const tagOf = function (c, name) { const m = new RegExp('<[^>]*\\bid="[^"]*' + name + '"[^>]*>').exec(c.innerHTML); return m ? m[0] : ''; };
+ok(/class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-left')) && /class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-right')), 'each side pane is a fill box', 'panes: ' + tagOf(c1, 'pane-left') + ' ' + tagOf(c1, 'pane-right'));
+ok(/class="[^"]*\bfill\b/.test(tagOf(c1, 'center')), 'and so is the centre', 'centre: ' + tagOf(c1, 'center'));
+const boxA = mounted.filter(function (m) { return m.name === 'a'; })[0];
+ok(boxA && (' ' + boxA.box.className + ' ').indexOf(' fill ') !== -1, 'the box a tool is mounted in is a fill box, given before its mount', 'tool box class: ' + JSON.stringify(boxA && boxA.box.className));
 
 test.subHeading('the strips: a button per tool');
 const left = (c1.innerHTML.match(/data-tool="[^"]*"/g) || []).map(function (s) { return s.slice(11, -1); });

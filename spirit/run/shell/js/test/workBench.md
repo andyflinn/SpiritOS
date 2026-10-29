@@ -21,6 +21,10 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
   `strip-right`.
 - Space is granted top-down (rule/16): its root takes the shell's `fill` class, and it sets no width or height on the
   container it is given.
+- Every box from the app to a tool states its size (rule/16; goal/G41.18, Andy, with many model rows: *"the lists
+  violate: rule/16 — A list gets a box of a stated size. Files and contacts do it right, agents must as well."*): each
+  side pane and the centre are `fill` boxes, and so is the box a tool is mounted in, given before its mount. A list in a
+  tool then stands in its pane's height and scrolls inside it, never growing the pane with its rows.
 - Each strip has one button per tool, carrying `data-side`, `data-tool` (the tool's name), the tool's icon and its title.
   A side with no tools draws no strip, no pane and no border.
 - At start each side shows its first tool.
@@ -41,3 +45,4 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
 - A press on one side reaching the other.
 - A drag past the minimum, and a move after the pointer is up.
 - A click after destroy.
+- A side pane, or a tool's box, that is only as tall as its content.
