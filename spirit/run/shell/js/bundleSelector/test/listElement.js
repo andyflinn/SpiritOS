@@ -82,6 +82,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(JSON.stringify(cols) === '["label"]', 'by default its one column is the label', 'columns: ' + short(cols));
   const m = typeof o.matched === 'function' ? o.matched({ id: 7, label: 'Reader' }) : null;
   ok(m && m.label === 'Reader' && !('id' in m), 'a row is matched on its label, never its hidden id', 'matched: ' + short(m));
+  // Andy, goal/G41.14: "the bundleSelector shows a fucking number is selected instead of the fucking label or the
+  // bundle." A dropdown shows the row picked by the list's name(row) (probabilitySearch); without it, the key.
+  ok(typeof o.name === 'function' && o.name({ id: 7, label: 'Reader' }, '7') === 'Reader', 'a picked bundle is shown by its label, never its number', 'name: ' + short(typeof o.name === 'function' ? o.name({ id: 7, label: 'Reader' }, '7') : o.name));
 
   test.subHeading('each row a bundle row element');
   const el = o.element({ id: 7, label: 'Reader' }, '7');

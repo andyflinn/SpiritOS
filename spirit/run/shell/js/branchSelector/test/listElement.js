@@ -87,6 +87,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(el && el.kind === 'branch' && el.row.id === 3 && el.row.family === 'desk', 'each row is a branchElement of that branch', 'element: ' + short(el));
   const m = typeof o.matched === 'function' ? o.matched({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) : null;
   ok(m && m.family === 'desk' && m.verb === 'chat.add' && !('id' in m) && !('bundle' in m), 'a row is matched on its family and verb, never its hidden numbers', 'matched: ' + short(m));
+  // goal/G41.14: a picked branch is shown by what it reaches, never its number (Andy: "the bundleSelector shows a
+  // fucking number is selected instead of the fucking label").
+  const nm = typeof o.name === 'function' ? [o.name({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }, '3'), o.name({ id: 4, bundle: 7, family: 'files', verb: '' }, '4')] : null;
+  ok(nm && nm[0] === 'desk.chat.add' && nm[1] === 'files (ALL)', 'a picked branch is shown as family.verb, or family (ALL), never its number', 'name: ' + short(nm));
 
   test.subHeading('its filter: the family selector, its verb half with it');
   // Andy, box: "the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as

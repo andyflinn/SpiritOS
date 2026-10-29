@@ -32,6 +32,8 @@ their data set"*).
 - Its probabilitySearch's `data` is `branches`: the search's answers are seated there, and a row the stream changes redraws
   the list.
 
+- A picked branch is shown as `family.verb`, or `family (ALL)`, never its number (the list's `name(row)`).
+
 ## What its test must try to break
 
 - A part counted on that the list did not load itself.

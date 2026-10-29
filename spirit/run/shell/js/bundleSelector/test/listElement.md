@@ -26,6 +26,9 @@ their data set"*).
 - Its probabilitySearch's `data` is `bundles`: the search's answers are seated there, and a row the stream changes redraws
   the list.
 
+- A picked bundle is shown by its label, never its number (the list's `name(row)`; Andy: *"the bundleSelector shows a
+  fucking number is selected instead of the fucking label or the bundle."*).
+
 ## What its test must try to break
 
 - A part counted on that the list did not load itself.
