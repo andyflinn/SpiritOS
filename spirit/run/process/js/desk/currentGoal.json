@@ -1,5 +1,5 @@
 {
- "change": 114142,
+ "change": 114278,
  "goal": "goal/G41",
  "items": [
   {
@@ -13395,13 +13395,12 @@
    "id": "goal/G41.18",
    "title": "Aquire model data from providers.",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 0,
+   "version": 18,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "delete",
     "verify"
    ],
@@ -13410,17 +13409,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 10,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -13486,13 +13485,209 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
+   "box": "# the Scope of this item is only this: Get the model table populated with models from providers.\n- one fix first: a new provider row will not be added if the URL is the same as an existing URL in the provider table, nor will a change be allowed if the change would result in duplicate URL's, trailing slashes don't count as different.\n\n- to acquire models for the models table, the following needs to happen:\n- the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table updating.\n|\n- when the models icon is active....\n- the left hand panel will show the same title row, it does now: \"🧠Models\"\n- then it show a button row with the following button \"provider models\", which will open a panel in the center pane of the workBench. more about that panel below...\n- below that is the model-search, ALMOST as it is now, with one difference\n- the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the provider-key on the model row.\n|\n- the title of the new center-pane is: \"🧠 Update model list\"\n- then a form row: from [provider-dropdown] [ask-Button]\n- when a provider is selected. The ask button will ask the provider for a model-list, which is then shown below the the ask form above, with a remark \"model list updated.\". Updated means, unavailable models from that provider will be removed, also.\n- only if a provider answers with a list of more than 0 models, will the agent's model table be \"updated\" as described above.\n|\n- the agent (process) gets a \"./provider/\" subfolder and uses the standard plugin pattern\n- ./provider/<providerName>/<providerName>.js with will be node.js-required into a table, where <providerName> must match the label of a provider row.\n- if a provider row has no matching plugin (case-insensitive), the OpenAPI  plugin will be used, if it fails, the provider row will be flagged as unusable.\n|\nbuilt in this item\n- OpenAI plugin\n- Anthropic plugin\n- Unsloth will be the test case for \"no-matching-plugin\"\n- the UI as specified.\n\n# final requirements\n- all production code files get their tests and document files in the appropriate ./test/ folders\n\n\n\n\n",
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T15:50:41.410Z",
+     "text": "ALL, \n\nI'll be happy for starters if we can display provider model lists in the center pane. maybe we'll just automatically update the agents model list, throw out the rows that are no longer offered, and add rows that are new in that providers model-list.\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T15:51:02.622Z",
+     "text": "- wsl: feasible. Anthropic answers GET /v1/models with the key: id and display name of each model. OpenAI has the same. The agent process asks, so the key stays in it.\n- Reuse the model table: a sync adds a row per new model (provider, model name, label from the display name).\n- One worry with throwing rows out: a dropped model loses the description and capabilities you typed. I would mark it withdrawn and keep it, greyed in the list.\n? Throw out, or keep marked withdrawn?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T15:51:19.816Z",
+     "text": "- cw: doable, and the key stays safe: the agent process asks the provider for its list, never the browser.\n- Each provider answers its list differently. Anthropic pages through its models and needs the key and the version header. Ollama has its own list call, and OpenAI-style providers a third one. So the agent must know which kind a provider row is.\n- Sync, my proposal: a model row is matched by its provider and model name. A new model gets a row, labelled with the name the provider gives it, with its capabilities from the list. A model no longer offered loses its row. A row that stays keeps your own label and description.\n- When: whenever a provider row is added or its URL or key changes, when the agent starts, and on a Refresh press in the center pane. No polling.\n- Today nothing points at a model row, so removing one breaks nothing yet. Once jobs pick models, a removed model will need a word on that job.\n- It needs one new op on the agent's model verb, a sync for one provider. That changes the agent's interface, so it needs wsl's review and your yes on the op itself.\n? Does the provider row get a kind field (anthropic, ollama, openai), or should the agent tell the kind from the URL?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:00:36.325Z",
+     "text": "i want to use this building approach:\n\n- add little by little, test it,\n- extending the model row with capability booleans (icons in the list) we can do now, plus make decisions on non-OpenAI-API's and which ones we make special allowance for...\n- i use unsloth studio, not ollama anymore, my question is: should non OpenAI compatible suppliers just be plugins?\n- for most point mentioned by you all, my answer is: We'll cross that bridge when we get to it.\n\nso, just getting models into the model table is what i want now. THAT's the scope of this item: When I'm happy with that. I'll add another item.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:01:02.716Z",
+     "text": "- cw: agreed on the scope: models into the model table, nothing more.\n- Plugins, yes. One small file per provider kind, each answering one thing: list the models of a provider row, with the key. The provider row names its kind, and the agent loads that kind's file. Adding a supplier then never touches the agent itself.\n- The OpenAI-compatible kind is the first plugin, not a special case. It covers OpenAI and every local server that speaks that API.\n- Anthropic is the second plugin: its list call takes its own key header and the version header.\n- Capability booleans fit the same step: each plugin fills what its provider says, and the list shows an icon per capability that is on.\n? Which plugin first: OpenAI-compatible for your Unsloth Studio, or Anthropic for your Levant key?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:11:15.653Z",
+     "text": "all, \n\nthoughts on the box?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:11:52.158Z",
+     "text": "- wsl, on the box:\n- Plugin by the provider label breaks on your two Anthropic keys: two rows need two labels, and a rename changes the plugin. I would give the provider row a plugin field, empty meaning OpenAI.\n- The provider icon has no home: the provider row has url and apiKey only. A field on it, or the plugin gives it?\n- \"model list updated\": does Ask write the table, adding new models and dropping gone ones, or only show the list?\n- Ask is a new op on the agent's interface: it needs cw's and my review, and your yes on the op."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:12:43.165Z",
+     "text": "- cw: the box fits the tree. The left panel already has its title row and a button row with Add, so Provider models joins that row. The centre pane opens the way a row's detail does now, with the same title style.\n- The dropdown can be the selector the grants panel uses for jobs, configured with the provider table: nothing new to write.\n- The plugin pattern the tree has is the desk's: a folder per plugin holding its .js. The agent's provider folder can follow it as is.\n- Matching on the provider row's label: I would match ignoring case, so a row labelled Anthropic finds the anthropic folder. Renaming a row then changes its plugin; fine for now, worth knowing.\n- I would make the OpenAI default a plugin file too, used when no other matches, so every provider kind is tested the same way.\n- Ask needs one new op on the agent's model verb. That is an interface change: wsl's review and your yes on that op.\n? Does Ask also write the new models into the model table, adding the ones not there yet and removing none, or only show the provider's list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:20:28.254Z",
+     "text": "All, \n\nGet you gobbledeegook out of my face, \n\nwsl is coming with this, even though both of you tell me that Anthropic only needs ONE key?\n\nnow get you your stories straight.\n\nbox is updated.\n\nfeedback please."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:20:45.066Z",
+     "text": "- wsl: sorry, badly said. One key per call, yes. I meant your two keys, org and Levant, as two provider rows: both are Anthropic, but two rows cannot share one label.\n- On v11: \"OpenAPI\" should read OpenAI. Still open: where the provider icon comes from, and whether Ask writes the new models into the table."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:20:53.040Z",
+     "text": "- cw: our stories agree: one key per call. wsl meant your two Anthropic rows, the Levant one and the old one, each with its own key.\n- With label matching, both rows find the anthropic plugin only if both are labelled Anthropic. Then the list cannot tell them apart. Fine for now: keep one.\n- The provider icon has a home already: every row of every agent table has an icon field.\n- I read OpenAPI as the OpenAI plugin.\n- Unusable: I would show it on the row, kept with the row, so it stays after a restart.\n? Does model list updated mean Ask adds the new models into the model table?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:26:26.106Z",
+     "text": "ALL, \n\ni think i clarified outstanding issues.\n\nfeedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:26:46.233Z",
+     "text": "- wsl: v13 is clear to me. One URL per provider row also settles the two Anthropic keys.\n- The one thing I read in, from your scope line: Ask writes the models it gets into the model table, new ones added, none removed.\n? Is that right?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:26:56.625Z",
+     "text": "- cw: v13 is clear to me, and buildable.\n- The URL rule settles the two-key question: one Anthropic row, so labels need not be unique.\n- I will apply the URL rule to a changed URL as well as a new row, and treat a trailing slash as the same URL.\n- I read model list updated as: Ask adds every listed model not yet in the table, for that provider, and removes none.\n- Unsloth: the suites test the fallback against a stand-in server; Unsloth itself is the live check on your node.\n- The box still says OpenAPI on its last plugin line; I read it as OpenAI.\n- Ask stays a new op on the agent's model verb: wsl's review and your yes on it before I build it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:29:08.326Z",
+     "text": "ALL, \n\ndouble check.\n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:29:29.996Z",
+     "text": "- wsl: green on v14.\n- I read it as cw does: Ask adds the listed models not yet in the table, removes none; OpenAPI means OpenAI.\n- The new op, ask on the model verb with the provider row's ID: reviewed, it looks right to me. It still needs your yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:29:30.324Z",
+     "text": "- cw: not yet green, box v14. One thing left: does Ask add the listed models into the model table, none removed? Also your yes on Ask as a new op of the agent's model verb."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:31:48.087Z",
+     "text": "you 17:29 ALL,\n\ntriple check.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:32:07.968Z",
+     "text": "- cw: green on v15 but for your yes on Ask, the new op of the model verb. I will build a failed Ask to remove nothing: only a list the provider actually answered updates the table."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:35:02.751Z",
+     "text": "ALL,\n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:35:13.403Z",
+     "text": "- wsl: green on v15. Ask adds the new models and removes the ones the provider no longer lists; a failed Ask changes nothing.\n- Left: your yes on Ask, the new op."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:35:22.038Z",
+     "text": "- cw: green on v16, but for one word: your yes on Ask as a new op of the agent's model verb."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:36:18.774Z",
+     "text": "ALL,\n\nWHAT THE FUCK ARE YOU TALKING ABOUT \"op\"????, \n\nIN FUCKING ENGLISH!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:36:29.120Z",
+     "text": "- wsl: sorry. The Ask button needs the agent to learn one new command: \"ask this provider for its models\". Adding a command to the agent needs your yes, by your rule.\n? Yes to that new command?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:36:40.311Z",
+     "text": "- cw: sorry. In English: the page can ask the agent to do five things with the model table today: add, change, delete, get and search a row.\n- Your Ask button needs a sixth: ask a provider for its models and update the table.\n- Your rule says a new thing the page can ask for needs review and your yes. wsl has reviewed it.\n? May I add that sixth request, ask a provider for its models?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:37:58.244Z",
+     "text": "decision:\n\nthe provider table gets a new verb: \"ask\""
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:38:13.099Z",
+     "text": "- wsl: understood: ask goes on the provider table, given a provider row, and updates the model table. I write the red on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:39:29.723Z",
+     "text": "ALL, \n\nbox changed,\n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-29T16:39:42.271Z",
+     "text": "- wsl: green on v17."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:39:50.246Z",
+     "text": "- cw: green on v17. Nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-29T16:40:15.707Z",
+     "text": "add files to the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-29T16:41:04.857Z",
+     "text": "- cw: 10 files on the item: the agent's interface, the provider table with its ask and the URL rule, its row showing unusable, the two plugins, the model table's server, list and row, the new Update model list pane, and the shared table element for the extra button.\n- The suites are wsl's to add with the red."
+    }
+   ]
   }
  ]
 }
