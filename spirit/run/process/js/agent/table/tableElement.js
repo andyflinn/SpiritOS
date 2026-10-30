@@ -187,6 +187,7 @@
     // so in its detail panel, never silently."): the bundle named is asked of the node once (auth.bundle get); false while
     // the node has no such bundle.
     var bundleHeld = {};
+    var bundleLabel = {};
     // ITS ROWS ARE THIS ROW'S ONLY (Andy: "the model picker in provider details of course shows models at all, when it
     // must show models from that provider"): a list that is a view of its table's whole branch draws every row the page
     // holds, whatever its search asked. The shell keeps that branch (Andy: "the SHELL must do the caching automatically,
@@ -291,12 +292,19 @@
         if (f.kind === 'bundle') {
           needs(['shell/js/bundleSelector.js']).then(function () {
             if (gone || !E.bundleSelector) return;
-            bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: row[f.field] ? 'bundle ' + row[f.field] : 'Pick a bundle' });
+            // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
+            // selection instead of the fucking label?"); its number only once the node has no such bundle.
+            var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[f.field] !== undefined ? bundleLabel[f.field] : bundleHeld[f.field] === false ? 'bundle ' + row[f.field] : '…';
+            bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: says });
           });
           if (row[f.field] && bundleHeld[f.field] === undefined) {
             bundleHeld[f.field] = true;
             var named = row[f.field];
-            Promise.resolve(spirit.ready).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function () {}, function (e) {
+            Promise.resolve(spirit.ready).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
+              if (gone || String(row[f.field]) !== String(named)) return;
+              bundleLabel[f.field] = String((got && got.label) || named);
+              paint();
+            }, function (e) {
               // The node's word for it (no-such-bundle); any other refusal says nothing of the bundle.
               var code = String((e && (e.code || (e.body && e.body.code))) || '');
               if (gone || !/^no-such-/.test(code) || String(row[f.field]) !== String(named)) return;
@@ -307,7 +315,13 @@
         }
       });
       container.querySelector('#' + pre + 'save').addEventListener('click', save);
-      container.querySelector('#' + pre + 'delete').addEventListener('click', remove);
+      // DELETE ASKS ARE-YOU-SURE (Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"): the
+      // shell's arming button, loaded here (rule/26); the first press arms, the second deletes.
+      var del = container.querySelector('#' + pre + 'delete');
+      needs(['shell/js/armingButton.js']).then(function () {
+        if (gone || !del.isConnected || !E.armingButton) return;
+        E.armingButton.attach(del, { label: 'Delete', run: remove, api: o.api });
+      });
     }
     // What was changed, as the verb takes it: a secret only when typed, a pick only when picked.
     function changes() {
