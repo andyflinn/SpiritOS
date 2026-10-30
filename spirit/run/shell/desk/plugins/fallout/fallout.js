@@ -54,7 +54,31 @@
     name: 'outcome',
     choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],
     test: function (row, value) { return !value || row.outcome === value ? 1 : 0; },
+  }, {
+    // PRODUCT TESTS ONLY (goal/G41.22; Andy: "fallout needs a filter that show me product tests only"; agreed: "product
+    // tests are the tests under spirit/run; the repo's spirit/test is hidden by the filter"). The reporter sends a product
+    // test's suite as /<path>/<module> (test/testReport.js, SUITE); a spirit/test suite comes as its bare file name. The
+    // list's own filter, as deskVerify's search has no key for it; it goes with the outcome filter.
+    name: 'scope',
+    choices: [{ value: '', word: 'all tests' }, { value: 'product', word: 'product tests only' }],
+    test: function (row, value) { return !value || String((row && row.suite) || '').charAt(0) === '/' ? 1 : 0; },
   }];
+  // THE OUTCOME AS ITS ICON (goal/G41.22; Andy: "the "green"/"red" column must use icons"; agreed: "the icons are the
+  // reporter's own: ✅ green, ❌ red"). deskVerify answers the words; each row it answers carries its icon too, as the
+  // field the Result column shows (result), and the filter still reads the words (outcome).
+  var ICONS = { green: '✅', red: '❌' };
+  function withIcons(answer) {
+    var b = answer && answer.body;
+    if (!b || !Array.isArray(b.items)) return answer;
+    b.items = b.items.map(function (it) {
+      var row = null;
+      try { row = JSON.parse(it.label); } catch (e) { row = null; }
+      if (!row || typeof row !== 'object') return it;
+      row.result = ICONS[row.outcome] || String(row.outcome || '');
+      return Object.assign({}, it, { label: JSON.stringify(row) });
+    });
+    return answer;
+  }
   // ONE NICE LINE PER TEST (Andy: "test-file-name | failure-description | success or fail | since"), and NO DETAIL ON
   // SCREEN ("I know you can read those details, so it doesn't need to be on-screen."): the failure and the commit stay in
   // deskVerify. The probability search draws the columns from each row's own fields (outcome red or green, at the time);
@@ -62,7 +86,7 @@
   var COLUMNS = [
     { field: 'suite', label: 'Suite', sort: 'text' },
     { field: 'title', label: 'Test', sort: 'text' },
-    { field: 'outcome', label: 'Result', sort: 'text' },
+    { field: 'result', label: 'Result', sort: 'text' },
     { field: 'at', label: 'Since', sort: 'date' },
   ];
   // A test's history in a dialog (Andy: "if you want to show the history of one test, use a dialog."): the list's details
@@ -92,7 +116,7 @@
     var el = document.getElementById('fallout-list');
     if (!P || typeof P.create !== 'function' || !el || !ctx) return;
     list = P.create(el, {
-      api: { verb: ctx.verb, onPublished: ctx.onPublished },
+      api: { verb: function (name, a) { return Promise.resolve(ctx.verb(name, a)).then(withIcons); }, onPublished: ctx.onPublished },
       server: 'deskVerify',
       verb: 'search',
       args: args,
@@ -125,9 +149,9 @@
         '<div id="fallout-tabs" style="margin-top:1em"></div>' +
         // THE REDS LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): a fill box in a fill pane, no stat-tile.
         '<div id="fallout-pane-reds" class="fill"><div id="fallout-list" class="fill" style="margin-top:1em"></div></div>' +
-        '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>' +
-        // THE GOAL CHAT AT THE BOTTOM (Andy, 2026-10-17: "add the goal chat at the bottom."), below both inner tabs.
-        '<div id="fallout-chat"></div>';
+        // NO CHAT (goal/G41.22, box v25; Andy: "The chat needs to be removed from fallout"): the goal chat it carried
+        // since goal/G27.14 is gone, and ctx.chat is never asked for one.
+        '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>';
       if (!container.falloutWired) {
         container.falloutWired = true;
         container.addEventListener('click', function (e) {
@@ -138,7 +162,6 @@
       }
       drawTabs();
       withList(mountList);
-      if (typeof given.chat === 'function') given.chat(document.getElementById('fallout-chat'));
     },
   };
 }());

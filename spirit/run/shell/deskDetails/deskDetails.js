@@ -215,7 +215,8 @@ function ddMakeBench(n) {
 // goal/G33.4: an item's own End design, while its goal is out of design.
 // goal/G41.2: Start design too, which the desk offers on any item since goal/G40.12 ("You can turn design on for an item
 // at any time"); a press missing here was dropped from the dialog unseen.
-var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
+// goal/G41.22: push Goal, on the current goal and its items as the desk offers it; its press is the verb pushgoal.
+var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen', pushgoal: 'push Goal' };
 
 // THE VERIFIER'S RUN OF THIS ITEM (goal/G33.6), as the List's status column shows it: the desk's fact (verifyRunning)
 // joined with deskVerify's own publish (ddRun), through the one shared rendering (shell/shared/js/deskRunStatus.js).
@@ -1011,6 +1012,8 @@ spirit.shell.activateApp({
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
+      // goal/G41.22: a verb of the desk, not a press.
+      if (id === 'dd-pushgoal') { ddWrite('pushgoal', {}); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
       // goal/G33.3: Verify presses at once, whatever the switch says.
       if (id === 'dd-verify') { ddPress('verify'); return; }

@@ -441,7 +441,11 @@ function meantForAgent(row) {
   const inView = row.goal === 0 || (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
     row.special === true || heldByMe(dataSet.get('deskItems/' + String(row.id || '')));
   if (!inView) return null;
-  if ((row.table === 'chat' || row.table === 'box') && isOld(row.row.at)) return null;
+  // HIS LINE A PUSH GOAL HANDS AGAIN (goal/G41.22; Andy: "in that same wake hands the agent every line of Andy's
+  // addressed to it that nobody took yet: nothing replayed, nothing lost"): the desk sends only lines nobody took, so its
+  // time is no reason to drop it; a line this agent has seen already stays dropped below (seenLines).
+  const handedAgain = row.replace === true && row.table === 'chat';
+  if ((row.table === 'chat' || row.table === 'box') && !handedAgain && isOld(row.row.at)) return null;
   // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
   if (row.table === 'box') {
     const f = dataSet.get('deskItems/' + String(row.id || ''));
@@ -631,8 +635,27 @@ function say(to, word) {
 // (handOver): all the news since the last wake from what the stream brought, then the triggers, last. No trigger
 // gathers news of its own.
 function wakeWith(trigger) {
+  // A trigger waiting already, or handed and not yet read, is not queued twice (a row the stream brings again).
+  const k = trigger && trigger.key;
+  if (k && (waiting.some(function (w) { return w.key === k; }) || (unread && unread.items.some(function (x) { return x.key === k; })))) return;
   waiting.push(trigger);
+  saveWake();
   wakers.splice(0).forEach(function (wake) { wake(); });
+}
+// THE WAKE OUTLIVES A RESTART (goal/G41.22; Andy, the box: "every wake not yet read comes back in one, none lost and none
+// twice, also after a node restart"). Found live: after a node restart the ear handed old lines back one per wake, and
+// lines a wake carried while nobody read it were lost, as both lived in this process alone. So the wake handed and not
+// yet read (its key and lines) and the triggers waiting are kept in this server's settings as they change, and read back
+// at start: the next wait, naming the key the agent last read, hands them as it would have. Bounded like an answer: a
+// kept wake past WAKE_KEPT_BYTES keeps its newest lines.
+const WAKE_KEPT_BYTES = 256 * 1024;
+function saveWake() {
+  const plain = function (x) { return { key: String(x.key || ''), text: String(x.text || ''), trigger: !!x.trigger }; };
+  const kept = { unread: unread ? { key: unread.key, items: unread.items.map(plain) } : null, waiting: waiting.map(function (w) { return { key: String(w.key || ''), text: String(w.text || '') }; }) };
+  while (Buffer.byteLength(JSON.stringify(kept), 'utf8') > WAKE_KEPT_BYTES && (kept.waiting.length || (kept.unread && kept.unread.items.length))) {
+    if (kept.unread && kept.unread.items.length) kept.unread.items.shift(); else kept.waiting.shift();
+  }
+  try { putSetting.run('wake', JSON.stringify(kept)); } catch (e) { /* kept again on the next change */ }
 }
 // NO LINE IS LOST (goal/G41.11; Andy: "desk and deskClient must work in concert"): a line leaves the queue only as it
 // goes into the answer. What does not fit stays queued, in its place, and owed makes the next wait hand it over at
@@ -650,14 +673,25 @@ function readWake(read) {
   if (!unread) return;
   const was = unread;
   unread = null;
-  if (read && read === was.key) return;
-  waiting.unshift.apply(waiting, was.items.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger; }));
+  if (read && read === was.key) { saveWake(); return; }
+  // A trigger read back after a restart is its key and text (saveWake).
+  waiting.unshift.apply(waiting, was.items.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger === true ? { key: x.key, text: x.text } : x.trigger; }));
   sinceWake.unshift.apply(sinceWake, was.items.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: true }; }));
   // A rule's text it handed comes again too.
   was.rules.forEach(function (tag) { rulesHanded.delete(tag); });
   again = { key: was.key, texts: was.items.map(function (x) { return x.text; }).join('\n') };
   owed = true;
+  saveWake();
 }
+// What a restart left (saveWake), read back once at start: a wake handed and never read, and the triggers that waited.
+(function () {
+  let kept = null;
+  try { const row = getSetting.get('wake'); kept = row && row.value ? JSON.parse(row.value) : null; } catch (e) { kept = null; }
+  if (!kept) return;
+  if (kept.unread && kept.unread.key && Array.isArray(kept.unread.items)) unread = { key: String(kept.unread.key), items: kept.unread.items, rules: [] };
+  (Array.isArray(kept.waiting) ? kept.waiting : []).forEach(function (w) { if (w && w.text) waiting.push({ key: String(w.key || ''), text: String(w.text) }); });
+  owed = waiting.length > 0;
+}());
 function handOver(to, t0) {
   moveSince();
   owed = false;
@@ -699,6 +733,7 @@ function handOver(to, t0) {
   const flight = { key: same ? again.key : Date.now().toString(36) + '.' + wakeCount, items: sent, rules: [] };
   again = null;
   unread = flight;
+  saveWake();
   const rulesBefore = new Set(rulesHanded);
   // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
   // deskClient?", and "the deskClient is already supposed to have every fucking applicable rule in it's cache". The

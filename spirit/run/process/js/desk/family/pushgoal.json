@@ -1,0 +1,4 @@
+{
+  "description": "Andy's alone: push the current goal whole to every subscribed deskClient, replacing each one's copy of it: the goal's and its items' facts, his lines to agents that nobody took yet, then its end. Answers {change}.",
+  "request": {}
+}

@@ -97,12 +97,52 @@
       keep(id, { files: files, filesMore: false });
     }
   }
+  // A PUSH GOAL REPLACES THE COPY (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the current goal
+  // whole, no merge: nothing stale survives", "it moves each agent's read pointer to the newest change"). Its rows come
+  // under one change, marked replace, its end last: once it has landed, an item of that goal it did not carry is gone,
+  // and every part kept of the goal's items (box, chat, checks, files) goes too, so each is read afresh. From then on a
+  // row of that goal of an older change undoes nothing (desk/replaced/<goal>, the push's change).
+  var pushing = {};
+  function goalNumber(o) {
+    if (typeof o.goal === 'number') return o.goal;
+    if (o.key && typeof o.key.goal === 'number') return o.key.goal;
+    var m = /^goal\/G(\d+)/.exec(String(o.id || (o.item && o.item.id) || ''));
+    return m ? Number(m[1]) : -1;
+  }
+  function ofGoal(id, g) { var m = /^goal\/G(\d+)(?:\.\d+)?$/.exec(String(id)); return !!m && Number(m[1]) === g; }
+  function replaced(o) {
+    var g = goalNumber(o);
+    if (o.end === true) {
+      var p = pushing[g];
+      delete pushing[g];
+      if (!p || p.change !== o.change) return;
+      var all = D.get('deskItems') || {};
+      Object.keys(all).forEach(function (id) { if (ofGoal(id, g) && !p.ids[id]) D.del('deskItems/' + id); });
+      var parts = D.get('deskItem') || {};
+      Object.keys(parts).forEach(function (id) { if (ofGoal(id, g)) D.del('deskItem/' + id); });
+      D.set('desk/replaced' + g, o.change);
+      return;
+    }
+    if (!pushing[g] || pushing[g].change !== o.change) pushing[g] = { change: o.change, ids: {} };
+    // His lines the push hands again are the deskClient's to wake on (its onRow); its copy keeps no part of them.
+    if (o.table) return;
+    var it = facts(o.item);
+    if (!it) return;
+    pushing[g].ids[it.id] = true;
+    rowOf(o, it);
+  }
+  function stale(o) {
+    var at = Number(D.get('desk/replaced' + goalNumber(o)));
+    return at > 0 && typeof o.change === 'number' && o.change < at;
+  }
   function published(o) {
     if (!o || typeof o !== 'object') return;
     // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
     if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
     // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
     if (o.rule && o.row && typeof o.row === 'object') { D.set('deskRules/' + String(o.rule), o.row); return; }
+    if (o.replace === true) { replaced(o); return; }
+    if (stale(o)) return;
     if (o.table) { side(o); return; }
     var it = facts(o.item);
     if (!it) return;

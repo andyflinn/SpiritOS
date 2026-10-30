@@ -66,6 +66,8 @@ module.exports = {
     'phase.take': { id: 'id', phase: 'id' },
     // id is '' for start-design with nothing open, which starts a new goal.
     press: { id: 'text', what: 'id' },
+    // goal/G41.22: Andy's alone; the current goal, so no argument.
+    pushgoal: {},
     // agent '' is the caller.
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
@@ -140,7 +142,21 @@ module.exports = {
       if (row.plugin) return 'plugin ' + row.plugin;
       return '';
     }
+    // A PUSH GOAL REPLACES (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the current goal whole, no
+    // merge: nothing stale survives"; Q1: "nothing drops from the cache, unless the api.js from the server says so"): its
+    // end drops every row of that goal it did not bring, so a restart reads none of it back; after it, a row of that goal
+    // of an older change is not kept.
+    function replacedAt(rows, g) {
+      var at = 0;
+      rows.forEach(function (r) { var p = place(r); if (r.replace === true && r.end === true && p && p.goal === g && Number(r.change) > at) at = Number(r.change); });
+      return at;
+    }
     function keep(rows, row) {
+      var p = place(row);
+      if (row && row.replace === true && row.end === true && p) {
+        return rows.filter(function (r) { var q = place(r); return !q || q.goal !== p.goal || (r.replace === true && r.change === row.change && !r.end); }).concat([row]);
+      }
+      if (p && row.replace !== true && typeof row.change === 'number' && row.change < replacedAt(rows, p.goal)) return rows;
       var id = identity(row);
       return rows.filter(function (r) { return !id || identity(r) !== id; }).concat([row]);
     }

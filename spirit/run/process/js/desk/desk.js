@@ -586,7 +586,7 @@ function grantOf(it, p, core) {
 // Q mark) stay as they were: an item's whole chat is compared at each write, and its lines are rarely changed.
 const LINE_JSON = new WeakMap();
 function lineJson(l) {
-  const sig = String(l.taken) + '|' + String(l.takenKey) + '|' + String(l.answered) + '|' + String(l.q);
+  const sig = String(l.taken) + '|' + String(l.takenKey) + '|' + String(l.answered) + '|' + String(l.q) + '|' + String(l.took);
   const kept = LINE_JSON.get(l);
   if (kept && kept.sig === sig) return kept.json;
   const json = JSON.stringify(l);
@@ -1084,6 +1084,9 @@ function shownLine(s, l) {
   delete o.takenKey;
   // goal/G21.6: whether its take is answered is the desk's own bookkeeping, as the taker's key is.
   delete o.answered;
+  // goal/G41.22: so are a nick's bound take and an agent's take of it.
+  delete o.bound;
+  delete o.took;
   return o;
 }
 
@@ -1338,7 +1341,7 @@ function apply(s, r, b, item, goalOf) {
           // An agent never heard from has no label yet: the take stands under its key, shown by its nick.
           const label = known || String(b.nick);
           // goal/G21.6: an open take of this line by its addressee; other agents' takes under the item stand.
-          line.taken = label; line.takenKey = key;
+          line.taken = label; line.takenKey = key; line.bound = true;
           if (known) it.takers[known] = true;
           // HIS NICK REQUEST ABOUT THE BOX: the box is that agent's for one write, red at once, for one minute.
           if (b.hold === true) { it.boxTakenBy = label; it.boxTakenKey = key; it.boxHoldUntil = Date.parse(r.at) + BOX_HOLD_MS; it.capOffer = null; }
@@ -1699,7 +1702,9 @@ function apply(s, r, b, item, goalOf) {
     // what reaches here lands; a record written before goal/G21.6 took his latest line, which is that same line.
     case 'line.take': {
       const l = takeableLine(it, String(r.key || ''));
-      if (l) { l.taken = r.by; l.takenKey = String(r.key || ''); it.takers[r.by] = true; }
+      if (l) { l.taken = r.by; l.takenKey = String(r.key || ''); it.takers[r.by] = true; return; }
+      // A TAKE OF A LINE ITS NICK BOUND TO IT (goal/G41.22): the agent has it now, so pushgoal hands it no more.
+      openTakes(it).forEach(function (o) { if (tookLine(o, { by: r.by, key: String(r.key || '') })) o.took = true; });
       return;
     }
     default: return;
@@ -1890,6 +1895,9 @@ function buttonsOf(s, it) {
   // the desk, never the current goal, and "that current goal change must be stopped for ALL plugin-goals", in the code
   // common to plugins, not inside one.
   if (it.goal && g && !g.abandoned && s.current !== it.id && !PLUGIN_GOAL[it.id]) out.push('make-current');
+  // PUSH GOAL (goal/G41.22; Andy: "the current goal and all its items, get a new button in the detail panel: "push
+  // Goal""): offered on the current goal and each of its items; its press is the verb pushgoal, his alone.
+  if (s.current && (it.id === s.current || it.goalId === s.current)) out.push('pushgoal');
   // DELETE, IN DESIGN MODE OR OUT OF IT (goal/G24.9; it was design mode only under goal/G9.7). Andy, 2026-10-14: "i have
   // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode, with two
   // exceptions: none while an agent holds a phase on it (red, build or verify), and none on an item claimed done and
@@ -2336,6 +2344,33 @@ function pushGoalWhole(gid) {
   [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
     .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
 }
+// PUSH GOAL (goal/G41.22, box v22; Andy: "the current goal and all its items, get a new button in the detail panel:
+// "push Goal", the ver on the desk is: "pushgoal""; agreed: "pushgoal replaces each agent's copy of the current goal
+// whole, no merge: nothing stale survives", "it moves each agent's read pointer to the newest change, never back to the
+// start, and in that same wake hands the agent every line of Andy's addressed to it that nobody took yet"). Every row
+// of it is under the one change it is pushed at and marked replace: the goal's facts and each item's, then each of his
+// lines to agents that nobody took yet (its row naming them, so each goes to its own), last its end. A deskClient drops
+// what it kept of the goal that the push does not carry (shell/shared/js/deskData.js, the family's cache.keep).
+function pushGoalReplace() {
+  const s = S;
+  const gid = s.current;
+  const g = gid ? s.goals[gid] : null;
+  if (!g) return 0;
+  const k = numbersOf(gid);
+  const ids = [gid].concat(g.members).filter(function (id) { return !!s.items[id]; });
+  const mark = function (o) { o.replace = true; o.goal = k[0]; return o; };
+  ids.forEach(function (id) { publishOne(mark(rowPublish(s, id, 'goal.whole', s.change))); });
+  ids.forEach(function (id) {
+    s.items[id].chat.forEach(function (l, i) {
+      // Nobody took it: not answered, and not taken by an agent (a nick binds its take at the write; took marks the agent's).
+      if (l.by !== 'andy' || l.answered || l.took || !Array.isArray(l.to) || !l.to.length) return;
+      if (l.taken && !l.bound) return;
+      publishOne(mark(sidePublish(s, id, { table: 'chat', x: { out: function () { return shownLine(s, l); }, to: l.to } }, s.change)));
+    });
+  });
+  publishOne({ change: s.change, verb: 'goal.whole', replace: true, end: true, goal: k[0], item: null, key: { goal: k[0], item: 0 } });
+  return s.change;
+}
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
 // every item where somebody holds something (signoff and his exclusion let go of what that agent held).
 function goalIds(s, gid) { const g = s.goals[gid]; return g ? [gid].concat(g.members) : []; }
@@ -2492,6 +2527,49 @@ function writeGoalFile(s, verb, a, change) {
 }
 // The node runs goalShare.js as a job, asked through the one spirit object of this process (goal/G40.6) on its own
 // node, with the verb the shell's Start Job uses.
+// A CLAIM PULLS THE DESK'S OWN CHECKOUT (goal/G41.22, box v22; Andy: "when the desk gets a claim red/build done. it pulls
+// it's repo automatically"; agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in
+// it: then it pulls nothing and says so under the item."). The checkout is GOAL_REPO, the one the goal file is shared
+// into; a desk sharing nothing (every suite's, spawned with {}) pulls nothing. The run it can know of is deskVerify's
+// (an item's verifyRunning). Answers once the pull, or the word that it did not, is done; it never throws.
+const PULL_WAIT_MS = 30000;
+const PULL_TRIES = 5;
+function pullOwnRepo(id) {
+  if (!GOAL_SHARED || !GOAL_REPO) return Promise.resolve();
+  const say = function (text) { try { write('chat.add', { id: id, text: text, by: 'desk', key: '' }); } catch (e) { /* the item went */ } };
+  const git = function (args) {
+    return new Promise(function (resolve, reject) {
+      require('child_process').execFile('git', ['-C', GOAL_REPO].concat(args), { timeout: PULL_WAIT_MS, windowsHide: true }, function (err, out, errOut) {
+        if (err) reject(new Error(String(errOut || err.message).trim().split('\n')[0])); else resolve(String(out));
+      });
+    });
+  };
+  const st = walkState();
+  const running = Object.keys(st.items).filter(function (k) { return st.items[k].verifyRunning === true; });
+  if (running.length) { say('not pulled: a test run is going on in the desk\'s checkout (' + running.join(', ') + ')'); return Promise.resolve(); }
+  return git(['status', '--porcelain', '--untracked-files=no']).then(function (out) {
+    const edits = out.split('\n').filter(Boolean);
+    if (edits.length) { say('not pulled: the desk\'s checkout has edits of its own (' + edits.slice(0, 3).map(function (l) { return l.slice(3); }).join(', ') + (edits.length > 3 ? ', …' : '') + ')'); return; }
+    // Its own branch from origin by name, fetched and then moved on only: a pull left to choose answered "Cannot
+    // fast-forward to multiple branches".
+    // The goal file's share runs git in the same checkout (goalShare.js, a job of its own), so two fetches can meet: a
+    // locked ref is tried again, a second apart, before the desk says it did not pull.
+    const once = function () {
+      return git(['rev-parse', '--abbrev-ref', 'HEAD']).then(function (branch) {
+        const b = branch.trim();
+        // Into its remote ref, never FETCH_HEAD, which the share's own fetch rewrites under it.
+        return git(['fetch', '-q', 'origin', '+refs/heads/' + b + ':refs/remotes/origin/' + b]).then(function () { return git(['merge', '--ff-only', '-q', 'refs/remotes/origin/' + b]); });
+      });
+    };
+    const tries = function (left) {
+      return once().then(null, function (e) {
+        if (left <= 0) throw e;
+        return new Promise(function (r) { setTimeout(r, 1000); }).then(function () { return tries(left - 1); });
+      });
+    };
+    return tries(PULL_TRIES).then(function () {}, function (e) { say('not pulled: ' + e.message); });
+  }, function (e) { say('not pulled: ' + e.message); });
+}
 function shareFile(repoPath, fromFile, message) {
   Promise.resolve().then(function () {
     // As {status, body}. A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays.
@@ -3398,6 +3476,9 @@ appServer.serve(withPlugins({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // goal/G41.22: his push of the current goal whole (pushGoalReplace). Andy: "pushgoal is the decided verb. no review."
+  // It writes nothing: a publish of what the desk holds.
+  pushgoal: { request: {}, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); return { change: pushGoalReplace() }; } },
   // HIS DELETE (goal/G9.7, widened by goal/G24.9): his alone, never a goal, never while a phase is held or a claim is
   // open, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
   // apart.
@@ -3783,8 +3864,12 @@ appServer.serve(withPlugins({
       if (!it) throw refused('no-such-item');
       mayWrite(st, w);
       // AN OPEN TAKE STANDS (goal/G21.1, goal/G21.6): a line its nick bound to it, or one it took and has not answered
-      // yet. Nothing to write; its next post answers that take.
-      if (holdsTake(it, w)) return { change: st.change };
+      // yet; its next post answers that take. A bound line taken for the first time is written (goal/G41.22: "every line
+      // of Andy's addressed to it that nobody took yet" is what pushgoal hands again, so the desk must know it was taken).
+      if (holdsTake(it, w)) {
+        if (!openTakes(it).some(function (l) { return tookLine(l, w) && !l.took; })) return { change: st.change };
+        return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
+      }
       let his = null;
       for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
       // AN AGENT'S LINE IS NEVER TAKEN (goal/G21.4). Andy, in the item's box: "An agent's answer is never takeable: no
@@ -3888,8 +3973,10 @@ appServer.serve(withPlugins({
       // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
       const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
       if (phase === 'build') emptiedByPress({ id: id });
-      // A BUILD CLAIM IS AN EVENT (goal/G33.3), as the press claim-done is: the states are read, nothing handed over.
-      if (phase === 'build') return verifyEvent('').then(function () { return { change: landed.change }; });
+      // A BUILD CLAIM IS AN EVENT (goal/G33.3), as the press claim-done is: the states are read, nothing handed over. The
+      // checkout is pulled first (goal/G41.22), so what is verified is what was claimed.
+      if (phase === 'build') return pullOwnRepo(id).then(function () { return verifyEvent(''); }).then(function () { return { change: landed.change }; });
+      pullOwnRepo(id);
       return { change: landed.change };
     },
   },
