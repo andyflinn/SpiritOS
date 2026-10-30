@@ -146,13 +146,9 @@
     }
     if (o.add !== false) container.querySelector('#' + pre + 'add').addEventListener('click', function () {
       if (typeof o.add === 'function') { o.add(open); return; }
-      // The new row reaches the list by the stream, as every change does.
-      // A NEW ROW TAKES ITS TABLE'S ICON (Andy: "all table rows will have an icon, by default the tables icon").
-      call(o.table, look.icon ? { op: 'add', icon: look.icon } : { op: 'add' }).then(function (r) {
-        if (gone) return;
-        container.querySelector('#' + pre + 'note').textContent = r.refused ? 'Not added: ' + r.refused : '';
-        if (r.id) open(r.id, true);
-      });
+      // ADD MAKES NO ROW (Andy: "NO ROW WILL BE CREATED WITH AN \"Add\" BUTTON for provider, persona, OR JOB!!!!!!!!!!!!"):
+      // it opens the detail in Add mode, an editor with no row of its own; the row is made there, whole.
+      open('', true);
     });
     needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
       if (gone) return;
@@ -209,6 +205,12 @@
     }
     var note = '';
     var added = o.added === true;
+    // THE ADD MODE (Andy: "the detail panel has and \"Add\" mode, with an \"Add new <provider|persona|job>\" button at the
+    // bottom. Only when all fields, including icon, are filled, will the \"Add\" button not respopnd with an error."): an
+    // editor with no id. It asks no get, a field changed saves nothing, and its button adds the whole row once every one
+    // of the table's mandatory fields (o.required, as its server names them) is filled; from then on it is that row's.
+    var adding = !o.id;
+    var required = Array.isArray(o.required) ? o.required : [];
     var path = branchOf(o.table) + '/' + o.id;
     var fields = [ICON_FIELD].concat(o.fields || []);
     function input(f) { return container.querySelector('#' + pre + f.field); }
@@ -244,7 +246,8 @@
           return f.of && !(narrowCount[f.field] > 0) ? line.replace('<div ', '<div hidden ') : line;
         }).join('') +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
-        '<div style="margin-top:1em"><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
+        '<div style="margin-top:1em">' + (adding ? '<button type="button" id="' + pre + 'addnew">Add new ' + esc((o.look && o.look.name) || o.table) + '</button>'
+          : '<button type="button" id="' + pre + 'delete">Delete</button>') + ' <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
         if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
@@ -322,6 +325,7 @@
       });
       // DELETE ASKS ARE-YOU-SURE (Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"): the
       // shell's arming button, loaded here (rule/26); the first press arms, the second deletes.
+      if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
       needs(['shell/js/armingButton.js']).then(function () {
         if (gone || !del.isConnected || !E.armingButton) return;
@@ -344,6 +348,10 @@
         else v = el ? String(el.value || '') : undefined;
         if (f.kind === 'secret' && !v) return;
         if (f.kind === 'url' && !v) return;
+        // A pick or a bundle never picked holds no key, so it is not sent (Andy: "when i pick a persona, provider, or a
+        // bundle, the UI responds to ALL three of those picker changes with exactly these words: \"Not saved: agent.job:
+        // provider must be a peer's public key\"").
+        if ((f.kind === 'pick' || f.kind === 'bundle') && (v === '' || v == null)) return;
         if (v !== undefined && v !== null) out[f.field] = v;
       });
       return out;
@@ -351,6 +359,7 @@
     // A save and Delete only propose: the editor repaints when the stream writes the row's path (or deletes it), and says
     // a refusal in its note.
     function save() {
+      if (adding) return;
       call(o.table, changes()).then(function (r) {
         if (gone) return;
         if (!r.refused) added = false;
@@ -365,8 +374,30 @@
         paint();
       });
     }
+    // Add new: the mandatory fields missing are said and nothing is made, what was typed kept; with them all, the whole
+    // row is added once and the editor becomes its.
+    function addNew() {
+      var a = changes();
+      delete a.id;
+      a.op = 'add';
+      Object.keys(a).forEach(function (k) { if (k !== 'op') row[k] = a[k]; });
+      var lacks = required.filter(function (k) { return a[k] == null || String(a[k]).trim() === ''; });
+      if (lacks.length) { note = 'Not added: ' + lacks.join(', ') + (lacks.length > 1 ? ' are' : ' is') + ' required'; paint(); return; }
+      call(o.table, a).then(function (r) {
+        if (gone) return;
+        if (r.refused || !r.id) { note = 'Not added: ' + (r.refused || 'no row'); paint(); return; }
+        o.id = r.id;
+        adding = false;
+        added = false;
+        note = 'Added.';
+        path = branchOf(o.table) + '/' + o.id;
+        attach();
+      });
+    }
     // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so.
-    var unwatch = D().watch(path, function (p, value) {
+    var unwatch = function () {};
+    function attach() {
+    unwatch = D().watch(path, function (p, value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;
       paint();
@@ -374,8 +405,9 @@
     // ITS FIRST STATE IS ALWAYS THE SERVER'S get (Andy, on G41.18: "that exactly what GET is for, to bring in the rest for
     // detail panels etc..."): a search answers only the fields its list shows, so what the branch holds may be a slim
     // row. The whole row is put where the stream writes it, and the editor draws from there.
+    var had = row;
     row = null;
-    paint();
+    if (!had) paint();
     call(o.table, { op: 'get', id: o.id }).then(function (r) {
       if (gone) return;
       if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
@@ -383,6 +415,8 @@
       // A set that changes nothing tells no watcher: the editor takes the answer itself.
       if (!row) { row = D().get(path) || r; paint(); }
     });
+    }
+    if (adding) { row = {}; paint(); } else attach();
     return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 

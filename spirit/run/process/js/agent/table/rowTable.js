@@ -44,13 +44,18 @@ function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra
 function sqlType(rule) { return String(rule).replace(/\?$/, '') === 'bool' ? 'INTEGER' : 'TEXT'; }
 
 // def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '', shows(row) -> fields shown too,
-//   listed: [field] the fields its list shows, which alone a search answers beside the id (icon and label by default) }
+//   listed: [field] the fields its list shows, which alone a search answers beside the id (icon and label by default),
+//   required: [field] its mandatory fields }
 function rowTable(db, def, publish) {
   const name = def.name;
   const fields = Object.assign({}, COMMON, def.fields);
   const secret = def.secret || [];
   // The fields its list shows, all a search answers beside the id: icon and label, unless the table names its own.
   const listed = Array.isArray(def.listed) ? def.listed : ['icon', 'label'];
+  // NO INVALID ROW GETS ONTO A TABLE (Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!", "# mandatory fields
+  // (server AND ui)"): an add without one of these, or a change that would empty one, is refused, naming each missing.
+  const required = Array.isArray(def.required) ? def.required : [];
+  function missing(r) { return required.filter(function (f) { return r[f] === undefined || r[f] === null || String(r[f]).trim() === ''; }); }
   const t = '"' + name + '"';
   db.exec('CREATE TABLE IF NOT EXISTS ' + t + ' (id TEXT PRIMARY KEY, privateKey TEXT NOT NULL, sealPublicKey TEXT NOT NULL, ' +
     'sealPrivateKey TEXT NOT NULL, ' + Object.keys(fields).map(function (f) {
@@ -116,6 +121,10 @@ function rowTable(db, def, publish) {
       if (bad) throw refuse(bad.code === 'no-such-argument' ? 'no-such-argument' : 'bad-request', bad.message);
       const why = def.check ? def.check(a, db) : '';
       if (why) throw refuse('bad-request', name + ': ' + why);
+      if (a.op === 'add' || a.op === 'set') {
+        const lacks = missing(a.op === 'add' ? a : Object.assign({}, the(a), a));
+        if (lacks.length) throw refuse('bad-request', name + ': ' + lacks.join(', ') + (lacks.length > 1 ? ' are' : ' is') + ' required');
+      }
       if (a.op === 'add') {
         const key = generateIdentity('');
         const set = given(a);
@@ -172,6 +181,7 @@ function rowTable(db, def, publish) {
   // them).
   return {
     verb: verb,
+    required: required.slice(),
     has: function (id) { return !!q.get.get(String(id)); },
     label: function (id) { const r = q.get.get(String(id)); return r ? String(r.label || '') : ''; },
     icon: function (id) { const r = q.get.get(String(id)); return r ? String(r.icon || '') : ''; },

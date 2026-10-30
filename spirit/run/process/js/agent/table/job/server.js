@@ -12,5 +12,7 @@ module.exports = function (ctx) {
   return rowTable(ctx.db, {
     name: 'job',
     fields: { loop: 'bool?', job: 'text?', bundle: 'text?', provider: 'key?', persona: 'key?' },
+    // goal/G41.21: "# mandatory fields (server AND ui)"; "job: icon, label".
+    required: ['icon', 'label'],
   }, ctx.publish);
 };

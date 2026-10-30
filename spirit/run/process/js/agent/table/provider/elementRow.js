@@ -36,6 +36,8 @@
         if (gone) return;
         made = window.spirit.elements.agentRow.create(container, {
           api: api, table: 'provider', id: id, added: added === true, look: detail && detail.look ? detail.look('provider') : null, fields: FIELDS,
+          // Its mandatory fields, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)").
+          required: ['icon', 'label', 'url'],
         });
       });
       return { destroy: function () { gone = true; if (made) made.destroy(); } };

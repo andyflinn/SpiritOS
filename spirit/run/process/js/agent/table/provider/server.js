@@ -45,6 +45,8 @@ module.exports = function (ctx) {
     // provider's current model."
     fields: { url: 'url?', apiKey: 'text?', unusable: 'bool?', model: 'key?' },
     secret: ['apiKey'],
+    // goal/G41.21: "# mandatory fields (server AND ui)"; "provider: icon, label, valid URL".
+    required: ['icon', 'label', 'url'],
     check: function (a, db) {
       if ((a.op !== 'add' && a.op !== 'set') || !a.url) return '';
       const mine = a.op === 'set' ? String(a.id) : '';
