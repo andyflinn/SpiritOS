@@ -38,6 +38,8 @@ function makeDom() {
   function el(tag) {
     const attrs = {}; const heard = {};
     const e = { tagName: String(tag || 'div').toUpperCase(), children: [], parentNode: null, style: {}, value: '', hidden: false, disabled: false, type: '', title: '', _text: '',
+      // Every box as if its content were ten times its height, scrolled to the top: what the app scrolls is seen.
+      scrollTop: 0, scrollHeight: 1000, clientHeight: 100,
       get id() { return attrs.id || ''; }, set id(v) { attrs.id = String(v); },
       get className() { return attrs.class || ''; }, set className(v) { attrs.class = String(v); },
       get firstChild() { return e.children[0] || null; },
@@ -157,6 +159,43 @@ function armingStub(document, made) {
   return { attach: attach, create: create };
 }
 
+// A working workBench, as its spec says (shell/js/test/workBench.md), that writes down every bench it makes: its strips
+// are buttons by data-tool, a click shows that tool in its side's pane, a tool's mount is called once with a box of its own.
+function workBenchStub(document, benches) {
+  function create(container, o) {
+    o = o || {};
+    const sides = { left: Array.isArray(o.left) ? o.left : [], right: Array.isArray(o.right) ? o.right : [] };
+    const root = container.appendChild(document.createElement('div'));
+    root.setAttribute('data-bench', 'yes');
+    const strip = {}; const pane = {}; const boxes = { left: {}, right: {} }; const shown = { left: '', right: '' };
+    if (sides.left.length) { strip.left = root.appendChild(document.createElement('div')); pane.left = root.appendChild(document.createElement('div')); }
+    const center = root.appendChild(document.createElement('div'));
+    center.setAttribute('data-bench-center', 'yes');
+    if (sides.right.length) { pane.right = root.appendChild(document.createElement('div')); strip.right = root.appendChild(document.createElement('div')); }
+    function press(side, name) {
+      const t = sides[side].filter(function (x) { return x.name === name; })[0];
+      if (!t) return;
+      if (!boxes[side][name]) { boxes[side][name] = pane[side].appendChild(document.createElement('div')); if (typeof t.mount === 'function') t.mount(boxes[side][name]); }
+      shown[side] = name;
+      if (typeof o.changed === 'function') o.changed(side, name);
+    }
+    ['left', 'right'].forEach(function (side) {
+      sides[side].forEach(function (t) {
+        const b = strip[side].appendChild(document.createElement('button'));
+        b.setAttribute('data-side', side); b.setAttribute('data-tool', t.name); b.textContent = t.icon;
+        b.addEventListener('click', function () { press(side, t.name); });
+      });
+    });
+    const bench = { container: container, opts: o, root: root, center: center, press: press,
+      shown: function (side) { return shown[side]; }, width: function () { return 240; }, destroy: function () { container.innerHTML = ''; } };
+    benches.push(bench);
+    return bench;
+  }
+  return { create: create };
+}
+// A panel's icon, on today's strip (data-panel) or on the workBench's (data-tool).
+function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + key + '"]') || w.document.querySelector('[data-tool="' + key + '"]'); }
+
 // ── EVERY ARE-YOU-SURE IS AN armingButton (goal/G41.9) ───────────────────────────────────────────────────────────────
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
@@ -168,8 +207,10 @@ function ddWorld(facts, checks) {
   const asked = [];
   const required = [];
   const closed = [];
+  const benches = [];
+  const titles = [];
   const api = { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
-    setScreenTitle: function () {}, closeDialog: function (x) { closed.push(x); }, onPublished: function () {}, armUntilElsewhere: function () {},
+    setScreenTitle: function (t) { titles.push(String(t)); }, closeDialog: function (x) { closed.push(x); }, onPublished: function () {}, armUntilElsewhere: function () {},
     verb: function (name, args) {
       asked.push({ name: name, args: args });
       if (name === 'desk.item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 1 } });
@@ -184,13 +225,19 @@ function ddWorld(facts, checks) {
     console: { log: function () {}, error: function () {}, warn: function () {} } };
   win.window = win;
   win.spirit = { escapeHtml: api.escapeHtml,
-    require: function (p) { required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    // workBench is on the page once spirit.require brings it, never preloaded.
+    require: function (p) {
+      const q = String(p).replace(/^\/+/, '');
+      required.push(q);
+      if (q === 'shell/js/workBench.js') win.spirit.elements.workBench = workBenchStub(document, benches);
+      return Promise.resolve({});
+    },
     elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
       probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
   vm.runInContext(raw, win, { filename: FILE });
-  const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win };
+  const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     win.def.mount(document.body.appendChild(document.createElement('div')), api);
     await win.def.open({ id: facts.id });
@@ -250,7 +297,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   w = ddWorld(ITEM, []); await w.open();
   await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item');
   const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
-  const grants = async function () { const g = ddWorld(ITEM, CHECKS); await g.open(); g.document.click(g.document.querySelector('[data-panel="files"]')); await settle(); return g; };
+  const grants = async function () { const g = ddWorld(ITEM, CHECKS); await g.open(); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
   w = await grants();
   await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1');
   w = await grants();
@@ -279,7 +326,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
       what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }));
   }
   const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
-  const withQ = async function () { const g = ddWorld(ITEM, QS); await g.open(); g.document.click(g.document.querySelector('[data-panel="qs"]')); await settle(); return g; };
+  const withQ = async function () { const g = ddWorld(ITEM, QS); await g.open(); g.document.click(panelIcon(g, 'qs')); await settle(); return g; };
   w = await withQ();
   await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove');
 
@@ -324,7 +371,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     return r;
   };
   const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
-  const rulesIcon = function (r) { return r.document.querySelector('[data-panel="rules"]'); };
+  const rulesIcon = function (r) { return panelIcon(r, 'rules'); };
   const rw = ruleWorld(); await rw.open();
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
   const pick = rulePick(rw);
@@ -337,14 +384,59 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
   ok(!scriptTags.length, 'no hand-rolled script tag loads the search', scriptTags.length + ' script tag(s) for probabilitySearch');
   // Away to the box and back: the dropdown is there again, every time the panel opens.
-  const boxIcon = rw.document.querySelector('[data-panel="box"]');
+  const boxIcon = panelIcon(rw, 'box');
   if (boxIcon) { rw.document.click(boxIcon); await settle(); }
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
   const again = rulePick(rw);
   ok(!!again && inPage(rw, again.host) && shown(again.host), 'away from the rules and back, the dropdown is shown again', 'after reopening: ' + JSON.stringify({ made: rw.searches.length, shown: !!again && shown(again.host) }));
-  test.subHeading('goal/G41.11: a new chat line is put in on top; the lines shown stay as they are');
-  // Andy, on G41.11: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing my attempted
-  // copies". A line already shown is the same element after a new line comes and after any other repaint.
+  // ── goal/G41.22: THE DETAILS PANEL IS A workBench ─────────────────────────────────────────────────────────────────────
+  // Andy, box v15: "the item panel drops appHeader", "the items ID and title, including status is shown in the shells
+  // title bar like always", "one row, the button row, at the top, using the whole width, like it is today", "just use
+  // workBench", "the left icons strip and panel, are what we have today", "the center panel us the chat", "the right
+  // panel, we leave blank, but will carry plugin-desk-apps".
+  const walkAll = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walkAll(c, out); }); return out; };
+  const inside = function (n, box) { for (let p = n; p; p = p.parentNode) { if (p === box) return true; } return false; };
+  test.subHeading('goal/G41.22: no appHeader; the id, title and status in the shell\'s title bar');
+  ok(!/appHeader/.test(plain), 'deskDetails.js names no appHeader', 'deskDetails.js still names appHeader');
+  const wt = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.7', title: 'A titled item', status: 'running' }), []); await wt.open();
+  const lastTitle = wt.titles[wt.titles.length - 1] || '';
+  ok(lastTitle.indexOf('goal/G9.7') !== -1 && lastTitle.indexOf('A titled item') !== -1 && lastTitle.indexOf('running') !== -1,
+    'the shell\'s title bar says the id, the title and the status', 'the title bar was given ' + JSON.stringify(wt.titles));
+  test.subHeading('goal/G41.22: one workBench, the button row above it');
+  const wb = ddWorld(ITEM, []); await wb.open();
+  ok(wb.required.indexOf('shell/js/workBench.js') !== -1, 'it requires shell/js/workBench.js through spirit.require', 'required: ' + JSON.stringify(wb.required));
+  const bench = wb.benches[0] || null;
+  ok(wb.benches.length === 1 && !!bench && inside(bench.container, wb.document.getElementById('dd-body')), 'it makes one workBench, inside its own body',
+    'workBenches made: ' + wb.benches.length);
+  const leftNames = bench ? (bench.opts.left || []).map(function (t) { return t.name + ' ' + t.icon; }) : [];
+  const panelNames = (panels || []).map(function (p) { return p.key + ' ' + p.icon; });
+  ok(!!bench && JSON.stringify(leftNames) === JSON.stringify(panelNames), 'the left strip is today\'s panels, each its icon, in order: ' + panelNames.join(', '),
+    'the left strip: ' + JSON.stringify(leftNames) + ', today\'s panels: ' + JSON.stringify(panelNames));
+  ok(!!bench && !(bench.opts.right || []).length, 'the right side is left blank: no tool on it', 'the right side has ' + JSON.stringify(bench && bench.opts.right));
+  const row = wb.document.getElementById('dd-name-row');
+  const benchOrder = walkAll(wb.document.root, []);
+  ok(!!row && !!bench && !inside(row, bench.root) && benchOrder.indexOf(row) < benchOrder.indexOf(bench.root), 'the button row stands above the workBench, outside it, the whole width',
+    'the button row: ' + (!row ? 'none' : !bench ? 'no workBench to stand above' : inside(row, bench.root) ? 'inside the workBench' : 'after the workBench'));
+  if (bench) { const qsIcon = panelIcon(wb, 'qs'); if (qsIcon) { wb.document.click(qsIcon); await settle(); } }
+  ok(!!bench && bench.shown('left') === 'qs' && !!wb.document.querySelector('[data-qclear], #dd-panel') && inside(wb.document.querySelector('[data-qclear], #dd-panel'), bench.root),
+    'a left icon shows its panel in the workBench\'s left pane', 'after the red Qs icon: ' + JSON.stringify({ shown: bench && bench.shown('left') }));
+  test.subHeading('goal/G41.22: the centre is the chat, its search on top and its input at the bottom');
+  const centre = bench ? bench.center : null;
+  const find = wb.document.getElementById('dd-chat-find');
+  const chatLog = wb.document.getElementById('dd-chat');
+  const say = wb.document.getElementById('dd-say');
+  ok(!!centre && [find, chatLog, say].every(function (n) { return n && inside(n, centre); }), 'the chat search, the chat and its input are in the workBench\'s centre',
+    'in the centre: ' + JSON.stringify({ search: !!(find && centre && inside(find, centre)), chat: !!(chatLog && centre && inside(chatLog, centre)), input: !!(say && centre && inside(say, centre)) }));
+  const order2 = walkAll(wb.document.root, []);
+  ok(!!find && !!chatLog && !!say && order2.indexOf(find) < order2.indexOf(chatLog) && order2.indexOf(chatLog) < order2.indexOf(say), 'top to bottom: the search, the chat, the input',
+    'positions: ' + JSON.stringify({ search: order2.indexOf(find), chat: order2.indexOf(chatLog), input: order2.indexOf(say) }));
+  const sayStyle = String((say && say.attrs && say.attrs.style) || '');
+  ok(/resize\s*:\s*vertical/.test(sayStyle), 'the chat input can be sized up and down only (resize: vertical)', 'the input\'s style: ' + JSON.stringify(sayStyle));
+
+  test.subHeading('goal/G41.22: newest line at the bottom, pinned there; the lines shown stay as they are');
+  // Andy, box v15: "scrolls upward, not downward. that means, newest lines at the bottom, pinned to the bottom, and older
+  // lines above." And G41.11, kept: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing
+  // my attempted copies": a line already shown is the same element after a new line comes and after any other repaint.
   const CHATTY = Object.assign({}, ITEM, { id: 'goal/G9.6' });
   const L1 = { by: 'andy', at: '2026-10-27T10:00:00.000Z', text: 'the first line' };
   const L2 = { by: 'claude-windows', at: '2026-10-27T10:01:00.000Z', text: 'the second line' };
@@ -356,24 +448,31 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   cw.api.verb = function (name, args) { if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(name, args); };
   await cw.open();
   const log = function () { return cw.document.getElementById('dd-chat'); };
-  const shownNow = function () { return (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); };
+  // What he sees, top to bottom: the lines in their order, turned round where a box shows them reversed (column-reverse).
+  const reversed = function () { for (let p = log(); p; p = p.parentNode) { if (/flex-direction\s*:\s*column-reverse/.test(String((p.attrs && p.attrs.style) || '') + ' ' + String((p.style && p.style.flexDirection) || ''))) return true; } return false; };
+  const shownNow = function () { const l = (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); return reversed() ? l.slice().reverse() : l; };
+  // Pinned to the bottom: a box between the lines and the centre scrolled to its end, or one showing them reversed.
+  const pinned = function () { if (reversed()) return true; for (let p = log(); p && p !== cw.document.root; p = p.parentNode) { if (p.scrollTop >= p.scrollHeight - p.clientHeight) return true; } return false; };
+  const words = function (l) { return JSON.stringify(l.map(function (b) { return b.textContent.replace(/[\s\S]*(the \w+ line)[\s\S]*/, '$1'); })); };
   const before = shownNow();
-  ok(before.length === 2 && /second/.test(before[0].textContent), 'it opens with the two lines, newest first', 'shown: ' + JSON.stringify(before.map(function (b) { return b.textContent; })));
+  ok(before.length === 2 && /first/.test(before[0].textContent) && /second/.test(before[1].textContent), 'it opens with the two lines, the newest at the bottom', 'top to bottom: ' + words(before));
+  ok(pinned(), 'it opens pinned to the bottom, at the newest line', 'no box of the chat is scrolled to its end');
   if (heard) { heard({ change: 50, table: 'chat', id: CHATTY.id, row: L3 }); await settle(); }
   const afterLine = shownNow();
-  ok(afterLine.length === 3 && /third/.test(afterLine[0].textContent), 'a new line on the stream is put in on top', 'shown: ' + JSON.stringify(afterLine.map(function (b) { return b.textContent; })));
-  ok(afterLine.length === 3 && afterLine[1] === before[0] && afterLine[2] === before[1], 'the two lines already shown are the same elements as before: not drawn again',
-    'drawn again: ' + JSON.stringify({ second: afterLine[1] === before[0], first: afterLine[2] === before[1] }));
+  ok(afterLine.length === 3 && /third/.test(afterLine[2].textContent), 'a new line on the stream is put in at the bottom', 'top to bottom: ' + words(afterLine));
+  ok(pinned(), 'after a new line it is pinned to the bottom still', 'no box of the chat is scrolled to its end after the new line');
+  ok(afterLine.length === 3 && afterLine[0] === before[0] && afterLine[1] === before[1], 'the two lines already shown are the same elements as before: not drawn again',
+    'drawn again: ' + JSON.stringify({ first: afterLine[0] === before[0], second: afterLine[1] === before[1] }));
   if (heard) { heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
   const afterOther = shownNow();
-  ok(afterOther.length === 3 && afterOther[0] === afterLine[0] && afterOther[1] === before[0] && afterOther[2] === before[1],
+  ok(afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2],
     'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
   test.subHeading('goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off');
   // Andy: "the rules list is NOT placed properly in a size-limited container". The upper half is fixed at 30vh with its
   // overflow hidden; what bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
   const rf = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }), []);
   await rf.open();
-  const icon = rf.document.querySelector('[data-panel="rules"]');
+  const icon = panelIcon(rf, 'rules');
   if (icon) { rf.document.click(icon); await settle(); }
   const firstRuleRow = rf.document.querySelector('[data-rule-remove]');
   let bound = null;

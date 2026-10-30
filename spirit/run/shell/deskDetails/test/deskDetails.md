@@ -1,7 +1,8 @@
 # shell/deskDetails/deskDetails.js
 
 An item's details page in the Desk app: the box, the suites, the red Qs, the blocks, the files and the rules, each a
-panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20) requires of it.
+panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11 and G41.22 require
+of it.
 
 ## Requirements (goal/G41.1)
 
@@ -46,9 +47,9 @@ first displayed."
   first press arms, the second presses `start-design` / `end-design`.
 - **Rename** opens its field (`dd-name`) holding the current title of the goal or item; Save sends the title as edited.
 - **The chat keeps what it shows** (Andy: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS
-  REDRAWN, killing my attempted copies"): a new line from the stream is put in at the top (newest first), and every line
-  already shown stays the same element, through that line and through any other repaint (a check, a status), so a
-  selection survives. The whole chat is drawn again only when the panel reloads (a dropped update, another subject).
+  REDRAWN, killing my attempted copies"): every line already shown stays the same element, through a new line and
+  through any other repaint (a check, a status), so a selection survives. The whole chat is drawn again only when the
+  panel reloads (a dropped update, another subject). Where a new line goes is goal/G41.22's, below.
 
 ## What its test must try to break (goal/G41.11)
 
@@ -60,3 +61,36 @@ first displayed."
 
 The upper half is fixed at 30vh with its overflow hidden; the box that bounds the rules panel scrolls (overflow auto), so
 a long list of rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.
+
+## Requirements (goal/G41.22, box v15)
+
+Andy: *"the item panel drops appHeader"*, *"the items ID and title, including status is shown in the shells title bar
+like always"*, *"one row, the button row, at the top, using the whole width, like it is today"*, *"just use workBench"*,
+*"the left icons strip and panel, are what we have today"*, *"the center panel us the chat"*, *"the right panel, we
+leave blank, but will carry plugin-desk-apps"*, *"the chat has it's search at the top and it's input at the bottom"*,
+*"newest lines at the bottom, pinned to the bottom, and older lines above"*, *"the chat input can only be sized
+vertically"*.
+
+- **No appHeader**: deskDetails.js names none. The id, title and status go to the shell's title bar
+  (`api.setScreenTitle`).
+- **One workBench** (`shell/js/workBench.js`, loaded through `spirit.require`), made inside the dialog's body.
+  - Its **left** tools are today's panels, `DD_PANELS`, each by its key and glyph, in order. A left icon shows that
+    panel in the left pane.
+  - Its **right** side has no tool: it is blank until a desk plugin app gives it one.
+  - Its **centre** is the chat: the chat search (`dd-chat-find`) on top, the lines (`dd-chat`), the input (`dd-say`) at
+    the bottom.
+- **The button row** (`dd-name-row`) stands above the workBench, outside it, the whole width.
+- **The input** resizes up and down only (`resize: vertical`).
+- **Newest at the bottom**: the lines read oldest to newest, top to bottom. A new line from the stream goes in at the
+  bottom. The chat opens pinned to the bottom and stays there after a new line: a box of the chat is scrolled to its
+  end, or the lines are shown reversed (`flex-direction: column-reverse`).
+- That every box of the panel is bounded, tall and wide, is the shell's general rules' check
+  (`shell/test/boot-sibling-generalRules.md`), which mounts this app.
+
+## What its test must try to break (goal/G41.22)
+
+- An appHeader left; the title bar missing the id, the title or the status.
+- No workBench, or two; a panel missing from the left strip, or out of order; a tool on the right.
+- The button row inside the workBench, or below it.
+- The chat, its search or its input outside the centre, or out of order; an input that resizes sideways.
+- The newest line on top; a new line put in on top; a chat not scrolled to its newest line; a line drawn again.
