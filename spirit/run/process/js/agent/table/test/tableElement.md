@@ -121,6 +121,10 @@ Only when all fields, including icon, are filled, will the "Add" button not resp
 
 Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that............."*. A field of kind `output`, naming the table it points to (`pick`), shows that table's row by its icon and label; it has no picker and no input, and a save of the row never sends it.
 
+### A bundle field follows the server (goal/G41.21)
+
+Andy: *"persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just doesn't seem to hear the change from the server)"*: the row's bundle changed on the stream, the bundle field says the new bundle by its label.
+
 ## What its test must try to break
 
 - A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
@@ -137,3 +141,4 @@ Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a
 - An Add that makes a row before it is valid; an Add mode that saves on a change, loses what was typed, or has a Delete.
 - A pick refused for a field the user never touched.
 - An output field drawn as a picker or an input, or sent with a save.
+- A bundle field that keeps the label of the bundle it first showed.

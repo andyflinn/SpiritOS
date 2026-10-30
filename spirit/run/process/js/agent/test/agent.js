@@ -117,13 +117,15 @@ test.startTest('agent.js: the agent server');
     const colsOf = function (t) { return t ? look.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all() : []; };
     // The columns, as cw named them for the build: camelCase as the shadow-roll is, every table's id the public key and
     // the rest of its key set beside it.
-    const KEYSET = [/^id$/, /^privateKey$/, /^sealPublicKey$/, /^sealPrivateKey$/, /^label$/, /^description$/];
+    // goal/G41.21, Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.", "ALL, from all agent-tables I mean...".
+    const KEYSET = [/^id$/, /^privateKey$/, /^sealPublicKey$/, /^sealPrivateKey$/, /^label$/];
     const WANT = {
       provider: KEYSET.concat([/^url$/, /^apiKey$/, /^model$/]),
-      model: KEYSET.concat([/^providerId$/, /^modelName$/, /^capabilities$/]),
+      model: KEYSET.concat([/^providerId$/, /^capabilities$/]),
       persona: KEYSET.concat([/^persona$/, /^bundle$/]),
       job: KEYSET.concat([/^loop$/, /^job$/, /^bundle$/, /^provider$/, /^persona$/]),
     };
+    ok(Object.keys(WANT).every(function (name) { return colsOf(tableOf(name)).every(function (c) { return c.name !== 'description'; }); }), 'no agent table has a description column', 'columns: ' + short(Object.keys(WANT).map(function (n) { return [n, colsOf(tableOf(n)).map(function (c) { return c.name; })]; })));
     Object.keys(WANT).forEach(function (name) {
       const t = tableOf(name);
       const cols = colsOf(t).map(function (c) { return c.name; });
@@ -177,14 +179,14 @@ test.startTest('agent.js: the agent server');
     const changed = await ask('provider', { op: 'set', id: pid, label: 'A provider, renamed' });
     const row2 = pT && isKey(pid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(pT) + ' WHERE id = ?').get(pid) : null;
     ok(changed.status === 200 && !!row2 && row2.label === 'A provider, renamed' && row2.apiKey === API_KEY && leaks(changed) === 0, 'provider {set} changes the field it names, keeps the rest, and answers no secret', 'answer ' + short(changed.body || changed) + ', label ' + short(row2 && row2.label));
-    const modelAdd = await ask('model', { op: 'add', label: 'A model', description: 'd', providerId: pid, modelName: 'test-model-1', capabilities: ['text'] });
+    const modelAdd = await ask('model', { op: 'add', label: 'test-model-1', providerId: pid, capabilities: ['text'] });
     const mid = modelAdd.body && modelAdd.body.id;
     const mT = tableOf('model');
     const mrow = mT && isKey(mid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(mT) + ' WHERE id = ?').get(mid) : null;
-    ok(isKey(mid) && mid !== pid && !!mrow && mrow.providerId === pid && mrow.modelName === 'test-model-1', 'model {add} keys its own row, naming its provider by the provider\'s id', 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow));
-    const jobAdd = await ask('job', { op: 'add', icon: '📋', label: 'Code review', description: 'd', loop: true, job: 'Review the diff.' });
+    ok(isKey(mid) && mid !== pid && !!mrow && mrow.providerId === pid && mrow.label === 'test-model-1' && !('modelName' in mrow), 'model {add} keys its own row, naming its provider by the provider\'s id', 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow));
+    const jobAdd = await ask('job', { op: 'add', icon: '📋', label: 'Code review', loop: true, job: 'Review the diff.' });
     const jid = jobAdd.body && jobAdd.body.id;
-    const personaAdd = await ask('persona', { op: 'add', icon: '🎭', label: 'A reviewer', description: 'd', persona: 'You review code.' });
+    const personaAdd = await ask('persona', { op: 'add', icon: '🎭', label: 'A reviewer', persona: 'You review code.' });
     ok(isKey(jid) && isKey(personaAdd.body && personaAdd.body.id), 'job {add} and persona {add} each answer a key of their own', 'job ' + short(jobAdd.body || jobAdd) + ', persona ' + short(personaAdd.body || personaAdd));
     // goal/G41.21: a job's grant is its bundle, and it names its provider and its persona; no grant verb is asked.
     const jSet = await ask('job', { op: 'set', id: jid, bundle: '7', provider: pid, persona: personaAdd.body && personaAdd.body.id });

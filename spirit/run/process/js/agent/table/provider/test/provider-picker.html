@@ -47,12 +47,14 @@ window.picker = function (answers) {
     var shown = !!line && !line.hidden && line.getClientRects().length > 0;
     var host = label ? document.getElementById(label.getAttribute('for')) : null;
     var field = host ? host.querySelector('button') : null;
+    // What the closed field says as the panel opens: the provider's current model, by its name.
+    var fieldText = field ? field.textContent.replace(/\s+/g, ' ').trim() : '';
     if (field) field.click();
     return wait(800).then(function () {
       var pop = host ? Array.prototype.filter.call(host.querySelectorAll('div'), function (d) { return /popup$/.test(d.id); })[0] : null;
       var rows = pop ? Array.prototype.map.call(pop.querySelectorAll('tr[data-key]'), function (tr) { return { key: tr.getAttribute('data-key'), text: tr.textContent.replace(/\s+/g, ' ').trim() }; }) : [];
       var said = pop ? pop.textContent.replace(/\s+/g, ' ').trim() : '';
-      return JSON.stringify({ label: !!label, shown: shown, field: !!field, popupOpen: !!pop && !pop.hidden, rows: rows, nothing: /Nothing matches/.test(said), asked: asked });
+      return JSON.stringify({ fieldText: fieldText, label: !!label, shown: shown, field: !!field, popupOpen: !!pop && !pop.hidden, rows: rows, nothing: /Nothing matches/.test(said), asked: asked });
     });
   });
 };

@@ -41,6 +41,10 @@ No agents talk to each other through it: each agent sees itself as the only agen
   verbs, no grant, and `process/js/agent/table/grant` is gone.
 - The provider table has `model`; the job table `bundle`, `provider` and `persona`.
 
+### No description, no model name (goal/G41.21)
+
+Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. No agent table has a description column. Andy: *"i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI."*: the model table has no model name column, its label holds it.
+
 ## What its test must try to break
 
 - A DEBUG state kept apart from the built-in one.
@@ -66,3 +70,4 @@ No agents talk to each other through it: each agent sees itself as the only agen
   shell/js/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
 - A grant table or verb left, or an old grant table kept at start.
+- A description column left on an agent table; a model name column.

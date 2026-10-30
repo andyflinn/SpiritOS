@@ -391,8 +391,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);
   const PA = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine', url: 'https://mine.example' }).id;
   const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
-  const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA, modelName: 'claude-mine' }).id;
-  const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB, modelName: 'claude-theirs' }).id;
+  const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA }).id;
+  const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB }).id;
   D.seat('agent.model', sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
   // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
   // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
@@ -438,7 +438,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   {
     D.set('agent.provider/KOUT', { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
     w.calls.length = 0;
-    w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT', modelName: 'm' } : { id: 'KM' }; };
+    w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT' } : { id: 'KM' }; };
     const before = w.searches.length;
     const eo = box('output');
     const ro = E.agentRow.create(eo, { api: {}, table: 'model', id: 'KM', added: false, look: look,
@@ -525,6 +525,12 @@ test.startTest('tableElement.js: what the tables\' elements share');
     const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
     ok(set && set.table === 'job' && String(set.args.bundle) === '9' && set.args.label === 'A job', 'a bundle picked saves the whole row at once: job { op: set, id, label, bundle }', 'calls: ' + short(w.calls));
   }
+  // Andy: "persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just
+  // doesn't seem to hear the change from the server)": the row's bundle changed on the stream, the field says the new one.
+  D.merge('agent.job/KJ', { bundle: '9' }); await settle(); await settle();
+  const bsel2 = w.bundles[w.bundles.length - 1];
+  const bundleSays2 = bsel2 ? String((bsel2.row && bsel2.row.label) || bsel2.opts.placeholder || '') : '';
+  ok(/Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2), 'the row\'s bundle changed by the server, the field says the new one, Writer', 'the bundle field says ' + JSON.stringify(bundleSays2) + ' after the stream set bundle 9, Writer');
   r4.destroy();
 
   // Box v17: "A bundle deleted while a job names it leaves that job with no grant, and the job says so in its detail

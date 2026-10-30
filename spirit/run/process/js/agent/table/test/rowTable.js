@@ -52,7 +52,7 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
   test.subHeading('the table: the key set, the common fields, the named fields');
   const cols = db.prepare('PRAGMA table_info("thing")').all();
   const names = cols.map(function (c) { return c.name; });
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'description', 'url', 'apiKey', 'on', 'tags'].forEach(function (c) {
+  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'url', 'apiKey', 'on', 'tags'].forEach(function (c) {
     ok(names.indexOf(c) !== -1, 'it has the column ' + c, 'columns: ' + short(names));
   });
   const pk = cols.filter(function (c) { return c.pk; }).map(function (c) { return c.name; });
@@ -197,6 +197,9 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
   const oldCols = db.prepare('PRAGMA table_info("old")').all().map(function (c) { return c.name; });
   ok(oldCols.indexOf('icon') !== -1 && oldCols.indexOf('persona') !== -1, 'the missing icon and named fields are added to it', 'columns: ' + short(oldCols));
   ok(old.label('k') === 'Kept' && old.icon('k') === '', 'and its rows are kept, the new fields empty', 'label ' + short(old.label('k')) + ', icon ' + short(old.icon('k')));
+  // goal/G41.21, Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.": a table that has one
+  // from before loses it at start, its rows kept.
+  ok(oldCols.indexOf('description') === -1 && old.label('k') === 'Kept', 'its old description column is dropped at start, the row kept', 'columns: ' + short(oldCols));
 
   test.subHeading('the rows persist in agent.db');
   db.close();

@@ -44,10 +44,10 @@ test.startTest('job/: the job table');
   // Andy, box v22: "with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the
   // job-description that may come with a prompt".
   // goal/G41.21 (box v17): "The job table gains a field, bundle", "a second field, provider", "a third field, persona".
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','loop','job','bundle','provider','persona'].forEach(function (c) {
+  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','loop','job','bundle','provider','persona'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the job table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 12, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 11, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a job, its loop flag and its text');
   const TEXT = 'Read the news.\nSay what changed.';
@@ -94,7 +94,7 @@ test.startTest('job/: the job table');
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
   // the rest for detail panels etc...". The list shows a row by its icon and its label.
   {
-    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search' }).id;
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one' }).id;
     let listedRow = null;
     try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
     ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
@@ -140,9 +140,9 @@ test.startTest('job/: the job table');
   ok(r && r.look && r.look.icon === '📋' && r.look.table === 'job', 'its title row has the job table\'s look', 'look: ' + short(r && r.look));
   // goal/G41.21: the bundle set "with a bundleSelector in dropdown mode" (kind bundle), the provider and the persona by a
   // pick field of their table; the order of the box, the code field drawn last by the shared element whatever its place.
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['description', 'description', ''], ['loop', 'bool', ''], ['job', 'code', ''],
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['loop', 'bool', ''], ['job', 'code', ''],
     ['bundle', 'bundle', ''], ['provider', 'pick', 'provider'], ['persona', 'pick', 'persona']]),
-    'its fields are the label, the description, the loop flag, the job, then the bundle by the bundle selector, the provider and the persona each by a pick field of its table', 'fields: ' + short(r && r.fields));
+    'its fields are the label, the loop flag, the job, then the bundle by the bundle selector, the provider and the persona each by a pick field of its table', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the job table\'s rows from the stream itself (goal/G41.16)');

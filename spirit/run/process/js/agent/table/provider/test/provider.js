@@ -47,10 +47,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; goal/G41.18, box v17: "if it fails, the provider row
   // will be flagged as unusable".
   // goal/G41.21 (box v17): "The provider table gains a field, model: the id of one row of the model table".
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'description', 'url', 'apiKey', 'unusable', 'model'].forEach(function (c) {
+  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'url', 'apiKey', 'unusable', 'model'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the provider table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 11, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: the API key never leaves the agent process');
   const added = call(t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
@@ -123,8 +123,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   });
   await new Promise(function (r) { server.listen(0, '127.0.0.1', r); });
   const host = 'http://127.0.0.1:' + server.address().port;
-  const modelsOf = function (pid) { return db.prepare('SELECT * FROM "model" WHERE providerId = ? ORDER BY modelName').all(pid); };
-  const names = function (pid) { return modelsOf(pid).map(function (m) { return m.modelName; }); };
+  const modelsOf = function (pid) { return db.prepare('SELECT * FROM "model" WHERE providerId = ? ORDER BY label').all(pid); };
+  const names = function (pid) { return modelsOf(pid).map(function (m) { return m.label; }); };
   const usable = function (id) { try { return db.prepare('SELECT unusable FROM "provider" WHERE id = ?').get(id).unusable; } catch (e) { return 'no column: ' + e.message; } };
 
   call(t.verb, { op: 'delete', id: added.id });
@@ -137,8 +137,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(first && Array.isArray(first.models) && JSON.stringify(first.models) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }]) && first.updated === true,
     'it answers the provider\'s list, { models: [{ modelName, label }], updated: true }', 'answer: ' + short(first));
   const mA = modelsOf(anth.id);
-  ok(JSON.stringify(names(anth.id)) === '["claude-a","claude-b"]' && mA.every(function (m) { return m.label === (m.modelName === 'claude-a' ? 'Claude A' : 'Claude B'); }),
-    'each model not yet in the table is added, for that provider, its label the provider\'s name of it', 'models: ' + short(mA.map(function (m) { return [m.modelName, m.label]; })));
+  // goal/G41.21: "the label hold the model name as provided by the provider": never its display name (Claude A).
+  ok(JSON.stringify(names(anth.id)) === '["claude-a","claude-b"]' && mA.every(function (m) { return !('modelName' in m); }),
+    'each model not yet in the table is added, for that provider, its label the model name exactly as the provider gives it', 'models: ' + short(mA.map(function (m) { return m.label; })));
   ok(published.filter(function (p) { return p.agent && p.agent.table === 'model' && p.agent.row; }).length === 2, 'and each new model row is published, so the lists follow', 'published: ' + short(published.map(function (p) { return p.agent && p.agent.table; })));
 
   stand.heard.length = 0;
@@ -148,18 +149,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('ask updates: new models added, gone ones removed, his own words kept');
   // With no claude-b from the first ask, one stands in for it, so what follows still tries the update.
-  const keep = modelsOf(anth.id).filter(function (m) { return m.modelName === 'claude-b'; })[0] ||
-    ctx.tables.model.verb.handler({ op: 'add', providerId: anth.id, modelName: 'claude-b', label: 'Claude B' });
-  ctx.tables.model.verb.handler({ op: 'set', id: keep.id, label: 'My B', description: 'mine' });
+  const keep = modelsOf(anth.id).filter(function (m) { return m.label === 'claude-b'; })[0] ||
+    ctx.tables.model.verb.handler({ op: 'add', providerId: anth.id, label: 'claude-b' });
+  ctx.tables.model.verb.handler({ op: 'set', id: keep.id, capabilities: ['mine'] });
   const openaiRow = call(t.verb, { op: 'add', icon: '🏢', label: 'OpenAI', url: host + '/v1', apiKey: 'sk-other' });
-  const otherModel = ctx.tables.model.verb.handler({ op: 'add', providerId: openaiRow.id, modelName: 'gpt-kept', label: 'Kept' });
+  const otherModel = ctx.tables.model.verb.handler({ op: 'add', providerId: openaiRow.id, label: 'gpt-kept' });
   stand.anthropic = [['claude-b', 'Claude B'], ['claude-c', 'Claude C']];
   published.length = 0;
   await ask({ op: 'ask', id: anth.id });
   const after = modelsOf(anth.id);
-  const b = after.filter(function (m) { return m.modelName === 'claude-b'; })[0];
+  const b = after.filter(function (m) { return m.label === 'claude-b'; })[0];
   ok(JSON.stringify(names(anth.id)) === '["claude-b","claude-c"]', 'a model the provider no longer lists is removed; a new one is added', 'models: ' + short(names(anth.id)));
-  ok(b && b.id === keep.id && b.label === 'My B' && b.description === 'mine', 'a model it still lists keeps its row, its label and description as he set them', 'claude-b: ' + short(b && { id: b.id === keep.id, label: b.label, description: b.description }));
+  ok(b && b.id === keep.id && b.label === 'claude-b' && b.capabilities === JSON.stringify(['mine']), 'a model it still lists keeps its row, its label the model name, and what else it holds', 'claude-b: ' + short(b && { id: b.id === keep.id, label: b.label, description: b.description }));
   ok(published.some(function (p) { return p.agent && p.agent.table === 'model' && p.agent.removed === true; }), 'the removed model is published removed', 'published: ' + short(published));
   ok(names(openaiRow.id).indexOf('gpt-kept') !== -1 && ctx.tables.model.has(otherModel.id), 'another provider\'s models are not touched', 'other provider: ' + short(names(openaiRow.id)));
 
@@ -196,7 +197,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
   // the rest for detail panels etc...". The list shows a row by its icon and its label.
   {
-    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search', url: 'https://listed.example' }).id;
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', url: 'https://listed.example' }).id;
     let listedRow = null;
     try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
     ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
@@ -243,8 +244,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
   // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this
   // provider": of names the picked table's field that must hold this row's id (../../tableElement.js).
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['description', 'description', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']]),
-    'its fields are the label, the description, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 'fields: ' + short(r && r.fields));
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']]),
+    'its fields are the label, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the provider table\'s rows from the stream itself (goal/G41.16)');
@@ -291,12 +292,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const M = pctx.tables.model.verb;
     const ANTH = call(P, { op: 'add', icon: '🅰', label: 'Anthropic', url: 'https://anthropic.example' }).id;
     const OTHER = call(P, { op: 'add', icon: '🅾', label: 'Other', url: 'https://other.example' }).id;
-    const mine = ['claude-alpha', 'claude-beta'].map(function (n) { return call(M, { op: 'add', label: n, providerId: ANTH, modelName: n }).id; });
-    const theirs = call(M, { op: 'add', label: 'other-gamma', providerId: OTHER, modelName: 'other-gamma' }).id;
+    const mine = ['claude-alpha', 'claude-beta'].map(function (n) { return call(M, { op: 'add', label: n, providerId: ANTH }).id; });
+    const theirs = call(M, { op: 'add', label: 'other-gamma', providerId: OTHER }).id;
     // What the real tables answer, keyed by the call: the page's stand-in agent server hands these on as they are.
     const answers = { provider: ANTH };
     const keep = function (table, verb, args) { answers[table + ' ' + JSON.stringify(args)] = call(verb, args); };
+    // The provider's current model is its first (goal/G41.21, Andy: "provider details: when the panel opens, pickers must
+    // reflect the value or the row field (model)").
+    call(P, { op: 'set', id: ANTH, model: mine[0] });
     keep('provider', P, { op: 'get', id: ANTH });
+    keep('model', M, { op: 'get', id: mine[0] });
     [{ op: 'search', text: '' }, { op: 'search', text: '', providerId: ANTH }].forEach(function (a) { keep('model', M, a); });
     const chrome = H.findChrome();
     if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); }
@@ -318,6 +323,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
             if (!m) test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300));
             else {
               ok(m.label && m.shown, 'the provider\'s detail shows its Model field, the provider having models', 'Model field: drawn ' + m.label + ', shown ' + m.shown);
+              ok(/claude-alpha/.test(m.fieldText), 'as the panel opens, the Model field shows the provider\'s current model, claude-alpha', 'the Model field says ' + JSON.stringify(m.fieldText));
               ok(m.field && m.popupOpen, 'pressed, the Model field opens its dropdown', 'field ' + m.field + ', open ' + m.popupOpen);
               const keys = m.rows.map(function (r) { return r.key; }).sort();
               ok(!m.nothing && JSON.stringify(keys) === JSON.stringify(mine.slice().sort()), 'with the search empty, from the start, it lists this provider\'s two models and nothing else',

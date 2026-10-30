@@ -42,9 +42,14 @@ Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row
 no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
 editor the same fields (`required`), so the UI checks them too.
 
+### No description (goal/G41.21)
+
+Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The persona table has no description column, and its detail no Description field.
+
 ## What its test must try to break
 
 - A persona text that loses its lines, or is emptied by a set of its label.
 - The persona edited in a one-line field.
 - A persona without its bundle column, or a detail with no bundle selector.
 - A persona row added without its icon and label.
+- A description column or field on the persona.

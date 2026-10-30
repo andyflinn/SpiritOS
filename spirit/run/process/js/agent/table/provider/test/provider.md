@@ -94,6 +94,14 @@ Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row
 no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
 editor the same fields (`required`), so the UI checks them too.
 
+### No description (goal/G41.21)
+
+Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The provider table has no description column, and its detail no Description field.
+
+### A model's label is its model name; the Model field shows the current model (goal/G41.21)
+
+The provider's ask adds each model with its label the model name exactly as the provider gives it, never its display name; a model still listed keeps its row. Andy: *"provider details: when the panel opens, pickers must reflect the value or the row field (model)"*: in the real browser, the provider's current model set, the closed Model field names it as the panel opens.
+
 ## What its test must try to break
 
 - The API key in any answer or published row, ask's included.
@@ -105,3 +113,5 @@ editor the same fields (`required`), so the UI checks them too.
 - No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.
 - A Model picker listing none of its provider's models with the search empty, listing another provider's models, or rows without the model's name.
 - A provider row added without its icon, label and a valid url.
+- A description column or field on the provider.
+- A model labelled by the provider's display name; a Model field that says Pick a model while the provider has one.

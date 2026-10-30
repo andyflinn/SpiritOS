@@ -44,10 +44,10 @@ test.startTest('persona/: the persona table');
   // Andy, box v22: "with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt".
   // goal/G41.21, Andy: "and where the fuck is my bundle field in persona-table and the fucking picker for a bundle with the
   // persona?"
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','persona','bundle'].forEach(function (c) {
+  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','persona','bundle'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the persona table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 8, 'and nothing else', 'columns: ' + short(cols));
   {
     const pid = call(t.verb, { op: 'add', icon: '🎭', label: 'With a bundle', persona: 'p' }).id;
     call(t.verb, { op: 'set', id: pid, bundle: '7' });
@@ -86,7 +86,7 @@ test.startTest('persona/: the persona table');
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
   // the rest for detail panels etc...". The list shows a row by its icon and its label.
   {
-    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search' }).id;
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one' }).id;
     let listedRow = null;
     try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
     ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
@@ -131,8 +131,8 @@ test.startTest('persona/: the persona table');
   ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'it hands the editor the persona table\'s mandatory fields, [icon, label]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '🎭' && r.look.table === 'persona', 'its title row has the persona table\'s look', 'look: ' + short(r && r.look));
   // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['persona', 'code'], ['bundle', 'bundle']]),
-    'its fields are the label, the description, the persona in a CodeMirror editor, and its bundle by the bundle selector', 'fields: ' + short(r && r.fields));
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['persona', 'code'], ['bundle', 'bundle']]),
+    'its fields are the label, the persona in a CodeMirror editor, and its bundle by the bundle selector', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the persona table\'s rows from the stream itself (goal/G41.16)');

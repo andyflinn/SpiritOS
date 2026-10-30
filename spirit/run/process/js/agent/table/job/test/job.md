@@ -45,6 +45,10 @@ Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row
 no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
 editor the same fields (`required`), so the UI checks them too.
 
+### No description (goal/G41.21)
+
+Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The job table has no description column, and its detail no Description field.
+
 ## What its test must try to break
 
 - A job deleted whose grants stay.
@@ -52,3 +56,4 @@ editor the same fields (`required`), so the UI checks them too.
 - A loop flag that comes back as a number.
 - A job without its bundle, provider or persona; a delete that still asks a grant table.
 - A job row added without its icon and label.
+- A description column or field on the job.

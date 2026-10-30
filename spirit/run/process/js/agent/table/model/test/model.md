@@ -49,6 +49,10 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 
 Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that............."*. The model's detail shows its provider (kind `output`, the provider table's row by its icon and label); it is no picker.
 
+### The model's label is the model name, shown only (goal/G41.21)
+
+Andy: *"i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI."*; and on capabilities: *"it's not like the user can all of a sudden decide that the model can juggle, do NOT display a fucking text input field for that, I haven't even decided yet what goes on the model row for capabilites"*. Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The model table has no model name and no description column; its label holds the model name exactly as the provider gives it, and its search answers the id, the label and the provider's icon. Its detail shows the label, the provider and the capabilities, none of them editable.
+
 ## What its test must try to break
 
 - A model naming a provider that is not there, by add or by set.
@@ -56,3 +60,4 @@ Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a
 - A model shown without its provider's icon, or the icon kept in the table.
 - A list showing the label where the model name belongs; a provider models button that opens nothing; an Add button.
 - A model's provider drawn as a picker or an input.
+- A model name column, a label taken from the provider's display name, or a label, provider or capabilities drawn as an input.

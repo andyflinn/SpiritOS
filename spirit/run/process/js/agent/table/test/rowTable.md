@@ -60,6 +60,10 @@ Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row
 and makes no row, the refusal naming every one missing; a change that would empty one is refused, the row kept; a
 change keeping them all is taken. A table naming none takes a bare row, as before.
 
+### No description (goal/G41.21)
+
+Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The common fields are the key set, the icon and the label; a table with a description column from before loses it at start, its rows kept.
+
 ## What its test must try to break
 
 - A private half, a seal private key or a secret in a get, a search or a published row.
@@ -70,3 +74,4 @@ change keeping them all is taken. A table naming none takes a bare row, as befor
 - An old table that loses its rows, or never gets the new field.
 - A narrowed search answering another row's rows, or refusing the field.
 - A row made, or emptied, without a mandatory field; a refusal that does not name it.
+- A description column made, or kept from before.

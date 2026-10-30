@@ -42,17 +42,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const t = ctx.tables.model = require(path.join(DIR, 'server.js'))(ctx);
   ok(t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function', 'server.js(ctx) answers the table, its verb and has', 'answered: ' + short(t && Object.keys(t)));
   const cols = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
-  // Andy, box v22: "with Label and Description, provider-key, and model-name and capabilities".
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'description', 'providerId', 'modelName', 'capabilities'].forEach(function (c) {
+  // Andy, box v22: "with Label and Description, provider-key, and model-name and capabilities"; then, goal/G41.21: "i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI."
+  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'providerId', 'capabilities'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the model table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 8 && cols.indexOf('modelName') === -1, 'and nothing else: no model name column, the label holds it', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a model names a provider that is there');
   const provider = call(ctx.tables.provider.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.example' });
-  const added = call(t.verb, { op: 'add', label: 'Opus', providerId: provider.id, modelName: 'claude-opus-5-5', capabilities: ['text', 'tools'] });
+  const added = call(t.verb, { op: 'add', label: 'claude-opus-5-5', providerId: provider.id, capabilities: ['text', 'tools'] });
   const got = added.id ? call(t.verb, { op: 'get', id: added.id }) : null;
-  ok(got && got.providerId === provider.id && got.modelName === 'claude-opus-5-5', 'a model is added with its provider\'s id and its model name', 'get: ' + short(got));
+  ok(got && got.providerId === provider.id && got.label === 'claude-opus-5-5', 'a model is added with its provider\'s id, its label the model name as the provider gives it', 'get: ' + short(got));
   ok(got && JSON.stringify(got.capabilities) === '["text","tools"]', 'its capabilities are a list', 'capabilities: ' + short(got && got.capabilities));
   const gone = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
   const noProvider = call(t.verb, { op: 'add', label: 'Lost', providerId: gone });
@@ -68,13 +68,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const shownGet = call(t.verb, { op: 'get', id: added.id });
   ok(shownGet && shownGet.providerIcon === '🅰', 'a model\'s get carries providerIcon, the icon of its provider row', 'get: ' + short(shownGet));
   let found = null;
-  try { found = JSON.parse((call(t.verb, { op: 'search', text: 'Opus' }).items || [])[0].label); } catch (e) { found = null; }
+  try { found = JSON.parse((call(t.verb, { op: 'search', text: 'opus' }).items || [])[0].label); } catch (e) { found = null; }
   ok(found && found.providerIcon === '🅰', 'and so does each row a search finds', 'found: ' + short(found));
   // goal/G41.18, Andy: "only the ID and the fields shown in a table, that's all it needs": the model list shows the
   // provider's icon and the model name.
-  ok(found && JSON.stringify(Object.keys(found).sort()) === '["id","modelName","providerIcon"]', 'a search answers the id and what the model list shows, the model name and the provider\'s icon, nothing else', 'found: ' + short(found && Object.keys(found)));
+  ok(found && JSON.stringify(Object.keys(found).sort()) === '["id","label","providerIcon"]', 'a search answers the id and what the model list shows, the label (the model name) and the provider\'s icon, nothing else', 'found: ' + short(found && Object.keys(found)));
   published.length = 0;
-  call(t.verb, { op: 'add', label: 'Sonnet', providerId: provider.id, modelName: 'claude-sonnet-5-5' });
+  call(t.verb, { op: 'add', label: 'claude-sonnet-5-5', providerId: provider.id });
   const pub = published.filter(function (x) { return x.agent && x.agent.table === 'model' && x.agent.row; })[0];
   ok(pub && pub.agent.row.providerIcon === '🅰', 'and each model row the server publishes', 'published: ' + short(published));
   const bare = call(t.verb, { op: 'add', label: 'Bare' });
@@ -112,7 +112,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon, and its button row "the following
   // button \"provider models\", which will open a panel in the center pane of the workBench".
   const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });
-  ok(JSON.stringify(shownBy) === '["providerIcon","modelName"]', 'its list shows each model by its provider\'s icon and its model name (goal/G41.18)', 'columns: ' + short(o && o.columns));
+  ok(JSON.stringify(shownBy) === '["providerIcon","label"]', 'its list shows each model by its provider\'s icon and its label, the model name (goal/G41.18, G41.21)', 'columns: ' + short(o && o.columns));
   const btn = ((o && o.buttons) || []).filter(function (b) { return b && b.label === 'provider models'; })[0];
   ok(!!btn && typeof btn.press === 'function', 'it hands the shared element a button, provider models', 'buttons: ' + short(o && o.buttons));
   if (btn && typeof btn.press === 'function') {
@@ -135,8 +135,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const provField = r && r.fields.filter(function (f) { return f.field === 'providerId'; })[0];
   // goal/G41.21, Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for
   // that.............": the provider is shown (kind output, the provider table's row by its icon and label), never picked.
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['description', 'description', ''], ['providerId', 'output', 'provider'], ['modelName', 'text', ''], ['capabilities', 'list', '']]),
-    'its fields are the label, the description, the provider shown and never picked, the model name, and the capabilities as a list', 'fields: ' + short(r && r.fields));
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'output', ''], ['providerId', 'output', 'provider'], ['capabilities', 'output', '']]),
+    'its fields are the label shown only (the model name as the provider gives it), the provider shown and never picked, and the capabilities shown only', 'fields: ' + short(r && r.fields));
   ok(provField && provField.pick === 'provider', 'the provider is picked from a search of the provider table', 'providerId: ' + short(provField));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
