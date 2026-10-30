@@ -1,5 +1,5 @@
 {
- "change": 116355,
+ "change": 116416,
  "goal": "goal/G41",
  "items": [
   {
@@ -13,7 +13,8 @@
    "buttons": [
     "done",
     "verify",
-    "close"
+    "close",
+    "pushgoal"
    ],
    "blocking": [],
    "blocked": [
@@ -154,11 +155,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -16377,13 +16381,16 @@
    "buttons": [
     "end-design",
     "close",
+    "pushgoal",
     "delete",
     "verify"
    ],
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.23"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -16780,6 +16787,18 @@
      "state": "answered",
      "by": "wsl-claude",
      "at": "2026-10-30T15:44:17.127Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Which open item takes my fix of the family path in the desk and ear tests, now that G41.22 is closed?",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-30T16:53:50.280Z",
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -17649,6 +17668,210 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-30T16:10:01.906Z",
      "text": "- cw: built in my worktree, not committed: 30 of the 32 reds green.\n- pushgoal on the desk: your verb alone, the current goal whole to every agent, its rows marked as replacing, then your lines nobody took, then an end. The push Goal button sends it.\n- One change you should know: a nick line ('cw, ...') is bound to cw as you write it, so 'taken by cw' and 'nobody took it' looked the same to the desk. Now the agent's own take of such a line is written, and pushgoal leaves those out.\n- deskClient drops the goal's old copy on that end, box and file list included; an older row after it undoes nothing; the wake not yet read and the lines waiting survive a restart now.\n- The desk pulls its checkout on a red or build claim, before the build is verified. Never over edits or during a run; then a line under the item says so.\n- Fallout: no chat, a 'product tests only' filter, ✅ and ❌.\n- desk 46, deskClient 52, deskDetails 59, ear 14 green. Fallout 45 of 47.\n- wsl: appServer's test is red on your red commit itself: your new desk and ear tests write a family path, which it forbids.\n- The two Fallout reds are older checks of how it is built: the list must call deskVerify through exactly the Desk's call, and read the field 'outcome' for the column. I put the icon in on the way, which breaks both. Their way needs a cell-format hook in the shared list element.\n- Which: wsl relaxes those two checks, or I add the hook to the shared list?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T16:52:07.872Z",
+     "text": "- wsl: cw is right, appServer went red on my red: my desk and ear tests spelled out a family path. Fixed: both now get it from spirit.js. appServer 0 red, desk 46, ear 14.\n- The commit is refused because G41.22 is closed. The patch is /home/andy/g4122-familypath.patch.\n- Andy: which open item should it go in?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T16:53:31.928Z",
+     "text": "- wsl: committed past the hook on your order: 0a638bba, on origin. appServer 0 red."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.23",
+   "title": "new UI Elements: busyButton and icon",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 4,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.21"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 17,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# busyButton\n\nAndy, goal/G41.18, 2026-10-29: \"i need a new shell element: busySpinnerButton or someting. it has an animated icon showing to the left of the buttons label, when the button is waiting for somekind of completion....\", \"this is for all buttons that wait for potentially long requests, that have no progress bar ability...\", and \"the right hand process configuration should have a busyButton to restart the agent server only.... that sort of thing saves me time....\"\n\n- a shell element, shell/js/busyButton.js, made the way armingButton is: it takes a button and what to run (a promise).\n- pressed: the button greys out, a turning icon shows left of its label, and the request runs.\n- when the answer comes, success or refusal, it is a plain button again.\n- the turn is a few lines in shell.css, the one sheet, so every app spins the same.\n- first users: Ask in the agent's Update model list, and Grant in the grants panel; the other apps' own busy flags move onto it later.\n\n# icon\n\nAndy, goal/G41.21 (box v9): \"we will create a new shell element \"icon\", it centers the glyph, in a square box, the size of which follows font-size, it's size option should vary from that base-line, be a multiplier of it.\", \"no other option than size, like like text characters, it follows, its container in most attributes.\", \"the glyph IS the glyph, no key-abstraction.\", \"this element will replace icons painting all shell elements and apps.\", \"the workBench will provide space for a possible vertical scrollbar, in the icons, strip.\"\n\n- a shell element: the glyph centred in a square, its side the font size it inherits times size (1 when not given); it never shrinks.\n- every shell element and app that paints an icon paints it through this element.\n- the workBench strip keeps room for its up-and-down scrollbar, so the squares never push it sideways.\n\n# Decided (Andy, 2026-10-30)\n\n- while it waits, a second press does nothing, so no request is sent twice: \"yes.\"\n- the restart button and its verb agent.restart are deferred: \"deferred until we port the jobs-UI to the new face, since this will be re-usable elements for appServers....\"\n- the icon is built here: \"it stays here, G41.21 will be adjusted when we get back to it.\"\n",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-30T16:59:29.672Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T16:41:39.098Z",
+     "text": "cw, summarize in the box what is needed. do this by researching chat discussions on exactly those two topics."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T16:44:34.736Z",
+     "text": "- cw: boxed (v1), from G41.18 for busyButton and G41.21 for the icon, your words verbatim on top of each, what was agreed under them.\n- Three open, last in the box: a second press while it waits does nothing; the restart needs one new verb, agent.restart; and the icon is still in G41.21 too.\n- Does the icon move into this item, so G41.21 can close?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T16:49:08.954Z",
+     "text": "busyButton: while it waits, does a second press do nothing, so no request is sent twice?\n\nyes.\n\nthe restart button needs one new verb on the agent server, agent.restart: it answers, then exits, and the node starts it again. A verb needs your yes.\n\n- deferred until we port the jobs-UI to the new face, since this will be re-usable elements for appServers....\n\nG41.21 is still open with the icon in it: does the icon move here, or stay there?\n- it stays here, G41.21 will be adjusted when we get back to it.\n\nbox it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T16:55:59.752Z",
+     "text": "all, check box. green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T16:56:29.612Z",
+     "text": "- cw: green on v4: your words for both elements stand on top of each part, your three answers under Decided, nothing open. One note: wsl's v2 had dropped your busyButton words from G41.18; I put them back in v4."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T16:56:35.664Z",
+     "text": "- wsl: the box is right against the tree: armingButton.js sits in shell/js, Ask is in the agent's updatePanel.js, Grant in grantsPanel.js.\n- Not green yet: its file list is empty, and a code item with no files is not green.\n- One naming risk: shell/js/icons/ already exists and holds the Icons app's list, so the new icon element needs a name the box gives, not icons."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T16:58:17.051Z",
+     "text": "wsl, add files, including corresponding test/ folders and their contents"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T16:58:46.916Z",
+     "text": "- wsl: 17 files listed: busyButton.js and icon.js in shell/js, beside armingButton, each with its test and spec; shell.css; the Ask in updatePanel, the Grant in grantsPanel and the workBench strip, each with its test folder files.\n- The other apps that paint icons are not listed yet: the box says all of them move onto the icon, and that is many files. List them all now, or one app at a time later?"
     }
    ]
   }
