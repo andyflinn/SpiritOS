@@ -222,6 +222,12 @@
       if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
       if (f.kind === 'bundle' && bundleHeld[f.field] === false) return '<div id="' + id + '"></div><div>Bundle ' + esc(v) + ' is gone from this node: this ' + esc(o.table) + ' has no grant.</div>';
       if (f.kind === 'pick' || f.kind === 'icon' || f.kind === 'bundle') return '<div id="' + id + '"></div>';
+      // AN OUTPUT FIELD IS SHOWN, NEVER PICKED OR SENT (Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER
+      // ordered a fucking picker for that............."): the other table's row by its icon and label, as the branch holds it.
+      if (f.kind === 'output') {
+        var shown = f.pick && v ? D().get(branchOf(f.pick) + '/' + v) : null;
+        return '<div id="' + id + '">' + esc(shown ? nameOf(Object.assign({ key: v }, shown), columnsOf(f.pick)) : (v || '')) + '</div>';
+      }
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
     }
@@ -346,6 +352,7 @@
         else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : row[f.field];
         else if (f.kind === 'list') v = String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         else v = el ? String(el.value || '') : undefined;
+        if (f.kind === 'output') return;
         if (f.kind === 'secret' && !v) return;
         if (f.kind === 'url' && !v) return;
         // A pick or a bundle never picked holds no key, so it is not sent (Andy: "when i pick a persona, provider, or a

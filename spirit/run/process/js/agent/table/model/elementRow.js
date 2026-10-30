@@ -24,7 +24,7 @@
       },
     });
   }, function () { /* no data set: the lists still search */ });
-  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'providerId', label: 'Provider', kind: 'pick', pick: 'provider' }, { field: 'modelName', label: 'Model name', kind: 'text' }, { field: 'capabilities', label: 'Capabilities', kind: 'list' }];
+  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }, { field: 'modelName', label: 'Model name', kind: 'text' }, { field: 'capabilities', label: 'Capabilities', kind: 'list' }];
   E.modelRow = {
     create: function (container, api, id, added, detail) {
       var made = null;
