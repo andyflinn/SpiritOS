@@ -244,15 +244,20 @@
           return f.of && !(narrowCount[f.field] > 0) ? line.replace('<div ', '<div hidden ') : line;
         }).join('') +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
-        '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
+        '<div style="margin-top:1em"><button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
         if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
+        // A FIELD CHANGED SAVES THE ROW (Andy: "and why the fuck does a row not automatically save when i make a change to a
+        // field?"; on Q2: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
+        // necessary."): an input's change, a pick, a bundle picked; there is no Save.
+        if (el && f.kind !== 'pick' && f.kind !== 'icon' && f.kind !== 'bundle' && f.kind !== 'code') el.addEventListener('change', save);
         // The row's icon, or its table's while it has none.
         if (f.kind === 'icon') {
           needs(['shell/js/iconSelector.js']).then(function () {
             if (gone || !el.isConnected) return;
             icons[f.field] = E.iconSelector.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
         if (f.kind === 'code') {
@@ -268,7 +273,7 @@
           needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
-              face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
+              face: 'dropdown', placeholder: current || 'Pick a ' + f.pick, pick: function () { save(); },
             }, f.of ? narrowedTo(f) : {}));
           });
           // Its table's rows of this row, counted once; a change of whether there are any draws the editor again.
@@ -296,6 +301,7 @@
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[f.field] !== undefined ? bundleLabel[f.field] : bundleHeld[f.field] === false ? 'bundle ' + row[f.field] : '…';
             bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: says });
+            if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[f.field] === undefined) {
             bundleHeld[f.field] = true;
@@ -314,7 +320,6 @@
           }
         }
       });
-      container.querySelector('#' + pre + 'save').addEventListener('click', save);
       // DELETE ASKS ARE-YOU-SURE (Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"): the
       // shell's arming button, loaded here (rule/26); the first press arms, the second deletes.
       var del = container.querySelector('#' + pre + 'delete');
@@ -323,26 +328,27 @@
         E.armingButton.attach(del, { label: 'Delete', run: remove, api: o.api });
       });
     }
-    // What was changed, as the verb takes it: a secret only when typed, a pick only when picked.
+    // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows
+    // it, a pick or a bundle not picked again as the row holds it; a secret only when typed, so an untyped key is kept.
     function changes() {
       var out = { op: 'set', id: o.id };
       fields.forEach(function (f) {
         var el = input(f);
         var v;
         if (f.kind === 'bool') v = !!(el && el.checked);
-        else if (f.kind === 'code') v = editors[f.field] ? editors[f.field].value() : undefined;
-        else if (f.kind === 'pick') v = picks[f.field] && picks[f.field].value ? picks[f.field].value : undefined;
-        else if (f.kind === 'bundle') v = bundles[f.field] && bundles[f.field].value !== '' && bundles[f.field].value != null ? String(bundles[f.field].value) : undefined;
-        else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : undefined;
+        else if (f.kind === 'code') v = editors[f.field] ? editors[f.field].value() : row[f.field];
+        else if (f.kind === 'pick') v = picks[f.field] && picks[f.field].value ? picks[f.field].value : row[f.field];
+        else if (f.kind === 'bundle') v = bundles[f.field] && bundles[f.field].value !== '' && bundles[f.field].value != null ? String(bundles[f.field].value) : row[f.field];
+        else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : row[f.field];
         else if (f.kind === 'list') v = String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         else v = el ? String(el.value || '') : undefined;
         if (f.kind === 'secret' && !v) return;
         if (f.kind === 'url' && !v) return;
-        if (v !== undefined && JSON.stringify(v) !== JSON.stringify(row[f.field])) out[f.field] = v;
+        if (v !== undefined && v !== null) out[f.field] = v;
       });
       return out;
     }
-    // Save and Delete only propose: the editor repaints when the stream writes the row's path (or deletes it), and says
+    // A save and Delete only propose: the editor repaints when the stream writes the row's path (or deletes it), and says
     // a refusal in its note.
     function save() {
       call(o.table, changes()).then(function (r) {
