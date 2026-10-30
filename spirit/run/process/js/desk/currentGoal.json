@@ -1,5 +1,5 @@
 {
- "change": 115594,
+ "change": 115596,
  "goal": "goal/G41",
  "items": [
   {
@@ -143,16 +143,14 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -13396,12 +13394,11 @@
    "id": "goal/G41.18",
    "title": "Aquire model data from providers.",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
