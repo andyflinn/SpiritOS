@@ -42,7 +42,9 @@ window.spirit.ready = Promise.resolve({ contact: {
 } });
 window.spirit.fieldRules = { problem: function (t) { return t.length > 8 ? 'too long' : ''; } };
 vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-const make = window.spirit.elements.createContactLabel;
+const made = window.spirit.elements.contactLabel;
+// Box v23: "every element gets a container and appends itself": each label here is made into a container of its own.
+const make = function (o) { return made.create(node('div'), o); };
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
 const textOf = function (root) { return root.children[0].textContent; };
 const whyOf = function (root) { return root.children[root.children.length - 1].textContent; };
@@ -54,6 +56,13 @@ const rename = function (detail) { doc.fire('contact.rename', { detail: detail }
   test.startTest('contactLabel.js: a contact\'s name by key');
 
   test.subHeading('the element');
+  if (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.elements))
+    test.check('it registers spirit.elements.contactLabel with a create, and createContactLabel no more');
+  else { test.fail('elements: ' + JSON.stringify(Object.keys(window.spirit.elements))); test.reportSuccessFailureCount(); return; }
+  const box = node('div');
+  const boxed = made.create(box, { key: 'KA', caption: 'Anna' });
+  if (box.children.length === 1 && box.children[0] === boxed && boxed.parentNode === box) test.check('create(container, options) appends the label to its container and answers it');
+  else test.fail('container holds ' + box.children.length + (box.children[0] === boxed ? ', the label' : ', not the label'));
   const plain = make({ key: 'KA', caption: 'Anna', className: 'x' });
   const edit = make({ key: 'KA', caption: 'Anna', editable: true });
   if (plain.tagName === 'span' && plain.className === 'contact-label x' && edit.className === 'contact-label contact-label-editable')

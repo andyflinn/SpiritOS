@@ -58,7 +58,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({}), elements: {} } };
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -71,9 +71,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC), 'it names no table: no auth verb, no agent grant, no stream job of its own (goal/G41.16)', 'rowElement.js names a table of its own');
   ok(E.grantElement && typeof E.grantElement.create === 'function', 'it registers spirit.elements.grantElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.grantElement || typeof E.grantElement.create !== 'function') return;
-  let refused = null;
-  try { E.grantElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { refused = e && e.message; }
-  ok(refused !== null, 'made with no grants table, it is refused: it never falls back to one', 'made with none: no refusal');
+  // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "throws nothing even when unconfigured"): made with no grants
+  // table it is a row of nothing, and never falls back to one.
+  let thrown = null; let bare = null;
+  try { bare = E.grantElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = e && e.message; }
+  ok(thrown === null && !!bare, 'made with no grants table, it throws nothing and is a row all the same', 'made with none: ' + (thrown ? 'it threw ' + thrown : 'nothing made'));
 
   for (const t of [{ name: 'the node\'s grants', g: NODE, id: 'K1', label: 'Bob <b>', row: function (x) { return { key: x.id, path: x.path, label: x.label }; } },
     { name: 'the agent\'s grants by job', g: AGENT, id: 'J1', label: 'Night <b>', row: function (x) { return { job_id: x.id, path: x.path, job: x.label }; } }]) {

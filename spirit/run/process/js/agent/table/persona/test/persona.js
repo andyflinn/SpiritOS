@@ -76,8 +76,8 @@ test.startTest('persona/: the persona table');
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
-  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client: the stream lands there.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (shell/shared/js/spiritData.js), which spirit.js brings with the client: the stream lands there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.personaTable && typeof E.personaTable.create === 'function' && E.personaRow && typeof E.personaRow.create === 'function',

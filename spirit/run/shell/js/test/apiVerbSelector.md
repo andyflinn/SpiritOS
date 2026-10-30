@@ -6,7 +6,9 @@ it is the verb half of the family selector, `apiFamilySelector.js`.
 
 ## Requirements
 
-- A shell element of its own: it adds `createApiVerbSelector(options)` to `window.spirit.elements`.
+- A shell element of its own: it adds `apiVerbSelector.create(container, options)` to `window.spirit.elements`, and
+  `createApiVerbSelector` no more. The control is appended to the container and answered (box v23: *"every element gets
+  a container and appends itself"*).
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
 - **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3; rule/26): its test runs on a bare page.
 - Its root carries `value`, the chosen verb. Its first option, at the top, reads `All Verbs`: a valid choice whose value is the
@@ -19,6 +21,7 @@ it is the verb half of the family selector, `apiFamilySelector.js`.
 ## What its test must try to break
 
 - The file missing, or an old shell list made.
+- The old factory still registered, or a control not appended to its container.
 - DEBUG or DEPENDENCIES offered.
 - The dropdown shown, or a verb kept, with no server.
 - A pick that does not fire change, All Verbs among them.

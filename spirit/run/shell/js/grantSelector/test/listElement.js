@@ -82,7 +82,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // it was made. Here the real row element and the page's data set: a list is made for a table no row was ever drawn of,
   // and its first grant arrives on the stream.
   {
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
     const DATA = global.window.spirit.data;
     global.window.spirit.elements.armingButton = { attach: function (b) { return b; } };
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' });

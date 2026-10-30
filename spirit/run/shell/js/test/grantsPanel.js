@@ -73,9 +73,10 @@ function config(w) {
 function world() {
   const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null };
   const E = {
-    createBundleSelector: function (opts) { const b = node('bundle'); b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); return b; },
-    createContactSelector: function (opts) { const c = node('contact'); c.opts = opts || {}; c.value = ''; c.row = null; w.ids.push(c); return c; },
-    createApiFamilySelector: function (opts) { const f = node('family'); f.opts = opts; f.family = ''; f.verb = ''; f.value = ''; w.families.push(f); return f; },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
+    bundleSelector: { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
+    contactSelector: { create: function (c, opts) { const x = node('contact'); x.container = c; x.opts = opts || {}; x.value = ''; x.row = null; w.ids.push(x); c.appendChild(x); return x; } },
+    apiFamilySelector: { create: function (c, opts) { const f = node('family'); f.container = c; f.opts = opts; f.family = ''; f.verb = ''; f.value = ''; w.families.push(f); c.appendChild(f); return f; } },
     grantList: { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   };
   const api = {
@@ -87,8 +88,8 @@ function world() {
       return Promise.resolve({ status: 200, body: {} });
     },
   };
-  const FILES = { 'shell/js/bundleSelector.js': ['createBundleSelector'], 'shell/js/contactSelector.js': ['createContactSelector'],
-    'shell/js/apiFamilySelector.js': ['createApiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'] };
+  const FILES = { 'shell/js/bundleSelector.js': ['bundleSelector'], 'shell/js/contactSelector.js': ['contactSelector'],
+    'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'] };
   const page = {};
   const win = {
     spirit: { elements: page,
@@ -103,7 +104,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.api = api; w.page = page;
   return w;
@@ -129,11 +130,21 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/auth\.(grant|revoke|search)\b|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(code), 'it names no grants table and no ID table: no auth grant verb, no agent verb, no loopback location, no branch (goal/G41.16)', 'grantsPanel.js names a table of its own');
   ok(E.grantsPanel && typeof E.grantsPanel.create === 'function', 'it registers spirit.elements.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
   if (!E.grantsPanel || typeof E.grantsPanel.create !== 'function') return;
-  const refusals = [];
-  [{}, { ids: config(w).ids }, { grants: config(w).grants }].forEach(function (c) {
-    try { E.grantsPanel.create(node('x'), Object.assign({ api: w.api }, c)); refusals.push(null); } catch (e) { refusals.push(e && e.message); }
+  // Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured
+  // (it says it is not configured)").
+  const unset = [];
+  [[{}, /ID table/], [{ ids: config(w).ids }, /grants table/], [{ grants: config(w).grants }, /ID table/]].forEach(function (c) {
+    const host = node('x'); let threw = null; let made = null;
+    try { made = E.grantsPanel.create(host, Object.assign({ api: w.api }, c[0])); } catch (e) { threw = e && e.message; }
+    const said = host.kids.map(function (k) { return String(k.textContent || ''); }).join(' ');
+    unset.push({ threw: threw, said: said, fits: host.kids.length === 1 && /^not configured: /.test(said) && c[1].test(said) && /\bjob-manifest-note\b/.test(host.kids[0].className),
+      empties: !!made && typeof made.destroy === 'function' && (made.destroy(), host.innerHTML === '') });
   });
-  ok(refusals.every(function (r) { return r !== null; }) && w.grantLists.length === 0, 'made without its ID table or its grants table, it is refused, and draws nothing', 'refusals: ' + short(refusals) + ', lists ' + w.grantLists.length);
+  await settle();
+  ok(unset.every(function (u) { return u.threw === null; }), 'made without its ID table or its grants table, it throws nothing', 'threw: ' + short(unset.map(function (u) { return u.threw; })));
+  ok(unset.every(function (u) { return u.fits; }) && w.grantLists.length === 0 && w.bundles.length === 0 && w.ids.length === 0 && w.families.length === 0,
+    'it says, in one note, "not configured: " and the table it lacks, and draws nothing else', 'said: ' + short(unset.map(function (u) { return u.said; })) + ', lists ' + w.grantLists.length + ', selectors ' + (w.bundles.length + w.ids.length + w.families.length));
+  ok(unset.every(function (u) { return u.empties; }), 'and its destroy empties the host', 'destroy: ' + short(unset.map(function (u) { return u.empties; })));
 
   const box = node('panel');
   const cfg = config(w);
@@ -142,6 +153,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('the grant form, one row: grant [ID] [bundle] [Grant]');
   ok(w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1, 'one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length);
+  const parts = w.bundles.concat(w.ids, w.families);
+  ok(parts.every(function (x) { return x.container && x.container.kids.indexOf(x) !== -1; }), 'each made with a container of its own, <name>.create(container, options)', 'containers: ' + short(parts.map(function (x) { return !!x.container; })));
   ok(w.ids.every(function (c) { return c.opts.table === cfg.ids.table && c.opts.key === cfg.ids.key && c.opts.label === cfg.ids.label; }), 'both ID selectors search the ID table it was handed: its location, key and label fields', 'ID selectors: ' + short(w.ids.map(function (c) { return c.opts; })));
   const holder = function (el) { return box.nodes.findIndex(function (n) { return n.kids.indexOf(el) !== -1; }); };
   const grantAt = box.nodes.findIndex(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || n.getAttribute('data-grants') || ''); });

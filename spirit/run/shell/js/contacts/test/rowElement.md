@@ -2,7 +2,7 @@
 
 One contact as a row element: `spirit.elements.contactElement.create(row)` builds it through the shared
 `rowElement.create` (`shell/js/rowElement.js`). Its subject is a public key; it reads `data.contacts` of the faceless
-layer (`shell/js/spiritData.js`) and repaints from it.
+layer (`shell/shared/js/spiritData.js`) and repaints from it.
 
 ## API
 

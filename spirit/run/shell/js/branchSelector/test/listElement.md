@@ -16,7 +16,8 @@ their data set"*).
 - It loads what it uses itself (rule/26): `shell/js/probabilitySearch.js`, `shell/js/branchSelector/rowElement.js` and
   `shell/js/apiFamilySelector.js`.
 - It registers `spirit.elements.branchList.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
-- It draws one family selector and one probabilitySearch in `host`, and fills it as soon as it is drawn.
+- It draws one family selector, `apiFamilySelector.create(its filter row, …)` (the shell's element shape, goal/G41.19),
+  above one probabilitySearch in `host`, and fills it as soon as it is drawn.
 - Its search asks `auth.branch { op: 'search', text, bundle, family, verb }` through the spirit object, the text
   trimmed, `bundle` from `opts.bundle`, and answers as a reply, `{ items, more }`.
 - `opts.columns` names the row's fields it shows, in order (the branch editor: `family`, `verb`, `delete`).
@@ -27,7 +28,8 @@ their data set"*).
   - a family chosen searches again, narrowed by the family;
   - a verb chosen searches again, narrowed by both.
   The verb half's hiding until a family is chosen is the family selector's own.
-- `refresh()` and `destroy()` reach the search element; `.list` is it.
+- `refresh()` and `destroy()` reach the search element; `.list` is it. `destroy()` leaves `host` empty, the filters
+  with it (box v23: *"destroy empties it"*).
 
 - Its probabilitySearch's `data` is `branches`: the search's answers are seated there, and a row the stream changes redraws
   the list.

@@ -8,7 +8,8 @@ selecting branch rows."*
 
 ## Requirements
 
-- It registers `spirit.elements.createBranchSelector(options)`.
+- It registers `spirit.elements.branchSelector.create(container, options)`, and `createBranchSelector` no more. Its root is
+  appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `branch-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `shell/js/branchSelector/listElement.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
@@ -20,6 +21,7 @@ selecting branch rows."*
 
 ## What its test must try to break
 
+- The old factory still registered, or a root not appended to its container.
 - A selector that counts on an element the page did not load, or on the old list search.
 - A list that is not told its bundle.
 - A pick that leaves `.value` a text, or `.row` without the branch.

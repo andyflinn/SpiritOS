@@ -1,6 +1,6 @@
 // spirit/run/spirit.js
-// THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. The relay serves it as the very first script,
-// inline in face.html (serveCommon.inlineSpirit); the home node's index.html loads it; a server process requires it.
+// THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. face.html loads it first, by a script tag, from
+// the relay or the home node (goal/G41.19); the home node's index.html loads it; a server process requires it.
 // AT THE RUN ROOT, THE ONE DOOR (goal/G40.1). Andy: spirit.js sits in "the run-root, the nodes root of its own fs
 // scope", and every script that is not the node or a relay server installs it first, as the global spirit, "and then
 // use[s] that object properly". The node and the relay build spirit themselves (kernel.js): they are its embodiments.
@@ -711,10 +711,9 @@
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own row
       // element, which takes its type's stream itself (goal/G41.16: no data script). A page without it still runs,
       // uncached. Asked once the page is parsed, so a page that loads it by tag keeps the one cache it made.
-      // The file tree is cached too (Q2: "the file tree must be cached."): it comes as updates of one job, so the files
-      // row element, its translation, comes with the cache and hears it from the start.
-      return parsed().then(function () { return requireOne('shell/shared/js/spiritData.js'); })
-        .then(function () { return requireOne('shell/js/files/rowElement.js'); }).then(null, function () { /* no cache served here */ });
+      // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
+      // whoever draws with the file tree, the face's boot for its home among them.
+      return parsed().then(function () { return requireOne('shell/shared/js/spiritData.js'); }).then(null, function () { /* no cache served here */ });
     }).then(function () { return self; });
     self.ready = started;
     return started;

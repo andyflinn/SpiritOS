@@ -67,7 +67,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   } });
   global.window = { spirit: { elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'shell', 'js', 'spiritData.js'));
+  load(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     if (p === 'process/js/agent/table/tableElement.js' && !global.window.spirit.elements.agentDetail) load(path.join(__dirname, '..', '..', 'tableElement.js'));

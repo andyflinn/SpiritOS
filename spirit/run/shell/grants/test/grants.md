@@ -14,7 +14,8 @@ panel draws and does is the panel's (`shell/js/test/grantsPanel.md`).
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - Nothing of the old shell: no `shellCreateListSearch`, no `api.ui.elements`, no `apiBranchSelector`.
 - It loads what it uses itself (rule/26): `shell/js/grantsPanel.js`, `shell/js/tabContainer.js` and
-  `shell/js/bundleEditor.js`. It draws nothing itself: no markup, no list, no selector of its own, no data script.
+  `shell/js/bundleEditor.js`. It draws nothing itself: no markup, no list, no selector of its own (by either shape,
+  `createContactSelector` or `contactSelector.create`), no data script.
 - Two tabs, one `tabContainer`: `grants`, the grants panel in its own box with the app's api; `bundles`, the bundle
   editor with the app's api.
 - It configures the panel for contacts and the node's grants:

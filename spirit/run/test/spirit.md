@@ -207,6 +207,11 @@ spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server
 
   start, progress and end resolve once the node has them, so awaited calls arrive in order. When the jobs family is
   bound (`spirit.require('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
+- **How a face gets it** (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"): `face.html` loads it by one tag,
+  `<script src="/spirit.js"></script>`, and no other script. The node and the relay serve `face.html` byte for byte as
+  it is on disk; no server pastes spirit.js into a page.
+- **Started on a page, it loads the cache and no element** (goal/G41.19: no preloading elements): `spirit.data`, and
+  nothing else from `shell/`. Whoever draws with a data set loads its row element.
 
 ## What the red must try to break
 

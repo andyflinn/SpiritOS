@@ -26,6 +26,8 @@ function node(tag) {
     addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); },
     removeEventListener: function () {},
     dispatchEvent: function (e) { (heard[e.type] || []).slice().forEach(function (fn) { fn(e); }); return true; } };
+  let html = '';
+  Object.defineProperty(n, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); n.kids.length = 0; } });
   return n;
 }
 function within(root, x) { if (root === x) return true; return (root.kids || []).some(function (k) { return within(k, x); }); }
@@ -46,14 +48,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       lists.push(l); return l;
     } }; },
     'shell/js/branchSelector/rowElement.js': function (E) { E.branchElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
-    'shell/js/apiFamilySelector.js': function (E) { E.createApiFamilySelector = function (o) { const f = node('family'); f.o = o || {}; f.family = ''; f.verb = ''; families.push(f); return f; }; },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
+    'shell/js/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
-  // The page's one data set (shell/js/spiritData.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (shell/shared/js/spiritData.js), which spirit.js brings with the client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -98,7 +101,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // \"(ALL)\"", and since: "apiFamiliySelector.js will use apiVerbSelector as part of itself". The verb half's hiding
   // is the family selector's own (its test).
   const fam = families[0];
-  ok(!!fam && within(host, fam) && families.length === 1, 'it draws one family selector in its host', 'families ' + families.length);
+  ok(!!fam && within(host, fam) && families.length === 1 && fam.container !== host && !within(fam.container, l.host),
+    'it draws one family selector in its host, apiFamilySelector.create(a filter row of its own, above the list)', 'families ' + families.length + ', own row ' + !!(fam && fam.container !== host));
   if (!fam) return;
   asked.length = 0;
   await o.api.verb('auth.branch', o.args('', {}));
@@ -120,5 +124,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const r2 = l.refreshes;
   made.refresh(); made.destroy();
   ok(l.refreshes === r2 + 1 && l.destroyed === true && made.list === l, 'refresh and destroy reach the search element; .list is it', 'refreshes ' + (l.refreshes - r2) + ', destroyed ' + l.destroyed);
+  // goal/G41.19, box v23: "destroy empties it".
+  ok(host.kids.length === 0, 'and destroy leaves its host empty, the filters with it', 'kids left: ' + host.kids.length);
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

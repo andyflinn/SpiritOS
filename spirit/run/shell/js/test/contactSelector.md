@@ -10,8 +10,9 @@ based table calls its label)"*.
 
 ## Requirements
 
-- It registers `spirit.elements.createContactSelector(options)`. Its root is answered at once, nothing chosen, with
-  `refresh`, `present` and `mark`, as Chatter and the shell use it.
+- It registers `spirit.elements.contactSelector.create(container, options)`, and `createContactSelector` no more. Its
+  root is appended to the container (box v23: *"every element gets a container and appends itself"*) and answered at
+  once, nothing chosen, with `refresh`, `present` and `mark`, as Chatter and the shell use it.
 - It loads what it uses itself (rule/26): on a bare page it requires `shell/js/probabilitySearch.js`, then builds on
   it. Nothing of the old shell's list search is in it (goal/G40.8).
 - With no table named, it searches the contacts, `contact.search`, and a row is the contact's key and name, as before.
@@ -24,6 +25,7 @@ based table calls its label)"*.
 
 ## What its test must try to break
 
+- The old factory still registered, or a root not appended to its container.
 - A configured table that is asked anywhere but its own family and verb.
 - A row whose ID or label is read from the wrong field.
 - The contacts' default broken by the new options.

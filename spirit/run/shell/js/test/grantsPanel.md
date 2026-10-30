@@ -19,8 +19,9 @@ boody well know how to configure the damn grantsPanel element"*.
   `stream(job)`;
 - `api`: the app's shell api.
 
-Made without its ID table or its grants table, it is refused and draws nothing: it never falls back to one caller's
-setting.
+Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing
+even when unconfigured (it says it is not configured)"*): one note, `not configured: ` and the table it lacks, and
+nothing else drawn; its `destroy()` empties the host. It never falls back to one caller's setting.
 
 ## Requirements
 
@@ -29,6 +30,8 @@ setting.
 - It names no grants table and no ID table: no auth grant verb, no agent verb, no loopback location, no branch. The
   node's bundles are the one dictionary both kinds of grant are made from, so reading a bundle's branches
   (`auth.branch`) is its own.
+- Its selectors are made in the shell's element shape, `<name>.create(container, options)` (goal/G41.19), each in a
+  container of its own, then set in the line it stands in.
 - **The grant form, one row**: "grant", the ID selector, the bundle selector, the Grant button. Both ID selectors (the
   form's and the filter) search the ID table it was handed: its location, key and label.
 - **The filter line, below it**: the ID filter, the family selector and the deprecated button, in one row
@@ -47,7 +50,8 @@ setting.
 
 ## What its test must try to break
 
-- A grants table, ID table, verb or branch named in the panel itself; a panel made without its configuration.
+- A grants table, ID table, verb or branch named in the panel itself; a panel made without its configuration that
+  throws, keeps silent, or draws more than its note.
 - An ID selector that searches anything but the ID table it was handed.
 - The form out of order, the filters off their line, a fill box above the list.
 - A filter that narrows by a key field the grants table did not name, or does not redraw the list.

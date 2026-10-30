@@ -44,8 +44,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   let answer = function (a) { return Promise.resolve({ id: 11 }); };
   const auth = { branch: function (a) { asked.push(a); return answer(a); } };
   const STANDS = {
-    'shell/js/apiFamilySelector.js': function (E) { E.createApiFamilySelector = function (o) { const f = node('family'); f.o = o || {}; f.family = ''; f.verb = ''; f.value = ''; families.push(f); return f; }; },
-    'shell/js/branchSelector.js': function (E) { E.createBranchSelector = function (o) { const b = node('branches'); b.o = o || {}; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); return b; }; },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
+    'shell/js/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
+    'shell/js/branchSelector.js': function (E) { E.branchSelector = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
@@ -60,7 +61,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['shell/js/apiFamilySelector.js', 'shell/js/branchSelector.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
-  ok(E.branchEditor && typeof E.branchEditor.open === 'function', 'it registers spirit.elements.branchEditor.open', 'elements: ' + short(Object.keys(E)));
+  ok(E.branchEditor && typeof E.branchEditor.open === 'function' && typeof E.branchEditor.create === 'function', 'it registers spirit.elements.branchEditor.open and .create', 'elements: ' + short(Object.keys(E)));
   if (!E.branchEditor || typeof E.branchEditor.open !== 'function') return;
 
   test.subHeading('a page of its own, always on one bundle');
@@ -75,14 +76,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   const box = p.box;
   const bs = branchSels[0];
-  ok(!!bs && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
-    'its list is a branchSelector pane on that bundle, columns family, verb, delete', 'branch selector: ' + short(bs && bs.o));
+  ok(!!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
+    'its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box));
 
   test.subHeading('the add form: new [family, its verb] [Add]');
   // Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself": the box's two dropdowns are its two halves.
   const fam = families[0];
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
-  ok(!!fam && !!add && families.length === 1 && all(box).indexOf(fam) !== -1, 'it draws one family selector and an Add button in its page', 'family ' + families.length + ', Add ' + !!add);
+  ok(!!fam && !!add && families.length === 1 && all(box).indexOf(fam) !== -1 && fam.container.kids.indexOf(add) !== -1,
+    'it draws one family selector, apiFamilySelector.create(the add row), and an Add button beside it', 'family ' + families.length + ', Add ' + !!add + ', same row ' + !!(fam && add && fam.container.kids.indexOf(add) !== -1));
   if (!fam || !add) return;
   ok(/\bnew\b/.test(text(box)), 'the row reads new', 'text: ' + short(text(box)));
   add.dispatchEvent({ type: 'click' });
@@ -101,5 +103,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   ok(asked.length === 2 && asked[1].verb === 'chat.add', 'a verb chosen is sent as it is', 'asked: ' + short(asked));
   ok(/already-in-bundle|already in this bundle/.test(text(box)), 'a refused add is said in the page, in the node\'s words', 'text: ' + short(text(box)));
+
+  test.subHeading('the shell\'s element shape: create(container, options) (goal/G41.19)');
+  // Box v23: "every element gets a container and appends itself".
+  const host = node('host');
+  const made = E.branchEditor.create(host, { bundle: 9 });
+  await settle();
+  ok(branchSels.length === 2 && branchSels[1].o.bundle === 9 && all(host).indexOf(branchSels[1]) !== -1 && all(host).indexOf(families[1]) !== -1,
+    'create(container, { bundle }) draws the editor into that container', 'branch selectors ' + branchSels.length + ', in host ' + !!(branchSels[1] && all(host).indexOf(branchSels[1]) !== -1));
+  ok(!!made && typeof made.destroy === 'function', 'and answers a handle with destroy', 'made: ' + short(made && Object.keys(made)));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

@@ -46,7 +46,7 @@ const asksOf = function (verb) { return desk.asks.filter(function (a) { return a
 
 // ── THE STUBS ────────────────────────────────────────────────────────
 const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
-const D = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
+const D = require(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
 const subscribeArgs = [];   // what each subscribe was handed: { key, family, since }
@@ -73,7 +73,7 @@ globalThis.spirit = {
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 0, body: null }; }); },
 };
-// The data set lives on the one spirit object, where the desk's translator finds it (shell/js/spiritData.js).
+// The data set lives on the one spirit object, where the desk's translator finds it (shell/shared/js/spiritData.js).
 globalThis.spirit.data = D;
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
@@ -374,8 +374,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   test.subHeading('a restarted deskClient subscribes to its desk, the position appServer\'s');
   await new Promise(function (r) { setTimeout(r, 40); });
   const heard = Number(curD.get('desk/change')) || 0;
-  [FILE, path.join(RUN, 'shell', 'js', 'spiritData.js'), path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')].forEach(function (f) { delete require.cache[require.resolve(f)]; });
-  curD = require(path.join(RUN, 'shell', 'js', 'spiritData.js'));
+  [FILE, path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')].forEach(function (f) { delete require.cache[require.resolve(f)]; });
+  curD = require(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   globalThis.spirit.data = curD;
   served = null;
   subscribeArgs.length = 0;

@@ -122,7 +122,7 @@ function makeDom() {
 // The real files the app and its elements load, run on the page when they are required; anything else is answered and
 // not run.
 const REAL = [
-  'shell/js/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
+  'shell/shared/js/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
   'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'process/js/agent/table/model/updatePanel.js',
   'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
@@ -141,7 +141,8 @@ function world() {
   win.window = win;
   // The agent server: every verb answers an empty table.
   const family = new Proxy({}, { get: function (o, verb) { if (verb === 'then') return undefined; return function () { return Promise.resolve({ items: [], more: false }); }; } });
-  const selector = function () { return document.createElement('span'); };
+  // A selector stand-in in the shell's element shape (goal/G41.19): create(container, options) appends it and answers it.
+  const selector = { create: function (c) { const s = document.createElement('span'); c.appendChild(s); return s; } };
   win.spirit = {
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     familyPath: familyPath, isBrowser: function () { return true; },
@@ -151,7 +152,7 @@ function world() {
     elements: {
       // The recorder: the box each list is made in, and whether it is a dropdown.
       probabilitySearch: { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
-      createContactSelector: selector, createBundleSelector: selector, createApiFamilySelector: selector,
+      contactSelector: selector, bundleSelector: selector, apiFamilySelector: selector,
     },
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');
@@ -162,7 +163,7 @@ function world() {
   };
   win.spirit.ready = Promise.resolve(win.spirit);
   vm.createContext(win);
-  win.spirit.require('shell/js/spiritData.js');
+  win.spirit.require('shell/shared/js/spiritData.js');
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   return { document: document, win: win, panes: panes };
 }

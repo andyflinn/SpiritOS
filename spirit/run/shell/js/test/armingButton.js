@@ -18,7 +18,8 @@ const settle = async function () { for (let i = 0; i < 10; i++) await new Promis
 
 function element(tag) {
   const attrs = {}; const heard = {};
-  const el = { tagName: String(tag).toUpperCase(), textContent: '', className: '', type: '', title: '',
+  const el = { tagName: String(tag).toUpperCase(), textContent: '', className: '', type: '', title: '', children: [],
+    appendChild: function (c) { el.children.push(c); return c; },
     setAttribute: function (k, v) { attrs[k] = String(v); },
     getAttribute: function (k) { return k in attrs ? attrs[k] : null; },
     hasAttribute: function (k) { return k in attrs; },
@@ -53,14 +54,17 @@ test.startTest('armingButton.js: the are-you-sure button');
   ok(fs.existsSync(FILE), 'shell/js/armingButton.js exists', 'there is no shell/js/armingButton.js');
   const win = world();
   const E = win.spirit.elements.armingButton;
-  ok(!!E && typeof E.create === 'function', 'it adds armingButton.create to window.spirit.elements', 'no window.spirit.elements.armingButton.create');
+  ok(!!E && typeof E.create === 'function' && E.create.length === 2, 'it adds armingButton.create(container, options) to window.spirit.elements', 'no window.spirit.elements.armingButton.create of a container and options');
   if (!E) return;
 
   test.subHeading('the first press arms it, and runs nothing');
   const a = api(); const ran = [];
-  const b = E.create({ label: 'Revoke', run: function () { ran.push('revoke'); return 'done'; }, api: a, title: 'take it back', className: 'gr-revoke' });
+  // Box v23: "every element gets a container and appends itself".
+  const box = element('div');
+  const b = E.create(box, { label: 'Revoke', run: function () { ran.push('revoke'); return 'done'; }, api: a, title: 'take it back', className: 'gr-revoke' });
   ok(!!b && b.tagName === 'BUTTON' && b.type === 'button', 'create answers a button of type button', 'answered ' + short(b && b.tagName));
   if (!b) return;
+  ok(box.children.length === 1 && box.children[0] === b, 'it is appended to the container it is given', 'container holds ' + box.children.length + (box.children[0] === b ? ', the button' : ', not the button'));
   ok(b.textContent === 'Revoke' && !isArmed(b), 'unarmed, it says its label', 'text ' + short(b.textContent) + ', armed ' + isArmed(b));
   ok(b.title === 'take it back' && /gr-revoke/.test(b.className), 'its title and class are put on it', 'title ' + short(b.title) + ', class ' + short(b.className));
   b.press(); await settle();
@@ -89,8 +93,8 @@ test.startTest('armingButton.js: the are-you-sure button');
 
   test.subHeading('one loaded at a time');
   const a2 = api(); const ran2 = [];
-  const one = E.create({ label: 'Block', armedLabel: 'Block them? Press again', run: function () { ran2.push('block'); }, api: a2 });
-  const two = E.create({ label: 'Forget', run: function () { ran2.push('forget'); }, api: a2 });
+  const one = E.create(element('div'), { label: 'Block', armedLabel: 'Block them? Press again', run: function () { ran2.push('block'); }, api: a2 });
+  const two = E.create(element('div'), { label: 'Forget', run: function () { ran2.push('forget'); }, api: a2 });
   one.press(); await settle();
   ok(one.textContent === 'Block them? Press again', 'armedLabel is said when armed', 'text ' + short(one.textContent));
   two.press(); await settle();
@@ -108,7 +112,7 @@ test.startTest('armingButton.js: the are-you-sure button');
     ok(isArmed(drawn) && drawn.textContent === 'Delete? Press again' && ran4.length === 0, 'its first press arms it, its own text the label', 'text ' + short(drawn.textContent) + ', ran ' + ran4.length);
     drawn.press(); await settle();
     ok(!isArmed(drawn) && drawn.textContent === 'Delete' && ran4.length === 1, 'its second press runs it, and it says Delete again', 'text ' + short(drawn.textContent) + ', ran ' + ran4.length);
-    const other = E.create({ label: 'Waive', run: function () {}, api: a4 });
+    const other = E.create(element('div'), { label: 'Waive', run: function () {}, api: a4 });
     drawn.press(); await settle();
     other.press(); await settle();
     ok(!isArmed(drawn) && isArmed(other), 'an attached button and a made one are one loaded at a time too', 'drawn ' + isArmed(drawn) + ', other ' + isArmed(other));
@@ -116,7 +120,7 @@ test.startTest('armingButton.js: the are-you-sure button');
 
   test.subHeading('without the shell\'s hook it still arms and runs');
   const ran3 = [];
-  const bare = E.create({ label: 'Close', run: function () { ran3.push('close'); } });
+  const bare = E.create(element('div'), { label: 'Close', run: function () { ran3.push('close'); } });
   bare.press(); await settle();
   ok(isArmed(bare) && ran3.length === 0, 'without armUntilElsewhere it still arms, running nothing', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
   bare.press(); await settle();

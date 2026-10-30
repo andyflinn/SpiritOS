@@ -7,8 +7,9 @@ lists. Grants and introSpector build their lines with it, through the api-branch
 
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
 - **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3).
-- `createAppServerSelector({ placeholder, all, tree })` answers its root element: `root.value` the chosen family, `''`
-  for none; `root.tree` the tree it was drawn from.
+- `appServerSelector.create(container, { placeholder, all, tree })` appends its root element to the container and
+  answers it (box v23: *"every element gets a container and appends itself"*); `createAppServerSelector` no more.
+  `root.value` the chosen family, `''` for none; `root.tree` the tree it was drawn from.
 - Its rows are `apiTreeIndex.servers(tree)`: sorted, a family that did not answer (`{ ok: false }`) left out.
 - `all` is what its None reads; None clears the value.
 - A pick sets `root.value` and fires a bubbling `change`.
@@ -18,6 +19,7 @@ lists. Grants and introSpector build their lines with it, through the api-branch
 ## What its test must try to break
 
 - An old shell list made, or probabilitySearch not loaded by itself.
+- The old factory still registered, or a control not appended to its container.
 - A family that did not answer listed, or the rows unsorted.
 - A pick that does not fire change, or None that leaves the value.
 - load(fn) still listing the old tree.

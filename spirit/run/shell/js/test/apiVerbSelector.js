@@ -56,10 +56,14 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   const E = win.spirit.elements;
 
   test.subHeading('a shell element of its own, on probabilitySearch');
-  ok(typeof E.createApiVerbSelector === 'function', 'it adds createApiVerbSelector to window.spirit.elements', 'elements: ' + short(Object.keys(E)));
-  if (typeof E.createApiVerbSelector !== 'function') return;
+  const made = E.apiVerbSelector;
+  ok(made && typeof made.create === 'function' && !('createApiVerbSelector' in E), 'it adds apiVerbSelector with a create to window.spirit.elements, and createApiVerbSelector no more', 'elements: ' + short(Object.keys(E)));
+  if (!made || typeof made.create !== 'function') return;
   ok(w.required.indexOf('shell/js/probabilitySearch.js') !== -1, 'it loads probabilitySearch itself (goal/G41.3)', 'required: ' + short(w.required));
-  const verbs = E.createApiVerbSelector({});
+  // Box v23: "every element gets a container and appends itself".
+  const box = node('div');
+  const verbs = made.create(box, {});
+  ok(box.kids.length === 1 && box.kids[0] === verbs, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === verbs ? ', the control' : ', not the control'));
   const seen = [];
   verbs.addEventListener('change', function () { seen.push(verbs.value); });
   await settle();

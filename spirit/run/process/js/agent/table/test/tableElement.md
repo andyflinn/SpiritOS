@@ -45,7 +45,8 @@ the table)"*.
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
   - The icon is its first field (*"the detail panel's first input will be the icon i choose for that row"*). It is
-    chosen with the shell's icon selector, on the table's icon while the row has none.
+    chosen with the shell's icon selector, `iconSelector.create(the icon field, …)` (the shell's element shape,
+    goal/G41.19), on the table's icon while the row has none.
   - Each field shows the row: a line its value, a bool its tick, a list its words split by commas. A secret is an
     empty password box that says only whether it is set.
   - **It follows its row by itself** (Andy: *"make sure that all element LISTEN to what needs listening to, by

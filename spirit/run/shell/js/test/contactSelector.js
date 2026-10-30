@@ -58,15 +58,20 @@ test.startTest('contactSelector.js: the configurable ID selector');
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p]) STANDS[p](global.window.spirit.elements); return Promise.resolve(true); };
   vm.runInThisContext(SRC, { filename: FILE });
-  const make = global.window.spirit.elements.createContactSelector;
-  ok(typeof make === 'function', 'it registers spirit.elements.createContactSelector', 'elements: ' + short(Object.keys(global.window.spirit.elements)));
-  if (typeof make !== 'function') return;
+  const E = global.window.spirit.elements;
+  const made = E.contactSelector;
+  ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.elements.contactSelector with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));
+  if (!made || typeof made.create !== 'function') return;
+  // Box v23: "every element gets a container and appends itself".
+  const make = function (o) { return made.create(element('div'), o); };
   const rowsOf = async function (l, text) { const a = await l.o.api.verb(l.o.server + '.' + l.o.verb, l.o.args(text, {})); return (a && a.body && a.body.items) || []; };
   const parsed = function (item) { try { return JSON.parse(item.label); } catch (e) { return null; } };
 
   test.subHeading('it loads what it uses itself (rule/26)');
-  const plain = make({});
+  const box = element('div');
+  const plain = made.create(box, {});
   await settle();
+  ok(box.children.length === 1 && box.children[0] === plain, 'create(container, options) appends its root to its container and answers it', 'container holds ' + box.children.length + (box.children[0] === plain ? ', the root' : ', not the root'));
   ok(required.indexOf('shell/js/probabilitySearch.js') !== -1 && lists.length === 1, 'on a bare page it requires shell/js/probabilitySearch.js, then builds on it', 'required ' + short(required) + ', lists ' + lists.length);
   ok(plain && plain.value === '' && typeof plain.refresh === 'function' && typeof plain.present === 'function' && typeof plain.mark === 'function',
     'it answers its root at once, nothing chosen, with refresh, present and mark, as Chatter and the shell use it', 'root: ' + short(plain && Object.keys(plain)));

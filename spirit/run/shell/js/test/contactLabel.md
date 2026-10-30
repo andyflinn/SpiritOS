@@ -1,12 +1,14 @@
 # shell/js/contactLabel.js
 
-The contact label: a contact's name by key, as a shell element (`spirit.elements.createContactLabel`). What it shows
+The contact label: a contact's name by key, as a shell element (`spirit.elements.contactLabel`). What it shows
 is the node's caption for the key, never a rule of its own.
 
 ## API
 
-`createContactLabel({ key, caption?, editable?, className? })` → a `span.contact-label` (`contact-label-editable` in
-mode 2, the caller's class added), holding `span.contact-label-text` and `span.contact-label-error`.
+`contactLabel.create(container, { key, caption?, editable?, className? })` → a `span.contact-label`
+(`contact-label-editable` in mode 2, the caller's class added), holding `span.contact-label-text` and
+`span.contact-label-error`, appended to the container (box v23: *"every element gets a container and appends
+itself"*). `createContactLabel` is no more.
 
 ## Requirements
 
@@ -25,6 +27,6 @@ mode 2, the caller's class added), holding `span.contact-label-text` and `span.c
 
 ## What its test must try to break
 
-Two labels of one key before the answer; a key the book cannot name; a failing ask; a rename of another key or with a
+The old factory still registered; a label not appended to its container; Two labels of one key before the answer; a key the book cannot name; a failing ask; a rename of another key or with a
 non-text caption; a label that left the page; double clicks; blank, too long and refused names; an answer with no
 caption.

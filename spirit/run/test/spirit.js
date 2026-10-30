@@ -413,9 +413,21 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   // ── 6b. ON A FACE, spirit.js LOADS THE FACE ──────────────────────────
   test.subHeading('6b. on a face: face.html holds spirit.js alone, and spirit.js loads the face shell');
   const faceHtml = fs.readFileSync(path.join(RUN, 'face.html'), 'utf8');
-  if (/<html[^>]*data-spirit="face"/.test(faceHtml) && /<!-- spirit\.js -->/.test(faceHtml) && !/<script\b/.test(faceHtml.replace(/<!--[\s\S]*?-->/g, '')))
-    test.check('face.html says it is a face (data-spirit="face"), marks the place for spirit.js, and loads no script of its own');
-  else test.fail('face.html still loads scripts of its own, or does not say it is a face');
+  // goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": one tag, /spirit.js, and nothing pasted in by a server.
+  const faceScripts = faceHtml.replace(/<!--[\s\S]*?-->/g, '').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) || [];
+  if (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts.length === 1 && /^<script src="\/spirit\.js"><\/script>$/.test(faceScripts[0]))
+    test.check('face.html says it is a face (data-spirit="face") and loads spirit.js by one script tag, and no other script');
+  else test.fail('face.html\'s scripts: ' + short(faceScripts) + ', or it does not say it is a face');
+  const served = await new Promise(function (resolve) {
+    const chunks = [];
+    const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { if (b) chunks.push(Buffer.from(b)); resolve(Buffer.concat(chunks)); } };
+    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'face.html')); } catch (e) { resolve(Buffer.from('threw ' + e.message)); }
+  });
+  if (served.equals(fs.readFileSync(path.join(RUN, 'face.html')))) test.check('the node serves face.html byte for byte as it is on disk');
+  else test.fail('the node serves face.html changed: ' + served.length + ' bytes against ' + fs.statSync(path.join(RUN, 'face.html')).size + ' on disk');
+  const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'relayServer.js'), 'utf8');
+  if (!/inlineSpirit/.test(serverSrc)) test.check('no server pastes spirit.js into a page: serveCommon.inlineSpirit is gone, from the node and the relay');
+  else test.fail('inlineSpirit is still in serveCommon.js or relayServer.js');
   const injected = [];
   const faceWindow = {
     fetch: function (url) {
@@ -515,6 +527,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   // loads with a files element (rule/26); spirit.js loads the cache and no data script.
   if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/spiritData\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no shell/js/files/data.js (goal/G41.16)');
   else test.fail('on a page spirit.js still loads a data script: ' + short(cq.fetched.map(function (f) { return f.url; }).filter(function (u) { return /data\.js/.test(u) && !/spiritData/.test(u); })));
+  // goal/G41.19, Andy: no preloading elements: the cache alone; an element comes with whoever draws with it.
+  const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/spiritData\.js/.test(u) && /shell\//.test(u); });
+  if (!preloaded.length) test.check('on a page spirit.js loads the cache and no element: no files row element with it (goal/G41.19)');
+  else test.fail('on a page spirit.js still loads elements with the cache: ' + short(preloaded));
   const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
   else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));

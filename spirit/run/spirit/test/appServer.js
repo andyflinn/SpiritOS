@@ -66,7 +66,7 @@ const asked = [];
 // loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
 // puts it on the stand-in, where the desk's translator finds it.
 const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
-delete require.cache[require.resolve(path.join(RUN, 'shell', 'js', 'spiritData.js'))];
+delete require.cache[require.resolve(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'))];
 const fake = {
   familyPath: familyPath,
   require: function (p, key) {

@@ -48,7 +48,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const auth = { bundle: function (a) { asked.push(a); return answer(a); } };
   const STANDS = {
     'shell/js/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
-    'shell/js/bundleSelector.js': function (E) { E.createBundleSelector = function (o) { const s = node('bundles'); s.o = o || {}; s.refreshed = 0; s.refresh = function () { s.refreshed += 1; }; sels.push(s); return s; }; },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
+    'shell/js/bundleSelector.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.refresh = function () { s.refreshed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
@@ -88,8 +89,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box: "the bundleSelector in pane-mode, with the following columns 1. [fieldInput:fieldRule:Label] ... 2. an
   // edit button, leading to the branchEditor.js ... 3. a delete armingButton.js".
   const sel = sels[0];
-  ok(!!sel && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","edit","delete"]' && sel.o.editable === true,
-    'a bundleSelector pane, columns label, edit, delete, its labels edited in place', 'selector: ' + short(sel && sel.o));
+  ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","edit","delete"]' && sel.o.editable === true,
+    'bundleSelector.create(its box, a pane, columns label, edit, delete, its labels edited in place)', 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box));
   ok(!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill')), 'in a box that fills the space left (shell.css fill)', 'classes: ' + short(all(box).map(function (k) { return k.className; })));
   if (!sel) return;
 

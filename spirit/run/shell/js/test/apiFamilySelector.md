@@ -8,7 +8,9 @@ NEEDs the family selector to have any meaning at all."*). Its test is `./apiFami
 ## Requirements
 
 - `shell/js/apiFamilySelector.js` is there and `shell/js/apiBranchSelector.js` is not; the rename leaves no copy.
-- It registers `createApiFamilySelector(options)`, and `createApiBranchSelector` no more.
+- It registers `apiFamilySelector.create(container, options)`, and `createApiFamilySelector` and
+  `createApiBranchSelector` no more. The control is appended to the container and answered (box v23: *"every element
+  gets a container and appends itself"*).
 - Nothing of `shellCreateListSearch` (goal/G40.8).
 - It loads its two halves itself (rule/26): the family dropdown, `shell/js/appServerSelector.js`, and the verb selector,
   `shell/js/apiVerbSelector.js`. Two probabilitySearch dropdowns.
@@ -27,6 +29,7 @@ NEEDs the family selector to have any meaning at all."*). Its test is `./apiFami
 ## What its test must try to break
 
 - The old file left beside the new one, or the old factory still registered.
+- A control not appended to its container.
 - A part counted on that it did not load itself.
 - The verb half shown before a family is chosen, or a verb kept across families.
 - DEBUG offered as a verb.

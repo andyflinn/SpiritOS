@@ -2,7 +2,7 @@
 
 // spirit/run/process/js/agent/table/test/tableElement.js
 // The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
-// The browser file runs in node on a window of its own, over the real spirit.data (shell/js/spiritData.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.data (shell/shared/js/spiritData.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 
@@ -80,7 +80,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const w = world();
   global.window = { spirit: { elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'shell', 'js', 'spiritData.js'));
+  load(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   const D = global.window.spirit.data;
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
@@ -91,7 +91,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
     w.searches.push(s); return s;
   } };
-  global.window.spirit.elements.createIconSelector = function (o, opts) { const sel = { value: (opts && opts.value) || '', opts: opts }; w.icons.push(sel); return sel; };
+  // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
+  global.window.spirit.elements.iconSelector = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
   const E = global.window.spirit.elements;
   ok(E.agentTable && typeof E.agentTable.create === 'function' && E.agentRow && typeof E.agentRow.create === 'function',
@@ -220,6 +221,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
     'a secret is an empty password box that says only whether it is set', 'secret: ' + short(the(ed, 'apiKey').tag));
   const sel = w.icons[w.icons.length - 1];
   ok(sel && sel.value === '🏢', 'the icon chooser is the shell\'s icon selector, on the table\'s icon while the row has none', 'icon selector: ' + short(sel && sel.opts));
+  ok(sel && sel.container === the(ed, 'icon') && the(ed, 'icon').children.indexOf(sel) !== -1, 'made with iconSelector.create(the icon field, options), it stands in that field', 'icon container: ' + short(sel && sel.container && sel.container.tag));
 
   test.subHeading('the editor follows its row in spirit.data');
   D.merge('agent.provider/KR', { label: 'From the stream' });

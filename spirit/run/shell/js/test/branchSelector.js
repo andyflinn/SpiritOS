@@ -54,20 +54,24 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
-  const make = global.window.spirit.elements.createBranchSelector;
-  ok(typeof make === 'function', 'it registers spirit.elements.createBranchSelector, beside the shell\'s other selectors', 'elements: ' + short(Object.keys(global.window.spirit.elements)));
-  if (typeof make !== 'function') return;
+  const E = global.window.spirit.elements;
+  const made = E.branchSelector;
+  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.elements.branchSelector with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
+  if (!made || typeof made.create !== 'function') return;
 
   test.subHeading('a thin selector over its own list (rule/26; the contactSelector\'s pattern)');
-  const root = make({ bundle: 7, placeholder: 'choose a branch…' });
+  // Box v23: "every element gets a container and appends itself".
+  const box = element('div');
+  const root = made.create(box, { bundle: 7, placeholder: 'choose a branch…' });
   await settle();
+  ok(box.children.length === 1 && box.children[0] === root, 'create(container, options) appends its root to its container and answers it', 'container holds ' + box.children.length + (box.children[0] === root ? ', the root' : ', not the root'));
   ok(required.indexOf('shell/js/branchSelector/listElement.js') !== -1, 'on a bare page it requires its list, shell/js/branchSelector/listElement.js', 'required: ' + short(required));
   ok(root && root.value === '' && root.row === null && /\bbranch-selector\b/.test(root.className), 'it answers its root at once, class branch-selector, nothing chosen: value \'\', row null',
     'root: ' + short(root && { value: root.value, row: root.row, className: root.className }));
   const list = lists[0];
   ok(list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a branch…' && list.o.bundle === 7, 'its list is drawn into its root, a dropdown by default, its bundle and placeholder handed on', 'list: ' + short(list && { face: list.o.face, placeholder: list.o.placeholder, inRoot: list.host === root }));
   if (!list) return;
-  make({ bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] }); await settle();
+  made.create(element('div'), { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] }); await settle();
   const pane = lists[1] && lists[1].o;
   ok(pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["family","verb","delete"]',
     'face pane is the list itself; columns are handed to it', 'pane: ' + short(pane));

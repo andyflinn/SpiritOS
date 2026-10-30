@@ -18,8 +18,8 @@ opens. So the editor names no description and no api-branch selector.
   - a valid one asks `auth.bundle { op: 'add', label }`, the label as `fieldRules.normalize` writes it;
   - answered, the list searches again and the input is emptied for the next;
   - refused, the node's words are said in the panel and the label stays in the input.
-- Below it, filling the space left (a `fill` box, shell.css): a `bundleSelector` pane, columns `label`, `edit` and
-  `delete`, its labels edited in place (`editable`). What a row does is the row element's
+- Below it, filling the space left (a `fill` box, shell.css): `bundleSelector.create(its box, …)` (the shell's element
+  shape, goal/G41.19), a pane, columns `label`, `edit` and `delete`, its labels edited in place (`editable`). What a row does is the row element's
   (`shell/js/bundleSelector/rowElement.js`).
 - `destroy()` empties its box.
 

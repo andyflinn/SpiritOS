@@ -3,7 +3,7 @@
 The agent app's lists, walked from each list to the app (goal/G41.18; rule/16). Its test is `./listBoxes.js`. The app
 runs on a small page (the one Desk's suite drives, copied) with the real workBench, table elements and grants panel. The
 search element is a recorder that keeps the box each list was made in. The selectors and the agent server are
-stand-ins.
+stand-ins, the selectors in the shell's element shape, `<name>.create(container, options)` (goal/G41.19).
 
 Andy, on G41.18:
 

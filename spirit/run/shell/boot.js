@@ -365,12 +365,13 @@
   }
   // WHAT THE FACE LOADS FROM HOME (goal/G40.7; Andy: "execute a hard-Coded download/fetch of all those scripts rather
   // than stealing them from index.html ... but do not download kernel.js"): in order, the home page's sheets and
-  // scripts but the old shell, spirit.js (inline in this page, first), kernel.js and CodeMirror (loaded when an app
+  // scripts but the old shell, spirit.js (this page's first script tag), kernel.js and CodeMirror (loaded when an app
   // needs it). A part added to the face is added here. Not on it, by rule (goal/G40.8): listSearch.js ("list search is
   // deprecated, and forbidden in face"), the contact selector built on it, and the deprecated header element.
   // ONLY WHAT BOOT RUNS ITSELF (goal/G41.3; Andy: boot preloads only the home and Join components, every app bootstraps
   // its own): spirit's libraries, the sheet, the navigation every app is a page on, and Join's steps, which boot works
   // out. Every other element is loaded by the app that draws with it, through spirit.require; the cache by spirit.js.
+  // The home draws its apps from the file tree, so boot requires the files row element, its translation, itself.
   var FACE_PARTS = [
     'spirit/ownerBadge.js',
     'spirit/fieldRules.js',
@@ -746,9 +747,13 @@
         setConnected(true);
         window.spirit.transport = { events: function (h) { held.push(h); return function () { held = held.filter(function (x) { return x !== h; }); }; } };
       }
-      // The spirit object (goal/G32.1), inline in this page, gets its families once the node can be reached, and the
-      // parts load once they are there (goal/G40.7: "fetch the damn api's from home" first).
-      var parts = function () { return loadParts(); };
+      // The spirit object (goal/G32.1), this page's first script, gets its families once the node can be reached, and the
+      // parts load once they are there (goal/G40.7: "fetch the damn api's from home" first); then the file tree's row
+      // element, which the home's app list reads.
+      var parts = function () {
+        return loadParts().then(function () { return window.spirit.require('shell/js/files/rowElement.js'); })
+          .then(null, function () { /* without it the home lists no apps; the files app says why */ });
+      };
       return Promise.resolve(window.spirit.start()).then(parts, parts);
     }).then(function () {
       if (home) {

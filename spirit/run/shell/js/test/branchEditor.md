@@ -14,10 +14,12 @@ of itself"*). The way back is the shell's (*"the shell provides a back-button fr
 - It loads what it uses itself (rule/26): `shell/js/apiFamilySelector.js` and `shell/js/branchSelector.js`. The
   navigation is the shell's own.
 - It registers `spirit.elements.branchEditor.open({ bundle, label })`, which pushes a page on the shell's navigation,
-  titled `Edit <label>`.
-- Mounted, the page draws:
-  - the add form, reading `new`: one family selector, its verb half with it, and an Add button;
-  - a `branchSelector` pane on that bundle, its columns `family`, `verb`, `delete`.
+  titled `Edit <label>`, and `branchEditor.create(container, options)`, which draws the same editor into the container
+  and answers a handle with `destroy` (the shell's element shape, goal/G41.19).
+- Mounted, the page draws, each part made with its container (`<name>.create(container, options)`):
+  - the add form, reading `new`: one family selector, `apiFamilySelector.create(the add row, …)`, its verb half with
+    it, and an Add button in the same row;
+  - `branchSelector.create(the page, …)`, a pane on that bundle, its columns `family`, `verb`, `delete`.
 - Add:
   - with no family it asks nothing;
   - otherwise it asks `auth.branch { op: 'add', bundle, family, verb }`, the family selector's `family` and `verb`,
@@ -29,5 +31,6 @@ of itself"*). The way back is the shell's (*"the shell provides a back-button fr
 
 - A page on another bundle, or titled otherwise.
 - A part counted on that the editor did not load itself.
+- A part made into another container than its own.
 - An Add sent with no family, or not followed by the list searching again.
 - A refusal kept silent.

@@ -428,7 +428,8 @@ const FACE_DIR = path.join(__dirname, '..', 'shell');
 // /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
 // (goal/G30.9, box v16); face.css turns its colours green.
 // face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
-const FACE_FILES = { '/shell.css': '../shell.css', '/shell/face.css': 'face.css', '/shell/boot.js': 'boot.js', '/shell/seal.js': 'seal.js', '/shell/favicon.svg': 'favicon.svg', '/shell/login/login.js': 'login/login.js', '/shell/login/login.json': 'login/login.json' };
+// /spirit.js is face.html's script tag, at the run root as on the node (goal/G41.19).
+const FACE_FILES = { '/spirit.js': '../spirit.js', '/shell.css': '../shell.css', '/shell/face.css': 'face.css', '/shell/boot.js': 'boot.js', '/shell/seal.js': 'seal.js', '/shell/favicon.svg': 'favicon.svg', '/shell/login/login.js': 'login/login.js', '/shell/login/login.json': 'login/login.json' };
 const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
@@ -441,8 +442,6 @@ function faceSend(res, status, file) {
   fs.readFile(path.join(FACE_DIR, file), function (err, data) {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
     res.writeHead(status, { 'Content-Type': FACE_TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-    // face.html carries the spirit object inline as its first script (goal/G32.1).
-    if (path.basename(file) === 'face.html') { res.end(common.inlineSpirit(data.toString('utf8'), path.join(FACE_DIR, '..'))); return; }
     res.end(data);
   });
 }

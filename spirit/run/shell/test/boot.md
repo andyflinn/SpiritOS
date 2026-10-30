@@ -20,7 +20,8 @@ app loads its own components, as a tree, through spirit.require.
   the stand. that's the only pre-load allowed."): the paths of components in its code are spirit.js's own libraries, the
   shell's sheet, the seal, the login app, the Join app and the navigation it draws apps in. No other shell/js element,
   and no other app's file. (This reads "the home and join components" as the login app, the navigation, and Join with
-  its steps.)
+  its steps; and, since spirit.js loads no element, the file tree's row element, which the home lists its apps from,
+  goal/G41.19.)
 - Login and Join are its two mandatory components, hard-coded by path; boot disregards their sidecars.
 - Both are core whole, as are boot, the seal, the sheet and the icon, so no page can change them. (A sidecar is a node's
   own state since goal/G41.1, box v16-v17, beside no code.)

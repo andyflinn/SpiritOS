@@ -8,7 +8,8 @@ selecting bundle rows."*
 
 ## Requirements
 
-- It registers `spirit.elements.createBundleSelector(options)`.
+- It registers `spirit.elements.bundleSelector.create(container, options)`, and `createBundleSelector` no more. Its root is
+  appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `bundle-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `shell/js/bundleSelector/listElement.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
@@ -20,6 +21,7 @@ selecting bundle rows."*
 
 ## What its test must try to break
 
+- The old factory still registered, or a root not appended to its container.
 - A selector that counts on an element the page did not load, or on the old list search.
 - A pick that leaves `.value` a text, or `.row` without the bundle.
 - A pane that loses the editor's columns or its editing.

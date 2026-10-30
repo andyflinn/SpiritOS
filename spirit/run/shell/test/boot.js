@@ -136,7 +136,9 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
     const paths = (boot.match(/['"](?:spirit|shell)\/[\w/.-]+\.(?:js|css|json)['"]|['"]shell\.css['"]/g) || []).map(function (s) { return s.slice(1, -1); });
     const allowed = function (p) {
       return p === 'shell.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) || p === 'shell/seal.js' || p === 'shell/boot.js' ||
-        /^shell\/login\//.test(p) || /^shell\/join\//.test(p) || p === 'shell/js/navigationWrapper.js' || p === 'shell/js/joinSteps.js';
+        /^shell\/login\//.test(p) || /^shell\/join\//.test(p) || p === 'shell/navigationWrapper.js' || p === 'shell/js/joinSteps.js' ||
+        // goal/G41.19: the home lists its apps from the file tree, so boot loads the tree's row element; spirit.js no longer does.
+        p === 'shell/js/files/rowElement.js';
     };
     const extra = paths.filter(function (p) { return !allowed(p); }).filter(function (p, i, all) { return all.indexOf(p) === i; });
     ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheet, the seal, the login app, Join and the navigation (' + paths.length + ' paths read)',

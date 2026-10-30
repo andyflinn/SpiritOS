@@ -1,6 +1,6 @@
 # shell/shared/js/deskData.js
 
-The desk's translator (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (`shell/js/spiritData.js`),
+The desk's translator (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (`shell/shared/js/spiritData.js`),
 in the page and in node alike. A desk component's shared part, so in `shell/shared/js` (goal/G41.11; Andy: "desk
 components can make their own shared stuff in spirit/run/shell/shared/js"). Its test runs it beside the real
 spirit.data, as the module runs. Read from the module's code (goal/G41.11).

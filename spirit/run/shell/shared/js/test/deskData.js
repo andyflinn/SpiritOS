@@ -2,7 +2,7 @@
 
 // spirit/run/shell/shared/js/test/deskData.js
 // The tests of shell/shared/js/deskData.js, and of no other module (spec: ./deskData.md; goal/G41.11). The translator
-// runs as it does: in a window of its own beside the real spirit.data (shell/js/spiritData.js), which it writes into;
+// runs as it does: in a window of its own beside the real spirit.data (shell/shared/js/spiritData.js), which it writes into;
 // the desk's rows are handed in as appServer's streamListener hands them, jobs of module process/js/desk.
 
 const fs = require('fs');
@@ -11,7 +11,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskData.js');
-const SPIRIT_DATA = path.join(RUN, 'shell', 'js', 'spiritData.js');
+const SPIRIT_DATA = path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

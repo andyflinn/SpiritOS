@@ -35,7 +35,7 @@ const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
 let onUpdate = null; let unsubscribed = 0;
 window.spirit.events = { subscribe: function (h) { onUpdate = h.onUpdate; return function () { unsubscribed += 1; }; } };
-load(path.join(JS, 'spiritData.js'));
+load(path.join(JS, '..', 'shared', 'js', 'spiritData.js'));
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
 load(path.join(JS, 'contacts', 'listElement.js'));

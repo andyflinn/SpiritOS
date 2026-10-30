@@ -77,16 +77,18 @@
   function create(row, opts) {
     var o = opts || {};
     var g = o.grants;
-    // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "no throw even unconfigured"): a row with no grants table is
-    // a row of nothing, on no stream, its Revoke asking nothing.
+    // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "no throw even unconfigured"): with no grants table there is
+    // no field to read the row by, no stream and nothing to revoke, so the row is empty and has no Revoke.
     var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function' && typeof g.stream === 'function');
-    if (!configured) g = { key: 'key', label: 'label', revoke: function () { return Promise.resolve(null); } };
-    var r = row || {};
+    var r = configured ? (row || {}) : {};
+    var key = configured ? r[g.key] : '';
+    var label = configured ? r[g.label] : '';
+    var revoke = configured ? [{ name: 'revoke', paint: function () { return '<button type="button" class="gr-revoke" data-action="revoke">Revoke</button>'; } }] : [];
     var el = E.rowElement.create({
       kind: 'grant',
-      key: keyOf(r[g.key], r.path),
+      key: keyOf(key, r.path),
       index: configured ? indexOf(g) : null,
-      row: { key: String(r[g.key] || ''), path: String(r.path || ''), label: String(r[g.label] || '') },
+      row: { key: String(key || ''), path: String(r.path || ''), label: String(label || '') },
       fields: [
         { name: 'name', from: ['label'], paint: function (v) { return '<span style="white-space:nowrap">' + esc(v.label) + '</span>'; } },
         { name: 'path', paint: function (v) {
@@ -94,12 +96,11 @@
           return '<span style="white-space:nowrap">' + esc(v.path) + '</span>' +
             (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '');
         } },
-        { name: 'revoke', paint: function () { return '<button type="button" class="gr-revoke" data-action="revoke">Revoke</button>'; } },
-      ],
-      actions: [
+      ].concat(revoke),
+      actions: configured ? [
         // Its table revokes it, and the stream takes the row out.
         { name: 'revoke', label: 'Revoke', run: function (it) { return g.revoke(it.row.key, it.row.path); } },
-      ],
+      ] : [],
     });
     var mount = el.mount;
     el.mount = function (hosts) {

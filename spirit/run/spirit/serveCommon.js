@@ -103,8 +103,6 @@ function sendFile(res, filePath) {
     }
 
     res.writeHead(200, { 'Content-Type': type });
-    // face.html, served by the home node too, carries the spirit object inline (goal/G32.1).
-    if (path.basename(filePath) === 'face.html') { res.end(inlineSpirit(data.toString('utf8'), path.dirname(filePath))); return; }
     res.end(data);
   });
 }
@@ -448,22 +446,6 @@ function ensureFirstRun(rootDir, opts) {
   return auth.loadIdentity(rootDir);
 }
 
-// THE SPIRIT OBJECT, INLINE AND FIRST (goal/G32.1; Andy: "the very first script it serves should be right in a script
-// tab in the very only html file it servers"): face.html marks the place with <!-- spirit.js -->, and whoever serves the
-// page, the relay or the home node, puts the run root's spirit.js there inline (goal/G40.1). One source, so the page and
-// a server process run the same file. A tree with no spirit.js serves the page without it, and says so: the face would
-// otherwise fail without a word (a relay not yet updated, goal/G40.1).
-function inlineSpirit(html, runDir) {
-  let src = '';
-  try { src = require('fs').readFileSync(require('path').join(runDir, 'spirit.js'), 'utf8'); } catch (e) {
-    console.error('inlineSpirit: no spirit.js at ' + require('path').join(runDir, 'spirit.js') + '; face.html is served without the spirit object');
-    return html;
-  }
-  // A '</script' inside the source would end the tag early.
-  const safe = src.replace(/<\/script/gi, '<\\/script');
-  return String(html).replace('<!-- spirit.js -->', function () { return '<script>\n' + safe + '\n</script>'; });
-}
-
 // THIS NODE'S PORT, FOR EVERY node.js PROCESS ON IT (goal/G40.6). Andy: "only a node.js servers listening on a loopback
 // port writes that port to environment.json", "it really belongs in serverCommon", and "anytime a node.js process
 // requires(spirit) spirit itself fetches the port from environment.json". Written before the node starts any server
@@ -477,7 +459,6 @@ function writeEnvironment(rootDir, port) {
 
 module.exports = {
   writeEnvironment: writeEnvironment,
-  inlineSpirit: inlineSpirit,
   ensureFirstRun: ensureFirstRun,
   firstDescription: firstDescription,
   bodyBytes: bodyBytes,

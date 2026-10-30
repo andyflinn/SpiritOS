@@ -12,8 +12,9 @@ procedure must be done from scratch").
 page an arming one, and answers it, carrying `disarm()` and `armed()`. Most apps draw their buttons as markup and draw
 them again on every change; they attach after each draw. A button drawn again is a new button, unarmed.
 
-`window.spirit.elements.armingButton.create({ label, armedLabel, run, api, title, className })` is `attach` on a new
-`<button type="button">`, its title and class put on it.
+`window.spirit.elements.armingButton.create(container, { label, armedLabel, run, api, title, className })` is `attach`
+on a new `<button type="button">`, its title and class put on it, appended to the container (box v23: *"every element
+gets a container and appends itself"*).
 
 - `label` what it says unarmed (for `attach`, by default the button's own text); `armedLabel` what it says armed, by default `<label>? Press again`.
 - `run()` what the second press does.
@@ -35,6 +36,7 @@ them again on every change; they attach after each draw. A button drawn again is
 
 ## What its test must try to break
 
+- A made button not appended to its container.
 - A single press that runs; a second press that runs twice or not at all.
 - A disarm that leaves it red, or the armed wording behind.
 - Two buttons armed at once.

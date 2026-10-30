@@ -65,7 +65,13 @@ test.startTest('appServerSelector.js: the app-server selector');
 
   test.subHeading('the server half: a probabilitySearch dropdown of the node\'s families');
   const changes = [];
-  const servers = w.E.createAppServerSelector({ all: 'all servers' });
+  const made = w.E.appServerSelector;
+  ok(made && typeof made.create === 'function' && !('createAppServerSelector' in w.E), 'it registers appServerSelector with a create, and createAppServerSelector no more', 'elements: ' + short(Object.keys(w.E)));
+  if (!made || typeof made.create !== 'function') return;
+  // Box v23: "every element gets a container and appends itself".
+  const box = node('div');
+  const servers = made.create(box, { all: 'all servers' });
+  ok(box.kids.length === 1 && box.kids[0] === servers, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === servers ? ', the control' : ', not the control'));
   servers.addEventListener('change', function () { changes.push(servers.value); });
   await settle();
   const sl = w.lists[0];

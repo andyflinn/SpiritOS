@@ -106,7 +106,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
   // goal/G41.16: "the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js".
-  ok(!/innerHTML|createElement|probabilitySearch|grantList|createContactSelector|createBundleSelector|createApiFamilySelector/.test(code) && !w.required.some(function (p) { return /data\.js$/.test(p); }),
+  // The selectors by either shape: createContactSelector, or contactSelector.create (goal/G41.19).
+  ok(!/innerHTML|createElement|probabilitySearch|grantList|[cC]ontactSelector|[bB]undleSelector|[aA]piFamilySelector/.test(code) && !w.required.some(function (p) { return /data\.js$/.test(p); }),
     'it draws nothing itself: no markup, no list, no selector of its own, no data script', 'grants.js still draws or builds something of its own');
 
   const app = node('container');

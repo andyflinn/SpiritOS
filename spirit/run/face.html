@@ -6,13 +6,14 @@
      empty but for the login app, which opens at once. Logged in, everything else comes from the home node over the
      sealed link (goal/G30.11; shell/seal.js is the node's seal in WebCrypto, shell/boot.js says the rest); the not
      connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device).
-     IT HOLDS spirit.js ALONE (goal/G40.6): data-spirit="face" says what this page is, and spirit.js, inline and first,
-     loads the face shell itself; the seal comes once the face links to its home node. -->
+     IT HOLDS spirit.js ALONE (goal/G40.6): data-spirit="face" says what this page is, and spirit.js, first, loads the
+     face shell itself; the seal comes once the face links to its home node. spirit.js comes by a plain script tag, and
+     this file is served as it is on disk (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"). -->
 <html lang="en" data-spirit="face">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- spirit.js -->
+  <script src="/spirit.js"></script>
   <title>Face</title>
   <link rel="icon" type="image/svg+xml" href="/shell/favicon.svg" />
   <link rel="stylesheet" href="/shell.css" />

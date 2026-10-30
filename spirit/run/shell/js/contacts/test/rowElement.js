@@ -25,7 +25,7 @@ window.spirit.elements = { contactDetails: { open: function (o) { asked.push({ v
 // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
 const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
-load(path.join(JS, 'spiritData.js'));
+load(path.join(JS, '..', 'shared', 'js', 'spiritData.js'));
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
 const C = window.spirit.elements.contactElement;

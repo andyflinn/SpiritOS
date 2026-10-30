@@ -19,7 +19,7 @@ grantsPanel element"*: the row knows no table.
 ## Requirements
 
 - It loads what it uses itself (rule/26): `shell/js/rowElement.js` and `shell/js/armingButton.js`; no data script.
-- It names no table: no auth verb, no agent grant, no stream job of its own. Made with no grants table, it is refused.
+- It names no table: no auth verb, no agent grant, no stream job of its own. Made with no grants table it throws nothing (goal/G41.19, box v23: *"throws nothing even when unconfigured"*): it is a row of nothing, and never falls back to one.
 - A row element of kind `grant`, keyed `<id>\n<path>`, the id read from the table's key field.
 - Its fields are `name`, `path` and `revoke`, Revoke the rightmost. Whose grant it is (the table's label field) and the
   path are drawn escaped.

@@ -75,13 +75,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it names no shellCreateListSearch (goal/G40.8)', 'it names shellCreateListSearch');
   const w = world();
   await settle();
-  ok(typeof w.E.createApiFamilySelector === 'function' && !('createApiBranchSelector' in w.E), 'it registers createApiFamilySelector, and createApiBranchSelector no more', 'elements: ' + short(Object.keys(w.E)));
-  if (typeof w.E.createApiFamilySelector !== 'function') return;
+  const made = w.E.apiFamilySelector;
+  ok(made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E),
+    'it registers apiFamilySelector with a create, and createApiFamilySelector and createApiBranchSelector no more', 'elements: ' + short(Object.keys(w.E)));
+  if (!made || typeof made.create !== 'function') return;
   ok(w.required.indexOf('shell/js/appServerSelector.js') !== -1 && w.required.indexOf('shell/js/apiVerbSelector.js') !== -1,
     'it loads its two halves itself (rule/26): the family dropdown, appServerSelector, and the verb selector', 'required: ' + short(w.required));
 
   test.subHeading('the family, then its verb, side by side');
-  const fam = w.E.createApiFamilySelector({ all: 'every family' });
+  // Box v23: "every element gets a container and appends itself".
+  const box = node('div');
+  const fam = made.create(box, { all: 'every family' });
+  ok(box.kids.length === 1 && box.kids[0] === fam, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === fam ? ', the control' : ', not the control'));
   const seen = [];
   fam.addEventListener('change', function () { seen.push(fam.value); });
   await settle();
