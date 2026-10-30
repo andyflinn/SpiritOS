@@ -63,40 +63,43 @@
     choices: [{ value: '', word: 'all tests' }, { value: 'product', word: 'product tests only' }],
     test: function (row, value) { return !value || String((row && row.suite) || '').charAt(0) === '/' ? 1 : 0; },
   }];
-  // THE OUTCOME AS ITS ICON (goal/G41.22; Andy: "the "green"/"red" column must use icons"; agreed: "the icons are the
-  // reporter's own: ✅ green, ❌ red"). deskVerify answers the words; each row it answers carries its icon too, as the
-  // field the Result column shows (result), and the filter still reads the words (outcome).
+  // EACH TEST A ROW ELEMENT (goal/G41.23; Andy, goal/G41.22: "the "green"/"red" column must use icons"; agreed: "the
+  // icons are the reporter's own: ✅ green, ❌ red"; goal/G41.21: "this element will replace icons painting all shell
+  // elements and apps."). The list takes a row element for each row (element(row), as Contacts and Icons do), and it
+  // paints the cells: the Result cell is the outcome deskVerify answers, drawn as its icon through the icon element
+  // (shell/js/icon.js). The row stays deskVerify's own, and the call the Desk's own.
   var ICONS = { green: '✅', red: '❌' };
-  function withIcons(answer) {
-    var b = answer && answer.body;
-    if (!b || !Array.isArray(b.items)) return answer;
-    b.items = b.items.map(function (it) {
-      var row = null;
-      try { row = JSON.parse(it.label); } catch (e) { row = null; }
-      if (!row || typeof row !== 'object') return it;
-      row.result = ICONS[row.outcome] || String(row.outcome || '');
-      return Object.assign({}, it, { label: JSON.stringify(row) });
-    });
-    return answer;
-  }
-  // THE RESULT CELL'S ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
-  // elements and apps."): the list draws each cell as text from its row's field, so once shell/js/icon.js is here a cell
-  // of the Result column holding only its ✅ or ❌ is made the element in place, as the list draws it (watched). The
-  // words of the filter buttons and the summary line are text beside a glyph, and stay as they are.
-  function paintResults(root) {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // Made by icon.create and handed on as its markup, since a cell is painted as text; as text while icon.js has not loaded.
+  function iconHtml(glyph) {
     var I = win.spirit.elements && win.spirit.elements.icon;
-    if (!I || !root || typeof root.querySelectorAll !== 'function') return;
-    Array.prototype.forEach.call(root.querySelectorAll('td[data-field="result"]'), function (td) {
-      var glyph = String(td.textContent || '').trim();
-      if (!glyph || td.querySelector('.shell-icon')) return;
-      td.textContent = '';
-      I.create(td, { glyph: glyph });
-    });
+    if (!I || typeof I.create !== 'function') return esc(glyph);
+    var hold = document.createElement('span');
+    I.create(hold, { glyph: glyph });
+    return hold.innerHTML;
   }
-  function watchResults(root) {
-    var loaded = typeof win.spirit.require === 'function' ? Promise.resolve(win.spirit.require('shell/js/icon.js')).then(null, function () { /* the glyphs stay text */ }) : Promise.resolve();
-    loaded.then(function () { paintResults(root); });
-    if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { paintResults(root); }).observe(root, { childList: true, subtree: true });
+  // WHAT ITS ROWS ARE MADE OF, IT LOADS ITSELF as it loads (rule/26): the shared row element and the icon element, asked
+  // here so they are on the page before deskVerify's first answer; a row asked for before then is drawn as plain text.
+  if (typeof win.spirit.require === 'function') ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { Promise.resolve(win.spirit.require(p)).then(null, function () {}); });
+  var rowIndex = null;
+  function testRow(row) {
+    var R = win.spirit.elements && win.spirit.elements.rowElement;
+    if (!R || typeof R.create !== 'function') return null;
+    var r = row || {};
+    rowIndex = rowIndex || R.index(function () {});
+    return R.create({
+      kind: 'test',
+      key: String(r.suite || '') + '\n' + String(r.title || ''),
+      index: rowIndex,
+      row: { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || ''), at: String(r.at || '') },
+      fields: [
+        { name: 'suite', paint: function (v) { return esc(v.suite); } },
+        { name: 'title', paint: function (v) { return esc(v.title); } },
+        { name: 'outcome', paint: function (v) { return ICONS[v.outcome] ? iconHtml(ICONS[v.outcome]) : esc(v.outcome); } },
+        { name: 'at', paint: function (v) { return esc(v.at); } },
+      ],
+      actions: [],
+    });
   }
   // ONE NICE LINE PER TEST (Andy: "test-file-name | failure-description | success or fail | since"), and NO DETAIL ON
   // SCREEN ("I know you can read those details, so it doesn't need to be on-screen."): the failure and the commit stay in
@@ -105,7 +108,7 @@
   var COLUMNS = [
     { field: 'suite', label: 'Suite', sort: 'text' },
     { field: 'title', label: 'Test', sort: 'text' },
-    { field: 'result', label: 'Result', sort: 'text' },
+    { field: 'outcome', label: 'Result', sort: 'text' },
     { field: 'at', label: 'Since', sort: 'date' },
   ];
   // A test's history in a dialog (Andy: "if you want to show the history of one test, use a dialog."): the list's details
@@ -135,7 +138,7 @@
     var el = document.getElementById('fallout-list');
     if (!P || typeof P.create !== 'function' || !el || !ctx) return;
     list = P.create(el, {
-      api: { verb: function (name, a) { return Promise.resolve(ctx.verb(name, a)).then(withIcons); }, onPublished: ctx.onPublished },
+      api: { verb: ctx.verb, onPublished: ctx.onPublished },
       server: 'deskVerify',
       verb: 'search',
       args: args,
@@ -143,6 +146,7 @@
       matched: function (row) { return { suite: String((row && row.suite) || ''), title: String((row && row.title) || '') }; },
       filters: FILTERS,
       details: details,
+      element: testRow,
       empty: 'No test matches.',
     });
     list.refresh();
@@ -178,8 +182,6 @@
           var tab = t && t.getAttribute ? t.getAttribute('data-fallout-tab') : null;
           if (tab === 'reds' || tab === 'items') { inner = tab; drawTabs(); }
         });
-        // Once per container, as the click is.
-        watchResults(container);
       }
       drawTabs();
       withList(mountList);
