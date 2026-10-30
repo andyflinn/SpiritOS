@@ -88,16 +88,29 @@
   // EVERY LIST SHOWS A ROW BY ITS ICON AND ITS LABEL, AND NOTHING ELSE (Andy: "the list in the left side pane then will
   // only show: icon and label").
   var LIST_COLUMNS = [{ field: 'icon', label: '' }, { field: 'label', label: 'Label', sort: 'text' }];
+  // A TABLE LISTED BY OTHER FIELDS, in its list and in every pick of it alike: the model's "[icon] \"model-name\"", the
+  // provider's icon the server sends with the row (goal/G41.18), which is all its search answers.
+  var COLUMNS_OF = { model: [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }] };
+  function columnsOf(table) { return COLUMNS_OF[table] || LIST_COLUMNS; }
   //   A SEARCH OF A TABLE, a list or a picker: probabilitySearch over its branch, its first search sent as it is made
   //   ("the table-list in the left pane must be immediately shown when the table icon is selected"), each row drawn by
   //   its icon and its label, a picker's chosen row too ("pickers for all these tables, should display: [icon][label],
   //   exactly the same as the list").
+  // A row's [icon][label] by the columns it is listed with (a column's from names the row's value: the model's
+  // providerIcon and modelName).
+  function nameOf(r, columns) {
+    if (!r) return '';
+    var cols = columns;
+    var valueOf = function (field) { var c = cols.filter(function (k) { return k.field === field; })[0]; return r[(c && c.from) || field]; };
+    return (valueOf('icon') ? valueOf('icon') + ' ' : '') + String(valueOf('label') || r.key || '');
+  }
   function search(host, o, more) {
+    var columns = o.columns || columnsOf(o.table);
     var s = E.probabilitySearch.create(host, Object.assign({
       api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
-      columns: o.columns || LIST_COLUMNS,
-      name: function (r) { return (r && r.icon ? r.icon + ' ' : '') + String((r && (r.label || r.key)) || ''); },
+      columns: columns,
+      name: function (r) { return nameOf(r, columns); },
     }, more));
     s.refresh();
     return s;
@@ -178,10 +191,18 @@
     // must show models from that provider"): a list that is a view of its table's whole branch draws every row the page
     // holds, whatever its search asked. The shell keeps that branch (Andy: "the SHELL must do the caching automatically,
     // using translators...."), so the pick stays its view and the list's own filter leaves out a row whose f.of is not
-    // this row's id; the filter has no buttons (when: never). Its search asks the same narrowed.
+    // this row's id; the filter has no buttons (when: never). A row a plain search seated carries no f.of (Andy, on
+    // G41.18: "only the ID and the fields shown in a table"), so what the narrowed ask answered counts as this row's too
+    // (narrowKeys). Its search asks the same narrowed.
+    var narrowKeys = {};
     function narrowedTo(f) {
+      var mine = narrowKeys[f.field] = narrowKeys[f.field] || {};
       return {
-        filters: [{ name: f.of, when: function () { return false; }, test: function (r) { return String(r && r[f.of] != null ? r[f.of] : '') === String(o.id) ? 1 : 0; } }],
+        filters: [{ name: f.of, when: function () { return false; }, test: function (r) {
+          if (!r) return 0;
+          if (r[f.of] != null && r[f.of] !== '') return String(r[f.of]) === String(o.id) ? 1 : 0;
+          return mine[String(r.key || r.id)] ? 1 : 0;
+        } }],
         args: function (text) { var a = { op: 'search', text: text }; a[f.of] = o.id; return a; },
       };
     }
@@ -242,7 +263,7 @@
         // new pick is saved.
         if (f.kind === 'pick') {
           var other = row[f.field] ? D().get(branchOf(f.pick) + '/' + row[f.field]) : null;
-          var current = other ? (other.icon ? other.icon + ' ' : '') + (other.label || row[f.field]) : '';
+          var current = other ? nameOf(Object.assign({ key: row[f.field] }, other), columnsOf(f.pick)) : '';
           needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
@@ -256,6 +277,9 @@
             q[f.of] = o.id;
             call(f.pick, q).then(function (r) {
               var n = r && Array.isArray(r.items) ? r.items.length : 0;
+              var mine = narrowKeys[f.field] = narrowKeys[f.field] || {};
+              (n ? r.items : []).forEach(function (it) { if (it && it.key != null) mine[String(it.key)] = true; });
+              if (!gone && picks[f.field] && typeof picks[f.field].redraw === 'function') picks[f.field].redraw();
               if (gone || n === narrowCount[f.field]) return;
               narrowCount[f.field] = n;
               paint();

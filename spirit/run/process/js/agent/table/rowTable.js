@@ -158,8 +158,10 @@ function rowTable(db, def, publish) {
         // A FOUND ROW CARRIES ITS ID AND WHAT ITS LIST SHOWS, NOTHING MORE (Andy, on G41.18: "only the ID and the fields
         // shown in a table, that's all it needs"): the keys and the rest stay for get, so one answer holds four times
         // the rows. It is ranked by all it shows, above.
+        // A narrowed search's rows carry the fields it was narrowed by too, so the page's cache knows whose they are (a
+        // provider's Model pick keeps only its own models, goal/G41.21).
         const slim = { id: row.id };
-        listed.forEach(function (k) { if (row[k] !== undefined) slim[k] = row[k]; });
+        listed.concat(narrow).forEach(function (k) { if (row[k] !== undefined) slim[k] = row[k]; });
         if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: row.id, label: JSON.stringify(slim) });
       });
       const r = bucket.serialize(null, SEARCH_ROOM);
