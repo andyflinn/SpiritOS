@@ -170,6 +170,21 @@
     // editor opens; while none do, its line is hidden (Andy, box v17: "The Model field is hidden while the model table
     // holds no model of this provider.").
     var narrowCount = {};
+    // A BUNDLE GONE (Andy, box v17: "A bundle deleted while a job names it leaves that job with no grant, and the job says
+    // so in its detail panel, never silently."): the bundle named is asked of the node once (auth.bundle get); false while
+    // the node has no such bundle.
+    var bundleHeld = {};
+    // ITS ROWS ARE THIS ROW'S ONLY (Andy: "the model picker in provider details of course shows models at all, when it
+    // must show models from that provider"): a list that is a view of its table's whole branch draws every row the page
+    // holds, whatever its search asked. The shell keeps that branch (Andy: "the SHELL must do the caching automatically,
+    // using translators...."), so the pick stays its view and the list's own filter leaves out a row whose f.of is not
+    // this row's id; the filter has no buttons (when: never). Its search asks the same narrowed.
+    function narrowedTo(f) {
+      return {
+        filters: [{ name: f.of, when: function () { return false; }, test: function (r) { return String(r && r[f.of] != null ? r[f.of] : '') === String(o.id) ? 1 : 0; } }],
+        args: function (text) { var a = { op: 'search', text: text }; a[f.of] = o.id; return a; },
+      };
+    }
     var note = '';
     var added = o.added === true;
     var path = branchOf(o.table) + '/' + o.id;
@@ -181,6 +196,7 @@
       var id = pre + f.field;
       if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
       if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
+      if (f.kind === 'bundle' && bundleHeld[f.field] === false) return '<div id="' + id + '"></div><div>Bundle ' + esc(v) + ' is gone from this node: this job has no grant.</div>';
       if (f.kind === 'pick' || f.kind === 'icon' || f.kind === 'bundle') return '<div id="' + id + '"></div>';
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
@@ -231,7 +247,7 @@
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
-            }, f.of ? { args: function (text) { var a = { op: 'search', text: text }; a[f.of] = o.id; return a; } } : {}));
+            }, f.of ? narrowedTo(f) : {}));
           });
           // Its table's rows of this row, counted once; a change of whether there are any draws the editor again.
           if (f.of && narrowCount[f.field] === undefined) {
@@ -253,6 +269,17 @@
             if (gone || !E.bundleSelector) return;
             bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: row[f.field] ? 'bundle ' + row[f.field] : 'Pick a bundle' });
           });
+          if (row[f.field] && bundleHeld[f.field] === undefined) {
+            bundleHeld[f.field] = true;
+            var named = row[f.field];
+            Promise.resolve(spirit.ready).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function () {}, function (e) {
+              // The node's word for it (no-such-bundle); any other refusal says nothing of the bundle.
+              var code = String((e && (e.code || (e.body && e.body.code))) || '');
+              if (gone || !/^no-such-/.test(code) || String(row[f.field]) !== String(named)) return;
+              bundleHeld[f.field] = false;
+              paint();
+            });
+          }
         }
       });
       container.querySelector('#' + pre + 'save').addEventListener('click', save);
