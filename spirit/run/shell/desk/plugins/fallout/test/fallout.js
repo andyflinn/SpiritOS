@@ -150,7 +150,8 @@ function world(withList, totals) {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const ctx = { dialogs: [], streams: [], chats: [],
-    verb: function () { return Promise.resolve({}); },
+    calls: [],
+    verb: function (name, args) { ctx.calls.push({ name: name, args: args }); return Promise.resolve({}); },
     onPublished: function (fn, server) { ctx.streams.push({ fn: fn, server: server }); },
     callDialog: function (app, params) { ctx.dialogs.push({ app: app, params: params }); },
     chat: function (el) { ctx.chats.push(el); } };
@@ -230,10 +231,21 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const made = w.list.made[0];
   ok(w.list.made.length === 1 && made.host === w.$('fallout-list'), 'one list is made, in #fallout-list', 'made: ' + w.list.made.length);
   const o = made.opts;
-  ok(o.server === 'deskVerify' && o.verb === 'search' && o.api.verb === w.ctx.verb && o.api.onPublished === w.ctx.onPublished, 'it searches deskVerify, verb search, through the ctx\'s own call and stream',
-    short({ server: o.server, verb: o.verb }));
+  // WHAT IT DOES, NOT HOW IT IS WIRED (goal/G41.23; Andy: "i approve" wsl rewriting the two checks of how the list is
+  // built, since Fallout adds the icon to each row on the way in): a call the list makes reaches the ctx's own call,
+  // its name and arguments as they are, and the list follows the ctx's own stream.
+  const callsBefore = w.ctx.calls.length;
+  let through = null;
+  try { through = o.api && typeof o.api.verb === 'function' ? o.api.verb('deskVerify.search', { over: 'tests', probe: 1 }) : null; } catch (e) { through = null; }
+  await Promise.resolve(through).catch(function () {});
+  const reached = w.ctx.calls.slice(callsBefore);
+  ok(o.server === 'deskVerify' && o.verb === 'search' && reached.length === 1 && reached[0].name === 'deskVerify.search' && JSON.stringify(reached[0].args) === '{"over":"tests","probe":1}' && o.api.onPublished === w.ctx.onPublished,
+    'it searches deskVerify, verb search: a call of the list reaches the ctx\'s own call as it is, and it follows the ctx\'s own stream',
+    short({ server: o.server, verb: o.verb, reached: reached, stream: o.api && o.api.onPublished === w.ctx.onPublished }));
   ok(w.list.refreshed === 1, 'the list is refreshed once at open', 'refreshed: ' + w.list.refreshed);
-  ok(JSON.stringify(o.columns.map(function (c) { return c.field; })) === '["suite","title","outcome","at"]' && o.columns[3].sort === 'date' && o.empty === 'No test matches.',
+  // The columns by what they say; the Result column's field is the one each row carries its ✅ or ❌ in (the real list's
+  // checks below).
+  ok(JSON.stringify(o.columns.map(function (c) { return c.label; })) === '["Suite","Test","Result","Since"]' && o.columns[0].field === 'suite' && o.columns[1].field === 'title' && o.columns[3].field === 'at' && o.columns[3].sort === 'date' && o.empty === 'No test matches.',
     'one line per test: Suite, Test, Result, Since (by date); empty says No test matches.', short(o.columns));
   ok(JSON.stringify(o.args('', {})) === JSON.stringify({ over: 'tests', current: 'yes', slim: 'yes' }), 'no text: the tests that stand now, slim', short(o.args('', {})));
   ok(JSON.stringify(o.args('deskChat.js', { outcome: 'red' })) === JSON.stringify({ over: 'tests', current: 'yes', slim: 'yes', outcome: 'red', suite: 'deskChat.js' }),

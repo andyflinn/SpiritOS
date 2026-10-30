@@ -17,12 +17,14 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog. `ctx.c
 - **Two inner tabs**, Reds and Items, Reds selected at first (`aria-selected`); Items says it holds nothing yet and is
   hidden. A press on a tab shows its pane and hides the other; the click is wired once per container.
 - **The Reds list is the probability search** (goal/G40.12), loaded on demand from `/shell/js/probabilitySearch.js`
-  when not on the page, made once in `#fallout-list` and refreshed: server `deskVerify`, verb `search`, through the
-  ctx's own call and stream.
+  when not on the page, made once in `#fallout-list` and refreshed: server `deskVerify`, verb `search`. A call the list
+  makes reaches the ctx's own call, its name and arguments as they are, and the list follows the ctx's own stream. What
+  is checked is what it does, not how it is wired (goal/G41.23; Andy: *"i approve"*): Fallout adds the icon to each row
+  on the way in.
   - `args(text, filters)`: `{over: 'tests', current: 'yes', slim: 'yes'}`, the outcome filter along, a suite's file
     name (`<name>.js`, no folder) as `suite`, other text as `test`.
-  - Columns: Suite, Test, Result, Since (a date); empty says `No test matches.`; the words matched are the suite and
-    the title.
+  - Columns: Suite, Test, Result, Since (a date), by what they say; the Result column shows the row's ✅ or ❌ (the
+    real list's checks); empty says `No test matches.`; the words matched are the suite and the title.
   - One filter, outcome: red ❌ first, green ✅, then both.
   - A row's details open `shell/falloutHistory {suite, heading}`.
 - **The summary** (Andy: "TOTAL OF ALL FAILURES. period"): two deskVerify searches, red then green, through the list's
