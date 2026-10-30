@@ -100,9 +100,10 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - At open a left panel shows, as the details did before the workBench.
 - **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
   must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60), the files (150, with
-  three open grants), the rules (60) and the suites (60), each shown in turn. The pane itself never scrolls; the panel's
-  own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a few links, not a list,
-  and are not asked.
+  three open grants), the rules (60) and the suites (60), each shown in turn, the first time its icon is pressed (Andy:
+  *"i want to see the panel content THE FIRST  TIME i pop in a panel, NOT the second time."*). The pane itself never
+  scrolls; the panel's own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a
+  few links, not a list, and are not asked.
 - **The files panel's grant row is pinned on top** (Andy: *"the file panel must have the red gran button row pinned to
   the top and the file list only using the remaining vertical space"*): the grant buttons are not in the list that
   scrolls, stand above it, and stay where they are when the list is scrolled to its end.

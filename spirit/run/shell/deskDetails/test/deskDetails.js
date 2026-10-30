@@ -518,8 +518,8 @@ const byId = function (w, id) { return function () { return w.document.getElemen
             let p = null;
             try { p = JSON.parse(await page.evaluate('window.panel(' + JSON.stringify(key) + ')')); } catch (e) { p = null; }
             ok(!!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1,
-              'the ' + key + ' panel uses all the height: its list scrolls in itself, down to the bottom of the pane',
-              'the ' + key + ' panel: ' + JSON.stringify(p));
+              'the ' + key + ' panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane',
+              'the ' + key + ' panel, pressed the first time: ' + JSON.stringify(p));
             // THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
             // file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
             if (key === 'files') {
