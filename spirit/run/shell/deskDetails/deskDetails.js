@@ -186,7 +186,9 @@ function ddMakeBench(n) {
   if (n !== ddFrameN || !W || typeof W.create !== 'function' || !host || !centre) return;
   ddBench = W.create(host, {
     left: DD_PANELS.map(function (p) {
-      return { name: p.key, icon: p.icon, title: p.title, mount: function (box) { ddBenchBoxes[p.key] = box; } };
+      // workBench says changed before it makes a tool's box, so the first show of a tool moves the panel here, once its
+      // box is there (Andy: "i want to see the panel content THE FIRST TIME i pop in a panel, NOT the second time").
+      return { name: p.key, icon: p.icon, title: p.title, mount: function (box) { ddBenchBoxes[p.key] = box; if (ddPanelSel === p.key) ddShowLeft(p.key); } };
     }),
     // goal/G41.22: blank until a desk plugin app gives it a tool.
     right: [],
