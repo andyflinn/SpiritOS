@@ -298,6 +298,28 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // "The Model field is hidden while the model table holds no model of this provider". of names the picked table's field
   // that holds this row's id; the narrowing goes to the table's search (../rowTable.js).
   const NARROW = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'model', label: 'Model', kind: 'pick', pick: 'model', of: 'providerId' }];
+  // WHAT THE DROPDOWN SHOWS (Andy: "the model picker in provider details of course shows models at all, when it must show
+  // models from that provider"): the list is a view of its rows (its data branch, or rows()), filtered and ranked by the
+  // real list's own heart, probabilitySearch.order, the state it is made with.
+  const LIST = (function () {
+    const win = { window: null, spirit: { elements: {} }, console: console };
+    win.window = win;
+    vm.createContext(win);
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
+      vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
+    });
+    return win.spirit.elements.probabilitySearch;
+  }());
+  const offered = function (s) {
+    if (!s || !LIST || typeof LIST.order !== 'function') return null;
+    const rows = s.o.data ? D.rows(s.o.data) : (typeof s.o.rows === 'function' ? s.o.rows() || [] : []);
+    const entries = rows.map(function (r, i) { return { key: String(r.key), row: r, at: i }; });
+    return LIST.order(entries, { words: '', values: {}, filters: s.o.filters || [], columns: s.o.columns || [], matched: s.o.matched, score: s.o.score })
+      .map(function (e) { return e.key; }).sort();
+  };
+  // The page holds two models in its branch, one of this provider's and one of another's.
+  D.set('agent.model/M1', { id: 'M1', icon: '', label: 'Mine', providerId: 'KN' });
+  D.set('agent.model/M2', { id: 'M2', icon: '', label: 'Theirs', providerId: 'KOTHER' });
   const narrowed = async function (models) {
     w.calls.length = 0;
     const before = w.searches.length;
@@ -315,7 +337,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
     const lineStart = at === -1 ? -1 : ed3.innerHTML.lastIndexOf('<div', at);
     const line = lineStart === -1 ? '' : ed3.innerHTML.slice(lineStart, at);
     const shown = at !== -1 && !/\bhidden\b|display:\s*none/.test(line);
-    const out = { search: s, args: args, shown: shown, calls: w.calls.slice() };
+    const out = { search: s, args: args, shown: shown, calls: w.calls.slice(), offered: offered(s) };
     r3.destroy();
     return out;
   };
@@ -323,6 +345,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(withModels.args && withModels.args.op === 'search' && withModels.args.text === 'claude' && withModels.args.providerId === 'KN',
     'its dropdown searches the model table narrowed to this row: { op: search, text, providerId: this row\'s id }', 'args: ' + short(withModels.args));
   ok(withModels.shown, 'with a model of this provider in the model table, the Model field is shown', 'the Model field is not shown with a model of this provider');
+  ok(JSON.stringify(withModels.offered) === '["M1"]', 'of the page\'s models, the dropdown offers this provider\'s alone: M1, not M2 of another provider',
+    'the dropdown offers ' + short(withModels.offered) + ' of M1 (this provider\'s) and M2 (another\'s)');
   const withNone = await narrowed([]);
   ok(withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === 'KN'; }),
     'it asks the model table for this provider\'s models, narrowed the same way', 'calls: ' + short(withNone.calls));
