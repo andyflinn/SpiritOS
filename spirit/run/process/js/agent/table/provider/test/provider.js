@@ -53,7 +53,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(cols.length === 11, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: the API key never leaves the agent process');
-  const added = call(t.verb, { op: 'add', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
+  const added = call(t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
   const raw = added.id ? db.prepare('SELECT apiKey FROM "provider" WHERE id = ?').get(added.id) : null;
   ok(raw && raw.apiKey === SECRET, 'the API key is kept on the row', 'row: ' + short(raw && { set: !!raw.apiKey }));
   const got = call(t.verb, { op: 'get', id: added.id });
@@ -69,19 +69,36 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // different."
   const count = function () { return db.prepare('SELECT COUNT(*) AS n FROM "provider"').get().n; };
   const n0 = count();
-  ok(call(t.verb, { op: 'add', label: 'Again', url: 'https://api.anthropic.com' }).refusal === 'bad-request' && count() === n0, 'a new row with a url already in the table is refused, and nothing is added', 'rows ' + count() + ' of ' + n0);
-  ok(call(t.verb, { op: 'add', label: 'Slash', url: 'https://api.anthropic.com/' }).refusal === 'bad-request' && count() === n0, 'and so is the same url with a trailing slash', 'rows ' + count() + ' of ' + n0);
+  ok(call(t.verb, { op: 'add', icon: '🏢', label: 'Again', url: 'https://api.anthropic.com' }).refusal === 'bad-request' && count() === n0, 'a new row with a url already in the table is refused, and nothing is added', 'rows ' + count() + ' of ' + n0);
+  ok(call(t.verb, { op: 'add', icon: '🏢', label: 'Slash', url: 'https://api.anthropic.com/' }).refusal === 'bad-request' && count() === n0, 'and so is the same url with a trailing slash', 'rows ' + count() + ' of ' + n0);
   const n1 = count();
-  const other = call(t.verb, { op: 'add', label: 'Other', url: 'https://api.openai.com/v1' });
+  const other = call(t.verb, { op: 'add', icon: '🏢', label: 'Other', url: 'https://api.openai.com/v1' });
   ok(other.id && count() === n1 + 1, 'a row with a url of its own is added', 'answer: ' + short(other));
   const moved = call(t.verb, { op: 'set', id: other.id, url: 'https://api.anthropic.com/' });
   ok(moved.refusal === 'bad-request' && call(t.verb, { op: 'get', id: other.id }).url === 'https://api.openai.com/v1', 'a change to another row\'s url is refused, the url kept', 'answer: ' + short(moved));
   ok(!call(t.verb, { op: 'set', id: other.id, url: 'https://api.openai.com/v1/' }).refusal && !call(t.verb, { op: 'set', id: other.id, label: 'Renamed' }).refusal,
     'a row may keep its own url, with or without the slash, and change its other fields', 'own url refused');
-  const e1 = call(t.verb, { op: 'add', label: 'No url one' });
-  const e2 = call(t.verb, { op: 'add', label: 'No url two' });
-  ok(e1.id && e2.id, 'rows with no url are no duplicates of each other', 'answers: ' + short([e1, e2]));
-  [other.id, e1.id, e2.id].forEach(function (id) { if (id) call(t.verb, { op: 'delete', id: id }); });
+  [other.id].forEach(function (id) { if (id) call(t.verb, { op: 'delete', id: id }); });
+
+  test.subHeading('server.js: no invalid provider row (goal/G41.21)');
+  {
+  // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - provider: icon,
+  // label, valid URL".
+  const before = count();
+  const noUrl = call(t.verb, { op: 'add', icon: '🏢', label: 'No url' });
+  const noIcon = call(t.verb, { op: 'add', label: 'No icon', url: 'https://no-icon.example' });
+  const noLabel = call(t.verb, { op: 'add', icon: '🏢', url: 'https://no-label.example' });
+  const blank = call(t.verb, { op: 'add', icon: '🏢', label: '   ', url: 'https://blank.example' });
+  ok([noUrl, noIcon, noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && count() === before,
+    'an add without its url, its icon or its label, or with a label of blanks, is refused, and makes no row', 'answers: ' + short([noUrl, noIcon, noLabel, blank]));
+  ok(/url/i.test(String(noUrl.why)) && /icon/i.test(String(noIcon.why)) && /label/i.test(String(noLabel.why)), 'each refusal names the field missing', 'why: ' + short([noUrl.why, noIcon.why, noLabel.why]));
+  const whole = call(t.verb, { op: 'add', icon: '🏢', label: 'Whole', url: 'https://whole.example' });
+  ok(whole.id && count() === before + 1, 'with its icon, its label and a url, it is added', 'answer: ' + short(whole));
+  const emptied = call(t.verb, { op: 'set', id: whole.id, label: '' });
+  const unurled = call(t.verb, { op: 'set', id: whole.id, url: '' });
+  ok(emptied.refusal && unurled.refusal && call(t.verb, { op: 'get', id: whole.id }).label === 'Whole', 'a change that would empty its label or its url is refused, the row kept', 'answers: ' + short([emptied, unurled]));
+  call(t.verb, { op: 'delete', id: whole.id });
+  }
 
   test.subHeading('server.js: ask, a provider\'s models into the model table (goal/G41.18)');
   // Andy, box v17: "the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table
@@ -111,7 +128,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const usable = function (id) { try { return db.prepare('SELECT unusable FROM "provider" WHERE id = ?').get(id).unusable; } catch (e) { return 'no column: ' + e.message; } };
 
   call(t.verb, { op: 'delete', id: added.id });
-  const anth = call(t.verb, { op: 'add', label: 'Anthropic', url: host, apiKey: SECRET });
+  const anth = call(t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: host, apiKey: SECRET });
   ok((await ask({ op: 'ask', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey })).refusal === 'no-such-row', 'ask of a row that is not there is refused no-such-row', 'ask answered');
   stand.anthropic = [['claude-a', 'Claude A'], ['claude-b', 'Claude B']];
   published.length = 0;
@@ -134,7 +151,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const keep = modelsOf(anth.id).filter(function (m) { return m.modelName === 'claude-b'; })[0] ||
     ctx.tables.model.verb.handler({ op: 'add', providerId: anth.id, modelName: 'claude-b', label: 'Claude B' });
   ctx.tables.model.verb.handler({ op: 'set', id: keep.id, label: 'My B', description: 'mine' });
-  const openaiRow = call(t.verb, { op: 'add', label: 'OpenAI', url: host + '/v1', apiKey: 'sk-other' });
+  const openaiRow = call(t.verb, { op: 'add', icon: '🏢', label: 'OpenAI', url: host + '/v1', apiKey: 'sk-other' });
   const otherModel = ctx.tables.model.verb.handler({ op: 'add', providerId: openaiRow.id, modelName: 'gpt-kept', label: 'Kept' });
   stand.anthropic = [['claude-b', 'Claude B'], ['claude-c', 'Claude C']];
   published.length = 0;
@@ -156,7 +173,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('no plugin for the label: the OpenAI plugin; it failing flags the row unusable');
   // One url, one row: the OpenAI row of the last part goes, so the Unsloth row may take the stand-in's /v1.
   call(t.verb, { op: 'delete', id: openaiRow.id });
-  const unsloth = call(t.verb, { op: 'add', label: 'Unsloth', url: host + '/v1/' });
+  const unsloth = call(t.verb, { op: 'add', icon: '🏢', label: 'Unsloth', url: host + '/v1/' });
   stand.openai = ['qwen-local', 'llama-local'];
   stand.heard.length = 0;
   const local = await ask({ op: 'ask', id: unsloth.id });
@@ -179,7 +196,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
   // the rest for detail panels etc...". The list shows a row by its icon and its label.
   {
-    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search' }).id;
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', description: 'not in a search', url: 'https://listed.example' }).id;
     let listedRow = null;
     try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
     ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
@@ -220,6 +237,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const r = made.rows[0] && made.rows[0].o;
   ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'provider' && r.id === 'KP' && r.added === true && r.api === api,
     'a row it opens is a providerRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
+  ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label', 'url']), 'it hands the editor the provider table\'s mandatory fields, [icon, label, url]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '🏢' && r.look.table === 'provider', 'its title row has the provider table\'s look', 'look: ' + short(r && r.look));
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
   // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this

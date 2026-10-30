@@ -173,17 +173,15 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(rows.length === 1 && rows[0].box === detail.center && rows[0].key === 'KP' && rows[0].added === false && rows[0].row.label === 'One',
     'pick opens row(box, key, false, row) in the detail pane', 'rows: ' + short(rows.map(function (r) { return { key: r.key, added: r.added }; })));
 
-  test.subHeading('Add asks the server, and opens the new row');
+  test.subHeading('Add makes no row: it opens the detail in Add mode (goal/G41.21)');
+  // Andy: "NO ROW WILL BE CREATED WITH AN "Add" BUTTON for provider, persona, OR JOB!!!!!!!!!!!!"; "the proper way to do
+  // such a thing is, the detail panel has and "Add" mode".
   w.calls.length = 0;
   w.answer = function () { return { id: 'KNEW' }; };
+  const opened0 = rows.length;
   the(left, 'add').click(); await settle();
-  ok(w.calls.length === 1 && w.calls[0].table === 'provider' && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'add', icon: '🏢' }),
-    'Add calls provider { op: add, icon } through the agent\'s interface, the new row taking its table\'s icon', 'calls: ' + short(w.calls));
-  ok(rows.length === 2 && rows[1].key === 'KNEW' && rows[1].added === true, 'and opens the new row\'s editor, added', 'rows: ' + short(rows.map(function (r) { return { key: r.key, added: r.added }; })));
-  w.answer = function () { return refused('provider: label must be a name'); };
-  the(left, 'add').click(); await settle();
-  ok(the(left, 'note').textContent === 'Not added: provider: label must be a name' && rows.length === 2, 'a refused Add says the server\'s reason, and opens nothing',
-    'note: ' + short(the(left, 'note').textContent));
+  ok(!w.calls.some(function (c) { return c.args && c.args.op === 'add'; }), 'pressing Add asks the server nothing: no row is made', 'calls: ' + short(w.calls));
+  ok(rows.length === opened0 + 1 && !rows[rows.length - 1].key && rows[rows.length - 1].added === true, 'it opens an editor with no row of its own, in Add mode', 'rows: ' + short(rows.map(function (r) { return { key: r.key, added: r.added }; })));
 
   test.subHeading('a table may make its own Add');
   w.calls.length = 0;
@@ -248,6 +246,38 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const sel = w.icons[w.icons.length - 1];
   ok(sel && sel.value === '🏢', 'the icon chooser is the shell\'s icon selector, on the table\'s icon while the row has none', 'icon selector: ' + short(sel && sel.opts));
   ok(sel && sel.container === the(ed, 'icon') && the(ed, 'icon').children.indexOf(sel) !== -1, 'made with iconSelector.create(the icon field, options), it stands in that field', 'icon container: ' + short(sel && sel.container && sel.container.tag));
+
+  test.subHeading('the Add mode: "Add new <name>", and nothing made until every mandatory field is filled (goal/G41.21)');
+  // Andy: "with an "Add new <provider|persona|job>" button at the bottom. Only when all fields, including icon, are filled,
+  // will the "Add" button not respopnd with an error."; "# mandatory fields (server AND ui) - provider: icon, label,
+  // valid URL". The table hands its editor its mandatory fields, as its server names them (o.required).
+  {
+    w.calls.length = 0;
+    w.answer = function (table, a) { return a.op === 'add' ? { id: 'KADD' } : (a.op === 'get' ? { id: 'KADD', icon: '🏢', label: 'Fresh', url: 'https://fresh.example' } : { id: 'KADD' }); };
+    const ea = box('adding');
+    const ra = E.agentRow.create(ea, { api: {}, table: 'provider', id: '', added: true, look: look, required: ['icon', 'label', 'url'],
+      fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }] });
+    await settle(); await settle();
+    ok(!w.calls.some(function (c) { return c.args && c.args.op === 'get'; }), 'with no row it asks no get', 'calls: ' + short(w.calls));
+    const addBtnHtml = /<button[^>]*>\s*Add new Provider\s*<\/button>/.test(ea.innerHTML);
+    ok(addBtnHtml && !/>\s*Delete\s*</.test(ea.innerHTML), 'its bottom button says Add new Provider, and there is no Delete', 'editor: ' + short(ea.innerHTML.slice(-300)));
+    const addBtn = Object.keys(ea.parts).filter(function (k) { return new RegExp('id="' + k + '"[^>]*>\\s*Add new Provider').test(ea.innerHTML); }).map(function (k) { return ea.parts[k]; })[0] || null;
+    the(ea, 'label').value = 'Fresh';
+    the(ea, 'label').fire('change'); await settle();
+    ok(!w.calls.some(function (c) { return c.args && (c.args.op === 'add' || c.args.op === 'set'); }), 'in Add mode a field changed saves nothing', 'calls: ' + short(w.calls));
+    if (addBtn) addBtn.click(); await settle();
+    const said = ea.innerHTML + ' ' + Object.keys(ea.parts).map(function (k) { return String(ea.parts[k].textContent || ''); }).join(' ');
+    ok(!w.calls.some(function (c) { return c.args && c.args.op === 'add'; }) && /url/i.test(said) && /not added|missing|required/i.test(said),
+      'pressed with the URL empty, it makes nothing and says the URL is missing', 'calls ' + short(w.calls) + ', said ' + short(said.slice(-300)));
+    the(ea, 'url').value = 'https://fresh.example';
+    const addBtn2 = Object.keys(ea.parts).filter(function (k) { return new RegExp('id="' + k + '"[^>]*>\\s*Add new Provider').test(ea.innerHTML); }).map(function (k) { return ea.parts[k]; })[0] || addBtn;
+    if (addBtn2) addBtn2.click(); await settle(); await settle();
+    const adds = w.calls.filter(function (c) { return c.args && c.args.op === 'add'; });
+    ok(adds.length === 1 && adds[0].table === 'provider' && adds[0].args.icon === '🏢' && adds[0].args.label === 'Fresh' && adds[0].args.url === 'https://fresh.example',
+      'with every mandatory field filled, it adds the whole row once: provider { op: add, icon, label, url }', 'calls: ' + short(w.calls));
+    ok(/<b>Change<\/b>/.test(ea.innerHTML) && !/Add new Provider/.test(ea.innerHTML), 'added, the editor is the new row\'s, its title Change', 'editor: ' + short(ea.innerHTML.slice(0, 300)));
+    ra.destroy();
+  }
 
   test.subHeading('the editor follows its row in spirit.data');
   D.merge('agent.provider/KR', { label: 'From the stream' });
@@ -359,8 +389,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const sctx = { db: new DatabaseSync(path.join(scratchDb, 'agent.db')), dbFile: path.join(scratchDb, 'agent.db'), tables: {}, publish: function () {} };
   sctx.tables.provider = require(path.join(__dirname, '..', 'provider', 'server.js'))(sctx);
   sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);
-  const PA = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine' }).id;
-  const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs' }).id;
+  const PA = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine', url: 'https://mine.example' }).id;
+  const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
   const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA, modelName: 'claude-mine' }).id;
   const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB, modelName: 'claude-theirs' }).id;
   D.seat('agent.model', sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);

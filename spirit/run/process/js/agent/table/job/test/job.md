@@ -39,9 +39,16 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
   dropdown mode (kind `bundle`), the provider and the persona each by a pick field of its table.
 - Enforcing the bundle when a job runs is out of scope (Andy: *"oos."*).
 
+### No invalid job row (goal/G41.21, box v23)
+
+Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row, a valid label (NOT empty) IS THE MINIMUM required"*, *"# mandatory fields (server AND ui)"*. The job table's mandatory fields are its icon and label: an add without one, or with a label of blanks, is refused and makes
+no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
+editor the same fields (`required`), so the UI checks them too.
+
 ## What its test must try to break
 
 - A job deleted whose grants stay.
 - A grant dropped by an add or a set.
 - A loop flag that comes back as a number.
 - A job without its bundle, provider or persona; a delete that still asks a grant table.
+- A job row added without its icon and label.

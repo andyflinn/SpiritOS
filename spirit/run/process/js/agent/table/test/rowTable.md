@@ -54,6 +54,12 @@ Its test is `./rowTable.js`.
   answers only the rows whose field holds that value, ranked by the words as before; a value no row holds answers no
   rows; a search naming no field answers every row.
 
+### Mandatory fields (goal/G41.21, box v23)
+
+Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row, a valid label (NOT empty) IS THE MINIMUM required"*, *"# mandatory fields (server AND ui)"*. A table names its mandatory fields (`def.required`): an add missing one, or holding one of blanks, is refused
+and makes no row, the refusal naming every one missing; a change that would empty one is refused, the row kept; a
+change keeping them all is taken. A table naming none takes a bare row, as before.
+
 ## What its test must try to break
 
 - A private half, a seal private key or a secret in a get, a search or a published row.
@@ -63,3 +69,4 @@ Its test is `./rowTable.js`.
   argument verb").
 - An old table that loses its rows, or never gets the new field.
 - A narrowed search answering another row's rows, or refusing the field.
+- A row made, or emptied, without a mandatory field; a refusal that does not name it.

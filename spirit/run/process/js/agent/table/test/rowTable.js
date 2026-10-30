@@ -140,6 +140,28 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
     ok(call(kids.verb, { op: 'search', text: '' }).items.length === 5, 'a search naming no field answers every row, as before', 'search: ' + short(call(kids.verb, { op: 'search', text: '' })));
   }
 
+  test.subHeading('a table names its mandatory fields, and takes no row without them (goal/G41.21)');
+  // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!", "for a new row, a valid label (NOT empty) IS THE MINIMUM
+  // required", "# mandatory fields (server AND ui)". A table's def.required names them; the provider, persona and job
+  // tables name theirs (their own tests).
+  {
+    const need = mod.rowTable(db, { name: 'need', fields: { url: 'url?' }, required: ['icon', 'label', 'url'] }, function () {});
+    const n = function () { return db.prepare('SELECT COUNT(*) AS n FROM "need"').get().n; };
+    const missing = call(need.verb, { op: 'add', label: 'No icon', url: 'https://need.example' });
+    const blank = call(need.verb, { op: 'add', icon: '🧪', label: ' ', url: 'https://need.example' });
+    const bare = call(need.verb, { op: 'add' });
+    ok([missing, blank, bare].every(function (r) { return r.refusal && !r.id; }) && n() === 0, 'an add missing a mandatory field, or with one of blanks, is refused and makes no row', 'answers: ' + short([missing, blank, bare]));
+    ok(/icon/.test(String(missing.why)) && /label/.test(String(blank.why)) && /icon/.test(String(bare.why)) && /label/.test(String(bare.why)) && /url/.test(String(bare.why)),
+      'the refusal names every mandatory field missing', 'why: ' + short([missing.why, blank.why, bare.why]));
+    const whole = call(need.verb, { op: 'add', icon: '🧪', label: 'Whole', url: 'https://need.example' });
+    ok(isKey(whole.id) && n() === 1, 'with them all it is added', 'answer: ' + short(whole));
+    const emptied = call(need.verb, { op: 'set', id: whole.id, icon: '' });
+    ok(emptied.refusal && /icon/.test(String(emptied.why)) && call(need.verb, { op: 'get', id: whole.id }).icon === '🧪', 'a change that would empty one is refused, the row kept', 'answer: ' + short(emptied));
+    ok(!call(need.verb, { op: 'set', id: whole.id, label: 'Renamed' }).refusal, 'a change that keeps them all is taken', 'refused');
+    const free = mod.rowTable(db, { name: 'free', fields: { url: 'url?' } }, function () {});
+    ok(isKey(call(free.verb, { op: 'add' }).id), 'a table naming none takes a bare row, as before', 'refused');
+  }
+
   test.subHeading('a refusal says why');
   const unknownOp = call(verb, { op: 'fly' });
   ok(unknownOp.refusal === 'bad-request' && /add, set, delete, get, search/.test(unknownOp.why), 'an op it does not know is refused, naming the ops', 'fly: ' + short(unknownOp));

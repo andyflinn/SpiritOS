@@ -95,6 +95,19 @@ the table)"*.
   in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);
   one the node no longer has is said in the panel, the bundle and that the job has no grant. One the node has is not.
 
+### Add mode (goal/G41.21, box v23)
+
+Andy: *"NO ROW WILL BE CREATED WITH AN "Add" BUTTON for provider, persona, OR JOB!!!!!!!!!!!!"*, *"the proper way to do
+such a thing is, the detail panel has and "Add" mode, with an "Add new <provider|persona|job>" button at the bottom.
+Only when all fields, including icon, are filled, will the "Add" button not respopnd with an error."*
+
+- Pressing a table's Add asks the server nothing; it opens an editor with no row of its own, in Add mode.
+- In Add mode the editor asks no get, saves nothing when a field changes, has no Delete, and its bottom button says
+  `Add new <name>`.
+- Pressed with a mandatory field (`o.required`) empty, it makes nothing and says which; what was typed stays.
+- With every mandatory field filled, it adds the whole row once (`{ op: add, ...every field }`), and the editor is the
+  new row's from then on, its title Change.
+
 ## What its test must try to break
 
 - A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
@@ -108,3 +121,4 @@ the table)"*.
 - A dropdown row drawn empty, its columns asking fields its table's search does not answer.
 - A bundle shown as its number; a Delete that deletes on its first press.
 - A field edit that waits for a Save, a Save button left, or a save sending part of the row.
+- An Add that makes a row before it is valid; an Add mode that saves on a change, loses what was typed, or has a Delete.

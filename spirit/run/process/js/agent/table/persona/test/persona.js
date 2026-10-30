@@ -49,7 +49,7 @@ test.startTest('persona/: the persona table');
   });
   ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
   {
-    const pid = call(t.verb, { op: 'add', label: 'With a bundle', persona: 'p' }).id;
+    const pid = call(t.verb, { op: 'add', icon: '🎭', label: 'With a bundle', persona: 'p' }).id;
     call(t.verb, { op: 'set', id: pid, bundle: '7' });
     const got = call(t.verb, { op: 'get', id: pid });
     ok(got && String(got.bundle) === '7' && got.persona === 'p', 'a persona keeps its bundle, its text as it was', 'get: ' + short(got));
@@ -58,12 +58,29 @@ test.startTest('persona/: the persona table');
 
   test.subHeading('server.js: a persona is its text');
   const TEXT = 'You are careful.\nYou answer short.';
-  const added = call(t.verb, { op: 'add', label: 'Careful', persona: TEXT });
+  const added = call(t.verb, { op: 'add', icon: '🎭', label: 'Careful', persona: TEXT });
   const got = added.id ? call(t.verb, { op: 'get', id: added.id }) : null;
   ok(got && got.persona === TEXT && got.label === 'Careful', 'a persona is added with its text, kept as typed, lines and all', 'get: ' + short(got));
   call(t.verb, { op: 'set', id: added.id, label: 'Renamed' });
   ok(call(t.verb, { op: 'get', id: added.id }).persona === TEXT, 'a set of its label keeps its text', 'get: ' + short(call(t.verb, { op: 'get', id: added.id })));
   ok(dropped.length === 0 && (call(t.verb, { op: 'delete', id: added.id }).id === added.id) && dropped.length === 0, 'a persona deleted takes no grants: grants are a job\'s', 'dropped: ' + short(dropped));
+
+  test.subHeading('server.js: no invalid persona row (goal/G41.21)');
+  // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - persona: icon, label".
+  {
+    const rowsNow = function () { return db.prepare('SELECT COUNT(*) AS n FROM "persona"').get().n; };
+    const before = rowsNow();
+    const noIcon = call(t.verb, { op: 'add', label: 'No icon' });
+    const noLabel = call(t.verb, { op: 'add', icon: '🎭' });
+    const blank = call(t.verb, { op: 'add', icon: '🎭', label: '  ' });
+    ok([noIcon, noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && rowsNow() === before, 'an add without its icon or its label, or with a label of blanks, is refused, and makes no row', 'answers: ' + short([noIcon, noLabel, blank]));
+    ok(/icon/i.test(String(noIcon.why)) && /label/i.test(String(noLabel.why)), 'each refusal names the field missing', 'why: ' + short([noIcon.why, noLabel.why]));
+    const whole = call(t.verb, { op: 'add', icon: '🎭', label: 'Whole' });
+    ok(whole.id && rowsNow() === before + 1, 'with its icon and its label, it is added', 'answer: ' + short(whole));
+    const emptied = call(t.verb, { op: 'set', id: whole.id, label: '' });
+    ok(emptied.refusal && call(t.verb, { op: 'get', id: whole.id }).label === 'Whole', 'a change that would empty its label is refused, the row kept', 'answer: ' + short(emptied));
+    call(t.verb, { op: 'delete', id: whole.id });
+  }
 
   test.subHeading('server.js: a search answers what the list shows (goal/G41.18)');
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
@@ -110,6 +127,8 @@ test.startTest('persona/: the persona table');
   const r = made.rows[0] && made.rows[0].o;
   ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && r.id === 'K1' && r.added === false && r.api === api,
     'a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
+  ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'it hands the editor the persona table\'s mandatory fields, [icon, label]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '🎭' && r.look.table === 'persona', 'its title row has the persona table\'s look', 'look: ' + short(r && r.look));
   // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
   ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['persona', 'code'], ['bundle', 'bundle']]),

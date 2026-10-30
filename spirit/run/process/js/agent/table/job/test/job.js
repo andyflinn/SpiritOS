@@ -51,7 +51,7 @@ test.startTest('job/: the job table');
 
   test.subHeading('server.js: a job, its loop flag and its text');
   const TEXT = 'Read the news.\nSay what changed.';
-  const added = call(t.verb, { op: 'add', label: 'News', loop: true, job: TEXT });
+  const added = call(t.verb, { op: 'add', icon: '📋', label: 'News', loop: true, job: TEXT });
   const got = added.id ? call(t.verb, { op: 'get', id: added.id }) : null;
   ok(got && got.loop === true && got.job === TEXT, 'a job is added with its loop flag, a bool, and its text, kept as typed', 'get: ' + short(got));
   ok(db.prepare('PRAGMA table_info("job")').all().filter(function (c) { return c.name === 'loop'; })[0].type === 'INTEGER', 'the loop flag is kept as an INTEGER', 'loop column');
@@ -70,8 +70,25 @@ test.startTest('job/: the job table');
   test.subHeading('server.js: a job deleted asks no grant table (goal/G41.21)');
   // "With it go ... the job's delete hook that dropped a job's grants": a job's grant is its bundle, deleted with it.
   ok(call(t.verb, { op: 'delete', id: added.id }).id === added.id && dropped.length === 0, 'deleting a job drops it, and asks no grant table for anything', 'dropped: ' + short(dropped));
-  const other = call(t.verb, { op: 'add', label: 'Other' });
+  const other = call(t.verb, { op: 'add', icon: '📋', label: 'Other' });
   call(t.verb, { op: 'set', id: other.id, label: 'Still' });
+
+  test.subHeading('server.js: no invalid job row (goal/G41.21)');
+  // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - job: icon, label".
+  {
+    const rowsNow = function () { return db.prepare('SELECT COUNT(*) AS n FROM "job"').get().n; };
+    const before = rowsNow();
+    const noIcon = call(t.verb, { op: 'add', label: 'No icon' });
+    const noLabel = call(t.verb, { op: 'add', icon: '📋' });
+    const blank = call(t.verb, { op: 'add', icon: '📋', label: '  ' });
+    ok([noIcon, noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && rowsNow() === before, 'an add without its icon or its label, or with a label of blanks, is refused, and makes no row', 'answers: ' + short([noIcon, noLabel, blank]));
+    ok(/icon/i.test(String(noIcon.why)) && /label/i.test(String(noLabel.why)), 'each refusal names the field missing', 'why: ' + short([noIcon.why, noLabel.why]));
+    const whole = call(t.verb, { op: 'add', icon: '📋', label: 'Whole' });
+    ok(whole.id && rowsNow() === before + 1, 'with its icon and its label, it is added', 'answer: ' + short(whole));
+    const emptied = call(t.verb, { op: 'set', id: whole.id, label: '' });
+    ok(emptied.refusal && call(t.verb, { op: 'get', id: whole.id }).label === 'Whole', 'a change that would empty its label is refused, the row kept', 'answer: ' + short(emptied));
+    call(t.verb, { op: 'delete', id: whole.id });
+  }
 
   test.subHeading('server.js: a search answers what the list shows (goal/G41.18)');
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
@@ -118,6 +135,8 @@ test.startTest('job/: the job table');
   const r = made.rows[0] && made.rows[0].o;
   ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'job' && r.id === 'K1' && r.added === false && r.api === api,
     'a row it opens is a jobRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
+  ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'it hands the editor the job table\'s mandatory fields, [icon, label]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '📋' && r.look.table === 'job', 'its title row has the job table\'s look', 'look: ' + short(r && r.look));
   // goal/G41.21: the bundle set "with a bundleSelector in dropdown mode" (kind bundle), the provider and the persona by a
   // pick field of their table; the order of the box, the code field drawn last by the shared element whatever its place.

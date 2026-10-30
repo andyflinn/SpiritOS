@@ -88,6 +88,12 @@ the real dropdown, the agent server a stand-in answering what the real tables an
 - With the search empty, from the start, it lists that provider's two models and nothing else.
 - Each row says its model.
 
+### No invalid provider row (goal/G41.21, box v23)
+
+Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row, a valid label (NOT empty) IS THE MINIMUM required"*, *"# mandatory fields (server AND ui)"*. The provider table's mandatory fields are its icon, label and a valid url: an add without one, or with a label of blanks, is refused and makes
+no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
+editor the same fields (`required`), so the UI checks them too.
+
 ## What its test must try to break
 
 - The API key in any answer or published row, ask's included.
@@ -98,3 +104,4 @@ the real dropdown, the agent server a stand-in answering what the real tables an
 - An empty or failed list that changes the model table; a failure that leaves the row unflagged.
 - No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.
 - A Model picker listing none of its provider's models with the search empty, listing another provider's models, or rows without the model's name.
+- A provider row added without its icon, label and a valid url.

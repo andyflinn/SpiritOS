@@ -158,7 +158,7 @@ test.startTest('agent.js: the agent server');
     // add (answers the new id), set, delete, get (the row without its secrets, apiKeySet in place of the key) and search.
     test.subHeading('goal/G41.4: add makes a row with its key set; set changes it; delete removes it');
     const API_KEY = 'sk-test-' + 'a'.repeat(24);
-    const added = await ask('provider', { op: 'add', label: 'A provider', description: 'for the test', url: 'https://api.example.test/v1', apiKey: API_KEY });
+    const added = await ask('provider', { op: 'add', icon: '🏢', label: 'A provider', description: 'for the test', url: 'https://api.example.test/v1', apiKey: API_KEY });
     const pid = added.body && added.body.id;
     // The shadow-roll's kind of ID: an ed25519 public key, SPKI DER in base64 (spirit/relayAuth.js generateIdentity).
     const isKey = function (k) { return typeof k === 'string' && /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/.test(k); };
@@ -182,9 +182,9 @@ test.startTest('agent.js: the agent server');
     const mT = tableOf('model');
     const mrow = mT && isKey(mid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(mT) + ' WHERE id = ?').get(mid) : null;
     ok(isKey(mid) && mid !== pid && !!mrow && mrow.providerId === pid && mrow.modelName === 'test-model-1', 'model {add} keys its own row, naming its provider by the provider\'s id', 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow));
-    const jobAdd = await ask('job', { op: 'add', label: 'Code review', description: 'd', loop: true, job: 'Review the diff.' });
+    const jobAdd = await ask('job', { op: 'add', icon: '📋', label: 'Code review', description: 'd', loop: true, job: 'Review the diff.' });
     const jid = jobAdd.body && jobAdd.body.id;
-    const personaAdd = await ask('persona', { op: 'add', label: 'A reviewer', description: 'd', persona: 'You review code.' });
+    const personaAdd = await ask('persona', { op: 'add', icon: '🎭', label: 'A reviewer', description: 'd', persona: 'You review code.' });
     ok(isKey(jid) && isKey(personaAdd.body && personaAdd.body.id), 'job {add} and persona {add} each answer a key of their own', 'job ' + short(jobAdd.body || jobAdd) + ', persona ' + short(personaAdd.body || personaAdd));
     // goal/G41.21: a job's grant is its bundle, and it names its provider and its persona; no grant verb is asked.
     const jSet = await ask('job', { op: 'set', id: jid, bundle: '7', provider: pid, persona: personaAdd.body && personaAdd.body.id });

@@ -36,8 +36,15 @@ codeMirror-field for the persona-description i give it with every prompt)"*.
 - **Its detail panel sets it with the bundle selector in dropdown mode** (kind `bundle`), after the persona's text, as
   the job's does.
 
+### No invalid persona row (goal/G41.21, box v23)
+
+Andy: *"NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"*, *"for a new row, a valid label (NOT empty) IS THE MINIMUM required"*, *"# mandatory fields (server AND ui)"*. The persona table's mandatory fields are its icon and label: an add without one, or with a label of blanks, is refused and makes
+no row, naming the field; a change that would empty one is refused, the row kept. The row element hands the shared
+editor the same fields (`required`), so the UI checks them too.
+
 ## What its test must try to break
 
 - A persona text that loses its lines, or is emptied by a set of its label.
 - The persona edited in a one-line field.
 - A persona without its bundle column, or a detail with no bundle selector.
+- A persona row added without its icon and label.
