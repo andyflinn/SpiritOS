@@ -65,7 +65,10 @@
     // buttons. What overflows a tool that is no list still scrolls the pane.
     function pane(side) { return '<div id="' + pre + 'pane-' + side + '" class="fill" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
     function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="flex:none;width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
-    container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0">' +
+    // ITS CONTAINER BOUNDS IT, WHATEVER THE CONTAINER IS (goal/G41.22; Andy: "workBench if, contained, needs to be
+    // restreicted by its container, be that the shell app itself or another container"): a fill in a column, and its
+    // container's whole height in any other box, so nothing in it grows the page.
+    container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0;height:100%;max-height:100%;box-sizing:border-box">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
       '<div id="' + pre + 'center" class="fill" style="overflow:auto;min-width:0;' + PAD + '"></div>' +
       (sides.right.length ? border('right') + pane('right') + strip('right') : '') + '</div>';
