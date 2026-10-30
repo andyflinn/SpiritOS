@@ -98,7 +98,14 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - The page does not scroll, nor the app area; the chat input's bottom is on screen.
 - The chat is scrolled to its end, and the newest line is its last, shown whole above the chat's bottom.
 - At open a left panel shows, as the details did before the workBench.
-- The box fills the left pane, top to bottom: no box left at the old upper half's 30%.
+- **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
+  must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60), the files (150, with
+  three open grants), the rules (60) and the suites (60), each shown in turn. The pane itself never scrolls; the panel's
+  own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a few links, not a list,
+  and are not asked.
+- **The files panel's grant row is pinned on top** (Andy: *"the file panel must have the red gran button row pinned to
+  the top and the file list only using the remaining vertical space"*): the grant buttons are not in the list that
+  scrolls, stand above it, and stay where they are when the list is scrolled to its end.
 
 ## What its test must try to break (goal/G41.22)
 
@@ -108,4 +115,5 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - The chat, its search or its input outside the centre, or out of order; an input that resizes sideways.
 - The newest line on top; a new line put in on top; a chat not scrolled to its newest line; a line drawn again.
 - In the browser: a chat stopped short of its end, the newest line cut off; a left pane empty at open; a box a third of
-  its pane.
+  its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
+  scroll away with the files.

@@ -511,8 +511,23 @@ const byId = function (w, id) { return function () { return w.document.getElemen
             'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
           ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows (' + m.leftShown + '), as the details did before the workBench',
             'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
-          ok(!!m.box && !!m.pane && m.box.bottom >= m.pane.bottom - 24 && m.box.bottom <= m.pane.bottom + 1, 'the box fills the left pane, top to bottom',
-            'the box is ' + JSON.stringify(m.box) + ' in the left pane ' + JSON.stringify(m.pane));
+          // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
+          // side panels must fucking use all available vertical space, especially the lists"): given long content, the
+          // pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.
+          for (const key of ['box', 'qs', 'files', 'rules', 'suites']) {
+            let p = null;
+            try { p = JSON.parse(await page.evaluate('window.panel(' + JSON.stringify(key) + ')')); } catch (e) { p = null; }
+            ok(!!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1,
+              'the ' + key + ' panel uses all the height: its list scrolls in itself, down to the bottom of the pane',
+              'the ' + key + ' panel: ' + JSON.stringify(p));
+            // THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
+            // file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
+            if (key === 'files') {
+              ok(!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top,
+                'the files panel: the grant buttons stay pinned above the file list as it scrolls',
+                'the files panel\'s grant row: ' + JSON.stringify(p && { inList: p.grantInList, before: p.grantBefore, after: p.grantAfter, list: p.scroller }));
+            }
+          }
         }
       }
     } finally {
