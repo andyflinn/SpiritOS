@@ -85,7 +85,7 @@ the real dropdown, the agent server a stand-in answering what the real tables an
 
 - The provider's detail shows its Model field, the provider having models.
 - Pressed, it opens its dropdown.
-- With the search empty, from the start, it lists that provider's two models and nothing else; never Nothing matches.
+- With the search empty, from the start, it lists that provider's two models and nothing else.
 - Each row says its model.
 
 ## What its test must try to break
@@ -97,4 +97,4 @@ the real dropdown, the agent server a stand-in answering what the real tables an
 - ask removing another provider's models, or his label and description of a model kept.
 - An empty or failed list that changes the model table; a failure that leaves the row unflagged.
 - No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.
-- A Model picker saying Nothing matches. with the search empty, listing another provider's models, or rows without the model's name.
+- A Model picker listing none of its provider's models with the search empty, listing another provider's models, or rows without the model's name.
