@@ -71,12 +71,20 @@ function config(w) {
 }
 
 function world() {
-  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null };
+  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [] };
   const E = {
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     bundleSelector: { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
     contactSelector: { create: function (c, opts) { const x = node('contact'); x.container = c; x.opts = opts || {}; x.value = ''; x.row = null; w.ids.push(x); c.appendChild(x); return x; } },
     apiFamilySelector: { create: function (c, opts) { const f = node('family'); f.container = c; f.opts = opts; f.family = ''; f.verb = ''; f.value = ''; w.families.push(f); c.appendChild(f); return f; } },
+    // The busyButton (goal/G41.23), tested in its own folder: a stand-in that keeps the button and the request it is
+    // handed, and runs the request on a press, keeping what it answers.
+    busyButton: { attach: function (button, opts) {
+      const a = { button: button, opts: opts || {}, answers: [] };
+      w.busy.push(a);
+      button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); });
+      return button;
+    } },
     grantList: { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   };
   const api = {
@@ -89,7 +97,7 @@ function world() {
     },
   };
   const FILES = { 'shell/js/bundleSelector.js': ['bundleSelector'], 'shell/js/contactSelector.js': ['contactSelector'],
-    'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'] };
+    'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'], 'shell/js/busyButton.js': ['busyButton'] };
   const page = {};
   const win = {
     spirit: { elements: page,
@@ -238,5 +246,32 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   w.grantAnswer = function () { return { ok: false, code: 'owner-only', error: 'owner only' }; };
   press(); await settle();
   ok(/owner-only|owner only/.test(box.innerHTML), 'a grant refused for another reason says so', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
+
+  test.subHeading('Grant is a busyButton, waiting until every grant is answered (goal/G41.23)');
+  // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
+  ok(w.required.indexOf('shell/js/busyButton.js') !== -1, 'it loads the busyButton itself (rule/26)', 'required: ' + short(w.required));
+  // The panel may draw its form again when it says something: its Grant button is found again.
+  const grantNow = function () { return box.nodes.filter(function (n) { return /<button/.test(n.tag) && n.getAttribute('data-grants') === 'grant'; }).pop() || null; };
+  const gb = grantNow();
+  const gbusy = w.busy.filter(function (a) { return a.button === gb; }).pop() || null;
+  ok(!!gbusy && typeof gbusy.opts.run === 'function', 'its Grant button is made a busyButton, the grant its request', 'busyButtons: ' + w.busy.length + (gbusy ? ', the Grant one with no request' : ', none on the Grant button'));
+  if (gbusy) {
+    let letGo = null;
+    w.grantAnswer = function () { return new Promise(function (r) { letGo = r; }); };
+    const before = gbusy.answers.length;
+    const at1 = w.calls.length;
+    gb.fire('click', { target: gb, preventDefault: function () {} });
+    await settle();
+    const r = gbusy.answers[before];
+    let settled = false;
+    Promise.resolve(r).then(function () { settled = true; }, function () { settled = true; });
+    await settle();
+    const asked = w.calls.slice(at1).filter(function (c) { return c.name === 'grants.grant'; }).length;
+    ok(asked === 1 && !!r && typeof r.then === 'function' && !settled, 'a press grants, and the request it hands the button is still waiting while the grant is not answered',
+      'grants asked ' + asked + ', the request answered ' + (r && typeof r.then === 'function' ? (settled ? 'a promise already settled' : 'a promise') : short(r)));
+    w.grantAnswer = null;
+    for (let i = 0; i < 5 && letGo; i++) { const go = letGo; letGo = null; go({ ok: true }); await settle(); }
+    ok(settled, 'and it settles once every grant is answered, so the button is plain again', 'still waiting after the answers');
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

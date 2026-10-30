@@ -55,6 +55,21 @@ one workBench in each container below, a tool on each side and every pane given 
   neither the page nor the app area scrolls.
 - In each, the left pane, the right pane and the centre scroll inside the container.
 
+### The icon strip (goal/G41.23)
+
+Andy, goal/G41.21: *"this element will replace icons painting all shell elements and apps."*, and *"the workBench will
+provide space for a possible vertical scrollbar, in the icons, strip."* Asked of the same page, `window.strip(n)`: a
+workBench of n left tools, each glyph an emoji as the apps' tools have, in a box of 300 pixels, measured with one tool
+and with forty.
+
+- Each tool's glyph is painted through the icon element (`shell/js/icon.js`): its button holds an element of the class
+  the icon element carries, showing that glyph.
+- Forty tools scroll down the strip, its scrollbar drawn.
+- With the scrollbar showing, no icon is pushed sideways: the strip does not scroll across, and no button, nor what it
+  draws, reaches past the scrollbar.
+- The room is kept with no scrollbar too: with one tool the strip is as wide, and its button where it was and as wide,
+  as with forty.
+
 ## What its test must try to break
 
 - A second mount of a tool shown again.
@@ -63,3 +78,5 @@ one workBench in each container below, a tool on each side and every pane given 
 - A click after destroy.
 - A side pane, the centre, an icon strip, or a tool's box, that is only as tall as its content.
 - A workBench that grows past a container that is no flex column, or past the shell's app area, so the page scrolls.
+- A tool's glyph painted as text of its own instead of through the icon element.
+- A strip whose scrollbar pushes its icons sideways, or across; a strip whose buttons widen when no scrollbar shows.

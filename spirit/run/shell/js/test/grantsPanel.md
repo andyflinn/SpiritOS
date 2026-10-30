@@ -48,6 +48,16 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
   is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives on
   the stream (rule/19).
 
+### Grant is a busyButton (goal/G41.23)
+
+Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"*. The busyButton is tested in
+its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
+
+- The panel loads `shell/js/busyButton.js` itself (rule/26).
+- Its Grant button, as drawn now, is attached as a busyButton, the grant its request (`run`).
+- A press grants, and the request it hands the button waits while a grant is not answered; it settles once every
+  grant of the bundle is answered, so the button is plain again.
+
 ## What its test must try to break
 
 - A grants table, ID table, verb or branch named in the panel itself; a panel made without its configuration that
@@ -57,3 +67,4 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 - A filter that narrows by a key field the grants table did not name, or does not redraw the list.
 - A deprecated mark that does not follow a server starting or ending, or its filter on at first.
 - A grant made past the grants table it was handed, or of anything but the bundle's branches.
+- A Grant button that is no busyButton, or one whose request answers before the grants do.

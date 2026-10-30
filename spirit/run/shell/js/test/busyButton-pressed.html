@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; font-size: 16px; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.23 (Andy, goal/G41.18: "it has an animated icon showing to the left of the buttons label, when the button is
+// waiting for somekind of completion...."): busyButtons pressed, their requests held, answered, refused and thrown, and
+// what the browser makes of them, measured. Opened by ./busyButton.js at /DEBUG/shell/js/test/busyButton-pressed.html.
+var heard = { errors: 0, unhandled: 0 };
+window.addEventListener('error', function () { heard.errors += 1; });
+window.addEventListener('unhandledrejection', function () { heard.unhandled += 1; });
+window.pressed = function () {
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  var sheetsBefore = document.styleSheets.length;
+  var stylesBefore = document.querySelectorAll('style').length;
+  return Promise.resolve().then(function () { return spirit.require('shell/js/busyButton.js'); }).catch(function () { return null; }).then(function () {
+    var E = (spirit.elements || {}).busyButton;
+    var out = { made: !!E && typeof E.create === 'function' && E.create.length === 2 && typeof E.attach === 'function' };
+    if (!out.made) return JSON.stringify(out);
+    // What a button shows: its label (the text outside any element in it), the element left of it, how it is drawn.
+    function look(b) {
+      var spin = b.firstElementChild;
+      var label = '';
+      var left = null;
+      Array.prototype.forEach.call(b.childNodes, function (n) {
+        if (n.nodeType !== 3 || !n.textContent.trim()) return;
+        label += n.textContent.trim();
+        var r = document.createRange(); r.selectNodeContents(n);
+        var x = r.getBoundingClientRect().left;
+        if (left === null || x < left) left = x;
+      });
+      var s = spin ? spin.getBoundingClientRect() : null;
+      var name = spin ? getComputedStyle(spin).animationName : 'none';
+      return { disabled: b.disabled, text: b.textContent.trim(), label: label, kids: b.children.length,
+        spin: s ? { right: Math.round(s.right), width: Math.round(s.width), height: Math.round(s.height) } : null,
+        labelLeft: left === null ? null : Math.round(left), animation: name, shellSheet: inShellCss(name) };
+    }
+    // The turn is shell.css's: a keyframes rule of that name in the sheet loaded from /shell.css.
+    function inShellCss(name) {
+      if (!name || name === 'none') return false;
+      return Array.prototype.some.call(document.styleSheets, function (sh) {
+        if (!sh.href || !/\/shell\.css$/.test(sh.href)) return false;
+        var rules = []; try { rules = sh.cssRules; } catch (e) { return false; }
+        return Array.prototype.some.call(rules, function (r) { return r.type === 7 && r.name === name; });
+      });
+    }
+    var host = document.createElement('div');
+    document.body.appendChild(host);
+
+    // A request held until it is let go.
+    var runs = 0; var letGo = null;
+    var b = E.create(host, { label: 'Ask', title: 'ask the provider', className: 'my-ask', run: function () { runs += 1; return new Promise(function (r) { letGo = r; }); } });
+    out.create = { button: !!b && b.tagName === 'BUTTON' && b.type === 'button', appended: host.lastElementChild === b, title: b && b.title, className: b && b.className, before: look(b) };
+    b.click();
+    return wait(150).then(function () {
+      out.waiting = look(b);
+      out.waiting.runs = runs;
+      // A second press while it waits: a click, and an event dispatched as a script would.
+      b.click();
+      b.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      return wait(100);
+    }).then(function () {
+      out.secondPress = runs;
+      if (letGo) letGo({ ok: true });
+      return wait(150);
+    }).then(function () {
+      out.answered = look(b);
+      b.click();
+      return wait(100);
+    }).then(function () {
+      out.again = runs;
+      if (letGo) letGo({ ok: true });
+      return wait(100);
+    }).then(function () {
+      // Refused: the request's promise rejects.
+      var refuse = null;
+      var r = E.create(host, { label: 'Grant', run: function () { return new Promise(function (res, rej) { refuse = rej; }); } });
+      r.click();
+      return wait(100).then(function () {
+        out.refusedWaiting = look(r);
+        if (refuse) refuse(new Error('owner only'));
+        return wait(150);
+      }).then(function () { out.refused = look(r); });
+    }).then(function () {
+      // Thrown: run throws as it is called.
+      var t = E.create(host, { label: 'Throw', run: function () { throw new Error('thrown'); } });
+      t.click();
+      return wait(150).then(function () { out.thrown = look(t); });
+    }).then(function () {
+      // No promise: run answers at once.
+      var n = E.create(host, { label: 'Now', run: function () { return 'done'; } });
+      n.click();
+      return wait(150).then(function () { out.atOnce = look(n); });
+    }).then(function () {
+      // attach: a button already in the page, its own text the label.
+      var drawn = document.createElement('button'); drawn.type = 'button'; drawn.textContent = 'Reload';
+      host.appendChild(drawn);
+      var hold = null;
+      var same = E.attach(drawn, { run: function () { return new Promise(function (r) { hold = r; }); } });
+      out.attach = { same: same === drawn };
+      drawn.click();
+      return wait(100).then(function () {
+        out.attach.waiting = look(drawn);
+        if (hold) hold();
+        return wait(150);
+      }).then(function () { out.attach.answered = look(drawn); });
+    }).then(function () {
+      out.sheets = { before: sheetsBefore, after: document.styleSheets.length, stylesBefore: stylesBefore, stylesAfter: document.querySelectorAll('style').length };
+      out.heard = heard;
+      return JSON.stringify(out);
+    });
+  });
+};
+</script>
+</body>
+</html>

@@ -56,7 +56,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 (async function () {
   test.subHeading('its file');
   if (!fs.existsSync(FILE)) { test.fail('process/js/agent/table/model/updatePanel.js is not there'); return; }
-  const w = { calls: [], searches: [], required: [], answer: null };
+  const w = { calls: [], searches: [], required: [], answer: null, busy: [] };
   w.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
     return function (args) {
@@ -71,6 +71,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     if (p === 'process/js/agent/table/tableElement.js' && !global.window.spirit.elements.agentDetail) load(path.join(__dirname, '..', '..', 'tableElement.js'));
+    // The busyButton (goal/G41.23), tested in its own folder: a stand-in that keeps the button and the request it is
+    // handed, and runs the request on a press, keeping what it answers.
+    if (p === 'shell/js/busyButton.js') global.window.spirit.elements.busyButton = { attach: function (button, opts) {
+      const a = { button: button, opts: opts || {}, answers: [] };
+      w.busy.push(a);
+      button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); });
+      return button;
+    } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
   global.window.spirit.elements.probabilitySearch = { create: function (host, o) {
@@ -133,6 +141,29 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const s3 = shown(centre);
   ok(s3.indexOf('provider: Unsloth did not answer') !== -1 && s3.indexOf('model list updated.') === -1, 'a refused ask says the server\'s reason, and no remark', 'shown: ' + short(s3));
   ok(s3.indexOf('claude-a') === -1, 'and the list of an earlier ask is no longer shown', 'shown: ' + short(s3));
+
+  test.subHeading('Ask is a busyButton, waiting until the provider answers (goal/G41.23)');
+  // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
+  ok(w.required.indexOf('shell/js/busyButton.js') !== -1, 'it loads the busyButton itself (rule/26)', 'required: ' + short(w.required));
+  const busyOf = function () { const b = the(centre, 'ask'); return w.busy.filter(function (a) { return a.button === b; }).pop() || null; };
+  const ab = busyOf();
+  ok(!!ab && typeof ab.opts.run === 'function', 'its Ask button is made a busyButton, the ask its request', 'busyButtons: ' + w.busy.length + (ab ? ', the Ask one with no request' : ', none on the Ask button'));
+  if (ab) {
+    let letGo = null;
+    w.calls.length = 0;
+    w.answer = function () { return new Promise(function (r) { letGo = r; }); };
+    const before = ab.answers.length;
+    press(); await settle();
+    const r = ab.answers[before];
+    let settled = false;
+    Promise.resolve(r).then(function () { settled = true; }, function () { settled = true; });
+    await settle();
+    ok(w.calls.length === 1 && !!r && typeof r.then === 'function' && !settled, 'a press asks once, and the request it hands the button is still waiting while the provider has not answered',
+      'asked ' + w.calls.length + ', the request answered ' + (r && typeof r.then === 'function' ? (settled ? 'a promise already settled' : 'a promise') : short(r)));
+    if (letGo) letGo({ models: [], updated: false });
+    await settle();
+    ok(settled, 'and it settles once the provider answers, so the button is plain again', 'still waiting after the answer');
+  }
 
   test.subHeading('destroy');
   pane.destroy();

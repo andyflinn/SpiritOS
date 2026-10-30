@@ -52,6 +52,36 @@ window.contained = function (name) {
     });
   });
 };
+// goal/G41.23 (Andy, goal/G41.21: "the workBench will provide space for a possible vertical scrollbar, in the icons,
+// strip.", and "this element will replace icons painting all shell elements and apps."): a workBench of n left tools in
+// a box of 300 pixels, its strip measured. An icon made here gives the class the icon element carries.
+window.strip = function (n) {
+  return Promise.all([spirit.require('shell/js/workBench.js'), Promise.resolve().then(function () { return spirit.require('shell/js/icon.js'); }).catch(function () { return null; })]).then(function () {
+    document.body.querySelectorAll('.case').forEach(function (x) { x.remove(); });
+    var mark = '';
+    if (spirit.elements.icon && typeof spirit.elements.icon.create === 'function') {
+      var probe = document.createElement('div');
+      var made = spirit.elements.icon.create(probe, { glyph: 'A' });
+      mark = String(made && made.className || '').trim().split(/\s+/)[0] || '';
+    }
+    var c = document.createElement('div');
+    c.className = 'case';
+    c.style.cssText = 'height:300px;width:900px';
+    document.body.appendChild(c);
+    var tools = [];
+    for (var i = 0; i < n; i++) tools.push({ name: 't' + i, icon: ['🔑', '📦', '🧠', '📁', '⚙️', '🗂️'][i % 6], title: 't' + i, mount: function () {} });
+    spirit.elements.workBench.create(c, { left: tools });
+    var s = c.querySelector('[id$="strip-left"]');
+    var sr = s.getBoundingClientRect();
+    var inner = sr.left + s.clientLeft + s.clientWidth;
+    var buttons = Array.prototype.slice.call(s.querySelectorAll('button[data-tool]'));
+    var painted = buttons.filter(function (b, k) { var e = mark ? b.querySelector('.' + mark) : null; return !!e && e.textContent === tools[k].icon; }).length;
+    // What is drawn of a button, its glyph too: the box of its contents, which a button squeezed narrower overflows.
+    var outside = buttons.filter(function (b) { var r = document.createRange(); r.selectNodeContents(b); return Math.max(b.getBoundingClientRect().right, r.getBoundingClientRect().right) > inner + 0.5; }).length;
+    return JSON.stringify({ mark: mark, width: Math.round(sr.width), bar: s.offsetWidth - s.clientWidth - s.clientLeft * 2, scrollsDown: s.scrollHeight > s.clientHeight + 1,
+      sideways: s.scrollWidth > s.clientWidth + 1, buttons: buttons.length, firstLeft: buttons.length ? Math.round(buttons[0].getBoundingClientRect().left - sr.left) : null, firstWidth: buttons.length ? Math.round(buttons[0].getBoundingClientRect().width) : null, painted: painted, outside: outside });
+  });
+};
 </script>
 </body>
 </html>

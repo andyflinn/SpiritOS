@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.23 (Andy, goal/G41.21: "it centers the glyph, in a square box, the size of which follows font-size, it's size
+// option should vary from that base-line, be a multiplier of it."): icons in containers of several font sizes, and what
+// the browser makes of them, measured. Opened by ./icon.js at /DEBUG/shell/js/test/icon-sized.html.
+window.sized = function () {
+  return Promise.resolve().then(function () { return spirit.require('shell/js/icon.js'); }).catch(function () { return null; }).then(function () {
+    var E = (spirit.elements || {}).icon;
+    var out = { made: !!E && typeof E.create === 'function' && E.create.length === 2 };
+    if (!out.made) return JSON.stringify(out);
+    function host(css) { var h = document.createElement('div'); h.style.cssText = css; document.body.appendChild(h); return h; }
+    function box(el) { var r = el.getBoundingClientRect(); return { w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10, x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+    // Where the glyph is drawn: the box of its text.
+    function glyph(el) {
+      var r = document.createRange(); r.selectNodeContents(el);
+      var g = r.getBoundingClientRect();
+      return { x: g.left + g.width / 2, y: g.top + g.height / 2 };
+    }
+    function one(css, opts) { var h = host(css); var i = E.create(h, opts); return { h: h, i: i }; }
+    var base = one('font-size:20px;color:rgb(200, 0, 0)', { glyph: 'A' });
+    out.base = { answered: !!base.i && base.i.nodeType === 1, appended: base.h.lastElementChild === base.i, text: base.i.textContent, size: box(base.i),
+      className: String(base.i.className || ''), color: getComputedStyle(base.i).color };
+    out.twice = box(one('font-size:20px', { glyph: 'A', size: 2 }).i);
+    out.half = box(one('font-size:20px', { glyph: 'A', size: 0.5 }).i);
+    out.small = box(one('font-size:10px', { glyph: 'A' }).i);
+    out.key = one('font-size:20px', { glyph: '🔑' }).i.textContent;
+    // Centred: the glyph's middle at the box's middle.
+    var big = one('font-size:20px', { glyph: 'A', size: 3 }).i;
+    var b = box(big); var g = glyph(big);
+    out.centred = { side: b.w, dx: Math.round(Math.abs(g.x - b.x) * 10) / 10, dy: Math.round(Math.abs(g.y - b.y) * 10) / 10 };
+    // Never shrinks: in a row of five pixels with text that wants more.
+    var row = host('font-size:20px;display:flex;width:5px');
+    var tight = E.create(row, { glyph: 'A' });
+    var more = document.createElement('span'); more.textContent = 'a long label beside it'; row.appendChild(more);
+    out.tight = box(tight);
+    return JSON.stringify(out);
+  });
+};
+</script>
+</body>
+</html>

@@ -31,8 +31,19 @@ model-list, which is then shown below the the ask form above, with a remark \"mo
   answer and writes no row.
 - `destroy` destroys the dropdown and empties the pane.
 
+### Ask is a busyButton (goal/G41.23)
+
+Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"*. The busyButton is tested in
+its own folder (`shell/js/test/busyButton.md`); here a stand-in keeps what it is handed.
+
+- The pane loads `shell/js/busyButton.js` itself (rule/26).
+- Its Ask button is attached as a busyButton, the ask its request (`run`).
+- A press asks once, and the request it hands the button waits while the provider has not answered; it settles once
+  the provider answers, so the button is plain again.
+
 ## What its test must try to break
 
 - An ask sent with no provider, or to any table but the provider table.
 - The remark said when nothing was updated, or after a refusal.
 - A model's label unescaped; an earlier list left standing under a refusal.
+- An Ask button that is no busyButton, or one whose request answers before the provider does.

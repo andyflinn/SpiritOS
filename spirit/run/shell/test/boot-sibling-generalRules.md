@@ -100,6 +100,13 @@ box is its own check, named by the element's path and the box's id chain."*
   - **each box is its own check**, titled `<path>/headLessBrowser.html: sized box <its id chain>`, such as
     `div#agent-bench > div#wb1-strip-left`, so a red names the element and the box at once;
   - the mount box never grows past its height, and the page never scrolls sideways.
+- **Every icon through the icon element** (goal/G41.23; Andy, goal/G41.21: *"this element will replace icons painting
+  all shell elements and apps."*; box v5: *"new-face apps will be updated to use the new "icon" element."*; Q1: *"plus
+  the intrinsic apps, plus the icons app. all apps that use icons."*): every glyph it draws that is a pictograph
+  (Unicode `Extended_Pictographic`, as its icons are) and is shown lies inside an element of the class the icon element
+  (`shell/js/icon.js`) carries. The class is read from an icon made after the mount, so nothing is preloaded. Judged as
+  drawn and after each tool and tab button is pressed, as the boxes are; the check names the first glyphs drawn outside
+  it and where.
 - **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
 
 **Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we
@@ -113,3 +120,4 @@ on purpose, to hide the native scrollbars (its own css: *"Things will break if t
 - A file that asks for a file that is not there, throws, or logs an error, its options missing included.
 - A box only as tall or as wide as its content, anywhere between a scrolling box and the app.
 - A destroy that leaves what it drew.
+- A pictograph painted as text of its own, outside the icon element, as drawn or after a press.

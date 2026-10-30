@@ -229,6 +229,24 @@ ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after
       ok(names.length === 3 && !loose.length, c[1] + ': the left pane, the right pane and the centre each scroll inside it',
         c[1] + ': not scrolling inside it: ' + (names.length === 3 ? loose.join(', ') : 'panes found ' + JSON.stringify(m.panes)));
     }
+
+    // THE STRIP (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps.",
+    // and "the workBench will provide space for a possible vertical scrollbar, in the icons, strip."): one tool, and 40
+    // that scroll down a box of 300 pixels.
+    test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': the icon strip, one tool and forty');
+    const strip = async function (n) { try { return JSON.parse(await page.evaluate('window.strip(' + n + ')')); } catch (e) { return null; } };
+    const one = await strip(1);
+    const many = await strip(40);
+    if (!one || !many) { test.fail('the page measured no strip: ' + JSON.stringify({ one: one, many: many })); return; }
+    ok(!!many.mark && one.painted === 1 && many.painted === 40, 'each tool\'s glyph is painted through the icon element (class ' + many.mark + ')',
+      many.mark ? 'painted through the icon element: ' + one.painted + ' of 1, ' + many.painted + ' of 40' : 'no icon element to paint through: shell/js/icon.js made no element with a class');
+    ok(many.scrollsDown && many.bar > 0, 'forty tools scroll down the strip, its scrollbar ' + many.bar + ' pixels wide',
+      'forty tools: scrolls down ' + many.scrollsDown + ', scrollbar ' + many.bar + ' pixels (the case needs one drawn)');
+    ok(!many.sideways && many.outside === 0, 'with its scrollbar showing, no icon is pushed sideways: nothing scrolls across, no button past the scrollbar',
+      'with its scrollbar showing: scrolls across ' + many.sideways + ', ' + many.outside + ' of ' + many.buttons + ' buttons past it');
+    ok(one.width === many.width && one.firstLeft === many.firstLeft && one.firstWidth === many.firstWidth,
+      'the room is kept with no scrollbar too: the strip as wide, its buttons where they were and as wide (' + one.width + ' wide, a button at ' + one.firstLeft + ', ' + one.firstWidth + ' wide)',
+      'one tool: the strip ' + one.width + ' wide, its button at ' + one.firstLeft + ', ' + one.firstWidth + ' wide; forty: ' + many.width + ', the first at ' + many.firstLeft + ', ' + many.firstWidth + ' wide');
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

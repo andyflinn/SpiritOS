@@ -60,7 +60,34 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
 // recorded under its own module (test/testReport.js). This run records one line per file, named by its address.
+// EVERY FILE THAT PAINTS AN ICON LOADS THE ICON ELEMENT (goal/G41.23; Q1, Andy: "plus the intrinsic apps, plus the
+// icons app. all apps that use icons."; "wsl, Go" on: a second rule reads the code, so that it misses none). A bare mount
+// draws no data, so most icons are seen only here: a shell script (no test, no vendor code) whose code, comments left
+// out, holds a pictograph (Unicode Extended_Pictographic), or that paints icons it is handed (named below, read by
+// hand), loads shell/js/icon.js. Each is its own check, named by its path.
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/contacts/contacts.js', 'shell/js/icons/listElement.js',
+  'shell/js/icons/rowElement.js', 'shell/js/iconSelector.js', 'shell/js/workBench.js'];
+function painters() {
+  const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
+  return tracked.filter(function (f) {
+    if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'shell/js/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
+    if (FROM_DATA.indexOf(f) !== -1) return true;
+    const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    return /\p{Extended_Pictographic}/u.test(code);
+  });
+}
+function iconsLoaded() {
+  test.subHeading('every shell file that paints an icon loads the icon element');
+  const files = painters();
+  test.comment(files.length + ' shell files paint icons: ' + files.join(', '));
+  files.forEach(function (f) {
+    const src = fs.readFileSync(path.join(RUN, f), 'utf8');
+    ok(src.indexOf('shell/js/icon.js') !== -1, f + ': it paints icons and loads shell/js/icon.js', f + ': it paints icons and never loads shell/js/icon.js');
+  });
+}
+
 async function every() {
+  iconsLoaded();
   const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'shell/test/boot-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
   test.comment('every app and element in its reach: ' + files.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
@@ -153,6 +180,22 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
       '  var wide = document.createElement("div"); wide.style.cssText = "width:5000px;min-width:5000px;height:1px;flex:none";' +
       '  var t = grows(el, "height", tall), w = grows(el, "width", wide);' +
       '  out.push({ box: chain(el), tall: t, wide: w }); }); return out; }())';
+    // EVERY ICON THROUGH THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all
+    // shell elements and apps."; box v5: "new-face apps will be updated to use the new \"icon\" element."; Q1: "all apps
+    // that use icons."): every glyph it draws that is a pictograph (Unicode Extended_Pictographic, as its icons are) lies
+    // inside an element of the class the icon element carries. The class is read from an icon made after the mount, so
+    // nothing is preloaded (rule/26). Judged as drawn, and after each press, as the boxes are.
+    const ICONS = '(function () { var box = window.spiritMount.box; var mark = window.spiritIconMark || ""; var out = [];' +
+      ' var walk = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); var n;' +
+      ' while ((n = walk.nextNode())) { var g = n.textContent.match(/\\p{Extended_Pictographic}/gu); if (!g) continue; var el = n.parentElement;' +
+      '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
+      '  var parts = []; for (var e = el; e && e !== box; e = e.parentNode) { if (e.id || e === el) parts.unshift(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "")); }' +
+      '  out.push(g.join("") + " in " + parts.join(" > ")); } return out; }())';
+    await page.evaluate('Promise.resolve().then(function () { return spirit.require("shell/js/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.elements.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+    const iconMark = await page.evaluate('window.spiritIconMark || ""');
+    const loose = {};
+    const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
+    await iconProbe();
     const seen = {};
     const bounded = function (p) { return p.tall.kept && p.tall.inside && !p.tall.spilt && p.wide.kept && p.wide.inside && !p.wide.spilt; };
     const probe = async function () { const s = await page.evaluate('JSON.stringify(' + PROBE + ')'); (s ? JSON.parse(s) : []).forEach(function (p) { if (!seen[p.box] || bounded(seen[p.box])) seen[p.box] = p; }); };
@@ -162,6 +205,7 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
       await page.evaluate('(function () { var b = window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]")[' + i + ']; if (b) b.click(); }())');
       await sleep(400);
       await probe();
+      await iconProbe();
     }
     test.comment('pressed ' + count + ' tool and tab buttons; ' + Object.keys(seen).length + ' scrolling boxes');
     Object.keys(seen).forEach(function (k) {
@@ -174,6 +218,10 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
       if (p.tall.spilt || p.wide.spilt) why.push('the mount box overflows');
       ok(!why.length, k + ' keeps its height and its width when given far more than it holds', k + ': ' + why.join('; '));
     });
+    test.subHeading(NAMED + ': ' + 'every icon it paints is the icon element');
+    const looseList = Object.keys(loose);
+    ok(!!iconMark && !looseList.length, 'every pictograph it draws lies inside the icon element (class ' + iconMark + ')',
+      iconMark ? looseList.length + ' drawn outside the icon element: ' + short(looseList.slice(0, 5)) : 'no icon element to paint through: shell/js/icon.js made no element with a class');
     test.subHeading(NAMED + ': ' + 'its box never grows');
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
