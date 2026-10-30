@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+</head>
+<body>
+<div id="app-container"><div id="app-header"><div id="app-title">an app</div></div><div id="app-content"><div class="app-pane" id="the-pane"></div></div></div>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.22 (Andy: "The desk main page now has a giant gap between the shells title bar and it's first row of
+// buttons."): an app's header area in the home page's app area, a row of buttons in it and 3000 pixels of content under
+// it, as the Desk draws its top bar, and where the browser puts them, measured. Opened by ./appHeader.js at
+// /DEBUG/shell/js/appHeader/test/appHeader-pinned.html.
+window.pinned = function () {
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  return spirit.require('shell/js/appHeader/appHeader.js').then(function () {
+    var pane = document.getElementById('the-pane');
+    var head = spirit.elements.appHeader.create(pane);
+    head.innerHTML = '<div style="display:flex;gap:8px"><button type="button">List</button><button type="button">Rules</button></div>';
+    var content = document.createElement('div');
+    content.style.cssText = 'height:3000px;flex:none';
+    content.textContent = 'the list';
+    pane.appendChild(content);
+    return wait(300).then(function () {
+      var bar = document.getElementById('app-header').getBoundingClientRect();
+      var p = pane.getBoundingClientRect();
+      var h = head.getBoundingClientRect();
+      var out = { titleBar: Math.round(bar.bottom), paneTop: Math.round(p.top), head: { top: Math.round(h.top), bottom: Math.round(h.bottom) }, content: Math.round(content.getBoundingClientRect().top) };
+      pane.scrollTop = 1000;
+      return wait(300).then(function () { out.headAfterScroll = Math.round(head.getBoundingClientRect().top); out.scrolled = Math.round(pane.scrollTop); return JSON.stringify(out); });
+    });
+  });
+};
+</script>
+</body>
+</html>
