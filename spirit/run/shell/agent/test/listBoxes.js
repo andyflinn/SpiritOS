@@ -3,7 +3,7 @@
 // spirit/run/shell/agent/test/listBoxes.js
 // The tests of shell/agent/agent.js as one app, and of no other module (spec: ./listBoxes.md; goal/G41.18): every list
 // pane it draws stands in a box of a stated size, each box above it up to the app too (rule/16). The app runs on a small
-// page, with the real workBench, the real table elements and the real grants panel in it; the search element is a
+// page, with the real workBench, the real table elements in it; the search element is a
 // recorder that keeps the box each list was made in, and the selectors and the agent server are stand-ins.
 
 const fs = require('fs');
@@ -127,7 +127,6 @@ const REAL = [
   'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'process/js/agent/table/model/updatePanel.js',
   'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
   'process/js/agent/table/job/elementTable.js', 'process/js/agent/table/job/elementRow.js',
-  'shell/js/grantsPanel.js', 'shell/js/grantSelector/listElement.js',
 ];
 
 function world() {
@@ -197,7 +196,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const strip = function (name) { return w.document.querySelectorAll('[data-tool]').filter(function (b) { return b.getAttribute('data-tool') === name; })[0]; };
 
   test.subHeading('each tool\'s list pane');
-  const want = [['provider', 'provider'], ['model', 'model'], ['persona', 'persona'], ['job', 'job'], ['grant', 'search']];
+  // goal/G41.21: the grant tool went with agent.grant.
+  const want = [['provider', 'provider'], ['model', 'model'], ['persona', 'persona'], ['job', 'job']];
   for (const t of want) {
     const b = strip(t[0]);
     if (!b) { test.fail('no strip button for the ' + t[0] + ' tool'); continue; }
@@ -212,6 +212,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('every list pane the app drew');
   const all = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && under(p.host, app); });
   const bad = all.map(function (p) { return { verb: p.o.verb, gaps: gaps(p.host, app) }; }).filter(function (x) { return x.gaps.length; });
-  ok(all.length >= 5 && !bad.length, 'all ' + all.length + ' list panes drawn, none in a box only as tall as its content', 'not fill: ' + short(bad));
+  ok(all.length >= 4 && !bad.length, 'all ' + all.length + ' list panes drawn, none in a box only as tall as its content', 'not fill: ' + short(bad));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

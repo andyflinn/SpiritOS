@@ -34,6 +34,13 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - It streams its state as `{ agent: { debug } }`: it serves with a publisher whose bootstrap hands a subscriber the
   state, and `debug` publishes the new state. There is no read verb: the page reads the state from the stream.
 
+## Requirements (goal/G41.21, box v17)
+
+- **agent.grant is removed altogether**: agent.db holds four tables, provider, model, persona and job; an agent.db that
+  held a grant table from before loses it at start (*"its rows in agent.db are dropped"*). The interface declares four
+  verbs, no grant, and `process/js/agent/table/grant` is gone.
+- The provider table has `model`; the job table `bundle`, `provider` and `persona`.
+
 ## What its test must try to break
 
 - A DEBUG state kept apart from the built-in one.
@@ -58,3 +65,4 @@ No agents talk to each other through it: each agent sees itself as the only agen
   model, persona and job; grant with server.js alone, its page files gone since goal/G41.16 (the grants panel,
   shell/js/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
+- A grant table or verb left, or an old grant table kept at start.

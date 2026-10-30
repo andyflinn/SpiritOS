@@ -58,7 +58,7 @@ function the(b, end) { const k = Object.keys(b.parts).filter(function (id) { ret
 
 // The world: the agent server's interface answering as rowTable.js does, the searches made, the icon selectors made.
 function world() {
-  const w = { calls: [], searches: [], icons: [], required: [], answer: null };
+  const w = { calls: [], searches: [], icons: [], bundles: [], required: [], answer: null };
   // Not a thenable: Promise.resolve hands the interface itself on.
   w.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
@@ -84,6 +84,13 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const D = global.window.spirit.data;
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
+    // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
+    // what it was handed.
+    if (p === 'shell/js/bundleSelector.js') global.window.spirit.elements.bundleSelector = { create: function (c, opts) {
+      const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
+        refresh: function () {}, destroy: function () { sel.destroyed = true; } };
+      w.bundles.push(sel); c.appendChild(sel); return sel;
+    } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
   global.window.spirit.elements.probabilitySearch = { create: function (host, o) {
@@ -276,5 +283,60 @@ test.startTest('tableElement.js: what the tables\' elements share');
   D.merge('agent.provider/KS', { label: 'After' }); await settle();
   ok(ed2.innerHTML === '', 'destroyed, it empties its box and hears its row no more', 'editor2: ' + short(ed2.innerHTML));
   r.destroy();
+
+  test.subHeading('a pick field narrowed to this row: of (goal/G41.21)');
+  // Box v17: "a dropdown search of the model table ... showing only the models whose provider is this provider", and
+  // "The Model field is hidden while the model table holds no model of this provider". of names the picked table's field
+  // that holds this row's id; the narrowing goes to the table's search (../rowTable.js).
+  const NARROW = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'model', label: 'Model', kind: 'pick', pick: 'model', of: 'providerId' }];
+  const narrowed = async function (models) {
+    w.calls.length = 0;
+    const before = w.searches.length;
+    w.answer = function (table, a) {
+      if (a.op === 'get') return { id: 'KN', icon: '', label: 'Narrow' };
+      if (table === 'model' && a.op === 'search') return { items: models.map(function (k) { return { key: k, label: JSON.stringify({ id: k, label: k }) }; }), more: false };
+      return { id: 'KN' };
+    };
+    const ed3 = box('narrow');
+    const r3 = E.agentRow.create(ed3, { api: {}, table: 'provider', id: 'KN', added: false, look: look, fields: NARROW });
+    await settle(); await settle();
+    const s = w.searches.slice(before).filter(function (x) { return x.o && x.o.verb === 'model'; })[0] || null;
+    let args = null; try { args = s && typeof s.o.args === 'function' ? s.o.args('claude') : null; } catch (e) { args = null; }
+    const at = ed3.innerHTML.search(/for="[^"]*-model"/);
+    const lineStart = at === -1 ? -1 : ed3.innerHTML.lastIndexOf('<div', at);
+    const line = lineStart === -1 ? '' : ed3.innerHTML.slice(lineStart, at);
+    const shown = at !== -1 && !/\bhidden\b|display:\s*none/.test(line);
+    const out = { search: s, args: args, shown: shown, calls: w.calls.slice() };
+    r3.destroy();
+    return out;
+  };
+  const withModels = await narrowed(['M1']);
+  ok(withModels.args && withModels.args.op === 'search' && withModels.args.text === 'claude' && withModels.args.providerId === 'KN',
+    'its dropdown searches the model table narrowed to this row: { op: search, text, providerId: this row\'s id }', 'args: ' + short(withModels.args));
+  ok(withModels.shown, 'with a model of this provider in the model table, the Model field is shown', 'the Model field is not shown with a model of this provider');
+  const withNone = await narrowed([]);
+  ok(withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === 'KN'; }),
+    'it asks the model table for this provider\'s models, narrowed the same way', 'calls: ' + short(withNone.calls));
+  ok(!withNone.shown, 'with none, the Model field is hidden', 'the Model field is shown though the model table holds no model of this provider');
+
+  test.subHeading('a bundle field: the bundle selector in dropdown mode (goal/G41.21)');
+  // Box v17: "The job's detail panel ... sets it with a bundleSelector in dropdown mode."
+  w.calls.length = 0;
+  w.answer = function (table, a) { return a.op === 'get' ? { id: 'KJ', icon: '', label: 'A job', bundle: '7' } : { id: 'KJ' }; };
+  const ed4 = box('bundle');
+  const r4 = E.agentRow.create(ed4, { api: {}, table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
+  await settle(); await settle();
+  const bsel = w.bundles[w.bundles.length - 1];
+  ok(w.required.indexOf('shell/js/bundleSelector.js') !== -1, 'it loads the bundle selector itself (rule/26)', 'required: ' + short(w.required));
+  ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
+  if (bsel) {
+    bsel.value = 9; bsel.row = { id: 9, label: 'Reader' };
+    (bsel.heard.change || []).forEach(function (fn) { fn({ target: bsel }); });
+    w.calls.length = 0;
+    the(ed4, 'save').click(); await settle();
+    const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
+    ok(set && set.table === 'job' && String(set.args.bundle) === '9', 'a bundle picked is saved: job { op: set, id, bundle }', 'calls: ' + short(w.calls));
+  }
+  r4.destroy();
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

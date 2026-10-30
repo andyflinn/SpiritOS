@@ -48,6 +48,12 @@ Its test is `./rowTable.js`.
   tables.
 - The rows persist in `agent.db`.
 
+## Requirements (goal/G41.21, box v17)
+
+- **A search narrowed by a field**: a search naming one of the table's own fields (`{ op: 'search', text, providerId }`)
+  answers only the rows whose field holds that value, ranked by the words as before; a value no row holds answers no
+  rows; a search naming no field answers every row.
+
 ## What its test must try to break
 
 - A private half, a seal private key or a secret in a get, a search or a published row.
@@ -56,3 +62,4 @@ Its test is `./rowTable.js`.
 - An argument it does not declare taken in silence. The face's calls once carried `verb` ("Not added: job takes no
   argument verb").
 - An old table that loses its rows, or never gets the new field.
+- A narrowed search answering another row's rows, or refusing the field.

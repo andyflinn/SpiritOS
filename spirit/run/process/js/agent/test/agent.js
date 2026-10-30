@@ -48,6 +48,14 @@ test.startTest('agent.js: the agent server');
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
   const state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });
+  // An agent.db from before goal/G41.21, its grant table holding a row: "its rows in agent.db are dropped" at start.
+  {
+    const { DatabaseSync } = require('node:sqlite');
+    const old = new DatabaseSync(path.join(state, 'agent.db'));
+    old.exec('CREATE TABLE "grant" (job_id TEXT NOT NULL, path TEXT NOT NULL, PRIMARY KEY (job_id, path))');
+    old.prepare('INSERT INTO "grant" (job_id, path) VALUES (?, ?)').run('KOLD', 'fs.search');
+    old.close();
+  }
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'agent', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('agent', pipe);
@@ -99,7 +107,9 @@ test.startTest('agent.js: the agent server');
     // ── goal/G41.4: THE DATA SET OF agent.db (box v22) ─────────────────────────────────────────────────────────────────
     // Andy: "a provider table ... a model table ... a persona table ... a job table ... an grant/auth table, keyed by
     // job-ID, structured exactly like the auth table in node"; each "keyed by ID same as the shadow-roll".
-    test.subHeading('goal/G41.4: agent.db holds the five tables, each with its fields');
+    // goal/G41.21 (box v17): "agent.grant is removed altogether"; the provider gains model, the job bundle, provider and
+    // persona.
+    test.subHeading('goal/G41.4, G41.21: agent.db holds the four tables, each with its fields, and no grant table');
     const { DatabaseSync } = require('node:sqlite');
     const look = new DatabaseSync(db, { readOnly: true });
     const tables = look.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; });
@@ -109,10 +119,10 @@ test.startTest('agent.js: the agent server');
     // the rest of its key set beside it.
     const KEYSET = [/^id$/, /^privateKey$/, /^sealPublicKey$/, /^sealPrivateKey$/, /^label$/, /^description$/];
     const WANT = {
-      provider: KEYSET.concat([/^url$/, /^apiKey$/]),
+      provider: KEYSET.concat([/^url$/, /^apiKey$/, /^model$/]),
       model: KEYSET.concat([/^providerId$/, /^modelName$/, /^capabilities$/]),
       persona: KEYSET.concat([/^persona$/]),
-      job: KEYSET.concat([/^loop$/, /^job$/]),
+      job: KEYSET.concat([/^loop$/, /^job$/, /^bundle$/, /^provider$/, /^persona$/]),
     };
     Object.keys(WANT).forEach(function (name) {
       const t = tableOf(name);
@@ -122,30 +132,27 @@ test.startTest('agent.js: the agent server');
       const pk = colsOf(t).filter(function (c) { return c.pk > 0; }).map(function (c) { return c.name; });
       ok(!!t && pk.length === 1 && /^id$/i.test(pk[0]), name + ' is keyed by its id alone', name + ': primary key ' + short(pk));
     });
+    // "its rows in agent.db are dropped": the grant table the scratch agent.db held before the start is gone.
     const grantT = tableOf('grant');
-    const grantPk = colsOf(grantT).filter(function (c) { return c.pk > 0; }).sort(function (a, b) { return a.pk - b.pk; }).map(function (c) { return c.name; });
-    // node's grants (spirit/nodeStore.js:502): peer_id and path, one row per grant; here the job's ID stands for the peer.
-    ok(!!grantT && JSON.stringify(grantPk) === '["job_id","path"]' && colsOf(grantT).length === 2, 'a grant table keyed (job ID, path), as node\'s grants are (peer_id, path)', 'grant: table ' + (grantT || 'none') + ', primary key ' + short(grantPk));
+    ok(!grantT, 'agent.db has no grant table: a job\'s grant is its bundle (goal/G41.21)', 'agent.db still has the table ' + grantT);
     look.close();
 
-    test.subHeading('goal/G41.4: one verb per table, in its family interface, each in its own folder');
-    const TABLES = ['provider', 'model', 'persona', 'job', 'grant'];
+    test.subHeading('goal/G41.4, G41.21: one verb per table, in its family interface, each in its own folder; grant gone');
+    const TABLES = ['provider', 'model', 'persona', 'job'];
     let fam = null;
     try { delete require.cache[require.resolve(API)]; fam = require(API); } catch (e) { fam = null; }
     const verbs = (fam && fam.verbs) || {};
-    ok(TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }), 'its interface declares the five verbs, provider, model, persona, job and grant', 'verbs: ' + short(Object.keys(verbs)));
+    ok(TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }) && !('grant' in verbs), 'its interface declares the four verbs, provider, model, persona and job, and no grant', 'verbs: ' + short(Object.keys(verbs)));
     const files = [];
-    // goal/G41.16: the grant table's page files went, the grants panel drawing the grants by job (shell/js/grantsPanel.js,
-    // configured by the agent app); its folder keeps its server.
-    TABLES.forEach(function (t) { (t === 'grant' ? ['server.js'] : ['server.js', 'elementTable.js', 'elementRow.js']).forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
+    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
     const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
-    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, the four but grant with elementTable.js and elementRow.js', absent.length + ' of 13 missing: ' + absent.join(', '));
-    const kept = ['elementTable.js', 'elementRow.js'].filter(function (f) { return fs.existsSync(path.join(RUN, 'process', 'js', 'agent', 'table', 'grant', f)); });
-    ok(!kept.length, 'the grant folder has no page files of its own: the grants panel draws its grants (goal/G41.16)', 'grant still has: ' + kept.join(', '));
+    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 12 missing: ' + absent.join(', '));
+    // goal/G41.21: "With it go its folder (process/js/agent/table/grant)".
+    ok(!fs.existsSync(path.join(RUN, 'process', 'js', 'agent', 'table', 'grant')), 'the grant table\'s folder process/js/agent/table/grant is gone', 'process/js/agent/table/grant is still there');
     const served = (await ask('DEBUG', {})).status === 200;
     const answers = {};
     for (const t of TABLES) answers[t] = await ask(t, {});
-    ok(served && TABLES.every(function (t) { return !(answers[t].body && answers[t].body.code === 'no-such-verb') && !/no.such.verb|unknown verb/i.test(short(answers[t])); }), 'the server serves each of the five verbs', 'answers: ' + short(answers));
+    ok(served && TABLES.every(function (t) { return !(answers[t].body && answers[t].body.code === 'no-such-verb') && !/no.such.verb|unknown verb/i.test(short(answers[t])); }), 'the server serves each of the four verbs', 'answers: ' + short(answers));
 
     // The verb's shape, as cw named it for the build: flat, as every family verb is, <table> {op, ...fields}, op one of
     // add (answers the new id), set, delete, get (the row without its secrets, apiKeySet in place of the key) and search.

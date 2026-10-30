@@ -43,10 +43,11 @@ test.startTest('job/: the job table');
   const cols = db.prepare('PRAGMA table_info("job")').all().map(function (c) { return c.name; });
   // Andy, box v22: "with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the
   // job-description that may come with a prompt".
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','loop','job'].forEach(function (c) {
+  // goal/G41.21 (box v17): "The job table gains a field, bundle", "a second field, provider", "a third field, persona".
+  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','loop','job','bundle','provider','persona'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the job table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 12, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a job, its loop flag and its text');
   const TEXT = 'Read the news.\nSay what changed.';
@@ -57,11 +58,20 @@ test.startTest('job/: the job table');
   call(t.verb, { op: 'set', id: added.id, loop: false });
   ok(call(t.verb, { op: 'get', id: added.id }).loop === false && call(t.verb, { op: 'get', id: added.id }).job === TEXT, 'a set of the flag keeps the text', 'get: ' + short(call(t.verb, { op: 'get', id: added.id })));
 
-  test.subHeading('server.js: a job deleted takes its grants with it');
-  ok(call(t.verb, { op: 'delete', id: added.id }).id === added.id && JSON.stringify(dropped) === JSON.stringify([added.id]), 'deleting a job asks the grant table to drop that job\'s grants, once', 'dropped: ' + short(dropped));
+  test.subHeading('server.js: a job\'s bundle, provider and persona (goal/G41.21)');
+  // A provider's and a persona's id are public keys, as every row's is.
+  const keyOf = function () { return require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64'); };
+  const P = keyOf();
+  const Q = keyOf();
+  call(t.verb, { op: 'set', id: added.id, bundle: '7', provider: P, persona: Q });
+  const three = call(t.verb, { op: 'get', id: added.id });
+  ok(three && String(three.bundle) === '7' && three.provider === P && three.persona === Q && three.job === TEXT, 'a job keeps its bundle, its provider and its persona, its text as it was', 'get: ' + short(three));
+
+  test.subHeading('server.js: a job deleted asks no grant table (goal/G41.21)');
+  // "With it go ... the job's delete hook that dropped a job's grants": a job's grant is its bundle, deleted with it.
+  ok(call(t.verb, { op: 'delete', id: added.id }).id === added.id && dropped.length === 0, 'deleting a job drops it, and asks no grant table for anything', 'dropped: ' + short(dropped));
   const other = call(t.verb, { op: 'add', label: 'Other' });
   call(t.verb, { op: 'set', id: other.id, label: 'Still' });
-  ok(dropped.length === 1, 'an add or a set drops nothing', 'dropped: ' + short(dropped));
 
   test.subHeading('server.js: a search answers what the list shows (goal/G41.18)');
   // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
@@ -109,8 +119,11 @@ test.startTest('job/: the job table');
   ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'job' && r.id === 'K1' && r.added === false && r.api === api,
     'a row it opens is a jobRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   ok(r && r.look && r.look.icon === '📋' && r.look.table === 'job', 'its title row has the job table\'s look', 'look: ' + short(r && r.look));
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['loop', 'bool'], ['job', 'code']]),
-    'its fields are the label, the description, the loop flag as a checkbox, and the job in a CodeMirror editor', 'fields: ' + short(r && r.fields));
+  // goal/G41.21: the bundle set "with a bundleSelector in dropdown mode" (kind bundle), the provider and the persona by a
+  // pick field of their table; the order of the box, the code field drawn last by the shared element whatever its place.
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['description', 'description', ''], ['loop', 'bool', ''], ['job', 'code', ''],
+    ['bundle', 'bundle', ''], ['provider', 'pick', 'provider'], ['persona', 'pick', 'persona']]),
+    'its fields are the label, the description, the loop flag, the job, then the bundle by the bundle selector, the provider and the persona each by a pick field of its table', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the job table\'s rows from the stream itself (goal/G41.16)');

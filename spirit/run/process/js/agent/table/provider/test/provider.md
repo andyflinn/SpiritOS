@@ -65,6 +65,13 @@ which will never reach the browser or any place outside of the agent process exc
   module `process/js/agent`) lands at `agent.provider/<id>` and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
+## Requirements (goal/G41.21, box v17)
+
+- **The provider table gains a field, model**: the id of one row of the model table, the provider's current model.
+  Eleven columns, nothing else.
+- **Its detail panel gets a Model field at the bottom**: a pick field of the model table, `of: 'providerId'`, so it
+  offers only the models whose provider is this provider (../../test/tableElement.md).
+
 ## What its test must try to break
 
 - The API key in any answer or published row, ask's included.
@@ -73,3 +80,4 @@ which will never reach the browser or any place outside of the agent process exc
 - ask through the wrong plugin, or with a label matched only in its own case.
 - ask removing another provider's models, or his label and description of a model kept.
 - An empty or failed list that changes the model table; a failure that leaves the row unflagged.
+- No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.

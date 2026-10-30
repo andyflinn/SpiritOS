@@ -62,6 +62,16 @@ the table)"*.
 - It requires no data script (goal/G41.16): each table's row element (`<table>/elementRow.js`) takes its own rows
   from the stream into `agent.<table>`.
 
+## Requirements (goal/G41.21, box v17)
+
+- **A pick field narrowed to its row: `of`.** A pick field `{ kind: 'pick', pick: <table>, of: <field> }` searches its
+  table narrowed to the rows whose `<field>` holds this row's id: its dropdown's `args(text)` is
+  `{ op: 'search', text, <field>: <this row's id> }`, and it asks the table the same narrowed search. While that search
+  answers no row, the field is hidden (*"The Model field is hidden while the model table holds no model of this
+  provider"*); with one, it is shown.
+- **A bundle field: kind `bundle`.** The editor loads `shell/js/bundleSelector.js` itself and makes a bundle selector in
+  the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`).
+
 ## What its test must try to break
 
 - A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
@@ -69,3 +79,4 @@ the table)"*.
 - A Save that sends the whole row, an empty secret, or draws what was typed before the stream says it.
 - A refusal shown as its bare code ("no such argument") instead of the server's reason.
 - An editor that does not follow its row in spirit.data, or keeps hearing it after destroy.
+- A narrowed pick searching the whole table, or shown with nothing to pick; a bundle field drawn as a pane, or not saved.

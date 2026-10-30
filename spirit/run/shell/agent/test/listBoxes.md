@@ -29,6 +29,10 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 - Every list pane the app drew, five at least, meets the same rule. A list drawn as a dropdown stands inline, as every
   picker in the tree does, and is not asked.
 
+## Requirements (goal/G41.21, box v17)
+
+- The grant tool went with agent.grant: the list panes judged are the four tables', provider, model, persona and job.
+
 ## What its test must try to break
 
 - Any box between a list and the app that is only as tall as its content. Mutated:

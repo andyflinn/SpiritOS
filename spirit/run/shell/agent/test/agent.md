@@ -56,6 +56,14 @@ No agents talk to each other through it: each agent sees itself as the only agen
     stream's grant rows (`{ agent: { table: 'grant', row } }`, removed when revoked), and no job row nor the node's own
     grants.
 
+## Requirements (goal/G41.21, box v17)
+
+- **The right strip gets its first real tool: the bundle editor.** Two right tools: the agent server's DEBUG box
+  (`server`) and the bundle editor, whose mount requires `shell/js/bundleEditor.js` and makes it in the box it is
+  handed, with the app's api.
+- **The Grants tool goes**: the left strip holds the app's tool and one per table, provider, model, persona and job; the
+  app names no grants panel and no grant table.
+
 ## What its test must try to break
 
 - A title that shows the bug with only one of the two on.
@@ -63,3 +71,4 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - A state streamed before the app opened, handed as the whole set with no single job.
 - A call that goes out as a raw verb instead of through the agent's interface.
 - A config saved anywhere but the app's own state folder.
+- A Grants tool left, or a right strip without the bundle editor.

@@ -120,6 +120,25 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
     ok(row && row.id === sid && row.url === 'https://slim.example' && JSON.stringify(Object.keys(row).sort()) === '["id","url"]', 'a table naming listed: [url] answers the id and the url, nothing else', 'item: ' + short(row));
     ok(call(slim.verb, { op: 'get', id: sid }).label === 'Hidden label', 'and get still answers the whole row', 'get: ' + short(call(slim.verb, { op: 'get', id: sid })));
   }
+  {
+    // A SEARCH NARROWED BY A FIELD (goal/G41.21, box v17: "showing only the models whose provider is this provider";
+    // "Narrowing a pick field to one provider's models is new"): a search naming one of the table's own fields answers
+    // only the rows whose field holds that value, ranked as before.
+    const kids = mod.rowTable(db, { name: 'kid', fields: { parentId: 'key?' } }, function () {});
+    const A = call(kids.verb, { op: 'add', label: 'Parent A' }).id;
+    const B = call(kids.verb, { op: 'add', label: 'Parent B' }).id;
+    const a1 = call(kids.verb, { op: 'add', label: 'First of A', parentId: A }).id;
+    const a2 = call(kids.verb, { op: 'add', label: 'Second of A', parentId: A }).id;
+    const b1 = call(kids.verb, { op: 'add', label: 'First of B', parentId: B }).id;
+    const keys = function (r) { return ((r && r.items) || []).map(function (i) { return i.key; }).sort(); };
+    const ofA = call(kids.verb, { op: 'search', text: '', parentId: A });
+    ok(JSON.stringify(keys(ofA)) === JSON.stringify([a1, a2].sort()), 'a search naming parentId answers only the rows whose parentId is it', 'search parentId A: ' + short(ofA));
+    const firstOfB = call(kids.verb, { op: 'search', text: 'First', parentId: B });
+    ok(JSON.stringify(keys(firstOfB)) === JSON.stringify([b1]), 'with words too: only its rows, ranked by the words', 'search First of B: ' + short(firstOfB));
+    const none = call(kids.verb, { op: 'search', text: '', parentId: b1 });
+    ok(none && Array.isArray(none.items) && none.items.length === 0 && none.more === false, 'a value no row holds answers no rows', 'search: ' + short(none));
+    ok(call(kids.verb, { op: 'search', text: '' }).items.length === 5, 'a search naming no field answers every row, as before', 'search: ' + short(call(kids.verb, { op: 'search', text: '' })));
+  }
 
   test.subHeading('a refusal says why');
   const unknownOp = call(verb, { op: 'fly' });

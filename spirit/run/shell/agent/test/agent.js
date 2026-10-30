@@ -19,7 +19,8 @@ const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 const AGENT_FAMILY = familyPath('agent');
 const BUG = '🐞';
 // The tables of agent.db, in the order of their left tools (goal/G41.4, box v22).
-const TABLES = ['provider', 'model', 'persona', 'job', 'grant'];
+// goal/G41.21 (box v17): "agent.grant is removed altogether: its table, its server, and the Grants tool in the left strip".
+const TABLES = ['provider', 'model', 'persona', 'job'];
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -99,13 +100,7 @@ function world(configText) {
   w.api.ui.elements.workBench = w.workBench;
   // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
-  w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
-    // goal/G41.16: the agent's grant table, its one flat verb (table/grant/server.js), each ask recorded.
-    grant: function (args) { w.grantAsks.push(args);
-      if (args && args.op === 'add' && args.path === 'fs.search') return Promise.reject(Object.assign(new Error('already granted'), { code: 'already-granted', refusal: 'already-granted' }));
-      if (args && args.op === 'search') return Promise.resolve({ items: [{ key: 'J1|fs.search', label: '{}' }], more: false });
-      return Promise.resolve({ job_id: args && args.job_id, path: args && args.path }); } };
-  w.grantAsks = [];
+  w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
   w.stream = function (debug) { const job = { id: 'job-agent', app: { agent: { debug: debug } } }; const all = { 'job-agent': job }; w.onJobs.forEach(function (fn) { fn(all, job, { visible: true }); }); };
   // What the shell hands a new reader at once: the whole set of jobs, and no single job that changed.
   w.snapshot = function (debug) { const all = { 'job-agent': { id: 'job-agent', app: { agent: { debug: debug } } } }; w.onJobs.forEach(function (fn) { fn(all, null, { visible: true }); }); };
@@ -153,15 +148,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The app's own tool, then one per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
   // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
   const LEFT = ['app'].concat(TABLES);
-  ok(JSON.stringify(L.map(function (t) { return t && t.name; })) === JSON.stringify(LEFT) && R.length === 1 &&
+  // goal/G41.21: "The right strip gets its first real tool: the bundle editor ... It joins the agent server's DEBUG box".
+  ok(JSON.stringify(L.map(function (t) { return t && t.name; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&
     L.concat(R).every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; }),
-    'the left strip holds the app\'s tool, then one per table (' + TABLES.join(', ') + '); the right one tool; each with its name, icon, title and mount',
+    'the left strip holds the app\'s tool, then one per table (' + TABLES.join(', ') + '), no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount',
     'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) }));
   ok(new Set(L.map(function (t) { return t && t.icon; })).size === L.length, 'every left tool has an icon of its own', 'icons: ' + short(L.map(function (t) { return t && t.icon; })));
-  if (L.length !== LEFT.length || R.length !== 1) return;
+  ok(!/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'the app names no grants panel and no grant table any more (goal/G41.21)', 'shell/agent/agent.js still names the grant table or the grants panel');
+  if (L.length !== LEFT.length || R.length !== 2) return;
+  const SERVER_TOOL = R.filter(function (t) { return t.name === 'server'; })[0];
+  const BUNDLE_TOOL = R.filter(function (t) { return t.name !== 'server'; })[0];
 
   test.subHeading('each table\'s tool mounts that table\'s own element');
-  for (const name of TABLES.filter(function (n) { return n !== 'grant'; })) {
+  for (const name of TABLES) {
     const t = L.filter(function (x) { return x.name === name; })[0];
     const before = w.required.length;
     const made = [];
@@ -177,45 +176,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
   }
 
-  test.subHeading('the grant tool mounts the grants panel, configured for its jobs (goal/G41.16)');
-  // Andy: "so, what would happen if i click on the grant icon, could we then show the grants element in the left pane,
-  // connected to the grants-by-job table?", and on G41.16: "the callers (Grants and agent shell apps should boody well know
-  // how to configure the damn grantsPanel element".
+  test.subHeading('the right strip\'s bundle editor (goal/G41.21)');
+  // Box v17: "the bundle editor (shell/js/bundleEditor.js, the shell element that lists, makes and edits bundles)".
   {
-    const t = L.filter(function (x) { return x.name === 'grant'; })[0];
     const before = w.required.length;
-    const panels = [];
-    global.window.spirit.elements.grantsPanel = { create: function (into, cfg) { panels.push({ into: into, cfg: cfg || {} }); return {}; } };
-    delete global.window.spirit.elements.grantTable;
-    const gb = box('table-grant'); t.mount(gb); await settle();
+    const editors = [];
+    global.window.spirit.elements.bundleEditor = { create: function (into, cfg) { editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+    const bb = box('bundles'); BUNDLE_TOOL.mount(bb); await settle();
     const asked = w.required.slice(before);
-    ok(asked.indexOf('shell/js/grantsPanel.js') !== -1 && asked.indexOf('process/js/agent/table/grant/elementTable.js') === -1 && /\bfill\b/.test(gb.className),
-      'the grant tool requires shell/js/grantsPanel.js into a fill box, and the agent\'s own grant table element no more', 'required ' + short(asked) + ', class ' + short(gb.className));
-    const p = panels[0];
-    ok(panels.length === 1 && p.into === gb && p.cfg.api === w.api, 'and creates the panel once in that box, with the app\'s api', 'panels: ' + panels.length);
-    const ids = (p && p.cfg.ids) || {};
-    ok(ids.table === 'loopback://api/agent/job' && ids.key && ids.label, 'its ID table is the agent\'s jobs, loopback://api/agent/job, with their key and label fields', 'ids: ' + short(ids));
-    const g = (p && p.cfg.grants) || {};
-    ok(g.branch === 'agent.grant' && g.key === 'job_id' && g.label === 'job' && ['search', 'grant', 'revoke', 'stream'].every(function (f) { return typeof g[f] === 'function'; }),
-      'its grants table is the agent\'s: branch agent.grant, keyed job_id, labelled job, with search, grant, revoke and stream', 'grants: ' + short({ branch: g.branch, key: g.key, label: g.label, fns: Object.keys(g) }));
-    if (typeof g.search === 'function') {
-      const found = await g.search('ni');
-      const s0 = w.grantAsks[w.grantAsks.length - 1];
-      ok(s0 && s0.op === 'search' && s0.text === 'ni' && found && Array.isArray(found.items), 'search(text) asks the agent\'s grant verb { op: search, text }', 'asked ' + short(s0));
-      const made = await g.grant('J3', 'jobs.list');
-      const a0 = w.grantAsks[w.grantAsks.length - 1];
-      ok(a0 && a0.op === 'add' && a0.job_id === 'J3' && a0.path === 'jobs.list' && made && made.ok !== false, 'grant(id, path) asks { op: add, job_id, path } and answers ok', 'asked ' + short(a0) + ', answered ' + short(made));
-      const already = await g.grant('J3', 'fs.search');
-      ok(already && already.ok === false && already.code === 'already-granted', 'a refusal answers { ok: false, code, error }', 'answered ' + short(already));
-      await g.revoke('J3', 'jobs.list');
-      const r0 = w.grantAsks[w.grantAsks.length - 1];
-      ok(r0 && r0.op === 'delete' && r0.job_id === 'J3' && r0.path === 'jobs.list', 'revoke(id, path) asks { op: delete, job_id, path }', 'asked ' + short(r0));
-      const one = g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list', job: 'Night' } } } });
-      const gone = g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list' }, removed: true } } });
-      ok(one && one.row.job_id === 'J9' && !one.gone && gone && gone.gone === true, 'stream(job): the agent stream\'s grant rows are its grants, removed when revoked', 'stream: ' + short([one, gone]));
-      ok(!g.stream({ module: 'process/js/agent', data: {}, app: { agent: { table: 'job', row: { id: 'J9' } } } }) && !g.stream({ type: 'bundles', data: { table: 'grant', row: {} } }),
-        'a job row, or the node\'s own grants, is none of its grants', 'stream answered a non-grant');
-    }
+    ok(asked.indexOf('shell/js/bundleEditor.js') !== -1, 'its mount requires shell/js/bundleEditor.js', 'required: ' + short(asked));
+    ok(editors.length === 1 && editors[0].into === bb && editors[0].cfg.api === w.api, 'and makes the bundle editor in the box it is handed, with the app\'s api', 'bundle editors: ' + short(editors.map(function (x) { return { here: x.into === bb, api: x.cfg.api === w.api }; })));
+    delete global.window.spirit.elements.bundleEditor;
   }
 
   test.subHeading('the left tool keeps the app\'s own config');
@@ -231,7 +202,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   change(lb, true); await settle();
 
   test.subHeading('the right tool sets the server\'s DEBUG state, and follows the stream');
-  const rb = box('right'); R[0].mount(rb); await settle();
+  const rb = box('right'); SERVER_TOOL.mount(rb); await settle();
   ok(rb.inputs.length === 1 && /type="checkbox"/.test(rb.inputs[0].tag), 'it draws one checkbox', 'inputs: ' + rb.inputs.length);
   change(rb, true); await settle();
   const asked = w.calls[w.calls.length - 1];

@@ -46,10 +46,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const cols = db.prepare('PRAGMA table_info("provider")').all().map(function (c) { return c.name; });
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; goal/G41.18, box v17: "if it fails, the provider row
   // will be flagged as unusable".
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'description', 'url', 'apiKey', 'unusable'].forEach(function (c) {
+  // goal/G41.21 (box v17): "The provider table gains a field, model: the id of one row of the model table".
+  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'description', 'url', 'apiKey', 'unusable', 'model'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the provider table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 11, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: the API key never leaves the agent process');
   const added = call(t.verb, { op: 'add', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
@@ -221,8 +222,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'a row it opens is a providerRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   ok(r && r.look && r.look.icon === '🏢' && r.look.table === 'provider', 'its title row has the provider table\'s look', 'look: ' + short(r && r.look));
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['url', 'url'], ['apiKey', 'secret']]),
-    'its fields are the label, the description, the url, and the API key as a secret', 'fields: ' + short(r && r.fields));
+  // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this
+  // provider": of names the picked table's field that must hold this row's id (../../tableElement.js).
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['description', 'description', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']]),
+    'its fields are the label, the description, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the provider table\'s rows from the stream itself (goal/G41.16)');

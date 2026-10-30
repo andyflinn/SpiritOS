@@ -29,8 +29,19 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
   module `process/js/agent`) lands at `agent.job/<id>` and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
+## Requirements (goal/G41.21, box v17)
+
+- **The job table gains three fields**: `bundle` (the key of one of the node's bundles), `provider` (the id of a provider
+  row) and `persona` (the id of a persona row); a job keeps them, its text as it was. Twelve columns, nothing else.
+- **A job deleted asks no grant table**: the delete hook that dropped a job's grants goes with agent.grant (*"With it go
+  ... the job's delete hook"*).
+- **Its detail panel**: after the label, the description, the loop flag and the job, the bundle by the bundle selector in
+  dropdown mode (kind `bundle`), the provider and the persona each by a pick field of its table.
+- Enforcing the bundle when a job runs is out of scope (Andy: *"oos."*).
+
 ## What its test must try to break
 
 - A job deleted whose grants stay.
 - A grant dropped by an add or a set.
 - A loop flag that comes back as a number.
+- A job without its bundle, provider or persona; a delete that still asks a grant table.
