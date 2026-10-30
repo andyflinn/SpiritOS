@@ -14,7 +14,7 @@ module.exports = {
     // unusable flag is the server's to set when a provider fails, so the page sends no such argument.
     provider: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', url: 'url?', apiKey: 'text?', model: 'key?', text: 'text?' },
     model: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', providerId: 'key?', modelName: 'text?', capabilities: 'list?', text: 'text?' },
-    persona: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', persona: 'text?', text: 'text?' },
+    persona: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', persona: 'text?', bundle: 'text?', text: 'text?' },
     job: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', description: 'description?', loop: 'bool?', job: 'text?', bundle: 'text?', provider: 'key?', persona: 'key?', text: 'text?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").

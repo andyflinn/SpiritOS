@@ -218,7 +218,7 @@
       var id = pre + f.field;
       if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
       if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
-      if (f.kind === 'bundle' && bundleHeld[f.field] === false) return '<div id="' + id + '"></div><div>Bundle ' + esc(v) + ' is gone from this node: this job has no grant.</div>';
+      if (f.kind === 'bundle' && bundleHeld[f.field] === false) return '<div id="' + id + '"></div><div>Bundle ' + esc(v) + ' is gone from this node: this ' + esc(o.table) + ' has no grant.</div>';
       if (f.kind === 'pick' || f.kind === 'icon' || f.kind === 'bundle') return '<div id="' + id + '"></div>';
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';

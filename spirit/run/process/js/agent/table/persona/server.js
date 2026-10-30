@@ -6,5 +6,5 @@
 const { rowTable } = require('../rowTable.js');
 
 module.exports = function (ctx) {
-  return rowTable(ctx.db, { name: 'persona', fields: { persona: 'text?' } }, ctx.publish);
+  return rowTable(ctx.db, { name: 'persona', fields: { persona: 'text?', bundle: 'text?' } }, ctx.publish);
 };

@@ -24,7 +24,10 @@
       },
     });
   }, function () { /* no data set: the lists still search */ });
-  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'persona', label: 'Persona, given with every prompt', kind: 'code' }];
+  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'persona', label: 'Persona, given with every prompt', kind: 'code' },
+    // goal/G41.21, box v19: the persona's bundle, by the bundle selector as the job's (Andy: "and where the fuck is my bundle
+    // field in persona-table and the fucking picker for a bundle with the persona?").
+    { field: 'bundle', label: 'Bundle', kind: 'bundle' }];
   E.personaRow = {
     create: function (container, api, id, added, detail) {
       var made = null;
