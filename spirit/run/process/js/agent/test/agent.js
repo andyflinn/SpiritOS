@@ -186,10 +186,12 @@ test.startTest('agent.js: the agent server');
     const jid = jobAdd.body && jobAdd.body.id;
     const personaAdd = await ask('persona', { op: 'add', label: 'A reviewer', description: 'd', persona: 'You review code.' });
     ok(isKey(jid) && isKey(personaAdd.body && personaAdd.body.id), 'job {add} and persona {add} each answer a key of their own', 'job ' + short(jobAdd.body || jobAdd) + ', persona ' + short(personaAdd.body || personaAdd));
-    const gAdd = await ask('grant', { op: 'add', job_id: jid, path: 'desk.chat.add' });
-    const gT = tableOf('grant');
-    const grows = gT && isKey(jid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(gT) + ' WHERE job_id = ?').all(jid) : [];
-    ok(gAdd.status === 200 && grows.length === 1 && grows[0].path === 'desk.chat.add', 'grant {op: add, job_id, path} grants that job that path, one row', 'answer ' + short(gAdd.body || gAdd) + ', rows ' + short(grows));
+    // goal/G41.21: a job's grant is its bundle, and it names its provider and its persona; no grant verb is asked.
+    const jSet = await ask('job', { op: 'set', id: jid, bundle: '7', provider: pid, persona: personaAdd.body && personaAdd.body.id });
+    const jT = tableOf('job');
+    const jrow = jT && isKey(jid) ? look2.prepare('SELECT * FROM ' + JSON.stringify(jT) + ' WHERE id = ?').get(jid) : null;
+    ok(jSet.status === 200 && jrow && String(jrow.bundle) === '7' && jrow.provider === pid && jrow.persona === (personaAdd.body && personaAdd.body.id),
+      'job {op: set, bundle, provider, persona} keeps the job\'s bundle, its provider and its persona', 'answer ' + short(jSet.body || jSet) + ', row ' + short(jrow));
     const got = await ask('provider', { op: 'get', id: pid });
     ok(got.status === 200 && got.body && got.body.label === 'A provider, renamed' && got.body.apiKeySet === true && leaks(got) === 0 && !('apiKey' in got.body) && !('privateKey' in got.body) && !('sealPrivateKey' in got.body),
       'provider {op: get} answers the row without its secrets, apiKeySet true in place of the key', 'answer: ' + short(got.body || got));
