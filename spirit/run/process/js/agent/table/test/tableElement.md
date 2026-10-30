@@ -95,6 +95,15 @@ the table)"*.
   in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);
   one the node no longer has is said in the panel, the bundle and that the job has no grant. One the node has is not.
 
+### A pick saves, whatever else is unpicked (goal/G41.21)
+
+Andy: *"when i pick a persona, provider, or a bundle, the UI responds to ALL three of those picker changes with exactly
+these words: "Not saved: agent.job: provider must be a peer's public key".... WTF!"*, *"that message could not be more
+stupid, when the user just selected a key by label for the respective table!!!!!"*. Against the real job, persona and
+provider tables on a scratch agent.db, a job with no provider and no persona yet: picking its persona saves it, then a
+bundle, then a provider, each taken by the job table, and the editor never says Not saved. A field not picked and empty
+is no value to send.
+
 ### Add mode (goal/G41.21, box v23)
 
 Andy: *"NO ROW WILL BE CREATED WITH AN "Add" BUTTON for provider, persona, OR JOB!!!!!!!!!!!!"*, *"the proper way to do
@@ -122,3 +131,4 @@ Only when all fields, including icon, are filled, will the "Add" button not resp
 - A bundle shown as its number; a Delete that deletes on its first press.
 - A field edit that waits for a Save, a Save button left, or a save sending part of the row.
 - An Add that makes a row before it is valid; an Add mode that saves on a change, loses what was typed, or has a Delete.
+- A pick refused for a field the user never touched.

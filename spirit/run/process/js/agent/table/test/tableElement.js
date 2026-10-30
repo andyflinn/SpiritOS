@@ -433,6 +433,54 @@ test.startTest('tableElement.js: what the tables\' elements share');
     'it asks the model table for this provider\'s models, narrowed the same way', 'calls: ' + short(withNone.calls));
   ok(!withNone.shown, 'with none, the Model field is hidden', 'the Model field is shown though the model table holds no model of this provider');
 
+  test.subHeading('a pick on a real job row saves, whatever else is unpicked (goal/G41.21)');
+  // Andy: "when i pick a persona, provider, or a bundle, the UI responds to ALL three of those picker changes with exactly
+  // these words: "Not saved: agent.job: provider must be a peer's public key".... WTF!", and "that message could not be more
+  // stupid, when the user just selected a key by label for the respective table!!!!!". The agent server here is the real
+  // job, persona and provider tables on the scratch agent.db: a job whose provider and persona are not picked yet.
+  {
+    sctx.tables.persona = require(path.join(__dirname, '..', 'persona', 'server.js'))(sctx);
+    sctx.tables.job = require(path.join(__dirname, '..', 'job', 'server.js'))(sctx);
+    const viaTables = function (table, a) {
+      try { return sctx.tables[table].verb.handler(a); } catch (e) { return refused(String((e.extra && e.extra.why) || e.message)); }
+    };
+    const PZ = viaTables('persona', { op: 'add', icon: '🎭', label: 'A reviewer', persona: 'You review.' }).id;
+    const JZ = viaTables('job', { op: 'add', icon: '📋', label: 'A job' }).id;
+    w.calls.length = 0;
+    w.answer = viaTables;
+    const before = w.searches.length;
+    const bBefore = w.bundles.length;
+    const ej = box('real-job');
+    const rj = E.agentRow.create(ej, { api: {}, table: 'job', id: JZ, added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' },
+      { field: 'bundle', label: 'Bundle', kind: 'bundle' }, { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' }, { field: 'persona', label: 'Persona', kind: 'pick', pick: 'persona' }] });
+    await settle(); await settle();
+    const saidNow = function () { return ej.innerHTML + ' ' + Object.keys(ej.parts).map(function (k) { return String(ej.parts[k].textContent || ''); }).join(' '); };
+    const refusedSets = function () { return w.calls.filter(function (c) { return c.table === 'job' && c.args && c.args.op === 'set'; }).map(function (c) { return viaTables('job', { op: 'get', id: JZ }); }); };
+    const pickIn = function (table, key) {
+      const s = w.searches.slice(before).filter(function (x) { return x.o && x.o.verb === table; }).pop();
+      if (!s) return false;
+      s.value = key; s.row = { id: key, label: table };
+      if (typeof s.o.pick === 'function') s.o.pick(s.row, key);
+      return true;
+    };
+    const personaPicked = pickIn('persona', PZ); await settle(); await settle();
+    const afterPersona = viaTables('job', { op: 'get', id: JZ });
+    ok(personaPicked && afterPersona.persona === PZ && !/Not saved/.test(saidNow()), 'picking a persona, the provider not picked yet, saves the job: its persona is the one picked, and nothing says Not saved',
+      'persona ' + short(afterPersona.persona) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]));
+    const bsel = w.bundles.slice(bBefore).pop();
+    if (bsel) { bsel.value = 7; bsel.row = { id: 7, label: 'Reader' }; (bsel.heard.change || []).forEach(function (fn) { fn({ target: bsel }); }); }
+    await settle(); await settle();
+    const afterBundle = viaTables('job', { op: 'get', id: JZ });
+    ok(!!bsel && String(afterBundle.bundle) === '7' && afterBundle.persona === PZ && !/Not saved/.test(saidNow()), 'picking a bundle saves the job too, the persona kept, and nothing says Not saved',
+      'bundle ' + short(afterBundle.bundle) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]));
+    const PV = viaTables('provider', { op: 'add', icon: '🏢', label: 'A provider', url: 'https://picked.example' }).id;
+    const providerPicked = pickIn('provider', PV); await settle(); await settle();
+    const afterProvider = viaTables('job', { op: 'get', id: JZ });
+    ok(providerPicked && afterProvider.provider === PV && !/Not saved/.test(saidNow()), 'picking a provider saves the job, and nothing says Not saved',
+      'provider ' + short(afterProvider.provider) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]));
+    rj.destroy();
+  }
+
   test.subHeading('a bundle field: the bundle selector in dropdown mode (goal/G41.21)');
   // Box v17: "The job's detail panel ... sets it with a bundleSelector in dropdown mode."
   w.calls.length = 0;
