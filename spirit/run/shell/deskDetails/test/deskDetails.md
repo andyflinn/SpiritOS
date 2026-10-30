@@ -7,7 +7,8 @@ of it.
 ## Requirements (goal/G41.1)
 
 - **Icons are glyphs** (Andy: the icon set is the only source of icons on the face; `spirit/client/iconIndex.js`
-  deleted): each panel of `DD_PANELS` names its icon as the glyph itself, and the strip draws it as it is.
+  deleted): each panel of `DD_PANELS` names its icon as the glyph itself, and the strip draws it as it is. Since
+  goal/G41.22 the strip is the workBench's, handed each glyph as it is; that is checked on what it is handed (below).
 - It reads no icon table (`iconIndex`, `ICON`).
 
 ## What its test must try to break

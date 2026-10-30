@@ -27,7 +27,8 @@ const keyed = (panels || []).filter(function (p) { return !p.icon || KEY.test(p.
 ok(panels && !keyed.length, 'every panel names its icon as the glyph itself', 'panels naming a key: ' + keyed.join(', '));
 test.subHeading('the strip draws them as they are, from no table');
 ok(!/iconIndex|\bICON\b/.test(code), 'deskDetails.js names no icon table', 'deskDetails.js still names iconIndex or ICON');
-ok(/\+ p\.icon \+/.test(code), 'the strip draws a panel\'s icon as it is (p.icon)', 'the strip does not draw p.icon as it is');
+// That the strip is handed each panel's glyph as it is, the workBench's since goal/G41.22, is asserted there: "the left
+// strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
 // A small forgiving page: markup parsed into elements, with ids, attributes, closest and simple selectors, and a click
