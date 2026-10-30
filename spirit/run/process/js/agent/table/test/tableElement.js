@@ -58,7 +58,7 @@ function the(b, end) { const k = Object.keys(b.parts).filter(function (id) { ret
 
 // The world: the agent server's interface answering as rowTable.js does, the searches made, the icon selectors made.
 function world() {
-  const w = { calls: [], searches: [], icons: [], bundles: [], required: [], answer: null };
+  const w = { calls: [], searches: [], icons: [], bundles: [], arming: [], required: [], answer: null };
   // Not a thenable: Promise.resolve hands the interface itself on.
   w.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
@@ -95,6 +95,14 @@ test.startTest('tableElement.js: what the tables\' elements share');
     w.required.push(String(p));
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
+    // The are-you-sure button (shell/js/armingButton.js), tested in its own folder: a stand-in whose first press arms and
+    // whose second runs, as the real one does.
+    if (p === 'shell/js/armingButton.js') global.window.spirit.elements.armingButton = { attach: function (button, opts) {
+      const a = { button: button, opts: opts || {}, armed: false };
+      w.arming.push(a);
+      button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
+      return button;
+    } };
     if (p === 'shell/js/bundleSelector.js') global.window.spirit.elements.bundleSelector = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
@@ -265,11 +273,17 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(the(ed, 'note').textContent === 'Not saved: provider: url must be a url' || /Not saved: provider: url must be a url/.test(ed.innerHTML),
     'a refused Save says the server\'s reason', 'note: ' + short(ed.innerHTML.slice(-200)));
 
-  test.subHeading('Delete proposes; the stream says it is gone');
+  test.subHeading('Delete is an are-you-sure button; the stream says it is gone (goal/G41.21)');
+  // Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"
   w.calls.length = 0;
   w.answer = function () { return { id: 'KR' }; };
+  ok(w.required.indexOf('shell/js/armingButton.js') !== -1 && w.arming.some(function (a) { return a.button === the(ed, 'delete'); }),
+    'its Delete button is an armingButton, loaded by the editor itself (rule/26)', 'required ' + short(w.required.filter(function (p) { return /arming/.test(p); })) + ', arming buttons ' + w.arming.length);
   the(ed, 'delete').click(); await settle();
-  ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }), 'Delete calls provider { op: delete, id }', 'calls: ' + short(w.calls));
+  ok(!w.calls.some(function (c) { return c.args && c.args.op === 'delete'; }), 'a first press of Delete deletes nothing: it arms', 'calls after one press: ' + short(w.calls));
+  the(ed, 'delete').click(); await settle();
+  ok(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; }).length === 1 && JSON.stringify(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; })[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }),
+    'the second press calls provider { op: delete, id }, once', 'calls: ' + short(w.calls));
   D.del('agent.provider/KR'); await settle();
   ok(/Deleted\./.test(ed.innerHTML), 'and once the row is deleted from its branch, the editor says Deleted.', 'editor: ' + short(ed.innerHTML));
 
@@ -382,6 +396,10 @@ test.startTest('tableElement.js: what the tables\' elements share');
   await settle(); await settle();
   const bsel = w.bundles[w.bundles.length - 1];
   ok(w.required.indexOf('shell/js/bundleSelector.js') !== -1, 'it loads the bundle selector itself (rule/26)', 'required: ' + short(w.required));
+  // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
+  // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
+  const bundleSays = bsel ? String((bsel.row && bsel.row.label) || bsel.opts.placeholder || '') : '';
+  ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label: ' + bundleSays, 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
   ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
   if (bsel) {
     bsel.value = 9; bsel.row = { id: 9, label: 'Reader' };

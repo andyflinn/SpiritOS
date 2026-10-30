@@ -79,6 +79,12 @@ the table)"*.
   provider"*); with one, it is shown.
 - **A bundle field: kind `bundle`.** The editor loads `shell/js/bundleSelector.js` itself and makes a bundle selector in
   the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`).
+- **The bundle by its label** (Andy: *"why would the bundle picker show "bundle 2" for it's selection instead of the
+  fucking label?"*): the bundle field shows the job's bundle by the label the node has for it (`auth.bundle { op: get }`),
+  never as the word bundle and its number.
+- **Delete is an are-you-sure button** (Andy: *"and why are the 'Delete' buttons in the detail panels not
+  armingButtons?"*): the editor loads `shell/js/armingButton.js` itself and attaches its Delete button; a first press
+  deletes nothing, the second calls `{ op: delete, id }` once.
 - **A bundle gone is said** (*"A bundle deleted while a job names it leaves that job with no grant, and the job says so
   in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);
   one the node no longer has is said in the panel, the bundle and that the job has no grant. One the node has is not.
@@ -94,3 +100,4 @@ the table)"*.
 - A bundle the node no longer has left unsaid.
 - A narrowed pick offering the branch's other rows, the server's ask narrowed alone.
 - A dropdown row drawn empty, its columns asking fields its table's search does not answer.
+- A bundle shown as its number; a Delete that deletes on its first press.
