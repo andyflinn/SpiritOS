@@ -3,7 +3,7 @@
 // always configured with a bundle key", "first row: Title: "Edit <bundle-label-content>"", "second row, add form: "new"
 // [apiFamilySelector:dropdown] [apiVerbSelector:dropdown] [Add-button]", "branchSelector:pane, with table columns as
 // follows: 1. Family (duh?) 2. Verb 3. armingButton 'Delete'", and of the way back: "the shell provides a back-button
-// from there" (the navigation's, shell/js/navigationWrapper.js). The two dropdowns of the add form are the family
+// from there" (the navigation's, shell/navigationWrapper.js). The two dropdowns of the add form are the family
 // selector's two halves (Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself").
 //
 //   spirit.elements.branchEditor.open({ bundle, label, api }) -> the page's nav
@@ -23,8 +23,7 @@
     var form = document.createElement('div');
     form.className = 'branch-editor-add';
     form.appendChild(document.createTextNode('new '));
-    var family = E.createApiFamilySelector({ all: 'choose a family…' });
-    form.appendChild(family);
+    var family = E.apiFamilySelector.create(form, { all: 'choose a family…' });
     var add = document.createElement('button');
     add.type = 'button';
     add.textContent = 'Add';
@@ -34,9 +33,8 @@
     said.className = 'job-manifest-note';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).
-    var branches = E.createBranchSelector({ bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'], api: o.api });
+    var branches = E.branchSelector.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'], api: o.api });
     branches.className += ' fill';
-    box.appendChild(branches);
 
     function say(text) { said.textContent = String(text || ''); }
     add.addEventListener('click', function () {
@@ -61,5 +59,12 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.branchEditor = { open: open };
+  // And the shell's element shape (goal/G41.19, box v23): create(container, options) draws the editor into the
+  // container, once its parts are in.
+  function create(container, options) {
+    var gone = false;
+    parts.then(function () { if (!gone) mount(container, options || {}); });
+    return { destroy: function () { gone = true; container.innerHTML = ''; } };
+  }
+  window.spirit.elements.branchEditor = { create: create, open: open };
 }());

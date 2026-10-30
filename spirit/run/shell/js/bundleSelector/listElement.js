@@ -59,7 +59,8 @@
     return {
       list: list,
       refresh: function () { list.refresh(); },
-      destroy: function () { list.destroy(); },
+      // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), its filters with it.
+      destroy: function () { if (list) list.destroy(); host.innerHTML = ''; },
     };
   }
 

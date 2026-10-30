@@ -407,7 +407,7 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
 // sender publishes as (process/js/<name>), the stream's translator (its data.js), a handler for each row if it wants
 // one, and the cache switch. serve() then adds the verb streamListener {json} -> {heard: true}: one bundle. Each row
-// goes straight into the server's spirit.data (shell/js/spiritData.js) through the translator, exactly as a face app
+// goes straight into the server's spirit.data (shell/shared/js/spiritData.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
@@ -430,7 +430,7 @@ const CACHE_LIMIT = 4 * 1024 * 1024;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
-  if (!streamData) streamData = require('../shell/js/spiritData.js');
+  if (!streamData) streamData = require('../shell/shared/js/spiritData.js');
   return streamData;
 }
 // One per sender this server follows: where it stands and what it keeps.
@@ -938,7 +938,7 @@ function saveCaches() {
 // spirit.js reads itself as it is required: the port from relay-state/environment.json, the rest from --node.
 
 module.exports = {
-  // goal/G33.4: the data set a following server keeps (shell/js/spiritData.js), filled by its stream's translator.
+  // goal/G33.4: the data set a following server keeps (shell/shared/js/spiritData.js), filled by its stream's translator.
   get data() { return dataSet(); },
   // goal/G33.8: the one publish, to the pages and to the subscribers.
   publish: publish,

@@ -50,13 +50,15 @@
 
     function strip(side) {
       // A strip is a box of a stated size too (Andy, on G41.18: "fix workBench for all 3 panes AND the icon strips"): as
-      // tall as the bench, its own width, a strip of many tools scrolling inside it.
-      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;overflow:auto;gap:6px;padding:4px">' +
+      // tall as the bench, its own width, a strip of many tools scrolling inside it. Its width is stated, not its icons'
+      // (goal/G41.19, the general rules: a strip given more than it holds grew wider with it).
+      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow:auto;gap:6px;padding:4px">' +
         sides[side].map(function (t) {
           return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="font-size:20px">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
     var PAD = 'box-sizing:border-box;padding-left:0.5em;padding-right:0.5em';
+    var STRIP_WIDTH = 48;
     // A PANE IS A BOX OF A STATED SIZE (rule/16; Andy, on G41.18: "ALL lists, otherwise my took bars at the top of a
     // container keep scrolling away...."): a side pane is a column as tall as the bench (class fill, its own width kept
     // by flex: none), and each tool's box in it a fill too, so a list inside scrolls in itself under its title and

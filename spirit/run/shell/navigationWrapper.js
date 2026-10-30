@@ -1,4 +1,4 @@
-// spirit/run/shell/js/navigationWrapper.js
+// spirit/run/shell/navigationWrapper.js
 // THE NAVIGATION, AN INTRINSIC SHELL ELEMENT (goal/G40.8). Andy, 2026-10-25: "the stack only holds ONLY navigation.
 // ie: an app is only a mountable icon in shell, conceptually, and it simply uses the navigation wrapper as it's top
 // container", and "so the shell does ALL the wrapping? agreed."

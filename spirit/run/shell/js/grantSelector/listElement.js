@@ -20,8 +20,13 @@
   function create(host, opts) {
     var o = opts || {};
     var g = o.grants;
+    // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured").
     if (!g || !g.branch || !g.key || !g.label || typeof g.search !== 'function') {
-      throw new Error('grantList: a grants table is required ({ branch, key, label, search, revoke, stream })');
+      var note = document.createElement('div');
+      note.className = 'job-manifest-note';
+      note.textContent = 'not configured: a grants table is required ({ branch, key, label, search, revoke, stream })';
+      host.appendChild(note);
+      return { list: null, refresh: function () {}, destroy: function () { host.innerHTML = ''; } };
     }
     // THE SOURCE: the table's search, the text trimmed, answered as a reply.
     function search(args) {

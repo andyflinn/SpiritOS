@@ -691,7 +691,7 @@
     // translator, which its type loads; a process follows a stream only through appServer's streamListener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
     module.exports = self;
-    requireOne('shell/js/spiritData.js').then(null, function () { /* a run tree without the cache runs uncached */ });
+    requireOne('shell/shared/js/spiritData.js').then(null, function () { /* a run tree without the cache runs uncached */ });
     return;
   }
 
@@ -713,7 +713,7 @@
       // uncached. Asked once the page is parsed, so a page that loads it by tag keeps the one cache it made.
       // The file tree is cached too (Q2: "the file tree must be cached."): it comes as updates of one job, so the files
       // row element, its translation, comes with the cache and hears it from the start.
-      return parsed().then(function () { return requireOne('shell/js/spiritData.js'); })
+      return parsed().then(function () { return requireOne('shell/shared/js/spiritData.js'); })
         .then(function () { return requireOne('shell/js/files/rowElement.js'); }).then(null, function () { /* no cache served here */ });
     }).then(function () { return self; });
     self.ready = started;

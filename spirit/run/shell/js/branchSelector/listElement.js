@@ -32,8 +32,7 @@
     // THE FILTER: the family selector, above the list.
     var filters = document.createElement('div');
     filters.className = 'branch-list-filters';
-    var family = E.createApiFamilySelector({ all: 'every family' });
-    filters.appendChild(family);
+    var family = E.apiFamilySelector.create(filters, { all: 'every family' });
     host.appendChild(filters);
     var box = document.createElement('div');
     box.className = 'fill';
@@ -85,7 +84,8 @@
     return {
       list: list,
       refresh: function () { list.refresh(); },
-      destroy: function () { list.destroy(); },
+      // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), its filters with it.
+      destroy: function () { if (list) list.destroy(); host.innerHTML = ''; },
     };
   }
 

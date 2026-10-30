@@ -216,5 +216,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createContactSelector = createContactSelector;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
+  // options) appends the control to the container and answers it.
+  window.spirit.elements.contactSelector = { create: function (container, options) { var root = createContactSelector(options); container.appendChild(root); return root; } };
 })();

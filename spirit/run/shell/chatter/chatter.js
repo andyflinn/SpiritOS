@@ -269,7 +269,7 @@ function chOpen(key) {
   var slot = chEl('ch-title-name');
   if (slot) {
     slot.innerHTML = '';
-    slot.appendChild(chApi.ui.elements.createContactLabel({ key: key, editable: true }));
+    chApi.ui.elements.contactLabel.create(slot, { key: key, editable: true });
   }
   // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
   var row = chRows[key];
@@ -521,13 +521,12 @@ spirit.shell.activateApp({
 
     var left = chEl('ch-left');
     // goal/G29.9: one pane over the book and the chats; the new-chat dropdown that stood here is gone.
-    chPane = api.ui.elements.createContactSelector({
+    chPane = api.ui.elements.contactSelector.create(left, {
       face: 'pane', search: chPeersSearch,
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
     });
     chPane.addEventListener('change', function () { if (chPane.value) chOpen(chPane.value); });
-    left.appendChild(chPane);
 
     // THIS CHAT, SEARCHED (goal/G29.18; Andy, 2026-10-18: "the chat window itself can then have a search", and "the
     // chat-history-search should have filters me, other person or both"). The shared list, asking chatClerver's

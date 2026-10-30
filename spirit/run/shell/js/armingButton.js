@@ -9,7 +9,8 @@
 //     A button already in the page made an arming one. label is what it says unarmed (by default its own text),
 //     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does, api the app's
 //     api: its armUntilElsewhere is the shell's hook (spirit/client/shell.js, shell/boot.js).
-//   armingButton.create({ label, armedLabel, run, api, title, className }) -> a new <button type="button">, attached
+//   armingButton.create(container, { label, armedLabel, run, api, title, className }) -> a new <button type="button">,
+//     appended to the container, attached
 //
 // The first press arms it (data-armed, which shell.css paints red) and hands the shell its disarm; the second disarms
 // and runs. ONE LOADED AT A TIME is the element's: arming one disarms the one armed before it.
@@ -50,13 +51,16 @@
     return button;
   }
 
-  function create(options) {
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): the button is
+  // appended to the container it is given, inline.
+  function create(container, options) {
     var o = options || {};
     var button = document.createElement('button');
     button.type = 'button';
     button.textContent = String(o.label == null ? '' : o.label);
     if (o.title) button.title = String(o.title);
     if (o.className) button.className = String(o.className);
+    container.appendChild(button);
     return attach(button, o);
   }
 

@@ -1,7 +1,7 @@
 // spirit/run/shell/shared/js/deskData.js
 // A DESK COMPONENT'S SHARED PART, SO NOT IN shell/js (goal/G41.11). Andy: "shell/js/ is for core shell elements! ...
 // desk components can make their own shared stuff in spirit/run/shell/shared/js".
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (shell/js/spiritData.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (shell/shared/js/spiritData.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". Two branches, and two values:

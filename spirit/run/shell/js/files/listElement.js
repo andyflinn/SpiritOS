@@ -111,6 +111,9 @@
     inner.addEventListener('input', treeLook);
     inner.addEventListener('click', treeLook);
     list.refresh();
+    // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), the tree's style with it.
+    var destroyList = list.destroy;
+    list.destroy = function () { destroyList(); host.innerHTML = ''; };
     return list;
   }
 

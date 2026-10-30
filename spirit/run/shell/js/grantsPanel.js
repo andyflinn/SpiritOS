@@ -29,9 +29,17 @@
     var c = config || {};
     var ids = c.ids;
     var g = c.grants;
-    if (!ids || !ids.table) throw new Error('grantsPanel: an ID table is required ({ table, key, label })');
-    if (!g || !g.branch || !g.key || !g.label || typeof g.grant !== 'function' || typeof g.search !== 'function') {
-      throw new Error('grantsPanel: a grants table is required ({ branch, key, label, search, grant, revoke, stream })');
+    // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured"; Andy: "you can
+    // mount an element like \"grantsPanel\", with only the container, and an ID-table missing").
+    var missing = !ids || !ids.table ? 'an ID table is required ({ table, key, label })'
+      : !g || !g.branch || !g.key || !g.label || typeof g.grant !== 'function' || typeof g.search !== 'function'
+        ? 'a grants table is required ({ branch, key, label, search, grant, revoke, stream })' : '';
+    if (missing) {
+      var note = document.createElement('div');
+      note.className = 'job-manifest-note';
+      note.textContent = 'not configured: ' + missing;
+      host.appendChild(note);
+      return { destroy: function () { host.innerHTML = ''; } };
     }
     var api = c.api;
     var tree = null;
@@ -227,10 +235,12 @@
       // THE GRANT FORM, ONE ROW (goal/G41.13, Andy: "the grants tab should have one-row grant form: \"grant\"
       // [idSelector] [bundleSelector] [grantButton]"). Both ID selectors search the ID table it was handed.
       var idTable = { table: ids.table, key: ids.key, label: ids.label };
-      idSel = P.createContactSelector(Object.assign({ placeholder: 'choose an ID…' }, idTable));
-      bundleSel = P.createBundleSelector({ placeholder: 'choose a bundle…' });
-      filterId = P.createContactSelector(Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
-      filterFamily = P.createApiFamilySelector({ all: 'every family' });
+      // Each made in a slot of its own; paint moves it into the line it stands in, each time it draws the form.
+      var slot = function () { return document.createElement('span'); };
+      idSel = P.contactSelector.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      bundleSel = P.bundleSelector.create(slot(), { placeholder: 'choose a bundle…' });
+      filterId = P.contactSelector.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
+      filterFamily = P.apiFamilySelector.create(slot(), { all: 'every family' });
       [filterId, filterFamily].forEach(function (f) { f.addEventListener('change', redraw); });
       paint();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.

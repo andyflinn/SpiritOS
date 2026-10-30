@@ -14,7 +14,7 @@
   var escapeHtml = spirit.escapeHtml;
 
   // A dropdown for choosing one icon out of the ICON pool, offered to
-  // apps as api.ui.elements.createIconSelector.
+  // apps as api.ui.elements.iconSelector.create(container, options).
   //
   // `excludeGlyphs` is an array of GLYPHS already spoken for. Glyphs, not
   // keys: what makes two apps collide is the picture they paint, and
@@ -203,5 +203,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createIconSelector = createIconSelector;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
+  // create(container, options) appends the dropdown and answers it; options.exclude the glyphs spoken for.
+  window.spirit.elements.iconSelector = { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } };
 })();

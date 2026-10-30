@@ -8,7 +8,7 @@
 // So it is one empty div and its sticking, nothing else: what goes inside stays each app's. It sticks under the shell's
 // titlebar (#app-header, sticky at the top of the same scroll), at the titlebar's measured height, measured here and
 // again whenever the window or the titlebar changes size, opaque in the shell's background and above the content.
-// Loaded by index.html before the shell; the shell hands it to apps as api.ui.elements.createAppHeader.
+// Loaded by index.html before the shell; the shell hands it to apps as api.ui.elements.appHeader.create(container).
 
 (function () {
   function titlebarHeight() {
@@ -36,5 +36,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createAppHeader = createAppHeader;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
+  // create(container) appends the header area and answers it.
+  window.spirit.elements.appHeader = { create: function (container) { var div = createAppHeader(); container.appendChild(div); return div; } };
 })();

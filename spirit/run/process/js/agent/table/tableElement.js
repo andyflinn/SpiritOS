@@ -191,8 +191,7 @@
         if (f.kind === 'icon') {
           needs(['shell/js/iconSelector.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = E.createIconSelector(null, { value: row[f.field] || (o.look && o.look.icon) || '' });
-            el.appendChild(icons[f.field]);
+            icons[f.field] = E.iconSelector.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
           });
         }
         if (f.kind === 'code') {

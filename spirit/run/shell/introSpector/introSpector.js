@@ -135,9 +135,8 @@ spirit.shell.activateApp({
       '</div>';
     var line = document.getElementById('is-line');
     var party = document.createElement('span');
-    var branch = api.ui.elements.createApiFamilySelector({ familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     line.appendChild(party);
-    line.appendChild(branch);
+    var branch = api.ui.elements.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js), the book and this
     // node's relays; None is self.
     window.spirit.elements.contactList.create(party, {

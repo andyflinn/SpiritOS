@@ -74,12 +74,14 @@ function rdFrame() {
 function rdHeader() {
   var old = document.getElementById('rd-bars');
   var els = rdApi && rdApi.ui && rdApi.ui.elements;
-  if (!old || !els || typeof els.createAppHeader !== 'function') return;
-  var head = els.createAppHeader();
+  if (!old || !old.parentNode || !els || !els.appHeader) return;
+  // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
+  var head = els.appHeader.create(old.parentNode);
+  old.parentNode.insertBefore(head, old);
   head.id = 'rd-bars';
   head.style.paddingBottom = '2px';
   while (old.firstChild) head.appendChild(old.firstChild);
-  if (old.parentNode) old.parentNode.replaceChild(head, old);
+  old.parentNode.removeChild(old);
 }
 
 function rdHeadHtml() {

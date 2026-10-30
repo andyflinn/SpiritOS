@@ -1,6 +1,6 @@
 // spirit/run/shell/js/files/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it reads data.files of the faceless layer (shell/js/spiritData.js, goal/G30.16), which the fs-watcher's stream keeps,
+// it reads data.files of the faceless layer (shell/shared/js/spiritData.js, goal/G30.16), which the fs-watcher's stream keeps,
 // so a change to a file repaints that file's cells and nothing else. rowElement.js does the shared work; this file says what a file is.
 //
 // THE DISPATCH OF FILES: one watch on data.files for every file row on the page, and an index by path. A row registers
@@ -16,7 +16,7 @@
   var files = null;
 
   // WHAT THE FS-WATCHER'S STREAM MEANS FOR data.files, IN THE TYPE'S OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of
-  // thos FUCKING data.js scripts"): the page's mirror of the node's tree (shell/js/spiritData.js). A connecting page is
+  // thos FUCKING data.js scripts"): the page's mirror of the node's tree (shell/shared/js/spiritData.js). A connecting page is
   // handed the tree as create commands, then treeComplete: the branch fills quietly and its watchers hear one word at
   // the end; after that each change is told by path. Every event ends in set or del. The tree comes as updates of one
   // job, so it is heard from the start: spirit.js loads this file with the cache (Q2: "the file tree must be cached.").
@@ -43,7 +43,7 @@
     });
   }
   if (window.spirit.data) translate(window.spirit.data);
-  else if (window.spirit.require) Promise.resolve(window.spirit.require('shell/js/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
+  else if (window.spirit.require) Promise.resolve(window.spirit.require('shell/shared/js/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

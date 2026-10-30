@@ -166,11 +166,13 @@ function ddFrame() {
 function ddHeader() {
   var old = document.getElementById('dd-bars');
   var els = ddApi && ddApi.ui && ddApi.ui.elements;
-  if (!old || !els || typeof els.createAppHeader !== 'function') return;
-  var head = els.createAppHeader();
+  if (!old || !els || !els.appHeader) return;
+  // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
+  var head = els.appHeader.create(old.parentNode);
+  old.parentNode.insertBefore(head, old);
   head.id = 'dd-bars';
   while (old.firstChild) head.appendChild(old.firstChild);
-  old.parentNode.replaceChild(head, old);
+  old.parentNode.removeChild(old);
 }
 
 // goal/G33.4: an item's own End design, while its goal is out of design.
@@ -860,7 +862,7 @@ function ddRename() {
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
-// one cache for deskClient and this page: spirit.data (shell/js/spiritData.js) with the desk's translator
+// one cache for deskClient and this page: spirit.data (shell/shared/js/spiritData.js) with the desk's translator
 // (shell/shared/js/deskData.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }

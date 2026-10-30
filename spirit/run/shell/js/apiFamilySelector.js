@@ -56,10 +56,8 @@
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
       var E = window.spirit.elements;
-      families = E.createAppServerSelector({ placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      verbs = E.createApiVerbSelector({});
-      root.appendChild(families);
-      root.appendChild(verbs);
+      families = E.appServerSelector.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
+      verbs = E.apiVerbSelector.create(root, {});
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;
@@ -91,5 +89,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createApiFamilySelector = createApiFamilySelector;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
+  // options) appends the control to the container and answers it.
+  window.spirit.elements.apiFamilySelector = { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } };
 })();

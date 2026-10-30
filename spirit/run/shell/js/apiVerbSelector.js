@@ -5,7 +5,7 @@
 //   including test folders." The family half is the app-server selector (shell/js/appServerSelector.js); this is the
 //   verb half, and the family selector (shell/js/apiFamilySelector.js) holds the two side by side.
 //
-// createApiVerbSelector(options) -> root, the control: root.value is the chosen verb, '' for its first option, All
+// spirit.elements.apiVerbSelector.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
 // Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
 // results in an empty string as value"); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
 // apiTreeIndex.verbs, so DEBUG and DEPENDENCIES are never offered (Andy: "DEBUG/DEPENDENCIES are owner only and will
@@ -55,5 +55,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createApiVerbSelector = createApiVerbSelector;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
+  // options) appends the control to the container and answers it.
+  window.spirit.elements.apiVerbSelector = { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } };
 })();

@@ -12,7 +12,7 @@
   // table's rows, another module's, or a row with no id write nothing. The data set it writes to, it loads itself
   // (rule/26).
   var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
-    : Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/spiritData.js') : null).then(function () { return window.spirit.data; });
+    : Promise.resolve(window.spirit.require ? window.spirit.require('shell/shared/js/spiritData.js') : null).then(function () { return window.spirit.data; });
   dataSet.then(function (D) {
     if (!D || typeof D.translate !== 'function') return;
     D.translate({

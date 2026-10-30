@@ -1,4 +1,4 @@
-// spirit/run/shell/js/spiritData.js
+// spirit/run/shell/shared/js/spiritData.js
 // THE FACELESS LAYER (goal/G30.16, box v14-v16). Andy: "we need to view the shell like a transient version of a node. it
 // needs a 100% faceless layer", "accurately mirror the exact state of the node that is its partner", "the shell stores
 // all data in one central location". The UI is a fast reading of this; nothing here touches the page, so it runs and
@@ -196,8 +196,8 @@
   var SEARCH_SCANNED = 1000;
   function ranking() {
     if (typeof require === 'function' && typeof module !== 'undefined' && module) {
-      return { match: require('../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
-        bucket: require('../../spirit/probabilityBucket.js').createProbabilityBucket, limits: require('../../spirit/limits.js') };
+      return { match: require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
+        bucket: require('../../../spirit/probabilityBucket.js').createProbabilityBucket, limits: require('../../../spirit/limits.js') };
     }
     var p = (root.spirit && root.spirit.probability) || {};
     return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };

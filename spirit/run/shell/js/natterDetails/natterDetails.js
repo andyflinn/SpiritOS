@@ -1826,7 +1826,24 @@ if (window.spirit && window.spirit.require) window.spirit.require('shell/js/armi
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
 // shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
+// AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
+// create(container, options) draws the same screen into the container, options { api, url, label?, relayLabel? }.
 (window.spirit.elements = window.spirit.elements || {}).natterDetails = {
+  create: function (container, options) {
+    var o = options || {};
+    var done = { destroy: function () { container.innerHTML = ''; } };
+    // UNCONFIGURED, IT SAYS SO and throws nothing (box v23: "no throw even unconfigured").
+    if (!o.api || !o.url) {
+      var note = document.createElement('div');
+      note.className = 'job-manifest-note';
+      note.textContent = 'not configured: no relay named';
+      container.appendChild(note);
+      return done;
+    }
+    ndPage.mount(container, o.api);
+    ndPage.open(o);
+    return done;
+  },
   open: function (params) {
     return window.spirit.elements.navigation.push({ title: 'Relay', mount: function (box, page) {
       ndPage.mount(box, page.api);

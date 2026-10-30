@@ -76,7 +76,8 @@
 
     return {
       set: function (value) { input.value = String(value == null ? '' : value); count(); },
-      destroy: function () { gone = true; },
+      // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it").
+      destroy: function () { gone = true; host.innerHTML = ''; },
     };
   }
 

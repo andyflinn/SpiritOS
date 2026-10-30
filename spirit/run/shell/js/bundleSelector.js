@@ -8,7 +8,7 @@
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
 // the node's bundles (auth.bundle search) and each row (bundleSelector/rowElement.js).
 //
-//   spirit.elements.createBundleSelector(options) -> root
+//   spirit.elements.bundleSelector.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is
 //     root.row     the chosen bundle, { id, label }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again
@@ -50,5 +50,7 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.createBundleSelector = createBundleSelector;
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
+  // options) appends the control to the container and answers it.
+  window.spirit.elements.bundleSelector = { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } };
 })();

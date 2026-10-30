@@ -24,11 +24,11 @@
   }));
   function keyOf(key, path) { return String(key) + '\n' + String(path); }
 
-  // THE DATA SET IT WRITES TO, IT LOADS ITSELF (rule/26): the page's one spirit.data (shell/js/spiritData.js), which
+  // THE DATA SET IT WRITES TO, IT LOADS ITSELF (rule/26): the page's one spirit.data (shell/shared/js/spiritData.js), which
   // may not be on the page yet when an app loads this file. spirit.require loads a file once, so it is the page's one
   // cache.
   var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
-    : Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/spiritData.js') : null).then(function () { return window.spirit.data; });
+    : Promise.resolve(window.spirit.require ? window.spirit.require('shell/shared/js/spiritData.js') : null).then(function () { return window.spirit.data; });
   function whenData(fn) {
     dataSet.then(function (D) { if (D && typeof D.translate === 'function') fn(D); }, function () { /* no data set: the lists still search */ });
   }

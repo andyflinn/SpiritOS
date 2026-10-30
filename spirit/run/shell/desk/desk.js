@@ -1603,11 +1603,13 @@ function deskVerifyEvent(obj) {
 function deskHeader(api) {
   var old = document.getElementById('desk-bars');
   var els = api && api.ui && api.ui.elements;
-  if (!old || !els || typeof els.createAppHeader !== 'function') return;
-  var head = els.createAppHeader();
+  if (!old || !els || !els.appHeader) return;
+  // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
+  var head = els.appHeader.create(old.parentNode);
+  old.parentNode.insertBefore(head, old);
   head.id = 'desk-bars';
   while (old.firstChild) head.appendChild(old.firstChild);
-  old.parentNode.replaceChild(head, old);
+  old.parentNode.removeChild(old);
 }
 
 spirit.shell.activateApp({
@@ -1824,8 +1826,9 @@ spirit.shell.activateApp({
       if (id) deskOpenRow(id);
     });
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
-    // what the desk server publishes.
-    deskApi.onPublished(deskOnPublished);
+    // what the desk server publishes. A shell whose api carries no onPublished (the face's) mounts it all the same,
+    // without the live repaint (goal/G41.19: it mounts cleanly, "no throw even unconfigured").
+    if (typeof deskApi.onPublished === 'function') deskApi.onPublished(deskOnPublished);
     // goal/G27.9: the elements subscribe after the store, so each repaints from what the store has just taken; once
     // the shared element is loaded, the List is drawn again so its rows are made as elements too.
     deskLoadSharedElement(function () { deskMountElements(); deskDraw(); });

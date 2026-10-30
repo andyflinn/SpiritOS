@@ -46,9 +46,8 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are edited in place.
-      var bundles = E.createBundleSelector({ face: 'pane', columns: ['label', 'edit', 'delete'], editable: true, api: o.api });
+      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true, api: o.api });
       bundles.className += ' fill';
-      box.appendChild(bundles);
 
       function say(text) { said.textContent = String(text || ''); }
       add.addEventListener('click', function () {

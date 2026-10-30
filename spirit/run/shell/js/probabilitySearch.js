@@ -22,7 +22,7 @@
 //   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text', 'path',
 //                              'number' or 'date'; without it the column is not a sort trigger. from names the row's value
 //                              when it is not the field's own name (a contact's label column shows its name)
-//   data                       optional: a branch of the faceless layer (shell/js/spiritData.js, goal/G30.16): the list is
+//   data                       optional: a branch of the faceless layer (shell/shared/js/spiritData.js, goal/G30.16): the list is
 //                              a view of it. Its rows are the branch's, the server's answers are seated in it, and a
 //                              write to it redraws the list
 //   element(row, key)          optional: the rowElement that draws a row (shell/js/files/, shell/js/contacts/)
@@ -489,6 +489,8 @@
       if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);
       off = null;
       Object.keys(byKey).forEach(function (k) { if (byKey[k].el) byKey[k].el.destroy(); });
+      // DESTROY LEAVES THE CONTAINER EMPTY (goal/G41.19, box v23: "destroy empties it").
+      container.innerHTML = '';
     };
     paintField();
     if (typeof o.rows === 'function' || o.data) draw();
