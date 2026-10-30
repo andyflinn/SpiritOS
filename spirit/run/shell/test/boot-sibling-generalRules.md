@@ -102,6 +102,11 @@ box is its own check, named by the element's path and the box's id chain."*
   - the mount box never grows past its height, and the page never scrolls sideways.
 - **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
 
+**Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we
+defer the red's on them: because it's codeMirror."*): `shell/js/codeMirror`, `shell/js/textViewer` and
+`shell/textEditor/textEditor` stay red on the bounded-box check. CodeMirror's scroller sits 50px past its clipped parent
+on purpose, to hide the native scrollbars (its own css: *"Things will break if this is overridden"*).
+
 ## What its test must try to break
 
 - A file that mounts only because the page preloaded something.

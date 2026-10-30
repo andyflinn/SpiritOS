@@ -77,14 +77,15 @@
   function create(row, opts) {
     var o = opts || {};
     var g = o.grants;
-    if (!g || !g.branch || !g.key || !g.label || typeof g.revoke !== 'function' || typeof g.stream !== 'function') {
-      throw new Error('grantElement: a grants table is required ({ branch, key, label, revoke, stream })');
-    }
+    // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "no throw even unconfigured"): a row with no grants table is
+    // a row of nothing, on no stream, its Revoke asking nothing.
+    var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function' && typeof g.stream === 'function');
+    if (!configured) g = { key: 'key', label: 'label', revoke: function () { return Promise.resolve(null); } };
     var r = row || {};
     var el = E.rowElement.create({
       kind: 'grant',
       key: keyOf(r[g.key], r.path),
-      index: indexOf(g),
+      index: configured ? indexOf(g) : null,
       row: { key: String(r[g.key] || ''), path: String(r.path || ''), label: String(r[g.label] || '') },
       fields: [
         { name: 'name', from: ['label'], paint: function (v) { return '<span style="white-space:nowrap">' + esc(v.label) + '</span>'; } },
