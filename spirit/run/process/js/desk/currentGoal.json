@@ -1,5 +1,5 @@
 {
- "change": 116789,
+ "change": 116913,
  "goal": "goal/G41",
  "items": [
   {
@@ -155,7 +155,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -164,6 +164,7 @@
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -16376,13 +16377,12 @@
    "id": "goal/G41.21",
    "title": "fix agent UI",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 9,
+   "version": 17,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -16392,17 +16392,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 22,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -16410,7 +16410,23 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -16459,6 +16475,14 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -16475,7 +16499,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- we cycle through this again and again.\n\n# workBench\n- the icon strips on the left and right always show a horizonal scrollbar at the bottom, and the icons in it are squashed (portrait), not square.\n\n- we will create a new shell element \"icon\", it centers the glyph, in a square box, the size of which follows font-size, it's size option should vary from that base-line, be a multiplier of it.\n- no other option than size, like like text characters, it follows, its container in most attributes.\n- the glyph IS the glyph, no key-abstraction.\n\n- this element will replace icons painting all shell elements and apps.\n\n- the workBench will provide space for a possible vertical scrollbar, in the icons, strip.\n\n",
+   "box": "- we cycle through this again and again.\n\n# The Agent app, its workBench\n\n- **The right strip gets its first real tool: the bundle editor** (shell/js/bundleEditor.js, the shell element that lists, makes and edits bundles). It joins the agent server's DEBUG box, which is there today.\n\n# Provider: its model\n\n- **The provider table gains a field, model**: the id of one row of the model table, the provider's current model.\n- **The provider's detail panel gets a Model field at the bottom.** It is a pick field (kind pick, as the model detail's Provider field is today): a dropdown search of the model table, the same probabilitySearch the left panel lists with, showing only the models whose provider is this provider.\n- **The Model field is hidden while the model table holds no model of this provider.**\n- **Narrowing a pick field to one provider's models is new**: today a pick field searches its whole table; it gains that filter.\n\n# Job: its bundle is its grant\n\n- **The job table gains a field, bundle**: the key of one of the node's bundles.\n- **The job's detail panel, in the centre of the workBench, sets it with a bundleSelector in dropdown mode.**\n- **That bundle is the job's grant**: the job is granted what the bundle holds, and choosing another bundle changes its grant. No other field holds a job's grants.\n- **A bundle deleted while a job names it leaves that job with no grant**, and the job says so in its detail panel, never silently.\n\n# Job: its provider, and so its model\n\n- **The job table gains a second field, provider**: the id of one row of the provider table. This is how a job is given a provider and model together: the job runs on that provider's current model (the provider's model field, above).\n- **The job's detail panel sets it with a provider pick field**, the dropdown search of the provider table, as the model detail's Provider field is.\n\n# Job: its persona\n\n- **The job table gains a third field, persona**: the id of one row of the persona table.\n- **The job's detail panel sets it with a persona pick field**, the dropdown search of the persona table, as the Provider field is.\n\n# The agent's grant table goes\n\n- **agent.grant is removed altogether**: its table, its server, and the Grants tool in the left strip. A job's grant is its bundle (above).\n- **With it go its folder (process/js/agent/table/grant), its place in the agent's list of tables, and the job's delete hook that dropped a job's grants**; its rows in agent.db are dropped.\n\n# Out of scope\n\n- **Enforcing the job's bundle when the job runs** (Andy: \"oos.\"): this item stores the bundle; nothing checks it when a job runs yet.\n",
    "checks": [],
    "chat": [
     {
@@ -16591,6 +16615,222 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-30T10:58:44.297Z",
      "text": "- cw: I cannot read your latest box. My node hands me v4, even after a restart, while wsl reads v7. My node answers box reads from its own cache, and that cache is filled by deskData: exactly the reds I named on G41.19 (a box read once is not kept current). So those reds cost us right here.\n- From v4 and wsl's line: the icon's square is the caller's font size times a multiplier, 1 when not given. No pixels anywhere: a caller that wants a bigger icon gives a bigger font or a bigger multiplier.\n- That works, and it answers my open point: every place that draws an icon moves to the element in this item.\n- Should fixing deskData come first, so both agents read the same box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:03:42.236Z",
+     "text": "all, box in the works, feed back?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:04:25.999Z",
+     "text": "- wsl: there is no modelSelector. The pickers already have a dropdown search, the one Ask uses for the provider, and it can search the model table the same way. Reuse it, no new element?\n- The job table has no grant field: a job's grants are rows in agent.grant. With that table scrapped, is the new bundle field itself the job's grant, one field rather than two?\n- Scrapping agent.grant is cheap: nothing in the agent enforces it yet, only the delete hook and the grants panel use it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:06:55.080Z",
+     "text": "wsl,\n\n\"wsl: there is no modelSelector. The pickers already have a dropdown search, the one Ask uses for the provider, and it can search the model table the same way. Reuse it, no new element?\"\n\n- BULLSHIT, are you telling me the model search in the left side panel is not a real probabilitySearch?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:07:18.504Z",
+     "text": "- wsl: it is a real probabilitySearch, and I said that badly. The left panel's model list and Ask's provider dropdown are both made by one function, agentDetail.search in tableElement.js, a probabilitySearch over its table.\n- So the modelSelector is that same search of the model table in dropdown face, narrowed to the provider. No new element: the box can say so."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:10:13.875Z",
+     "text": "does the internal model selector \"require\" probability search?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:10:47.606Z",
+     "text": "- wsl: yes, it requires it itself. A pick field in a detail (kind pick) runs spirit.require of shell/js/probabilitySearch.js and shell/js/icon.js right before it makes the dropdown (tableElement.js 220). The left list does the same at 144.\n- So the model field is a pick field over the model table: no new element, no extra require."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:14:03.741Z",
+     "text": "wsl, so you already have a built-in model-dropdown-picker in agent, correct? as it is, right now?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:14:40.381Z",
+     "text": "- wsl: not a model picker yet. The one picker in Agent today is the model detail's Provider field: a dropdown over the provider table (model/elementRow.js 27).\n- The machinery is built in: any detail field of kind pick, naming a table, becomes that dropdown. A model field on the provider is one line, pick: model; only narrowing it to the provider's own models is new."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:16:46.628Z",
+     "text": "wsl, understood, so the box is precise enough?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:17:17.880Z",
+     "text": "- wsl: nearly. Three gaps:\n- the model field: say it is a pick field over the model table, narrowed to this provider's models, and hidden when there are none.\n- the job: there is no grant field on a job today. Say that the bundle field is the job's grant, so its key is the grant.\n- the right strip already has one tool, the server box. Say that bundleEditor joins it, and that the left Grants tool goes with agent.grant."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:17:36.522Z",
+     "text": "all, who took the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T20:18:01.327Z",
+     "text": "- cw: not me: I made no box call on G41.21 today, reads only."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:18:07.137Z",
+     "text": "- wsl: the desk had it under my name, though I never pressed for it; I only read it. I have let it go now, unwritten. It is yours to write."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:19:18.291Z",
+     "text": "wsl, fix the box with precise, ENGLISH, terminology."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:19:57.489Z",
+     "text": "- wsl: box v13 is written, in your order, in plain words. The model field is a pick field over the model table, showing this provider's models only. The job's bundle is its grant. agent.grant goes with its Grants tool.\n- Please read the job part: I wrote \"the bundle is the job's grant\" for your \"adjusts the jobs grant field\". Is that what you meant?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:22:56.711Z",
+     "text": "wsl, box the following, too: the job table gets a second new field: provider, this is how a job is assigned a provider/model combination implicitly. of course that field is a provider-picker."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:23:20.827Z",
+     "text": "- wsl: boxed, v14. The job gets a provider field, a provider pick field in its detail panel, and runs on that provider's current model."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:23:43.877Z",
+     "text": "cw? feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T20:24:44.696Z",
+     "text": "- cw: on v14, checked against the tree. It holds: bundleEditor and bundleSelector exist as shell elements; the right strip today holds the agent server box; a pick field is how the model detail picks its Provider now.\n- New in the build, worth knowing: narrowing a pick to this provider's models is a filter the pick field does not have yet; small.\n- Two lines I would add. One: a bundle deleted while a job names it leaves that job with no grant, said on the job, not silently. Two: removing agent.grant takes its folder, its place in the agent's table list and the job's delete hook with it, and its rows in agent.db are dropped.\n- One real open: today nothing checks agent.grant when a job runs, so the bundle would only be stored. Is the job's bundle enforced when it runs, in this item, or stored now and enforced later?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:26:55.572Z",
+     "text": "cw, modify the box accordingly,"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T20:27:30.964Z",
+     "text": "- cw: boxed, v15: the narrowing filter as new, a deleted bundle said on its job, what goes with agent.grant, and the enforcement question under Open. Nothing of yours removed.\n- Is the job's bundle enforced when it runs, in this item, or stored now and enforced later?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:28:26.075Z",
+     "text": "all, check the box. green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:28:50.202Z",
+     "text": "- wsl: v15 holds against the tree, but it is not green yet. One open is left, whether the bundle is enforced when a job runs, and the file list is empty.\n- Your answer to the open decides the files: enforced now adds the agent's job runner to them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:32:40.053Z",
+     "text": "dammit, the job table also gains a persona fields, a persona-picker.\n\nbox that."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:33:14.304Z",
+     "text": "- wsl: boxed. The job gets a persona field too, set by a persona pick field in its detail panel, beside bundle and provider."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:34:20.071Z",
+     "text": "all, box was updated. green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:34:51.558Z",
+     "text": "- wsl: not green yet. Still open: is the job's bundle enforced when it runs, in this item, or later? And the file list is empty.\n- Answer the open and I list the files."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:36:14.121Z",
+     "text": "wsl: not green yet. Still open: is the job's bundle enforced when it runs, in this item, or later?\n\noos."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:37:07.478Z",
+     "text": "- wsl: boxed, v17: enforcing the bundle is out of scope, stored only.\n- 22 files listed, with their tests: the agent's table list, the pick field (tableElement), provider, job, grant (to go) and the Agent app. The item is green now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:37:18.295Z",
+     "text": "add the files to the item"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:37:39.049Z",
+     "text": "- wsl: they are on the item already: 22 files, listed a minute before your line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:38:37.906Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T20:38:55.369Z",
+     "text": "- wsl: green: nothing open in the box, 22 files listed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T20:39:12.186Z",
+     "text": "- cw: green but for one line: v17 says enforcing the bundle is out of scope, stored only. That answers the open question, and I see no line of yours that answers it. wsl wrote it.\n- Stored only now, enforced later: is that your ruling?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T20:40:16.394Z",
+     "text": "cw, how much more clear can i get?\n\nI'm building this piece by piece, and this is already big enough."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T20:40:43.437Z",
+     "text": "- cw: clear: stored only, piece by piece. Green."
     }
    ]
   },
@@ -17687,12 +17927,11 @@
    "id": "goal/G41.23",
    "title": "new UI Elements: busyButton and icon",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "wsl-claude",
    "version": 5,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -18295,6 +18534,18 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-30T19:47:34.688Z",
      "text": "- wsl: yes, it is CodeMirror. The one red suite is the mount test, and its only three reds are codeMirror, textViewer and textEditor, the ones we deferred. Every icon check is green.\n- cw: claim done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T19:47:59.225Z",
+     "text": "- cw: yes, the one red suite is the mount test, and only its three CodeMirror reds: codeMirror, textViewer, textEditor. Claiming Done on a939cae8."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T19:48:27.599Z",
+     "text": "- wsl: checked on the build: busyButton 19, icon 12, workBench 48, updatePanel 18, grantsPanel 36, Fallout 48, boot 29, all green. In the mount test only CodeMirror's three deferred reds are left."
     }
    ]
   }
