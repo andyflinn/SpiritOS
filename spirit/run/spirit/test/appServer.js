@@ -339,6 +339,30 @@ if (CHILD) {
     ok(asked.filter(function (a) { return a.verb === 'subscribe'; }).length === subsBefore + 1 && bootstraps === pushedAt && lastSub.since === pushEnd.n && lastSub.run === pushEnd.run,
       'its place in the stream moved to the push: subscribed again, it is handed nothing older and pushed nothing again', 'bootstraps ' + pushedAt + ' -> ' + bootstraps + ', subscribed with ' + short(lastSub) + ', the push ended at ' + short(pushEnd));
 
+    // goal/G41.22, Andy: "take the 3 seconds out, appServer.js calls peerPost in the most basic way": a subscriber that
+    // answers late, within the publisher's own wait, is no subscriber gone (traced 2026-10-30: the node's one sending slot
+    // held deliveries 4 to 7 s, and a 3 s race dropped a live client every time).
+    test.subHeading('a late answer is no drop: a delivery is a plain peerPost (goal/G41.22)');
+    const subsLate = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
+    const bootsLate = bootstraps;
+    const postsLate = posts.length;
+    gate.held = true;
+    A.publish(row(item(60)));
+    await tick(50);
+    A.publish(row(item(61)));
+    A.publish(row(item(62)));
+    await tick(4000);
+    release();
+    await tick(400);
+    ok(has(60) && has(61) && has(62), 'held 4 s, past the old 3 s, the rows still land: none is dropped', 'items 60-62: ' + [has(60), has(61), has(62)].join(' '));
+    const sentLate = posts.slice(postsLate).filter(Array.isArray);
+    ok(sentLate.length === 2 && sentLate[1].length === 2, 'what piled up while the first was out goes in one bundle after it', 'bundles after the hold: ' + short(sentLate.map(function (b) { return b.length; })));
+    A.publish(row(item(63)));
+    await tick(300);
+    ok(has(63) && bootstraps === bootsLate && asked.filter(function (a) { return a.verb === 'subscribe'; }).length === subsLate,
+      'the subscriber was never dropped: the next row comes with no subscribe again and no push', 'item 63 ' + has(63) + ', subscribes ' + subsLate + ' -> ' + asked.filter(function (a) { return a.verb === 'subscribe'; }).length + ', bootstraps ' + bootsLate + ' -> ' + bootstraps);
+    ok(!/FAST_MS|Promise\.race/.test(fs.readFileSync(FILE, 'utf8')), 'appServer.js races no delivery and no subscribe against a clock of its own', 'appServer.js still names FAST_MS or Promise.race');
+
     // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
     test.subHeading('the cache, per sender, saved and read back (box v15)');
     clearCache('cacheProbe');

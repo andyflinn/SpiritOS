@@ -37,6 +37,10 @@ stream"); Desk and deskClient move onto it.
 - **Its place moves to the push** (the box: "a goal pushed whole takes precedence, and the client's place in the stream
   moves to that push"): once it lands, a subscribe again carries the push's own end (`run`, `n`), and is answered from
   the log, with no second push.
+- **A late answer is no drop** (goal/G41.22, Andy: "take the 3 seconds out, appServer.js calls peerPost in the most
+  basic way"): a delivery and a subscribe are plain peerPosts, raced against no clock of appServer's own. A subscriber
+  answering within the publisher's own wait (`waitMs`) stays subscribed; the rows that piled up meanwhile go in one
+  bundle after it. Only an answer of no, or none within that wait, drops it.
 
 ### The cache (goal/G41.12)
 

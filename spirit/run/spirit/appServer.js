@@ -626,16 +626,17 @@ function withStreamListener(verbs, stream, followed, name) {
 // ROWS THAT BACK UP GO TOGETHER (box v15: "the server its publishings when they back up"; "A bundle is a JSON array of
 // rows in one peerPost, as many as a sized probability bucket fits in one answer"): while one bundle is in flight, the
 // rows behind it wait, and the next bundle takes as many of them as fit.
-// A DELIVERY FAILS FAST (goal/G41.12). Andy: "when desk pushed a message down the stream, i must fail FAST. and WAIT FOR
-// A re-subscribe", and "a FAST FAIL DOESN'^t CLOG THE SYSTEM": a bundle not taken within FAST_MS drops its subscriber and
-// its queue; it is sent nothing more until it subscribes again, with its position, and is handed what it missed then.
+// A DELIVERY IS A PLAIN peerPost (goal/G41.22; Andy: "take the 3 seconds out, appServer.js calls peerPost in the most
+// basic way"): the 3 s race of goal/G41.12 counted the wait for the node's one sending slot as the subscriber not
+// answering, and dropped live subscribers (traced 2026-10-30: one row through every 16 s). A bundle answered no, or not
+// answered within the publisher's own wait, drops its subscriber and its queue; it is sent nothing more until it
+// subscribes again, with its position, and is handed what it missed then.
 // Past QUEUE_MAX waiting rows it is dropped the same way, so nothing it is owed is lost on the way. NO LIST BEYOND THE
 // GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start the server's subscribers are the keys the
 // node grants it to (auth.search), each as the server's family; nothing else persists.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows: [entry] }
 const QUEUE_MAX = 1000;
-const FAST_MS = 3000;
 const LOG_MAX = 1000;
 // This run of the sender, and the number of the newest row it published in it.
 const RUN_ID = crypto.randomBytes(8).toString('hex');
@@ -657,19 +658,11 @@ function bundleOf(rows) {
   return rows.slice(0, Math.max(1, fit));
 }
 function deliver(key, q, bundle) {
-  // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), over peerPost with no patience.
-  const wait = Math.min(FAST_MS, publisher.waitMs);
-  // The binding keeps the publisher's own wait (spirit.js keeps a peer family's first wait for every later ask); the
-  // fast fail is the race below alone.
-  const sent = spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
+  // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
+  return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
     if (!fam || typeof fam.streamListener !== 'function') return 'away';
     return spirit.outcome(fam.streamListener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
-  // A DELIVERY THAT NEVER ANSWERS HOLDS NOTHING (found live 2026-10-27: the stream to a client stalled for good): past
-  // the fast wait it is away, whatever answers later.
-  let timer = null;
-  const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve('away'); }, wait); });
-  return Promise.race([sent, late]).then(function (said) { clearTimeout(timer); return said; });
 }
 function pumpTo(key) {
   const q = subscribers.get(key);
@@ -863,20 +856,15 @@ function serve(verbs, opts) {
     const st = senderOf(k, fam);
     if (st.pushing) { const cut = st.pushing; st.pushing = null; cut.forEach(function (r) { keepRow(st, r); }); }
     const position = st.run ? { family: name, run: st.run, since: st.n } : { family: name };
-    // A SUBSCRIBE FAILS FAST TOO (goal/G41.12; Andy: "resubscribe must ALSO FAIL SUPER-FAST, then wait for 10 soconds"):
-    // not answered within FAST_MS it answers false, and the caller asks again later.
-    let timer = null;
-    const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve(false); }, FAST_MS); });
-    const asked = s.follow(k).catch(function () { return false; }).then(function () {
-      // The publisher's family, bound by the one spirit object under its key (goal/G40.6).
-      // The binding keeps its own wait (spirit.js binds a peer's family once, with the first wait it is given, for every
-      // later ask of it); the fast fail is the race below alone.
+    // A SUBSCRIBE IS A PLAIN peerPost TOO (goal/G41.22; Andy: "take the 3 seconds out"): answered no, or not within the
+    // binding's wait, it answers false, and the caller asks again later.
+    return s.follow(k).catch(function () { return false; }).then(function () {
+      // The publisher's family, bound by the one spirit object under its key (goal/G40.6), with its own wait.
       return spirit.outcome(spirit.require(familyPath(fam), k, { waitMs: 10000 }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(position);
       }));
     }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
-    return Promise.race([asked, late]).then(function (ok) { clearTimeout(timer); return ok; });
   };
   // FOLLOW A SENDER'S STREAM (goal/G33.4): heard from now on, and granted the verb on this node. Answers whether the
   // node holds the grant (true when it did already).
