@@ -68,6 +68,10 @@ the table)"*.
   *"the model picker in provider details of course shows models at all, when it must show models from that
   provider"*): the dropdown is a view of its table's whole branch, so of the page's rows it lets through only those whose
   `<field>` holds this row's id, judged by the real list's own `probabilitySearch.order`.
+  The rows are what the real model table's search answers (../provider/server.js and ../model/server.js on a scratch
+  agent.db, seated in the page's branch as the list seats them), and each row it offers shows the model, never an empty
+  row (Andy: *"the model picker for the provider table showed a bunch of EMPTY rows"*: its columns asked icon and label,
+  which the model table's search does not answer).
   Further: A pick field `{ kind: 'pick', pick: <table>, of: <field> }` searches its
   table narrowed to the rows whose `<field>` holds this row's id: its dropdown's `args(text)` is
   `{ op: 'search', text, <field>: <this row's id> }`, and it asks the table the same narrowed search. While that search
@@ -89,3 +93,4 @@ the table)"*.
 - A narrowed pick searching the whole table, or shown with nothing to pick; a bundle field drawn as a pane, or not saved.
 - A bundle the node no longer has left unsaid.
 - A narrowed pick offering the branch's other rows, the server's ask narrowed alone.
+- A dropdown row drawn empty, its columns asking fields its table's search does not answer.

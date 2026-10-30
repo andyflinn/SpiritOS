@@ -318,18 +318,35 @@ test.startTest('tableElement.js: what the tables\' elements share');
       .map(function (e) { return e.key; }).sort();
   };
   // The page holds two models in its branch, one of this provider's and one of another's.
-  D.set('agent.model/M1', { id: 'M1', icon: '', label: 'Mine', providerId: 'KN' });
-  D.set('agent.model/M2', { id: 'M2', icon: '', label: 'Theirs', providerId: 'KOTHER' });
+  // THE ROWS AS THE MODEL TABLE ITSELF ANSWERS THEM: the real provider and model servers (../provider/server.js,
+  // ../model/server.js) on a scratch agent.db, two providers with a model each, the model table's search seated in the
+  // page's branch as the list seats it (spirit.data.seat).
+  const { DatabaseSync } = require('node:sqlite');
+  const os = require('os');
+  const scratchDb = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-tableElement-'));
+  // The servers check their arguments through the one spirit object's rules (spirit.check), as in the agent process.
+  global.window.spirit.check = require(path.join(RUN, 'spirit.js')).check;
+  const sctx = { db: new DatabaseSync(path.join(scratchDb, 'agent.db')), dbFile: path.join(scratchDb, 'agent.db'), tables: {}, publish: function () {} };
+  sctx.tables.provider = require(path.join(__dirname, '..', 'provider', 'server.js'))(sctx);
+  sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);
+  const PA = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine' }).id;
+  const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs' }).id;
+  const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA, modelName: 'claude-mine' }).id;
+  const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB, modelName: 'claude-theirs' }).id;
+  D.seat('agent.model', sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
+  // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
+  // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
+  const cellsOf = function (s, key) { const r = D.get('agent.model/' + key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
   const narrowed = async function (models) {
     w.calls.length = 0;
     const before = w.searches.length;
     w.answer = function (table, a) {
-      if (a.op === 'get') return { id: 'KN', icon: '', label: 'Narrow' };
+      if (a.op === 'get') return { id: PA, icon: '', label: 'Narrow' };
       if (table === 'model' && a.op === 'search') return { items: models.map(function (k) { return { key: k, label: JSON.stringify({ id: k, label: k }) }; }), more: false };
-      return { id: 'KN' };
+      return { id: PA };
     };
     const ed3 = box('narrow');
-    const r3 = E.agentRow.create(ed3, { api: {}, table: 'provider', id: 'KN', added: false, look: look, fields: NARROW });
+    const r3 = E.agentRow.create(ed3, { api: {}, table: 'provider', id: PA, added: false, look: look, fields: NARROW });
     await settle(); await settle();
     const s = w.searches.slice(before).filter(function (x) { return x.o && x.o.verb === 'model'; })[0] || null;
     let args = null; try { args = s && typeof s.o.args === 'function' ? s.o.args('claude') : null; } catch (e) { args = null; }
@@ -337,18 +354,22 @@ test.startTest('tableElement.js: what the tables\' elements share');
     const lineStart = at === -1 ? -1 : ed3.innerHTML.lastIndexOf('<div', at);
     const line = lineStart === -1 ? '' : ed3.innerHTML.slice(lineStart, at);
     const shown = at !== -1 && !/\bhidden\b|display:\s*none/.test(line);
-    const out = { search: s, args: args, shown: shown, calls: w.calls.slice(), offered: offered(s) };
+    const out = { search: s, args: args, shown: shown, calls: w.calls.slice(), offered: offered(s), cells: s ? (offered(s) || []).map(function (k) { return cellsOf(s, k); }) : [] };
     r3.destroy();
     return out;
   };
-  const withModels = await narrowed(['M1']);
-  ok(withModels.args && withModels.args.op === 'search' && withModels.args.text === 'claude' && withModels.args.providerId === 'KN',
+  const withModels = await narrowed([MA]);
+  ok(withModels.args && withModels.args.op === 'search' && withModels.args.text === 'claude' && withModels.args.providerId === PA,
     'its dropdown searches the model table narrowed to this row: { op: search, text, providerId: this row\'s id }', 'args: ' + short(withModels.args));
   ok(withModels.shown, 'with a model of this provider in the model table, the Model field is shown', 'the Model field is not shown with a model of this provider');
-  ok(JSON.stringify(withModels.offered) === '["M1"]', 'of the page\'s models, the dropdown offers this provider\'s alone: M1, not M2 of another provider',
-    'the dropdown offers ' + short(withModels.offered) + ' of M1 (this provider\'s) and M2 (another\'s)');
+  ok(JSON.stringify(withModels.offered) === JSON.stringify([MA]), 'of the page\'s models, the dropdown offers this provider\'s alone, not another provider\'s',
+    'the dropdown offers ' + short(withModels.offered) + ' of ' + short({ mine: MA, theirs: MB }));
+  // Andy: "the model picker for the provider table showed a bunch of EMPTY rows": a row is drawn by what its table's
+  // search answers, the model's name.
+  ok(withModels.cells.length > 0 && withModels.cells.every(function (c) { return /claude-mine/.test(c); }), 'each row it offers shows the model, as the model table answers it: ' + short(withModels.cells),
+    'rows it offers show ' + short(withModels.cells) + ': empty, the columns asking fields the model table does not answer');
   const withNone = await narrowed([]);
-  ok(withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === 'KN'; }),
+  ok(withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === PA; }),
     'it asks the model table for this provider\'s models, narrowed the same way', 'calls: ' + short(withNone.calls));
   ok(!withNone.shown, 'with none, the Model field is hidden', 'the Model field is shown though the model table holds no model of this provider');
 
