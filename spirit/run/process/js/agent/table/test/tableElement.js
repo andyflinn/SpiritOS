@@ -82,6 +82,15 @@ test.startTest('tableElement.js: what the tables\' elements share');
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   const D = global.window.spirit.data;
+  // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
+  // has not; each ask kept.
+  w.bundleAsks = [];
+  w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
+  global.window.spirit.ready = Promise.resolve({ auth: { bundle: function (a) {
+    w.bundleAsks.push(a);
+    if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
+    return Promise.resolve({ items: [], more: false });
+  } } });
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
@@ -338,5 +347,26 @@ test.startTest('tableElement.js: what the tables\' elements share');
     ok(set && set.table === 'job' && String(set.args.bundle) === '9', 'a bundle picked is saved: job { op: set, id, bundle }', 'calls: ' + short(w.calls));
   }
   r4.destroy();
+
+  // Box v17: "A bundle deleted while a job names it leaves that job with no grant, and the job says so in its detail
+  // panel, never silently."
+  const openedJob = async function (bundle) {
+    w.calls.length = 0;
+    w.bundleAsks.length = 0;
+    w.answer = function (table, a) { return a.op === 'get' ? { id: 'KG', icon: '', label: 'A job', bundle: bundle } : { id: 'KG' }; };
+    const ed5 = box('gone-' + bundle);
+    const r5 = E.agentRow.create(ed5, { api: {}, table: 'job', id: 'KG', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
+    await settle(); await settle();
+    // Everything the editor shows: its markup and what it wrote into its parts since.
+    const said = ed5.innerHTML + Object.keys(ed5.parts).map(function (k) { return String(ed5.parts[k].innerHTML || '') + String(ed5.parts[k].textContent || ''); }).join(' ');
+    const asked = w.bundleAsks.slice();
+    r5.destroy();
+    return { said: said, asked: asked };
+  };
+  const goneOne = await openedJob('5');
+  ok(goneOne.asked.some(function (a) { return a && a.op === 'get' && Number(a.id) === 5; }), 'a job naming a bundle asks the node for it: auth.bundle { op: get, id }', 'asked: ' + short(goneOne.asked));
+  ok(/\b5\b/.test(goneOne.said) && /no grant/i.test(goneOne.said), 'a bundle the node no longer has is said in the detail panel: the bundle and that the job has no grant', 'said: ' + short(goneOne.said));
+  const heldOne = await openedJob('7');
+  ok(!/no grant/i.test(heldOne.said), 'a bundle the node has is said as no such thing', 'said: ' + short(heldOne.said));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

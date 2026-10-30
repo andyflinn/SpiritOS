@@ -71,6 +71,9 @@ the table)"*.
   provider"*); with one, it is shown.
 - **A bundle field: kind `bundle`.** The editor loads `shell/js/bundleSelector.js` itself and makes a bundle selector in
   the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`).
+- **A bundle gone is said** (*"A bundle deleted while a job names it leaves that job with no grant, and the job says so
+  in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);
+  one the node no longer has is said in the panel, the bundle and that the job has no grant. One the node has is not.
 
 ## What its test must try to break
 
@@ -80,3 +83,4 @@ the table)"*.
 - A refusal shown as its bare code ("no such argument") instead of the server's reason.
 - An editor that does not follow its row in spirit.data, or keeps hearing it after destroy.
 - A narrowed pick searching the whole table, or shown with nothing to pick; a bundle field drawn as a pane, or not saved.
+- A bundle the node no longer has left unsaid.
