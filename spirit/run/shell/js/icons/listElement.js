@@ -16,7 +16,8 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['shell/js/icons/rowElement.js', 'shell/js/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
+  // goal/G41.23: each icon it lists is the icon element (shell/js/icon.js), which its rows paint through.
+  if (window.spirit.require) ['shell/js/icons/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
   // The owner's own set, out of git; the system set until he has one (goal/G40.8, shell/icons/icons.js says why).
   var SET = 'relay-state/shell/icons/iconSet.json';
   var SYSTEM_SET = 'shell/json/iconSet.json';

@@ -17,7 +17,7 @@
       var drop = null;
       // WHAT IT USES, IT LOADS ITSELF (rule/26).
       // goal/G41.23: Ask is a busyButton (shell/js/busyButton.js), loaded here too.
-      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/busyButton.js')]).then(function () {
+      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/busyButton.js'), spirit.require('shell/js/icon.js')]).then(function () {
         if (gone) return;
         E = window.spirit.elements;
         var D = E.agentDetail;

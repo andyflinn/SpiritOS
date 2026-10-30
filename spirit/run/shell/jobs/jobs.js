@@ -87,11 +87,30 @@ function jobsProgress(job) {
   return bar(open.done, open.total, open.text);
 }
 
+// THE STATUS MARK IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements
+// and apps."): written as a placeholder holding its glyph, made the icon element once shell/js/icon.js is on the page
+// (jobsWatchIcons, on the app's container). Its word beside it stays text.
+function jobsGlyph(glyph) { return '<span data-icon="' + jobsEscapeHtml(glyph) + '">' + jobsEscapeHtml(glyph) + '</span>'; }
+function jobsPaintIcons(root) {
+  var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  if (!I || !root || typeof root.querySelectorAll !== 'function') return;
+  Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
+    if (p.querySelector('.shell-icon')) return;
+    p.textContent = '';
+    I.create(p, { glyph: p.getAttribute('data-icon') });
+  });
+}
+function jobsWatchIcons(root) {
+  var loaded = typeof spirit.require === 'function' ? Promise.resolve(spirit.require('shell/js/icon.js')).then(null, function () { /* the glyphs stay text */ }) : Promise.resolve();
+  loaded.then(function () { jobsPaintIcons(root); });
+  if (typeof MutationObserver === 'function') new MutationObserver(function () { jobsPaintIcons(root); }).observe(root, { childList: true, subtree: true });
+}
+
 // ONE GREEN DOT (goal/G29.14; Andy: "make a left-most icon column, where a one green dot hops between rows, always
 // showing the most recent update").
 function jobsPaint(job, mark) {
   return '<td>' + (job.id === jobsLatest ? '<span class="job-latest" title="the most recent update" style="color:#3c3">●</span>' : '') + '</td>' +
-    '<td>' + (STATUS_ICON[job.status] || '') + ' ' + jobsEscapeHtml(job.status) + '</td>' +
+    '<td>' + (STATUS_ICON[job.status] ? jobsGlyph(STATUS_ICON[job.status]) + ' ' : '') + jobsEscapeHtml(job.status) + '</td>' +
     '<td>' + mark(jobsName(job)) + '</td>' +
     '<td>' + jobsEscapeHtml(jobsKind(job)) + '</td>' +
     '<td>' + jobsProgress(job) + '</td>' +
@@ -122,6 +141,7 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     jobsApi = api;
     container.innerHTML = '';
+    jobsWatchIcons(container);
     jobsList = window.spirit.elements.shellCreateListSearch(container, {
       rows: jobsRows,
       filters: [

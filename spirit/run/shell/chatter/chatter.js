@@ -44,6 +44,10 @@ var CH_STYLES = ['plain', 'bubbles'];
 // The app's own elements, built once at mount and held here.
 var chParts = {};
 function chEl(id) { return chParts[id] || null; }
+// THE ICON ELEMENT, LOADED BY THE APP ITSELF (goal/G41.23, rule/26): through the one loader, once.
+var chIconPart = window.spirit && typeof window.spirit.require === 'function'
+  ? Promise.resolve(window.spirit.require('shell/js/icon.js')).then(null, function () { /* the arrows stay text */ })
+  : Promise.resolve();
 
 function chAsk(verb, args) {
   return Promise.resolve(chApi.verb('chatClerver.' + verb, args || {})).then(function (r) {
@@ -483,13 +487,21 @@ spirit.shell.activateApp({
       var btn = chEl('ch-fold-' + which);
       var paneEl = chEl(paneId);
       var divider = chEl(dividerId);
-      function paint() { btn.textContent = paneEl.hidden ? foldedGlyph : openGlyph; }
+      // goal/G41.23: the arrow is an icon (Andy: "this element will replace icons painting all shell elements and apps."),
+      // through shell/js/icon.js once it has loaded (chIconPart), its glyph as text until then.
+      function paint() {
+        var glyph = paneEl.hidden ? foldedGlyph : openGlyph;
+        var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+        btn.textContent = '';
+        if (I && typeof I.create === 'function') I.create(btn, { glyph: glyph }); else btn.textContent = glyph;
+      }
       btn.addEventListener('click', function () {
         paneEl.hidden = !paneEl.hidden;
         divider.hidden = paneEl.hidden;
         paint();
       });
       paint();
+      chIconPart.then(paint);
     }
     fold('peers', 'ch-left', 'ch-divider-left', '◀️' || '◀', '▶️' || '▶');
     fold('objects', 'ch-right', 'ch-divider-right', '▶️' || '▶', '◀️' || '◀');

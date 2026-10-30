@@ -114,7 +114,12 @@ function ddSecondPress(b) {
 // have today", "the center panel us the chat", "the right panel, we leave blank, but will carry plugin-desk-apps"). The
 // id, title and status stay in the shell's title bar (ddPaint), as before. The left pane and the chat are written in a
 // holder first, so the inputs are in the frame from the start; the workBench, once spirit.require brings it, takes them.
-var ddBenchParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/workBench.js') : null);
+// goal/G41.23: its panels' icons stand alone on the bench's strip, which paints them through the icon element; the panel
+// loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
+// apps."). The lock before a core file's path is a glyph among words, and stays text.
+var ddBenchParts = typeof spirit !== 'undefined' && spirit.require
+  ? Promise.all([spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js')])
+  : Promise.resolve(null);
 var ddBench = null;
 var ddBenchBoxes = {};
 var ddFrameN = 0;

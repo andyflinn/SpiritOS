@@ -12,6 +12,17 @@
 
 (function () {
   var escapeHtml = spirit.escapeHtml;
+  // ITS GLYPHS ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell
+  // elements and apps."): shell/js/icon.js through the one loader, as this file runs. Each glyph that stands alone is made
+  // by icon.create and handed on as its markup, since the field and the rows are painted as text; plain text until then.
+  var iconReady = typeof spirit.require === 'function' ? Promise.resolve(spirit.require('shell/js/icon.js')).then(null, function () {}) : Promise.resolve();
+  function iconHtml(glyph) {
+    var I = window.spirit.elements && window.spirit.elements.icon;
+    if (!I || typeof I.create !== 'function') return escapeHtml(glyph);
+    var hold = document.createElement('span');
+    I.create(hold, { glyph: glyph });
+    return hold.innerHTML;
+  }
 
   // A dropdown for choosing one icon out of the ICON pool, offered to
   // apps as api.ui.elements.iconSelector.create(container, options).
@@ -85,9 +96,9 @@
 
     function paintField() {
       field.innerHTML =
-        '<span class="icon-selector-glyph">' + escapeHtml(value) + '</span>' +
+        '<span class="icon-selector-glyph">' + iconHtml(value) + '</span>' +
         '<span class="icon-selector-name">' + escapeHtml(labelFor(value)) + '</span>' +
-        '<span class="icon-selector-caret">' + escapeHtml('🔽') + '</span>';
+        '<span class="icon-selector-caret">' + iconHtml('🔽') + '</span>';
     }
 
     function paintRows() {
@@ -96,7 +107,7 @@
         return '<button type="button" class="icon-selector-row' +
           (i === activeIndex ? ' is-active' : '') +
           '" data-glyph="' + escapeHtml(c.glyph) + '">' +
-          '<span class="icon-selector-glyph">' + escapeHtml(c.glyph) + '</span>' +
+          '<span class="icon-selector-glyph">' + iconHtml(c.glyph) + '</span>' +
           '<span class="icon-selector-name">' + escapeHtml(c.label) + '</span>' +
           '</button>';
       }).join('') || '<div class="job-log-empty">no icon answers to that</div>';
@@ -199,6 +210,8 @@
 
     root.value = value;
     paintField();
+    // Painted again through the icon element once it has loaded.
+    iconReady.then(function () { paintField(); if (!list.hidden) paintRows(); });
     return root;
   }
 

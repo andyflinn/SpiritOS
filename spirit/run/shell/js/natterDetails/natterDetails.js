@@ -32,6 +32,17 @@
 // is RETURNED, and Natter records it.
 
 var ndEscapeHtml = spirit.escapeHtml;
+// A MARK THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all
+// shell elements and apps."): a fold's mark is made by icon.create and handed on as its markup, since the screen is painted
+// as text; plain text while shell/js/icon.js has not loaded. A mark among words (a heading's) is text (Andy: "glyphs are
+// legal in labels and description true, and in that context they don't need special handling").
+function ndIconHtml(glyph) {
+  var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  if (!I || typeof I.create !== 'function') return ndEscapeHtml(glyph);
+  var hold = document.createElement('span');
+  I.create(hold, { glyph: glyph });
+  return hold.innerHTML;
+}
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
 // rule is js/fieldRules.js, loaded by index.html, and the relay enforces
@@ -150,7 +161,7 @@ function ndPanel(id, mark, title, inner, extraClass) {
   return '<div class="stat-tile wide' + (extraClass ? ' ' + extraClass : '') + '">' +
     '<div class="panel-heading nd-fold" data-fold="' + ndEscapeHtml(id) + '"' +
       ' title="' + (shut ? 'Show' : 'Hide') + ' this">' +
-      '<span class="nd-fold-mark">' + (shut ? '▶️' : '🔽') + '</span> ' +
+      '<span class="nd-fold-mark">' + ndIconHtml(shut ? '▶️' : '🔽') + '</span> ' +
       (mark ? mark + ' ' : '') + ndEscapeHtml(title) +
     '</div>' +
     (shut ? '' : '<div class="nd-panel-body">' + inner + '</div>') +
@@ -850,7 +861,7 @@ function ndOwnerGroupHtml(inner) {
     '<div class="panel-heading nd-group-fold"' +
       ' title="' + (shut ? 'Show' : 'Hide') + ' what you can do as owner">' +
       '<span class="nd-fold-mark">' +
-        (shut ? '▶️' : '🔽') + '</span> ' +
+        ndIconHtml(shut ? '▶️' : '🔽') + '</span> ' +
       '⭐' + ' Managing my relay' +
     '</div>' +
     (shut ? '' : '<div class="nd-group-body">' + inner + '</div>') +
@@ -1823,6 +1834,8 @@ var ndPage = ({
 if (window.spirit && window.spirit.require) window.spirit.require('shell/js/joinForm.js');
 // And the armingButton its are-you-sure buttons are (goal/G41.9), the same way.
 if (window.spirit && window.spirit.require) window.spirit.require('shell/js/armingButton.js');
+// And the icon element its fold marks are (goal/G41.23): drawn again once it is there.
+if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('shell/js/icon.js')).then(function () { ndRender(); }, function () {});
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
 // shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).

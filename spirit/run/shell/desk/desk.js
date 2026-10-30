@@ -526,6 +526,31 @@ function deskNeed(p) {
   if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
+// AN ICON THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
+// elements and apps.", and "isn't a glyph inside flowing text just like another inline character? ... they don't need
+// special handling"): the row's type, the sword, a rule's status. Written as a placeholder holding its glyph, so the
+// markup is never empty; once shell/js/icon.js is on the page each one in the container is made the icon element
+// (deskPaintIcons, watching the container). A glyph among words stays text.
+// Its own escape: the sword is made as the file loads, before deskApi is there.
+function deskGlyph(glyph, title) {
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+  return '<span data-icon="' + esc(glyph) + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(glyph) + '</span>';
+}
+var deskIconReady = null;
+function deskPaintIcons(root) {
+  var I = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  if (!I || !root || typeof root.querySelectorAll !== 'function') return;
+  Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
+    if (p.querySelector('.shell-icon')) return;
+    p.textContent = '';
+    I.create(p, { glyph: p.getAttribute('data-icon') });
+  });
+}
+function deskWatchIcons(root) {
+  if (!deskIconReady) deskIconReady = deskNeed('/shell/js/icon.js').then(null, function () { /* the glyphs stay text */ });
+  deskIconReady.then(function () { deskPaintIcons(root); });
+  if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
+}
 function deskLoadData() {
   if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
   deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ });
@@ -629,7 +654,7 @@ function deskWarnWhy(row) {
 // list. only in the detals." It was drawn in every row of a goal in design mode until then, which was G9.7's miss.
 // goal/G33.4: an item's own End design is its Details' alone.
 var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete', 'end-design'];
-var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">⚔️</span>';
+var DESK_SWORD = deskGlyph('⚔️', 'There is a battle to be fought: make it the current goal in its Details');
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
 // THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too. It shows only once nothing under
@@ -695,7 +720,7 @@ function deskRowCells(row, presses) {
     // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
     // where i need to navigate to."
     '<td>' + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
-    '<td>' + (goal ? '<span title="a goal">📁</span>' : (Number(row.asks) > 0 ? '❌' : '💻')) + '</td>' +
+    '<td>' + (goal ? deskGlyph('📁', 'a goal') : deskGlyph(Number(row.asks) > 0 ? '❌' : '💻')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span>' + (row.alert ? ' ' + DESK_ALERT : '') + '</td>' +
     '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
@@ -1231,7 +1256,7 @@ function deskRuleElement(row, key) {
     kind: 'rule', key: key, index: deskRuleIndex,
     row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
     fields: [
-      { name: 'status', paint: function (v) { return '<span title="' + deskEsc(v.status) + '">' + (DESK_RULE_ICON[v.status] || '') + '</span>'; } },
+      { name: 'status', paint: function (v) { return DESK_RULE_ICON[v.status] ? deskGlyph(DESK_RULE_ICON[v.status], v.status) : '<span title="' + deskEsc(v.status) + '"></span>'; } },
       { name: 'label', paint: function (v) { return deskEsc(v.label); } },
       { name: 'type', paint: function (v) { return deskEsc(v.type); } },
       { name: 'key', paint: function (v) { return deskEsc(v.key); } },
@@ -1708,6 +1733,8 @@ spirit.shell.activateApp({
         // went with Andy's Apps ruling, 2026-10-13: "Apps replaces the label button". A plugin's UI is its tab under Apps.
       '</div>';
     deskHeader(api);
+    // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
+    deskWatchIcons(container);
     function show(tab) {
       // Apps opens on the inner tab last shown, Team the first time.
       if (tab === 'apps') tab = deskAppTab;

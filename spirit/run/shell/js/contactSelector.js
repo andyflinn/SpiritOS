@@ -41,9 +41,10 @@
 
 (function () {
   var escapeHtml = function (s) { return window.spirit.escapeHtml(String(s == null ? '' : s)); };
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). Its marks are the icon element (goal/G41.23; Andy, goal/G41.21: "this
+  // element will replace icons painting all shell elements and apps.").
   var parts = function () {
-    return Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js'].map(function (p) {
+    return Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js'].map(function (p) {
       return window.spirit.require ? window.spirit.require(p) : null;
     }));
   };
@@ -112,6 +113,26 @@
           { name: 'status', paint: function (r) { return statusGlyph(r); } },
         ],
       });
+      // Its mine, presence and status cells each hold one mark standing alone: once painted, the mark is made the icon
+      // element in its place (the span that carries its title, or the cell), as it is mounted and after each repaint.
+      var hosts = null;
+      function iconsIn() {
+        var I = window.spirit.elements.icon;
+        if (!hosts || !I || typeof I.create !== 'function') return;
+        ['mine', 'present', 'status'].forEach(function (name) {
+          var h = hosts[name];
+          if (!h || (typeof h.querySelector === 'function' && h.querySelector('.shell-icon'))) return;
+          var place = h.children && h.children.length === 1 ? h.children[0] : h;
+          var glyph = String(place.textContent || '').trim();
+          if (!glyph) return;
+          place.textContent = '';
+          I.create(place, { glyph: glyph });
+        });
+      }
+      var mount = el.mount;
+      el.mount = function (h) { hosts = h || null; var out = mount(h); iconsIn(); return out === undefined ? el : out; };
+      var apply = el.apply;
+      el.apply = function (changes) { var out = apply(changes); iconsIn(); return out; };
       elements[key] = el;
       return el;
     }

@@ -79,6 +79,25 @@
     });
     return answer;
   }
+  // THE RESULT CELL'S ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
+  // elements and apps."): the list draws each cell as text from its row's field, so once shell/js/icon.js is here a cell
+  // of the Result column holding only its ✅ or ❌ is made the element in place, as the list draws it (watched). The
+  // words of the filter buttons and the summary line are text beside a glyph, and stay as they are.
+  function paintResults(root) {
+    var I = win.spirit.elements && win.spirit.elements.icon;
+    if (!I || !root || typeof root.querySelectorAll !== 'function') return;
+    Array.prototype.forEach.call(root.querySelectorAll('td[data-field="result"]'), function (td) {
+      var glyph = String(td.textContent || '').trim();
+      if (!glyph || td.querySelector('.shell-icon')) return;
+      td.textContent = '';
+      I.create(td, { glyph: glyph });
+    });
+  }
+  function watchResults(root) {
+    var loaded = typeof win.spirit.require === 'function' ? Promise.resolve(win.spirit.require('shell/js/icon.js')).then(null, function () { /* the glyphs stay text */ }) : Promise.resolve();
+    loaded.then(function () { paintResults(root); });
+    if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { paintResults(root); }).observe(root, { childList: true, subtree: true });
+  }
   // ONE NICE LINE PER TEST (Andy: "test-file-name | failure-description | success or fail | since"), and NO DETAIL ON
   // SCREEN ("I know you can read those details, so it doesn't need to be on-screen."): the failure and the commit stay in
   // deskVerify. The probability search draws the columns from each row's own fields (outcome red or green, at the time);
@@ -159,6 +178,8 @@
           var tab = t && t.getAttribute ? t.getAttribute('data-fallout-tab') : null;
           if (tab === 'reds' || tab === 'items') { inner = tab; drawTabs(); }
         });
+        // Once per container, as the click is.
+        watchResults(container);
       }
       drawTabs();
       withList(mountList);

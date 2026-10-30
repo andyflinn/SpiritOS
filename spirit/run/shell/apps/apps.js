@@ -18,6 +18,14 @@ var APP_SCRIPT = /^(shell|process\/js)\/([^/]+)\/\2\.js$/;
 
 function appsEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function appsOnFace() { return !!(window.spirit && spirit.shell && typeof spirit.shell.faceApp === 'function'); }
+// THE APP'S ICON, SHOWN AS AN ICON (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
+// apps."): through shell/js/icon.js, which appsParts loads; its glyph as text only until then, so it is never empty.
+function appsShowIcon(holder, glyph) {
+  if (!holder) return;
+  var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  holder.textContent = '';
+  if (I && typeof I.create === 'function') I.create(holder, { glyph: glyph }); else holder.textContent = glyph;
+}
 // An app: its .js, with its .json in the Files cache beside it.
 function appsIsApp(path) {
   var m = APP_SCRIPT.exec(String(path || ''));
@@ -90,11 +98,12 @@ function appsPanelDraw(host, api, path) {
       '<div data-apps="installer"></div>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
       // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (shell/js/icons/listElement.js).
-      '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em">' + appsEsc(face.icon || '') + '</span> <span data-apps="icon-pick"></span>' +
+      '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em"></span> <span data-apps="icon-pick"></span>' +
         '<input type="hidden" data-face="icon" value="' + appsEsc(face.icon || '') + '"></label>' +
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
       (canWrite ? '' : '<div class="job-manifest-note">The face part is written from the face.</div>') +
       '<div data-apps="said" class="job-manifest-note"></div>';
+    appsShowIcon(panel.querySelector('[data-apps="icon-shown"]'), String(face.icon || ''));
     var installerBox = panel.querySelector('[data-apps="installer"]');
     if (installerBox) window.spirit.elements.appInstaller.create(installerBox, { path: path });
     if (!canWrite) return;
@@ -125,7 +134,7 @@ function appsPanelDraw(host, api, path) {
       pick: function (row, glyph) {
         if (!glyph) return;
         panel.querySelector('[data-face="icon"]').value = glyph;
-        panel.querySelector('[data-apps="icon-shown"]').textContent = glyph;
+        appsShowIcon(panel.querySelector('[data-apps="icon-shown"]'), glyph);
         save();
       },
     });
@@ -135,7 +144,7 @@ function appsPanelDraw(host, api, path) {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
 var appsParts = Promise.all(['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
-  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {

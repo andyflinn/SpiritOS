@@ -251,8 +251,9 @@ function contactsPaintUnknown() {
 // every contact row on the page (goal/G30.18).
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
-// through spirit.require, the list bringing its own.
-var contactsParts = spirit.require('shell/js/contacts/listElement.js');
+// through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
+// replace icons painting all shell elements and apps."), so the icon element comes with the list.
+var contactsParts = Promise.all([spirit.require('shell/js/contacts/listElement.js'), spirit.require('shell/js/icon.js')]);
 
 spirit.shell.activateApp({
   mount: function (container, api) {

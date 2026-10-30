@@ -17,6 +17,9 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) window.spirit.require('shell/js/rowElement.js');
+  // ITS DOT AND ITS MARK ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting
+  // all shell elements and apps."): an icon that stands alone, loaded here too.
+  var iconReady = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/icon.js') : null).then(null, function () { /* the glyph stays as text */ });
   var contacts = null;
   var subscribed = false;
 
@@ -57,6 +60,27 @@
   function esc(s) {
     var f = window.spirit && spirit.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  // A cell is painted as html (the shared row element's paint), so an icon is a place that names its glyph (data-icon),
+  // the glyph in it as text; once the cell is in the page, the icon element is made there (iconsIn).
+  function iconPlace(glyph, title) {
+    return '<span data-icon="' + esc(glyph) + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(glyph) + '</span>';
+  }
+  function iconsIn(hosts) {
+    var I = E.icon;
+    if (!hosts || !I || typeof I.create !== 'function') return;
+    var p = hosts.presence;
+    if (p && typeof p.querySelectorAll === 'function') {
+      Array.prototype.forEach.call(p.querySelectorAll('[data-icon]'), function (place) {
+        if (place.querySelector('.shell-icon')) return;
+        place.textContent = '';
+        I.create(place, { glyph: place.getAttribute('data-icon') });
+      });
+    }
+    // The status cell holds its mark alone, or nothing.
+    var s = hosts.status;
+    var mark = s ? String(s.textContent || '').trim() : '';
+    if (s && mark && !(typeof s.querySelector === 'function' && s.querySelector('.shell-icon'))) { s.textContent = ''; I.create(s, { glyph: mark }); }
   }
   // The label's rule, from the one definition (goal/G4.16).
   function nameRules() {
@@ -135,9 +159,10 @@
           var title = v.present === true ? 'present — a relay says they are connected'
             : v.present === false ? 'absent — a relay says they are not connected'
             : 'not known — no relay you are connected to mentions this key';
-          return '<span title="' + esc(title) + '">' + dot + '</span>';
+          return iconPlace(dot, title);
         } },
         { name: 'status', from: ['mine', 'blocked', 'held'], paint: function (v) {
+          // The cell is the mark alone, so the cell itself is its place (iconsIn).
           return v.blocked ? '❌' : v.held ? '⌛' : v.mine ? '⭐' : '';
         } },
         { name: 'label', from: ['name'], rule: nameRules(), paint: function (v) { return esc(v.name); },
@@ -160,9 +185,20 @@
         return spirit.ready.then(function (s) { return s.contact.get({ key: el.key }); });
       },
     });
+    // Its icons made in each cell it paints: as it is mounted, once icon.js is in, and after each repaint.
+    var hosts = null;
+    var mount = made.mount;
+    made.mount = function (h) {
+      hosts = h || null;
+      var out = mount(h);
+      iconsIn(hosts);
+      iconReady.then(function () { iconsIn(hosts); });
+      return out === undefined ? made : out;
+    };
     var apply = made.apply;
     made.apply = function (changes) {
       apply(changes);
+      iconsIn(hosts);
       var now = offered(made.row);
       if (now[0] === actions[0]) return;
       actions.splice.apply(actions, [0, actions.length].concat(now));

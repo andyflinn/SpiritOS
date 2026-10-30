@@ -654,11 +654,30 @@
     return { facts: { face: state ? state.face : '', loggedIn: !!(state && state.loggedIn), home: !!(state && state.home), up: !!(state && state.home) || link.up, sealed: link.sealed },
       open: open ? open.until : null, done: steps.map(done) };
   }
+  // A TILE'S ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
+  // apps."): shell/js/icon.js, asked through the one loader once the face reaches its home node (logged out, the relay
+  // serves the face its own parts only); until it is there the glyph is the tile's text, so no tile is ever blank.
+  var iconPart = null;
+  function iconLoaded() {
+    if (!iconPart && (link.up || (state && state.home)) && window.spirit && typeof window.spirit.require === 'function') {
+      iconPart = Promise.resolve(window.spirit.require('shell/js/icon.js')).then(null, function () { iconPart = null; });
+    }
+    return iconPart || Promise.resolve();
+  }
+  function paintGlyph(holder, glyph) {
+    var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+    if (I && typeof I.create === 'function') { holder.textContent = ''; I.create(holder, { glyph: glyph }); return; }
+    holder.textContent = glyph;
+    iconLoaded().then(function () {
+      var J = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+      if (J && typeof J.create === 'function' && holder.textContent === glyph && !holder.querySelector('.shell-icon')) { holder.textContent = ''; J.create(holder, { glyph: glyph }); }
+    });
+  }
   function icon(glyph, label, onOpen) {
     var el = document.createElement('div');
     el.className = 'app-icon';
     el.innerHTML = '<span class="icon"></span><span class="label"></span>';
-    el.querySelector('.icon').textContent = glyph || '';
+    paintGlyph(el.querySelector('.icon'), glyph || '');
     el.querySelector('.label').textContent = label;
     el.addEventListener('click', onOpen);
     desktop.appendChild(el);

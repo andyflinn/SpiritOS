@@ -83,7 +83,9 @@
       // element is loaded here, through spirit.require, never put on the face's own list of parts.
       container.innerHTML = '<div id="agent-bench" class="fill"></div>';
       var benchBox = container.querySelector('#agent-bench');
-      var loaded = E.workBench ? Promise.resolve() : Promise.resolve(spirit.require('shell/js/workBench.js'));
+      // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
+      // apps."), painted by the workBench's strip through shell/js/icon.js, loaded here with it.
+      var loaded = Promise.all([E.workBench ? null : spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js')]);
       loaded.then(function () { E = (window.spirit && window.spirit.elements) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE DETAIL PANE IS THE WORKBENCH'S CENTRE (Andy, on G41.4: "make the detail-panel take over the middle pane of the
       // workBench UI please"): a row opened from any table's list fills it, and what was there goes.

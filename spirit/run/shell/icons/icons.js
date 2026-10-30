@@ -48,11 +48,20 @@ function iconsPanel(api, row, glyph) {
 }
 function iconsPanelDraw(host, page, api, row, glyph) {
   host.innerHTML =
-    '<div class="stat-tile wide"><div class="panel-heading" style="font-size:2em">' + iconsEsc(glyph) + '</div>' +
+    '<div class="stat-tile wide"><div class="panel-heading" data-icons="glyph" style="font-size:2em">' + iconsEsc(glyph) + '</div>' +
     '<label class="field-label">Keywords <input type="text" data-icons="keywords" value="' + iconsEsc((row.keywords || []).join(', ')) + '"></label>' +
     '<button type="button" data-icons="remove">Remove this icon</button>' +
     '<div data-icons="said" class="job-manifest-note"></div></div>';
   var said = host.querySelector('[data-icons="said"]');
+  // THE ICON IT OPENS IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
+  // elements and apps."): the glyph written as text until shell/js/icon.js is here, then made the element in its place.
+  iconsParts.then(function () {
+    var heading = host.querySelector('[data-icons="glyph"]');
+    var I = window.spirit.elements.icon;
+    if (!heading || !I || heading.querySelector('.shell-icon')) return;
+    heading.textContent = '';
+    I.create(heading, { glyph: glyph });
+  }, function () { /* the glyph stays text */ });
   function back() { page.close(); }
   // Saved as the field changes, no Save button (as the Apps panel).
   // The keywords stop at their limit as they are typed (shell/js/fieldInput.js).
@@ -68,7 +77,7 @@ function iconsPanelDraw(host, page, api, row, glyph) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js'].map(function (p) { return spirit.require(p); }));
+var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {

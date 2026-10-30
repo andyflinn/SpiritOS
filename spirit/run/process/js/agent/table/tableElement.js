@@ -60,11 +60,21 @@
   // line, which every table's list and editor draw with, the grant editor included (E.agentDetail).
   //   THE TITLE ROW: [icon] then the words, each part in its own span; a detail pane's words are "Add | Change" and the
   //   table's name, a list pane's the table's name alone.
+  // ITS ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
+  // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
+  // shell/js/icon.js has not loaded (every pane that draws a title row loads it first, below).
+  function iconHtml(glyph, size) {
+    var I = window.spirit.elements && window.spirit.elements.icon;
+    if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
+    var hold = document.createElement('span');
+    I.create(hold, { glyph: String(glyph || ''), size: size });
+    return hold.innerHTML;
+  }
   function titleRow(look, words) {
     var l = look || {};
     // Set as a title, bigger than the lines below it (Andy: "the type face of the list and detail title rows should be a
     // bit more title-like a bit bigger").
-    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em;font-size:1.3em;font-weight:600"><span style="font-size:1.2em">' + esc(l.icon || '') + '</span>' +
+    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em;font-size:1.3em;font-weight:600">' + iconHtml(l.icon || '', 1.2) +
       words.map(function (w, i) { return i === 0 && words.length > 1 ? '<b>' + esc(w) + '</b>' : '<span>' + esc(w) + '</span>'; }).join('') + '</div>';
   }
   //   ONE FIELD A LINE ("the simple input lines, take up all the with availabe, with only the 1em between the inputs
@@ -131,8 +141,11 @@
         if (r.id) open(r.id, true);
       });
     });
-    needs(['shell/js/probabilitySearch.js']).then(function () {
+    needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
       if (gone) return;
+      // The title's icon, drawn before icon.js was there, through the icon element now (goal/G41.23).
+      var title = container.querySelector('.agent-title');
+      if (title && title.firstElementChild && !title.querySelector('.shell-icon')) title.firstElementChild.outerHTML = iconHtml(look.icon || '', 1.2);
       list = search(container.querySelector('#' + pre + 'list'), o, {
         matched: o.matched,
         pick: function (row, key) { open(key, false, row); },
@@ -204,7 +217,7 @@
         if (f.kind === 'pick') {
           var other = row[f.field] ? D().get(branchOf(f.pick) + '/' + row[f.field]) : null;
           var current = other ? (other.icon ? other.icon + ' ' : '') + (other.label || row[f.field]) : '';
-          needs(['shell/js/probabilitySearch.js']).then(function () {
+          needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, {
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,

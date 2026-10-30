@@ -17,13 +17,28 @@
   // require is not kept, so once the face is linked home the second ask reaches the node.
   function loginParts() { return spirit.require('shell/js/armingButton.js'); }
   loginParts().then(null, function () {});
+  // THE ICON ELEMENT TOO (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and
+  // apps."): a step's tick and its icon stand alone, so each is made by icon.create and handed on as its markup. Logged out
+  // the relay serves no icon.js, so they are plain text until it loads; then the steps are drawn again.
+  var lastDrawn = null;
+  Promise.resolve().then(function () { return spirit.require('shell/js/icon.js'); }).then(function () {
+    if (pane && lastDrawn) { shown = ''; draw(lastDrawn); }
+  }, function () { /* the glyphs stay text */ });
 
   function escape(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  function iconHtml(glyph) {
+    var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+    if (!glyph || !I || typeof I.create !== 'function') return escape(glyph || '');
+    var hold = document.createElement('span');
+    I.create(hold, { glyph: glyph });
+    return hold.innerHTML;
+  }
 
   function draw(h) {
     var said = JSON.stringify(h);
+    lastDrawn = h;
     if (said === shown) return;
     // Handed something new while he types in the field: drawn once he leaves it.
     if (pane.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
@@ -34,7 +49,7 @@
       var open = !done && !reached;
       if (s.until === h.open) reached = true;
       return '<li class="stat-tile wide">' +
-        '<div class="label">' + (done ? '☑️' : '⬜') + ' ' + escape(s.icon || '') + ' ' + escape(s.name) + '</div>' +
+        '<div class="label">' + iconHtml(done ? '☑️' : '⬜') + ' ' + iconHtml(s.icon || '') + ' ' + escape(s.name) + '</div>' +
         (open ? '<div class="job-manifest-note">' + escape(s.text || '') + '</div><div id="face-step-' + escape(s.until) + '"></div>' : '') +
         '</li>';
     }).join('') + '</ol>';

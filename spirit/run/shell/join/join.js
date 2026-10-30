@@ -24,7 +24,9 @@ var joinWaiting = false;  // handed something new while he was typing
 
 // The shell elements this app is made of. WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own
 // components, "lazy-load, is a tree...."): through spirit.require, and the steps are drawn again once they are in.
-var joinParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/js/contacts/listElement.js'].map(function (p) { return spirit.require(p); }));
+// Its step marks are the icon element (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell
+// elements and apps."), loaded here too.
+var joinParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/js/contacts/listElement.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
 joinParts.then(function () { joinShown = ''; joinShow(); }, function () { /* a form missing leaves its step without one */ });
 function joinEl() {
   var w = window.spirit.elements || {};
@@ -33,6 +35,18 @@ function joinEl() {
 // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
 var JOIN_DONE = '☑️';
 var JOIN_OPEN = '⬜';
+// A mark stands alone before its step's name, so it is an icon: a place naming its glyph, the glyph in it as text until
+// the icon element is made there (joinIcons), once the list is drawn and icon.js is in. A glyph among words stays text.
+function joinMark(glyph) { return '<span data-icon="' + glyph + '">' + glyph + '</span>'; }
+function joinIcons(host) {
+  var I = window.spirit.elements && window.spirit.elements.icon;
+  if (!host || !I || typeof I.create !== 'function') return;
+  Array.prototype.forEach.call(host.querySelectorAll('[data-icon]'), function (p) {
+    if (p.querySelector('.shell-icon')) return;
+    p.textContent = '';
+    I.create(p, { glyph: p.getAttribute('data-icon') });
+  });
+}
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
 // The steps' names, icons and words, read once from this app's own manifest.
 // Asked once, as it loads (goal/G40.8: spirit.fs answers when it has it, where the kernel's read waited in place).
@@ -66,12 +80,13 @@ function joinDraw() {
     var open = !done[i] && !reached;
     if (s.until === joinHanded.open) reached = true;
     return '<li class="stat-tile wide">' +
-      '<div class="label">' + (done[i] ? JOIN_DONE : JOIN_OPEN) + ' ' + joinEsc(s.icon || '') + ' ' + joinEsc(s.name) +
+      '<div class="label">' + joinMark(done[i] ? JOIN_DONE : JOIN_OPEN) + ' ' + joinEsc(s.icon || '') + ' ' + joinEsc(s.name) +
         (s.optional ? ' <span class="job-manifest-note">(optional)</span>' : '') + '</div>' +
       (open ? '<div class="job-manifest-note">' + joinEsc(s.text || '') + '</div><div id="join-step-' + i + '"></div>' : '') +
       '</li>';
   }).join('') + '</ol>' +
   (joinHanded.open ? '' : '<div class="job-manifest-note">' + JOIN_DONE + ' Every step is done.</div>');
+  joinIcons(host);
   list.forEach(function (s, i) {
     var box = document.getElementById('join-step-' + i);
     if (box) joinForm(s, box);
