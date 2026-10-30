@@ -138,12 +138,13 @@ function ddFrame() {
     '<div id="dd-bench" class="fill" style="min-height:0"></div>' +
     '<div id="dd-hold">' +
       // The left pane's content, a box of its own that scrolls (goal/G41.11: a long list is never cut off unseen).
-      '<div id="dd-left" class="fill" style="min-height:0;overflow:auto">' +
+      // The left pane's content: its rows on top, the panel taking the rest (each panel scrolls in itself, ddPanelHtml).
+      '<div id="dd-left" class="fill" style="min-height:0;overflow:hidden">' +
         // ATTACH A RULE, ON TOP OF THE RULES (goal/G41.11; Andy: "the add-rule dropdown is at the bottom of a (sometimes
         // LONG) list, and it must be on top"): a probability search of the rules as a dropdown; a pick attaches it. In
         // the frame, so the search survives every repaint; it shows with the rules panel only.
         '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
-        '<div id="dd-panel"></div>' +
+        '<div id="dd-panel" class="fill" style="min-height:0"></div>' +
     // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
     // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
     // label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the
@@ -201,7 +202,9 @@ function ddMakeBench(n) {
     },
   });
   ddBench.center.appendChild(centre);
-  ddBench.press('left', ddPanelSel);
+  // The bench shows its first tool when it is made; a press of the tool shown would collapse the side (found by wsl in
+  // the browser: no left panel until an icon was pressed), so only another tool is pressed.
+  if (ddBench.shown('left') !== ddPanelSel) ddBench.press('left', ddPanelSel);
   ddShowLeft(ddPanelSel);
   if (hold && hold.parentNode) hold.parentNode.removeChild(hold);
   ddPaint();
@@ -390,12 +393,18 @@ function ddGrantsHtml(open) {
     return '';
   }).join('');
 }
+// EVERY LEFT PANEL USES ALL ITS PANE (goal/G41.22; Andy: "all left side panels must fucking use all available vertical
+// space, especially the lists"): what stands on top stays put, the list under it takes the rest and scrolls in itself.
+function ddScrolls(html) { return '<div class="fill" style="min-height:0;overflow:auto">' + html + '</div>'; }
 function ddPanelHtml() {
-  if (ddPanelSel === 'qs') return ddQsHtml();
-  if (ddPanelSel === 'blocks') return ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>';
-  if (ddPanelSel === 'suites') return ddSuitesHtml();
-  if (ddPanelSel === 'rules') return ddRulesHtml();
-  if (ddPanelSel === 'files') return ddGrantsHtml(true) + (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false);
+  if (ddPanelSel === 'qs') return ddScrolls(ddQsHtml());
+  if (ddPanelSel === 'blocks') return ddScrolls(ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>');
+  if (ddPanelSel === 'suites') return ddScrolls(ddSuitesHtml());
+  if (ddPanelSel === 'rules') return ddScrolls(ddRulesHtml());
+  // Andy: "the file panel must have the red gran button row pinned to the top and the file list only using the
+  // remaining vertical space".
+  if (ddPanelSel === 'files') return '<div style="flex:none">' + ddGrantsHtml(true) + '</div>' +
+    ddScrolls((ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false));
   return ddBoxHtml();
 }
 
@@ -429,8 +438,10 @@ function ddBoxHtml() {
   // When the user clicks outside of that text box, and deactivates the input, also by leaving the details dialog, the
   // box input is released from the take. When a details dialog is opened, the text box is never taken."
   // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
-  return '<div' + taken + ' style="' + cap + 'height:100%;box-sizing:border-box">' +
-    '<textarea id="dd-box-input" style="width:100%;height:calc(30vh - 12px);box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
+  // THE FULL HEIGHT OF ITS PANE (goal/G41.22; Andy: "the box must use the full vertical space"): the old upper half's
+  // 30% is gone with the half itself.
+  return '<div' + taken + ' class="fill" style="' + cap + 'min-height:0;box-sizing:border-box">' +
+    '<textarea id="dd-box-input" style="flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
 // WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
@@ -553,7 +564,18 @@ function ddChatHtml() {
 // lines above"): the lines read oldest to newest, a new line goes in at the bottom, and the chat is scrolled to its end.
 var ddChatShown = { host: null, items: [], more: false };
 function ddChatKey(l) { return String(l.at) + '|' + String(l.key || l.by); }
-function ddChatPin(host) { host.scrollTop = host.scrollHeight; }
+// It stays pinned while the box changes size under it (the parts above it drawn late made it 44 pixels shorter after the
+// pin, found in the browser by wsl): pinned is whether he is at the end, and a change of size keeps him there.
+var ddChatPinned = true;
+var ddChatWatched = null;
+function ddChatPin(host) {
+  host.scrollTop = host.scrollHeight;
+  ddChatPinned = true;
+  if (ddChatWatched === host || typeof ResizeObserver !== 'function' || typeof host.addEventListener !== 'function') return;
+  ddChatWatched = host;
+  host.addEventListener('scroll', function () { ddChatPinned = host.scrollTop >= host.scrollHeight - host.clientHeight - 2; });
+  new ResizeObserver(function () { if (ddChatPinned) host.scrollTop = host.scrollHeight; }).observe(host);
+}
 function ddChatSync() {
   var host = document.getElementById('dd-chat');
   if (!host) return;

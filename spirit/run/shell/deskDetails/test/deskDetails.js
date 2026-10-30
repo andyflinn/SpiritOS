@@ -479,5 +479,48 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   let bound = null;
   for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
   ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
+  // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
+  // The page above has no layout, so what fills and what scrolls is asked of Chrome (wsl's verify of 3929879b found the
+  // chat 44 pixels short of its bottom, no left panel at open, and the box a third of its pane, all green here):
+  // ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
+  // with 200 chat lines and a long box.
+  const OPENED = '/DEBUG/shell/deskDetails/test/deskDetails-opened.html';
+  test.subHeading(OPENED.slice('/DEBUG'.length) + ': opened on an item, in the home page\'s app area');
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const chrome = H.findChrome();
+  if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
+  else {
+    const node = await H.scratchNode();
+    let page = null;
+    try {
+      page = node.up && node.debug ? await H.chromePage(chrome) : null;
+      if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up with its DEBUG on');
+      else {
+        await page.send('Page.navigate', { url: node.base + OPENED });
+        await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+        const s = await page.evaluate('window.opened()').catch(function () { return ''; });
+        let m = null;
+        try { m = JSON.parse(s); } catch (e) { m = null; }
+        if (!m) test.fail('the page measured nothing: ' + String(s).slice(0, 200));
+        else {
+          ok(!m.scrolls && !!m.say && m.say.bottom <= m.window, 'the page does not scroll, and the chat input is on screen (its bottom ' + (m.say && m.say.bottom) + ' of ' + m.window + ')',
+            'the page scrolls, or the input is off screen: ' + JSON.stringify({ scrolls: m.scrolls, input: m.say, window: m.window }));
+          ok(!!m.chatEnd && m.chatEnd.top >= m.chatEnd.end - 1, 'the chat is pinned to its bottom: scrolled to its end',
+            'the chat is scrolled to ' + JSON.stringify(m.chatEnd));
+          ok(!!m.newest && /line 199/.test(m.newest.text) && !!m.chat && m.newest.bottom <= m.chat.bottom + 1, 'the newest line is the last, and shows whole at the bottom',
+            'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
+          ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows (' + m.leftShown + '), as the details did before the workBench',
+            'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
+          ok(!!m.box && !!m.pane && m.box.bottom >= m.pane.bottom - 24 && m.box.bottom <= m.pane.bottom + 1, 'the box fills the left pane, top to bottom',
+            'the box is ' + JSON.stringify(m.box) + ' in the left pane ' + JSON.stringify(m.pane));
+        }
+      }
+    } finally {
+      if (page && page.kid) page.kid.kill();
+      if (node.child) node.child.kill();
+      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

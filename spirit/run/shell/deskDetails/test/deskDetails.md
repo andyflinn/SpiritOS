@@ -88,6 +88,18 @@ vertically"*.
 - That every box of the panel is bounded, tall and wide, is the shell's general rules' check
   (`shell/test/boot-sibling-generalRules.md`), which mounts this app.
 
+### Opened on an item, in a real browser (goal/G41.22)
+
+The page above has no layout, so what fills and what scrolls is asked of Chrome: `./deskDetails-opened.html`, opened at
+`/DEBUG/shell/deskDetails/test/deskDetails-opened.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`),
+opens the panel in the home page's app area (`#app-container` > `#app-header`, `#app-content`, under `/shell.css`) on
+an item with 200 chat lines and a long box. The desk is a stand-in that answers the reads.
+
+- The page does not scroll, nor the app area; the chat input's bottom is on screen.
+- The chat is scrolled to its end, and the newest line is its last, shown whole above the chat's bottom.
+- At open a left panel shows, as the details did before the workBench.
+- The box fills the left pane, top to bottom: no box left at the old upper half's 30%.
+
 ## What its test must try to break (goal/G41.22)
 
 - An appHeader left; the title bar missing the id, the title or the status.
@@ -95,3 +107,5 @@ vertically"*.
 - The button row inside the workBench, or below it.
 - The chat, its search or its input outside the centre, or out of order; an input that resizes sideways.
 - The newest line on top; a new line put in on top; a chat not scrolled to its newest line; a line drawn again.
+- In the browser: a chat stopped short of its end, the newest line cut off; a left pane empty at open; a box a third of
+  its pane.
