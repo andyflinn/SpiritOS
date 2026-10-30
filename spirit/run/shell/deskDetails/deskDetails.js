@@ -109,29 +109,36 @@ function ddSecondPress(b) {
 //
 // Andy: "if possible refresh only the chat history, so my typing doesn't get
 // wiped". The inputs live in the frame and are never repainted.
+// THE PANEL IS A workBench (goal/G41.22, box v15; Andy: "the item panel drops appHeader", "one row, the button row, at
+// the top, using the whole width, like it is today", "just use workBench", "the left icons strip and panel, are what we
+// have today", "the center panel us the chat", "the right panel, we leave blank, but will carry plugin-desk-apps"). The
+// id, title and status stay in the shell's title bar (ddPaint), as before. The left pane and the chat are written in a
+// holder first, so the inputs are in the frame from the start; the workBench, once spirit.require brings it, takes them.
+var ddBenchParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/workBench.js') : null);
+var ddBench = null;
+var ddBenchBoxes = {};
+var ddFrameN = 0;
 function ddFrame() {
   var el = document.getElementById('dd-body');
   if (!el) return;
+  if (ddBench && typeof ddBench.destroy === 'function') ddBench.destroy();
+  ddBench = null;
+  ddBenchBoxes = {};
+  var n = ++ddFrameN;
   el.innerHTML =
-    // His buttons and the strip stay pinned BELOW the title bar while the
-    // rest scrolls (desk/G1.12; goal/G2.1 note 4). SINCE goal/G6.1 the shell's
-    // app header does the sticking: ddHeader moves this block into it.
     // FLAT, NO TITLE BUBBLE (goal/G9.6). Andy: "the deskDetail has the title already in the shells title bar", and
     // "no rounded corners", "no margins and no padding". The status the bubble carried rides in the title bar.
-    '<div id="dd-bars">' +
+    '<div id="dd-bars" style="flex:none">' +
       '<div id="dd-name-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
       // THE RUN, WHILE THE VERIFIER RUNS THIS ITEM (goal/G33.6): the same rendering as the List's status column.
       '<div id="dd-run"></div>' +
     '</div>' +
-    // THE UPPER HALF (goal/G30.8; Andy, 2026-10-20: "an Icon strip down the left side of the detail panel. and an upper
-    // and a lower half"): fixed at 30% of the page, so nothing arriving late moves the page; the icons down its left
-    // edge, one panel at a time to their right. The yellow "How you check it" bubble that stood in the header is gone.
-    // A waiting icon blinks; the open one is marked.
-    '<style>.dd-icon{font-size:20px;padding:4px 6px;opacity:.55}.dd-icon-on{opacity:1;outline:1px solid currentColor}' +
-      '.dd-blink{opacity:1;animation:ddBlink 1s step-start infinite}@keyframes ddBlink{50%{opacity:.2}}</style>' +
-    '<div id="dd-upper" style="display:flex;gap:8px;height:30vh;overflow:hidden">' +
-      '<div id="dd-icons" style="display:flex;flex-direction:column;gap:6px"></div>' +
-      '<div style="flex:1;overflow:auto">' +
+    // A waiting icon blinks (goal/G30.8: "the icons on the left will blink if grants, or red Q's need my attention").
+    '<style>.dd-blink{animation:ddBlink 1s step-start infinite}@keyframes ddBlink{50%{opacity:.2}}</style>' +
+    '<div id="dd-bench" class="fill" style="min-height:0"></div>' +
+    '<div id="dd-hold">' +
+      // The left pane's content, a box of its own that scrolls (goal/G41.11: a long list is never cut off unseen).
+      '<div id="dd-left" class="fill" style="min-height:0;overflow:auto">' +
         // ATTACH A RULE, ON TOP OF THE RULES (goal/G41.11; Andy: "the add-rule dropdown is at the bottom of a (sometimes
         // LONG) list, and it must be on top"): a probability search of the rules as a dropdown; a pick attaches it. In
         // the frame, so the search survives every repaint; it shows with the rules panel only.
@@ -147,32 +154,57 @@ function ddFrame() {
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
       '</div>' +
-    '</div>' +
-    // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
-    // box.", then "yes, add it here." The probability search over chat.search (goal/G40.12: "all searches in desk are of
-    // the new probability variety"): a dropdown that ranks the lines as he types and marks the words; a line said in
-    // another item opens that item. In the frame, so it survives every repaint.
-    '<div class="start-job-form card"><div id="dd-chat-find" style="flex:1"></div></div>' +
-    '<div class="start-job-form card"><label class="field-label grow">Say' +
-      // Return is a new line; only Send sends (desk/G1.12).
-      '<textarea id="dd-say" rows="3" placeholder="under this item"></textarea></label>' +
-      '<button type="button" id="dd-say-send">Send</button></div>' +
-    '<div id="dd-error" class="job-start-error"></div>' +
-    '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
-  ddHeader();
+      // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "the chat has it's search at the top and it's input at the bottom, and
+      // scolls upward, not downward", "newest lines at the bottom, pinned to the bottom, and older lines above").
+      '<div id="dd-centre" class="fill" style="min-height:0">' +
+        // THE CHAT SEARCH (goal/G18.5, G40.12): the probability search over chat.search, a dropdown; a line said in
+        // another item opens that item. In the frame, so it survives every repaint.
+        '<div class="start-job-form card" style="flex:none"><div id="dd-chat-find" style="flex:1"></div></div>' +
+        '<div id="dd-chat" style="flex:1 1 auto;min-height:0;overflow:auto"></div>' +
+        '<div id="dd-error" class="job-start-error" style="flex:none"></div>' +
+        '<div class="start-job-form card" style="flex:none"><label class="field-label grow">Say' +
+          // Return is a new line; only Send sends (desk/G1.12). Sized up and down only (Andy: "the chat input can only be
+          // sized vertially").
+          '<textarea id="dd-say" rows="3" placeholder="under this item" style="resize:vertical"></textarea></label>' +
+          '<button type="button" id="dd-say-send">Send</button></div>' +
+      '</div>' +
+    '</div>';
+  ddBenchParts.then(function () { ddMakeBench(n); }, function () { /* no workBench: the holder shows it all, as written */ });
 }
-// THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #dd-bars moves into the app header, which sticks it
-// under the titlebar, and takes its id.
-function ddHeader() {
-  var old = document.getElementById('dd-bars');
-  var els = ddApi && ddApi.ui && ddApi.ui.elements;
-  if (!old || !els || !els.appHeader) return;
-  // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = els.appHeader.create(old.parentNode);
-  old.parentNode.insertBefore(head, old);
-  head.id = 'dd-bars';
-  while (old.firstChild) head.appendChild(old.firstChild);
-  old.parentNode.removeChild(old);
+// The left pane shows today's panel of the tool shown; the strip's tool is the panel's key (DD_PANELS).
+function ddShowLeft(name) {
+  var left = document.getElementById('dd-left');
+  var box = ddBenchBoxes[name];
+  if (left && box && left.parentNode !== box) box.appendChild(left);
+}
+function ddMakeBench(n) {
+  var W = window.spirit && window.spirit.elements && window.spirit.elements.workBench;
+  var host = document.getElementById('dd-bench');
+  var hold = document.getElementById('dd-hold');
+  var centre = document.getElementById('dd-centre');
+  if (n !== ddFrameN || !W || typeof W.create !== 'function' || !host || !centre) return;
+  ddBench = W.create(host, {
+    left: DD_PANELS.map(function (p) {
+      return { name: p.key, icon: p.icon, title: p.title, mount: function (box) { ddBenchBoxes[p.key] = box; } };
+    }),
+    // goal/G41.22: blank until a desk plugin app gives it a tool.
+    right: [],
+    changed: function (side, name) {
+      if (side !== 'left' || !name) return;
+      ddShowLeft(name);
+      if (name === ddPanelSel) return;
+      ddPanelSel = name;
+      ddPaint();
+      if (name === 'blocks') ddLoadTargets();
+      if (name === 'suites') ddLoadSuites(ddId);
+      if (name === 'rules') { ddLoadRuleNames(); ddMountRulePick(); }
+    },
+  });
+  ddBench.center.appendChild(centre);
+  ddBench.press('left', ddPanelSel);
+  ddShowLeft(ddPanelSel);
+  if (hold && hold.parentNode) hold.parentNode.removeChild(hold);
+  ddPaint();
 }
 
 // goal/G33.4: an item's own End design, while its goal is out of design.
@@ -314,12 +346,15 @@ var DD_PANELS = [
   { key: 'rules', icon: '📖', title: 'the rules attached' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
-function ddIconsHtml() {
+// The workBench draws the strip and marks the shown tool (goal/G41.22); a waiting icon on it blinks.
+function ddBlinkIcons() {
+  var body = document.getElementById('dd-body');
+  if (!body || typeof body.querySelectorAll !== 'function') return;
   var blink = { qs: ddWaits('Q'), files: ddWaits('G') };
-  return DD_PANELS.map(function (p) {
-    var cls = (p.key === ddPanelSel ? 'dd-icon dd-icon-on' : 'dd-icon') + (blink[p.key] ? ' dd-blink' : '');
-    return '<button type="button" data-panel="' + p.key + '" class="' + cls + '" title="' + ddEsc(p.title) + '">' + p.icon + '</button>';
-  }).join('');
+  Array.prototype.forEach.call(body.querySelectorAll('[data-side="left"][data-tool]'), function (b) {
+    var on = !!blink[b.getAttribute('data-tool')];
+    if (b.classList) b.classList.toggle('dd-blink', on);
+  });
 }
 // The red Qs open on this item, each with his remove (his clear, "Q1: clear", desk clearOf), and the checks (C) to press.
 function ddQsHtml() {
@@ -509,34 +544,39 @@ function ddName(label) {
 function ddChatHtml() {
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
-  return ddChat.slice().reverse().map(ddBubble).join('') + older;
+  return older + ddChat.map(ddBubble).join('');
 }
 // THE CHAT IS NEVER DRAWN AGAIN WHOLE BY A PAINT (goal/G41.11; Andy: "in ALL the chats, new lines are no added, THE WHOLE
-// FUCKING THING IS REDRAWN, killing my attempted copies"): each bubble shown is kept by its line; a new line goes on top,
-// a changed one replaces only its own bubble, a line gone takes its bubble with it. A new frame draws it once, whole.
+// FUCKING THING IS REDRAWN, killing my attempted copies"): each bubble shown is kept by its line; a changed one replaces
+// only its own bubble, a line gone takes its bubble with it. A new frame draws it once, whole.
+// NEWEST AT THE BOTTOM, PINNED THERE (goal/G41.22; Andy: "newest lines at the bottom, pinned to the bottom, and older
+// lines above"): the lines read oldest to newest, a new line goes in at the bottom, and the chat is scrolled to its end.
 var ddChatShown = { host: null, items: [], more: false };
 function ddChatKey(l) { return String(l.at) + '|' + String(l.key || l.by); }
+function ddChatPin(host) { host.scrollTop = host.scrollHeight; }
 function ddChatSync() {
   var host = document.getElementById('dd-chat');
   if (!host) return;
-  var want = ddChat.slice().reverse().map(function (l) { return { k: ddChatKey(l), h: ddBubble(l) }; });
+  var want = ddChat.map(function (l) { return { k: ddChatKey(l), h: ddBubble(l) }; });
   var whole = host !== ddChatShown.host || !want.length || !ddChatShown.items.length || ddChatMore !== ddChatShown.more;
   if (whole) {
     host.innerHTML = ddChatHtml();
-    var kids = host.children || [];
+    // The note over the lines, when older lines are left out, is the first child.
+    var kids = Array.prototype.slice.call(host.children || [], ddChatMore ? 1 : 0);
     ddChatShown = { host: host, more: ddChatMore, items: want.length ? want.map(function (w, i) { return { k: w.k, h: w.h, node: kids[i] }; }) : [] };
+    ddChatPin(host);
     return;
   }
+  var grew = want.length && ddChatShown.items.length && want[want.length - 1].k !== ddChatShown.items[ddChatShown.items.length - 1].k;
   var drawn = Object.create(null);
   ddChatShown.items.forEach(function (d) { drawn[d.k] = d; });
   var wanted = Object.create(null);
   want.forEach(function (w) { wanted[w.k] = true; });
   ddChatShown.items.forEach(function (d) { if (!wanted[d.k] && d.node && d.node.parentNode === host) host.removeChild(d.node); });
-  // The note under the lines, when older lines are left out, stays the last child.
-  var foot = ddChatMore ? host.lastChild : null;
+  var foot = null;
   var next = [];
-  // From the oldest up: a kept bubble stays where it is; a changed one is replaced in place; a new one goes in just
-  // above the bubble under it (or above the note, or last).
+  // From the newest up: a kept bubble stays where it is; a changed one is replaced in place; a new one goes in just
+  // above the bubble under it, or last.
   for (var i = want.length - 1; i >= 0; i--) {
     var w = want[i];
     var d = drawn[w.k];
@@ -549,6 +589,8 @@ function ddChatSync() {
     next.unshift({ k: w.k, h: w.h, node: node });
   }
   ddChatShown = { host: host, more: ddChatMore, items: next };
+  // A new line at the bottom keeps it pinned there; any other repaint leaves the scroll where he put it.
+  if (grew) ddChatPin(host);
 }
 
 function ddSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
@@ -560,7 +602,7 @@ function ddPaint() {
   ddSet('dd-run', ddRunHtml());
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
-  ddSet('dd-icons', ddIconsHtml());
+  ddBlinkIcons();
   // The chat search stands in the frame; it is made once the frame is drawn (ddMountChatFind), never again by a paint.
   if (!ddChatFind || ddChatFindHost !== document.getElementById('dd-chat-find')) ddMountChatFind();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
@@ -901,7 +943,7 @@ function ddLoad() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     ddApi = api;
-    container.innerHTML = '<div id="dd-body" class="stack"></div>';
+    container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0"></div>';
     document.getElementById('dd-body').addEventListener('click', function (event) {
       var t = event.target;
       // THE BLOCK BUBBLE (goal/G27.5): a delete on a stated block, the add, its fold.
@@ -914,21 +956,12 @@ spirit.shell.activateApp({
         if (to) ddWrite('block', { id: ddId, blocks: to }).then(ddLoadTargets);
         return;
       }
-      // THE STRIP (goal/G30.8): an icon shows its panel; the blocks ask their targets then. A red Q's remove is his clear.
+      // THE STRIP IS THE workBench's (goal/G41.22): an icon shows its panel through the bench's changed (ddMakeBench).
       var attr = function (name) {
         if (t && t.getAttribute && t.getAttribute(name) != null) return t.getAttribute(name);
         var up = t && t.closest ? t.closest('[' + name + ']') : null;
         return up && up.getAttribute ? up.getAttribute(name) : null;
       };
-      var panel = attr('data-panel');
-      if (panel) {
-        ddPanelSel = panel;
-        ddPaint();
-        if (panel === 'blocks') ddLoadTargets();
-        if (panel === 'suites') ddLoadSuites(ddId);
-        if (panel === 'rules') { ddLoadRuleNames(); ddMountRulePick(); }
-        return;
-      }
       var ruleOff = attr('data-rule-remove');
       if (ruleOff) { ddWrite('item.rules.remove', { id: ddId, rule: ruleOff }); return; }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
