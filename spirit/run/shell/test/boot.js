@@ -138,10 +138,13 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
       return p === 'shell.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) || p === 'shell/seal.js' || p === 'shell/boot.js' ||
         /^shell\/login\//.test(p) || /^shell\/join\//.test(p) || p === 'shell/navigationWrapper.js' || p === 'shell/js/joinSteps.js' ||
         // goal/G41.19: the home lists its apps from the file tree, so boot loads the tree's row element; spirit.js no longer does.
-        p === 'shell/js/files/rowElement.js';
+        p === 'shell/js/files/rowElement.js' ||
+        // goal/G41.23 (Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps."): the
+        // home paints its app tiles' icons through the icon element.
+        p === 'shell/js/icon.js';
     };
     const extra = paths.filter(function (p) { return !allowed(p); }).filter(function (p, i, all) { return all.indexOf(p) === i; });
-    ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheet, the seal, the login app, Join and the navigation (' + paths.length + ' paths read)',
+    ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheet, the seal, the login app, Join, the navigation, the tree\'s row and the icon (' + paths.length + ' paths read)',
       'boot loads components that are no part of it: ' + short(extra));
     ok(/shell\/login\/login\.js/.test(boot) && /shell\/join\b/.test(boot), 'login and Join are hard-coded in boot by their paths', 'boot does not name shell/login/login.js and shell/join');
     ok(!/(login|join)[\w.]*\.sidecar\.json/.test(boot), 'boot reads no sidecar of login or Join', 'boot reads the sidecar of login or Join');

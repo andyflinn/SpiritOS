@@ -114,7 +114,9 @@ box is its own check, named by the element's path and the box's id chain."*
   mounts: a bare mount draws no data, so most icons are seen only in the code). A shell script, no test and no vendor
   code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
   icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
-  icon selector, the workBench), names `shell/js/icon.js`. Each is its own check, named by its path.
+  icon selector, the workBench), names `shell/js/icon.js`. Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
+  before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
+  blocked and held marks, and the contacts list's filter icons, drawn before their words.
 - **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
 
 **Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we

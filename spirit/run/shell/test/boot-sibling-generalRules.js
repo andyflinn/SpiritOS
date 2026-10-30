@@ -72,11 +72,19 @@ const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js'
   'shell/js/icons/rowElement.js', 'shell/js/iconSelector.js', 'shell/js/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
+// A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
+// (Andy: "glyphs are legal in labels and description true").
+const TEXT_ONLY = {
+  'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
+  'shell/js/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
+  'shell/js/contacts/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+};
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
     if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'shell/js/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
+    if (TEXT_ONLY[f]) return false;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
     return ALONE.test(code);
   });
@@ -85,6 +93,7 @@ function iconsLoaded() {
   test.subHeading('every shell file that paints an icon loads the icon element');
   const files = painters();
   test.comment(files.length + ' shell files paint icons: ' + files.join(', '));
+  test.comment('glyphs among words only, read by hand: ' + Object.keys(TEXT_ONLY).map(function (f) { return f + ' (' + TEXT_ONLY[f] + ')'; }).join('; '));
   files.forEach(function (f) {
     const src = fs.readFileSync(path.join(RUN, f), 'utf8');
     ok(src.indexOf('shell/js/icon.js') !== -1, f + ': it paints icons and loads shell/js/icon.js', f + ': it paints icons and never loads shell/js/icon.js');
