@@ -41,6 +41,20 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
   never below 120 pixels. After the `pointerup`, a move changes nothing.
 - `destroy()` empties the container and drops its listeners: a click after it does nothing.
 
+### Kept to its container (goal/G41.22)
+
+Andy: *"workBench if, contained, needs to be restreicted by its container, be that the shell app itself or another
+container."* Asked of a real browser, since the stubs have no layout: `./workBench-contained.html`, opened at
+`/DEBUG/shell/js/test/workBench-contained.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), puts
+one workBench in each container below, a tool on each side and every pane given 5000 pixels of content.
+
+- The containers: a box of 300 pixels that is a plain block; a box of 300 pixels that is a flex column; the shell's app
+  area as the home page draws it (`#app-container` > `#app-header`, `#app-content`, under `/shell.css`), the window
+  1280 by 800.
+- In each, the workBench is no taller than its container, its bottom inside it; the container does not spill, and
+  neither the page nor the app area scrolls.
+- In each, the left pane, the right pane and the centre scroll inside the container.
+
 ## What its test must try to break
 
 - A second mount of a tool shown again.
@@ -48,3 +62,4 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
 - A drag past the minimum, and a move after the pointer is up.
 - A click after destroy.
 - A side pane, the centre, an icon strip, or a tool's box, that is only as tall as its content.
+- A workBench that grows past a container that is no flex column, or past the shell's app area, so the page scrolls.

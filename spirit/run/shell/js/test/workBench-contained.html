@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.22 (Andy: "workBench if, contained, needs to be restreicted by its container, be that the shell app itself or
+// another container."): one workBench at a time in a container of its own, every pane given 5000 pixels of content, and
+// what the browser makes of it, measured. Opened by ./workBench.js at /DEBUG/shell/js/test/workBench-contained.html.
+window.contained = function (name) {
+  return spirit.require('shell/js/workBench.js').then(function () {
+    document.body.querySelectorAll('.case').forEach(function (n) { n.remove(); });
+    var c;
+    var outer = null;
+    if (name === 'app') {
+      // The home page's app area, as index.html draws it.
+      outer = document.createElement('div');
+      outer.id = 'app-container';
+      outer.className = 'case';
+      outer.innerHTML = '<div id="app-header"><div id="app-title">a title</div></div><div id="app-content"></div>';
+      document.body.appendChild(outer);
+      c = document.getElementById('app-content');
+    } else {
+      c = document.createElement('div');
+      c.className = 'case';
+      c.style.cssText = 'height:300px;width:900px' + (name === 'flex' ? ';display:flex;flex-direction:column' : '');
+      document.body.appendChild(c);
+    }
+    function tall(box) { var d = document.createElement('div'); d.style.cssText = 'height:5000px;flex:none'; d.textContent = 'tall'; box.appendChild(d); }
+    var b = spirit.elements.workBench.create(c, {
+      left: [{ name: 'a', icon: 'A', title: 'a', mount: tall }],
+      right: [{ name: 'b', icon: 'B', title: 'b', mount: tall }],
+    });
+    tall(b.center);
+    var root = c.firstElementChild;
+    var room = name === 'app' ? { top: 0, bottom: window.innerHeight, height: window.innerHeight } : c.getBoundingClientRect();
+    var rr = root.getBoundingClientRect();
+    function pane(el) { var r = el.getBoundingClientRect(); return { scrolls: el.scrollHeight > el.clientHeight + 1, bottom: Math.round(r.bottom) }; }
+    var panes = {};
+    root.querySelectorAll('[id$="pane-left"],[id$="pane-right"]').forEach(function (p) { panes[p.id.replace(/^wb\d+-/, '')] = pane(p); });
+    panes.centre = pane(b.center);
+    var page = document.scrollingElement;
+    return JSON.stringify({
+      room: Math.round(room.bottom), bench: { bottom: Math.round(rr.bottom), height: Math.round(rr.height) }, roomHeight: Math.round(room.height),
+      spilt: c.scrollHeight > c.clientHeight + 1,
+      pageScrolls: page.scrollHeight > page.clientHeight + 1 || !!(outer && outer.scrollHeight > outer.clientHeight + 1),
+      panes: panes,
+    });
+  });
+};
+</script>
+</body>
+</html>

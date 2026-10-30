@@ -191,4 +191,49 @@ let threw = null;
 try { wb.press('left', 'a'); } catch (e) { threw = e; }
 ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after destroy threw ' + (threw && threw.message));
 
-test.reportSuccessFailureCount();
+// ── goal/G41.22: KEPT TO ITS CONTAINER, IN A REAL BROWSER ────────────────────────────────────────────────────────────
+// Andy: "workBench if, contained, needs to be restreicted by its container, be that the shell app itself or another
+// container." The stubs above have no layout, so this is asked of Chrome: ./workBench-contained.html, on a scratch node
+// with its DEBUG on, puts one workBench in each container, every pane given 5000 pixels of content.
+(async function () {
+  const fs = require('fs');
+  const H = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'headLessChrome.js'));
+  const ADDRESS = '/DEBUG/shell/js/test/workBench-contained.html';
+  const CASES = [
+    ['block', 'a box of 300 pixels, a plain block'],
+    ['flex', 'a box of 300 pixels, a flex column'],
+    ['app', 'the shell\'s app area, as the home page draws it'],
+  ];
+  test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': kept to its container');
+  const chrome = H.findChrome();
+  if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); test.reportSuccessFailureCount(); return; }
+  const node = await H.scratchNode();
+  let page = null;
+  try {
+    if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on'); return; }
+    page = await H.chromePage(chrome);
+    if (page.error) { test.fail(page.error); return; }
+    await page.send('Page.navigate', { url: node.base + ADDRESS });
+    await H.until(function () { return page.evaluate('typeof window.contained === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+    for (const c of CASES) {
+      const s = await page.evaluate('window.contained(' + JSON.stringify(c[0]) + ')').catch(function (e) { return ''; });
+      let m = null;
+      try { m = JSON.parse(s); } catch (e) { m = null; }
+      if (!m) { test.fail(c[1] + ': the page measured nothing (' + String(s).slice(0, 200) + ')'); continue; }
+      ok(m.bench.bottom <= m.room + 1 && m.bench.height <= m.roomHeight + 1 && !m.spilt && !m.pageScrolls,
+        c[1] + ': the workBench stays inside it, ' + m.bench.height + ' of ' + m.roomHeight + ' pixels, and nothing outside scrolls',
+        c[1] + ': the workBench is ' + m.bench.height + ' pixels tall in ' + m.roomHeight + ', its bottom at ' + m.bench.bottom + ' of ' + m.room +
+          (m.spilt ? ', the container spills' : '') + (m.pageScrolls ? ', the page scrolls' : ''));
+      const names = Object.keys(m.panes);
+      const loose = names.filter(function (k) { return !m.panes[k].scrolls || m.panes[k].bottom > m.room + 1; });
+      ok(names.length === 3 && !loose.length, c[1] + ': the left pane, the right pane and the centre each scroll inside it',
+        c[1] + ': not scrolling inside it: ' + (names.length === 3 ? loose.join(', ') : 'panes found ' + JSON.stringify(m.panes)));
+    }
+  } finally {
+    if (page && page.kid) page.kid.kill();
+    if (node.child) node.child.kill();
+    try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    test.reportSuccessFailureCount();
+  }
+}());
