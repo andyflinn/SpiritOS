@@ -54,6 +54,27 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - A delivery of several rows is appServer's bundle (goal/G41.12); deskClient sees each row alone.
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
+- **Push goal replaces the copy whole** (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the
+  current goal whole, no merge: nothing stale survives."). The push, as the desk build must send it (today's whole-goal
+  rows carry no mark and no end, so a client cannot tell what the push lacks): every row under one change, the push's,
+  marked `replace: true`; the goal's facts and its items' (`verb: 'goal.whole'`, `key: { goal, item }`); then each of
+  his lines addressed to an agent that nobody took yet, as the chat side row with its `to`; last its end,
+  `{ change, verb: 'goal.whole', replace: true, end: true, key: { goal, item: 0 } }`. Once it has landed:
+  an item of that goal the push lacks is gone; another goal's items stay (goal/G41.15); a stale row is replaced; a part
+  kept from before (the box, the file list) is not answered from the old copy: it is read afresh. The cache drops what
+  the push replaced through the desk family's own `cache.keep` (Andy, Q1: "nothing drops from the cache, unless the
+  api.js from the server says so"), so a restart reads none of it back.
+- **The read pointer is at the push's change** (Andy: "it moves each agent's read pointer to the newest change, never
+  back to the start"): a row of an older change, coming after the push, does not undo the fresh copy.
+- **The same wake hands what is owed** (Andy: "and in that same wake hands the agent every line of Andy's addressed to
+  it that nobody took yet: nothing replayed, nothing lost."): his addressed line the push carries that the stream never
+  brought comes once; his line the agent already read does not come again.
+- **Every wake not yet read comes back in one, none lost and none twice, also after a node restart** (Andy, the box,
+  of the Desk Ear). Found live: after a node restart the ear handed old lines back one per wake; lines a wake carried
+  while nobody read it were lost. Within one run three wakes nobody read come in one answer, each line once, and reading
+  with the key acknowledges all (a guard: it holds today). After a restart on the same state folder, the data set read
+  back from appServer's cache: the next wait, naming the key the agent last read, hands once each the wake handed but
+  never read and the line that waited, and nothing already read, even when the catch-up brings those rows again.
 
 ## What its test must try to break
 
@@ -68,6 +89,11 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - A restarted client that does not subscribe to its desk, or names a position appServer keeps.
 - A push that drops an item it leaves out, another goal's items, the position or a kept file list.
 - A line for another agent that comes back in a catch-up as this agent's.
+- A replace push that leaves an item it lacks, a kept box or file list from before it, or that drops another goal's.
+- A row of an older change, after the push, written over the fresh copy; a cache that reads the replaced rows back.
+- His addressed line the stream lost and the push carries, not handed; a line already read, handed again.
+- Wakes nobody read split over several answers or handed twice; after a restart, an unread wake or a waiting line
+  lost, or a line already read handed again.
 
 ## Not testable as written here
 

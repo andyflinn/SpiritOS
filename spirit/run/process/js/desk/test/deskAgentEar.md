@@ -24,6 +24,10 @@ there is a wake waiting", and of the read key: "good idea, make the red assert i
 - **An empty answer is asked again**; a refusal ends it, exit 1, the reason printed (a signed-off agent says so).
 - **A door that timed out is no refusal** (goal/G41.11): its node's door gave up on a wait (`app-did-not-answer`, 504) while deskClient held it; nothing was handed and the unread wake stays queued, so the ear asks again with the same key instead of ending.
 - One ask of the desk or of deskClient prints the answer as it came.
+- **Every wake not yet read comes back in one** (goal/G41.22; Andy, the box: "every wake not yet read comes back in
+  one, none lost and none twice, also after a node restart."). Keeping, gathering and dropping the wakes is deskClient's
+  `next`, so its test holds that requirement (`process/js/deskClient/test/deskClient.js`, its restart included); the
+  ear's half is what its checks above already hold: it prints the whole answer it is handed and passes the key unchanged.
 
 ## What its test must try to break
 

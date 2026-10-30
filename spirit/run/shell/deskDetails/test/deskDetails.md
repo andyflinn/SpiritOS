@@ -118,3 +118,25 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - In the browser: a chat stopped short of its end, the newest line cut off; a left pane empty at open; a box a third of
   its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
   scroll away with the files.
+
+## Requirements (goal/G41.22, box v22: push Goal)
+
+Andy: *"the current goal and all its items, get a new button in the detail panel: "push Goal", the ver on the desk is:
+"pushgoal""*.
+
+- The current goal's details, and the details of each item of the current goal, show a button reading `push Goal` in
+  the button row (`#dd-name-row`).
+- Pressing it sends the desk's verb pushgoal, `desk.pushgoal` (as `ddAsk` names every verb: `'desk.' + verb`), once.
+  Pressed once, and once more only if the first press armed it: whether it asks are-you-sure is the build's choice.
+- A goal that is not current, and an item of one, show no push Goal.
+
+What the test assumes: the dialog decides nothing (its header), so the desk says where push Goal stands: `pushgoal` in
+the item's `buttons`, on the current goal and on each of its items, as `make-current` is offered on a goal that is not
+current (process/js/desk/desk.js, buttons). The facts carry no current-goal field today, and the test adds none. The
+verb's arguments are the build's; the test asserts only the verb sent.
+
+## What its test must try to break (goal/G41.22, box v22: push Goal)
+
+- No push Goal on the current goal, or on an item of it; a button reading something else, or outside the button row.
+- A press that sends nothing, sends a press (`desk.press`) instead of the verb, or sends the verb twice.
+- A push Goal drawn where the desk offers no pushgoal.

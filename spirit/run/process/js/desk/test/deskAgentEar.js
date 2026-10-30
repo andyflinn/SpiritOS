@@ -29,7 +29,8 @@ fs.writeFileSync(PRELOAD, [
   "const used = {};",
   "function answer(verb) { const list = ANSWERS[verb] || [{ ok: true }]; const i = Math.min(used[verb] || 0, list.length - 1); used[verb] = (used[verb] || 0) + 1; return list[i]; }",
   "const family = new Proxy({}, { get: function (t, verb) { if (verb === 'then' || typeof verb !== 'string') return undefined; return function (args) { fs.appendFileSync(LOG, JSON.stringify({ verb: String(verb), args: args }) + '\\n'); return Promise.resolve(answer(String(verb))); }; } });",
-  "const fake = { require: function () { return Promise.resolve(family); }, outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); } };",
+  // familyPath as the one spirit object names a family's path (spirit.js, goal/G41.12): the ear asks it since then.
+  "const fake = { familyPath: function (name) { return 'process/js/' + String(name || '') + '/family/api.js'; }, require: function () { return Promise.resolve(family); }, outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); } };",
   "const realLoad = Module._load;",
   "Module._load = function (request) { if (/(^|\\/)spirit\\.js$/.test(request)) { globalThis.spirit = fake; return fake; } return realLoad.apply(this, arguments); };",
 ].join('\n'));

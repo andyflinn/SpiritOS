@@ -27,19 +27,64 @@ folders").
   off is refused the box (taken, the cap's why), and an agent with cap on takes it under the one-write hold. A box write
   below red offers nothing.
 
-- **The position** (Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do desk, (re-use that
-  verb) with the position number as argument"): `subscribe {family, since?}`. Without `since`, or 0, the bootstrap is
-  what it always was: the current goal's facts whole, no side row. With `since` = N it hands, after the goal's facts,
-  every side row of the current goal and the group chat whose change is after N, oldest first, each as the row its
-  write published; nothing at or before N, nothing of another goal. A line of his addressed to other agents (its `to`)
-  never comes back to one it was not addressed to; one to the subscriber, or to nobody, does. The box has no change of
-  its own: an item whose own row changed after N hands its box too.
-- **Every push ends with `{ bootstrapped: true }`**, once, after its last row (Q5: the subscriber replaces its cache
-  whole once the push has landed).
-- **A subscribe does not expire** (Andy: "subscribes over peerPost should NOT expire"): a row a subscriber did not take
-  stays first in its queue and is posted to it again after the publisher's wait, the same row; once it answers, its
-  whole push and what was written meanwhile land, none dropped. Past QUEUE_MAX (1000) the oldest go; that cap is not
-  driven here (over a thousand rows behind a 10 s wait), it is the publisher's own (spirit/appServer.js).
+- **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/appServer.js, the stream
+  protocol of goal/G41.12, which replaced `{ bootstrapped: true }`), once, after its last row (Q5: the push has landed
+  whole).
+- **Gone** (goal/G41.22): *the position*, a subscribe with `since` = a desk change number, went with the one stream
+  protocol (74ac4c65, goal/G41.12: "the desk's bundled() and its change-number catch-up" removed; a position is the
+  publisher's `(run, since)` now). *A subscribe does not expire* went with 3ad44a6b (Andy: "take the 3 seconds out,
+  appServer.js calls peerPost in the most basic way"): a delivery left unanswered drops its subscriber, which subscribes
+  again when it is back. Their checks went with them.
+
+## Requirements (goal/G41.22, box v22)
+
+- **pushgoal** (Andy: "the current goal and all its items, get a new button in the detail panel: "push Goal", the ver
+  on the desk is: "pushgoal""):
+  - A verb of the desk: `family/pushgoal.json` beside the others, a description and its `request`; the family's
+    `api.js` lists it (its header: "A verb added to the server is added here, in the same commit"); the server answers
+    it. The test calls it with the request its own file declares, an `id` (if it takes one) being the current goal's.
+  - Andy's alone: an agent calling it is refused `not-owner` (desk.js `ownerOnly`, as `item.rename` and his presses
+    are), and nothing is pushed.
+  - Called by Andy, it pushes the current goal whole, the goal's row and each of its items' as `goal.whole` facts rows
+    (desk.js `pushGoalWhole`, as at start and at make-current), to every subscribed deskClient; no other goal's.
+  - Agreed in the box: "it moves each agent's read pointer to the newest change, never back to the start". On the wire:
+    every entry it sends a subscriber is numbered at or past the newest that subscriber had taken.
+  - Agreed in the box: "in that same wake hands the agent every line of Andy's addressed to it that nobody took yet:
+    nothing replayed, nothing lost." His line to cw that nobody took comes to cw again in the push, his line to ubi to
+    ubi; a line cw took already, and a line to another agent, do not.
+- **Auto pull** (Andy: "when the desk gets a claim red/build done. it pulls it's repo automatically"):
+  - A red claim taken, and a build claim taken (verb `claim`), the desk pulls its own checkout: it then holds the
+    commit pushed onto origin since.
+  - Agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in it: then it pulls
+    nothing and says so under the item." Over a checkout with an uncommitted edit of a tracked file, the claim pulls
+    nothing (HEAD unmoved, origin's new commit not in it), the edit stays as it was, and a line of the desk's (`by`
+    desk) lands under the claimed item. While a run deskVerify took is going on (an item's `verifyRunning`: a
+    `verify.answer` taken and no `verify.state` ended since), the same: nothing pulled, a desk line under the item.
+  - **What the build must provide** (the test's seam): the checkout it pulls is `GOAL_REPO`, the manifest value
+    `goalRepo` (default: the checkout holding desk.js), the repo the desk already names as its own for the goal file.
+    The test points it at a scratch clone of a scratch bare origin, never this repo. A pull made as a node job
+    (goalShare's way, `jobs.create`) or in the desk itself both work: the pretend node runs the jobs it is asked to.
+    "A run going on" is the run the desk can know of, deskVerify's, seeded as a `verify.answer` record before the desk
+    starts; a test run the desk cannot see is no case of this test.
+
+### Owed, with the reason
+
+- **The replace mark of pushgoal.** Agreed: "pushgoal replaces each agent's copy of the current goal whole, no merge:
+  nothing stale survives." No mark on the wire says "replace" today: since goal/G41.15 a landed full push is placed
+  row by row through the family's keep and drops nothing (spirit/appServer.js `landed`), and `pushGoalWhole` sends plain
+  rows. Which mark tells a deskClient to drop its copy of the goal (a full push scoped to the goal, a row of its own, an
+  entry flag) is the build's shape to name, and a check written now would guess it. Nothing stale surviving is seen in
+  the deskClient (process/js/deskClient/test/deskClient.js), not here: an item gone from the goal, a stale box, gone
+  from its cache after the push.
+- **Its deskClient pointer.** The wire half is checked here; the deskClient's own read pointer (its place in
+  `deskClient.db`) moving to the newest change is the deskClient's test's.
+- **The "push Goal" button** on the current goal and its items in the detail panel is the desk page's, not the server's.
+
+## The pretend node, brought up to date (goal/G41.22)
+
+It read `{ verb }` at the door and each bundle element as a row; since goal/G41.15 the door is `{ call, args }`, and
+since goal/G41.12 a bundle is entries `{ run, n, row }`. It reads both now: the same checks, which had gone red on the
+format alone.
 
 ## What its test must try to break
 
@@ -48,7 +93,13 @@ folders").
 - A code item green with no files; a Go taken on it; a late file not marked, or an early one marked.
 - "all agents ..." or "wsl is ..." addressing anybody; an included agent left out of an ALL line.
 - A red box write that offers no cap; a cap offered to an agent with cap off; a cap offered below red.
-- A catch-up that hands nothing after the position, or the same again from before it, or another goal's lines.
-- A line to cw handed to ubi in a catch-up.
 - A push without its end, or with two.
-- A subscriber dropped, or its row lost, because one delivery got no answer.
+- pushgoal called by an agent, or pushing another goal, or a pointer sent back, or a line taken already handed again.
+- A claim that pulls over edits or during a run, or that pulls nothing and says nothing.
+- pushgoal missing, or taken from an agent; a push of it missing a subscriber, or an item of the goal, or carrying
+  another goal.
+- A pushgoal numbered below what a subscriber had taken (its pointer sent back).
+- An untaken line to an agent missing from its wake; a taken line, or another agent's, replayed in it.
+- A red or build claim taken and the checkout not pulled.
+- A pull over an edit of its own (or an autostash that moves HEAD), or while deskVerify's run goes on; a refused pull
+  that says nothing under the item.

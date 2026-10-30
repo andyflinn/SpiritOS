@@ -157,6 +157,44 @@ function world(withList, totals) {
   const container = document.body.appendChild(document.createElement('div'));
   return { document: document, win: win, list: list, ctx: ctx, container: container, $: function (id) { return document.getElementById(id); } };
 }
+// THE PAGE WITH THE REAL LIST (goal/G41.22): what Andy sees is what the probability search draws, so the real one runs
+// on the page, its three libraries before it, and deskVerify is a stand-in answering its search with the rows given, as
+// deskVerify sends them (slim: suite, title, outcome, at; key suite + newline + title) and the totals of the outcome
+// asked. A product test's suite is what the reporter sends, /<path>/<module> under spirit/run (test/testReport.js,
+// SUITE); a test of the repo's spirit/test keeps its bare file name.
+function realWorld(rows) {
+  const document = makeDom();
+  const win = { document: document, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math,
+    RegExp: RegExp, Date: Date, Infinity: Infinity, console: { log: function () {}, error: function () {} } };
+  win.window = win;
+  win.spirit = { elements: {}, require: function () { return Promise.resolve(true); } };
+  vm.createContext(win);
+  ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js', null].forEach(function (rel) {
+    const f = rel ? path.join(RUN, rel) : FILE;
+    vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
+  });
+  const ctx = { asked: [], dialogs: [], chats: 0,
+    verb: function (name, args) {
+      ctx.asked.push({ name: name, args: args });
+      const of = rows.filter(function (r) { return !args.outcome || r.outcome === args.outcome; });
+      const items = args.slim === 'yes' ? of.map(function (r) { return { key: r.suite + '\n' + r.title, label: JSON.stringify(r) }; }) : [];
+      return Promise.resolve({ status: 200, body: { ok: true, items: items, more: false, total: of.length } });
+    },
+    onPublished: function () { return function () {}; },
+    callDialog: function (app, params) { ctx.dialogs.push({ app: app, params: params }); },
+    chat: function () { ctx.chats++; } };
+  const container = document.body.appendChild(document.createElement('div'));
+  const $ =function (id) { return document.getElementById(id); };
+  // The rows the list shows now, each as its suite (the row's key) and its cells' text.
+  const shown = function () {
+    return $('fallout-list') ? $('fallout-list').querySelectorAll('tr').filter(function (tr) { return tr.hasAttribute('data-key'); }).map(function (tr) {
+      return { suite: String(tr.getAttribute('data-key')).split('\n')[0], cells: tr.querySelectorAll('td').map(function (td) { return td.textContent.trim(); }) };
+    }) : [];
+  };
+  // A filter button the list draws, by the words on it.
+  const buttons = function () { return $('fallout-list') ? $('fallout-list').querySelectorAll('button').filter(function (b) { return b.hasAttribute('data-filter'); }) : []; };
+  return { document: document, win: win, ctx: ctx, container: container, $: $, shown: shown, buttons: buttons };
+}
 
 test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
 
@@ -167,14 +205,21 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(!!P && typeof P.open === 'function', 'window.spirit.deskPlugins.fallout.open is there', 'deskPlugins: ' + short(w.win.spirit.deskPlugins && Object.keys(w.win.spirit.deskPlugins)));
   if (!P) return;
 
-  test.subHeading('open: its blocks, the Reds tab first, Items empty and hidden, the goal chat at the bottom');
+  test.subHeading('open: its blocks, the Reds tab first, Items empty and hidden');
   P.open(w.container, w.ctx); await settle();
-  ['fallout-summary', 'fallout-tabs', 'fallout-pane-reds', 'fallout-list', 'fallout-items', 'fallout-chat'].forEach(function (id) {
+  ['fallout-summary', 'fallout-tabs', 'fallout-pane-reds', 'fallout-list', 'fallout-items'].forEach(function (id) {
     ok(!!w.$(id), 'it draws #' + id, 'no #' + id);
   });
-  const ids = w.container.querySelectorAll('[id]').map(function (n) { return n.id; });
-  ok(ids.indexOf('fallout-chat') === ids.length - 1, 'the goal chat is the last block, below both inner tabs', short(ids));
-  ok(w.ctx.chats.length === 1 && w.ctx.chats[0] === w.$('fallout-chat'), 'ctx.chat is handed #fallout-chat', 'chats: ' + w.ctx.chats.length);
+  // goal/G41.22, box v25, Andy: "The chat needs to be removed from fallout". The goal chat it carried since goal/G27.14
+  // ("add the goal chat at the bottom.") is gone: the Desk mounts a plugin's chat only where the plugin hands it a box
+  // (ctx.chat, shell/desk/desk.js), so Fallout hands none, draws no chat block of its own, and asks for no chat.
+  test.subHeading('goal/G41.22: the Fallout view carries no chat');
+  ok(w.ctx.chats.length === 0, 'ctx.chat is never called: the Desk mounts no goal chat in Fallout', 'ctx.chat handed ' + w.ctx.chats.length + ' box(es): ' + short(w.ctx.chats.map(function (c) { return c.id; })));
+  const every = function (n, out) { (n.children || []).forEach(function (c) { out.push(c); every(c, out); }); return out; };
+  const chatty = every(w.container, []).filter(function (n) { return /chat/i.test(String(n.id || '') + ' ' + String(n.className || '')); });
+  ok(chatty.length === 0, 'nothing it draws is a chat: no element whose id or class names chat', 'chat elements drawn: ' + short(chatty.map(function (n) { return n.id || n.className; })));
+  const said = w.container.querySelectorAll('textarea').concat(w.container.querySelectorAll('input').filter(function (n) { return /say|chat|message/i.test(String(n.id || '') + ' ' + String(n.getAttribute('placeholder') || '')); }));
+  ok(said.length === 0, 'no chat input: no textarea, no field to say a line in', 'inputs drawn: ' + short(said.map(function (n) { return n.id || n.tagName; })));
   const tabs = w.$('fallout-tabs').querySelectorAll('[data-fallout-tab]');
   ok(tabs.length === 2 && tabs[0].textContent === 'Reds' && tabs[1].textContent === 'Items' && tabs[0].getAttribute('aria-selected') === 'true' && tabs[1].getAttribute('aria-selected') === 'false',
     'two inner tabs, Reds selected, Items not', short(tabs.map(function (t) { return [t.textContent, t.getAttribute('aria-selected')]; })));
@@ -197,9 +242,10 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
     short(o.args('a/b.js')));
   ok(JSON.stringify(o.matched({ suite: 's.js', title: 't', outcome: 'red' })) === '{"suite":"s.js","title":"t"}' && JSON.stringify(o.matched(null)) === '{"suite":"","title":""}',
     'the words matched are the suite and the title', short(o.matched(null)));
-  const f = o.filters[0];
-  ok(o.filters.length === 1 && f.name === 'outcome' && f.choices.map(function (c) { return c.value; }).join(',') === 'red,green,' && f.choices[0].icon === '❌' && f.choices[1].icon === '✅',
-    'one filter, outcome: red ❌ first, green ✅, then both', short(f.choices));
+  // The outcome filter by its name: since goal/G41.22 a second filter, product tests only, stands beside it (below).
+  const f = o.filters.filter(function (x) { return x && x.name === 'outcome'; })[0] || {};
+  ok(o.filters[0] === f && Array.isArray(f.choices) && f.choices.map(function (c) { return c.value; }).join(',') === 'red,green,' && f.choices[0].icon === '❌' && f.choices[1].icon === '✅',
+    'the first filter is outcome: red ❌ first, green ✅, then both', short(o.filters));
   ok(f.test({ outcome: 'red' }, 'red') === 1 && f.test({ outcome: 'green' }, 'red') === 0 && f.test({ outcome: 'green' }, '') === 1, 'the filter keeps the rows of its outcome, and all for both',
     'filter answers wrong');
   o.details({ suite: 's.js', title: 'the test #1' });
@@ -266,5 +312,57 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const gaps = [];
   for (let n = host; n && n !== wfill.container; n = n.parentNode) { if (!isFill(n) || / stat-tile /.test(' ' + String(n.className || '') + ' ')) gaps.push((n.id ? '#' + n.id : n.tagName || '') + (n.className ? '.' + n.className : '')); }
   ok(!!host && !gaps.length, 'the Reds list stands in a fill box, every box up to the plugin\'s own is fill, none a stat-tile', 'not fill: ' + (host ? gaps.join(' < ') : 'no list made'));
+
+  // goal/G41.22, Andy: "fallout needs a filter that show me product tests only, and the "green"/"red" column must use
+  // icons". Agreed: product tests are the tests under spirit/run; the repo's spirit/test is hidden by the filter. The
+  // icons are the reporter's own: ✅ green, ❌ red. Judged on the real list's rows, what Andy sees.
+  const ROWS = [
+    { suite: '/shell/desk/plugins/fallout', title: '/shell/desk/plugins/fallout open #1', outcome: 'red', at: '2026-10-30T10:00:00Z' },
+    { suite: 'relayGates.js', title: 'relayGates.js gates #1', outcome: 'red', at: '2026-10-30T10:01:00Z' },
+    { suite: '/spirit/appServer', title: '/spirit/appServer serves #2', outcome: 'green', at: '2026-10-30T10:02:00Z' },
+    { suite: 'agentReadme.js', title: 'agentReadme.js reads #3', outcome: 'green', at: '2026-10-30T10:03:00Z' },
+  ];
+  const isProduct = function (suite) { return suite.charAt(0) === '/'; };
+  test.subHeading('goal/G41.22: the real list on the page, deskVerify a stand-in');
+  const wr = realWorld(ROWS);
+  wr.win.spirit.deskPlugins.fallout.open(wr.container, wr.ctx); await settle();
+  // Both outcomes shown, so every row stands (the outcome filter opens on red).
+  const both = wr.buttons().filter(function (b) { return b.getAttribute('data-filter') === 'outcome' && b.getAttribute('data-value') === ''; })[0];
+  if (both) { wr.document.click(both); await settle(); }
+  const all = wr.shown();
+  ok(!!both && all.length === ROWS.length, 'the real list draws the four rows deskVerify answers, both outcomes shown', 'rows shown: ' + short(all));
+  // box v25, "The chat needs to be removed from fallout": what it asks over the wire, the real list's included, is no chat's.
+  const chatAsks = wr.ctx.asked.filter(function (a) { return /chat/i.test(a.name); });
+  ok(wr.ctx.asked.length > 0 && !chatAsks.length && wr.ctx.chats === 0, 'opened with the real list, it asks for no chat and mounts none (box v25)',
+    'chat asked: ' + short(chatAsks) + ', ctx.chat called ' + wr.ctx.chats + ' times');
+
+  test.subHeading('goal/G41.22: the Result column shows ✅ for green and ❌ for red, not the words');
+  const cellsOf = function (suite) { const r = all.filter(function (x) { return x.suite === suite; })[0]; return r ? r.cells : []; };
+  ok(cellsOf('/spirit/appServer').indexOf('✅') !== -1 && cellsOf('agentReadme.js').indexOf('✅') !== -1, 'a green test\'s row has a cell reading ✅', 'green rows: ' + short([cellsOf('/spirit/appServer'), cellsOf('agentReadme.js')]));
+  ok(cellsOf('/shell/desk/plugins/fallout').indexOf('❌') !== -1 && cellsOf('relayGates.js').indexOf('❌') !== -1, 'a red test\'s row has a cell reading ❌', 'red rows: ' + short([cellsOf('/shell/desk/plugins/fallout'), cellsOf('relayGates.js')]));
+  ok(all.length && all.every(function (r) { return r.cells.every(function (c) { return c !== 'green' && c !== 'red'; }); }), 'no cell says green or red in words', 'rows: ' + short(all));
+
+  test.subHeading('goal/G41.22: a filter shows product tests only, the tests under spirit/run; spirit/test is hidden');
+  // The control's shape is the build's: any filter button of the list whose words name product. Its group is its
+  // data-filter; off is another choice of that group, or the same button again for a toggle.
+  const product = wr.buttons().filter(function (b) { return /product/i.test(b.textContent); })[0];
+  ok(!!product, 'the list has a filter button that names product tests', 'filter buttons: ' + short(wr.buttons().map(function (b) { return b.textContent; })));
+  if (product) {
+    const group = product.getAttribute('data-filter');
+    wr.document.click(product); await settle();
+    const only = wr.shown();
+    ok(only.length === 2 && only.every(function (r) { return isProduct(r.suite); }), 'pressed: only the product tests show, both outcomes still', 'rows shown: ' + short(only.map(function (r) { return r.suite; })));
+    const off = wr.buttons().filter(function (b) { return b.getAttribute('data-filter') === group && !/product/i.test(b.textContent); })[0] ||
+      wr.buttons().filter(function (b) { return /product/i.test(b.textContent); })[0];
+    if (off) { wr.document.click(off); await settle(); }
+    const back = wr.shown();
+    ok(back.length === ROWS.length, 'off again: the spirit/test rows show too', 'rows shown: ' + short(back.map(function (r) { return r.suite; })));
+    const red = wr.buttons().filter(function (b) { return b.getAttribute('data-filter') === 'outcome' && b.getAttribute('data-value') === 'red'; })[0];
+    const prod = wr.buttons().filter(function (b) { return /product/i.test(b.textContent); })[0];
+    if (red) { wr.document.click(red); await settle(); }
+    if (prod) { wr.document.click(prod); await settle(); }
+    const redProduct = wr.shown();
+    ok(redProduct.length === 1 && redProduct[0].suite === '/shell/desk/plugins/fallout', 'with ❌ and product tests: the one red product test', 'rows shown: ' + short(redProduct.map(function (r) { return r.suite; })));
+  }
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

@@ -479,6 +479,44 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   let bound = null;
   for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
   ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
+
+  // ── goal/G41.22: PUSH GOAL ON THE CURRENT GOAL AND ITS ITEMS ──────────────────────────────────────────────────────────
+  // Andy: "the current goal and all its items, get a new button in the detail panel: "push Goal", the ver on the desk is:
+  // "pushgoal"". The dialog decides nothing (its header): the desk offers pushgoal in an item's buttons on the current
+  // goal and on each of its items, as it offers make-current on a goal that is not current; the dialog draws it from
+  // there, and its press is the desk's verb pushgoal, desk.pushgoal as ddAsk names every verb.
+  test.subHeading('goal/G41.22: push Goal on the current goal and its items, the desk\'s verb pushgoal');
+  const pushButton = function (g) { return g.document.querySelectorAll('button').filter(function (b) { return /^push goal/i.test(b.textContent.trim()) || b.hasAttribute('data-armed') && /push goal/i.test(b.id + ' ' + (b.getAttribute('data-arming') || '')); })[0] || null; };
+  const pushes = function (g) { return g.asked.filter(function (a) { return a.name === 'desk.pushgoal'; }); };
+  // Pressed as he would: once, and once more only if the first press armed it (an are-you-sure is the build's to choose).
+  const pushed = async function (g) {
+    const b = pushButton(g);
+    if (!b) return null;
+    g.document.click(b); await settle();
+    const again = pushButton(g) || b;
+    if (!pushes(g).length && again.hasAttribute('data-armed')) { g.document.click(again); await settle(); }
+    return pushes(g);
+  };
+  const CURRENT_GOAL = Object.assign({}, GOAL, { buttons: GOAL.buttons.concat(['pushgoal']) });
+  const CURRENT_ITEM = Object.assign({}, ITEM, { buttons: ITEM.buttons.concat(['pushgoal']) });
+  for (const subject of [CURRENT_GOAL, CURRENT_ITEM]) {
+    const what = subject.goal === '' ? 'the current goal' : 'an item of the current goal';
+    const g = ddWorld(subject, []); await g.open();
+    const b = pushButton(g);
+    ok(!!b && b.textContent.trim() === 'push Goal' && inside(b, g.document.getElementById('dd-name-row')), what + ': the button row has a "push Goal" button',
+      what + ': ' + (b ? 'a button reading "' + b.textContent.trim() + '"' + (inside(b, g.document.getElementById('dd-name-row')) ? '' : ', outside the button row') : 'no push Goal button'));
+    const sent = await pushed(g);
+    ok(!!sent && sent.length === 1 && !g.asked.some(function (a) { return a.name === 'desk.press' && a.args && a.args.what === 'pushgoal'; }),
+      what + ': pressing push Goal sends the desk\'s verb pushgoal (desk.pushgoal), once, and no press',
+      what + ': ' + (sent ? 'desk.pushgoal sent ' + sent.length + ' times' : 'no button to press') + '; writes: ' + JSON.stringify(anyWrite(g)));
+  }
+  // No pushgoal offered: a goal that is not current, and an item of one, draw no push Goal (as it stands today too).
+  for (const subject of [GOAL, ITEM]) {
+    const what = subject.goal === '' ? 'a goal that is not current' : 'an item of a goal that is not current';
+    const g = ddWorld(subject, []); await g.open();
+    const b = pushButton(g);
+    ok(!b && !pushes(g).length, what + ': no push Goal button, nothing pushed', what + ': ' + (b ? 'a button reading "' + b.textContent.trim() + '"' : '') + ' ' + JSON.stringify(pushes(g)));
+  }
   // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
   // The page above has no layout, so what fills and what scrolls is asked of Chrome (wsl's verify of 3929879b found the
   // chat 44 pixels short of its bottom, no left panel at open, and the box a third of its pane, all green here):
