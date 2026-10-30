@@ -103,10 +103,18 @@ box is its own check, named by the element's path and the box's id chain."*
 - **Every icon through the icon element** (goal/G41.23; Andy, goal/G41.21: *"this element will replace icons painting
   all shell elements and apps."*; box v5: *"new-face apps will be updated to use the new "icon" element."*; Q1: *"plus
   the intrinsic apps, plus the icons app. all apps that use icons."*): every glyph it draws that is a pictograph
-  (Unicode `Extended_Pictographic`, as its icons are) and is shown lies inside an element of the class the icon element
-  (`shell/js/icon.js`) carries. The class is read from an icon made after the mount, so nothing is preloaded. Judged as
+  (Unicode `Extended_Pictographic`, as its icons are), is shown and **stands alone**, its element's whole text, lies
+  inside an element of the class the icon element (`shell/js/icon.js`) carries. A glyph among words is a character of
+  the text and is left as it is (Andy: *"isn't a glyph inside flowing text just like another inline character? ...
+  glyphs are legal in labels and description true, and in that context they don't need special handling"*, then
+  *"narrow the rules so."*). The class is read from an icon made after the mount, so nothing is preloaded. Judged as
   drawn and after each tool and tab button is pressed, as the boxes are; the check names the first glyphs drawn outside
   it and where.
+- **Every shell file that paints an icon loads the icon element** (judged once, in the run given no file, before the
+  mounts: a bare mount draws no data, so most icons are seen only in the code). A shell script, no test and no vendor
+  code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
+  icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
+  icon selector, the workBench), names `shell/js/icon.js`. Each is its own check, named by its path.
 - **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
 
 **Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we
@@ -121,3 +129,4 @@ on purpose, to hide the native scrollbars (its own css: *"Things will break if t
 - A box only as tall or as wide as its content, anywhere between a scrolling box and the app.
 - A destroy that leaves what it drew.
 - A pictograph painted as text of its own, outside the icon element, as drawn or after a press.
+- A glyph among the words of a label or a description counted as an icon.

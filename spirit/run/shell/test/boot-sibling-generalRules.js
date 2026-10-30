@@ -62,18 +62,23 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // recorded under its own module (test/testReport.js). This run records one line per file, named by its address.
 // EVERY FILE THAT PAINTS AN ICON LOADS THE ICON ELEMENT (goal/G41.23; Q1, Andy: "plus the intrinsic apps, plus the
 // icons app. all apps that use icons."; "wsl, Go" on: a second rule reads the code, so that it misses none). A bare mount
-// draws no data, so most icons are seen only here: a shell script (no test, no vendor code) whose code, comments left
-// out, holds a pictograph (Unicode Extended_Pictographic), or that paints icons it is handed (named below, read by
-// hand), loads shell/js/icon.js. Each is its own check, named by its path.
+// draws no data, so most icons are seen only here. AN ICON STANDS ALONE (Andy: "isn't a glyph inside flowing text just
+// like another inline character? ... glyphs are legal in labels and description true, and in that context they don't
+// need special handling", then "narrow the rules so."): a shell script (no test, no vendor code) whose code, comments
+// left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
+// paints icons it is handed (named below, read by hand), loads shell/js/icon.js. A glyph among words is text. Each is
+// its own check, named by its path.
 const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/contacts/contacts.js', 'shell/js/icons/listElement.js',
   'shell/js/icons/rowElement.js', 'shell/js/iconSelector.js', 'shell/js/workBench.js'];
+// A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
+const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
     if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'shell/js/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-    return /\p{Extended_Pictographic}/u.test(code);
+    return ALONE.test(code);
   });
 }
 function iconsLoaded() {
@@ -182,12 +187,15 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
       '  out.push({ box: chain(el), tall: t, wide: w }); }); return out; }())';
     // EVERY ICON THROUGH THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all
     // shell elements and apps."; box v5: "new-face apps will be updated to use the new \"icon\" element."; Q1: "all apps
-    // that use icons."): every glyph it draws that is a pictograph (Unicode Extended_Pictographic, as its icons are) lies
-    // inside an element of the class the icon element carries. The class is read from an icon made after the mount, so
+    // that use icons."): every glyph it draws that is a pictograph (Unicode Extended_Pictographic, as its icons are) and
+    // stands alone, its element's whole text, lies inside an element of the class the icon element carries. A glyph among
+    // words is a character of the text (Andy: "glyphs are legal in labels and description true, and in that context they
+    // don't need special handling"; "narrow the rules so."). The class is read from an icon made after the mount, so
     // nothing is preloaded (rule/26). Judged as drawn, and after each press, as the boxes are.
     const ICONS = '(function () { var box = window.spiritMount.box; var mark = window.spiritIconMark || ""; var out = [];' +
       ' var walk = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); var n;' +
       ' while ((n = walk.nextNode())) { var g = n.textContent.match(/\\p{Extended_Pictographic}/gu); if (!g) continue; var el = n.parentElement;' +
+      '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
       '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
       '  var parts = []; for (var e = el; e && e !== box; e = e.parentNode) { if (e.id || e === el) parts.unshift(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "")); }' +
       '  out.push(g.join("") + " in " + parts.join(" > ")); } return out; }())';
