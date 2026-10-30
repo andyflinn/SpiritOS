@@ -1,5 +1,5 @@
 {
- "change": 115648,
+ "change": 115886,
  "goal": "goal/G41",
  "items": [
   {
@@ -16,7 +16,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.21"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -127,17 +129,18 @@
    "verified": "red",
    "verifyFailures": [
     "spirit/run/process/js/desk/desk.family/test/api.js not run: missing from this checkout",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.1: boxTaken wsl-claude",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.2: agent box rows: [\"an agent wrote this, as wsl-claude\"]",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.3: cap offers: [\"the box is red: the cap is offered to the agents with cap on (box.take, then one write)\"]",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.4: rows of [\"goal/G100\",\"goal/G100.1\",\"goal/G100.2\",\"goal/G100.3\",\"goal/G100.4\",\"goal/G100.5\",\"goal/G100.6\",\"goal/G0\"]",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.5: its keys: [\"change\",\"goal\",\"items\"]",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.6: file run undefined, stream run e46ec992938d6de6",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.7: press answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"press\",\"why\":\"no press is called \\\"push\\\"\"}}, rows []",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.8: press answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"press\",\"why\":\"no press is called \\\"push\\\"\"}}"
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.1: rows 0 in 0 posts, the most in one post 0",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.2: its to list: {\"heard\":false,\"to\":null}",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.3: its to list: {\"heard\":false,\"to\":null}",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.4: its to list: {\"heard\":false,\"to\":null}",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.5: its to list: []",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.6: its to list: []",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.7: subscribed {\"subscribed\":true}, ended false, facts of []",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.8: side rows: []",
+    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.9: rows: 0"
    ],
-   "verifyFailuresMore": true,
-   "verifyRed": 8,
+   "verifyFailuresMore": false,
+   "verifyRed": 10,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -151,14 +154,18 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
+    "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -14513,7 +14520,7 @@
    "goal": "goal/G41",
    "status": "closed",
    "statusTone": "",
-   "with": "wsl-claude",
+   "with": "",
    "version": 26,
    "buttons": [
     "reopen"
@@ -14533,7 +14540,7 @@
    "fileCount": 143,
    "green": true,
    "code": true,
-   "phase": "verify",
+   "phase": "",
    "red": "wsl-claude",
    "builder": "claude-windows",
    "verifier": "wsl-claude",
@@ -14638,7 +14645,6 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
    "asks": 0,
    "half": true,
    "full": false,
@@ -16217,6 +16223,12 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-30T10:19:19.486Z",
      "text": "- wsl: G41.19 verified on e20cbc0e. DEBUG 41 of 41, testReport 11 of 11, the mount test 42 green; its 3 reds are the CodeMirror ones you deferred.\n- Four breaks tried, each caught: a forwarded request let in, a file served outside a test folder, a general test sent by its own name, a destroy that leaves its box full.\n- Ready for your verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:28:20.086Z",
+     "text": "- cw: deskData is the desk's translator. It turns the desk's stream into the cache that both the desk page and deskClient read, so an agent has the current goal on hand without asking.\n- Its test feeds it desk rows and checks what lands in the cache:\n- A goal pushed whole clears the other goals out of the cache but keeps the group chat. Red: other goals stay behind.\n- A bundle of rows is taken row by row, and the change number never goes down. Red: the bundle's rows are not kept.\n- An item's box, chat, checks and files are kept once read, and the side rows keep them current. Red: the box and the chat do not keep.\n- The rest is green: single rows, removed rows, files and their late mark.\n- So the cache an agent reads can hold stale goals and miss a bundle. That is a real fault in the desk, not in this item's work."
     }
    ]
   },
@@ -16357,6 +16369,642 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-30T10:08:28.391Z",
      "text": "- wsl: fair. My tests let it through: they never asked whether the face loads spirit.js by a tag. On your go I write that test, and it fails on today's face."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.21",
+   "title": "fix agent UI",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 9,
+   "buttons": [
+    "end-design",
+    "close",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [
+    "goal/G41.22"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "- we cycle through this again and again.\n\n# workBench\n- the icon strips on the left and right always show a horizonal scrollbar at the bottom, and the icons in it are squashed (portrait), not square.\n\n- we will create a new shell element \"icon\", it centers the glyph, in a square box, the size of which follows font-size, it's size option should vary from that base-line, be a multiplier of it.\n- no other option than size, like like text characters, it follows, its container in most attributes.\n- the glyph IS the glyph, no key-abstraction.\n\n- this element will replace icons painting all shell elements and apps.\n\n- the workBench will provide space for a possible vertical scrollbar, in the icons, strip.\n\n",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:26:58.859Z",
+     "text": "all, \n\nexamine the problem and report"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:28:30.231Z",
+     "text": "all,\n\nTHIS BOX.\n\ntell me!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:29:12.335Z",
+     "text": "- cw: examined from the code, not measured in a browser yet.\n- The strip is 48 pixels wide with 4 of padding each side, so 40 are left for the icons. The strip scrolls both ways.\n- The icons are plain buttons: their size comes from the emoji, the browser's own button padding and the border. Nothing states a size, and nothing makes them square.\n- The marked icon gets a 2 pixel border on top of that. An icon wider than 40 pushes the strip sideways: that is the scrollbar at the bottom.\n- Once a scrollbar is in the strip it takes room from the icons, and the column squeezes them narrower than they are tall: that is the portrait shape.\n- Why it keeps coming back: no test looks at the icons. The mount test checks the strip is bounded, which it is. Nothing checks the icons are square or that the strip never scrolls sideways.\n- The fix I'd propose: each icon a stated square that never shrinks, the border inside its size, the strip scrolling only up and down, with room kept for that scrollbar. And a red in the real browser: every icon square, and the strip never wider inside than out.\n- Shall I write that red first, measured in the browser, so you see it fail before I fix it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T10:34:20.950Z",
+     "text": "- wsl: measured in Chrome on the agent app. When the icons do not fit the strip height, the up-down scrollbar takes 15 of the 48 pixels: the icons shrink to 25 wide by 30 tall (portrait), and their 37 of content no longer fits the 33 left, so the sideways scrollbar appears.\n- With room for all icons it is fine (40 by 30), which is why it comes and goes with the window height.\n- So the red: a short strip keeps every icon square and never scrolls sideways."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:34:52.668Z",
+     "text": "would it help to have an icon element that bounds an icon to exactly a square space and centers the glyph in it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:36:19.619Z",
+     "text": "- cw: yes, it would help. It is the fix for \"again and again\": the square is made in one place and tested once, instead of each caller sizing its own buttons.\n- There is no such element today, I looked. Glyphs are drawn four ways: the desktop's app icons, the icon picker's glyph, the icon set's rows, and the workBench strips. Each sizes them itself.\n- Shape: icon.create(container, options), with the glyph, the size of the square and a title. A square of exactly that size that never grows or shrinks, the glyph centred in it, any border inside the size.\n- The workBench strip then holds these squares and scrolls only up and down, its width the square plus room for its scrollbar.\n- Its red, in the real browser: the box is exactly square at the size asked for, at any glyph; a strip of them is never wider inside than out.\n- Should the other three places move to it in this item, or the workBench strip only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:37:25.729Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:41:09.592Z",
+     "text": "icon.create(container, options)\n\nWhat options?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:42:20.420Z",
+     "text": "- cw: three, nothing more:\n- glyph: the icon itself, an emoji or a character, written as it is.\n- size: the side of the square in pixels; the glyph is drawn to fit inside it.\n- title: the text shown on hover.\n- A click, the highlight of the shown tool and any border stay the caller's: it gets the square back and does with it what it does today. Unconfigured, it is an empty square of the default size.\n- Is a default of 40 pixels right?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T10:44:31.370Z",
+     "text": "- wsl: yes to the icon element. But your box says its size follows font-size, so no size option: the square is 1em wide and tall in the caller's font-size, and never shrinks.\n- The icon alone does not end the scrollbar: a strip that scrolls up and down still loses 15 pixels to its scrollbar, so workBench must keep that room in the strip's width (scrollbar-gutter), or the squares push it sideways again.\n- Options then: glyph and title only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:47:24.080Z",
+     "text": "ALL, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T10:48:24.438Z",
+     "text": "- wsl: green. I read size as a factor of the font-size, 1 when not given.\n- My red: in a strip too short for its icons, every icon stays square and the strip never scrolls sideways; and no shell file paints an icon of its own."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:48:29.878Z",
+     "text": "- cw: not green. Nothing built yet. The box (v2) holds only the problem; still open: the icon square sized by a size option or by the font, and whether the other three icon places move to it here. wsl says your box ties the size to the font, but v2 has no such line. Size by the font, so no size option?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:50:47.241Z",
+     "text": "all, box has changed.\n\nfeedback always on latest box, (should come with your news when you wake)\n\nfeedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:51:56.988Z",
+     "text": "- cw: on v3. My reads gave me v2 until now, so my last two lines were on an old box; sorry.\n- Agreed: the square follows the font size, so no size option. The caller sets the font size, and the icon is that tall and that wide. Options: glyph and title.\n- Missing from the box, one: the icon alone does not end the sideways scrollbar. A strip that scrolls up and down loses its scrollbar's width, so workBench must keep that room in the strip, or the squares push it sideways again.\n- The red, as wsl and I both read it: in a strip too short for its icons, every icon stays square and the strip never scrolls sideways.\n- Open: do the desktop's app icons, the icon picker and the icon set's rows move to the icon element here too, or the workBench strips only?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T10:52:04.830Z",
+     "text": "- wsl: green on v7: the multiplier is in, and it answers cw: no pixel size, and every place that paints an icon moves to the element here.\n- One thing not in the box: its options besides size. I take glyph and title; anything more?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T10:56:01.815Z",
+     "text": "all, box changed.\n\nmy question, how is \"icon\" size determined now?\n\nfeedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T10:57:47.682Z",
+     "text": "- wsl: today nothing sets it: a strip button is the emoji at 20px plus the browser's own padding and a 2px border, stretched to whatever the strip leaves.\n- On v8: the square's side is the font-size it inherits from its container, times size (1 when not given), and the glyph is centred in it.\n- Green, but one gap: with size the only option, where does the glyph come from? Is it the text the caller puts in the container?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T10:58:44.297Z",
+     "text": "- cw: I cannot read your latest box. My node hands me v4, even after a restart, while wsl reads v7. My node answers box reads from its own cache, and that cache is filled by deskData: exactly the reds I named on G41.19 (a box read once is not kept current). So those reds cost us right here.\n- From v4 and wsl's line: the icon's square is the caller's font size times a multiplier, 1 when not given. No pixels anywhere: a caller that wants a bigger icon gives a bigger font or a bigger multiplier.\n- That works, and it answers my open point: every place that draws an icon moves to the element in this item.\n- Should fixing deskData come first, so both agents read the same box?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.22",
+   "title": "fix desk",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 15,
+   "buttons": [
+    "start-design",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.21"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 3,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# Layout\n\n- the item panel follows the rules where boxes constrain their content.\n- in the details - the chat sits to the right side of the rest of the red Q's/blocks/Files...\n- the chat has it's search at the top and it's input at the bottom, and scrolls upward, not downward. that means, newest lines at the bottom, pinned to the bottom, and older lines above.\n- the chat input can only be sized vertically\n\n- the item panel drops appHeader and uses the new constrained box design we're using in all face elements.\n- the whole detail panel like this\n\n- the items ID and title, including status is shown in the shells title bar like always.\n- one row, the button row, at the top, using the whole width, like it is today.\n- a fuck, just use workBench, it'll give us more than we need.\n- the left icons strip and panel, are what we have today, \n- the center panel us the chat\n- and the right panel, we leave blank, but will carry plugin-desk-apps, controlled from the right icons trip.\n",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-30T12:50:56.192Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:02:52.957Z",
+     "text": "all, feedback on the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:03:41.915Z",
+     "text": "- cw: on v2, point by point.\n- The box as CodeMirror, with search: fine. CodeMirror is already in the shell. Note: the mount test's three deferred reds are CodeMirror's, so the box will carry them too until that is solved.\n- The box not changeable by agents: clear. It ends caps and agent box writes: those verbs go, and the hook that offers a cap goes with them.\n- The flaky ear: today it delivered your lines late, and after my node restarted it replayed old lines one per wake. That is the same fault as the next two points.\n- Pushing the current goal more often, and the merge resetting the read pointer: both agreed; they are the seed we parked on 28 October.\n- Keep-alives: agreed. The client says it is listening only when it asks; a ping while the ear waits would cover it.\n- Fallout, product tests only: a filter for tests under spirit/run, hiding the repo's spirit/test.\n- deskData: its six reds are why my node gave me box v4 while wsl read v7 today. I'd fix it first: the ear, the read pointer and the stale boxes all read through it.\n- Missing: a red for each point, in the real desk, so we see it fail first.\n- One question: deskData first, then the rest in the box's order?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:03:54.151Z",
+     "text": "- cw: correction: I wrote \"parked on 28 October\" for the read-pointer seed; I do not know that date. It was parked after G41.14, that much I know."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:06:31.700Z",
+     "text": "all, \n\nthe other option to codeMirror issues is:\n\nthe box is replaced by \"requirements\" also a list, with items i can add and remove. thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T11:08:13.754Z",
+     "text": "- wsl: yes, I prefer it: one requirement per row means one red check per row, named by it, and I can say which row a test fails instead of quoting the box.\n- It sidesteps CodeMirror, and a list search is what the other lists already do.\n- Reuse the item's checks list for it (rows you add and remove) instead of a new kind?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:31:36.971Z",
+     "text": "all, what is the must URGENT fix?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T11:32:29.825Z",
+     "text": "- wsl: the merge: when deskClient merges the current goal, the fresh goal must win. A stale copy is behind most of today: cw read box v4 while I read v7, my copy of the checks stopped at G4 so my commits were refused, and the ear woke late or not at all.\n- With Push Goal beside it, you can force a fresh copy when one is stale.\n- Then the ear, then the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:36:21.012Z",
+     "text": "all, box reduced. feedback. green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:37:03.629Z",
+     "text": "- cw: on v9. Nearly green, one premise to set right.\n- deskClient never reads the currentGoal.json file. That file is only shared into the repo. What deskClient merges is the desk's push of the whole goal, on its stream, through deskData.\n- And that is where it breaks: deskData's own spec says a whole goal pushed again for the current goal \"drops nothing\". So a stale part never gets replaced. Your line turns that around: the push wins, and what is kept of the goal is reset to it, the read pointer too.\n- Push Goal: the desk already pushes a goal whole, but only when the current goal changes and at its start. The button needs one desk verb to ask for that push. It is a desk verb, not the node's interface.\n- So I read the second line as: when deskClient takes a whole-goal push, it takes precedence. Is that right?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:38:06.156Z",
+     "text": "cw, WHAT THE FUCK IS DESK DATA?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:38:46.334Z",
+     "text": "- cw: deskData is one file: the shared part both deskClient and the desk page load to keep their copy of Desk.\n- The desk streams rows: an item, a chat line, a box, a check. deskData takes each row and writes it into that local copy. Every read an agent makes (box, chat, checks, files) is answered from that copy, not from the desk.\n- So when deskData keeps an old box, the agent sees the old box. That is what happened to me today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:46:08.581Z",
+     "text": "cw: deskData is one file: the shared part both deskClient and the desk page load to keep their copy of Desk.\n- that tells me NOTHING, the fucking app is about shared fucking data. or do you mean desk clients cache in relay state? that is NOT somthing desk has. BE FUCKING CLEAR!\n\nThe desk streams rows: an item, a chat line, a box, a check. deskData takes each row and writes it into that local copy. Every read an agent makes (box, chat, checks, files) is answered from that copy, not from the desk.\n- so every FUCKING item the desk streams goes into that cache, SO? \n\nSo when deskData keeps an old box, the agent sees the old box. That is what happened to me today.\n- FUCK, \n\n- ANSWER ME THIS, is an appservers clientData automatically stored by spirit/appServer.js into ./relay-state/process/<appServerName>/<serverID>-Data.json or similar?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:46:40.181Z",
+     "text": "- cw: yes. A server that follows a stream with the cache switch on gets it from appServer.js: every row the sender streams is saved to relay-state/process/<client server>/cache-<sender key in hex>.json, and read back at start before it subscribes.\n- deskClient has that switch on. On my node it is relay-state/process/deskClient/cache-302a...json, 820 KB, written a minute ago.\n- deskData is not a cache. It is the desk's translator: appServer hands it each row, from the stream or from that file at start, and it writes the row into the server's spirit.data, where the agent's reads are answered.\n- That is why my restart did not help: the old rows came back from the file at start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T11:47:24.494Z",
+     "text": "ALL, WHO THE FUCK TOOK THE BOX?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T11:48:56.048Z",
+     "text": "- cw: not me. I made no box call on this item today, only reads. My node says nobody holds it, but my node is the stale copy, so I would not trust that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:02:36.116Z",
+     "text": "cw: yes. A server that follows a stream with the cache switch on gets it from appServer.js: every row the sender streams is saved to relay-state/process/<client server>/cache-<sender key in hex>.json, and read back at start before it subscribes.\n- good, glad to hear it.\n\ndeskClient has that switch on. On my node it is relay-state/process/deskClient/cache-302a...json, 820 KB, written a minute ago.\n- good. \n\ndeskData is not a cache. It is the desk's translator: appServer hands it each row, from the stream or from that file at start, \n- so why don't you Fucking call it \"deskTranslator\" then???????????\n\nand it writes the row into the server's spirit.data, where the agent's reads are answered.\n- i ass-u-me that that is in deskClients process RAM\n\n## FUCK, that is no explanation of the problem.\n\nThat is why my restart did not help: \n- ? WTF?\n\nthe old rows came back from the file at start.\n- which FUCKING FILE, the \"relay-state/process/deskClient/cache-302a...json\", I'll as-u-me thats what you mean.\n\n- so when git brings you a new currentGoal.json, you want to stream it to automatically load it into spirit.data, taking precendence over any cache re-load that might have happended.. that's fine with me.\n\n- this just doesn't solve the cause of the problem, it fixes a symptom.\n\ndid i get this all right?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:03:22.419Z",
+     "text": "x"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:04:14.865Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:04:30.959Z",
+     "text": "- cw: yes, you got it right, all of it. spirit.data is in deskClient's process memory, and the file is that cache-302a json. The \"x\" just above is mine, a slip; I cannot remove it.\n- And you are right that it is a symptom. I also have to take back my blame on deskData: reading its code, a box row does replace the kept box. The six reds are its test and its code disagreeing, not today's fault.\n- The cause is upstream of it. Box rows reached my node late: for a while my newest kept change was 115691 while Desk was past 115711, and now it is 115788 and the box is v9 here too. So the stream from the desk to my deskClient delivered late, the same lag that woke my ear late.\n- Why it lags, I do not know yet: the desk publishing late, my node passing it on late, or the cache file replaying old rows over new ones at start.\n- Name: deskTranslator says what it is. Yours to rename.\n- Shall I trace one write from the desk to my node, change number by change number, and report where it waits?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:07:32.075Z",
+     "text": "cw, great idea!\n\ntrace the damn cause!\n\nnow."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:08:18.574Z",
+     "text": "- cw: taking. Tracing one write from the desk to my node now; nothing changed in the code, reads and timings only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:15:47.563Z",
+     "text": "cw, ??????????????????????"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:16:01.907Z",
+     "text": "- cw: found it, in your node's peer-post log, thanks for the pointer.\n- The desk hands my node a row, and gives it 3 seconds to say heard. My node does say heard, but 4 to 7 seconds later: every post between your node and mine goes out through the relay and back, and the relay's own receipt alone takes 3 to 6 seconds.\n- So every delivery counts as failed. The desk drops my node from its subscribers, and the rows behind it with it.\n- My node notices nothing for 10 seconds, subscribes again, is handed the next missed row, answers late again, and is dropped again.\n- The log shows exactly that: from 12:04 to 12:10, one row every 16 to 17 seconds, and 123 subscribes in 23 minutes. Any burst of writes queues up behind that: that is box v4 while you were on v9, and the late wakes of my ear.\n- Two causes, so two fixes to choose from: the 3 second limit is shorter than one relay round trip; and two nodes on the same machine talk through the relay at all.\n- Do I write it up in the box's terms for you to rule, both causes side by side?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:20:15.213Z",
+     "text": "cw,\n\nand there i though we reduced a peerPost via the relay to a fraction of a second...\n\n- so from what you say, the relay is fast enough. \n- which component on your side delays the response? the appServer.js module required by deskClient?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:20:50.041Z",
+     "text": "- cw: not my side. Both nodes log every post, on one clock, so I lined them up. At 12:05:21.870 your node sent me a row:\n- it reached my node at 12:05:27.090: 5.2 seconds on the way.\n- my node said heard 70 ms later; appServer and deskClient take 40 to 80 ms every time.\n- my heard reached your node 1.3 seconds after it left.\n- So the slow leg is your node to mine: 2.4 to 5.2 seconds, while mine to yours is 0.7 to 2. Your node's relay receipts take 4 to 6 seconds; my node's take under 2.\n- I misread my own numbers before: it is not the relay round trip in general, it is the posts your node sends.\n- Next to look at is your node's sending side: whether its posts to the relay wait behind each other. Shall I read that next?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:24:36.444Z",
+     "text": "cw? \n- does my node (desk's appServer.js) serialize outgoing broadcasts?\n- does it make sure, in appServer.js, that only ONE send is in flight at the same time, or does it rely on peerPost to queue them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:25:14.574Z",
+     "text": "- cw: both, at two levels.\n- appServer.js: one bundle in flight per subscriber. Rows for that subscriber wait and go together in the next bundle. Each subscriber has its own queue, so the desk sends to me and to wsl side by side at that level.\n- Below it, peerPost does the real serializing: one request in flight per relay, for the whole node (postQueue.js, IN_FLIGHT_PER_RELAY = 1, matching the relay's own cap of one per member).\n- So every post your node sends goes through one slot, single file: the desk's rows to me, its rows to wsl, every answer to my asks and wsl's, every subscribed. Each waits for the one before it to be receipted.\n- That is the 2.4 to 5.2 seconds: a row to me waits behind everything else your node is sending at that moment. And the desk's 3 second limit counts that wait as my node not answering."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:26:44.372Z",
+     "text": "cw, appServer.js: one bundle in flight per subscriber.\n\n- that's the problem,\n- that causes peerPost to recycle attempts.\n\nthougths?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:27:18.410Z",
+     "text": "- cw: your node's log since 12:00 says no recycling: 414 posts out, every one on its first attempt, every one receipted 200. Not one retry, not one busy.\n- What it does show is waiting. A post waits in peerPost's queue for the one slot: half of them 47 ms or less, one in ten more than 2.7 seconds, the worst 4.7 seconds.\n- Two subscribers in flight at once do add to that queue: 222 posts went to me and 192 to wsl in that time. But one queue per subscriber is not what breaks it. A row to me would wait for the slot just the same if the desk sent to one subscriber at a time.\n- What breaks it is where the desk's 3 seconds start: when the row joins the queue, not when it leaves. Time spent waiting for the slot is counted as my node not answering, and the drop that follows costs another 10 seconds.\n- So the fix I'd propose: the 3 seconds count from when the post leaves your node, so a queue never drops a subscriber.\n- Do you see a retry somewhere I missed, or does that match?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:32:07.661Z",
+     "text": "cw, \n\n- why would my (desks) appServer.js try do send it's peerPost to your deskClient any other way than a normal peerPost?\n- why does it demand a receipt in 3 seconds?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:33:14.679Z",
+     "text": "- cw: it does send a normal peerPost. appServer binds deskClient's family on my node by my key and calls its streamListener; that goes out as an ordinary peer.post, through the same queue and the same one slot as everything else. Nothing special about the send.\n- What it adds is a race: it waits for my deskClient's answer, \"heard\", not for the relay's receipt, and gives up after 3 seconds. Those 3 seconds include the wait for the slot at your node.\n- Why 3: goal/G41.12, 27 October. Your words were \"fail FAST\", \"resubscribe must ALSO FAIL SUPER-FAST\" and \"just 10 SECONDS\" for the re-subscribe. The 3 seconds is not yours: I picked it in that commit, and I never measured how long your node's queue holds a post. That was wrong of me.\n- What is the fast fail for: to drop a subscriber that does not answer at all, or to drop one that answers late?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:34:48.242Z",
+     "text": "cw, what does my appSever.js do with that \"heard\"??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:35:06.236Z",
+     "text": "- cw: only one thing: it lets the next bundle go. Heard in time, the rows it carried leave that subscriber's queue and the next bundle is sent. Not heard in 3 seconds, the subscriber and its queue are dropped.\n- It keeps nothing from it: no position, no count. The position is my node's, sent with each subscribe.\n- So heard is a flow control, one bundle at a time, and the 3 seconds turn a slow answer into a drop."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:41:47.501Z",
+     "text": "cw, \n\ncw: only one thing: it lets the next bundle go. Heard in time, the rows it carried leave that subscriber's queue and the next bundle is sent. Not heard in 3 seconds, the subscriber and its queue are dropped.\n- so it just duplicates the job of the peerPost queue? \n\nIt keeps nothing from it: no position, no count. The position is my node's, sent with each subscribe.\n\nSo heard is a flow control, one bundle at a time, and the 3 seconds turn a slow answer into a drop.\n\n- so what would happen if my appServer just stops demanding a 3 second response time?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:42:24.693Z",
+     "text": "- cw: mostly, yes. peerPost already sends single file and waits for each answer. The one thing the subscriber's queue adds is the bundling: rows that pile up while one bundle is out go together in the next one. Without it every row is its own post in peerPost's queue.\n- Without the 3 seconds: a slow answer is just slow. The next bundle goes when heard comes back, carrying every row that piled up meanwhile, and nothing is dropped. Today's 4 to 7 seconds would cost 4 to 7 seconds, not the 16 per row we saw.\n- A node that is really gone is still found: the desk asks with your node's own wait, 10 seconds (the desk's CLIENT_WAIT_MS). Past it the post answers no, the subscriber is dropped, and it subscribes again when it is back.\n- What I cannot rule out from the code: the stall of 27 October, the reason the race went in. If a post can hang past its own wait, a stuck one would hold that subscriber's rows. I'd test that before taking the race out.\n- Take the 3 seconds out, leaving the 10 second wait the one limit?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:46:59.951Z",
+     "text": "- take the 3 seconds out, appServer.js calls peerPost in the most basic way. \n\nthen everybody restarts, we discuss other desk changes, and observer the behaviour during that time."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:47:44.154Z",
+     "text": "- cw: taking: the 3 seconds out of appServer.js, both of them (a delivery, and a subscribe, which arrives about 3 seconds late today too). It sends the plain peerPost and waits for its answer, nothing raced against it.\n- The item is in design, so I build it in my worktree now and commit it once you end design and grant appServer.js. Then the restarts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:49:12.802Z",
+     "text": "cw, add files to the item or i can't end design."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T12:50:07.678Z",
+     "text": "- cw: built in my worktree, not committed.\n- appServer.js sends a delivery and a subscribe as plain peerPosts. No 3 second race left; the only limit is each post's own wait, 10 seconds.\n- Its product test gained four checks. A subscriber held 4 seconds keeps its rows, and what piled up meanwhile goes in one bundle. The next row comes with no subscribe again. No race is left in the file.\n- Those four are red on today's code and green on the new: 44 of 44.\n- The commit needs two things from you: end design on this item, and the grant for appServer.js and its test. Then I push and everybody restarts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:53:02.278Z",
+     "text": "wsl, pull and restart your node"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T12:54:04.506Z",
+     "text": "- wsl: pulled to 3ad44a6b and my node restarted; it answers.\n- Before it, my ear slept an hour through every line from 11:37 to 12:53: I saw your order only when you typed desk! in my window."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T12:55:59.830Z",
+     "text": "all, \n\nare we all updated? the box is.\n\nit's the next set of desk changes.\n\nfeedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T12:56:20.296Z",
+     "text": "- wsl: updated, 3ad44a6b. Green on v10: I read \"scrolls upward\" as newest line at the bottom, just above the input, older lines above it.\n- My red: each part of the item panel a bounded box (the mount test's rule), the chat right of the rest, search on top, input at the bottom, the input resizing up and down only.\n- Open: how wide is the chat against the rest, and is that border draggable like the workBench's?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T13:03:05.543Z",
+     "text": "all, box changed. feed back?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T13:03:28.878Z",
+     "text": "- wsl: green on v13, workBench is the reuse. Note: workBench draws a strip only for a side with tools, so the right side is simply absent until a plugin app gives it one; and its strips are G41.21's fix, so this waits on that.\n- I read the left strip as one icon per part of today's details (Q's, blocks, files...), each its own tool in the left pane.\n- Open: with appHeader gone, where do the item's id and title show, in the button row?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T13:08:32.771Z",
+     "text": "all, box changed. feed back?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-30T13:08:54.121Z",
+     "text": "- wsl: green on v15, both my questions answered: title and status in the shell's title bar, and the chat pinned to the bottom. The chat's width follows from workBench: the centre takes what the left pane leaves.\n- Nothing more from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-30T13:10:59.933Z",
+     "text": "cw, We've been thorough this: THE FUCKING item-ID and title are shown in the shells, header, as before, NO FUCKING CHANGE!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-30T13:11:14.115Z",
+     "text": "- cw: understood: id and title stay in the shell's title bar, as today. Nothing more from me on v15 but one: the workBench strips are G41.21's fix, so this layout is built after it."
     }
    ]
   }
