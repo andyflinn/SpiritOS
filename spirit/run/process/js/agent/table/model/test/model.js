@@ -49,7 +49,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a model names a provider that is there');
-  const provider = call(ctx.tables.provider.verb, { op: 'add', label: 'Anthropic' });
+  const provider = call(ctx.tables.provider.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.example' });
   const added = call(t.verb, { op: 'add', label: 'Opus', providerId: provider.id, modelName: 'claude-opus-5-5', capabilities: ['text', 'tools'] });
   const got = added.id ? call(t.verb, { op: 'get', id: added.id }) : null;
   ok(got && got.providerId === provider.id && got.modelName === 'claude-opus-5-5', 'a model is added with its provider\'s id and its model name', 'get: ' + short(got));
