@@ -330,13 +330,15 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // ── PUSHGOAL (goal/G41.22, box v22; Andy: "the current goal and all its items, get a new button in the detail
     // panel: "push Goal", the ver on the desk is: "pushgoal"") ──────────────────────────────────────────────────────────
     test.subHeading('pushgoal: a verb of the desk, Andy\'s alone');
+    // The family's folder by spirit.js's one familyPath (goal/G41.12): no test spells a family path of its own.
+    const deskFamily = path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('desk'));
     let pgFile = null;
-    try { pgFile = JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'family', 'pushgoal.json'), 'utf8')); } catch (e) { pgFile = null; }
+    try { pgFile = JSON.parse(fs.readFileSync(path.join(path.dirname(deskFamily), 'pushgoal.json'), 'utf8')); } catch (e) { pgFile = null; }
     const pgRequest = pgFile && pgFile.request && typeof pgFile.request === 'object' && !Array.isArray(pgFile.request) ? pgFile.request : null;
     ok(!!pgFile && typeof pgFile.description === 'string' && pgFile.description !== '' && !!pgRequest, 'family/pushgoal.json beside the others describes it, with its request',
       'pushgoal.json: ' + short(pgFile));
     let deskVerbs = {};
-    try { deskVerbs = require(path.join(RUN, 'process', 'js', 'desk', 'family', 'api.js')).verbs || {}; } catch (e) { deskVerbs = {}; }
+    try { deskVerbs = require(deskFamily).verbs || {}; } catch (e) { deskVerbs = {}; }
     ok(Object.prototype.hasOwnProperty.call(deskVerbs, 'pushgoal'), 'the family\'s api.js lists it, so a call of it leaves the spirit object',
       'api.js lists ' + Object.keys(deskVerbs).length + ' verbs, pushgoal not among them');
     // Called with the request its own file declares: an id, if it takes one, is the current goal's.
