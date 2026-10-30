@@ -1,5 +1,5 @@
 {
- "change": 116354,
+ "change": 116355,
  "goal": "goal/G41",
  "items": [
   {
@@ -154,7 +154,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -16591,12 +16591,11 @@
    "id": "goal/G41.22",
    "title": "fix desk",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 25,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
