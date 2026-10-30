@@ -19,9 +19,8 @@ Andy, on G41.19:
 - One generator script per kind of answer, in `spirit/run/spirit/DEBUG/`: `headLessBrowser.js` and
   `garbageArguments.js`. `DEBUG.js` only reads the address and hands it to that script.
 - `spirit/run/shell/mount.html` is gone: the page is made from the address.
-- A module's special needs for a generator sit beside its tests: `<folder>/test/<module>-<generatorScript>.json`. The
-  grants panel's is `shell/js/test/grantsPanel-headLessBrowser.json`, and its old name,
-  `grantsPanel-boot-sibling-generalRules.json`, is gone.
+- **No mount files at all** (box v23: *"no manifests at this point, because special cases can be handled by the
+  elements own test script"*): no `<module>-headLessBrowser.json` is left in `spirit/run`, the grants panel's included.
 - Neither `DEBUG.js` nor its `DEBUG/` folder can be fetched by a browser, DEBUG on or off.
 
 ### The address
@@ -51,13 +50,25 @@ the module's name without extension; the generator script's name without `.js`, 
     a 4xx status and a `code`, never a 2xx, a 5xx or a "handler failed";
   - the node still answers its api afterwards.
 
+### DEBUG on: no generator, then the file itself
+
+Box v20-v23: *"DEBUG.js will, if the generator implied by the URL does NOT exist, will attempt to serve the exact file
+implied by the URL, Leaving \"DEBUG/\" out"*, so an element's own test can open several pages of its own,
+`./test/<element>-<case>.html`.
+
+- `/DEBUG/shell/js/test/workBench.md` answers 200 with that file as it is.
+- Only a file inside a `test/` folder: `/DEBUG/shell/js/workBench.js` (the element's own script) and
+  `/DEBUG/spirit/serveCommon.js` are refused.
+- Refused: no such generator and no such file (`/DEBUG/shell/js/test/noSuchPage.html`); a test file asked with a
+  forwarded-from header.
+
 ### DEBUG on: what it refuses
 
 Each is not answered by DEBUG.js, so it answers as an address of no route does (a 4xx), never a page or a list:
 
 - no such module under `spirit/run`;
 - a `..` anywhere in the address (sent as it is, not normalised by the client);
-- no such generator script;
+- no such generator script, and no such file;
 - a request carrying a forwarded-from header (`X-Forwarded-For`, `Forwarded`): Caddy passes a request from the internet
   to a relay from loopback, saying where it came from;
 - a request not from loopback: tried on the relay, which listens on every address, by asking it at this machine's own

@@ -207,25 +207,27 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
     ok(!errors.length, 'and it says no error on the console', 'console: ' + short(errors));
     if (!report || report.state !== 'mounted') return;
 
-    test.subHeading(NAMED + ': ' + 'it draws, in the box it is given');
-    const drew = await page.evaluate('(function () { var b = window.spiritMount.box; return !!b && b.childElementCount > 0 && b.getBoundingClientRect().height > 0; }())');
-    ok(drew === true, 'it draws something into its box', 'its box is empty');
-
-    test.subHeading(NAMED + ': ' + 'every list in a box of a stated size (rule/16)');
-    // rule/16: a list scrolls inside a box of a stated size. Judged by the layout itself, so the page names no element
-    // (Andy: "why are there elements hard-coded in there?"): every box it drew that scrolls (overflow auto or scroll),
-    // shown, is given far more than it can hold, and must keep its height, inside the mount box. A box only as tall as
-    // its content, anywhere above a list, lets the list grow with it. A dropdown's list is hidden until it opens, and is
-    // not asked. It is judged as drawn, and again after each tool and tab button it draws is pressed in turn, so each
-    // list it can show is judged while it shows.
+    // EVERY BOX INSIDE IT BOUNDED, TALL AND WIDE (goal/G41.19, box v23; rule/16; Andy: "list-in-a-sized-box
+    // (anything-in-a-sized-box) are really a test of the container", "any container that mounts unknown stuff inside it
+    // should be bounded in vertically and horizontally"). Judged by the layout itself, so the page names no element:
+    // every box it drew that scrolls (overflow auto or scroll, either way), shown, is given a child far taller than it,
+    // then one far wider, and must keep its height and its width, inside the mount box. A box only as tall or as wide as
+    // its content, anywhere above it, lets it grow. A dropdown's list is hidden until it opens, and is not asked. It is
+    // judged as drawn, and again after each tool and tab button it draws is pressed in turn. EACH BOX IS ITS OWN CHECK,
+    // named by this file's path and the box's id chain (Andy: "only if the test is properly named can the problem be
+    // diagnosed quickly").
     const PROBE = '(function () { var box = window.spiritMount.box; var out = [];' +
-      ' Array.prototype.forEach.call(box.querySelectorAll("*"), function (el) { var cs = getComputedStyle(el); if (!/auto|scroll/.test(cs.overflowY) || !el.getClientRects().length) return;' +
-      '  var before = el.getBoundingClientRect().height; var tall = document.createElement("div"); tall.style.height = "5000px"; tall.style.flex = "none"; el.appendChild(tall);' +
-      '  var after = el.getBoundingClientRect(); var bx = box.getBoundingClientRect(); var spilt = box.scrollHeight > box.clientHeight + 1; el.removeChild(tall);' +
-      '  var name = el.tagName.toLowerCase() + (el.id ? "#" + el.id : ""); for (var n = el.parentNode; n && n !== box && !el.id; n = n.parentNode) { if (n.id) { name = n.tagName.toLowerCase() + "#" + n.id + " " + name; break; } }' +
-      '  out.push({ box: name, kept: Math.abs(after.height - before) <= 1, inside: after.bottom <= bx.bottom + 1, spilt: spilt }); }); return out; }())';
+      ' function chain(el) { var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "")); } return parts.join(" > "); }' +
+      ' function grows(el, prop, kid) { var before = el.getBoundingClientRect()[prop]; el.appendChild(kid); var after = el.getBoundingClientRect(); var bx = box.getBoundingClientRect();' +
+      '  var r = { kept: Math.abs(after[prop] - before) <= 1, inside: after.bottom <= bx.bottom + 1 && after.right <= bx.right + 1, spilt: box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1 }; el.removeChild(kid); return r; }' +
+      ' Array.prototype.forEach.call(box.querySelectorAll("*"), function (el) { var cs = getComputedStyle(el); if (!/auto|scroll/.test(cs.overflowY + cs.overflowX) || !el.getClientRects().length) return;' +
+      '  var tall = document.createElement("div"); tall.style.cssText = "height:5000px;width:1px;flex:none";' +
+      '  var wide = document.createElement("div"); wide.style.cssText = "width:5000px;min-width:5000px;height:1px;flex:none";' +
+      '  var t = grows(el, "height", tall), w = grows(el, "width", wide);' +
+      '  out.push({ box: chain(el), tall: t, wide: w }); }); return out; }())';
     const seen = {};
-    const probe = async function () { const s = await page.evaluate('JSON.stringify(' + PROBE + ')'); (s ? JSON.parse(s) : []).forEach(function (p) { if (!seen[p.box] || seen[p.box].kept) seen[p.box] = p; }); };
+    const bounded = function (p) { return p.tall.kept && p.tall.inside && !p.tall.spilt && p.wide.kept && p.wide.inside && !p.wide.spilt; };
+    const probe = async function () { const s = await page.evaluate('JSON.stringify(' + PROBE + ')'); (s ? JSON.parse(s) : []).forEach(function (p) { if (!seen[p.box] || bounded(seen[p.box])) seen[p.box] = p; }); };
     await probe();
     const count = await page.evaluate('window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]").length');
     for (let i = 0; i < count; i++) {
@@ -233,10 +235,18 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
       await sleep(400);
       await probe();
     }
-    test.comment('pressed ' + count + ' tool and tab buttons');
-    const list = Object.keys(seen).map(function (k) { return seen[k]; });
-    const bad = list.filter(function (p) { return !p.kept || !p.inside || p.spilt; });
-    ok(!bad.length, list.length ? 'each of its ' + list.length + ' scrolling boxes keeps its height when given too much, inside its box' : 'it draws no scrolling box', 'not so: ' + short(bad));
+    test.comment('pressed ' + count + ' tool and tab buttons; ' + Object.keys(seen).length + ' scrolling boxes');
+    Object.keys(seen).forEach(function (k) {
+      const p = seen[k];
+      test.subHeading(NAMED + ': sized box ' + k);
+      const why = [];
+      if (!p.tall.kept) why.push('it grows taller with its content');
+      if (!p.wide.kept) why.push('it grows wider with its content');
+      if (!p.tall.inside || !p.wide.inside) why.push('it reaches past the mount box');
+      if (p.tall.spilt || p.wide.spilt) why.push('the mount box overflows');
+      ok(!why.length, k + ' keeps its height and its width when given far more than it holds', k + ': ' + why.join('; '));
+    });
+    test.subHeading(NAMED + ': ' + 'its box never grows');
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
 

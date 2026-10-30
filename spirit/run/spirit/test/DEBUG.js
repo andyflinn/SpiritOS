@@ -100,9 +100,10 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', g + '.js')), 'its generator script spirit/run/spirit/DEBUG/' + g + '.js is there', 'spirit/run/spirit/DEBUG/' + g + '.js is not there');
   });
   ok(!fs.existsSync(path.join(RUN, 'shell', 'mount.html')), 'shell/mount.html is gone: the page is made from the address', 'shell/mount.html is still there');
-  // A module's special needs for a generator sit beside its tests, named <module>-<generatorScript>.json.
-  ok(fs.existsSync(path.join(RUN, 'shell', 'js', 'test', 'grantsPanel-headLessBrowser.json')) && !fs.existsSync(path.join(RUN, 'shell', 'js', 'test', 'grantsPanel-boot-sibling-generalRules.json')),
-    'the grants panel\'s mount needs are grantsPanel-headLessBrowser.json, the old name gone', 'shell/js/test/grantsPanel-headLessBrowser.json is not there, or the old -boot-sibling-generalRules.json still is');
+  // NO MOUNT FILES AT ALL (box v23: "no manifests at this point, because special cases can be handled by the elements
+  // own test script"): every element mounts with its container alone, so no <module>-headLessBrowser.json is left.
+  const manifests = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) { return /-headLessBrowser\.json$/.test(f) && fs.existsSync(path.join(REPO, f)); });
+  ok(!manifests.length, 'no mount file is left: every element mounts with its container alone', 'mount files still there: ' + short(manifests));
   // serveCommon requires it: loaded in a child, DEBUG.js is among the modules loaded.
   let loaded = '';
   try {
@@ -160,9 +161,21 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     };
     await refused('/DEBUG/shell/js/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run');
     await refused('/DEBUG/shell/js/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address');
-    await refused('/DEBUG/shell/js/workBench/noSuchGenerator.html', {}, 'no such generator script');
+    await refused('/DEBUG/shell/js/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file');
     await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For');
     await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded');
+    // NO GENERATOR, THEN THE EXACT FILE OF THE ADDRESS, /DEBUG LEFT OFF (box v20-v23: "DEBUG.js will, if the generator
+    // implied by the URL does NOT exist, will attempt to serve the exact file implied by the URL"), and only a file
+    // inside a test/ folder: an element's own test pages, ./test/<element>-<case>.html.
+    const PAGE_FILE = 'shell/js/test/workBench.md';
+    const own = fs.readFileSync(path.join(RUN, PAGE_FILE), 'utf8');
+    test.subHeading('/' + PAGE_FILE + ', the node, DEBUG on: the file itself');
+    const served = await ask('127.0.0.1', N, '/DEBUG/' + PAGE_FILE);
+    ok(served.status === 200 && served.text === own, 'a file inside a test/ folder is served as it is', '/DEBUG/' + PAGE_FILE + ' answered ' + served.status + ' ' + short(served.text.slice(0, 120)));
+    await refused('/DEBUG/shell/js/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)');
+    await refused('/DEBUG/spirit/serveCommon.js', {}, 'a server script');
+    await refused('/DEBUG/shell/js/test/noSuchPage.html', {}, 'no such file in a test/ folder');
+    await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' }, 'a test file asked with X-Forwarded-For');
     for (const p of ['/spirit/DEBUG.js', '/spirit/DEBUG/headLessBrowser.js', '/spirit/DEBUG/garbageArguments.js']) {
       test.subHeading(p + ', the node, DEBUG on');
       const r = await ask('127.0.0.1', N, p);

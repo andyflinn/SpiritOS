@@ -66,21 +66,10 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
   Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that uses a part it
   did not require fails here.
 - **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with the api a face gives an app.
-- **An element** mounts by itself: the page creates the element the file registers on `spirit.elements`, in the box,
-  with no options. If the page cannot tell which element the file registered, or it registered none with a `create`,
-  the page fails and says what it found. A mount file is for a special case only (Andy, box v17: *"a mount test or any
-  other test type only needs a manifest for special cases, like a grants panel that needs configuring with and ID
-  table."*).
-- **A special case** is mounted by the file beside its tests that names how (Andy: *"so the test folder needs a
-  <module>-shell-child-<testname>.json if it has special call or mount requirements for that test?"*, and *"i proposed
-  making it a json file."*): `<its folder>/test/<its name>-headLessBrowser.json`, named after the module and the
-  generator that reads it. It is JSON, not a script: `testModule.js` runs every `.js` in a test folder as a test.
-  - `{ "create": "<the element's name on spirit.elements>", "options": { ... } }`: the page calls
-    `spirit.elements[create].create(box, options)` and keeps what it answered (its destroy).
-  - JSON holds no function, so in the options `{ "answers": X }` is a function that answers X (the grants panel's
-    search, grant, revoke and stream), and `{ "page": "api" }` is the page's api.
-  - The grants panel's is `shell/js/test/grantsPanel-headLessBrowser.json`; its old name,
-    `grantsPanel-boot-sibling-generalRules.json`, is gone.
+- **An element** mounts with its container alone, no options: the page creates the element its file registers on
+  `spirit.elements` (box v23: *"No mount files at all: every element is mounted with its container alone, no
+  options"*). An element missing its options must not throw: it mounts and says it is not configured. Its special
+  cases are its own test's, on pages of its own in `./test/`.
 - It reports on `window.spiritMount`:
   - `state`: `loading`, then `mounted` or `failed`;
   - `error`: why it failed;
@@ -89,27 +78,33 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
 
 ## Requirements: what it judges per file
 
-- **It loads by itself:**
+Box v23: *"Clean mount: with its container alone it mounts, loads its own parts, throws nothing even when unconfigured
+(it says it is not configured), asks for no missing file, logs no console error, and destroy leaves the container
+empty."* And *"every box inside it that scrolls keeps its height and its width when given far more than it holds; each
+box is its own check, named by the element's path and the box's id chain."*
+
+- **It mounts cleanly:**
   - the node answers the DEBUG page for the file;
-  - the file mounts on the bare page;
+  - the file mounts on the bare page, with its container alone;
   - nothing it runs throws;
   - every file it asks for is there: no file request answers 4xx or fails. The door's answers and the browser's own
     favicon request are not files the page asked for;
   - it says no error on the console.
-- **It draws**: its box holds something, of a height.
-- **Every list in a box of a stated size (rule/16)**:
-  - every tool and tab button it draws (`[data-tool]`, `[data-tab]`) is pressed in turn, so each list it can show is
-    made;
-  - judged by the layout, not by names: every box it drew that scrolls (overflow `auto` or `scroll`) and is shown is
-    given far more than it can hold (a child 5000px tall, taken out again), and keeps its height, inside the mount box,
-    the mount box not overflowing. A box only as tall as its content, anywhere above a list, lets the list grow with it.
-    A dropdown's list is hidden until it opens, and is not asked;
-  - the box never grows past its height, and the page never scrolls sideways.
-- **Destroy**: an element's destroy leaves its box empty. An app is closed by the face and has none of its own.
+- **Every box inside it bounded, tall and wide** (rule/16; Andy: *"any container that mounts unknown stuff inside it
+  should be bounded in vertically and horizontally"*):
+  - every tool and tab button it draws (`[data-tool]`, `[data-tab]`) is pressed in turn, and its boxes judged after
+    each press, so each box it can show is judged while it shows;
+  - judged by the layout, not by names: every shown box that scrolls (overflow `auto` or `scroll`, either way) is
+    given a child 5000px tall, then one 5000px wide, each taken out again. It keeps its height and its width, inside
+    the mount box, the mount box not overflowing. A dropdown's list is hidden until it opens, and is not asked;
+  - **each box is its own check**, titled `<path>/headLessBrowser.html: sized box <its id chain>`, such as
+    `div#agent-bench > div#wb1-strip-left`, so a red names the element and the box at once;
+  - the mount box never grows past its height, and the page never scrolls sideways.
+- **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
 
 ## What its test must try to break
 
 - A file that mounts only because the page preloaded something.
-- A file that asks for a file that is not there, throws, or logs an error.
-- A list in a box only as tall as its content, anywhere between it and the app.
+- A file that asks for a file that is not there, throws, or logs an error, its options missing included.
+- A box only as tall or as wide as its content, anywhere between a scrolling box and the app.
 - A destroy that leaves what it drew.
