@@ -19,7 +19,7 @@
           add: false,
           // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon the server sends with the
           // row; and the button row holds "provider models", opening the Update model list pane in the centre.
-          columns: [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }],
+          columns: [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', label: 'Model', sort: 'text' }],
           buttons: [{ label: 'provider models', press: function () {
             if (!detail) return;
             detail.open(function (box) {

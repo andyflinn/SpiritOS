@@ -24,7 +24,7 @@
       },
     });
   }, function () { /* no data set: the lists still search */ });
-  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'loop', label: 'Loop (the agent app runs it again)', kind: 'bool' }, { field: 'job', label: 'Job, which may come with a prompt', kind: 'code' },
+  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'loop', label: 'Loop (the agent app runs it again)', kind: 'bool' }, { field: 'job', label: 'Job, which may come with a prompt', kind: 'code' },
     // goal/G41.21, box v17: the bundle "with a bundleSelector in dropdown mode" (kind bundle), "That bundle is the job's
     // grant"; the provider and the persona each by a pick field of its table.
     { field: 'bundle', label: 'Bundle (its grant)', kind: 'bundle' }, { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' },

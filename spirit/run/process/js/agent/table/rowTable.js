@@ -34,7 +34,9 @@ const PRIVATE = ['privateKey', 'sealPrivateKey'];
 // What every row has beside its key set, with its rule (spirit.js's standard). EVERY ROW HAS AN ICON (Andy, on G41.4:
 // "all table rows will have an icon, by default the tables icon"): a glyph, which the page's Add sets to its table's
 // icon and its editor lets him choose.
-const COMMON = { icon: 'text?', label: 'name?', description: 'description?' };
+// No description (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.", "ALL, from all
+// agent-tables I mean...").
+const COMMON = { icon: 'text?', label: 'name?' };
 // One answer is what appServer lets leave, measured on the whole body.
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
@@ -67,6 +69,12 @@ function rowTable(db, def, publish) {
   Object.keys(fields).forEach(function (f) {
     if (have.indexOf(f) !== -1) return;
     db.exec('ALTER TABLE ' + t + ' ADD COLUMN "' + f + '" ' + sqlType(fields[f]) + ' NOT NULL DEFAULT ' + (sqlType(fields[f]) === 'INTEGER' ? '0' : "''"));
+  });
+  // A COLUMN THE TABLE NO LONGER NAMES GOES at start (the description, goal/G41.21): an agent.db from before takes the
+  // new shape.
+  have.forEach(function (c) {
+    if (KEYSET.indexOf(c) !== -1 || fields[c] !== undefined) return;
+    db.exec('ALTER TABLE ' + t + ' DROP COLUMN "' + c + '"');
   });
   const q = {
     get: db.prepare('SELECT * FROM ' + t + ' WHERE id = ?'),

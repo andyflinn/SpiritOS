@@ -24,7 +24,10 @@
       },
     });
   }, function () { /* no data set: the lists still search */ });
-  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }, { field: 'modelName', label: 'Model name', kind: 'text' }, { field: 'capabilities', label: 'Capabilities', kind: 'list' }];
+  // goal/G41.21: every field shown only. The label is the model name as the provider gives it (Andy: "the label hold the
+  // model name as provided by the provider, and is output only in the models UI"); the capabilities ("model details,
+  // capabilites, is output only").
+  var FIELDS = [{ field: 'label', label: 'Model', kind: 'output' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }, { field: 'capabilities', label: 'Capabilities', kind: 'output' }];
   E.modelRow = {
     create: function (container, api, id, added, detail) {
       var made = null;
