@@ -45,9 +45,14 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   module `process/js/agent`) lands at `agent.model/<id>` and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
+### The provider shown, never picked (goal/G41.21)
+
+Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that............."*. The model's detail shows its provider (kind `output`, the provider table's row by its icon and label); it is no picker.
+
 ## What its test must try to break
 
 - A model naming a provider that is not there, by add or by set.
 - Capabilities that come back as text instead of a list.
 - A model shown without its provider's icon, or the icon kept in the table.
 - A list showing the label where the model name belongs; a provider models button that opens nothing; an Add button.
+- A model's provider drawn as a picker or an input.

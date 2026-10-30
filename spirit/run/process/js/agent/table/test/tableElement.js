@@ -433,6 +433,28 @@ test.startTest('tableElement.js: what the tables\' elements share');
     'it asks the model table for this provider\'s models, narrowed the same way', 'calls: ' + short(withNone.calls));
   ok(!withNone.shown, 'with none, the Model field is hidden', 'the Model field is shown though the model table holds no model of this provider');
 
+  test.subHeading('an output field shows, and is never picked or sent (goal/G41.21)');
+  // Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that.............".
+  {
+    D.set('agent.provider/KOUT', { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
+    w.calls.length = 0;
+    w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT', modelName: 'm' } : { id: 'KM' }; };
+    const before = w.searches.length;
+    const eo = box('output');
+    const ro = E.agentRow.create(eo, { api: {}, table: 'model', id: 'KM', added: false, look: look,
+      fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }] });
+    await settle(); await settle();
+    const shownAll = eo.innerHTML + ' ' + Object.keys(eo.parts).map(function (k) { return String(eo.parts[k].textContent || '') + String(eo.parts[k].innerHTML || ''); }).join(' ');
+    ok(/Anthropic/.test(shownAll), 'it shows the provider by its label', 'shown: ' + short(shownAll.slice(-300)));
+    ok(!w.searches.slice(before).some(function (s) { return s.o && s.o.verb === 'provider'; }) && !/<input[^>]*id="[^"]*-providerId"/.test(eo.innerHTML),
+      'and has no picker and no input for it', 'searches ' + short(w.searches.slice(before).map(function (s) { return s.o && s.o.verb; })) + ', markup ' + short(eo.innerHTML.slice(-300)));
+    the(eo, 'label').value = 'Renamed';
+    the(eo, 'label').fire('change'); await settle();
+    const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
+    ok(set && set.args.label === 'Renamed' && !('providerId' in set.args), 'a save of the row never sends it', 'calls: ' + short(w.calls));
+    ro.destroy();
+  }
+
   test.subHeading('a pick on a real job row saves, whatever else is unpicked (goal/G41.21)');
   // Andy: "when i pick a persona, provider, or a bundle, the UI responds to ALL three of those picker changes with exactly
   // these words: "Not saved: agent.job: provider must be a peer's public key".... WTF!", and "that message could not be more

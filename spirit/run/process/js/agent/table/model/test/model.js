@@ -133,8 +133,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'a row it opens is a modelRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   ok(r && r.look && r.look.icon === '🧠' && r.look.table === 'model', 'its title row has the model table\'s look', 'look: ' + short(r && r.look));
   const provField = r && r.fields.filter(function (f) { return f.field === 'providerId'; })[0];
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['providerId', 'pick'], ['modelName', 'text'], ['capabilities', 'list']]),
-    'its fields are the label, the description, the provider picked, the model name, and the capabilities as a list', 'fields: ' + short(r && r.fields));
+  // goal/G41.21, Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for
+  // that.............": the provider is shown (kind output, the provider table's row by its icon and label), never picked.
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['description', 'description', ''], ['providerId', 'output', 'provider'], ['modelName', 'text', ''], ['capabilities', 'list', '']]),
+    'its fields are the label, the description, the provider shown and never picked, the model name, and the capabilities as a list', 'fields: ' + short(r && r.fields));
   ok(provField && provField.pick === 'provider', 'the provider is picked from a search of the provider table', 'providerId: ' + short(provField));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 

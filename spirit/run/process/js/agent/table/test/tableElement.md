@@ -117,6 +117,10 @@ Only when all fields, including icon, are filled, will the "Add" button not resp
 - With every mandatory field filled, it adds the whole row once (`{ op: add, ...every field }`), and the editor is the
   new row's from then on, its title Change.
 
+### An output field (goal/G41.21)
+
+Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that............."*. A field of kind `output`, naming the table it points to (`pick`), shows that table's row by its icon and label; it has no picker and no input, and a save of the row never sends it.
+
 ## What its test must try to break
 
 - A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
@@ -132,3 +136,4 @@ Only when all fields, including icon, are filled, will the "Add" button not resp
 - A field edit that waits for a Save, a Save button left, or a save sending part of the row.
 - An Add that makes a row before it is valid; an Add mode that saves on a change, loses what was typed, or has a Delete.
 - A pick refused for a field the user never touched.
+- An output field drawn as a picker or an input, or sent with a save.
