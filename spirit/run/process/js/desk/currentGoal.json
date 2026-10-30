@@ -1,5 +1,5 @@
 {
- "change": 115588,
+ "change": 115594,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.18",
     "goal/G41.19"
    ],
    "codeOffered": false,
@@ -151,7 +150,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -13395,15 +13396,13 @@
    "id": "goal/G41.18",
    "title": "Aquire model data from providers.",
    "goal": "goal/G41",
-   "status": "verified red",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "end-design",
-    "done",
-    "verify",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -13411,8 +13410,8 @@
    "blocked": [],
    "codeOffered": true,
    "go": true,
-   "alone": false,
-   "alert": true,
+   "alone": true,
+   "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
@@ -13516,7 +13515,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "# the Scope of this item is only this: Get the model table populated with models from providers.\n- one fix first: a new provider row will not be added if the URL is the same as an existing URL in the provider table, nor will a change be allowed if the change would result in duplicate URL's, trailing slashes don't count as different.\n\n- to acquire models for the models table, the following needs to happen:\n- the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table updating.\n|\n- when the models icon is active....\n- the left hand panel will show the same title row, it does now: \"🧠Models\"\n- then it show a button row with the following button \"provider models\", which will open a panel in the center pane of the workBench. more about that panel below...\n- below that is the model-search, ALMOST as it is now, with one difference\n- the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the provider-key on the model row.\n|\n- the title of the new center-pane is: \"🧠 Update model list\"\n- then a form row: from [provider-dropdown] [ask-Button]\n- when a provider is selected. The ask button will ask the provider for a model-list, which is then shown below the the ask form above, with a remark \"model list updated.\". Updated means, unavailable models from that provider will be removed, also.\n- only if a provider answers with a list of more than 0 models, will the agent's model table be \"updated\" as described above.\n|\n- the agent (process) gets a \"./provider/\" subfolder and uses the standard plugin pattern\n- ./provider/<providerName>/<providerName>.js with will be node.js-required into a table, where <providerName> must match the label of a provider row.\n- if a provider row has no matching plugin (case-insensitive), the OpenAPI  plugin will be used, if it fails, the provider row will be flagged as unusable.\n|\nbuilt in this item\n- OpenAI plugin\n- Anthropic plugin\n- Unsloth will be the test case for \"no-matching-plugin\"\n- the UI as specified.\n\n# final requirements\n- all production code files get their tests and document files in the appropriate ./test/ folders\n\n\n\n\n",
@@ -14522,7 +14521,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
