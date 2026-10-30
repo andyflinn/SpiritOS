@@ -42,10 +42,19 @@ test.startTest('persona/: the persona table');
   ok(t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function', 'server.js(ctx) answers the table, its verb and has', 'answered: ' + short(t && Object.keys(t)));
   const cols = db.prepare('PRAGMA table_info("persona")').all().map(function (c) { return c.name; });
   // Andy, box v22: "with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt".
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','persona'].forEach(function (c) {
+  // goal/G41.21, Andy: "and where the fuck is my bundle field in persona-table and the fucking picker for a bundle with the
+  // persona?"
+  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','description','persona','bundle'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the persona table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 8, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
+  {
+    const pid = call(t.verb, { op: 'add', label: 'With a bundle', persona: 'p' }).id;
+    call(t.verb, { op: 'set', id: pid, bundle: '7' });
+    const got = call(t.verb, { op: 'get', id: pid });
+    ok(got && String(got.bundle) === '7' && got.persona === 'p', 'a persona keeps its bundle, its text as it was', 'get: ' + short(got));
+    call(t.verb, { op: 'delete', id: pid });
+  }
 
   test.subHeading('server.js: a persona is its text');
   const TEXT = 'You are careful.\nYou answer short.';
@@ -102,8 +111,9 @@ test.startTest('persona/: the persona table');
   ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && r.id === 'K1' && r.added === false && r.api === api,
     'a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   ok(r && r.look && r.look.icon === '🎭' && r.look.table === 'persona', 'its title row has the persona table\'s look', 'look: ' + short(r && r.look));
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['persona', 'code']]),
-    'its fields are the label, the description, and the persona in a CodeMirror editor', 'fields: ' + short(r && r.fields));
+  // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['description', 'description'], ['persona', 'code'], ['bundle', 'bundle']]),
+    'its fields are the label, the description, the persona in a CodeMirror editor, and its bundle by the bundle selector', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the persona table\'s rows from the stream itself (goal/G41.16)');

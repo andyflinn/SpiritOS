@@ -121,7 +121,7 @@ test.startTest('agent.js: the agent server');
     const WANT = {
       provider: KEYSET.concat([/^url$/, /^apiKey$/, /^model$/]),
       model: KEYSET.concat([/^providerId$/, /^modelName$/, /^capabilities$/]),
-      persona: KEYSET.concat([/^persona$/]),
+      persona: KEYSET.concat([/^persona$/, /^bundle$/]),
       job: KEYSET.concat([/^loop$/, /^job$/, /^bundle$/, /^provider$/, /^persona$/]),
     };
     Object.keys(WANT).forEach(function (name) {

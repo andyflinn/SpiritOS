@@ -28,7 +28,16 @@ codeMirror-field for the persona-description i give it with every prompt)"*.
   module `process/js/agent`) lands at `agent.persona/<id>` and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
+## Requirements (goal/G41.21, box v19)
+
+- **The persona table gains a field, bundle**: the key of one of the node's bundles (Andy: *"and where the fuck is my
+  bundle field in persona-table and the fucking picker for a bundle with the persona?"*). A persona keeps it, its text
+  as it was; nine columns, nothing else.
+- **Its detail panel sets it with the bundle selector in dropdown mode** (kind `bundle`), after the persona's text, as
+  the job's does.
+
 ## What its test must try to break
 
 - A persona text that loses its lines, or is emptied by a set of its label.
 - The persona edited in a one-line field.
+- A persona without its bundle column, or a detail with no bundle selector.
