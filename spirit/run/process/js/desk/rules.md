@@ -128,6 +128,10 @@ when closing an item, verify only with the items red. the full harness runs only
 
 ## test
 
+### rule/27 (version 66): What tests are for.
+
+Test suites do not exists to confirm what the code does, they are there to assert what the user/designer wants. test will diligently make sure that the user/designer gets what he wants, and NOT what the builder or verifier thinks is "enough"!
+
 ### rule/20 (version 50): verification of test folders in product tree
 
 do not claim verification of a product script is done is green until
