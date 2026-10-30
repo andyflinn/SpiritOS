@@ -72,6 +72,22 @@ which will never reach the browser or any place outside of the agent process exc
 - **Its detail panel gets a Model field at the bottom**: a pick field of the model table, `of: 'providerId'`, so it
   offers only the models whose provider is this provider (../../test/tableElement.md).
 
+### The Model picker in a real browser (goal/G41.21)
+
+Andy: *"the model picker for anthropic simply shows: "Nothing matches.", no if the search field is empty or not"*,
+*"make sure that the picker is filled, from the beginning, with the result of the default search (empty search input)"*,
+and *"tests are not there to confirm what the fucking code does, they're there to assert what the user/designer
+wants"*. What he sees, asserted where he sees it: the real provider and model servers on a scratch agent.db, two
+providers, two models of one and one of the other; `./provider-picker.html`, opened at
+`/DEBUG/process/js/agent/table/provider/test/provider-picker.html` on a scratch node with its DEBUG on
+(`test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
+the real dropdown, the agent server a stand-in answering what the real tables answered for each call.
+
+- The provider's detail shows its Model field, the provider having models.
+- Pressed, it opens its dropdown.
+- With the search empty, from the start, it lists that provider's two models and nothing else; never Nothing matches.
+- Each row says its model.
+
 ## What its test must try to break
 
 - The API key in any answer or published row, ask's included.
@@ -81,3 +97,4 @@ which will never reach the browser or any place outside of the agent process exc
 - ask removing another provider's models, or his label and description of a model kept.
 - An empty or failed list that changes the model table; a failure that leaves the row unflagged.
 - No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.
+- A Model picker saying Nothing matches. with the search empty, listing another provider's models, or rows without the model's name.

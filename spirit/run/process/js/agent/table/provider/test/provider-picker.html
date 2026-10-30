@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+</head>
+<body>
+<div id="app-container"><div id="app-header"><div id="app-title">Agent</div></div><div id="app-content"><div class="app-pane" id="pane"></div></div></div>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.21 (Andy: "the model picker for anthropic simply shows: "Nothing matches.", no if the search field is empty or
+// not", "make sure that the picker is filled, from the beginning, with the result of the default search (empty search
+// input)", "wsl, make sure your tests actually checks if this thing works"): a provider's detail as the Agent app draws
+// it, the real row element, the real shared table element and the real dropdown, its Model field opened, and what the
+// browser shows in it. The agent server is the one stand-in: it answers what the real provider and model tables answered
+// in the test (./provider.js), handed in as window.picker(answers). Opened at
+// /DEBUG/process/js/agent/table/provider/test/provider-picker.html.
+window.picker = function (answers) {
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  var asked = [];
+  // The agent server's answer to one call: what the real tables answered for those arguments, else nothing found.
+  function answer(table, args) {
+    asked.push({ table: table, args: args });
+    var key = table + ' ' + JSON.stringify(args);
+    if (Object.prototype.hasOwnProperty.call(answers, key)) return answers[key];
+    if (args && args.op === 'search') return { items: [], more: false };
+    return { ok: false, error: 'no-such-row' };
+  }
+  var family = new Proxy({}, { get: function (o, table) {
+    if (table === 'then' || typeof table !== 'string') return undefined;
+    return function (args) { var a = answer(table, args); return a && a.ok === false ? Promise.reject(Object.assign(new Error(a.error), { body: a })) : Promise.resolve(a); };
+  } });
+  var AGENT = spirit.familyPath('agent');
+  var realRequire = spirit.require;
+  spirit.require = function (p) { return p === AGENT ? Promise.resolve(family) : realRequire.apply(spirit, arguments); };
+  // The app's api, as the dropdown calls it: agent.<table> over the shell's verb.
+  var api = { verb: function (name, args) { var t = String(name).replace(/^agent\./, ''); var a = answer(t, args); return Promise.resolve({ status: 200, body: a }); },
+    onPublished: function () { return function () {}; } };
+  var detail = { open: function () {}, look: function (t) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t }; } };
+  var pane = document.getElementById('pane');
+  return Promise.resolve(spirit.require('process/js/agent/table/provider/elementRow.js')).then(function () {
+    spirit.elements.providerRow.create(pane, api, answers.provider, false, detail);
+    return wait(1500);
+  }).then(function () {
+    var label = Array.prototype.filter.call(pane.querySelectorAll('label'), function (l) { return /^\s*Model\s*$/.test(l.textContent); })[0] || null;
+    var line = label ? label.closest('div[style*="display:flex"]') || label.parentNode.parentNode : null;
+    var shown = !!line && !line.hidden && line.getClientRects().length > 0;
+    var host = label ? document.getElementById(label.getAttribute('for')) : null;
+    var field = host ? host.querySelector('button') : null;
+    if (field) field.click();
+    return wait(800).then(function () {
+      var pop = host ? Array.prototype.filter.call(host.querySelectorAll('div'), function (d) { return /popup$/.test(d.id); })[0] : null;
+      var rows = pop ? Array.prototype.map.call(pop.querySelectorAll('tr[data-key]'), function (tr) { return { key: tr.getAttribute('data-key'), text: tr.textContent.replace(/\s+/g, ' ').trim() }; }) : [];
+      var said = pop ? pop.textContent.replace(/\s+/g, ' ').trim() : '';
+      return JSON.stringify({ label: !!label, shown: shown, field: !!field, popupOpen: !!pop && !pop.hidden, rows: rows, nothing: /Nothing matches/.test(said), asked: asked });
+    });
+  });
+};
+</script>
+</body>
+</html>

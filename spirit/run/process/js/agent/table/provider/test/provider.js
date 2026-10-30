@@ -250,5 +250,71 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(JSON.stringify(DATA.branch('agent.provider')) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'agent.provider: ' + short(DATA.branch('agent.provider')));
     off();
   }
+
+  // ── THE MODEL PICKER IN A REAL BROWSER (goal/G41.21; Andy: "the model picker for anthropic simply shows: "Nothing
+  // matches.", no if the search field is empty or not", "make sure that the picker is filled, from the beginning, with the
+  // result of the default search (empty search input)", "wsl, make sure your tests actually checks if this thing works,
+  // get some damn DEBUG.js test to fucking assert that this shit is done right!"). The real provider and model servers on
+  // a scratch agent.db answer; ./provider-picker.html draws the provider's detail with the real elements in Chrome, on a
+  // scratch node with its DEBUG on, and opens its Model field.
+  {
+    const ADDRESS = '/DEBUG/process/js/agent/table/provider/test/provider-picker.html';
+    test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': the provider\'s Model field, opened');
+    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
+    // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
+    // above put a stand-in in its place.
+    global.spirit.check = require(path.join(RUN, 'spirit.js')).check;
+    const pctx = { db: new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
+    pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);
+    pctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(pctx);
+    const P = pctx.tables.provider.verb;
+    const M = pctx.tables.model.verb;
+    const ANTH = call(P, { op: 'add', icon: '🅰', label: 'Anthropic', url: 'https://anthropic.example' }).id;
+    const OTHER = call(P, { op: 'add', icon: '🅾', label: 'Other', url: 'https://other.example' }).id;
+    const mine = ['claude-alpha', 'claude-beta'].map(function (n) { return call(M, { op: 'add', label: n, providerId: ANTH, modelName: n }).id; });
+    const theirs = call(M, { op: 'add', label: 'other-gamma', providerId: OTHER, modelName: 'other-gamma' }).id;
+    // What the real tables answer, keyed by the call: the page's stand-in agent server hands these on as they are.
+    const answers = { provider: ANTH };
+    const keep = function (table, verb, args) { answers[table + ' ' + JSON.stringify(args)] = call(verb, args); };
+    keep('provider', P, { op: 'get', id: ANTH });
+    [{ op: 'search', text: '' }, { op: 'search', text: '', providerId: ANTH }].forEach(function (a) { keep('model', M, a); });
+    const chrome = H.findChrome();
+    if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); }
+    else {
+      const node = await H.scratchNode();
+      let page = null;
+      try {
+        if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on'); }
+        else {
+          page = await H.chromePage(chrome);
+          if (page.error) test.fail(page.error);
+          else {
+            await page.send('Page.navigate', { url: node.base + ADDRESS });
+            await H.until(function () { return page.evaluate('typeof window.picker === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+            const s = await page.evaluate('window.picker(' + JSON.stringify(answers) + ')').catch(function () { return ''; });
+            let m = null;
+            try { m = JSON.parse(s); } catch (e) { m = null; }
+            if (m) test.comment('the page asked: ' + JSON.stringify(m.asked).slice(0, 900) + '; answers held: ' + JSON.stringify(Object.keys(answers)).slice(0, 600));
+            if (!m) test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300));
+            else {
+              ok(m.label && m.shown, 'the provider\'s detail shows its Model field, the provider having models', 'Model field: drawn ' + m.label + ', shown ' + m.shown);
+              ok(m.field && m.popupOpen, 'pressed, the Model field opens its dropdown', 'field ' + m.field + ', open ' + m.popupOpen);
+              const keys = m.rows.map(function (r) { return r.key; }).sort();
+              ok(!m.nothing && JSON.stringify(keys) === JSON.stringify(mine.slice().sort()), 'with the search empty, from the start, it lists this provider\'s two models and nothing else',
+                (m.nothing ? 'it says Nothing matches.; ' : '') + 'it lists ' + short(m.rows) + (keys.indexOf(theirs) !== -1 ? ', another provider\'s model among them' : ''));
+              ok(m.rows.length > 0 && m.rows.every(function (r) { return /claude-(alpha|beta)/.test(r.text); }), 'each row says its model', 'rows: ' + short(m.rows));
+            }
+          }
+        }
+      } finally {
+        if (page && page.kid) page.kid.kill();
+        if (node.child) node.child.kill();
+        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { fs.rmSync(pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
+      }
+    }
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
