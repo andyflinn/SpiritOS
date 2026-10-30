@@ -54,6 +54,9 @@ one workBench in each container below, a tool on each side and every pane given 
 - In each, the workBench is no taller than its container, its bottom inside it; the container does not spill, and
   neither the page nor the app area scrolls.
 - In each, the left pane, the right pane and the centre scroll inside the container.
+- In each, every strip button is a square, as wide as it is tall (goal/G41.23; Andy: *"the buttons are still not
+  square"*, *"the rounded shape, it that's the button, id DEFINITELY NOT square"*): in the shell's app area too, whose
+  sheet gives an app's buttons a height of their own.
 
 ### The icon strip (goal/G41.23)
 
@@ -80,3 +83,4 @@ and with forty.
 - A workBench that grows past a container that is no flex column, or past the shell's app area, so the page scrolls.
 - A tool's glyph painted as text of its own instead of through the icon element.
 - A strip whose scrollbar pushes its icons sideways, or across; a strip whose buttons widen when no scrollbar shows.
+- A strip button square in a bare box and not in the shell's app area.

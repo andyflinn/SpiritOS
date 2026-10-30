@@ -228,6 +228,11 @@ ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after
       const loose = names.filter(function (k) { return !m.panes[k].scrolls || m.panes[k].bottom > m.room + 1; });
       ok(names.length === 3 && !loose.length, c[1] + ': the left pane, the right pane and the centre each scroll inside it',
         c[1] + ': not scrolling inside it: ' + (names.length === 3 ? loose.join(', ') : 'panes found ' + JSON.stringify(m.panes)));
+      // SQUARE WHERE IT IS SHOWN (goal/G41.23; Andy: "the buttons are still not square", "the rounded shape, it that's the
+      // button, id DEFINITELY NOT square"): in the shell's app area too, whose sheet gives its buttons a height of their own.
+      const unsquare = (m.buttons || []).filter(function (b) { return Math.abs(b[0] - b[1]) > 1; });
+      ok((m.buttons || []).length === 2 && !unsquare.length, c[1] + ': each strip button is a square, ' + JSON.stringify(m.buttons),
+        c[1] + ': strip buttons not square, width by height: ' + JSON.stringify(m.buttons));
     }
 
     // THE STRIP (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps.",
