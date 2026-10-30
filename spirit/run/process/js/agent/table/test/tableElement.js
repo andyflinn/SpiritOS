@@ -50,7 +50,9 @@ function part(tag) {
     checked: /\schecked(\s|>)/.test(tag), isConnected: true, textContent: '', children: [], className: '', style: {},
     addEventListener: function (type, fn) { (heard[type] = heard[type] || []).push(fn); },
     appendChild: function (c) { n.children.push(c); return c; },
-    click: function () { (heard.click || []).slice().forEach(function (fn) { fn({}); }); } };
+    click: function () { (heard.click || []).slice().forEach(function (fn) { fn({}); }); },
+    // An edit finished, as the browser says it: change, then a blur.
+    fire: function (type) { (heard[type] || []).slice().forEach(function (fn) { fn({ type: type, target: n }); }); } };
   return n;
 }
 // The parts of a box whose id ends in the given name.
@@ -252,26 +254,40 @@ test.startTest('tableElement.js: what the tables\' elements share');
   await settle();
   ok(the(ed, 'label').value === 'From the stream', 'a row written to its path shows at once: nothing listens by hand', 'label: ' + short(the(ed, 'label').value));
 
-  test.subHeading('Save proposes only what was changed');
+  test.subHeading('a field changed saves the whole row at once; there is no Save (goal/G41.21)');
+  // Andy: "and why the fuck does a row not automatically save when i make a change to a field?", and on Q2, does the Save
+  // button go: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
+  // necessary."
+  ok(!the(ed, 'save') && !/>\s*Save\s*</.test(ed.innerHTML), 'the editor has no Save button', 'the editor still draws Save');
   w.calls.length = 0;
   the(ed, 'label').value = 'Typed';
-  the(ed, 'save').click(); await settle();
-  // The row has no icon of its own, so the table's, which its chooser shows, is saved with it (Andy: "all table rows will
-  // have an icon, by default the tables icon").
-  ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed' }),
-    'Save calls provider { op: set, id } with the changed label and the icon shown: an empty secret and an unchanged field are not sent', 'calls: ' + short(w.calls));
+  the(ed, 'label').fire('change'); await settle();
+  const sets = function () { return w.calls.filter(function (c) { return c.args && c.args.op === 'set'; }); };
+  const whole = sets()[0];
+  // The whole row as the editor shows it: every field, the icon its chooser shows (the table's while the row has none:
+  // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
+  ok(sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] }),
+    'changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 'calls: ' + short(w.calls));
   ok(D.get('agent.provider/KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(D.get('agent.provider/KR')));
-  ok(/Saved\./.test(ed.innerHTML) && /<b>Change<\/b>/.test(ed.innerHTML), 'a Save taken says Saved., and the title says Change from then on', 'editor: ' + short(ed.innerHTML.slice(-200)));
+  // The server takes it and its stream says so, as rowTable publishes every row it changes.
+  D.merge('agent.provider/KR', { label: 'Typed' }); await settle();
+  w.calls.length = 0;
+  the(ed, 'on').checked = false;
+  the(ed, 'on').fire('change'); await settle();
+  ok(sets().length === 1 && sets()[0].args.on === false && sets()[0].args.label === 'Typed', 'a tick changed saves the whole row too, the label as typed', 'calls: ' + short(w.calls));
   w.calls.length = 0;
   the(ed, 'apiKey').value = 'sk-new';
-  the(ed, 'save').click(); await settle();
-  ok(w.calls.length === 1 && w.calls[0].args.apiKey === 'sk-new', 'a secret typed is sent', 'calls: ' + short(w.calls));
+  the(ed, 'apiKey').fire('change'); await settle();
+  ok(sets().length === 1 && sets()[0].args.apiKey === 'sk-new', 'a secret typed is saved with the row', 'calls: ' + short(w.calls));
   w.calls.length = 0;
   w.answer = function () { return refused('provider: url must be a url'); };
   the(ed, 'url').value = 'not a url';
-  the(ed, 'save').click(); await settle();
-  ok(the(ed, 'note').textContent === 'Not saved: provider: url must be a url' || /Not saved: provider: url must be a url/.test(ed.innerHTML),
-    'a refused Save says the server\'s reason', 'note: ' + short(ed.innerHTML.slice(-200)));
+  the(ed, 'url').fire('change'); await settle();
+  ok(/Not saved: provider: url must be a url/.test(ed.innerHTML + ' ' + String((the(ed, 'note') || {}).textContent || '')),
+    'a refused save says the server\'s reason', 'note: ' + short(ed.innerHTML.slice(-200)));
+  w.answer = function () { return { id: 'KR' }; };
+  the(ed, 'url').value = 'https://one.example';
+  the(ed, 'url').fire('change'); await settle();
 
   test.subHeading('Delete is an are-you-sure button; the stream says it is gone (goal/G41.21)');
   // Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"
@@ -402,12 +418,12 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label: ' + bundleSays, 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
   ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
   if (bsel) {
+    w.calls.length = 0;
     bsel.value = 9; bsel.row = { id: 9, label: 'Reader' };
     (bsel.heard.change || []).forEach(function (fn) { fn({ target: bsel }); });
-    w.calls.length = 0;
-    the(ed4, 'save').click(); await settle();
+    await settle();
     const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
-    ok(set && set.table === 'job' && String(set.args.bundle) === '9', 'a bundle picked is saved: job { op: set, id, bundle }', 'calls: ' + short(w.calls));
+    ok(set && set.table === 'job' && String(set.args.bundle) === '9' && set.args.label === 'A job', 'a bundle picked saves the whole row at once: job { op: set, id, label, bundle }', 'calls: ' + short(w.calls));
   }
   r4.destroy();
 

@@ -82,6 +82,12 @@ the table)"*.
 - **The bundle by its label** (Andy: *"why would the bundle picker show "bundle 2" for it's selection instead of the
   fucking label?"*): the bundle field shows the job's bundle by the label the node has for it (`auth.bundle { op: get }`),
   never as the word bundle and its number.
+- **A field changed saves the whole row at once; there is no Save** (Andy: *"and why the fuck does a row not
+  automatically save when i make a change to a field?"*, and on Q2: *"yes, send the whole row for update. it costs
+  nothing, and we don't need more fucking verbs than necessary."*): the editor draws no Save button; an edit of a field
+  (its change event), a tick, a secret typed, or a bundle picked sends `{ op: set, id, ...every field it shows }` by
+  itself, a secret only when typed so an untyped key is kept. A refused save says the server's reason. The editor still
+  draws only what the stream brings (rule/19).
 - **Delete is an are-you-sure button** (Andy: *"and why are the 'Delete' buttons in the detail panels not
   armingButtons?"*): the editor loads `shell/js/armingButton.js` itself and attaches its Delete button; a first press
   deletes nothing, the second calls `{ op: delete, id }` once.
@@ -101,3 +107,4 @@ the table)"*.
 - A narrowed pick offering the branch's other rows, the server's ask narrowed alone.
 - A dropdown row drawn empty, its columns asking fields its table's search does not answer.
 - A bundle shown as its number; a Delete that deletes on its first press.
+- A field edit that waits for a Save, a Save button left, or a save sending part of the row.
