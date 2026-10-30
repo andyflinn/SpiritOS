@@ -61,10 +61,11 @@
       // scrollbar, in the icons, strip."): it scrolls up and down only, its gutter kept with or without a bar, and each
       // button keeps its own width in the middle, so a scrollbar showing moves nothing and pushes nothing sideways.
       // EACH BUTTON A SQUARE AROUND ITS ICON (Andy: "the icon strips in workbench don't show as square, or maybe it's the
-      // buttons containing them"): its line was taller than the icon, so it stood taller than wide; its side is stated.
+      // buttons containing them"): its line was taller than the icon, so it stood taller than wide; its side is stated, and
+      // the 44 pixel least height shell.css gives every app's button (a touch target) is lifted for it.
       return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;align-items:center;gap:6px;padding:4px">' +
         sides[side].map(function (t) {
-          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="flex:none;font-size:20px;box-sizing:border-box;width:1.6em;height:1.6em;padding:0;display:flex;align-items:center;justify-content:center;line-height:1">' + esc(t.icon) + '</button>';
+          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="flex:none;font-size:20px;box-sizing:border-box;width:1.6em;height:1.6em;min-width:0;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;line-height:1">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
