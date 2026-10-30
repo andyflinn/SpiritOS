@@ -30,7 +30,15 @@ function makeDom() {
       get isConnected() { let p = e; while (p.parentNode) p = p.parentNode; return p === doc.root; },
       get textContent() { return e.children.length ? e.children.map(function (c) { return c.textContent; }).join('') : e._text; },
       set textContent(v) { e.children = []; e._text = String(v == null ? '' : v); },
-      get innerHTML() { return e._html || ''; },
+      // Its markup as a page has it, made from what it holds now (goal/G41.23: an icon made by icon.create in a holder is
+      // handed on as the holder's markup).
+      get innerHTML() { return e.children.map(function (c) { return c.outerHTML; }).join('') || (e._text ? e._text.replace(/&/g, '&amp;').replace(/</g, '&lt;') : (e._html || '')); },
+      get outerHTML() {
+        if (e.tagName === '#TEXT') return e._text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        const tag = e.tagName.toLowerCase();
+        const at = Object.keys(attrs).map(function (k) { return ' ' + k + '="' + String(attrs[k]).replace(/"/g, '&quot;') + '"'; }).join('');
+        return '<' + tag + at + '>' + (VOID[tag] ? '' : e.innerHTML + '</' + tag + '>');
+      },
       set innerHTML(v) { e._html = String(v); e.children = []; e._text = ''; parseInto(e, String(v)); },
       getAttribute: function (k) { if (k === 'id') return attrs.id || null; return k in attrs ? attrs[k] : null; },
       setAttribute: function (k, v) { attrs[k] = String(v); },
@@ -167,7 +175,14 @@ function realWorld(rows) {
   const win = { document: document, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math,
     RegExp: RegExp, Date: Date, Infinity: Infinity, console: { log: function () {}, error: function () {} } };
   win.window = win;
-  win.spirit = { elements: {}, require: function () { return Promise.resolve(true); } };
+  // The one loader as a page has it: a shell file Fallout asks for (its row element, the icon element) runs on the page
+  // once, as the list's libraries do (goal/G41.23; cw: "The page should load what Fallout asks for").
+  const ran = {};
+  win.spirit = { elements: {}, require: function (p) {
+    const rel = String(p || '').replace(/^\/+/, '');
+    if (/^shell\/.+\.js$/.test(rel) && !ran[rel] && fs.existsSync(path.join(RUN, rel))) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+    return Promise.resolve(true);
+  } };
   vm.createContext(win);
   ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js', null].forEach(function (rel) {
     const f = rel ? path.join(RUN, rel) : FILE;
@@ -188,7 +203,9 @@ function realWorld(rows) {
   // The rows the list shows now, each as its suite (the row's key) and its cells' text.
   const shown = function () {
     return $('fallout-list') ? $('fallout-list').querySelectorAll('tr').filter(function (tr) { return tr.hasAttribute('data-key'); }).map(function (tr) {
-      return { suite: String(tr.getAttribute('data-key')).split('\n')[0], cells: tr.querySelectorAll('td').map(function (td) { return td.textContent.trim(); }) };
+      // Each cell's text, and the class of the one element a cell holds, if it holds just one (an icon's).
+      return { suite: String(tr.getAttribute('data-key')).split('\n')[0], cells: tr.querySelectorAll('td').map(function (td) { return td.textContent.trim(); }),
+        alone: tr.querySelectorAll('td').map(function (td) { const k = td.children.filter(function (c) { return c.tagName !== '#TEXT' || c._text.trim(); }); return k.length === 1 && k[0].tagName !== '#TEXT' ? k[0].className : ''; }) };
     }) : [];
   };
   // A filter button the list draws, by the words on it.
@@ -340,6 +357,13 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const cellsOf = function (suite) { const r = all.filter(function (x) { return x.suite === suite; })[0]; return r ? r.cells : []; };
   ok(cellsOf('/spirit/appServer').indexOf('✅') !== -1 && cellsOf('agentReadme.js').indexOf('✅') !== -1, 'a green test\'s row has a cell reading ✅', 'green rows: ' + short([cellsOf('/spirit/appServer'), cellsOf('agentReadme.js')]));
   ok(cellsOf('/shell/desk/plugins/fallout').indexOf('❌') !== -1 && cellsOf('relayGates.js').indexOf('❌') !== -1, 'a red test\'s row has a cell reading ❌', 'red rows: ' + short([cellsOf('/shell/desk/plugins/fallout'), cellsOf('relayGates.js')]));
+  // THROUGH THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements
+  // and apps."): the cell reading ✅ or ❌ holds the icon element alone, its class the one an icon made here carries.
+  const probe = wr.win.spirit.elements.icon && typeof wr.win.spirit.elements.icon.create === 'function' ? wr.win.spirit.elements.icon.create(wr.document.createElement('span'), { glyph: 'A' }) : null;
+  const mark = probe ? String(probe.className || '').trim().split(/\s+/)[0] : '';
+  const inIcon = wr.shown().every(function (r) { const i = r.cells.findIndex(function (c) { return c === '✅' || c === '❌'; }); return i !== -1 && !!mark && r.alone[i].split(/\s+/).indexOf(mark) !== -1; });
+  ok(!!mark && wr.shown().length > 0 && inIcon, 'each ✅ or ❌ cell holds the icon element (class ' + mark + ')',
+    mark ? 'cells not drawn through the icon element: ' + short(wr.shown().map(function (r) { return r.alone; })) : 'the page has no icon element: Fallout did not load shell/js/icon.js');
   ok(all.length && all.every(function (r) { return r.cells.every(function (c) { return c !== 'green' && c !== 'red'; }); }), 'no cell says green or red in words', 'rows: ' + short(all));
 
   test.subHeading('goal/G41.22: a filter shows product tests only, the tests under spirit/run; spirit/test is hidden');

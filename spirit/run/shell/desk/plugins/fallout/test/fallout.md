@@ -88,3 +88,14 @@ the goal chat at the bottom.") goes. The Desk mounts a plugin's chat only in the
 
 - The chat block drawn but left empty; `ctx.chat` handed some other box; a chat input left behind; a chat read asked
   through the list's slot or the ctx's call.
+
+## Requirements (goal/G41.23)
+
+- **Each ✅ or ❌ through the icon element** (Andy, goal/G41.21: *"this element will replace icons painting all shell
+  elements and apps."*; then *"fix the fucking code."*): the list draws each test by a row element (`element(row)`, as
+  Contacts and Icons do), and the Result cell holds the icon element alone, its class the one an icon made on the page
+  carries. Fallout loads `shell/js/rowElement.js` and `shell/js/icon.js` itself. Deskverify's rows and the Desk's call
+  are untouched, the column's field is `outcome`.
+- The real-list page runs a shell file Fallout asks for once, as it runs the list's libraries, and its markup is made
+  from what each element holds now, as a page's is.
+- What its test must try to break: a ✅ or ❌ drawn as text; icon.js not loaded.
