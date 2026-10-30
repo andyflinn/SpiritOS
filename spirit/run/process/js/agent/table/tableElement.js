@@ -165,6 +165,11 @@
     var editors = {};
     var picks = {};
     var icons = {};
+    var bundles = {};
+    // A PICK NARROWED TO THIS ROW (goal/G41.21; f.of): how many rows of its table hold this row's id, asked once an
+    // editor opens; while none do, its line is hidden (Andy, box v17: "The Model field is hidden while the model table
+    // holds no model of this provider.").
+    var narrowCount = {};
     var note = '';
     var added = o.added === true;
     var path = branchOf(o.table) + '/' + o.id;
@@ -176,7 +181,7 @@
       var id = pre + f.field;
       if (f.kind === 'bool') return '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '>';
       if (f.kind === 'secret') return '<input type="password" id="' + id + '" style="' + STRETCH + '" autocomplete="off" placeholder="' + (row[f.field + 'Set'] ? 'set; type to replace' : 'not set') + '">';
-      if (f.kind === 'pick' || f.kind === 'icon') return '<div id="' + id + '"></div>';
+      if (f.kind === 'pick' || f.kind === 'icon' || f.kind === 'bundle') return '<div id="' + id + '"></div>';
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
     }
@@ -184,6 +189,8 @@
       if (gone) return;
       Object.keys(picks).forEach(function (k) { picks[k].destroy(); });
       picks = {};
+      Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); });
+      bundles = {};
       editors = {};
       icons = {};
       if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div style="margin-top:1em">' + esc(note || 'Loading…') + '</div></div>'; return; }
@@ -194,7 +201,10 @@
       // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
       // .text-view.fill). Its width is the centre's, which the workBench holds (shell/js/workBench.js).
       container.innerHTML = '<div class="fill">' + head() +
-        simple.map(function (f) { return fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field])); }).join('') +
+        simple.map(function (f) {
+          var line = fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field]));
+          return f.of && !(narrowCount[f.field] > 0) ? line.replace('<div ', '<div hidden ') : line;
+        }).join('') +
         code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
         '<div style="margin-top:1em"><button type="button" id="' + pre + 'save">Save</button> <button type="button" id="' + pre + 'delete">Delete</button> <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
@@ -219,9 +229,29 @@
           var current = other ? (other.icon ? other.icon + ' ' : '') + (other.label || row[f.field]) : '';
           needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
             if (gone) return;
-            picks[f.field] = search(el, { api: o.api, table: f.pick }, {
+            picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick,
+            }, f.of ? { args: function (text) { var a = { op: 'search', text: text }; a[f.of] = o.id; return a; } } : {}));
+          });
+          // Its table's rows of this row, counted once; a change of whether there are any draws the editor again.
+          if (f.of && narrowCount[f.field] === undefined) {
+            narrowCount[f.field] = 0;
+            var q = { op: 'search', text: '' };
+            q[f.of] = o.id;
+            call(f.pick, q).then(function (r) {
+              var n = r && Array.isArray(r.items) ? r.items.length : 0;
+              if (gone || n === narrowCount[f.field]) return;
+              narrowCount[f.field] = n;
+              paint();
             });
+          }
+        }
+        // A BUNDLE FIELD (goal/G41.21; Andy, box v17: "sets it with a bundleSelector in dropdown mode"): the shell's bundle
+        // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
+        if (f.kind === 'bundle') {
+          needs(['shell/js/bundleSelector.js']).then(function () {
+            if (gone || !E.bundleSelector) return;
+            bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: row[f.field] ? 'bundle ' + row[f.field] : 'Pick a bundle' });
           });
         }
       });
@@ -237,6 +267,7 @@
         if (f.kind === 'bool') v = !!(el && el.checked);
         else if (f.kind === 'code') v = editors[f.field] ? editors[f.field].value() : undefined;
         else if (f.kind === 'pick') v = picks[f.field] && picks[f.field].value ? picks[f.field].value : undefined;
+        else if (f.kind === 'bundle') v = bundles[f.field] && bundles[f.field].value !== '' && bundles[f.field].value != null ? String(bundles[f.field].value) : undefined;
         else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : undefined;
         else if (f.kind === 'list') v = String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         else v = el ? String(el.value || '') : undefined;
@@ -281,7 +312,7 @@
       // A set that changes nothing tells no watcher: the editor takes the answer itself.
       if (!row) { row = D().get(path) || r; paint(); }
     });
-    return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); container.innerHTML = ''; } };
+    return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 
   E.agentTable = { create: createTable };

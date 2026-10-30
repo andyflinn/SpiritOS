@@ -24,7 +24,10 @@
       },
     });
   }, function () { /* no data set: the lists still search */ });
-  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' }];
+  var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'description', label: 'Description', kind: 'description' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' },
+    // goal/G41.21, box v17: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is
+    // this provider": of names the model table's field that holds this provider's id; hidden while it holds none.
+    { field: 'model', label: 'Model', kind: 'pick', pick: 'model', of: 'providerId' }];
   E.providerRow = {
     create: function (container, api, id, added, detail) {
       var made = null;

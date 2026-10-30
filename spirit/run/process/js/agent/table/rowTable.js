@@ -95,7 +95,9 @@ function rowTable(db, def, publish) {
     set: Object.assign({ op: 'id', id: 'key' }, fields),
     delete: { op: 'id', id: 'key' },
     get: { op: 'id', id: 'key' },
-    search: { op: 'id', text: 'text?' },
+    // A SEARCH NARROWED BY A FIELD (goal/G41.21; Andy, box v17: "showing only the models whose provider is this
+    // provider"): any of the table's own fields may be named, each optional, and only the rows holding that value answer.
+    search: Object.assign({ op: 'id', text: 'text?' }, Object.keys(fields).reduce(function (o, f) { o[f] = /\?$/.test(fields[f]) ? fields[f] : fields[f] + '?'; return o; }, {})),
   };
   function the(a) {
     const r = q.get.get(String(a.id));
@@ -145,7 +147,9 @@ function rowTable(db, def, publish) {
       const words = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
       let n = 0;
+      const narrow = given(a);
       q.all.all().forEach(function (r) {
+        if (narrow.some(function (f) { return String(r[f] == null ? '' : r[f]) !== String(stored(f, a[f])); })) return;
         const row = shown(r);
         const flat = {};
         Object.keys(row).forEach(function (k) { if (typeof row[k] === 'string' && k !== 'id' && k !== 'sealPublicKey') flat[k] = row[k]; });

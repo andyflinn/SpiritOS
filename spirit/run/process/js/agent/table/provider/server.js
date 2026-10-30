@@ -41,7 +41,9 @@ function pluginOf(label) {
 module.exports = function (ctx) {
   const table = rowTable(ctx.db, {
     name: 'provider',
-    fields: { url: 'url?', apiKey: 'text?', unusable: 'bool?' },
+    // goal/G41.21, box v17: "The provider table gains a field, model: the id of one row of the model table, the
+    // provider's current model."
+    fields: { url: 'url?', apiKey: 'text?', unusable: 'bool?', model: 'key?' },
     secret: ['apiKey'],
     check: function (a, db) {
       if ((a.op !== 'add' && a.op !== 'set') || !a.url) return '';

@@ -16,10 +16,9 @@
 //   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
 //   agent.db, each mounting that table's own element, process/js/agent/table/<name>/elementTable.js. A row opened from
 //   a list is edited in the workBench's centre, the one detail pane of the app.
-//   THE GRANT TOOL IS THE GRANTS PANEL (goal/G41.16; Andy: "could we then show the grants element in the left pane,
-//   connected to the grants-by-job table?"): shell/js/grantsPanel.js, which knows no table, configured here for the
-//   agent's jobs and its grants by job (Andy: "the callers (Grants and agent shell apps should boody well know how to
-//   configure the damn grantsPanel element").
+//   NO GRANT TOOL (goal/G41.21, box v17: "agent.grant is removed altogether: its table, its server, and the Grants tool
+//   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
+//   first real tool: the bundle editor"): shell/js/bundleEditor.js, beside the agent server's DEBUG box.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
   var AGENT = spirit.familyPath('agent');
@@ -31,40 +30,7 @@
     { name: 'model', icon: '🧠', title: 'Models', one: 'Model' },
     { name: 'persona', icon: '🎭', title: 'Personas', one: 'Persona' },
     { name: 'job', icon: '📋', title: 'Jobs', one: 'Job' },
-    { name: 'grant', icon: '🔑', title: 'Grants, by job', one: 'Grant' },
   ];
-
-  // The agent's grants, as the panel, the grant list and the grant row take a grants table: kept in data.agent.grant,
-  // keyed by the job, labelled by the job's label; asked through the agent's one grant verb (table/grant/server.js),
-  // each grant row arriving on the agent stream. A search item is keyed <job_id>\n<path> here, as the grant row keys the
-  // same grant from the stream, so one grant is one row of the branch.
-  function answer(r) { return { ok: true, row: r }; }
-  function refused(e) {
-    var code = String((e && (e.code || e.refusal)) || '');
-    return { ok: false, code: code, error: String((e && e.message) || code || 'refused') };
-  }
-  function agentGrant(args) { return Promise.resolve(spirit.require(AGENT)).then(function (a) { return a.grant(args); }); }
-  var GRANTS = {
-    branch: 'agent.grant',
-    key: 'job_id',
-    label: 'job',
-    search: function (text) {
-      return agentGrant({ op: 'search', text: String(text || '') }).then(function (got) {
-        var items = ((got && got.items) || []).map(function (i) {
-          var r = null;
-          try { r = JSON.parse(i.label); } catch (e) { r = null; }
-          return r && r.job_id && r.path ? { key: r.job_id + '\n' + r.path, label: i.label } : i;
-        });
-        return { items: items, more: !!(got && got.more) };
-      });
-    },
-    grant: function (id, path) { return agentGrant({ op: 'add', job_id: id, path: path }).then(answer, refused); },
-    revoke: function (id, path) { return agentGrant({ op: 'delete', job_id: id, path: path }).then(answer, refused); },
-    stream: function (job) {
-      var a = job && job.module === 'process/js/agent' && job.app && job.app.agent;
-      return a && a.table === 'grant' ? { row: a.row, gone: a.removed === true } : null;
-    },
-  };
 
   spirit.shell.activateApp({
     mount: function (container, api) {
@@ -110,11 +76,6 @@
           return t ? { icon: t.icon, name: t.one, title: t.title } : { icon: '', name: table, title: table };
         },
       };
-      function grantTool(box) {
-        Promise.resolve(spirit.require('shell/js/grantsPanel.js')).then(function () {
-          window.spirit.elements.grantsPanel.create(box, { ids: { table: 'loopback://api/agent/job', key: 'id', label: 'label' }, grants: GRANTS, api: api });
-        }, function () { box.textContent = 'The grants panel could not be loaded.'; });
-      }
       function build() {
       bench = E.workBench.create(benchBox, {
         // ANOTHER LEFT TOOL, AN EMPTY CENTRE (Andy, on G41.4: "if the current \"icon\" is changed the content of a
@@ -137,7 +98,6 @@
         } }].concat(TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
-            if (t.name === 'grant') { grantTool(box); return; }
             Promise.resolve(spirit.require('process/js/agent/table/' + t.name + '/elementTable.js')).then(function () {
               window.spirit.elements[t.name + 'Table'].create(box, api, detail);
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
@@ -152,6 +112,12 @@
             drawServer();
             Promise.resolve(spirit.require(AGENT)).then(function (agent) { return agent.debug({ on: on }); }).then(drawServer, drawServer);
           });
+        } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {
+          // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api.
+          box.className = 'fill';
+          Promise.resolve(spirit.require('shell/js/bundleEditor.js')).then(function () {
+            window.spirit.elements.bundleEditor.create(box, { api: api });
+          }, function () { box.textContent = 'The bundle editor could not be loaded.'; });
         } }],
       });
       }
