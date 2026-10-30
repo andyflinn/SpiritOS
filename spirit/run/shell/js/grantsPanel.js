@@ -23,7 +23,7 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
   var parts = Promise.all(['shell/js/contactSelector.js', 'shell/js/bundleSelector.js', 'shell/js/apiFamilySelector.js',
-    'shell/js/grantSelector/listElement.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; }));
+    'shell/js/grantSelector/listElement.js', 'shell/js/busyButton.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; }));
 
   function create(host, config) {
     var c = config || {};
@@ -225,7 +225,11 @@
         paint();
         redraw();
       });
-      host.querySelector('[data-grants="grant"]').addEventListener('click', function () { grantBundle(); });
+      // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
+      // requests"): greyed and turning until every grant of the bundle is answered.
+      var grantButton = host.querySelector('[data-grants="grant"]');
+      if (E.busyButton) E.busyButton.attach(grantButton, { run: grantBundle });
+      else grantButton.addEventListener('click', function () { grantBundle(); });
       host.appendChild(listHost);
     }
 

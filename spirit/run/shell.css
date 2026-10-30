@@ -487,6 +487,19 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 #app-content button.desk-design-end:not([data-armed]) { background: #c00; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #600; }
 #app-content button.desk-design-start:not([data-armed]) { background: #1a7f37; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #0b4a1e; }
 
+/* THE ICON ELEMENT (goal/G41.23; shell/js/icon.js; Andy: "it centers the glyph, in a square box, the size of which
+   follows font-size", "like like text characters, it follows, its container in most attributes"): a square of its own
+   font size, which is its container's times its size; the glyph centred; never shrinking in a row. */
+.shell-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
+  width: 1em; height: 1em; line-height: 1; overflow: visible; vertical-align: middle; }
+
+/* THE BUSY BUTTON'S TURN (goal/G41.23; shell/js/busyButton.js; Andy: "an animated icon showing to the left of the
+   buttons label, when the button is waiting"): one turn for every app, here in the one sheet. */
+.shell-busy { display: inline-block; flex: none; width: 0.8em; height: 0.8em; margin-right: 0.4em; box-sizing: border-box;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -0.1em;
+  animation: shell-busy-turn 0.8s linear infinite; }
+@keyframes shell-busy-turn { to { transform: rotate(360deg); } }
+
 #app-content button[data-armed],
 #app-content button.armed {
   background: #7a2222;

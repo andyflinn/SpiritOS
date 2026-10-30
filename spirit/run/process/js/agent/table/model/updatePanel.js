@@ -16,7 +16,8 @@
       var gone = false;
       var drop = null;
       // WHAT IT USES, IT LOADS ITSELF (rule/26).
-      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('shell/js/probabilitySearch.js')]).then(function () {
+      // goal/G41.23: Ask is a busyButton (shell/js/busyButton.js), loaded here too.
+      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/busyButton.js')]).then(function () {
         if (gone) return;
         E = window.spirit.elements;
         var D = E.agentDetail;
@@ -28,10 +29,12 @@
           '<div id="' + pre + 'said" class="fill" style="margin-top:1em;overflow:auto"></div></div>';
         drop = D.search(container.querySelector('#' + pre + 'from'), { api: api, table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         var said = container.querySelector('#' + pre + 'said');
-        container.querySelector('#' + pre + 'ask').addEventListener('click', function () {
+        // ASK WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long requests"):
+        // greyed and turning until the provider has answered.
+        E.busyButton.attach(container.querySelector('#' + pre + 'ask'), { run: function () {
           var id = drop && drop.value ? String(drop.value) : '';
-          if (!id) return;
-          Promise.resolve(spirit.require(spirit.familyPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function (r) {
+          if (!id) return null;
+          return Promise.resolve(spirit.require(spirit.familyPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function (r) {
             if (gone) return;
             var models = (r && Array.isArray(r.models)) ? r.models : [];
             said.innerHTML = models.map(function (m) { return '<div>' + esc(m.label) + ' <span class="job-manifest-note">' + esc(m.modelName) + '</span></div>'; }).join('') +
@@ -40,7 +43,7 @@
             if (gone) return;
             said.innerHTML = '<div>' + esc(D.whyOf(e)) + '</div>';
           });
-        });
+        } });
       });
       return { destroy: function () { gone = true; if (drop) drop.destroy(); container.innerHTML = ''; } };
     },

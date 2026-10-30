@@ -37,6 +37,11 @@
   var START_WIDTH = 240;
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  // ITS ICONS ARE THE ICON ELEMENT'S (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
+  // apps."): loaded through the one loader, once, as this file runs.
+  var iconReady = window.spirit && typeof window.spirit.require === 'function'
+    ? Promise.resolve(window.spirit.require('shell/js/icon.js')).then(null, function () { /* the glyph drawn as text, below */ })
+    : Promise.resolve();
 
   function create(container, opts) {
     var o = opts || {};
@@ -52,13 +57,30 @@
       // A strip is a box of a stated size too (Andy, on G41.18: "fix workBench for all 3 panes AND the icon strips"): as
       // tall as the bench, its own width, a strip of many tools scrolling inside it. Its width is stated, not its icons'
       // (goal/G41.19, the general rules: a strip given more than it holds grew wider with it).
-      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow:auto;gap:6px;padding:4px">' +
+      // ROOM FOR ITS SCROLLBAR, ALWAYS (goal/G41.23; Andy: "the workBench will provide space for a possible vertical
+      // scrollbar, in the icons, strip."): it scrolls up and down only, its gutter kept with or without a bar, and each
+      // button keeps its own width in the middle, so a scrollbar showing moves nothing and pushes nothing sideways.
+      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;align-items:center;gap:6px;padding:4px">' +
         sides[side].map(function (t) {
-          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="font-size:20px">' + esc(t.icon) + '</button>';
+          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="flex:none;font-size:20px;padding:4px">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
+    // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
+    // comes, so a button is never empty.
+    function paintIcons() {
+      var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+      ['left', 'right'].forEach(function (side) {
+        var s = part('strip-' + side);
+        if (!s) return;
+        Array.prototype.forEach.call(s.children || [], function (b, i) {
+          var t = sides[side][i];
+          if (!t || !b || (typeof b.querySelector === 'function' && b.querySelector('.shell-icon'))) return;
+          if (I && typeof I.create === 'function') { b.textContent = ''; I.create(b, { glyph: t.icon }); } else if (!b.textContent) b.textContent = String(t.icon == null ? '' : t.icon);
+        });
+      });
+    }
     var PAD = 'box-sizing:border-box;padding-left:0.5em;padding-right:0.5em';
-    var STRIP_WIDTH = 48;
+    var STRIP_WIDTH = 64;
     // A PANE IS A BOX OF A STATED SIZE (rule/16; Andy, on G41.18: "ALL lists, otherwise my took bars at the top of a
     // container keep scrolling away...."): a side pane is a column as tall as the bench (class fill, its own width kept
     // by flex: none), and each tool's box in it a fill too, so a list inside scrolls in itself under its title and
@@ -145,6 +167,9 @@
     container.addEventListener('click', onClick);
     container.addEventListener('pointerdown', onDown);
 
+    // The glyphs at once when the icon element is on the page, else once it has loaded.
+    paintIcons();
+    iconReady.then(function () { if (!gone) paintIcons(); });
     // At start each side shows its first tool.
     ['left', 'right'].forEach(function (side) { if (sides[side][0]) show(side, sides[side][0].name); });
 
