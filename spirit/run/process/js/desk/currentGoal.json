@@ -1,5 +1,5 @@
 {
- "change": 117399,
+ "change": 117404,
  "goal": "goal/G41",
  "items": [
   {
@@ -130,19 +130,15 @@
    ],
    "verified": "red",
    "verifyFailures": [
-    "spirit/run/process/js/desk/desk.family/test/api.js not run: missing from this checkout",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.1: rows 0 in 0 posts, the most in one post 0",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.2: its to list: {\"heard\":false,\"to\":null}",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.3: its to list: {\"heard\":false,\"to\":null}",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.4: its to list: {\"heard\":false,\"to\":null}",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.5: its to list: []",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.6: its to list: []",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.7: subscribed {\"subscribed\":true}, ended false, facts of []",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.8: side rows: []",
-    "spirit/run/process/js/desk/test/desk.js red: FAILURE #1.9: rows: 0"
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.1: answer: {\"ok\":false,\"code\":\"no-such-argument\",\"error\":\"no such argument\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider takes no argument description\"}}",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.2: row: null, private columns []",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.3: secrets in the answer: 0",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.4: answer {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider needs id\"}}, label null",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.5: answer {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\"}, row {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEILqLtEsUoFjDO1My94KISnS8SKZ6VHsBv2OtG8ioDwhH\",\"sealPub",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.6: answer {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\"}, row {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEIDv9lq8aiJrqM4T/uo4uIm6elXde25aodEzPNzhrSn+v\",\"sealPub"
    ],
-   "verifyFailuresMore": false,
-   "verifyRed": 10,
+   "verifyFailuresMore": true,
+   "verifyRed": 13,
    "verifyAnswer": "busy",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -156,7 +152,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -16382,12 +16378,11 @@
    "id": "goal/G41.21",
    "title": "fix agent UI",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 24,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -16397,7 +16392,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -16492,13 +16487,20 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.1: answer: {\"ok\":false,\"code\":\"no-such-argument\",\"error\":\"no such argument\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider takes no argument description\"}}",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.2: row: null, private columns []",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.3: secrets in the answer: 0",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.4: answer {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider needs id\"}}, label null",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.5: answer {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\"}, row {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEILqLtEsUoFjDO1My94KISnS8SKZ6VHsBv2OtG8ioDwhH\",\"sealPub",
+    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.6: answer {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\"}, row {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEIDv9lq8aiJrqM4T/uo4uIm6elXde25aodEzPNzhrSn+v\",\"sealPub"
+   ],
+   "verifyFailuresMore": true,
+   "verifyRed": 1,
    "verifyAnswer": "busy",
    "verifierBusy": true,
-   "verifyRunning": true,
+   "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
@@ -17509,7 +17511,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.21"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -18598,7 +18600,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.21"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
