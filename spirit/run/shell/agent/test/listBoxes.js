@@ -31,6 +31,7 @@ function makeDom() {
       get id() { return attrs.id || ''; }, set id(v) { attrs.id = String(v); },
       get className() { return attrs.class || ''; }, set className(v) { attrs.class = String(v); },
       get firstChild() { return e.children[0] || null; },
+      get nextSibling() { const k = e.parentNode ? e.parentNode.children : []; return k[k.indexOf(e) + 1] || null; },
       get isConnected() { let p = e; while (p.parentNode) p = p.parentNode; return p === doc.root; },
       get textContent() { return e.children.length ? e.children.map(function (c) { return c.textContent; }).join('') : e._text; },
       set textContent(v) { e.children = []; e._text = String(v == null ? '' : v); },
@@ -74,7 +75,15 @@ function makeDom() {
       return a[2] === undefined ? n.hasAttribute(a[1]) : n.getAttribute(a[1]) === a[2];
     });
   }
-  function matches(n, sel) { return String(sel).split(',').some(function (s) { return one(n, s); }); }
+  // A descendant selector, "a b": the last part on the element, each part before it on an element above it.
+  function chain(n, s) {
+    const parts = s.trim().split(/\s+/);
+    if (!one(n, parts[parts.length - 1])) return false;
+    let p = n.parentNode;
+    for (let i = parts.length - 2; i >= 0; i--) { while (p && !(p.tagName && one(p, parts[i]))) p = p.parentNode; if (!p) return false; p = p.parentNode; }
+    return true;
+  }
+  function matches(n, sel) { return String(sel).split(',').some(function (s) { return chain(n, s); }); }
   function unesc(s) { return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'); }
   function parseInto(root, html) {
     const stack = [root];
