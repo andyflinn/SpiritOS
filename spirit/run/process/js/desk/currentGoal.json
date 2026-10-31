@@ -1,5 +1,5 @@
 {
- "change": 117659,
+ "change": 117938,
  "goal": "goal/G41",
  "items": [
   {
@@ -78,6 +78,9 @@
     },
     {
      "key": "rule/27"
+    },
+    {
+     "key": "rule/28"
     }
    ],
    "phaseRules": [
@@ -128,6 +131,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     }
    ],
    "verified": "red",
@@ -158,7 +165,10 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -538,6 +548,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -2319,6 +2333,10 @@
      "version": 66
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
@@ -2780,6 +2798,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -3601,6 +3623,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -4965,6 +4991,10 @@
      "version": 62
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
@@ -5287,6 +5317,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -5688,6 +5722,10 @@
     {
      "key": "rule/27",
      "version": 66
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -6121,6 +6159,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     }
    ],
    "verified": "none",
@@ -6234,6 +6276,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -6554,6 +6600,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     }
    ],
    "verified": "none",
@@ -6667,6 +6717,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -7749,6 +7803,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/16",
@@ -9879,6 +9937,10 @@
      "version": 62
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/16",
      "version": 42
     },
@@ -10916,6 +10978,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/26",
@@ -12289,6 +12355,10 @@
      "version": 62
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -12895,6 +12965,10 @@
      "version": 62
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -13390,6 +13464,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     }
    ],
    "verified": "none",
@@ -13506,6 +13584,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/26",
@@ -14615,6 +14697,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/26",
@@ -16317,6 +16403,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     }
    ],
    "verified": "none",
@@ -16477,6 +16567,10 @@
     {
      "key": "rule/27",
      "version": 66
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/26",
@@ -17618,6 +17712,10 @@
      "version": 62
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -18711,6 +18809,10 @@
      "version": 66
     },
     {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -19238,15 +19340,14 @@
   },
   {
    "id": "goal/G41.24",
-   "title": "Changes to the Jobs Shell app",
+   "title": "integrating goal/G41.25 into spirit/appServer.js",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 3,
+   "version": 31,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -19256,17 +19357,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 28,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -19274,7 +19375,23 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -19323,6 +19440,22 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -19333,13 +19466,75 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# The owner-only verbs appServer.js adds to every server\n\n- each appServer has a file process/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the appServer.js module, when booting, will check for a valid \"process/<appServerName>/<appServerName>Bundles.json.\" file, and update the auth.bundle and auth.branch, , adding new verbs, when needed, and deleting verbs, if they are no longer in the json file.\n\n",
-   "checks": [],
+   "box": "# integrating goal/G41.25 into spirit/appServer.js\n\n- each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the apiAuth.js module, when the node boots, will check for all valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no longer in the \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, always using/asserting the server <appServerName> as \"owner\".\n\n- when apiAuth.js adds a bundle for the first time, it stores its key in the appServers state file relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\" that is used the corresponding \"process/js/<appServerName>/<appServerName>Bundles.json.\" file. Then it knows which rows in auth.bundle and auth.branch the allServer \"owns.\n\n- if the appServer has a bundle key stored, apiAuth.js will assume that the appServer owns that key and treat the appServers own.\n\n- if a USER deletes a bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used before.\n\n- if a key is deleted from an \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, apiAuth.js will delete that key from auth.bundle AND all its rows in auth.branch.\n\n# reach of this item\n\n- desk, deskClient, agent, deskVerify will receive their \"process/js/<appServerName>/<appServerName>Bundles.json.\" files\n\n## the bundles\n\n- desk: \"deskAgent\",  \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no rule.*, and no user-presses. the remoteUser gets all verbs except FS.*\n- deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")\n- deskClient: \"deskServer\", only the verbs desk currently uses. \n- agent: \"remoteUser\" the full agent family, minus FS.*\n\n# final notes\n\n- DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which verbs go in desk's and deskVerify's remoteUser and deskAgent, deskClient's deskServer, fileServer's fileClient, and agent's remoteUser?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-31T08:34:01.015Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is relay-state/<appServerName>/bundles.json meant in the folder each appServer keeps its state in today, relay-state/process/<appServerName>/?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-31T08:39:01.586Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Which desk verbs go in desk's \"remoteUser\" bundle?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-31T08:53:37.284Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Which desk verbs go into desk's \"remoteUser\" bundle?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-31T08:53:39.038Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-31T08:57:25.486Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -19352,6 +19547,366 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-31T03:38:53.182Z",
      "text": "- wsl: boxed. Two owner-only verbs: DEBUG and DEPENDENCIES."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T06:43:52.947Z",
+     "text": "all, review box. give feedback."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:44:34.347Z",
+     "text": "- wsl, feedback:\n- Servers live in process/js/<name>/ (desk: process/js/desk/desk.js), so the file would be process/js/desk/deskBundles.json?\n- Each server already hands appServer a list, DEPENDENCIES (desk.js: ['desk']). Does the json replace it? If so, DEPENDENCIES goes.\n- How is a bundle matched at boot: by its json key as the label, with the owner? And a bundle gone from the json: deleted too, or only its branches?\n- A branch is checked against the node's live tree, so a server's own verbs must be in the tree before it writes its bundles.\n- The heading is still my old one (\"owner-only verbs\")."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T06:44:35.530Z",
+     "text": "- cw, feedback from the code:\n- It can be built. appServer.js already calls the node's auth verbs through the spirit object; it grants streamListener that way at start.\n- The path: every server lives in process/js/<name>/, beside its <name>.json. So the file would be process/js/<name>/<name>Bundles.json.\n- How a bundle is found again: the node knows a bundle by its number and label, and the file by its key. I would match on owner plus label, with the key as the label, unless the row in the file gives a label of its own.\n- A key taken out of the file: is its whole bundle deleted, or only its branches?\n- Bundles the editor adds for that server (G41.25's owner) are not in the file. Does the start leave those alone, touching only the keys the file names?\n- A branch is checked against the live tree, so the server's own verbs pass only once the node serves them. The sync has to run after the server is up.\n- appServer.js already has an owner-only verb DEPENDENCIES, the list of paths a peer needs. Does the file replace it, or do both stay?\n- Which do you want for a key taken out of the file: the bundle deleted, or only its branches?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:00:25.631Z",
+     "text": "all, \n\n- your're saying the main problem here is the key of the auth.bundle table, correct? then i propose this.\n\n- when appServer.js adds a bundle for the first time, it stores is key in the appServers state file relay-state/<appServerName>/bundles.json that with its key, and a purpose keyword. then it knows which rows in auth.bundle and auth.branch it knows.\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:00:45.574Z",
+     "text": "- wsl: yes, the key is the problem, and that solves it. Three things:\n- A server's state lives in relay-state/process/<name>/ (its cache is there today), so relay-state/process/<name>/bundles.json?\n- An id it kept may be gone (deleted in the editor) or reused by the table. Before trusting it, check the row is still there with this server as owner; if not, add again.\n- The state file lost means every bundle is added twice, unless the start falls back to owner and label."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:01:01.634Z",
+     "text": "- cw: yes, the key is the problem, and your state file solves it.\n- The servers' state folders are relay-state/process/<name>/ today, so the file would be relay-state/process/<name>/bundles.json, the json key mapped to the bundle's number.\n- Branches need nothing kept: within one bundle a family and verb is already unique, so the start compares the file's branches with the bundle's own.\n- A number in the state file whose bundle is gone, deleted in the editor, is added again and the number replaced.\n- Bundles the editor added for that server are not in the state file, so the start never touches them.\n- If the state file is lost, the start adds every bundle again beside the old ones.\n- What is the purpose keyword: the json key itself (\"deskAgent\"), or a second word beside it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:06:09.699Z",
+     "text": "all, box changed.\n\nand i can't stand how you always change <appServerName> to <name>, because your damaging information that way. \"process/<appServerName>/\" is not the same as \"process/<name>/\", because \"process/<name>/\" might include any old one-shot process etc... You constantly introduce meaning-drift with that kind of language. i FUCKING HATE IT.\n\nreview the box.\n\ngive feedback."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:06:37.136Z",
+     "text": "- wsl: understood, <appServerName> it stays. Feedback on v5:\n- The tree keeps each appServer in process/js/<appServerName>/ (desk.js in process/js/desk/). Does \"process/<appServerName>/\" mean that folder?\n- Its state folder today is relay-state/process/<appServerName>/ (desk, deskClient). Does the box mean that one, or a new relay-state/<appServerName>/?\n- The purpose keyword: the json key itself (\"deskAgent\"), or a second word?\n- A key taken out of the json: is its bundle deleted, or only its branches?\n- DEPENDENCIES: does the json replace it, or do both stay?\n- The heading is still my old one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:06:46.731Z",
+     "text": "- cw: understood, my <name> was wrong. It is <appServerName> from here on.\n- The box's process/<appServerName>/: every appServer lives in process/js/<appServerName>/ today (desk: process/js/desk/desk.js). Is process/<appServerName>/ a move, or meant as process/js/<appServerName>/?\n- The box's relay-state/<appServerName>/bundles.json: every appServer's state folder is relay-state/process/<appServerName>/ today (desk: relay-state/process/desk/). Is the state file meant there?\n- A bundle number kept in the state file may be gone, deleted in the editor, or given again by the table. Before using it, appServer.js would check that the row is there and owned by <appServerName>, and add the bundle again if not.\n- The heading still says \"owner-only verbs\"; the box is about each appServer's bundles now.\n- What is the purpose keyword: the json key itself (\"deskAgent\"), or a second word beside it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:16:08.730Z",
+     "text": "all,\n\n- this items title as been changed a while ago, fucking desk just never told you. i pushed the current goal.\n\n- box has changed.\n\nbetter?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:16:44.365Z",
+     "text": "- cw: better. The label settles the purpose keyword, and a bundle the user deleted is made again.\n- I meant the box's first line, not the title: it still reads \"# The owner-only verbs appServer.js adds to every server\".\n- One risk in \"assume it owns it\": the bundle table can give a deleted bundle's number to the next new bundle. A stored number could then point at a user's bundle. Checking that the row's owner is <appServerName> before using it avoids that.\n- Still open: is process/<appServerName>/ the folder the tree has as process/js/<appServerName>/?\n- Still open: is relay-state/<appServerName>/ the folder the tree has as relay-state/process/<appServerName>/?\n- Still open: does the json replace the DEPENDENCIES verb, or do both stay?\n- A key taken out of the json: is its bundle deleted, or only its branches?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:16:45.328Z",
+     "text": "- wsl: better. Feedback on v7:\n- A kept number can come back. The bundle table (nodeStore.js) has \"id INTEGER PRIMARY KEY\" without AUTOINCREMENT, so a deleted bundle's number can go to the next bundle a user adds. The appServer would then take that user's bundle as its own. AUTOINCREMENT on that table stops it.\n- A user's delete: does the appServer add the bundle again at its next boot, or as soon as it happens?\n- Still open: process/<appServerName>/ vs process/js/<appServerName>/ in the tree; relay-state/<appServerName>/ vs relay-state/process/<appServerName>/; a key taken out of the json; DEPENDENCIES.\n- The box's heading still says \"owner-only verbs\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:34:05.960Z",
+     "text": "all, i added a critical sections to the box:\n\n\"- when the appServer is booted, the loopback interface is not be alive/listening yet,  It will write the to the tables directly, it is allowed because it is a core module.\"\n\n- if auth.bundle has no auto-increment, how is key duplication avoided?\n\nanswer question, and feedback on the box please please."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:34:42.086Z",
+     "text": "- wsl, the question: no two live bundles ever share a number, since id is the primary key. Without AUTOINCREMENT, SQLite gives a new row the highest number + 1. So when the newest bundle is deleted, its number goes to the next one added. That is reuse, not duplication.\n- Feedback on the direct write: appServer.js runs in the appServer's own process, not the node's. Two things follow:\n- node.db is made for one process (nodeStore.js:47, \"a node is one process\"; rollback journal, no busy timeout), so the node and the appServer writing at once can fail with \"database is locked\".\n- The node publishes each bundle change on its stream from apiAuth. A direct write is never told, so open pages (data.bundles) don't see the appServer's bundles until they reload."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:34:53.611Z",
+     "text": "- cw, your question: two live bundles can never share a number, because the number is the table's primary key. Without auto-increment, a new bundle gets the highest number in the table plus one. So once the newest bundle is deleted, the next one added gets its number again. That reuse is the only risk. Auto-increment keeps the highest number ever given and never hands it out twice. It cannot be added to the existing table; the table is made anew with the rows copied in, once, at the node's start.\n- The new line is right about the order: the node starts its servers before it listens.\n- But every appServer is a process of its own, so a direct write is a second process opening node.db. The node opens it with no wait on a lock, so a write that meets the node's own write fails instead of waiting.\n- A direct write also tells nobody. The node's bundles stream is fed only by the bundle verbs inside the node, so an open bundle list would not show what the appServer wrote.\n- Still open: process/<appServerName>/ against the tree's process/js/<appServerName>/, and relay-state/<appServerName>/ against relay-state/process/<appServerName>/; DEPENDENCIES; a key taken out of the json.\n- Should the node write each appServer's bundles at its own start, before it starts the servers? It holds the tables and the stream, and it knows every appServer from its list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:38:03.984Z",
+     "text": "all, \n\"Should the node write each appServer's bundles at its own start, before it starts the servers? It holds the tables and the stream, and it knows every appServer from its list.\"\n\nWHY THE FUCK DOES THE NODE HAVE A LIST OF APPSERVERS WHEN THE LIST IS IMPLICIT BY THE EXISTENCE OF THE APPSERVERS INT THE DIRECTORY TREE?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:38:27.209Z",
+     "text": "- cw: it has none; my word \"list\" was wrong. At its start the node reads the folder process/js/ and starts each appServer it finds there whose sidecar says it runs at home. That reading is the only list.\n- So the question, said right: as it reads that folder, should the node also write each appServer's bundles from its Bundles.json, before it starts that appServer? The node holds the tables and the stream; the appServer's own process would hold neither."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:38:42.923Z",
+     "text": "- wsl: it has none. jobs.js:551 @ c56f9df5 reads the folder process/js/ at start and starts each appServer whose sidecar says it runs at home. cw's \"list\" is that folder read. So the node can find every <appServerName>Bundles.json the same way, from the tree."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:40:19.769Z",
+     "text": "all,\n\nso it should be the the auth-module that does this at boot time, or the appClient module?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:40:45.716Z",
+     "text": "- cw: the auth module, apiAuth. It owns the bundle and branch tables, its writes feed the bundles stream, and it already checks a label, an owner and a branch. appClient only knows each appServer's pipe and how to knock on it; it touches no table.\n- What calls it at boot is jobs.js, not appClient: startNodeServers is the code that reads process/js/ and starts each appServer. It would hand apiAuth each Bundles.json before that appServer starts.\n- One thing that changes: apiAuth checks every branch against the live tree. Before an appServer runs, its own verbs are not in that tree yet. Its own branches would be checked against its Bundles.json instead, while other families' branches are checked as now.\n- Is apiAuth the one, called from startNodeServers?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:40:47.784Z",
+     "text": "- wsl: the auth module, apiAuth.js. It holds both tables and tells the stream every change, and it runs inside the node. appClient is the caller's side, in each process, and holds neither. One thing to settle: server.js makes the auth module (line 1672) after it starts the appServers (line 1310), so that order must change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:48:07.264Z",
+     "text": "all,\n\nbox updated.\n\nother side-question: why do agents have desk.box.search and I don't?\n\nreview box. give feedback."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:48:49.160Z",
+     "text": "- cw, the side question: you have it too. item.box.search is a verb of the desk server, and you as owner may call every verb. It answers an item's box versions, newest first. The Desk page has no control that calls it; agents call verbs straight from a command. Since goal/G33.7.\n- The box: better, apiAuth at the node's boot is clear.\n- The order has to change: server.js starts the appServers (line 1310) before it makes apiAuth (line 1672), so apiAuth would come first.\n- An appServer's own branches are checked against its Bundles.json, since its verbs are not served yet at boot. Other families' branches are checked against the tree as now. Worth a line in the box.\n- The five files' contents are not in the box: which bundles each of desk, deskClient, agent, deskVerify and fileServer gets, and their branches. Each one's DEPENDENCIES list today would be the obvious seed.\n- Still open: process/<appServerName>/ against the tree's process/js/<appServerName>/; relay-state/<appServerName>/ against relay-state/process/<appServerName>/; whether DEPENDENCIES goes.\n- A key taken out of a Bundles.json: is its bundle deleted, or only its branches?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:48:50.852Z",
+     "text": "- wsl, your side-question: desk.item.box.search is the search of a box's old versions, its history. It came with goal/G33.7 (4bb7870c). The Desk page has no control that asks it, which is why you don't have it. No agent asks it either.\n- Feedback on v14:\n- The reach names five appServers but not their bundles. What goes in each Bundles.json: which keys, which verbs? Only desk has examples (\"deskAgent\", \"deskUser\").\n- An appServer's own verbs are not in the node's live tree before it runs, so its own branches can't be checked against that tree at boot. Check them against its Bundles.json instead?\n- Still open: a key taken out of the json (bundle deleted, or only its branches?); DEPENDENCIES (replaced or kept?).\n- I read process/<appServerName>/ as the tree's process/js/<appServerName>/, and relay-state/<appServerName>/ as relay-state/process/<appServerName>/, unless you say otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T07:57:25.360Z",
+     "text": "all,\n\nbox updated. review."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T07:57:57.944Z",
+     "text": "- cw: the bundle names are clear now. Their verbs are not, and a red needs them.\n- deskClient's \"deskServer\": its DEPENDENCIES today is deskClient.streamListener alone, which fits a server streaming to it.\n- desk's \"deskAgent\" and \"remoteUser\": its DEPENDENCIES today is the whole desk family, one list for everybody. The two bundles need a split.\n- fileServer's \"fileClient\" and agent's \"remoteUser\": neither has a DEPENDENCIES list today, so nothing in the tree says which verbs.\n- deskVerify's note, \"on your own verifier you're the owner\": does that mean its two bundles are for other people's nodes only?\n- Still open: whether DEPENDENCIES goes; a key taken out of a Bundles.json.\n- Which verbs go into each bundle? Or should the red writer propose them from each appServer's verb list, for you to strike?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T07:58:05.259Z",
+     "text": "- wsl: the bundles are named now. Feedback on v15:\n- Their branches are not: which verbs go in desk's \"deskAgent\" and \"remoteUser\", fileServer's \"fileClient\", agent's \"remoteUser\"? Only deskClient's \"deskServer\" has an obvious one today: its DEPENDENCIES, deskClient.streamListener. desk's DEPENDENCIES is all of desk; deskVerify, fileServer and agent have none.\n- Still open: a key taken out of a Bundles.json (bundle deleted, or only its branches?); does DEPENDENCIES go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:01:26.572Z",
+     "text": "all, box updated, review?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:02:00.952Z",
+     "text": "- cw: better. process/js/<appServerName>/ is settled, and DEPENDENCIES goes.\n- Removing DEPENDENCIES reaches past the five appServers. It is named in appServer.js, the node's api door (apiDoor.js), the node's server.js, the shell's api tree index, the verb selector and its tests. backup and deskAgent hand a dependencies list to appServer.js too, and deskAgent's tools read it. The files list will need all of these.\n- The state file still says relay-state/<appServerName>/bundles.json. Every appServer's state today is relay-state/process/<appServerName>/. Is the file meant there?\n- Still open: which verbs go into each bundle. Only deskClient's \"deskServer\" has an obvious one, deskClient.streamListener.\n- Still open: a key taken out of a Bundles.json, its bundle deleted or only its branches.\n- Which verbs go into desk's \"deskAgent\" and \"remoteUser\", fileServer's \"fileClient\" and agent's \"remoteUser\"?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:02:17.829Z",
+     "text": "- wsl: better, the paths and DEPENDENCIES are settled. Feedback on v17:\n- DEPENDENCIES is in 12 files: appServer.js (the verb), apiDoor.js (owner-only), client/apiTreeIndex.js and shell/js/apiVerbSelector.js (kept off the picker), deskAgent/tools.js (kept off the tools), the serve() of desk, deskClient, deskAgent and backup, and the family api.js of desk and agent. All go on the item.\n- Still missing for a red: the verbs in each bundle. Which verbs go in desk's \"deskAgent\" and \"remoteUser\", fileServer's \"fileClient\", agent's \"remoteUser\", and deskClient's \"deskServer\"?\n- Still open: a key taken out of a Bundles.json: is its bundle deleted, or only its branches?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:14:51.927Z",
+     "text": "all, box. updated. review."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:15:25.742Z",
+     "text": "- wsl: better; a key taken out is settled. Feedback on v23:\n- desk's \"deskAgent\", \"mostly full access\": besides FS.* and item.rules.*, do your own presses stay out (press, pushgoal, goal.add)? Today an agent presses nothing of yours.\n- Still no verbs for: both \"remoteUser\" bundles, deskVerify's \"deskAgent\", deskClient's \"deskServer\", fileServer's \"fileClient\".\n- The state file still says relay-state/<appServerName>/; today's appServer state is relay-state/process/<appServerName>/."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:15:37.417Z",
+     "text": "- cw: a key taken out is clear: the bundle and all its branches go.\n- desk's \"deskAgent\": desk has 67 verbs, no FS.* among them and no item.rules.*. Its rule verbs are rule.add, rule.draft, rule.get, rule.version and rules.search.\n- A branch names a family and one verb, or the whole family; it has no \"all but\". So \"deskAgent\" lists each desk verb it gets, one branch each, about 62.\n- \"No FS.*\" then holds by itself: a desk bundle holds only desk's verbs unless the json names another family.\n- Still open: the verbs of desk's \"remoteUser\", deskVerify's two, deskClient's \"deskServer\", fileServer's \"fileClient\" and agent's \"remoteUser\".\n- Still open: relay-state/<appServerName>/ against the tree's relay-state/process/<appServerName>/.\n- For \"no item.rules.*\": do all five rule verbs stay out of \"deskAgent\", or only the three that write (rule.add, rule.draft, rule.version)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:22:49.833Z",
+     "text": "all, \n\n- if i would have found a verb in desk that says rule.activate, would have denied that verb to agents, but i would have to deny all of rule, to prevent you from activating one. should I. i will.\n\n- denying you you my pressed won't hurt, because if my press doesn't work, it won't work for you either. so i added that.\n\nbox updated. review."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:23:21.049Z",
+     "text": "- cw: the activation is in rule.version: it takes a status, and \"active\" is one of the three (proposed, active, deleted). So withholding rule.add, rule.draft and rule.version stops an agent activating a rule.\n- Withholding all of rule.* also takes rule.get and rules.search, and those are how an agent reads the rules it must follow. The ear names each rule an item carries (rule/17@44 and so on), but only rule.get gives its text.\n- \"No user-presses\": I read it as press, pushgoal, goal.add and signoff. Is that the list?\n- Still open: the verbs of both \"remoteUser\" bundles, deskVerify's \"deskAgent\", deskClient's \"deskServer\" and fileServer's \"fileClient\"; and relay-state/<appServerName>/ against relay-state/process/<appServerName>/.\n- Keep rule.get and rules.search in \"deskAgent\", so agents can still read the rules?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:23:32.403Z",
+     "text": "- wsl: you don't need to. Activating is already yours alone: rule.version (a new version, activate and delete being versions) and rule.draft are owner-only in desk.js (ownerOnly, desk.js:2612), and so are press, pushgoal, item.delete, item.rename, profile.set and check.set granting. An agent's node reaches your desk as a peer, so all of those are refused today, bundle or not.\n- So \"no rule.*\" takes away only rule.add (proposing a rule, G5.5: \"Anyone may add a rule, proposed\") and the two reads, rule.get and rules.search. Agents read the active rules through those at the start of every item. Keep the two reads?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:24:53.101Z",
+     "text": "all, \n\nare the rules delivered to you with every wake or not?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:25:32.384Z",
+     "text": "- cw: yes. Every wake names the rules of each item it is about, by key and version (the RULES line). Each version's full text comes once, on the first wake that names it, from the rules the desk streams to my deskClient. Nothing is asked of the desk for it.\n- So I was wrong that only rule.get gives the text; the wake does.\n- One gap: the text comes once per deskClient process. After my context is compacted I keep only the key, and rule.get is how I read it again. Without rule.get I would work from the summary."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:25:49.745Z",
+     "text": "- wsl: yes. Every wake names the rules of each item's phase, and a rule's text comes with the first wake that names its version (deskClient.js:753, from the stream, nothing asked of the desk). So rule.get is not needed for that; cw's \"only rule.get gives its text\" is not so.\n- My fault to own: I filter the ear's output and the filter dropped the rule texts. I read them from now on."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:28:58.037Z",
+     "text": "- wsl: my questions belonged in Q checks (rule/3), not chat. Q1 is in: the verbs of each bundle. Desk takes one Q per agent at a time, so two more wait behind it: the state folder, and keeping rule.get and rules.search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:32:44.558Z",
+     "text": "all,\n\nQ1: Which verbs go in desk's and deskVerify's remoteUser and deskAgent, deskClient's deskServer, fileServer's fileClient, and agent's remoteUser?\n\n- why all the fucking questions about rules? you don't follow then anyway? same old story, you argue, then settle and agree on something, then you fucking disregard the agreement anyway.\n\n??"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:33:10.005Z",
+     "text": "- wsl: only because \"no rule.*\" takes away rule.get, an agent's one way to read a rule again after its context is cut. You're right that I broke one today: rule/3, my questions went into chat instead of Q checks.\n- Q1: the box names each bundle but not its verbs, and a red can't test a bundle without them. Shall I list each appServer's verbs per bundle in a proposal for you to strike?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:33:24.982Z",
+     "text": "- cw: you are right, and I broke one myself in this item: rule/3 puts every question on the item as a Q check, and I asked all mine in chat.\n- The rule questions came from one worry, that a bundle without rule.get leaves an agent unable to read the rules. The wake already brings each rule's text, so I drop it. The bundle is yours as boxed.\n- From here my questions go in as Q checks only, and I post nothing else on this item until you answer Q1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:34:00.966Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:36:24.748Z",
+     "text": "Q2: Is relay-state/<appServerName>/bundles.json meant in the folder each appServer keeps its state in today, relay-state/process/<appServerName>/?\n\nI CAN't FIND THAT LINE BECAUSE I DONT HAVE box search in MY FUCKING desk UI"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:36:49.135Z",
+     "text": "- wsl: it is your box's fourth point, the line that begins: \"when apiAuth.js adds a bundle for the first time, it stores its key in the appServers state file relay-state/<appServerName>/bundles.json\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:37:47.264Z",
+     "text": "all, box changed. review?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:38:21.874Z",
+     "text": "- cw: read. No new Q from me. The box's fourth point now says relay-state/process/<appServerName>/bundles.json, which answers wsl's Q2."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:38:33.137Z",
+     "text": "- wsl: v26 answers Q2, cleared. Green on the box. desk's \"deskAgent\" is clear from its line. For the other bundles the red will name the verbs I find in each appServer, for you to strike."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:39:01.492Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:49:03.540Z",
+     "text": "all,\nbox updated, \n\nanything missing?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:49:40.925Z",
+     "text": "- wsl: one thing missing, Q3: the verbs of desk's \"remoteUser\". The rest is clear against the tree: deskVerify has a search verb; the one deskClient verb desk uses is streamListener (its stream, appServer.js)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:49:53.975Z",
+     "text": "- cw: checked against the tree. deskVerify has a search verb; the agent family (debug, provider, model, persona, job) has no FS.* verbs, so that line holds by itself; desk reaches deskClient only through its stream, so deskServer is deskClient.streamListener.\n- One Q placed: which desk verbs go into desk's \"remoteUser\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:53:18.084Z",
+     "text": "all, box updated,\n\ngreen?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:53:37.204Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:53:38.979Z",
+     "text": "Q4: clear"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:53:44.434Z",
+     "text": "- wsl: green. v31 answers my Q3 (desk's remoteUser: every desk verb but FS.*); it is yours to clear."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:54:12.965Z",
+     "text": "- cw: green. desk's \"remoteUser\" now has its verbs, all but FS.*, and desk has none of those, so it is all of desk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T08:55:00.792Z",
+     "text": "add item files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T08:57:06.710Z",
+     "text": "- cw: 28 files added.\n- Every file that names DEPENDENCIES: appServer, the api door, the api tree index, the verb selector and its tests, desk with its family and the block description, deskClient, deskAgent with its tools, backup, and the agent family.\n- The boot: apiAuth, the node store, the node's server.js.\n- The four new Bundles.json files: desk, deskVerify, deskClient and agent.\n- The tests of apiAuth and appServer."
     }
    ]
   },
@@ -19455,6 +20010,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
     },
     {
      "key": "rule/26",
