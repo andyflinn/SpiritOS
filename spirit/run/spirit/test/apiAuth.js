@@ -294,8 +294,8 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok(!!agentRow && agentRow.owner === 'probe' && (await ownedBy(a1, 'someone else')).length === 0, 'owned by the appServer, <appServerName>, whatever owner the row names', 'row: ' + short(agentRow));
   ok(!!agentRow && JSON.stringify(await branchesOf(a1, agentRow.id)) === JSON.stringify(['files.read', 'probe.ping']), 'with its branch rows, the appServer\'s own verbs among them though it is not served yet', 'branches: ' + short(agentRow && await branchesOf(a1, agentRow.id)));
   // The rest asks of these two, so a boot that made neither fails each check instead of stopping the test.
-  const AID = agentRow ? AID : -1;
-  const UID = userRow ? UID : -1;
+  const AID = agentRow ? agentRow.id : -1;
+  const UID = userRow ? userRow.id : -1;
   const st1 = stateOf('probe');
   ok(!!st1 && !!agentRow && !!userRow && st1.probeAgent && st1.probeAgent.id === AID && st1.probeAgent.label === 'Probe agent' && st1.probeUser && st1.probeUser.id === UID && st1.probeUser.label === 'Probe user',
     'and each key kept in relay-state/process/<appServerName>/bundles.json with its bundle\'s id and the same label', 'state: ' + short(st1));
@@ -313,7 +313,6 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   writeBundles('probe', {
     probeAgent: { label: 'Probe agent', branches: [{ family: 'probe', verb: 'ping' }, { family: 'probe', verb: 'pong' }] },
   });
-  await call(a2, 'bundle', { op: 'delete', id: UID });
   const a3 = boot(); await settleBoot();
   const mine3 = await ownedBy(a3, 'probe');
   ok(JSON.stringify(await branchesOf(a3, AID)) === JSON.stringify(['probe.ping', 'probe.pong']), 'a verb added to a key is added, a verb no longer in it is deleted, the same bundle', 'branches: ' + short(await branchesOf(a3, AID)));
