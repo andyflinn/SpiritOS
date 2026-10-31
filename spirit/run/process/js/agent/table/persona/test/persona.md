@@ -46,6 +46,16 @@ editor the same fields (`required`), so the UI checks them too.
 
 Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The persona table has no description column, and its detail no Description field.
 
+### Its provider (goal/G41.26)
+
+Andy, box: *"agent.persona gains a provider field, it's detail provides the same provider-FUCKING-Selector in drop down
+mode, that the job detail panel provides for the agent.job.provider"*.
+
+- The persona table gains a column, `provider`, the key of a provider row; a persona keeps it, its bundle and text as
+  they were. The agent family declares the persona's `provider` as it declares the job's.
+- Its detail sets it with the providerSelector in dropdown mode, the job's own field (`{ field: 'provider', kind:
+  'pick', pick: 'provider' }`), after the bundle. It is not mandatory, as the job's is not.
+
 ## What its test must try to break
 
 - A persona text that loses its lines, or is emptied by a set of its label.
@@ -53,3 +63,4 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 - A persona without its bundle column, or a detail with no bundle selector.
 - A persona row added without its icon and label.
 - A description column or field on the persona.
+- A persona without its provider column, or a detail whose provider field is not the job's providerSelector:dropdown.

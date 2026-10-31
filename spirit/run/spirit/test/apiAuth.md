@@ -24,7 +24,9 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 - Neither table records who made a row.
 - `auth.bundle`:
   - `add {label, owner}` answers `{ id }`. An empty label, or none, is refused `bad-request`.
-  - `get {id}` answers `{ id, label, owner }`; `set {id, label}` renames it.
+  - `get {id}` answers `{ id, label, owner }`. There is no `set` (goal/G41.26, Andy: *"A bundles label is determined when
+    it's added, and cannot be modified ... the auth.bundle set op will be removed."*): a set is refused `bad-request`,
+    the bundle as it was, and tells nothing.
   - `delete {id}` removes the bundle and every branch that names it, and answers `{ id }`.
   - `search {text}` answers `{ items, more }`, each item keyed by the id, its label the bundle as get shows it, best
     first; no words is every bundle. `owner` narrows it to that owner's bundles; none, or an empty one, narrows
@@ -112,3 +114,4 @@ auth.branch."*
   that lets another owner's bundle through.
 - A boot that adds a kept key twice, keeps a branch the file dropped, leaves a dropped key's bundle or branches, takes
   the owner a row names, touches a user's bundle, or stops at a file that is not valid.
+- A set that renames a bundle, or is told.

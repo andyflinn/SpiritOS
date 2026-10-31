@@ -25,7 +25,7 @@ opens. So the editor names no description and no api-branch selector.
   - answered, the list searches again and the input is emptied for the next;
   - refused, the node's words are said in the panel and the label stays in the input.
 - Below it, filling the space left (a `fill` box, shell.css): `bundleSelector.create(its box, …)` (the shell's element
-  shape, goal/G41.19), a pane, columns `label`, `owner`, `edit` and `delete` (goal/G41.25: the owner *"right after the bundles label"*), its labels edited in place (`editable`). What a row does is the row element's
+  shape, goal/G41.19), a pane, columns `label`, `owner`, `edit` and `delete` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`shell/js/bundleSelector/rowElement.js`).
 - `destroy()` empties its box.
 

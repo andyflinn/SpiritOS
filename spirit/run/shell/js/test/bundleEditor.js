@@ -90,8 +90,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // edit button, leading to the branchEditor.js ... 3. a delete armingButton.js".
   const sel = sels[0];
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
-  ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner","edit","delete"]' && sel.o.editable === true,
-    'bundleSelector.create(its box, a pane, columns label, owner, edit, delete, its labels edited in place)', 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box));
+  ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner","edit","delete"]' && !sel.o.editable,
+    'bundleSelector.create(its box, a pane, columns label, owner, edit, delete), its labels shown only (goal/G41.26: "the Label should now just be an output")', 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box));
   ok(!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill')), 'in a box that fills the space left (shell.css fill)', 'classes: ' + short(all(box).map(function (k) { return k.className; })));
   if (!sel) return;
 

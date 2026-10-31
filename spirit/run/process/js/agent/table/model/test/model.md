@@ -5,7 +5,7 @@
 
 Andy, box v22: *"a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and
 model-name and capabilities)"*. goal/G41.18 fills it from the providers: the provider table's ask
-(`../../provider/test/provider.md`), opened from this table's Update model list pane (`./updatePanel.md`).
+(`../../provider/test/provider.md`), asked from the Ask form at the top of this table's list (goal/G41.26).
 
 ## Requirements
 
@@ -30,10 +30,15 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
     from the providers.
   - Its list shows each model by its provider's icon and its model name: the columns it hands are `providerIcon`, then
     `modelName` (goal/G41.18).
-  - It hands the shared element one button, `provider models` (box v17: *"a button row with the following button
-    \"provider models\", which will open a panel in the center pane of the workBench"*). Pressed, it opens
-    `spirit.elements.modelUpdate` (`./updatePanel.js`, which it requires) in the detail pane, the centre, with the
-    page's api and detail pane.
+  - **The Ask form at the top** (goal/G41.26, Andy: *"The form \"from [Pick a provider ▾] [Ask]\" moves to the top of the
+    left pane (🧠Models) and replaces that panes [provider models] buttons. the center pane panel goes. the [Ask] button
+    will no longer spit out a list, and simply update the agent.model table"*):
+    - the pane reads `from`, a providerSelector:dropdown (a probabilitySearch dropdown of the provider table), then an
+      Ask button; the model list is drawn below it, never over it. It loads the search element and the busyButton itself;
+    - the list is handed no `provider models` button; `./updatePanel.js` and its test are gone, and nothing loads it;
+    - Ask with no provider chosen asks nothing; with one, it calls `provider { op: 'ask', id }` and shows no list: the
+      model table it updated is the list below;
+    - Ask is a busyButton, its request waiting until the provider answers (goal/G41.23).
   - A row it opens is a `modelRow`.
 - `elementRow.js` registers `spirit.elements.modelRow.create(container, api, id, added, detail)`:
   - It builds on `agentRow` with the model table's look.
@@ -58,6 +63,6 @@ Andy: *"i decided that model, does NOT need a name field, which i also NEVER FUC
 - A model naming a provider that is not there, by add or by set.
 - Capabilities that come back as text instead of a list.
 - A model shown without its provider's icon, or the icon kept in the table.
-- A list showing the label where the model name belongs; a provider models button that opens nothing; an Add button.
+- A list showing the label where the model name belongs; a provider models button still handed, the Update model list pane still there, an Ask that shows a list or asks with no provider chosen; an Add button.
 - A model's provider drawn as a picker or an input.
 - A model name column, a label taken from the provider's display name, or a label, provider or capabilities drawn as an input.

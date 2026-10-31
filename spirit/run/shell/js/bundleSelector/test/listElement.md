@@ -21,7 +21,7 @@ their data set"*).
 - Each row is a `bundleElement` of that bundle, `{ id, label }`.
 - By default its columns are the label, then the owner (goal/G41.25, Andy: *"the bundleSelector's list will gain a
   new column \"owner\", displayed right after the bundles label"*). `opts.columns` names the row's fields it shows, in order (the bundle editor:
-  `label`, `edit`, `delete`). `opts.editable` makes each row edit its label in place.
+  `label`, `edit`, `delete`). No row edits its label: `editable` is no option (goal/G41.26, Andy: *"the Label should now just be an output"*), so a list asked for it hands its rows none.
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
 
 - Its probabilitySearch's `data` is `bundles`: the search's answers are seated there, and a row the stream changes redraws

@@ -73,8 +73,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!list) return;
   made.create(element('div'), { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true }); await settle();
   const pane = lists[1] && lists[1].o;
-  ok(pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["label","edit","delete"]' && pane.editable === true,
-    'face pane is the list itself; columns and editable are handed to it', 'pane: ' + short(pane));
+  // goal/G41.26: "the Label should now just be an output": editable is no option, so none is handed on.
+  ok(pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["label","edit","delete"]' && !pane.editable,
+    'face pane is the list itself; its columns are handed to it, and no editable', 'pane: ' + short(pane));
 
   test.subHeading('goal/G41.25: mounted for an app server');
   // Andy, box: "the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time", and "if

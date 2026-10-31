@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.26 (Andy, box: "the chat pane shows up in the center pane of workBench, titled: \"💬 Chat with
+// <selected-persona-label>\". The title is pinned to the top of the center pane.", "pinned to the bottom or that pane is a
+// input block, which contains, for now a chat input line, which sends when Enter is pressed, and adds \"\n\" when
+// SHIFT.Enter is pressed, and a send button on the right edge of that row.", "the space between the Title row and the
+// Chat input row is filled by an upward scrolling chat log."): the chat pane in a centre of a stated size, and what the
+// browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/shell/agent/test/chatPane-laid.html.
+window.laid = function () {
+  return Promise.resolve().then(function () { return spirit.require('shell/agent/chatPane.js'); }).catch(function () { return null; }).then(function () {
+    var E = (spirit.elements || {}).chatPane;
+    var out = { made: !!E && typeof E.create === 'function' };
+    if (!out.made) return JSON.stringify(out);
+    // A centre pane as the workBench gives one: a box of a stated size.
+    var centre = document.createElement('div');
+    centre.style.cssText = 'position:absolute;left:10px;top:10px;width:500px;height:400px;display:flex;flex-direction:column';
+    document.body.appendChild(centre);
+    var made = E.create(centre, { persona: { id: 'KA', label: 'Ada <the reviewer>' } });
+    out.answered = !!made;
+    out.appended = centre.children.length > 0;
+    function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), h: Math.round(r.height) }; }
+    out.centre = rect(centre);
+    // The title: the first element whose text says the chat's title.
+    var all = Array.prototype.slice.call(centre.querySelectorAll('*'));
+    var title = all.filter(function (el) { return /Chat with/.test(el.textContent) && !el.querySelector('textarea,input,button'); })[0] || null;
+    out.titleText = title ? title.textContent.replace(/\s+/g, ' ').trim() : '';
+    out.titleHtml = title ? title.innerHTML : '';
+    out.title = rect(title);
+    var input = centre.querySelector('textarea') || centre.querySelector('input[type="text"],input:not([type])');
+    var send = all.filter(function (el) { return el.tagName === 'BUTTON' && /^\s*Send\s*$/i.test(el.textContent); })[0] || null;
+    out.inputTag = input ? input.tagName : '';
+    out.input = rect(input);
+    out.send = rect(send);
+    // The input row: the nearest box holding both the input and Send.
+    var row = input && send ? input.parentElement : null;
+    while (row && !row.contains(send)) row = row.parentElement;
+    out.row = rect(row);
+    // The log: what is left between the title and the input row, the element there that scrolls.
+    var log = all.filter(function (el) { var s = getComputedStyle(el); return el !== centre && !el.contains(input) && el !== title && !el.contains(title) && /(auto|scroll)/.test(s.overflowY); })[0] || null;
+    out.log = rect(log);
+    out.logOverflow = log ? getComputedStyle(log).overflowY : '';
+    // Enter and Shift+Enter, as the key arrives: Enter is the send (its newline held back), Shift+Enter left to the
+    // browser, which writes the newline.
+    function key(shift) {
+      var e = new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', shiftKey: !!shift, bubbles: true, cancelable: true });
+      input.dispatchEvent(e);
+      return e.defaultPrevented;
+    }
+    if (input) { input.focus(); input.value = 'hello'; out.enterHeld = key(false); out.shiftHeld = key(true); }
+    out.multiLine = !!input && input.tagName === 'TEXTAREA';
+    return JSON.stringify(out);
+  });
+};
+</script>
+</body>
+</html>

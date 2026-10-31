@@ -122,7 +122,8 @@ test.startTest('agent.js: the agent server');
     const WANT = {
       provider: KEYSET.concat([/^url$/, /^apiKey$/, /^model$/]),
       model: KEYSET.concat([/^providerId$/, /^capabilities$/]),
-      persona: KEYSET.concat([/^persona$/, /^bundle$/]),
+      // goal/G41.26, Andy, box: "agent.persona gains a provider field".
+      persona: KEYSET.concat([/^persona$/, /^bundle$/, /^provider$/]),
       job: KEYSET.concat([/^loop$/, /^job$/, /^bundle$/, /^provider$/, /^persona$/]),
     };
     ok(Object.keys(WANT).every(function (name) { return colsOf(tableOf(name)).every(function (c) { return c.name !== 'description'; }); }), 'no agent table has a description column', 'columns: ' + short(Object.keys(WANT).map(function (n) { return [n, colsOf(tableOf(n)).map(function (c) { return c.name; })]; })));
@@ -145,6 +146,8 @@ test.startTest('agent.js: the agent server');
     try { delete require.cache[require.resolve(API)]; fam = require(API); } catch (e) { fam = null; }
     const verbs = (fam && fam.verbs) || {};
     ok(TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }) && !('grant' in verbs), 'its interface declares the four verbs, provider, model, persona and job, and no grant', 'verbs: ' + short(Object.keys(verbs)));
+    // goal/G41.26: the persona's provider is declared as the job's is, a key the call may leave out.
+    ok(verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^key\??$/.test(String(verbs.persona.provider || '')), 'the persona verb takes a provider, declared as the job\'s', 'persona: ' + short(verbs.persona) + ', job.provider ' + short(verbs.job && verbs.job.provider));
     const files = [];
     TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
     const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
@@ -160,7 +163,7 @@ test.startTest('agent.js: the agent server');
     // add (answers the new id), set, delete, get (the row without its secrets, apiKeySet in place of the key) and search.
     test.subHeading('goal/G41.4: add makes a row with its key set; set changes it; delete removes it');
     const API_KEY = 'sk-test-' + 'a'.repeat(24);
-    const added = await ask('provider', { op: 'add', icon: '🏢', label: 'A provider', description: 'for the test', url: 'https://api.example.test/v1', apiKey: API_KEY });
+    const added = await ask('provider', { op: 'add', icon: '🏢', label: 'A provider', url: 'https://api.example.test/v1', apiKey: API_KEY });
     const pid = added.body && added.body.id;
     // The shadow-roll's kind of ID: an ed25519 public key, SPKI DER in base64 (spirit/relayAuth.js generateIdentity).
     const isKey = function (k) { return typeof k === 'string' && /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/.test(k); };

@@ -103,54 +103,34 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(/Read &lt;files>/.test(cells.label || '') && !/<files>/.test(cells.label || ''), 'the label is drawn escaped', 'label: ' + short(cells.label));
   ok(/data-action="edit"/.test(cells.edit || '') && /data-action="delete"/.test(cells.delete || ''), 'edit and delete are buttons naming their action', 'cells: ' + short(cells));
 
-  test.subHeading('the label is edited in place');
-  // Andy, box: "[fieldInput:fieldRule:Label], displays and updates the bundle's label. Empty or invalid is refused. when
-  // pressing the Enter key, or leaving the field, the bundle-label is updated is the label is valid (as in \"add\"), and
-  // if invalid, reverts to the value contained in the db-table."
-  const ed = E.bundleElement.create({ id: 7, label: 'Reader' }, { editable: true });
+  test.subHeading('the label is shown only (goal/G41.26)');
+  // Andy, box: "bundleSelector:pane mode the Label should now just be an output, field: A bundles label is determined
+  // when it's added, and cannot be modified. This will protect family owned bundles from having their label mutilated."
+  // Mounted, with the old editable option or without it, the label cell shows the label and holds no input.
+  const ed = E.bundleElement.create({ id: 7, label: 'Read <files>' }, { editable: true });
   const hosts = { label: cell(), owner: cell(), edit: cell(), delete: cell() };
   ed.mount(hosts);
-  const input = hosts.label.querySelector('input');
-  ok(!!input && input.value === 'Reader', 'editable, its label cell holds an input showing the label', 'label cell: ' + short(hosts.label.kids.map(function (k) { return k.tag; })));
-  if (!input) return;
-  ok(!!input.heard.beforeinput, 'the input is a fieldInput, held to the label\'s rule', 'listeners: ' + short(Object.keys(input.heard)));
-  input.value = 'Lister';
-  input.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault: function () {} });
   await settle();
-  ok(asked.length === 1 && asked[0].op === 'set' && asked[0].id === 7 && asked[0].label === 'Lister', 'Enter with a valid label asks auth.bundle { op: set, id, label }', 'asked: ' + short(asked));
-  input.value = 'Mover';
-  input.dispatchEvent({ type: 'blur' });
-  await settle();
-  ok(asked.length === 2 && asked[1].label === 'Mover', 'and so does leaving the field', 'asked: ' + short(asked));
+  // What the cell shows as text: its markup, and the text of what it holds that is no input.
+  const labelText = function () { return String(hosts.label.innerHTML || '') + hosts.label.kids.filter(function (k) { return !/input|textarea/i.test(k.tag || ''); }).map(function (k) { return String(k.textContent || ''); }).join(''); };
+  ok(!hosts.label.querySelector('input') && !hosts.label.kids.some(function (k) { return /input|textarea/i.test(k.tag || ''); }), 'mounted, its label cell holds no input, editable or not', 'label cell: ' + short(hosts.label.kids.map(function (k) { return k.tag; })));
+  ok(/Read &lt;files>|Read <files>/.test(labelText()) && !/<files>/.test(String(hosts.label.innerHTML || '')), 'it shows the label, escaped', 'label cell: ' + short(labelText()));
+  ok(asked.every(function (a) { return a.op !== 'set'; }), 'and asks the node no set, ever', 'asked: ' + short(asked));
   // rule/19: a ui only draws what the server's stream says; goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING
-  // LISTING to anything that changes their data set". The row draws no answer of its own: it repaints from data.bundles.
-  ok(ed.row.label === 'Reader', 'an answered set draws nothing by itself: the row waits for the stream', 'row: ' + short(ed.row));
+  // LISTING to anything that changes their data set". The row repaints from data.bundles.
   DATA.set('bundles/7', { id: 7, label: 'Mover' });
   await settle();
-  ok(ed.row.label === 'Mover' && input.value === 'Mover', 'the bundle\'s row in data.bundles changed, the row repaints its label, the input with it', 'row: ' + short(ed.row) + ', input ' + short(input.value));
+  ok(ed.row.label === 'Mover' && /Mover/.test(labelText()), 'the bundle\'s row in data.bundles changed, the row repaints its label', 'row: ' + short(ed.row) + ', label cell ' + short(labelText()));
   DATA.set('bundles/8', { id: 8, label: 'Someone else' });
   await settle();
   ok(ed.row.label === 'Mover', 'another bundle\'s row changes nothing here', 'row: ' + short(ed.row));
-  input.value = '   ';
-  input.dispatchEvent({ type: 'blur' });
-  await settle();
-  ok(asked.length === 2 && input.value === 'Mover', 'an empty label is refused: nothing asked, and the input shows the label the table holds', 'asked ' + asked.length + ', input ' + short(input.value));
-  input.value = 'x'.repeat(70);
-  input.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault: function () {} });
-  await settle();
-  ok(asked.length === 2 && input.value === 'Mover', 'so is one the label\'s rule refuses', 'asked ' + asked.length + ', input ' + short(input.value));
-  answer = function () { return Promise.reject(Object.assign(new Error('refused'), { refusal: 'bad-request' })); };
-  input.value = 'Taken';
-  input.dispatchEvent({ type: 'blur' });
-  await settle();
-  ok(asked.length === 3 && input.value === 'Mover', 'and one the node refuses reverts to the table\'s label as well', 'input ' + short(input.value));
-  answer = function () { return Promise.resolve({ id: 7 }); };
 
   test.subHeading('Delete asks are-you-sure; Edit opens the branch editor');
   const del = armed.filter(function (a) { return a.button && a.button.attrs['data-action'] === 'delete'; })[0];
   ok(!!del && typeof del.o.run === 'function', 'mounted, its Delete is an armingButton', 'armed: ' + short(armed.map(function (a) { return a.button && a.button.attrs; })));
   if (del) { await del.o.run(); await settle(); }
-  ok(asked.length === 4 && asked[3].op === 'delete' && asked[3].id === 7, 'its second press asks auth.bundle { op: delete, id }', 'asked: ' + short(asked));
+  const dels = asked.filter(function (a) { return a.op === 'delete'; });
+  ok(dels.length === 1 && dels[0].id === 7, 'its second press asks auth.bundle { op: delete, id }', 'asked: ' + short(asked));
   await ed.act('edit', {});
   await settle();
   ok(required.indexOf('shell/js/branchEditor.js') !== -1 && opened.length === 1 && opened[0].bundle === 7 && opened[0].label === 'Mover',

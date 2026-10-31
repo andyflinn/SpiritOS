@@ -94,7 +94,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const el = o.element({ id: 7, label: 'Reader' }, '7');
   ok(el && el.kind === 'bundle' && el.row.id === 7 && el.row.label === 'Reader' && !el.opts.editable, 'each row is a bundleElement of that bundle, not editable by default', 'element: ' + short(el));
 
-  test.subHeading('a pane of the editor: its columns and editable rows');
+  test.subHeading('a pane of the editor: its columns, its labels shown only (goal/G41.26)');
   // Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [fieldInput ... Label] 2. an edit button
   // ... 3. a delete armingButton.js".
   E.bundleList.create({}, { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true });
@@ -102,7 +102,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const p = lists[1] && lists[1].o;
   ok(p && JSON.stringify((p.columns || []).map(function (c) { return c.field; })) === '["label","edit","delete"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(p && p.columns));
   const pe = p && p.element({ id: 8, label: 'Writer' }, '8');
-  ok(pe && pe.opts.editable === true, 'and opts.editable makes each row edit its label in place', 'element: ' + short(pe));
+  // Andy, box: "bundleSelector:pane mode the Label should now just be an output": editable is no option any more, so a
+  // list asked for it still hands its rows none.
+  ok(pe && !pe.opts.editable, 'no row edits its label: an editable asked for is handed to no row', 'element: ' + short(pe && pe.opts));
 
   test.subHeading('goal/G41.25: made for an app server, it lists that server\'s bundles alone');
   // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY

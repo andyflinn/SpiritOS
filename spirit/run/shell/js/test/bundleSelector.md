@@ -13,8 +13,8 @@ selecting bundle rows."*
 - It answers its root at once, class `bundle-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `shell/js/bundleSelector/listElement.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
-- A dropdown by default; `options.face: 'pane'` is the list itself. `placeholder`, `columns` and `editable` are handed
-  to the list.
+- A dropdown by default; `options.face: 'pane'` is the list itself. `placeholder` and `columns` are handed
+  to the list; `editable` is no option (goal/G41.26: the label is shown only).
 - A pick sets `.value` to the bundle's id, a number, and `.row` to the bundle `{ id, label }`, and says so with one
   bubbling `change`. A clear picks nothing.
 - `refresh()` asks again.

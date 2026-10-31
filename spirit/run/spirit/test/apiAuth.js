@@ -44,7 +44,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     ok(d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request, 'spirit/auth/' + v + '.json describes the verb and its request', v + '.json: ' + short(d));
   });
   const bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
-  ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description', 'bundle.json: ' + short(bj));
+  ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset\b/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description, and no set (goal/G41.26)', 'bundle.json: ' + short(bj));
 
   const { createApiAuth } = require(FILE);
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-'));
@@ -63,12 +63,14 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     'a label that is empty, or none, is refused bad-request', 'empty label answered');
   const got = await call(auth, 'bundle', { op: 'get', id: reader.id });
   ok(got.id === reader.id && got.label === 'Reader' && got.owner === 'node' && Object.keys(got).length === 3, 'get {id} answers { id, label, owner }, no description, no paths', 'get: ' + short(got));
-  await call(auth, 'bundle', { op: 'set', id: reader.id, label: 'Lister' });
-  ok((await call(auth, 'bundle', { op: 'get', id: reader.id })).label === 'Lister', 'set {id, label} renames it', 'after set: ' + short(await call(auth, 'bundle', { op: 'get', id: reader.id })));
+  // goal/G41.26, Andy, box: "A bundles label is determined when it's added, and cannot be modified. This will protect
+  // family owned bundles from having their label mutilated. the auth.bundle set op will be removed."
+  const renamed = await call(auth, 'bundle', { op: 'set', id: reader.id, label: 'Lister' });
+  ok(renamed.refusal === 'bad-request' && (await call(auth, 'bundle', { op: 'get', id: reader.id })).label === 'Reader', 'there is no set op: a set is refused bad-request and the label stays what the add made it', 'set: ' + short(renamed) + ', get ' + short(await call(auth, 'bundle', { op: 'get', id: reader.id })));
   const all = await call(auth, 'bundle', { op: 'search', text: '' });
   ok(Array.isArray(all.items) && typeof all.more === 'boolean' && all.items.length === 2, 'search with no words answers { items, more }, every bundle', 'search: ' + short(all));
   const row = all.items && parsed(all.items.filter(function (i) { return String(i.key) === String(reader.id); })[0] || {});
-  ok(row && row.id === reader.id && row.label === 'Lister' && row.owner === 'node', 'each item keyed by the bundle\'s id, its label the bundle as get shows it, its owner with it', 'item: ' + short(row));
+  ok(row && row.id === reader.id && row.label === 'Reader' && row.owner === 'node', 'each item keyed by the bundle\'s id, its label the bundle as get shows it, its owner with it', 'item: ' + short(row));
   const hit = await call(auth, 'bundle', { op: 'search', text: 'Deskhand' });
   ok(hit.items && hit.items.length >= 1 && String(hit.items[0].key) === String(desk.id), 'a search of words ranks the bundle that has them first', 'search: ' + short(hit.items));
 
@@ -161,14 +163,14 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     const tb = await call(auth, 'bundle', { op: 'add', label: 'Told' });
     ok(told.length === 1 && told[0].table === 'bundle' && told[0].row.id === tb.id && told[0].row.label === 'Told' && told[0].row.owner === 'node' && !told[0].gone, 'a bundle added is told { table: bundle, row }, the row as get shows it, its owner with it', 'told: ' + short(told));
     await call(auth, 'bundle', { op: 'set', id: tb.id, label: 'Told again' });
-    ok(told.length === 2 && told[1].table === 'bundle' && told[1].row.label === 'Told again', 'a bundle set is told with its new row', 'told: ' + short(told.slice(1)));
+    ok(told.length === 1, 'a refused set tells nothing (goal/G41.26: there is no set op)', 'told: ' + short(told.slice(1)));
     const tr = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'files', verb: 'read' });
-    ok(told.length === 3 && told[2].table === 'branch' && told[2].row.id === tr.id && told[2].row.bundle === tb.id && told[2].row.family === 'files' && told[2].row.verb === 'read', 'a branch added is told { table: branch, row }', 'told: ' + short(told.slice(2)));
+    ok(told.length === 2 && told[1].table === 'branch' && told[1].row.id === tr.id && told[1].row.bundle === tb.id && told[1].row.family === 'files' && told[1].row.verb === 'read', 'a branch added is told { table: branch, row }', 'told: ' + short(told.slice(1)));
     await call(auth, 'branch', { op: 'set', id: tr.id, verb: 'list' });
-    ok(told.length === 4 && told[3].table === 'branch' && told[3].row.verb === 'list', 'a branch set is told with its new row', 'told: ' + short(told.slice(3)));
+    ok(told.length === 3 && told[2].table === 'branch' && told[2].row.verb === 'list', 'a branch set is told with its new row', 'told: ' + short(told.slice(2)));
     const tr2 = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'desk', verb: '' });
     await call(auth, 'bundle', { op: 'delete', id: tb.id });
-    const gone = told.slice(5);
+    const gone = told.slice(4);
     ok(gone.some(function (c) { return c.table === 'bundle' && c.gone === true && c.row.id === tb.id; }) &&
       [tr.id, tr2.id].every(function (id) { return gone.some(function (c) { return c.table === 'branch' && c.gone === true && c.row.id === id; }); }),
       'a bundle deleted is told gone, and each of its branches with it', 'told: ' + short(gone));
@@ -210,7 +212,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   await call(auth, 'bundle', { op: 'set', id: mine.id, label: 'Agent tools', owner: 'node' });
   await call(auth, 'bundle', { op: 'set', id: plain.id, owner: 'agent' });
   const afterSet = await call(auth, 'bundle', { op: 'get', id: mine.id });
-  ok(afterSet.owner === 'agent' && (await call(auth, 'bundle', { op: 'get', id: plain.id })).owner === 'node', 'the owner never changes after the add: a set naming another owner leaves it as it was', 'after set: ' + short(afterSet));
+  ok(afterSet.owner === 'agent' && (await call(auth, 'bundle', { op: 'get', id: plain.id })).owner === 'node', 'the owner never changes after the add: a set naming another owner is refused and leaves it as it was', 'after set: ' + short(afterSet));
   // Incoming: an add whose owner is not valid stores "node".
   const badIn = [];
   for (const bad of ['', 42, 'not a name!', 'a.b', null]) {
@@ -333,7 +335,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
 
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
-  ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Lister' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
+  ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Reader' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
     'opened again on the same root, the bundles and their branches are there', 'get: ' + short(await call(again, 'bundle', { op: 'get', id: reader.id })));
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },

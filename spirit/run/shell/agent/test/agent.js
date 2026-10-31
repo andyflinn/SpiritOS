@@ -147,15 +147,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const L = wb.opts.left || []; const R = wb.opts.right || [];
   // The app's own tool, then one per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
   // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
+  // goal/G41.26, Andy, box: "the left site icon strip gains a [chat] icon, that opens the following, NEW panel, titled:
+  // \"💬 Select Persona\"". Its place in the strip is not said; it is the one tool that is neither the app's nor a table's.
   const LEFT = ['app'].concat(TABLES);
   // goal/G41.21: "The right strip gets its first real tool: the bundle editor ... It joins the agent server's DEBUG box".
-  ok(JSON.stringify(L.map(function (t) { return t && t.name; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&
+  const CHAT_TOOL = L.filter(function (t) { return t && LEFT.indexOf(t.name) === -1; });
+  ok(JSON.stringify(L.map(function (t) { return t && t.name; }).filter(function (n) { return LEFT.indexOf(n) !== -1; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&
     L.concat(R).every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; }),
     'the left strip holds the app\'s tool, then one per table (' + TABLES.join(', ') + '), no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount',
     'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) }));
   ok(new Set(L.map(function (t) { return t && t.icon; })).size === L.length, 'every left tool has an icon of its own', 'icons: ' + short(L.map(function (t) { return t && t.icon; })));
   ok(!/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'the app names no grants panel and no grant table any more (goal/G41.21)', 'shell/agent/agent.js still names the grant table or the grants panel');
-  if (L.length !== LEFT.length || R.length !== 2) return;
+  ok(CHAT_TOOL.length === 1 && CHAT_TOOL[0].icon === '💬' && CHAT_TOOL[0].title === 'Select Persona', 'and one more left tool: 💬, titled Select Persona (goal/G41.26)', 'other left tools: ' + short(CHAT_TOOL.map(function (t) { return { name: t.name, icon: t.icon, title: t.title }; })));
+  if (R.length !== 2) return;
   const SERVER_TOOL = R.filter(function (t) { return t.name === 'server'; })[0];
   const BUNDLE_TOOL = R.filter(function (t) { return t.name !== 'server'; })[0];
 
@@ -174,6 +178,43 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       'and creates ' + name + 'Table once in that box, with the app\'s api and its detail pane', 'created: ' + made.length);
     const look = d && d.look(name);
     ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
+  }
+
+  test.subHeading('💬 Select Persona: a personaSelector:pane, a persona picked opens its chat in the centre (goal/G41.26)');
+  // Andy, box: "this new panel, below the title contains, for now, only a personaSelector:pane", "When the user clicks on
+  // a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows up in the center pane of workBench".
+  // A personaSelector:pane is the persona table's probabilitySearch in pane mode (rule/29), the agent tables' own
+  // (process/js/agent/table/tableElement.js, agentDetail.search); the chat pane is shell/agent/chatPane.js, tested in
+  // its own file.
+  if (CHAT_TOOL.length === 1) {
+    const sels = [];
+    const chats = [];
+    const prevDetail = global.window.spirit.elements.agentDetail;
+    global.window.spirit.elements.agentDetail = Object.assign({}, prevDetail || {}, {
+      titleRow: function (look, names) { return '<div class="agent-title"><span>' + (look && look.icon || '') + '</span> ' + (names || []).join(' ') + '</div>'; },
+      search: function (host, o, more) { const s2 = { host: host, o: o, more: more || {}, refresh: function () {}, destroy: function () {} }; sels.push(s2); return s2; },
+    });
+    global.window.spirit.elements.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; chats.push(c); return c; } };
+    const before = w.required.length;
+    const cb = box('chat'); CHAT_TOOL[0].mount(cb); await settle();
+    const asked = w.required.slice(before);
+    ok(asked.indexOf('process/js/agent/table/tableElement.js') !== -1, 'its mount loads the agent tables\' element itself (rule/26)', 'required: ' + short(asked));
+    ok(/class="agent-title"/.test(cb.innerHTML) && cb.innerHTML.indexOf('💬') !== -1 && /Select Persona/.test(cb.innerHTML), 'its panel is titled 💬 Select Persona', 'panel: ' + short(cb.innerHTML));
+    const sel = sels[0];
+    ok(sels.length === 1 && sel.o && sel.o.table === 'persona' && sel.o.api === w.api && sel.more.face === 'pane' && typeof sel.more.pick === 'function',
+      'below the title, only a personaSelector:pane: the persona table\'s search in pane mode, with the app\'s api', 'selectors: ' + short(sels.map(function (x) { return { table: x.o && x.o.table, face: x.more.face }; })));
+    ok(!!sel && !!sel.host && sel.host !== cb && !/Add a persona/.test(cb.innerHTML), 'in a box of its own, not over the title, with no Add', 'panel: ' + short(cb.innerHTML));
+    if (sel && typeof sel.more.pick === 'function') {
+      const cBefore = w.required.length;
+      sel.more.pick({ id: 'KA', label: 'Ada <the reviewer>' }, 'KA'); await settle();
+      ok(w.required.slice(cBefore).indexOf('shell/agent/chatPane.js') !== -1, 'a persona picked loads shell/agent/chatPane.js', 'required: ' + short(w.required.slice(cBefore)));
+      ok(chats.length === 1 && chats[0].into === wb.center && chats[0].opts.persona && chats[0].opts.persona.id === 'KA' && chats[0].opts.persona.label === 'Ada <the reviewer>',
+        'and opens the chat pane in the workBench\'s centre, for that persona', 'chat panes: ' + short(chats.map(function (c) { return { centre: c.into === wb.center, persona: c.opts.persona }; })));
+      sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
+      ok(chats.length === 2 && chats[0].destroyed === true && chats[1].opts.persona.id === 'KB', 'another persona picked opens its own chat in place of the first', 'chat panes: ' + short(chats.map(function (c) { return { id: c.opts.persona && c.opts.persona.id, destroyed: !!c.destroyed }; })));
+    }
+    global.window.spirit.elements.agentDetail = prevDetail;
+    delete global.window.spirit.elements.chatPane;
   }
 
   test.subHeading('the right strip\'s bundle editor (goal/G41.21)');

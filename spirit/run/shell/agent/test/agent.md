@@ -64,6 +64,19 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - **The Grants tool goes**: the left strip holds the app's tool and one per table, provider, model, persona and job; the
   app names no grants panel and no grant table.
 
+### 💬 Select Persona, and the chat it opens (goal/G41.26)
+
+Andy, box: *"the left site icon strip gains a [chat] icon, that opens the following, NEW panel, titled: \"💬 Select
+Persona\""*, *"this new panel, below the title contains, for now, only a personaSelector:pane."*, *"When the user clicks
+on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows up in the center pane of workBench"*.
+
+- The left strip holds one more tool beside the app's and the tables': icon 💬, title `Select Persona`.
+- Mounted, it loads the agent tables' element itself and draws its title row, 💬 Select Persona, then, in a box of its
+  own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), with the
+  app's api, and no Add.
+- A persona picked there loads `shell/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in the workBench's
+  centre, for that persona; another persona picked opens its own in place of the first.
+
 ## What its test must try to break
 
 - A title that shows the bug with only one of the two on.

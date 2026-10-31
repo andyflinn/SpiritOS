@@ -17,16 +17,13 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   the bundles label"*). The owner is drawn escaped, as the bundle names it, and never as an input: *"the owner field
   can never be changed after a bundle is added"*. The label is drawn escaped. Edit and Delete are buttons
   naming their action.
-- With `opts.editable`, the label is edited in place (Andy: *"[fieldInput:fieldRule:Label], displays and updates the
-  bundle's label"*):
-  - mounted, its label cell holds an input showing the label, a `fieldInput` held to the label's rule;
-  - Enter, or leaving the field, with a valid label asks `auth.bundle { op: 'set', id, label }`; the answer draws nothing
-    by itself (rule/19);
-  - an empty label, or one `fieldRules.js` refuses, asks nothing, and the input shows the label the table holds again;
-    so does one the node refuses.
+- **The label is shown only** (goal/G41.26, Andy: *"bundleSelector:pane mode the Label should now just be an output,
+  field: A bundles label is determined when it's added, and cannot be modified. This will protect family owned bundles
+  from having their label mutilated."*): mounted, with the old `editable` option or without it, the label cell shows the
+  label, escaped, and holds no input; the row asks the node no set, ever (there is none, `../../../../spirit/test/apiAuth.md`).
 - It repaints from the data set (goal/G41.14, Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that
   changes their data set"*): when `data.bundles/<its id>` changes, as it sets it from the node's stream, its label
-  repaints, the input with it; another bundle's row changes nothing.
+  repaints; another bundle's row changes nothing.
 - Delete is an `armingButton`; its second press asks `auth.bundle { op: 'delete', id }`.
 - Edit requires `shell/js/branchEditor.js`, then opens it on this bundle: `branchEditor.open({ bundle: id, label })`.
 

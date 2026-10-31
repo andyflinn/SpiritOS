@@ -44,15 +44,22 @@ test.startTest('persona/: the persona table');
   // Andy, box v22: "with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt".
   // goal/G41.21, Andy: "and where the fuck is my bundle field in persona-table and the fucking picker for a bundle with the
   // persona?"
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','persona','bundle'].forEach(function (c) {
+  // goal/G41.26, Andy, box: "agent.persona gains a provider field, it's detail provides the same provider-FUCKING-Selector
+  // in drop down mode, that the job detail panel provides for the agent.job.provider".
+  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','persona','bundle','provider'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the persona table has ' + c, 'columns: ' + short(cols));
   });
-  ok(cols.length === 8, 'and nothing else', 'columns: ' + short(cols));
+  ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
   {
     const pid = call(t.verb, { op: 'add', icon: '🎭', label: 'With a bundle', persona: 'p' }).id;
     call(t.verb, { op: 'set', id: pid, bundle: '7' });
     const got = call(t.verb, { op: 'get', id: pid });
     ok(got && String(got.bundle) === '7' && got.persona === 'p', 'a persona keeps its bundle, its text as it was', 'get: ' + short(got));
+    // A provider's id is a public key, as every row's is; the persona keeps it as the job keeps its own.
+    const P = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    call(t.verb, { op: 'set', id: pid, provider: P });
+    const withP = call(t.verb, { op: 'get', id: pid });
+    ok(withP && withP.provider === P && String(withP.bundle) === '7' && withP.persona === 'p', 'a persona keeps its provider, its bundle and text as they were (goal/G41.26)', 'get: ' + short(withP));
     call(t.verb, { op: 'delete', id: pid });
   }
 
@@ -131,8 +138,11 @@ test.startTest('persona/: the persona table');
   ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'it hands the editor the persona table\'s mandatory fields, [icon, label]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '🎭' && r.look.table === 'persona', 'its title row has the persona table\'s look', 'look: ' + short(r && r.look));
   // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
-  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind]; })) === JSON.stringify([['label', 'name'], ['persona', 'code'], ['bundle', 'bundle']]),
-    'its fields are the label, the persona in a CodeMirror editor, and its bundle by the bundle selector', 'fields: ' + short(r && r.fields));
+  // goal/G41.26: the provider by the providerSelector in dropdown mode, the same field the job's detail has
+  // (../../job/elementRow.js: { field: 'provider', kind: 'pick', pick: 'provider' }).
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['persona', 'code', ''], ['bundle', 'bundle', ''], ['provider', 'pick', 'provider']]),
+    'its fields are the label, the persona in a CodeMirror editor, its bundle by the bundle selector, and its provider by the providerSelector:dropdown, as the job\'s', 'fields: ' + short(r && r.fields));
+  ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'the provider is not mandatory, as the job\'s is not', 'required: ' + short(r && r.required));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('elementRow.js takes the persona table\'s rows from the stream itself (goal/G41.16)');
