@@ -1,4 +1,10 @@
 {
-  "description": "The node's bundles, each a named subset of the API, keyed by a number, each with an owner: \"node\" or the name of an app server. op add {label, owner?} answers {id}, owned by node when no owner, or an invalid one, is given; set {id, label} renames it, its owner never changes after the add; delete {id} removes it and every branch that names it; get {id} answers {id, label, owner}; search {text, owner?} answers {items, more}, an owner narrowing it to that owner's bundles. A label is never empty. Its branches are auth.branch's.",
-  "request": { "op": "", "id": 0, "label": "", "text": "", "owner": "" }
+  "description": "The node's bundles, each a named subset of the API, keyed by a number, each with an owner: \"node\" or the name of an app server. op add {label, owner?} answers {id}, owned by node when no owner, or an invalid one, is given; a bundle's label and owner are the add's and never change after; delete {id} removes it and every branch that names it; get {id} answers {id, label, owner}; search {text, owner?} answers {items, more}, an owner narrowing it to that owner's bundles. A label is never empty. Its branches are auth.branch's.",
+  "request": {
+    "op": "",
+    "id": 0,
+    "label": "",
+    "text": "",
+    "owner": ""
+  }
 }

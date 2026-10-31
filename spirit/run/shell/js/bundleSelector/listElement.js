@@ -3,13 +3,12 @@
 // elements, these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a
 // listElement.js and a rowElement.js script to fit within the probabilitySearch framework", "bundleSelector.js and
 // bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting bundle rows." The grants
-// app draws it as a dropdown; the bundle editor as a pane whose rows edit their label in place.
+// app draws it as a dropdown; the bundle editor as a pane, its labels shown only (goal/G41.26).
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's
 //     opts.columns   the row's fields it shows, in order, of label, owner, edit and delete; label and owner by default
 //     opts.family    an app server's name: it lists the bundles that server owns alone (goal/G41.25)
-//     opts.editable  each row edits its label in place (the editor's pane)
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
 // A VIEW OF data.bundles (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
@@ -56,7 +55,7 @@
       filters: family ? [{ name: 'owner', when: function () { return false; }, test: function (r) { return r && (r.owner || 'node') === family ? 1 : 0; } }] : [],
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.elements.bundleElement.create(row, { editable: o.editable === true, api: o.api });
+        return window.spirit.elements.bundleElement.create(row, { api: o.api });
       },
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").

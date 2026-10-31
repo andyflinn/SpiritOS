@@ -2,7 +2,7 @@
 // THE BUNDLES, MADE AND KEPT: a simple panel-type shell element (goal/G41.14). Andy, box: the "bundleEditor", "at the
 // top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]", "the
 // [add-Button] refused an empty or invalid label", and "filling the rest of the available vertical space: the
-// bundleSelector in pane-mode", its columns the label edited in place, Edit (the branch editor, a page of its own) and
+// bundleSelector in pane-mode", its columns the label (shown only since goal/G41.26), the owner, Edit (the branch editor, a page of its own) and
 // Delete (an armingButton). The grants app draws it in its Bundles tab ("the Grant app must use the bundleEditor in its
 // "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
 //
@@ -49,8 +49,8 @@
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
       box.appendChild(said);
-      // FILLING THE REST: the bundles, a pane whose labels are edited in place.
-      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], editable: true, api: o.api });
+      // FILLING THE REST: the bundles, a pane whose labels are shown only.
+      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], api: o.api });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }

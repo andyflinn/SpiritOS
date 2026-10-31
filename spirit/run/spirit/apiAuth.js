@@ -241,7 +241,6 @@ function createApiAuth(opts) {
     // to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review."), flat as
     // those are. auth.bundle:
     //   add {label}        answers { id }, the number the table gives it; a label never empty
-    //   set {id, label}    renames it, never to an empty label
     //   delete {id}        removes the bundle and every branch that names it; answers { id }
     //   get {id}           answers { id, label, owner }
     //   search {text, owner?}
@@ -250,10 +249,13 @@ function createApiAuth(opts) {
     // THE OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either \"node\"
     // (default), or the name of an appServer"; "the owner field can never be changed after a bundle is added"; "for
     // bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field
-    // with \"node\", incoming or outgoing"). Given at the add, never by a set; read as node wherever it is not valid.
+    // with \"node\", incoming or outgoing"). Given at the add, never changed after; read as node wherever it is not valid.
+    // NO SET (goal/G41.26; Andy, box: "A bundles label is determined when it's added, and cannot be modified. This will
+    // protect family owned bundles from having their label mutilated. the auth.bundle set op will be removed."): a
+    // bundle's label and owner are the add's; a set is refused bad-request.
     bundle: function (a) {
       const op = a && a.op;
-      if (BUNDLE_OPS.indexOf(op) === -1) return refuse('bad-request');
+      if (op === 'set' || BUNDLE_OPS.indexOf(op) === -1) return refuse('bad-request');
       const B = bundles();
       if (op === 'add') {
         if (!text(a.label)) return refuse('bad-request');
@@ -279,10 +281,7 @@ function createApiAuth(opts) {
         told({ table: 'bundle', row: { id: a.id }, gone: true });
         return { id: a.id };
       }
-      // set: the label, never an empty one; an owner it is given is left as the add made it.
-      if (a.label !== undefined && !text(a.label)) return refuse('bad-request');
-      if (a.label !== undefined) { B.set(a.id, a.label); told({ table: 'bundle', row: owned(B.get(a.id)) }); }
-      return { id: a.id };
+      return refuse('bad-request');
     },
 
     // auth.branch, a bundle's family, and one verb of it or all of it:

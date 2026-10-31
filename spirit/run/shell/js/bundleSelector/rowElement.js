@@ -3,11 +3,8 @@
 // bundle table, keyed by its hidden number; its fields label, owner, edit and delete. rowElement.js does the shared work; this
 // file says what a bundle is (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
 // updates, wherever they are used").
-// Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [fieldInput:fieldRule:Label], displays
-// and updates the bundle's label. Empty or invalid is refused. when pressing the Enter key, or leaving the field, the
-// bundle-label is updated is the label is valid (as in "add"), and if invalid, reverts to the value contained in the
-// db-table. 2. an edit button, leading to the branchEditor.js ... 3. a delete armingButton.js, deletes the "bundle" row
-// and all rows in the "branch" table that reference this bundle."
+// Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [the label] ... 2. an edit button, leading to the branchEditor.js ... 3. a delete armingButton.js, deletes the "bundle" row
+// and all rows in the "branch" table that reference this bundle." The label is shown only since goal/G41.26 (below).
 //
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 // their data set. and the SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the
@@ -18,12 +15,11 @@
 //
 //   bundleElement.create(row, opts) -> a rowElement of kind bundle
 //     row            { id, label, owner }, as auth.bundle answers it
-//     opts.editable  the label cell is an input that renames the bundle in place (the editor's pane); else drawn as text
 //     opts.api       the app's shell api, for the arming button's are-you-sure
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  var parts = Promise.all(['shell/js/rowElement.js', 'shell/js/fieldInput.js', 'shell/js/armingButton.js'].map(function (p) {
+  var parts = Promise.all(['shell/js/rowElement.js', 'shell/js/armingButton.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }));
 
@@ -69,21 +65,12 @@
     var f = window.spirit && spirit.escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  // The label's rule, the one definition both sides use (js/fieldRules.js): '' when it passes, else why not.
-  function labelWhy(text) {
-    var R = window.spirit.fieldRules || {};
-    var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();
-    if (!v) return { value: v, why: 'a bundle needs a label' };
-    var bad = typeof R.problem === 'function' ? R.problem(v) : '';
-    return { value: v, why: bad || '' };
-  }
   function ask(args) { return spirit.ready.then(function (s) { return s.auth.bundle(args); }); }
 
   function create(row, opts) {
     var o = opts || {};
     var r = row || {};
     var id = Number(r.id);
-    var input = null;
     var el = E.rowElement.create({
       kind: 'bundle',
       key: String(id),
@@ -108,53 +95,23 @@
         { name: 'delete', label: 'Delete', run: function (it) { return ask({ op: 'delete', id: it.row.id }); } },
       ],
     });
-    // A label the stream brought shows in the input too, when the row edits it in place.
-    var apply = el.apply;
-    el.apply = function (changes) {
-      apply(changes);
-      if (input && changes && 'label' in changes) input.value = el.row.label;
-    };
-
     var mount = el.mount;
     el.mount = function (hosts) {
       var h = hosts || {};
-      // Editable, the label cell is the input's, never repainted from the row.
-      mount(o.editable ? Object.assign({}, h, { label: null }) : h);
+      // THE LABEL IS SHOWN ONLY (goal/G41.26; Andy, box: "bundleSelector:pane mode the Label should now just be an output,
+      // field: A bundles label is determined when it's added, and cannot be modified"): painted from the row, no input.
+      mount(h);
       function controls() {
-        if (o.editable && h.label) labelInput(h.label);
         var edit = h.edit && typeof h.edit.querySelector === 'function' ? h.edit.querySelector('[data-action="edit"]') : null;
         if (edit) edit.addEventListener('click', function (e) { if (e && e.preventDefault) e.preventDefault(); el.act('edit', {}); });
         var del = h.delete && typeof h.delete.querySelector === 'function' ? h.delete.querySelector('[data-action="delete"]') : null;
         if (del) E.armingButton.attach(del, { label: 'Delete', api: o.api, run: function () { return el.act('delete', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the controls wait for them.
-      if (E.fieldInput && E.armingButton) controls(); else parts.then(controls);
+      if (E.armingButton) controls(); else parts.then(controls);
       return el;
     };
 
-    // THE LABEL, EDITED IN PLACE: held to the label's rule as it is typed (fieldInput), asked on Enter or on leaving the
-    // field, and put back to the table's label when the rule or the node refuses it. An answered rename shows when the
-    // stream brings it (el.apply above), never before.
-    function labelInput(host) {
-      host.innerHTML = '';
-      input = document.createElement('input');
-      input.type = 'text';
-      input.value = el.row.label;
-      E.fieldInput.attach(input, 'name');
-      host.appendChild(input);
-      function commit() {
-        var got = labelWhy(input.value);
-        if (got.why || got.value === el.row.label) { input.value = el.row.label; return Promise.resolve(null); }
-        return ask({ op: 'set', id: el.row.id, label: got.value }).then(null, function () { input.value = el.row.label; return null; });
-      }
-      input.addEventListener('keydown', function (e) {
-        if (!e || e.key !== 'Enter') return;
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        commit();
-      });
-      input.addEventListener('blur', function () { commit(); });
-      return input;
-    }
     return el;
   }
 

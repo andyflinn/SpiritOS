@@ -27,7 +27,10 @@
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'persona', label: 'Persona, given with every prompt', kind: 'code' },
     // goal/G41.21, box v19: the persona's bundle, by the bundle selector as the job's (Andy: "and where the fuck is my bundle
     // field in persona-table and the fucking picker for a bundle with the persona?").
-    { field: 'bundle', label: 'Bundle', kind: 'bundle' }];
+    { field: 'bundle', label: 'Bundle', kind: 'bundle' },
+    // goal/G41.26: its provider by the providerSelector:dropdown, as the job detail's (Andy, box: "it's detail provides the
+    // same provider-FUCKING-Selector in drop down mode, that the job detail panel provides for the agent.job.provider").
+    { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' }];
   E.personaRow = {
     create: function (container, api, id, added, detail) {
       var made = null;

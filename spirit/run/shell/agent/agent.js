@@ -102,7 +102,29 @@
               window.spirit.elements[t.name + 'Table'].create(box, api, detail);
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
-        })),
+        })).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
+          // 💬 SELECT PERSONA (goal/G41.26; Andy, box: "the left site icon strip gains a [chat] icon, that opens the
+          // following, NEW panel, titled: \"💬 Select Persona\"", "this new panel, below the title contains, for now, only a
+          // personaSelector:pane", and "When the user clicks on a persona in the left hand \"💬 Select Persona\" pane, the chat
+          // pane shows up in the center pane of workBench"). The personaSelector:pane is the persona table's search in pane
+          // mode (rule/29), the agent tables' own; a persona picked opens its chat in the centre, in place of what was there.
+          box.className = 'fill';
+          Promise.resolve(spirit.require('process/js/agent/table/tableElement.js')).then(function () {
+            var D = window.spirit.elements.agentDetail;
+            box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
+            D.search(box.querySelector('#agent-personas'), { api: api, table: 'persona' }, { face: 'pane', pick: function (row, key) {
+              var picked = { id: String((row && row.id) || key || ''), label: String((row && row.label) || '') };
+              detail.open(function (centre) {
+                var pane = null;
+                var closed = false;
+                Promise.resolve(spirit.require('shell/agent/chatPane.js')).then(function () {
+                  if (!closed) pane = window.spirit.elements.chatPane.create(centre, { persona: picked });
+                });
+                return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
+              });
+            } });
+          }, function () { box.textContent = 'The persona table could not be loaded.'; });
+        } }]),
         right: [{ name: 'server', icon: '🐞', title: 'The agent server', mount: function (box) {
           serverBox = box;
           box.innerHTML = '<label><input type="checkbox"' + (debug ? ' checked' : '') + '> DEBUG on the agent server</label>';

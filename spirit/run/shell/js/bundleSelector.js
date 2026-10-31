@@ -13,7 +13,7 @@
 //     root.row     the chosen bundle, { id, label }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again
 //     options.face       'pane' is the list itself; the default is the dropdown
-//     options.columns    the list's fields, of label, owner, edit and delete; options.editable: rows rename in place
+//     options.columns    the list's fields, of label, owner, edit and delete
 //     options.family     an app server's name: only the bundles it owns are listed (goal/G41.25)
 //     options.placeholder, options.all, options.api, options.empty   handed to the list
 (function () {
@@ -40,7 +40,6 @@
         all: isPane ? undefined : options.all,
         columns: options.columns,
         family: options.family,
-        editable: options.editable === true,
         api: options.api,
         empty: options.empty,
         pick: function (row) { pick(row); },
