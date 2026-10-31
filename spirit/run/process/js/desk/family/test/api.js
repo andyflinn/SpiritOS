@@ -45,7 +45,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
     });
   });
   ok(badRule.length === 0, 'every rule is one of spirit.js\'s standard (' + spirit.rules.join(', ') + '), \'?\' optional', 'unknown rules: ' + short(badRule));
-  ok(names.indexOf('DEBUG') === -1 && names.indexOf('DEPENDENCIES') === -1, 'DEBUG and DEPENDENCIES are appServer\'s, not listed', 'listed: ' + short(names.filter(function (v) { return /^(DEBUG|DEPENDENCIES)$/.test(v); })));
+  ok(names.indexOf('DEBUG') === -1, 'DEBUG is appServer\'s, not listed', 'listed: ' + short(names.filter(function (v) { return v === 'DEBUG'; })));
 
   test.subHeading('every verb it lists is one the server serves');
   const source = ['process/js/desk/desk.js', 'process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js', 'spirit/appServer.js']

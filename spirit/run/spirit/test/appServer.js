@@ -211,6 +211,16 @@ function runChild(mode, name, fam) {
 function clearCache(name) { try { fs.rmSync(path.join(RUN, 'relay-state', 'process', name), { recursive: true, force: true }); } catch (e) { /* none */ } }
 
 // ── the tree: one family path, eight folders (box v15, Family folders) ─────────────────────────────────────────────
+function jsonFiles(dir, out) {
+  let names = [];
+  try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
+  names.forEach(function (d) {
+    const p = path.join(dir, d.name);
+    if (d.isDirectory()) jsonFiles(p, out);
+    else if (/\.json$/.test(d.name)) out.push(p);
+  });
+  return out;
+}
 function codeFiles(dir, out) {
   let names = [];
   try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
@@ -250,6 +260,68 @@ if (CHILD) {
       return /\.family(?=['"`\/\\]|$)/m.test(t) || /(^|[^\\])\/?family\/api\.js/.test(t) || /join\([^)]*['"`]family['"`]\s*[),]/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
     ok(writers.length === 0, 'no file outside appServer\'s familyPath writes a family path', writers.length + ' files write one: ' + writers.join(', '));
+
+    test.subHeading('goal/G41.24: DEPENDENCIES is gone');
+    // Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
+    // itself." No code file names the verb or hands serve() a dependencies list; this file names it to look for it.
+    // The goal file the desk writes is his record, his box words in it, not code.
+    const CURRENT_GOAL = path.join(RUN, 'process', 'js', 'desk', 'currentGoal.json');
+    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'process', 'js', 'desk'), [])).filter(function (f) { return f !== SELF_FILE && f !== CURRENT_GOAL; }).filter(function (f) {
+      const t = fs.readFileSync(f, 'utf8');
+      return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
+    }).map(function (f) { return path.relative(RUN, f); });
+    ok(named.length === 0, 'no code file, and nothing in the desk folder, names DEPENDENCIES or hands serve() a dependencies list', named.length + ' still do: ' + named.join(', '));
+
+    test.subHeading('goal/G41.24: the appServers\' Bundles.json');
+    // Andy, box: "desk, deskClient, agent, deskVerify will receive their
+    // \"process/js/<appServerName>/<appServerName>Bundles.json.\" files", and "the bundles":
+    //   "desk: \"deskAgent\", \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no
+    //    rule.*, and no user-presses. the remoteUser gets all verbs except FS.*"
+    //   "deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")"
+    //   "deskClient: \"deskServer\", only the verbs desk currently uses."
+    //   "agent: \"remoteUser\" the full agent family, minus FS.*"
+    // A row is { label, branches: [{ family, verb }] } (spirit/test/apiAuth.md); a verb '' is the whole family, FS.* with it.
+    const bundlesOf = function (app) { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', app, app + 'Bundles.json'), 'utf8')); } catch (e) { return null; } };
+    const familyVerbs = function (app) { try { return Object.keys(require(path.join(RUN, 'process', 'js', app, 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
+    // What a row reaches, as verbs of one family: a whole-family branch reaches its FS.* verbs too (introSpector.js).
+    const reach = function (row, fam) {
+      const out = [];
+      ((row && Array.isArray(row.branches)) ? row.branches : []).forEach(function (b) {
+        if (!b || b.family !== fam) { out.push((b && b.family) + '.' + (b && b.verb)); return; }
+        if (!b.verb) out.push.apply(out, familyVerbs(fam).concat(['FS.*']));
+        else out.push(b.verb);
+      });
+      return out.filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
+    };
+    const rowOk = function (row) { return !!row && typeof row.label === 'string' && row.label.trim() !== '' && !('owner' in row) && Array.isArray(row.branches); };
+    const deskB = bundlesOf('desk');
+    const DESK = familyVerbs('desk');
+    ok(!!deskB && JSON.stringify(Object.keys(deskB).sort()) === '["deskAgent","remoteUser"]' && rowOk(deskB.deskAgent) && rowOk(deskB.remoteUser),
+      'process/js/desk/deskBundles.json holds deskAgent and remoteUser, each a row with a label, no owner, and its branches', 'deskBundles.json: ' + short(deskB));
+    const dRemote = reach(deskB && deskB.remoteUser, 'desk');
+    ok(DESK.length > 0 && JSON.stringify(dRemote) === JSON.stringify(DESK), 'desk\'s remoteUser gets every desk verb, and no FS.*', 'reaches ' + short(dRemote));
+    const dAgent = reach(deskB && deskB.deskAgent, 'desk');
+    // His presses (box: "desk user presses are: 'Done', 'Close', 'Reopen' 'Start|End design', 'Verify', 'Delete' and
+    // 'Abandon'"): Delete is the verb item.delete; the others are values of press, the verb the agents' own presses
+    // (claim-done, design-complete, bring-back) go through too, and refused to an agent by the desk itself
+    // (OWNER_PRESSES). A branch is a whole verb, so press stays in and item.delete goes.
+    const NOT_AGENT = function (v) { return /^FS\./.test(v) || v === 'FS.*' || /^item\.rules\./.test(v) || /^rule\./.test(v) || v === 'item.delete'; };
+    // Q5, Andy: "just do the ones named in the box.": rule.* is rule.add, rule.draft, rule.get and rule.version;
+    // rules.search is not among them, so it stays.
+    const ASKED = [];
+    const wantAgent = DESK.filter(function (v) { return !NOT_AGENT(v) && ASKED.indexOf(v) === -1; });
+    ok(DESK.length > 0 && dAgent.length > 0 && !dAgent.some(NOT_AGENT) && wantAgent.every(function (v) { return dAgent.indexOf(v) !== -1; }) && dAgent.every(function (v) { return DESK.indexOf(v) !== -1; }),
+      'desk\'s deskAgent gets the desk verbs but FS.*, item.rules.*, rule.* and his Delete (item.delete); press stays, its presses of his refused by the desk', 'reaches ' + short(dAgent) + '; missing ' + short(wantAgent.filter(function (v) { return dAgent.indexOf(v) === -1; })) + '; refused in it ' + short(dAgent.filter(NOT_AGENT)));
+    const vB = bundlesOf('deskVerify');
+    ok(!!vB && JSON.stringify(Object.keys(vB).sort()) === '["deskAgent","remoteUser"]' && ['deskAgent', 'remoteUser'].every(function (k) { return rowOk(vB[k]) && JSON.stringify(reach(vB[k], 'deskVerify')) === '["search"]'; }),
+      'process/js/deskVerify/deskVerifyBundles.json: deskAgent and remoteUser, both only search', 'deskVerifyBundles.json: ' + short(vB));
+    const cB = bundlesOf('deskClient');
+    ok(!!cB && JSON.stringify(Object.keys(cB)) === '["deskServer"]' && rowOk(cB.deskServer) && JSON.stringify(reach(cB.deskServer, 'deskClient')) === '["streamListener"]',
+      'process/js/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
+    const aB = bundlesOf('agent');
+    const AGENT = familyVerbs('agent');
+    ok(!!aB && JSON.stringify(Object.keys(aB)) === '["remoteUser"]' && rowOk(aB.remoteUser) && AGENT.length > 0 && JSON.stringify(reach(aB.remoteUser, 'agent')) === JSON.stringify(AGENT),
+      'process/js/agent/agentBundles.json: remoteUser, the full agent family minus FS.*', 'agentBundles.json: ' + short(aB) + ', reaches ' + short(reach(aB && aB.remoteUser, 'agent')));
 
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');

@@ -254,6 +254,84 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok(fromBefore.label === 'From before' && fromBefore.owner === 'node', 'opened on a node.db from before the owner, its bundles are there, each owned by "node"', 'get: ' + short(fromBefore));
   try { fs.rmSync(oldRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
+  test.subHeading('goal/G41.24: each appServer\'s bundles, written at the node\'s boot');
+  // Andy, box: "each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json", "this json file at
+  // it's root has one key for each bundle ... and the objects held those keys, contain the value for one bundle \"row\",
+  // without \"owner\" name, and all required branch rows", "the apiAuth.js module, when the node boots, will check for all
+  // valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the auth.bundle and auth.branch,
+  // adding new verbs, when needed, and deleting verbs, if they are no longer in the ... file, always using/asserting the
+  // server <appServerName> as \"owner\"", "when apiAuth.js adds a bundle for the first time, it stores its key in the
+  // appServers state file relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\"",
+  // "if a USER deletes a bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same
+  // key that was used before", and "if a key is deleted from an ... file, apiAuth.js will delete that key from auth.bundle
+  // AND all its rows in auth.branch."
+  // The boot is createApiAuth on the node's root, as server.js makes it; the appServers are its process/js/ folders.
+  // The row's shape (./apiAuth.md): { label, branches: [{ family, verb }] }, the branch rows auth.branch keeps.
+  const bootRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-boot-'));
+  const APPS = path.join(bootRoot, 'process', 'js');
+  const writeBundles = function (app, obj) {
+    fs.mkdirSync(path.join(APPS, app), { recursive: true });
+    fs.writeFileSync(path.join(APPS, app, app + 'Bundles.json'), typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2));
+  };
+  const stateOf = function (app) { return readJson(path.join(bootRoot, 'relay-state', 'process', app, 'bundles.json')); };
+  // probe is an appServer the live tree does not serve yet: at the node's boot no appServer runs.
+  const bootTree = { files: { read: {}, list: {} }, desk: { 'chat.add': {}, 'item.get': {} } };
+  const boot = function () { return createApiAuth({ rootDir: bootRoot, tree: function () { return Promise.resolve(bootTree); } }); };
+  const ownedBy = async function (a, app) { return ((await call(a, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(function (x) { return x && x.owner === app; }); };
+  const branchesOf = async function (a, id) { return ((await call(a, 'branch', { op: 'search', text: '', bundle: id })).items || []).map(parsed).map(function (b) { return b.family + '.' + b.verb; }).sort(); };
+  const settleBoot = async function () { for (let i = 0; i < 50; i++) await new Promise(function (r) { setImmediate(r); }); await new Promise(function (r) { setTimeout(r, 100); }); };
+  writeBundles('probe', {
+    probeAgent: { label: 'Probe agent', owner: 'someone else', branches: [{ family: 'probe', verb: 'ping' }, { family: 'files', verb: 'read' }] },
+    probeUser: { label: 'Probe user', branches: [{ family: 'probe', verb: 'ping' }] },
+  });
+  fs.mkdirSync(path.join(APPS, 'plain'), { recursive: true });
+  writeBundles('broken', '{ this is not json');
+  let a1 = boot(); await settleBoot();
+  let mine1 = await ownedBy(a1, 'probe');
+  const agentRow = mine1.filter(function (x) { return x.label === 'Probe agent'; })[0];
+  const userRow = mine1.filter(function (x) { return x.label === 'Probe user'; })[0];
+  ok(mine1.length === 2 && !!agentRow && !!userRow, 'at boot, each key of process/js/<appServerName>/<appServerName>Bundles.json is a bundle of auth.bundle, its label the row\'s', 'probe owns: ' + short(mine1));
+  ok(!!agentRow && agentRow.owner === 'probe' && (await ownedBy(a1, 'someone else')).length === 0, 'owned by the appServer, <appServerName>, whatever owner the row names', 'row: ' + short(agentRow));
+  ok(!!agentRow && JSON.stringify(await branchesOf(a1, agentRow.id)) === JSON.stringify(['files.read', 'probe.ping']), 'with its branch rows, the appServer\'s own verbs among them though it is not served yet', 'branches: ' + short(agentRow && await branchesOf(a1, agentRow.id)));
+  // The rest asks of these two, so a boot that made neither fails each check instead of stopping the test.
+  const AID = agentRow ? AID : -1;
+  const UID = userRow ? UID : -1;
+  const st1 = stateOf('probe');
+  ok(!!st1 && !!agentRow && !!userRow && st1.probeAgent && st1.probeAgent.id === AID && st1.probeAgent.label === 'Probe agent' && st1.probeUser && st1.probeUser.id === UID && st1.probeUser.label === 'Probe user',
+    'and each key kept in relay-state/process/<appServerName>/bundles.json with its bundle\'s id and the same label', 'state: ' + short(st1));
+  ok((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).every(function (x) { return x.owner !== 'plain' && x.owner !== 'broken'; }) && stateOf('broken') === null,
+    'an appServer with no Bundles.json, or one that is not valid, gets nothing, and the others are written all the same', 'owners: ' + short((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).map(function (x) { return x.owner; })));
+  // A bundle the editor added for that appServer (goal/G41.25) is the user's: no key of the file names it.
+  const byEditor = await call(a1, 'bundle', { op: 'add', label: 'Made in the editor', owner: 'probe' });
+  await call(a1, 'branch', { op: 'add', bundle: byEditor.id, family: 'files', verb: 'list' });
+
+  const a2 = boot(); await settleBoot();
+  const mine2 = await ownedBy(a2, 'probe');
+  ok(mine2.filter(function (x) { return x.label === 'Probe agent'; }).length === 1 && mine2.filter(function (x) { return x.label === 'Probe user'; }).length === 1 && JSON.stringify(stateOf('probe')) === JSON.stringify(st1),
+    'booted again on the same file, nothing is added twice: the kept key is the bundle', 'probe owns: ' + short(mine2) + ', state ' + short(stateOf('probe')));
+
+  writeBundles('probe', {
+    probeAgent: { label: 'Probe agent', branches: [{ family: 'probe', verb: 'ping' }, { family: 'probe', verb: 'pong' }] },
+  });
+  await call(a2, 'bundle', { op: 'delete', id: UID });
+  const a3 = boot(); await settleBoot();
+  const mine3 = await ownedBy(a3, 'probe');
+  ok(JSON.stringify(await branchesOf(a3, AID)) === JSON.stringify(['probe.ping', 'probe.pong']), 'a verb added to a key is added, a verb no longer in it is deleted, the same bundle', 'branches: ' + short(await branchesOf(a3, AID)));
+  ok(mine3.filter(function (x) { return x.label === 'Probe user'; }).length === 0 && !('probeUser' in (stateOf('probe') || {})),
+    'a key taken out of the file: its bundle goes from auth.bundle, and from the state file', 'probe owns: ' + short(mine3) + ', state ' + short(stateOf('probe')));
+  ok(((await call(a3, 'branch', { op: 'search', text: '' })).items || []).map(parsed).every(function (b) { return b.bundle !== UID; }), 'and all its rows in auth.branch', 'branches left: ' + short(((await call(a3, 'branch', { op: 'search', text: '' })).items || []).map(parsed).filter(function (b) { return b.bundle === UID; })));
+  ok((await call(a3, 'bundle', { op: 'get', id: byEditor.id })).label === 'Made in the editor' && JSON.stringify(await branchesOf(a3, byEditor.id)) === JSON.stringify(['files.list']),
+    'a bundle the user added for that appServer, kept under no key, is left as it was', 'editor\'s: ' + short(await call(a3, 'bundle', { op: 'get', id: byEditor.id })));
+
+  // A USER deletes the appServer's bundle: the next boot makes it again under the same key.
+  await call(a3, 'bundle', { op: 'delete', id: AID });
+  const a4 = boot(); await settleBoot();
+  const again4 = (await ownedBy(a4, 'probe')).filter(function (x) { return x.label === 'Probe agent'; });
+  const st4 = stateOf('probe');
+  ok(again4.length === 1 && again4[0].id !== AID && !!st4 && st4.probeAgent && st4.probeAgent.id === again4[0].id && JSON.stringify(await branchesOf(a4, again4[0].id)) === JSON.stringify(['probe.ping', 'probe.pong']),
+    'a bundle of the appServer\'s that the user deleted is made again at the next boot, its new id kept under the same key', 'probe owns: ' + short(again4) + ', state ' + short(st4));
+  try { fs.rmSync(bootRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
   ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Lister' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,

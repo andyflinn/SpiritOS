@@ -27,7 +27,7 @@ function node(tag) {
   return n;
 }
 
-const TREE = { fs: { search: {}, loadFile: {}, DEBUG: {}, DEPENDENCIES: {} }, jobs: { list: {} } };
+const TREE = { fs: { search: {}, loadFile: {}, DEBUG: {} }, jobs: { list: {} } };
 
 test.startTest('apiVerbSelector.js: the verb dropdown');
 
@@ -78,7 +78,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   test.subHeading('one server\'s verbs');
   ok(verbs.hidden === true && rows().length === 0, 'with no server it is hidden and lists nothing', 'hidden ' + verbs.hidden + ', rows ' + short(rows()));
   verbs.show(TREE, 'fs');
-  ok(verbs.hidden === false && short(rows()) === short(['loadFile', 'search']), 'show(tree, server) lists that server\'s verbs, DEBUG and DEPENDENCIES never', 'hidden ' + verbs.hidden + ', rows ' + short(rows()));
+  ok(verbs.hidden === false && short(rows()) === short(['loadFile', 'search']), 'show(tree, server) lists that server\'s verbs, DEBUG never', 'hidden ' + verbs.hidden + ', rows ' + short(rows()));
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   ok(verbs.value === 'search' && seen[seen.length - 1] === 'search', 'a pick sets its value and fires change', 'value ' + verbs.value + ', seen ' + short(seen));
   l.opts.pick(null, '');

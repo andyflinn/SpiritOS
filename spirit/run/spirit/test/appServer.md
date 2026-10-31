@@ -68,6 +68,25 @@ stream"); Desk and deskClient move onto it.
 - A subscribe follows the publisher's key and asks its family to subscribe this server; the first push lands in the
   data set.
 
+### goal/G41.24: no DEPENDENCIES, and the appServers' Bundles.json
+
+- Andy, box: *"DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
+  itself."* No code file, and no json of the desk folder, names DEPENDENCIES or hands `serve()` a dependencies list.
+  The goal file the desk writes, `currentGoal.json`, holds his box words and is not code.
+- Andy, box, *"the bundles"*. Each file is `process/js/<appServerName>/<appServerName>Bundles.json`, a row
+  `{ label, branches }` (`./apiAuth.md`), no owner; a branch with verb `''` reaches the whole family, its FS.* with it.
+  - desk: `deskAgent` and `remoteUser`. *"the remoteUser gets all verbs except FS.*"*: every verb of the desk family
+    (`process/js/desk/family/api.js`), no FS.*. *"desk agent gets mostly full access, but no FS.* verbs, no
+    item.rules.*, no rule.*, and no user-presses"*: every desk verb but those. His presses (*"'Done', 'Close',
+    'Reopen' 'Start|End design', 'Verify', 'Delete' and 'Abandon'"*): Delete is `item.delete`, left out; the others are
+    values of `press`, which the agents' own presses (claim-done, design-complete, bring-back) go through too and which
+    the desk refuses to an agent for his (`OWNER_PRESSES`, desk.js), so `press` stays. Q5, Andy: *"just do the ones named in the
+    box."*: `rule.*` is the verbs named `rule.`, so `rules.search` stays.
+  - deskVerify: `deskAgent` and `remoteUser`, *"both get only \"search\""*.
+  - deskClient: `deskServer`, *"only the verbs desk currently uses"*: `streamListener`, the one deskClient verb desk
+    reaches, through its stream.
+  - agent: `remoteUser`, *"the full agent family, minus FS.*"*: every verb of `process/js/agent/family/api.js`.
+
 ## Not asserted yet, and why
 
 - **The client's query of its cache through the family api.js, and `includeServer`**, and **the client bundling its

@@ -71,6 +71,34 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 Who may call the two verbs is the gate's: the owner, and whoever the owner grants them (Andy: *"can only be the node
 owner, until the node owner grants access to those tables to someone else"*). That is `spirit/test/apiGate.js`.
 
+### Each appServer's bundles, at the node's boot (goal/G41.24)
+
+Andy, box: *"each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json"*; *"this json file at it's
+root has one key for each bundle ... and the objects held those keys, contain the value for one bundle \"row\", without
+\"owner\" name, and all required branch rows"*; *"the apiAuth.js module, when the node boots, will check for all valid
+... files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no
+longer in the ... file, always using/asserting the server <appServerName> as \"owner\""*; *"when apiAuth.js adds a
+bundle for the first time, it stores its key in the appServers state file
+relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\""*; *"if a USER deletes a
+bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used
+before"*; *"if a key is deleted from an ... file, apiAuth.js will delete that key from auth.bundle AND all its rows in
+auth.branch."*
+
+- The boot is `createApiAuth({ rootDir })`, as the node makes it; each folder of `process/js/` is an appServer.
+- A row of `<appServerName>Bundles.json` is `{ label, branches: [{ family, verb }] }` (the shape is the red writer's,
+  open to Andy's change): the bundle's label, and its branch rows as `auth.branch` keeps them, a verb `''` all of the
+  family.
+- At boot, each key is a bundle owned by `<appServerName>`, whatever owner a row names, with exactly its branches. The
+  appServer's own verbs are written though no appServer is served yet at the node's boot.
+- The state file `relay-state/process/<appServerName>/bundles.json` keeps each key as `{ id, label }`: the bundle's id
+  and the same label.
+- Booted again: a kept key is its bundle, so nothing is added twice; a verb added to the key is added, one taken out is
+  deleted, the bundle the same.
+- A key taken out of the file: its bundle and all its branch rows are deleted, and the key leaves the state file.
+- A bundle of the appServer's that a user deleted is made again at the next boot, its new id kept under the same key.
+- A bundle the user added for that appServer (the editor mounted for it, goal/G41.25) is under no key and left as it is.
+- A folder with no Bundles.json, or one that is not valid JSON, gets nothing; the others are written all the same.
+
 ## What its test must try to break
 
 - A change, or a grant, not told; a refused one told.
@@ -82,3 +110,5 @@ owner, until the node owner grants access to those tables to someone else"*). Th
 - The old tables still made.
 - An owner changed by a set; an invalid owner stored or answered; a bundle from before with no owner; a search by owner
   that lets another owner's bundle through.
+- A boot that adds a kept key twice, keeps a branch the file dropped, leaves a dropped key's bundle or branches, takes
+  the owner a row names, touches a user's bundle, or stops at a file that is not valid.

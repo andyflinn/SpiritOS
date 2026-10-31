@@ -18,8 +18,8 @@ NEEDs the family selector to have any meaning at all."*). Its test is `./apiFami
   unchosen.
 - Its root carries `family`, `verb` and `value`:
   - nothing chosen: all three `''`, the verb half hidden;
-  - a family picked: `family` is it, `verb` `''`, `value` the family; the verb half shows that family's verbs, DEBUG and
-    DEPENDENCIES never;
+  - a family picked: `family` is it, `verb` `''`, `value` the family; the verb half shows that family's verbs, DEBUG never
+    (DEPENDENCIES is gone, goal/G41.24);
   - a verb picked: `verb` is it, `value` is `family.verb`;
   - All Verbs: `verb` `''`, `value` the family again;
   - another family clears the verb and lists its own verbs.
