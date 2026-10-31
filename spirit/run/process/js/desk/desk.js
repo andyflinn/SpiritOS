@@ -4004,10 +4004,6 @@ appServer.serve(withPlugins({
 // goal/G22.3: the table closes here, and withPlugins hands every verb of it to the plugins first.
 }),
 
-// The bundle a peer user needs (apiAuth/G1.10, DEPENDENCIES): the agents'
-// protocol spans most of this table — searches, reads, writes, presses,
-// changes — so the minimum is the app itself, one app-level grant-shape.
-//
 // ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
 //
 // These four were defined in the shared register, which the node and the
@@ -4018,7 +4014,7 @@ appServer.serve(withPlugins({
 // themselves are unchanged, so nothing on the wire moved.
 // goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
 // no opts.stream: the desk follows no stream (box v42).
-{ dependencies: ['desk'], publisher: { family: 'deskClient', bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
+{ publisher: { family: 'deskClient', bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

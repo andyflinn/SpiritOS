@@ -167,7 +167,7 @@ function createAppServer(verbs, opts) {
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
   // Verbs born after start (fileTransfer goal/G1.3): a hash-verb appears when
   // a file lands and goes when it is deleted. Only these may be dropped — a
-  // fixed verb, DEBUG or DEPENDENCIES never leaves a running server.
+  // fixed verb or DEBUG never leaves a running server.
   const runtime = Object.create(null);
 
   // One request body, already parsed, to { status, body }. `caller` is
@@ -339,40 +339,6 @@ function withDebug(verbs) {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
     handler: function (a) { return { debug: spirit.debug(typeof a.on === 'boolean' ? a.on : undefined) }; },
-  };
-  return all;
-}
-
-// DEPENDENCIES — apiAuth/G1.10. Andy: "an app knows it's requirements, it
-// must provide owners with the bundle-info in an owner-only verb
-// dependencies which returns a list ofminimum api-tree-paths, a peer user
-// requires.", "dependencies format: a list of grant-shapes consisten of
-// 'appname.verb'", "the server hard-codes that reply internaly". The
-// server hands serve() its list; this builds the verb from it, as DEBUG
-// is built. Owner-only is the gate's business (apiAuth/G1.2, apiDoor.js:
-// a member asking it is refused not-owner by name).
-const DEP_PATH = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
-
-function checkDependencies(paths) {
-  const list = paths == null ? [] : paths;
-  if (!Array.isArray(list)) throw new Error('appServer: dependencies must be a list of api-tree-paths');
-  list.forEach(function (p) {
-    // A malformed path stops the start, by name: a bundle nobody can
-    // grant is a bug in the server, not a row for the owner to puzzle at.
-    if (typeof p !== 'string' || !DEP_PATH.test(p)) {
-      throw new Error('appServer: dependency "' + String(p) + '" is not an api-tree-path (app or app.verb)');
-    }
-  });
-  return list.slice();
-}
-
-function withDependencies(verbs, paths) {
-  if (Object.prototype.hasOwnProperty.call(verbs, 'DEPENDENCIES')) return verbs;
-  const list = checkDependencies(paths);
-  const all = Object.assign({}, verbs);
-  all.DEPENDENCIES = {
-    request: {}, reply: { paths: [''] },
-    handler: function () { return { paths: list.slice() }; },
   };
   return all;
 }
@@ -804,17 +770,16 @@ function serve(verbs, opts) {
     process.exit(2);
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
-  // A malformed dependency stops the start, by name (apiAuth/G1.10): the
-  // throw lands before anything listens, and the exit says why.
+  // A malformed declaration stops the start, by name: the throw lands
+  // before anything listens, and the exit says why.
   // goal/G33.4: the stream a server follows, if it follows one (withStreamListener).
   const followed = new Set();
   // THE NAME FIRST, because this server's own codes wear it (goal/G16.11), and its cache folder is named by it
-  // (goal/G41.12); the declaration lands before anything listens so a malformed one stops the start the way a malformed
-  // dependency does.
+  // (goal/G41.12); the declaration lands before anything listens so a malformed one stops the start.
   const name = path.basename(String(argv[1] || 'server'), '.js');
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
-    verbs = withDependencies(withDebug(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), opts && opts.publisher), argv[1])), opts && opts.dependencies);
+    verbs = withDebug(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), opts && opts.publisher), argv[1]));
   } catch (e) {
     console.error(e.message);
     process.exit(2);

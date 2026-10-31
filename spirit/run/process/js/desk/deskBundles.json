@@ -1,0 +1,528 @@
+{
+  "deskAgent": {
+    "label": "deskAgent",
+    "branches": [
+      {
+        "family": "desk",
+        "verb": "agent.state"
+      },
+      {
+        "family": "desk",
+        "verb": "agents.search"
+      },
+      {
+        "family": "desk",
+        "verb": "block"
+      },
+      {
+        "family": "desk",
+        "verb": "block.targets"
+      },
+      {
+        "family": "desk",
+        "verb": "box.release"
+      },
+      {
+        "family": "desk",
+        "verb": "box.take"
+      },
+      {
+        "family": "desk",
+        "verb": "box.write"
+      },
+      {
+        "family": "desk",
+        "verb": "chat.add"
+      },
+      {
+        "family": "desk",
+        "verb": "chat.search"
+      },
+      {
+        "family": "desk",
+        "verb": "check.add"
+      },
+      {
+        "family": "desk",
+        "verb": "check.set"
+      },
+      {
+        "family": "desk",
+        "verb": "claim"
+      },
+      {
+        "family": "desk",
+        "verb": "goal.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.box"
+      },
+      {
+        "family": "desk",
+        "verb": "item.box.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.chat"
+      },
+      {
+        "family": "desk",
+        "verb": "item.checks"
+      },
+      {
+        "family": "desk",
+        "verb": "item.checks.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.claims.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.get"
+      },
+      {
+        "family": "desk",
+        "verb": "item.release"
+      },
+      {
+        "family": "desk",
+        "verb": "item.rename"
+      },
+      {
+        "family": "desk",
+        "verb": "item.status"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.take"
+      },
+      {
+        "family": "desk",
+        "verb": "items.search"
+      },
+      {
+        "family": "desk",
+        "verb": "line.take"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.done"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.may"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.take"
+      },
+      {
+        "family": "desk",
+        "verb": "press"
+      },
+      {
+        "family": "desk",
+        "verb": "profile.get"
+      },
+      {
+        "family": "desk",
+        "verb": "profile.set"
+      },
+      {
+        "family": "desk",
+        "verb": "pushgoal"
+      },
+      {
+        "family": "desk",
+        "verb": "rules.search"
+      },
+      {
+        "family": "desk",
+        "verb": "seen.get"
+      },
+      {
+        "family": "desk",
+        "verb": "seen.set"
+      },
+      {
+        "family": "desk",
+        "verb": "signoff"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.door"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.doors.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.make"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.add"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.run"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.runState"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.add"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.update"
+      },
+      {
+        "family": "desk",
+        "verb": "subscribe"
+      },
+      {
+        "family": "desk",
+        "verb": "unblock"
+      },
+      {
+        "family": "desk",
+        "verb": "unsubscribe"
+      },
+      {
+        "family": "desk",
+        "verb": "work.open"
+      }
+    ]
+  },
+  "remoteUser": {
+    "label": "remoteUser",
+    "branches": [
+      {
+        "family": "desk",
+        "verb": "agent.state"
+      },
+      {
+        "family": "desk",
+        "verb": "agents.search"
+      },
+      {
+        "family": "desk",
+        "verb": "block"
+      },
+      {
+        "family": "desk",
+        "verb": "block.targets"
+      },
+      {
+        "family": "desk",
+        "verb": "box.release"
+      },
+      {
+        "family": "desk",
+        "verb": "box.take"
+      },
+      {
+        "family": "desk",
+        "verb": "box.write"
+      },
+      {
+        "family": "desk",
+        "verb": "chat.add"
+      },
+      {
+        "family": "desk",
+        "verb": "chat.search"
+      },
+      {
+        "family": "desk",
+        "verb": "check.add"
+      },
+      {
+        "family": "desk",
+        "verb": "check.set"
+      },
+      {
+        "family": "desk",
+        "verb": "claim"
+      },
+      {
+        "family": "desk",
+        "verb": "goal.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.box"
+      },
+      {
+        "family": "desk",
+        "verb": "item.box.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.chat"
+      },
+      {
+        "family": "desk",
+        "verb": "item.checks"
+      },
+      {
+        "family": "desk",
+        "verb": "item.checks.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.claims.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.delete"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "item.files.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.get"
+      },
+      {
+        "family": "desk",
+        "verb": "item.release"
+      },
+      {
+        "family": "desk",
+        "verb": "item.rename"
+      },
+      {
+        "family": "desk",
+        "verb": "item.status"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.add"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "item.suites.search"
+      },
+      {
+        "family": "desk",
+        "verb": "item.take"
+      },
+      {
+        "family": "desk",
+        "verb": "items.search"
+      },
+      {
+        "family": "desk",
+        "verb": "line.take"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.done"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.may"
+      },
+      {
+        "family": "desk",
+        "verb": "phase.take"
+      },
+      {
+        "family": "desk",
+        "verb": "press"
+      },
+      {
+        "family": "desk",
+        "verb": "profile.get"
+      },
+      {
+        "family": "desk",
+        "verb": "profile.set"
+      },
+      {
+        "family": "desk",
+        "verb": "pushgoal"
+      },
+      {
+        "family": "desk",
+        "verb": "rule.add"
+      },
+      {
+        "family": "desk",
+        "verb": "rule.draft"
+      },
+      {
+        "family": "desk",
+        "verb": "rule.get"
+      },
+      {
+        "family": "desk",
+        "verb": "rule.version"
+      },
+      {
+        "family": "desk",
+        "verb": "rules.search"
+      },
+      {
+        "family": "desk",
+        "verb": "seen.get"
+      },
+      {
+        "family": "desk",
+        "verb": "seen.set"
+      },
+      {
+        "family": "desk",
+        "verb": "signoff"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.door"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.doors.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.make"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.add"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.paths.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.run"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.runState"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.add"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.remove"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.suites.search"
+      },
+      {
+        "family": "desk",
+        "verb": "stackFrameChecks.update"
+      },
+      {
+        "family": "desk",
+        "verb": "subscribe"
+      },
+      {
+        "family": "desk",
+        "verb": "unblock"
+      },
+      {
+        "family": "desk",
+        "verb": "unsubscribe"
+      },
+      {
+        "family": "desk",
+        "verb": "work.open"
+      }
+    ]
+  }
+}

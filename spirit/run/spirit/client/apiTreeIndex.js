@@ -27,10 +27,10 @@ function apiTreeServers(tree) {
   }).sort();
 }
 
-// ONE SERVER'S VERBS (apiAuth/G1.9), sorted, for the verb dropdown. DEBUG and DEPENDENCIES are the owner's and
-// never offered (Andy: "DEBUG/DEPENDENCIES are owner only and will never be offered to peerPost clients."); AGENTS
+// ONE SERVER'S VERBS (apiAuth/G1.9), sorted, for the verb dropdown. DEBUG is the owner's and never offered (Andy:
+// "DEBUG/... are owner only and will never be offered to peerPost clients."); AGENTS
 // is a verb like any other. A server the tree does not hold, or whose branch is an error, has no verbs.
-var API_TREE_OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];
+var API_TREE_OWNER_VERBS = ['DEBUG'];
 function apiTreeVerbs(tree, server) {
   if (apiTreeServers(tree).indexOf(server) === -1) return [];
   return Object.keys(tree[server]).filter(function (verb) {
@@ -41,7 +41,7 @@ function apiTreeVerbs(tree, server) {
 // WHETHER THE TREE SERVES A PATH TODAY (apiAuth/G1.6): how the Grants
 // app tells a live grant from a deprecated one. 'app' is served when
 // that server answered; 'app.verb' when the verb is among its verbs —
-// verbs(), so DEBUG and DEPENDENCIES are nobody's grant. A grant this
+// verbs(), so DEBUG is nobody's grant. A grant this
 // says is gone is REPORTED, never pruned: Andy, "so we defer pruning to
 // be triggered by the owners auth app, who can report deprecated
 // branches".

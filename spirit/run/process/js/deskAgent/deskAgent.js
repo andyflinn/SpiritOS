@@ -1991,7 +1991,7 @@ appServer.serve({
     request: { id: '' }, reply: { done: true, text: '' },
     handler: function (a) { return chatAnswer(a.id); },
   },
-}, { dependencies: [] });
+});
 
 say(PERSONA + ' is at the desk, model ' + MODEL + ', context the studio\'s (' + CONTEXT_FALLBACK + ' until read), server ' + (server.url || 'not set'));
 // The first state goes out at once, from what is known. The studio is not read until somebody asks models (the

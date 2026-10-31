@@ -1307,6 +1307,9 @@ catch (e) {
     // (spirit.familyPath, goal/G41.12).
     familyDir: function (name) { return path.join(ROOT_DIR, path.dirname(spirit.familyPath(name))); },
   });
+  // EACH APPSERVER'S BUNDLES ARE WRITTEN BY apiAuth AS IT IS MADE, below (goal/G41.24; Andy, box: "the apiAuth.js module,
+  // when the node boots, will check for all valid ... Bundles.json files"). Everything from here to there runs in this one
+  // pass, so the tables hold them before any appServer started here can ask the node anything.
   jobs.startNodeServers(ROOT_DIR, appClient);
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
@@ -1620,7 +1623,7 @@ catch (e) {
   // through this router (goal/G22.6: GET /api/relay/key is closed).
   peerRouter.startStreams(require('./hub').relayKeyAsk(peerRouter)).catch(() => {});
 
-  // ── THE CLAIMS, WHERE THE DEPENDENCIES ARE ─────────────────────────
+  // ── THE CLAIMS, WHERE WHAT THEY NEED IS ────────────────────────────
   //
   //   Andy: "registration after boot. it avoids dependency messes."
   //

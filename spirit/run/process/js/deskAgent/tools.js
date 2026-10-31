@@ -110,7 +110,7 @@ function createTools(opts) {
     const tableOf = typeof route.table === 'function' ? route.table() : Promise.resolve(null);
     return tableOf.then(function (table) {
       if (table) {
-        return { table: table, stems: Object.keys(table).filter(function (v) { return !/^FS\./.test(v) && v !== 'DEBUG' && v !== 'DEPENDENCIES'; }) };
+        return { table: table, stems: Object.keys(table).filter(function (v) { return !/^FS\./.test(v) && v !== 'DEBUG'; }) };
       }
       return route.ask(route.fs('search'), { q: '' }).then(function (r) {
         const items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];

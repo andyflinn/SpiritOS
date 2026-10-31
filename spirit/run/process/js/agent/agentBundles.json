@@ -1,0 +1,27 @@
+{
+  "remoteUser": {
+    "label": "remoteUser",
+    "branches": [
+      {
+        "family": "agent",
+        "verb": "debug"
+      },
+      {
+        "family": "agent",
+        "verb": "job"
+      },
+      {
+        "family": "agent",
+        "verb": "model"
+      },
+      {
+        "family": "agent",
+        "verb": "persona"
+      },
+      {
+        "family": "agent",
+        "verb": "provider"
+      }
+    ]
+  }
+}

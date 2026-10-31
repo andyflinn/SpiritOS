@@ -192,5 +192,5 @@ appServer.serve({
     handler: function () { return { lastCheck: status.lastCheck, lastCopy: status.lastCopy, lastError: status.lastError }; },
   },
 // No peer user: backup is the owner's housekeeping (apiAuth/G1.10).
-}, { dependencies: [] });
+});
 kick();

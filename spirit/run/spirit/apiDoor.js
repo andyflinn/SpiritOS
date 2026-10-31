@@ -29,10 +29,9 @@
 // member's every ask is decided by it. No auth handed means no grants
 // readable: the member reads as denied, never as ungated.
 
-// DEBUG and DEPENDENCIES are the owner's on every server (Andy, desk/G2.5:
-// "DEBUG verb is never allowed through peerPost()"; apiAuth/G1.10:
-// DEPENDENCIES owner-only "like DEBUG"), granted or not.
-const OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];
+// DEBUG is the owner's on every server (Andy, desk/G2.5: "DEBUG verb is never
+// allowed through peerPost()"), granted or not.
+const OWNER_VERBS = ['DEBUG'];
 // THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
 // access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
 // naming it cannot be made (apiAuth.grant), and one left in the table from before is read as nothing here.
@@ -184,10 +183,9 @@ function createApiDoor(opts) {
     // forever, about 9 a second (wsl-claude's hand check on a857b52).
     if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
-    // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5), and DEPENDENCIES with it
-    // (apiAuth/G1.10, owner-only "like DEBUG"): a member's ask for either on any server is refused
-    // here, by name, granted or not, and never passed on. The owner's own calls on /api/spirit still reach them.
-    if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG and DEPENDENCIES are for the owner, on loopback only' });
+    // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5): a member's ask for it on
+    // any server is refused here, by name, granted or not, and never passed on. The owner's own calls on /api/spirit still reach them.
+    if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG is for the owner, on loopback only' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
       return reply(message, r ? r.body : null, r && r.kind);
     }, function (e) {

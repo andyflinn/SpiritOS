@@ -1,0 +1,20 @@
+{
+  "deskAgent": {
+    "label": "deskAgent",
+    "branches": [
+      {
+        "family": "deskVerify",
+        "verb": "search"
+      }
+    ]
+  },
+  "remoteUser": {
+    "label": "remoteUser",
+    "branches": [
+      {
+        "family": "deskVerify",
+        "verb": "search"
+      }
+    ]
+  }
+}

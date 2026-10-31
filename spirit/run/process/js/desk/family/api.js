@@ -6,7 +6,7 @@
 // the handler needs it, optional only where the verb's own accepts() lets it be left out; each rule is the tightest
 // that every value the handler takes still passes ('text' where '' is a real value, 'id' where it must name something,
 // the field rules where the handler applies them). The server checks everything again. A verb added to the server is
-// added here, in the same commit. DEBUG and DEPENDENCIES are appServer's, not listed here.
+// added here, in the same commit. DEBUG is appServer's, not listed here.
 module.exports = {
   verbs: {
     // Only listening or working; the server refuses any other word.

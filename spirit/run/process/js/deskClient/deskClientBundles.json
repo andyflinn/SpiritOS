@@ -1,0 +1,11 @@
+{
+  "deskServer": {
+    "label": "deskServer",
+    "branches": [
+      {
+        "family": "deskClient",
+        "verb": "streamListener"
+      }
+    ]
+  }
+}

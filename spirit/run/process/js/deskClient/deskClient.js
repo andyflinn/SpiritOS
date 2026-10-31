@@ -1074,7 +1074,7 @@ const server = appServer.serve({
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
   stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, cache: true },
-  dependencies: ['deskClient.streamListener'], codes: {
+  codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
   // The chat and box gate (goal/G27.6, goal/G27.12): undeclared, both reached the agent as handler-failed.
