@@ -193,6 +193,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   w.win.def.mount(app, { setScreenTitle: function () {}, onJobs: function () {}, onPublished: function () {}, ui: {}, escapeHtml: w.win.spirit.escapeHtml,
     verb: function () { return Promise.resolve({ status: 200, body: { items: [], more: false } }); } });
   await settle();
+  let modelOrder = null;
+  // Where, in the app's order of elements, the Models title rows, the "from" of the Ask row, and the model list stand.
+  const order = function (root, host) {
+    const seq = [];
+    (function walk(n) { n.children.forEach(function (c) { seq.push(c); walk(c); }); }(root));
+    const titles = seq.filter(function (n) { return n.classList && n.classList.contains('agent-title') && /Models/.test(n.textContent); });
+    const from = seq.filter(function (n) { return n.tagName === 'SPAN' && n.textContent.trim() === 'from'; })[0];
+    return { titles: titles.length, title: titles.length ? seq.indexOf(titles[0]) : -1, from: from ? seq.indexOf(from) : -1, list: seq.indexOf(host) };
+  };
   const strip = function (name) { return w.document.querySelectorAll('[data-tool]').filter(function (b) { return b.getAttribute('data-tool') === name; })[0]; };
 
   test.subHeading('each tool\'s list pane');
@@ -207,7 +216,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (!made.length) { test.fail('the ' + t[0] + ' tool drew no list pane'); continue; }
     const g = gaps(made[made.length - 1].host, app);
     ok(!g.length, 'the ' + t[0] + ' tool\'s list stands in a fill box, and every box up to the app is fill too', t[0] + ': not fill: ' + g.join(' < '));
+    if (t[0] === 'model') modelOrder = order(app, made[made.length - 1].host);
   }
+
+  test.subHeading('the 🧠 Models pane: its title row first (goal/G41.26)');
+  // Andy, on G41.26: "i the left side models panel: the title row \"🧠Models\" must come before the \"from [🛖 Unsloth
+  // Studio ▾] [Ask] row."
+  const mo = modelOrder || {};
+  ok(mo.titles === 1, 'the pane draws one 🧠 Models title row', 'title rows saying Models: ' + mo.titles);
+  ok(mo.title !== -1 && mo.from !== -1 && mo.title < mo.from, 'the title row comes before the from [providerSelector:dropdown] [Ask] row', 'title at ' + mo.title + ', from at ' + mo.from);
+  ok(mo.from !== -1 && mo.list !== -1 && mo.from < mo.list, 'and the model list after it', 'from at ' + mo.from + ', list at ' + mo.list);
 
   test.subHeading('every list pane the app drew');
   const all = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && under(p.host, app); });

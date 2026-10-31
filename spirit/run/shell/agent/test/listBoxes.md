@@ -33,9 +33,18 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 
 - The grant tool went with agent.grant: the list panes judged are the four tables', provider, model, persona and job.
 
+## Requirements (goal/G41.26)
+
+Andy: *"i the left side models panel: the title row \"🧠Models\" must come before the \"from [🛖 Unsloth Studio ▾]
+[Ask] row."*
+
+- The 🧠 Models pane draws one title row saying Models, then the `from [providerSelector:dropdown] [Ask]` row, then
+  the model list.
+
 ## What its test must try to break
 
 - Any box between a list and the app that is only as tall as its content. Mutated:
   - the workBench's side pane without `fill`;
   - the table list's own box without `fill`;
   - the grants list's box without `fill`.
+- A Models pane whose Ask row stands above its title row, or that draws its title twice.
