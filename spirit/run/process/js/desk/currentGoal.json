@@ -1,5 +1,5 @@
 {
- "change": 118326,
+ "change": 118329,
  "goal": "goal/G41",
  "items": [
   {
@@ -161,7 +161,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -169,7 +169,10 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -19353,9 +19356,7 @@
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [
-    "goal/G41.25"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -20394,16 +20395,12 @@
    "id": "goal/G41.25",
    "title": "Modifications to the nodes bundle table and UI",
    "goal": "goal/G41",
-   "status": "waiting for deskVerify",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "end-design",
-    "close",
-    "pushgoal",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G41.24"
