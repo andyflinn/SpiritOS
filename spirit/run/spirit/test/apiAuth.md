@@ -10,23 +10,38 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 ## Requirements
 
 - `spirit/auth/api.js` declares, flat as the agent tables' verbs (*"op add, set, delete, get and search"*):
-  - `bundle { op, id, label, text }`, `id` a number;
+  - `bundle { op, id, label, text, owner }`, `id` a number;
   - `branch { op, id, bundle, family, verb, text }`, `id` and `bundle` numbers.
-- `spirit/auth/bundle.json` and `spirit/auth/branch.json` describe each verb and its request.
+- `spirit/auth/bundle.json` and `spirit/auth/branch.json` describe each verb and its request; `bundle.json` names the
+  owner.
 - `createApiAuth` answers `bundle(a)` and `branch(a)` beside grant and revoke.
 - The node keeps two tables in `node.db`, and makes the old `bundles` and `bundle_paths` no more. What they held is lost
   (Andy: *"any bundle lost during these changed are LOST. OOS."*).
-  - `bundle (id, label)`: `id` an integer key the node gives, hidden from the user; the label must not be empty when
-    added.
+  - `bundle (id, label, owner)`: `id` an integer key the node gives, hidden from the user; the label must not be empty
+    when added; `owner` below.
   - `branch (id, bundle, family, verb)`: `id` the key; `bundle` an indexed reference to a bundle row; `family` required;
     `verb` the empty string for all of the family.
 - Neither table records who made a row.
 - `auth.bundle`:
-  - `add {label}` answers `{ id }`. An empty label, or none, is refused `bad-request`.
-  - `get {id}` answers `{ id, label }`; `set {id, label}` renames it.
+  - `add {label, owner}` answers `{ id }`. An empty label, or none, is refused `bad-request`.
+  - `get {id}` answers `{ id, label, owner }`; `set {id, label}` renames it.
   - `delete {id}` removes the bundle and every branch that names it, and answers `{ id }`.
   - `search {text}` answers `{ items, more }`, each item keyed by the id, its label the bundle as get shows it, best
-    first; no words is every bundle.
+    first; no words is every bundle. `owner` narrows it to that owner's bundles; none, or an empty one, narrows
+    nothing.
+- **The owner** (goal/G41.25). Andy, box: *"the bundle table gains 1 field: \"owner\", which can contains either
+  \"node\" (default), or the name of an appServer"*, *"the owner field can never be changed after a bundle is added"*,
+  *"for bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\"
+  field with \"node\", incoming or outgoing"*, and *"changes to the auth.bundle verb for the addition of the \"owner\"
+  field are approved by andy and need no review."*
+  - An add with no owner is owned by `node`; with an app server's name, by that server.
+  - A set never changes the owner.
+  - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`.
+  - Outgoing: a kept row whose owner is not valid is answered `node`, by get, by search and on the stream.
+  - The bundles from before (a `bundle` table with no owner column) are each owned by `node`.
+  - Each row told for the stream carries its owner.
+  - Open, asked in the item: is a valid owner any app server's name, or only a server this node has? The test's owners
+    are servers of its tree, so it holds either way.
 - `auth.branch`:
   - `add {bundle, family, verb}` answers `{ id }`; a verb left out is the empty verb.
   - `get {id}` answers `{ id, bundle, family, verb }`; `set {id, ...}` changes what it names and keeps the rest;
@@ -64,3 +79,5 @@ owner, until the node owner grants access to those tables to someone else"*). Th
 - A bundle deleted with its branches left behind, or another bundle's branches taken with it.
 - A filter that does not narrow, or an empty one that does.
 - The old tables still made.
+- An owner changed by a set; an invalid owner stored or answered; a bundle from before with no owner; a search by owner
+  that lets another owner's bundle through.

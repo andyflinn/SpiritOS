@@ -13,7 +13,9 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   `shell/js/armingButton.js`, through `spirit.require`.
 - It registers `spirit.elements.bundleElement.create(row, opts)`: a row element (`shell/js/rowElement.js`) of kind
   `bundle`, keyed by the bundle's id. Its row is the bundle as `auth.bundle` answers it, `{ id, label }`.
-- Its fields are `label`, `edit` and `delete`, in that order. The label is drawn escaped. Edit and Delete are buttons
+- Its fields are `label`, `owner`, `edit` and `delete`, in that order (goal/G41.25: the owner *"displayed right after
+  the bundles label"*). The owner is drawn escaped, as the bundle names it, and never as an input: *"the owner field
+  can never be changed after a bundle is added"*. The label is drawn escaped. Edit and Delete are buttons
   naming their action.
 - With `opts.editable`, the label is edited in place (Andy: *"[fieldInput:fieldRule:Label], displays and updates the
   bundle's label"*):
@@ -36,7 +38,7 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
 ## What its test must try to break
 
 - A part counted on that the row did not load itself.
-- A label drawn unescaped.
+- A label or an owner drawn unescaped; an owner given an input.
 - An empty or too long label sent to the node, or left in the input after a refusal.
 - A Delete that asks on the first press.
 - An Edit that opens the editor on another bundle, or without its label.

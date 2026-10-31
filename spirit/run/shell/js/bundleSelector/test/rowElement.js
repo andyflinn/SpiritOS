@@ -92,7 +92,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const el = E.bundleElement.create({ id: 7, label: 'Read <files>' });
   ok(el.kind === 'bundle' && el.key === '7' && el.row.label === 'Read <files>', 'it is a row element of kind bundle, keyed by the bundle\'s id', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
-  ok(JSON.stringify(Object.keys(cells)) === '["label","edit","delete"]', 'its fields are label, edit and delete, in that order', 'fields: ' + short(Object.keys(cells)));
+  // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
+  ok(JSON.stringify(Object.keys(cells)) === '["label","owner","edit","delete"]', 'its fields are label, owner, edit and delete, in that order', 'fields: ' + short(Object.keys(cells)));
+  const ow = E.bundleElement.create({ id: 9, label: 'Agent tools', owner: 'agent' });
+  const owCells = {}; (ow.cells() || []).forEach(function (c) { owCells[c.name] = c.html; });
+  ok(/\bagent\b/.test(owCells.owner || '') && !/<input/.test(owCells.owner || ''), 'the owner is shown as the bundle names it, never an input: it never changes after the add', 'owner: ' + short(owCells.owner));
+  const odd = E.bundleElement.create({ id: 10, label: 'x', owner: 'a<b' });
+  const oddCells = {}; (odd.cells() || []).forEach(function (c) { oddCells[c.name] = c.html; });
+  ok(/a&lt;b/.test(oddCells.owner || '') && !/a<b/.test(oddCells.owner || ''), 'and drawn escaped', 'owner: ' + short(oddCells.owner));
   ok(/Read &lt;files>/.test(cells.label || '') && !/<files>/.test(cells.label || ''), 'the label is drawn escaped', 'label: ' + short(cells.label));
   ok(/data-action="edit"/.test(cells.edit || '') && /data-action="delete"/.test(cells.delete || ''), 'edit and delete are buttons naming their action', 'cells: ' + short(cells));
 
@@ -101,7 +108,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // pressing the Enter key, or leaving the field, the bundle-label is updated is the label is valid (as in \"add\"), and
   // if invalid, reverts to the value contained in the db-table."
   const ed = E.bundleElement.create({ id: 7, label: 'Reader' }, { editable: true });
-  const hosts = { label: cell(), edit: cell(), delete: cell() };
+  const hosts = { label: cell(), owner: cell(), edit: cell(), delete: cell() };
   ed.mount(hosts);
   const input = hosts.label.querySelector('input');
   ok(!!input && input.value === 'Reader', 'editable, its label cell holds an input showing the label', 'label cell: ' + short(hosts.label.kids.map(function (k) { return k.tag; })));

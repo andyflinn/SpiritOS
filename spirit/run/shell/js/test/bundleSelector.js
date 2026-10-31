@@ -76,6 +76,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["label","edit","delete"]' && pane.editable === true,
     'face pane is the list itself; columns and editable are handed to it', 'pane: ' + short(pane));
 
+  test.subHeading('goal/G41.25: mounted for an app server');
+  // Andy, box: "the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time", and "if
+  // the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver". The
+  // listing is its list's (./bundleSelector/listElement.js), so the family is handed to it.
+  made.create(element('div'), { family: 'agent' }); await settle();
+  const forAgent = lists[2] && lists[2].o;
+  ok(forAgent && forAgent.family === 'agent', 'create(container, { family }) hands the family to its list', 'list: ' + short(forAgent));
+  ok(!('family' in list.o) || list.o.family === undefined || list.o.family === '', 'mounted for no app server, it hands its list no family', 'list: ' + short(list.o));
+
   test.subHeading('a pick');
   list.o.pick({ id: 7, label: 'Reader' }, '7');
   const e = root.events[root.events.length - 1];

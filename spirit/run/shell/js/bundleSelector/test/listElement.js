@@ -79,7 +79,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const empty = await o.api.verb(o.server + '.' + o.verb, o.args('', {}));
   ok(empty && empty.body && Array.isArray(empty.body.items) && empty.body.items.length === 0 && empty.body.more === false, 'an empty answer is an empty list, like any other', 'empty: ' + short(empty));
   const cols = (o.columns || []).map(function (c) { return c.field; });
-  ok(JSON.stringify(cols) === '["label"]', 'by default its one column is the label', 'columns: ' + short(cols));
+  // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
+  ok(JSON.stringify(cols) === '["label","owner"]', 'by default its columns are the label, then the owner', 'columns: ' + short(cols));
+  answer = { items: [], more: false };
+  await o.api.verb(o.server + '.' + o.verb, o.args('', {}));
+  ok(asked.length > 0 && asked[asked.length - 1].op === 'search' && !('owner' in asked[asked.length - 1]), 'made for no app server, its search names no owner: every bundle', 'asked: ' + short(asked[asked.length - 1]));
   const m = typeof o.matched === 'function' ? o.matched({ id: 7, label: 'Reader' }) : null;
   ok(m && m.label === 'Reader' && !('id' in m), 'a row is matched on its label, never its hidden id', 'matched: ' + short(m));
   // Andy, goal/G41.14: "the bundleSelector shows a fucking number is selected instead of the fucking label or the
@@ -99,6 +103,41 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(p && JSON.stringify((p.columns || []).map(function (c) { return c.field; })) === '["label","edit","delete"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(p && p.columns));
   const pe = p && p.element({ id: 8, label: 'Writer' }, '8');
   ok(pe && pe.opts.editable === true, 'and opts.editable makes each row edit its label in place', 'element: ' + short(pe));
+
+  test.subHeading('goal/G41.25: made for an app server, it lists that server\'s bundles alone');
+  // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY
+  // bundles", and "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
+  // Appserver".
+  E.bundleList.create({}, { face: 'dropdown', family: 'agent' });
+  await settle();
+  const fo = lists[2] && lists[2].o;
+  const nA = asked.length;
+  if (fo && fo.api && typeof fo.args === 'function') await fo.api.verb(fo.server + '.' + fo.verb, fo.args(' too ', {}));
+  const fa = asked[nA];
+  ok(!!fa && asked.length === nA + 1 && fa.op === 'search' && fa.text === 'too' && fa.owner === 'agent', 'its search asks auth.bundle { op: search, text, owner: family }, the text trimmed', 'asked: ' + short(asked.slice(nA)));
+  // WHAT IT OFFERS: the list is a view of data.bundles, which holds every bundle the page has, so what it shows is that
+  // branch filtered and ranked by the real list's own heart, probabilitySearch.order, the state it is made with.
+  const LIST = (function () {
+    const win = { window: null, spirit: { elements: {} }, console: console };
+    win.window = win;
+    vm.createContext(win);
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
+      vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
+    });
+    return win.spirit.elements.probabilitySearch;
+  }());
+  DATA.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
+  DATA.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });
+  DATA.set('bundles/23', { id: 23, label: 'Desk hand', owner: 'desk' });
+  const offered = function (opts) {
+    if (!opts || !LIST || typeof LIST.order !== 'function') return null;
+    const rows = DATA.rows(opts.data) || [];
+    const entries = rows.map(function (r, i) { return { key: String(r.key != null ? r.key : r.id), row: r, at: i }; });
+    return LIST.order(entries, { words: '', values: {}, filters: opts.filters || [], columns: opts.columns || [], matched: opts.matched, score: opts.score })
+      .map(function (e) { return String(e.row && e.row.id); }).filter(function (k) { return ['21', '22', '23'].indexOf(k) !== -1; }).sort();
+  };
+  ok(fo && JSON.stringify(offered(fo)) === '["21"]', 'of the bundles the page holds, it offers that server\'s alone', 'offered: ' + short(fo && offered(fo)));
+  ok(JSON.stringify(offered(o)) === '["21","22","23"]', 'made for no app server, it offers every bundle, whoever owns it', 'offered: ' + short(offered(o)));
 
   test.subHeading('refresh and destroy are the search element\'s');
   const r0 = l.refreshes;

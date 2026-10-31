@@ -32,8 +32,10 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   // Andy, box: "The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch,
   // akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review."
   const b = verbs.bundle;
-  ok(b && b.op === 'id' && b.id === 'number?' && b.label === 'name?' && b.text === 'text?' && Object.keys(b).length === 4,
-    'spirit/auth/api.js declares bundle { op, id, label, text }: a numeric id, a label, nothing more', 'bundle: ' + short(b));
+  // goal/G41.25, box: "the bundle table gains 1 field: \"owner\"", and "changes to the auth.bundle verb for the addition
+  // of the \"owner\" field are approved by andy and need no review."
+  ok(b && b.op === 'id' && b.id === 'number?' && b.label === 'name?' && b.text === 'text?' && typeof b.owner === 'string' && /\?$/.test(b.owner) && Object.keys(b).length === 5,
+    'spirit/auth/api.js declares bundle { op, id, label, text, owner }: a numeric id, a label, an owner left out at will, nothing more', 'bundle: ' + short(b));
   const r = verbs.branch;
   ok(r && r.op === 'id' && r.id === 'number?' && r.bundle === 'number?' && r.family === 'text?' && r.verb === 'text?' && r.text === 'text?' && Object.keys(r).length === 6,
     'and branch { op, id, bundle, family, verb, text }, flat as the agent tables\' verbs', 'branch: ' + short(r));
@@ -41,10 +43,13 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     const d = readJson(path.join(RUN, 'spirit', 'auth', v + '.json'));
     ok(d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request, 'spirit/auth/' + v + '.json describes the verb and its request', v + '.json: ' + short(d));
   });
+  const bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
+  ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description', 'bundle.json: ' + short(bj));
 
   const { createApiAuth } = require(FILE);
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-'));
-  const tree = { files: { read: {}, list: {} }, desk: { 'chat.add': {}, 'item.get': {} } };
+  // goal/G41.25: agent is an app server of the tree, so a bundle it owns names a server the node has.
+  const tree = { files: { read: {}, list: {} }, desk: { 'chat.add': {}, 'item.get': {} }, agent: { job: {} } };
   const auth = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
   ok(typeof auth.bundle === 'function' && typeof auth.branch === 'function', 'createApiAuth answers bundle(a) and branch(a) beside grant and revoke', 'verbs: ' + short(Object.keys(auth)));
   if (typeof auth.bundle !== 'function' || typeof auth.branch !== 'function') return;
@@ -57,13 +62,13 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok((await call(auth, 'bundle', { op: 'add', label: '' })).refusal === 'bad-request' && (await call(auth, 'bundle', { op: 'add' })).refusal === 'bad-request',
     'a label that is empty, or none, is refused bad-request', 'empty label answered');
   const got = await call(auth, 'bundle', { op: 'get', id: reader.id });
-  ok(got.id === reader.id && got.label === 'Reader' && Object.keys(got).length === 2, 'get {id} answers { id, label }, no description, no paths', 'get: ' + short(got));
+  ok(got.id === reader.id && got.label === 'Reader' && got.owner === 'node' && Object.keys(got).length === 3, 'get {id} answers { id, label, owner }, no description, no paths', 'get: ' + short(got));
   await call(auth, 'bundle', { op: 'set', id: reader.id, label: 'Lister' });
   ok((await call(auth, 'bundle', { op: 'get', id: reader.id })).label === 'Lister', 'set {id, label} renames it', 'after set: ' + short(await call(auth, 'bundle', { op: 'get', id: reader.id })));
   const all = await call(auth, 'bundle', { op: 'search', text: '' });
   ok(Array.isArray(all.items) && typeof all.more === 'boolean' && all.items.length === 2, 'search with no words answers { items, more }, every bundle', 'search: ' + short(all));
   const row = all.items && parsed(all.items.filter(function (i) { return String(i.key) === String(reader.id); })[0] || {});
-  ok(row && row.id === reader.id && row.label === 'Lister', 'each item keyed by the bundle\'s id, its label the bundle as get shows it', 'item: ' + short(row));
+  ok(row && row.id === reader.id && row.label === 'Lister' && row.owner === 'node', 'each item keyed by the bundle\'s id, its label the bundle as get shows it, its owner with it', 'item: ' + short(row));
   const hit = await call(auth, 'bundle', { op: 'search', text: 'Deskhand' });
   ok(hit.items && hit.items.length >= 1 && String(hit.items[0].key) === String(desk.id), 'a search of words ranks the bundle that has them first', 'search: ' + short(hit.items));
 
@@ -115,8 +120,8 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   const db = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
   const colsOf = function (t) { try { return db.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all(); } catch (e) { return []; } };
   const names = function (cols) { return cols.map(function (x) { return x.name + (x.pk ? '*' : ''); }).sort(); };
-  ok(JSON.stringify(names(colsOf('bundle'))) === '["id*","label"]' && /INT/i.test((colsOf('bundle')[0] || {}).type || ''),
-    'node.db has bundle (id, an integer key; label)', 'bundle: ' + short(colsOf('bundle')));
+  ok(JSON.stringify(names(colsOf('bundle'))) === '["id*","label","owner"]' && /INT/i.test((colsOf('bundle').filter(function (c) { return c.name === 'id'; })[0] || {}).type || ''),
+    'node.db has bundle (id, an integer key; label; owner)', 'bundle: ' + short(colsOf('bundle')));
   ok(JSON.stringify(names(colsOf('branch'))) === '["bundle","family","id*","verb"]', 'and branch (id, the key; bundle, family, verb)', 'branch: ' + short(names(colsOf('branch'))));
   const idx = (function () { try { return db.prepare('PRAGMA index_list("branch")').all().map(function (i) { return db.prepare('PRAGMA index_info(' + JSON.stringify(i.name) + ')').all().map(function (c) { return c.name; }); }); } catch (e) { return []; } }());
   ok(idx.some(function (cols) { return cols[0] === 'bundle'; }), 'branch.bundle is indexed', 'indexes: ' + short(idx));
@@ -154,7 +159,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     const told = [];
     auth.onChange(function (c) { told.push(JSON.parse(JSON.stringify(c))); });
     const tb = await call(auth, 'bundle', { op: 'add', label: 'Told' });
-    ok(told.length === 1 && told[0].table === 'bundle' && told[0].row.id === tb.id && told[0].row.label === 'Told' && !told[0].gone, 'a bundle added is told { table: bundle, row }, the row as get shows it', 'told: ' + short(told));
+    ok(told.length === 1 && told[0].table === 'bundle' && told[0].row.id === tb.id && told[0].row.label === 'Told' && told[0].row.owner === 'node' && !told[0].gone, 'a bundle added is told { table: bundle, row }, the row as get shows it, its owner with it', 'told: ' + short(told));
     await call(auth, 'bundle', { op: 'set', id: tb.id, label: 'Told again' });
     ok(told.length === 2 && told[1].table === 'bundle' && told[1].row.label === 'Told again', 'a bundle set is told with its new row', 'told: ' + short(told.slice(1)));
     const tr = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'files', verb: 'read' });
@@ -191,6 +196,58 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     await auth.revoke({ key: GPEER, path: 'files.list' });
     ok(toldG.length === 2, 'a revoke refused not-granted tells nothing', 'told: ' + short(toldG));
   }
+
+  test.subHeading('goal/G41.25: a bundle\'s owner, "node" or an app server');
+  // Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either \"node\" (default), or the name of
+  // an appServer", "the owner field can never be changed after a bundle is added", and "for bundles without a valid
+  // \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field with \"node\", incoming
+  // or outgoing."
+  const plain = await call(auth, 'bundle', { op: 'add', label: 'Plain' });
+  ok((await call(auth, 'bundle', { op: 'get', id: plain.id })).owner === 'node', 'a bundle added with no owner is owned by "node"', 'get: ' + short(await call(auth, 'bundle', { op: 'get', id: plain.id })));
+  const mine = await call(auth, 'bundle', { op: 'add', label: 'For the agent', owner: 'agent' });
+  ok(isNum(mine.id) && (await call(auth, 'bundle', { op: 'get', id: mine.id })).owner === 'agent', 'a bundle added with an app server\'s name is owned by that server', 'add: ' + short(mine) + ', get ' + short(await call(auth, 'bundle', { op: 'get', id: mine.id })));
+  await call(auth, 'bundle', { op: 'set', id: mine.id, owner: 'desk' });
+  await call(auth, 'bundle', { op: 'set', id: mine.id, label: 'Agent tools', owner: 'node' });
+  await call(auth, 'bundle', { op: 'set', id: plain.id, owner: 'agent' });
+  const afterSet = await call(auth, 'bundle', { op: 'get', id: mine.id });
+  ok(afterSet.owner === 'agent' && (await call(auth, 'bundle', { op: 'get', id: plain.id })).owner === 'node', 'the owner never changes after the add: a set naming another owner leaves it as it was', 'after set: ' + short(afterSet));
+  // Incoming: an add whose owner is not valid stores "node".
+  const badIn = [];
+  for (const bad of ['', 42, 'not a name!', 'a.b', null]) {
+    const r = await call(auth, 'bundle', { op: 'add', label: 'Bad ' + badIn.length, owner: bad });
+    badIn.push([bad, isNum(r.id) ? (await call(auth, 'bundle', { op: 'get', id: r.id })).owner : r]);
+  }
+  ok(badIn.every(function (x) { return x[1] === 'node'; }), 'an add whose owner is not valid (empty, not a text, not a name) is owned by "node"', 'owners: ' + short(badIn));
+  // Outgoing: a row the table holds with an owner that is not valid is answered "node", by get, search and the stream.
+  const odb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
+  let wrote = true;
+  try { odb.prepare('UPDATE bundle SET owner = ? WHERE id = ?').run('not a name!', plain.id); } catch (e) { wrote = false; }
+  odb.close();
+  const outGet = await call(auth, 'bundle', { op: 'get', id: plain.id });
+  const outItem = ((await call(auth, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(function (x) { return x && x.id === plain.id; })[0];
+  ok(wrote && outGet.owner === 'node' && outItem && outItem.owner === 'node', 'a kept row whose owner is not valid is answered "node", by get and by search', 'wrote ' + wrote + ', get ' + short(outGet) + ', item ' + short(outItem));
+  test.subHeading('goal/G41.25: the search narrowed to one owner');
+  // Andy, box: "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
+  // Appserver"; the selector asks the node for them, as every narrowed list does (cw, agreed in the item's chat).
+  const owned = ((await call(auth, 'bundle', { op: 'search', text: '', owner: 'agent' })).items || []).map(parsed);
+  ok(owned.length === 1 && owned[0] && owned[0].id === mine.id && owned[0].owner === 'agent', 'search {text, owner} answers that owner\'s bundles alone', 'items: ' + short(owned));
+  const ofNode = ((await call(auth, 'bundle', { op: 'search', text: '', owner: 'node' })).items || []).map(parsed);
+  ok(ofNode.length > 1 && ofNode.every(function (x) { return x && x.owner === 'node'; }), 'owner "node" answers the node\'s bundles alone, a row read as "node" among them', 'items: ' + short(ofNode));
+  const every2 = ((await call(auth, 'bundle', { op: 'search', text: '' })).items || []).map(parsed);
+  ok(every2.some(function (x) { return x && x.owner === 'agent'; }) && every2.some(function (x) { return x && x.owner === 'node'; }), 'no owner is every bundle, whoever owns it', 'items: ' + short(every2));
+  ok((((await call(auth, 'bundle', { op: 'search', text: '', owner: '' })).items) || []).length === every2.length, 'an empty owner narrows nothing', 'empty owner narrowed');
+
+  test.subHeading('goal/G41.25: the bundles from before are owned by "node"');
+  // A node.db whose bundle table has no owner column yet, as every node has it before this item.
+  const oldRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-old-'));
+  fs.mkdirSync(path.join(oldRoot, 'relay-state'), { recursive: true });
+  const pre = new DatabaseSync(path.join(oldRoot, 'relay-state', 'node.db'));
+  pre.exec('CREATE TABLE bundle (id INTEGER PRIMARY KEY, label TEXT NOT NULL); INSERT INTO bundle (id, label) VALUES (5, \'From before\');');
+  pre.close();
+  const oldAuth = createApiAuth({ rootDir: oldRoot, tree: function () { return Promise.resolve(tree); } });
+  const fromBefore = await call(oldAuth, 'bundle', { op: 'get', id: 5 });
+  ok(fromBefore.label === 'From before' && fromBefore.owner === 'node', 'opened on a node.db from before the owner, its bundles are there, each owned by "node"', 'get: ' + short(fromBefore));
+  try { fs.rmSync(oldRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });

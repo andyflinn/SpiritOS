@@ -18,6 +18,9 @@ selecting bundle rows."*
 - A pick sets `.value` to the bundle's id, a number, and `.row` to the bundle `{ id, label }`, and says so with one
   bubbling `change`. A clear picks nothing.
 - `refresh()` asks again.
+- **Mounted for an app server** (goal/G41.25). Andy, box: *"the bundleSelector can be optionally configured with an
+  <AppServerName> (family) at mount-time"*. `options.family` is handed to its list, which lists that server's bundles
+  alone; without it, no family, and every bundle.
 
 ## What its test must try to break
 
@@ -25,3 +28,4 @@ selecting bundle rows."*
 - A selector that counts on an element the page did not load, or on the old list search.
 - A pick that leaves `.value` a text, or `.row` without the bundle.
 - A pane that loses the editor's columns or its editing.
+- A family not handed to the list, or one handed when none was asked.
