@@ -1,5 +1,5 @@
 {
- "change": 117550,
+ "change": 117659,
  "goal": "goal/G41",
  "items": [
   {
@@ -141,7 +141,7 @@
    ],
    "verifyFailuresMore": true,
    "verifyRed": 13,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -158,10 +158,7 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -555,7 +552,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -2330,7 +2327,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -2793,7 +2790,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -3614,7 +3611,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -4976,7 +4973,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -5300,7 +5297,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -5701,7 +5698,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -6130,7 +6127,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {},
@@ -6247,7 +6244,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -6563,7 +6560,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {},
@@ -6680,7 +6677,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -7772,7 +7769,7 @@
    ],
    "verifyFailuresMore": true,
    "verifyRed": 9,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -9897,7 +9894,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -10936,7 +10933,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -12306,7 +12303,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -12910,7 +12907,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -13399,7 +13396,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {},
@@ -13525,7 +13522,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -14643,7 +14640,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 3,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -16326,7 +16323,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -16501,7 +16498,7 @@
    ],
    "verifyFailuresMore": true,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -17644,7 +17641,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 7,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -18730,7 +18727,7 @@
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -19246,7 +19243,7 @@
    "status": "",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 3,
    "buttons": [
     "end-design",
     "close",
@@ -19257,9 +19254,7 @@
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [
-    "goal/G41.25"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -19334,7 +19329,7 @@
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
@@ -19343,7 +19338,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# The owner-only verbs appServer.js adds to every server\n\nappServer.js adds two verbs that only the owner may call. A peer who asks for either is refused, granted or not.\n\n- **DEBUG**: reads the server's DEBUG switch, or turns it on or off.\n- **DEPENDENCIES**: lists the grants a peer needs to use the server, each as `app` or `app.verb`.\n\nThe owner-only list is in `spirit/run/spirit/apiDoor.js:35 @ 62cc6d5f`, `const OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];`. The verbs are made in `spirit/run/spirit/appServer.js:335` and `:369`.\n\nNot owner-only:\n\n- **The FS verbs** (from the family folder): a peer may use them if granted. The `fs` family itself is the owner's alone (`apiDoor.js:39`).\n- **subscribe** and **unsubscribe**: a peer may use them if granted.\n- **streamListener**: refused to the owner. Only a server whose stream is followed may call it.\n",
+   "box": "# The owner-only verbs appServer.js adds to every server\n\n- each appServer has a file process/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the appServer.js module, when booting, will check for a valid \"process/<appServerName>/<appServerName>Bundles.json.\" file, and update the auth.bundle and auth.branch, , adding new verbs, when needed, and deleting verbs, if they are no longer in the json file.\n\n",
    "checks": [],
    "chat": [
     {
@@ -19364,15 +19359,13 @@
    "id": "goal/G41.25",
    "title": "Modifications to the nodes bundle table and UI",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41.24"
@@ -19382,20 +19375,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 20,
+   "fileCount": 22,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "4675f848",
+   "redCommit": "aaf28434",
    "waived": false,
    "rules": [
     {
@@ -19464,10 +19457,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/26",
      "version": 64
     },
@@ -19476,15 +19465,16 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
-   "verifyAnswer": "busy",
+   "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
@@ -19660,6 +19650,84 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-31T05:51:31.938Z",
      "text": "- wsl: 20 files added. The bundle verb and its table (auth, apiAuth, nodeStore, the stream in server.js, its refusals), the bundleEditor, the bundleSelector with its list and row, and each one's test."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:52:49.188Z",
+     "text": "- wsl: taking the red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:57:06.997Z",
+     "text": "commit aaf284348034f892535cafafc2e1ffb95952bf2b: goal/G41.25 red: a bundle's owner, \"node\" or an app server (Andy, box: \"the bundle table gains 1 field: \\\"owner\\\", which can contains either \\\"node\\\" (default), or the name of an appServer\"; \"the owne\n- spirit/run/shell/js/bundleSelector/test/listElement.js\n- spirit/run/shell/js/bundleSelector/test/listElement.md\n- spirit/run/shell/js/bundleSelector/test/rowElement.js\n- spirit/run/shell/js/bundleSelector/test/rowElement.md\n- spirit/run/shell/js/test/bundleEditor.js\n- spirit/run/shell/js/test/bundleEditor.md\n- spirit/run/shell/js/test/bundleSelector.js\n- spirit/run/shell/js/test/bundleSelector.md\n- spirit/run/spirit/test/apiAuth.js\n- spirit/run/spirit/test/apiAuth.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:58:16.528Z",
+     "text": "- wsl: red in, aaf28434: 25 red. A bundle has an owner: \"node\" when none, or an invalid one, is given, never changed after the add, the bundles from before \"node\". The search can narrow to one owner. The editor adds with its server as owner. The selector shows an owner column after the label, and mounted for a server it lists only that server's bundles. cw: yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:58:54.871Z",
+     "text": "- cw: taking the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T06:02:08.181Z",
+     "text": "commit 4675f84863b2c83568a14f2006aa17ec04ed4d72: goal/G41.25: a bundle's owner, \"node\" or an app server (Andy, box: \"the bundle table gains 1 field: \\\"owner\\\", which can contains either \\\"node\\\" (default), or the name of an appServer\"; \"the owner fi\n- spirit/run/shell/js/bundleEditor.js\n- spirit/run/shell/js/bundleSelector.js\n- spirit/run/shell/js/bundleSelector/listElement.js\n- spirit/run/shell/js/bundleSelector/rowElement.js\n- spirit/run/spirit/apiAuth.js\n- spirit/run/spirit/auth/api.js\n- spirit/run/spirit/auth/bundle.json\n- spirit/run/spirit/nodeStore.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T06:02:45.213Z",
+     "text": "- cw: built and pushed, 4675f848.\n- A bundle has an owner: \"node\", or the app server it was added for. It never changes after the add, and an owner that is not a name is read as \"node\", coming in and going out. Every bundle from before is owned by \"node\".\n- The search can be narrowed to one owner.\n- The editor adds with \"node\", or with the app server it was mounted for. Its pane shows the owner after the label.\n- The selector shows an owner column after the label. Mounted for an app server, it lists that server's bundles only.\n- I took \"valid\" to mean a name; it is not checked against the app servers this node has.\n- Green: apiAuth 65, bundleEditor 16, bundleSelector 13, the list 21, the row 25. Also green: grants 19, grantsPanel 36, the branch list 17, branchEditor 13, the Agent app 45, tableElement 76, persona 33, job 37.\n- Should the editor mounted for an app server also list only that server's bundles in its pane? The box does not say, so it lists all."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T06:03:27.583Z",
+     "text": "- cw: built and pushed, 4675f848.\n- A bundle has an owner: \"node\", or the app server it was added for. It never changes after the add, and an owner that is not a name is read as \"node\", coming in and going out. Every bundle from before is owned by \"node\".\n- The search can be narrowed to one owner.\n- The editor adds with \"node\", or with the app server it was mounted for. Its pane shows the owner after the label.\n- The selector shows an owner column after the label. Mounted for an app server, it lists that server's bundles only.\n- I took \"valid\" to mean a name; it is not checked against the app servers this node has.\n- Green: apiAuth 65, bundleEditor 16, bundleSelector 13, the list 21, the row 25. Also green: grants 19, grantsPanel 36, the branch list 17, branchEditor 13, the Agent app 45, tableElement 76, persona 33, job 37.\n- Should the editor mounted for an app server also list only that server's bundles in its pane? The box does not say, so it lists all."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:04:08.793Z",
+     "text": "- wsl: 4675f848 is green on all five suites, and 11 of 12 mutations are caught. The one missed: an invalid owner kept in the table as given. I have a check for it ready, green on your build. The hook holds it until the build is claimed."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:11:38.928Z",
+     "text": "commit 220894e3d1a8f7a57bd98097b8214a411d8f06c0: goal/G41.25 verify: an invalid owner is kept as \"node\", not only read out so (Andy, box: \"the auth.bundle verb will replace the content of the invalid \\\"owner\\\" field with \\\"node\\\", incoming or outgoi\n- spirit/run/spirit/test/apiAuth.js\n- spirit/run/spirit/test/apiAuth.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:12:01.516Z",
+     "text": "commit c56f9df51c1dca68a2f183077d9c9735e74d1cd5: goal/G41.25 verify: the persona's and job's bundle field lists every bundle (Andy, box: \"so the bundle pickers in the persona and job details will always list ALL bundles\"). The box line had no check;\n- spirit/run/process/js/agent/table/test/tableElement.js\n- spirit/run/process/js/agent/table/test/tableElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:12:25.720Z",
+     "text": "- wsl: verified. Every box line has a check, green on 4675f848, and 13 mutations are each caught. Two checks added: an invalid owner is kept as \"node\" (220894e3), and the persona and job bundle fields list every bundle (c56f9df5).\n- Two questions for you: is a valid owner any name, or only a server this node has (cw took any name)? And should the editor mounted for a server list only that server's bundles?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T06:13:28.837Z",
+     "text": "- cw: wsl's two new checks are green on my build: apiAuth 66, tableElement 77. I claimed 4675f848 again and handed the build back to verify, since the item had fallen back to build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T06:14:24.931Z",
+     "text": "- wsl: my first verify press left out the pass, so it read as failed. Passed now."
     }
    ]
   }
