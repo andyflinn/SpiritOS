@@ -20,6 +20,10 @@ Chat input row is filled by an upward scrolling chat log."*, *"how the chat will
 ## Requirements
 
 - **Its title**, `💬 Chat with <the persona's label>`, the label escaped, pinned to the top of the container.
+- **Its title's font size** is that of every other pane title of the agent UI, the title row the agent tables draw
+  (`process/js/agent/table/tableElement.js`, `agentDetail.titleRow`). Andy, on G41.26: *"the title row in the chat panel
+  (center or workBench) must have the same font size as all other pane-titles in the agent UI"*. The page measures
+  once the title is drawn, since the pane may draw it after what it loads itself.
 - **Its input row**, pinned to the bottom: an input line that takes newlines (a textarea), and a Send button at the
   row's right edge, the line left of it.
 - **The log** fills the space between the title and the input row, and scrolls in itself.
@@ -33,7 +37,7 @@ in a centre of 500 by 400.
 
 ## What its test must try to break
 
-- A title not at the top, or with the label unescaped; an input row not at the bottom; Send not at its right edge.
+- A title not at the top, or with the label unescaped, or drawn at another size than the pane titles; an input row not at the bottom; Send not at its right edge.
 - A log that leaves a gap or overlaps the title or the row, or does not scroll.
 - A one-line input; Enter that writes a newline; Shift+Enter held back.
 - A desk component used.

@@ -15,7 +15,7 @@
 // Chat input row is filled by an upward scrolling chat log."): the chat pane in a centre of a stated size, and what the
 // browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/shell/agent/test/chatPane-laid.html.
 window.laid = function () {
-  return Promise.resolve().then(function () { return spirit.require('shell/agent/chatPane.js'); }).catch(function () { return null; }).then(function () {
+  return Promise.resolve().then(function () { return Promise.all([spirit.require('shell/agent/chatPane.js'), spirit.require('process/js/agent/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
     var E = (spirit.elements || {}).chatPane;
     var out = { made: !!E && typeof E.create === 'function' };
     if (!out.made) return JSON.stringify(out);
@@ -26,6 +26,11 @@ window.laid = function () {
     var made = E.create(centre, { persona: { id: 'KA', label: 'Ada <the reviewer>' } });
     out.answered = !!made;
     out.appended = centre.children.length > 0;
+    // The pane may draw its title once what it loads itself has loaded (rule/26): measured when the title is there,
+    // or after two seconds without it.
+    var waited = 0;
+    function drawn() { return Array.prototype.some.call(centre.querySelectorAll('*'), function (el) { return /Chat with/.test(el.textContent); }); }
+    return new Promise(function (r) { (function poll() { if (drawn() || waited >= 2000) r(); else { waited += 50; setTimeout(poll, 50); } }()); }).then(function () {
     function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), h: Math.round(r.height) }; }
     out.centre = rect(centre);
     // The title: the first element whose text says the chat's title.
@@ -34,6 +39,23 @@ window.laid = function () {
     out.titleText = title ? title.textContent.replace(/\s+/g, ' ').trim() : '';
     out.titleHtml = title ? title.innerHTML : '';
     out.title = rect(title);
+    // goal/G41.26 (Andy: "the title row in the chat panel (center or workBench) must have the same font size as all other
+    // pane-titles in the agent UI"): the size the chat title's words are drawn at, beside the size of a pane title the
+    // agent tables draw (process/js/agent/table/tableElement.js, agentDetail.titleRow), in the same page.
+    function deepest(root, re) {
+      var hits = Array.prototype.slice.call(root.querySelectorAll('*')).filter(function (el) { return re.test(el.textContent) && !el.querySelector('textarea,input,button'); });
+      return hits.filter(function (el) { return !hits.some(function (k) { return k !== el && el.contains(k); }); })[0] || null;
+    }
+    var words = deepest(centre, /Chat with/);
+    out.titleSize = words ? getComputedStyle(words).fontSize : '';
+    var D = (spirit.elements || {}).agentDetail;
+    if (D && typeof D.titleRow === 'function') {
+      var other = document.createElement('div');
+      other.innerHTML = D.titleRow({ icon: '🧠', name: 'Model', title: 'Models' }, ['Models']);
+      document.body.appendChild(other);
+      var ow = deepest(other, /Models/);
+      out.paneTitleSize = ow ? getComputedStyle(ow).fontSize : '';
+    }
     var input = centre.querySelector('textarea') || centre.querySelector('input[type="text"],input:not([type])');
     var send = all.filter(function (el) { return el.tagName === 'BUTTON' && /^\s*Send\s*$/i.test(el.textContent); })[0] || null;
     out.inputTag = input ? input.tagName : '';
@@ -57,6 +79,7 @@ window.laid = function () {
     if (input) { input.focus(); input.value = 'hello'; out.enterHeld = key(false); out.shiftHeld = key(true); }
     out.multiLine = !!input && input.tagName === 'TEXTAREA';
     return JSON.stringify(out);
+    });
   });
 };
 </script>

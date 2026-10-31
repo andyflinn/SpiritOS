@@ -45,9 +45,14 @@ test.startTest('chatPane.js: the chat with a persona, in the centre');
 
     test.subHeading('its title, pinned to the top');
     // "titled: \"💬 Chat with <selected-persona-label>\". The title is pinned to the top of the center pane."
-    ok(m.titleText === '💬 Chat with Ada <the reviewer>', 'its title is 💬 Chat with <the persona\'s label>', 'title: ' + short(m.titleText));
+    // The title row sets its icon apart from its words by its own gap, as every pane title does, so a space there is not asked.
+    ok(m.titleText.replace(/^💬\s*/, '💬 ') === '💬 Chat with Ada <the reviewer>', 'its title is 💬 Chat with <the persona\'s label>', 'title: ' + short(m.titleText));
     ok(/Ada &lt;the reviewer&gt;/.test(m.titleHtml), 'the label escaped', 'title: ' + short(m.titleHtml));
     ok(!!m.title && near(m.title.top, m.centre.top), 'the title is at the top of the centre', 'title ' + short(m.title) + ', centre ' + short(m.centre));
+    // Andy, on G41.26: "the title row in the chat panel (center or workBench) must have the same font size as all other
+    // pane-titles in the agent UI".
+    ok(!!m.paneTitleSize, 'the page draws a pane title of the agent tables to measure against', 'no agentDetail.titleRow on the page');
+    ok(!!m.titleSize && m.titleSize === m.paneTitleSize, 'its title has the font size of every other pane title of the agent UI', 'chat title ' + short(m.titleSize) + ', pane title ' + short(m.paneTitleSize));
 
     test.subHeading('its input row, pinned to the bottom');
     // "pinned to the bottom or that pane is a input block, which contains, for now a chat input line ... and a send
