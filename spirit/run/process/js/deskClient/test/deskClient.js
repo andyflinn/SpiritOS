@@ -64,7 +64,11 @@ let restoreRows = null;
 const appServerStub = {
   get data() { return curD; },
   serve: function (verbs, opts) {
-    if (opts && opts.stream && opts.stream.translator) require(path.resolve(String(opts.stream.translator)));
+    // As appServer takes a stream's translator (goal/G41.24): required, and attached to the data set when it hands an attach.
+    if (opts && opts.stream && opts.stream.translator) {
+      const t = require(path.resolve(String(opts.stream.translator)));
+      if (t && typeof t.attach === 'function') t.attach(globalThis);
+    }
     if (restoreRows) { restoreRows.forEach(function (r) { curD.take({ module: 'process/js/desk', data: {}, app: r }); }); restoreRows = null; }
     served = { verbs: verbs, opts: opts || {} };
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
