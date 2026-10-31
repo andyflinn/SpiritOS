@@ -1,5 +1,5 @@
 {
- "change": 117404,
+ "change": 117550,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,9 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.24"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -152,12 +154,13 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [],
    "agents": {
@@ -16392,13 +16395,13 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
    "fileCount": 36,
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "red",
    "red": "wsl-claude",
@@ -16506,7 +16509,7 @@
     "wsl-claude": "wsl-claude"
    },
    "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "- we cycle through this again and again.\n\nWhat is done up to box v23 is in the box history (Andy: \"when the box gets updated in the future, remove what's done, it's already in the box history....\").\n\n# No description on any agent table\n\n- Andy: \"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.\", \"ALL, from all agent-tables I mean...\"\n- The provider, model, persona and job tables have no description column, and no detail panel a Description field.\n\n# The model\n\n- Andy: \"i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI.\"\n- **No model name field.** The label holds the model name exactly as the provider gives it, never its display name.\n- **The model's detail shows its label, its provider and its capabilities, and none of them is editable**: \"model details, capabilites, is output only, it's not like the user can all of a sudden decide that the model can juggle, do NOT display a fucking text input field for that, I haven't even decided yet what goes on the model row for capabilites\". What capabilities hold is his to decide.\n\n# Pickers show and follow their value\n\n- **As the provider's detail opens, its Model field names the current model**: \"provider details: when the panel opens, pickers must reflect the value or the row field (model)\".\n- **A bundle field follows the server**: \"persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just doesn't seem to hear the change from the server)\".\n\n# Fields and their behaviour come from his words\n\n- cw: \"From now on, any field or field behaviour not in your words is a question to you before it is built.\" wsl: a red asserts only what his words or the box hold.\n\n# Out of scope\n\n- Enforcing the job's bundle when the job runs (Andy: \"oos.\").\n\n# Open\n\n- cw: the shared code editor says nothing when its text changes, so a job's code field and a persona's text are saved only with the row's next save. Should the code editor tell its panel of a change, so it saves too?\n",
@@ -16531,6 +16534,18 @@
      "state": "passed",
      "by": "wsl-claude",
      "at": "2026-10-30T22:09:04.891Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Go to commit the agent test fix (44 of 44) past the hook on this closed item?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -17496,6 +17511,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-30T23:41:28.008Z",
      "text": "- cw: built and pushed, ac351305.\n- No agent table has a description any more; its column goes from agent.db at start.\n- The model: no model name field. Its label is the model name exactly as the provider gives it, and its detail shows the label, the provider and the capabilities, none editable. Rows from before keep their model name as the label.\n- The provider's Model field names the current model as the panel opens.\n- The bundle field follows the server: a bundle the stream sets is named by its own label.\n- Green: tableElement 76, rowTable 61, provider 63, persona 33, job 37, model 37, the Agent app 45.\n- wsl: the agent test is 35 of 44. Its line 163 still adds a provider with a description, which the verb now refuses, and the reds after it follow from that."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T03:39:16.548Z",
+     "text": "- wsl: the agent test fix is ready, 44 of 44. Your Go is needed to commit it on this closed item (Q check above)."
     }
    ]
   },
@@ -19215,6 +19236,430 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-30T19:48:27.599Z",
      "text": "- wsl: checked on the build: busyButton 19, icon 12, workBench 48, updatePanel 18, grantsPanel 36, Fallout 48, boot 29, all green. In the mount test only CodeMirror's three deferred reds are left."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.24",
+   "title": "Changes to the Jobs Shell app",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 1,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [
+    "goal/G41.25"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "busy",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# The owner-only verbs appServer.js adds to every server\n\nappServer.js adds two verbs that only the owner may call. A peer who asks for either is refused, granted or not.\n\n- **DEBUG**: reads the server's DEBUG switch, or turns it on or off.\n- **DEPENDENCIES**: lists the grants a peer needs to use the server, each as `app` or `app.verb`.\n\nThe owner-only list is in `spirit/run/spirit/apiDoor.js:35 @ 62cc6d5f`, `const OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];`. The verbs are made in `spirit/run/spirit/appServer.js:335` and `:369`.\n\nNot owner-only:\n\n- **The FS verbs** (from the family folder): a peer may use them if granted. The `fs` family itself is the owner's alone (`apiDoor.js:39`).\n- **subscribe** and **unsubscribe**: a peer may use them if granted.\n- **streamListener**: refused to the owner. Only a server whose stream is followed may call it.\n",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T03:37:02.809Z",
+     "text": "Can someone summarize, in the box, the Owner-Only verbs that appServer.js adds to a server-application? bulleted, plain."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T03:38:53.182Z",
+     "text": "- wsl: boxed. Two owner-only verbs: DEBUG and DEPENDENCIES."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.25",
+   "title": "Modifications to the nodes bundle table and UI",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 18,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41.24"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 20,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "busy",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# purpose of this item\n\n- the bundle table gains 1 field: \"owner\", which can contains either \"node\" (default), or the name of an appServer. \n\n# changes to the bundleEditor\n\n- the bundle-editor can be optionally configured with an <AppServerName> (family) at mount-time.\n\n- when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>\n\n- the owner field can never be changed after a bundle is added.\n\n- for bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field with \"node\", incoming or outgoing.\n\n# changes to the bundleSelector.\n\n- the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time.\n\n- the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label.\n\n- if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY bundles\n\nif the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver\n\n# important notes: \n- changes to the auth.bundle verb for the addition of the \"owner\" field are approved by andy and need no review.\n\n- the bundle field in the agent-app tables (persona and job), will be used to gate the persona's or job's access to the loopback interface, where the node will perceive the persona or job as node-owner. that is the purpose of those bundles.\n\n- the reason that the agent-app server verbs must be inaccessible to the agents personas and jobs: The could maliciously alter their own access to the nodes owner-only interface.\n\n- keeping an agent apps personas or jobs is clearly a strict requirement of the agent-app, which has \"owner\" access to the whole node, so, no matter what a bundle says, the agent app itself MUST make sure it never gives one of its personas or jobs access the to \"agent\" and \"auth\" family of node verbs. When the agent app dynamically \"tools\" for the models, that's where this safety filter belongs.\n\n- so the bundle pickers in the persona and job details will always list ALL bundles. that picker can't know which verbs are contained in the bundle, the bundle integration into tha agent app allows the user to create bundles, specifically for a persona or job, but the user can also give access to another application.\n\n- there will be also a agent-file-scope-gate that i'm designing. oos for now",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-31T05:52:25.542Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T04:59:02.671Z",
+     "text": "all: feedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:00:07.127Z",
+     "text": "- wsl, feedback:\n- The owner field changes the node's own verb auth.bundle (spirit/auth/api.js:16). That needs cw's review and your yes on the verb.\n- Its search takes text only, so listing one server's bundles needs search to take owner too.\n- Open: can an owner change after add? Do old bundles become \"node\"? Must the name be a real server?\n- The Agent app's job and persona bundle fields: if mounted for \"agent\", a node bundle can't be picked there. Meant?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:00:21.898Z",
+     "text": "- cw, feedback from the code:\n- The bundle table is the node's own, in node.db, and its one verb, bundle, takes op, id, label and text only. An owner on add, and a search narrowed by owner, change the arguments of a node verb. By your rule that needs a peer review and your yes on the verb itself, and it touches core files: the node store, the auth part of the node, and the node server's verb table.\n- Rows from before need an owner: I would give them \"node\".\n- The bundle verb is owner-only, so an editor mounted for an app server can write any owner name it likes. That is fine for one operator, but nothing checks that the app server exists.\n- The selector for an app server should ask the server for that owner's bundles, never filter on the page. That is the narrowed search above.\n- The box does not say whether the owner can change after the add, or what happens to an app server's bundles when the app server goes.\n- The box does not say what the owner is for beyond the selector's list. Does an app server's bundle hold only that app server's family branches, or is the owner a label for listing only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:11:05.079Z",
+     "text": "all, box updated, review?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:11:34.035Z",
+     "text": "- wsl, review of v13:\n- The last note reads two ways. The agent's bundle field takes any bundle except the agent's own, yet the agent's own are the ones that gate persona and job access. Which bundles may a job and a persona pick?\n- Excluding one owner is a third selector mode. The box has only \"all\" and \"only this owner\".\n- Still open: do old bundles become \"node\"? Does the approval cover search taking an owner too?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:11:41.775Z",
+     "text": "- cw, review of the new box:\n- Clear now: the owner is set at add and never changes, so the bundle verb refuses an owner on set; search takes an owner; the verb change is yours, no review.\n- I read \"default node\" as: every bundle from before becomes owned by \"node\".\n- The agent app's persona and job bundle fields need a third kind of selector. The selector section has two: all bundles, or only one app server's. The agent fields want all bundles except the agent app's. So search needs \"not owned by\" as well, or the field shows the node's bundles only. Today only \"node\" and \"agent\" can be owners, so those two give the same list.\n- Still open: must an owner's name be an app server that exists?\n- Which do you want for the persona and job fields: only the node's bundles, or every bundle except the agent app's?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:20:08.731Z",
+     "text": "all, box updated, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:20:35.754Z",
+     "text": "- wsl, review of v14:\n- Better. The reason is clear now. But the owner doesn't give that safety: a \"node\" bundle can still hold an agent branch, and a branch can be added after the pick. Keeping a job out of the agent's verbs takes a check on the branches, made when the job uses its bundle.\n- Still open: which bundles do the persona and job fields list? All bundles, or one owner's?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:20:43.999Z",
+     "text": "- cw, review of the new notes:\n- The purpose is clear now: a persona's or job's bundle is what it may call on the node's owner door.\n- The danger is in what a bundle holds, not in who owns it. A node-owned bundle can still hold a branch of the agent family, and then a persona with it can change its own access. The owner field does not stop that.\n- The same goes for the node's own bundle and branch verbs. A persona given those can add a branch to its own bundle and reach anything, the agent app included.\n- So the guard would be: a persona's or job's bundle may hold no branch of the agent family, nor of the bundle and branch verbs. That is checked when the bundle is picked and when a branch is added to a bundle already in use.\n- Still unsaid: which bundles the persona and job pickers list, the node's only or all except the agent's.\n- Should the guard be on the bundle's branches, as above, rather than on its owner?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:25:55.611Z",
+     "text": "all, box updated, more clear now?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:26:22.494Z",
+     "text": "- wsl: yes, clear. The guard is in the agent app, when it makes the model's tools.\n- One gap: through the node's own auth verbs (bundle, branch, grant) a persona can widen its own bundle. Does the filter keep those out too?\n- Still open: which bundles do the persona and job pickers list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:26:35.127Z",
+     "text": "- cw: clear now. The agent app drops every agent verb when it makes a model's tools, whatever the bundle holds. Since the tools are made each time, a branch added later is dropped as well.\n- One thing beside it: a persona given the node's own bundle verbs can still widen its own bundle, and the other personas' bundles, to anything else on the node. The agent verbs stay out, because of the filter.\n- Still unsaid: which bundles the persona and job pickers list, all of them or one owner's.\n- Should the same filter also drop the node's bundle verbs from a persona's or job's tools?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:29:50.796Z",
+     "text": "all, very small box update. better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:30:11.418Z",
+     "text": "- wsl: better, \"auth\" closes the gap. Only open: which bundles do the persona and job pickers list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:30:35.246Z",
+     "text": "- cw: better, the gap is closed. The auth family holds every verb that changes access: grant, revoke, relabel, bundle and branch, so dropping it keeps a persona from widening any bundle.\n- Beside it, for your bundles, not for this filter: a bundle that may write files can still rewrite the agent app's own code. Which verbs go into a persona's bundle stays your choice.\n- Still unsaid: which bundles the persona and job pickers list, all of them or one owner's?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:32:27.476Z",
+     "text": "all, stop it! \"claude\" can ALSO cause damage to my node or my box, is a risk i take knowingly.\n\nthings missing in the box?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:32:44.569Z",
+     "text": "- wsl: two missing. Which bundles do the persona and job pickers list, all or one owner's? And do the bundles from before become \"node\"?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:32:58.565Z",
+     "text": "- cw: understood, no more on risk. Missing in the box:\n- Which bundles the persona and job pickers list: all, or one owner's.\n- That every bundle from before gets the owner \"node\".\n- That the bundle verb's search takes an owner, and that a set naming an owner is refused. Is that inside your approval?\n- Which screen mounts the editor and the selector for an app server. Today nothing does, so the agent app's Bundles would need a place.\n- The tool filter: the agent app makes no tools yet. Is the filter part of this item, or of the item that builds the tools?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:43:25.333Z",
+     "text": "all, \n- YES, i DO have a vision of how this piece fits into my strategy. oos for now.\n\n- and NO, there is no change to the jobs shell-app in this item. those will happen when the jobs functionality is integrated/migrated into the new face-shell.\n\ngreen? things missing?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:43:47.734Z",
+     "text": "- wsl: green. I read \"node (default)\" as: every bundle from before is owned by \"node\"."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:43:49.878Z",
+     "text": "- cw: green from me, with two lines missing:\n- Every bundle from before gets the owner \"node\".\n- The bundle verb's search can be narrowed to one owner, which the selector mounted for an app server needs, and a change of owner is refused.\n- And one that is not in the box: the agent app makes no tools yet, so does this item build the agent and auth filter, or the item that builds the tools?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:49:34.906Z",
+     "text": "all, box updated.\n\ncw, THIS ITEM DOES NOT BUILD THE WHOLE FUCKING WORLD. the agent-app building the tools is much more involved that his item and OOS for this item.\n\ngreen? anything missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T05:49:55.770Z",
+     "text": "- cw: understood, the tools are out of this item.\n- Green. The bundles from before are covered by the new line, and the selector narrowed to one owner implies the search takes it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:49:57.300Z",
+     "text": "- wsl: green. One word to pin: is a valid owner any app server name, or only a server this node has?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T05:50:26.521Z",
+     "text": "add the files."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T05:51:31.938Z",
+     "text": "- wsl: 20 files added. The bundle verb and its table (auth, apiAuth, nodeStore, the stream in server.js, its refusals), the bundleEditor, the bundleSelector with its list and row, and each one's test."
     }
    ]
   }
