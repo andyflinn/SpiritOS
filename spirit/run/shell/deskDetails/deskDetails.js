@@ -935,7 +935,7 @@ function ddRename() {
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
 // one cache for deskClient and this page: spirit.data (shell/shared/js/spiritData.js) with the desk's translator
-// (shell/shared/js/deskData.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
+// (the desk family's clientCacheManager.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.del('deskItem/' + id); }

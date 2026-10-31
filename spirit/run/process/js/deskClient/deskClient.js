@@ -205,11 +205,14 @@ function heldByMe(row) {
 }
 // The answer the desk would give, from what the stream brought, or null when it is not all there. Any item the stream
 // brought answers, held or not (box v37: "up-to-date information at the agents' fingertips"). THE CACHE IS QUERIED
-// THROUGH THE DESK'S OWN api.js (goal/G41.12, box v15: "The client queries its own cache through that api.js"): its
-// cache.answer, on this node's own copy, the same appServer's query uses.
-const DESK_CACHE = require(path.join(__dirname, '..', '..', '..', spirit.familyPath('desk'))).cache;
+// THROUGH THE DESK'S OWN FAMILY FILE (goal/G41.12, box v15: "The client queries its own cache through that api.js"; since
+// goal/G41.24 its clientCacheManager.js, Andy: "deskClient can get it form its own disc"): its cache.answer, on this
+// node's own copy, the same appServer's query uses.
+// The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
+// here only when first read from, so that require is the one that runs it.
+const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.familyPath('desk')), 'clientCacheManager.js');
 function fromKept(name, args) {
-  return DESK_CACHE.answer(name, args, dataSet, ANSWER_ROOM);
+  return require(DESK_CCM).cache.answer(name, args, dataSet, ANSWER_ROOM);
 }
 // A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
 // node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
@@ -1073,7 +1076,7 @@ const server = appServer.serve({
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
-  stream: { module: 'process/js/desk', translator: path.join(__dirname, '..', '..', '..', 'shell', 'shared', 'js', 'deskData.js'), onRow: streamed, cache: true },
+  stream: { module: 'process/js/desk', translator: DESK_CCM, onRow: streamed, cache: true },
   codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },

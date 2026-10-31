@@ -446,7 +446,7 @@ function deskOnPublished(obj) {
   // CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record, published or not, so reading the chat again on
   // every jump asked the desk once per row. A real gap is a reconnect, and the chat is read again then (deskLoad).
   // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
-  // drawn here, the rest is the dialog's and the kept items' (shell/shared/js/deskData.js).
+  // drawn here, the rest is the dialog's and the kept items' (the desk family's clientCacheManager.js).
   if (obj.table) {
     if (obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
       if (deskGroup) {
@@ -516,8 +516,9 @@ var deskTeamElement = null;
 // know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
 var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
-// deskClient keeps it in node; loaded once by the app, as the shared element is.
-var DESK_DATA = '/shell/shared/js/deskData.js';
+// deskClient keeps it in node; loaded once by the app, as the shared element is. Since goal/G41.24 it is the desk
+// family's clientCacheManager.js, from the node that served this page.
+var DESK_DATA = '/process/js/desk/family/clientCacheManager.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.

@@ -406,10 +406,11 @@ const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 function hexKey(key) { return Buffer.from(String(key || ''), 'base64').toString('hex'); }
 function cacheFile(key) { return path.join(RUN_ROOT, 'relay-state', 'process', following.name, 'cache-' + hexKey(key) + '.json'); }
-// The sender's family api.js on this node, or null: none there, no cache.
+// The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
+// clientCacheManager.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  const file = path.join(RUN_ROOT, spirit.familyPath(String(family)));
+  const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'clientCacheManager.js');
   if (!fs.existsSync(file)) return null;
   try { return require(file); } catch (e) { return null; }
 }
@@ -542,7 +543,12 @@ function heard(st, from, e) {
 function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
   dataSet();
-  if (stream.translator) require(path.resolve(String(stream.translator)));
+  // A translator that hands an attach is attached to this server's data set here (goal/G41.24: the desk's
+  // clientCacheManager.js, required also for its cache rules, so its require may come before the data set).
+  if (stream.translator) {
+    const t = require(path.resolve(String(stream.translator)));
+    if (t && typeof t.attach === 'function') t.attach(globalThis);
+  }
   const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),

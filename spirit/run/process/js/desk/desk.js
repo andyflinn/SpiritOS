@@ -2350,7 +2350,7 @@ function pushGoalWhole(gid) {
 // start, and in that same wake hands the agent every line of Andy's addressed to it that nobody took yet"). Every row
 // of it is under the one change it is pushed at and marked replace: the goal's facts and each item's, then each of his
 // lines to agents that nobody took yet (its row naming them, so each goes to its own), last its end. A deskClient drops
-// what it kept of the goal that the push does not carry (shell/shared/js/deskData.js, the family's cache.keep).
+// what it kept of the goal that the push does not carry (the desk family's clientCacheManager.js, its cache.keep).
 function pushGoalReplace() {
   const s = S;
   const gid = s.current;
