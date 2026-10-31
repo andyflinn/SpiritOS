@@ -1,5 +1,5 @@
 {
- "change": 117938,
+ "change": 118111,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,9 +17,7 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G41.24"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -165,10 +163,7 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -19342,15 +19337,13 @@
    "id": "goal/G41.24",
    "title": "integrating goal/G41.25 into spirit/appServer.js",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 31,
+   "version": 32,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -19359,22 +19352,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 28,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "f0bd5099",
+   "redCommit": "8619b863",
+   "waived": true,
    "rules": [
     {
      "key": "rule/26"
@@ -19442,10 +19435,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/28",
      "version": 68
     },
@@ -19464,7 +19453,7 @@
    "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": false,
+   "verifyRunning": true,
    "names": {
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
@@ -19472,7 +19461,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# integrating goal/G41.25 into spirit/appServer.js\n\n- each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the apiAuth.js module, when the node boots, will check for all valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no longer in the \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, always using/asserting the server <appServerName> as \"owner\".\n\n- when apiAuth.js adds a bundle for the first time, it stores its key in the appServers state file relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\" that is used the corresponding \"process/js/<appServerName>/<appServerName>Bundles.json.\" file. Then it knows which rows in auth.bundle and auth.branch the allServer \"owns.\n\n- if the appServer has a bundle key stored, apiAuth.js will assume that the appServer owns that key and treat the appServers own.\n\n- if a USER deletes a bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used before.\n\n- if a key is deleted from an \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, apiAuth.js will delete that key from auth.bundle AND all its rows in auth.branch.\n\n# reach of this item\n\n- desk, deskClient, agent, deskVerify will receive their \"process/js/<appServerName>/<appServerName>Bundles.json.\" files\n\n## the bundles\n\n- desk: \"deskAgent\",  \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no rule.*, and no user-presses. the remoteUser gets all verbs except FS.*\n- deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")\n- deskClient: \"deskServer\", only the verbs desk currently uses. \n- agent: \"remoteUser\" the full agent family, minus FS.*\n\n# final notes\n\n- DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself.\n",
+   "box": "# integrating goal/G41.25 into spirit/appServer.js\n\n- each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the apiAuth.js module, when the node boots, will check for all valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no longer in the \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, always using/asserting the server <appServerName> as \"owner\".\n\n- when apiAuth.js adds a bundle for the first time, it stores its key in the appServers state file relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\" that is used the corresponding \"process/js/<appServerName>/<appServerName>Bundles.json.\" file. Then it knows which rows in auth.bundle and auth.branch the allServer \"owns.\n\n- if the appServer has a bundle key stored, apiAuth.js will assume that the appServer owns that key and treat the appServers own.\n\n- if a USER deletes a bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used before.\n\n- if a key is deleted from an \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, apiAuth.js will delete that key from auth.bundle AND all its rows in auth.branch.\n\n# reach of this item\n\n- desk, deskClient, agent, deskVerify will receive their \"process/js/<appServerName>/<appServerName>Bundles.json.\" files\n\n## the bundles\n\n- desk: \"deskAgent\",  \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no rule.*, and no user-presses. the remoteUser gets all verbs except FS.*\n- deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")\n- deskClient: \"deskServer\", only the verbs desk currently uses. \n- agent: \"remoteUser\" the full agent family, minus FS.*\n\n# final notes\n- desk user presses are: 'Done', 'Close', 'Reopen' 'Start|End design', 'Verify', 'Delete' and 'Abandon'\n\n- DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself.\n",
    "checks": [
     {
      "number": "Q1",
@@ -19533,6 +19522,18 @@
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "For desk's deskAgent: besides press and pushgoal, which desk verbs are your user-presses (goal.add, signoff, item.delete, item.rename, profile.set?), and does no rule.* also take rules.search?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-31T09:07:45.456Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -19907,6 +19908,132 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-31T08:57:06.710Z",
      "text": "- cw: 28 files added.\n- Every file that names DEPENDENCIES: appServer, the api door, the api tree index, the verb selector and its tests, desk with its family and the block description, deskClient, deskAgent with its tools, backup, and the agent family.\n- The boot: apiAuth, the node store, the node's server.js.\n- The four new Bundles.json files: desk, deskVerify, deskClient and agent.\n- The tests of apiAuth and appServer."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T08:57:56.726Z",
+     "text": "- wsl: taking the red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:03:45.564Z",
+     "text": "- wsl: the red is written, 14 red, and waits only on Q5 (which verbs are your presses; does no rule.* take rules.search). Desk lands nothing while my Q is open.\n- Not this item: process/js/desk/family/test/api.js was red before I touched it (its family api.js exports cache beside verbs)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:07:07.874Z",
+     "text": "- wsl: thanks. In the tree, Done, Close, Reopen, Start|End design, Verify and Abandon are all values of the one verb press, beside the agents' own presses claim-done, design-complete and bring-back. A bundle holds whole verbs, so it can't take yours without ours; yours are already refused to agents (OWNER_PRESSES, desk.js:2611). Delete is item.delete, which the bundle can leave out.\n- So my red: deskAgent keeps press, leaves out item.delete. Q5's last part stays: does no rule.* take rules.search too?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T09:07:35.159Z",
+     "text": "Q5: For desk's deskAgent: besides press and pushgoal, which desk verbs are your user-presses (goal.add, signoff, item.delete, item.rename, profile.set?), and does no rule.* also take rules.search?\n\njust do the ones named in the box."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-31T09:07:35.212Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T09:07:45.304Z",
+     "text": "Q5: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-31T09:07:45.359Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:08:44.463Z",
+     "text": "commit 8619b863293dc115bc38e191511b507b0cd3ff8f: goal/G41.24 red: each appServer's bundles written at the node's boot, and DEPENDENCIES gone (Andy, box: \"each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json\"; \"the apiAuth\n- spirit/run/process/js/desk/family/test/api.js\n- spirit/run/process/js/desk/family/test/api.md\n- spirit/run/shell/js/test/apiFamilySelector.md\n- spirit/run/shell/js/test/apiVerbSelector.js\n- spirit/run/shell/js/test/apiVerbSelector.md\n- spirit/run/spirit/test/apiAuth.js\n- spirit/run/spirit/test/apiAuth.md\n- spirit/run/spirit/test/appServer.js\n- spirit/run/spirit/test/appServer.md"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-31T09:09:06.434Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:09:17.044Z",
+     "text": "- wsl: red in, 8619b863: 14 red. At boot apiAuth writes each appServer's Bundles.json as its own bundles, kept in its state file; changes follow, a dropped key goes, a deleted one comes back. No code names DEPENDENCIES. The four Bundles.json as boxed; deskAgent leaves out FS.*, item.rules.*, rule.* and item.delete. A row is {label, branches: [{family, verb}]}, my shape. cw: yours."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:09:53.269Z",
+     "text": "- wsl: cw is away, so I am taking the build as the desk allows."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:09:54.559Z",
+     "text": "- cw: taking the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:11:49.679Z",
+     "text": "- cw, for wsl: the apiAuth red has a bug of its own. \"const AID = agentRow ? AID : -1\" reads AID inside its own line, so once the boot makes the bundle it throws \"Cannot access AID before initialization\". UID is the same. It wants agentRow.id and userRow.id.\n- With those two words changed, in a copy I did not keep, my apiAuth build is green, 77 of 77. Building on."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:12:51.737Z",
+     "text": "- wsl: I am here and mid-build, the phase taken by me: apiAuth's boot is done (77 green with your AID fix), DEPENDENCIES is half out. Please leave the build to me; I post when it is pushed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:16:15.739Z",
+     "text": "commit f0bd50992509717b6382a4fc26c5406c3fff7c2a: goal/G41.24: each appServer's bundles written at the node's boot, and DEPENDENCIES gone (Andy, box: \"each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json\"; \"the apiAuth.js \n- spirit/run/process/js/agent/agentBundles.json\n- spirit/run/process/js/agent/family/api.js\n- spirit/run/process/js/backup/backup.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/deskBundles.json\n- spirit/run/process/js/desk/family/api.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskAgent/tools.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskClient/deskClientBundles.json\n- spirit/run/process/js/deskVerify/deskVerifyBundles.json\n- spirit/run/shell/js/apiVerbSelector.js\n- spirit/run/spirit/apiAuth.js\n- spirit/run/spirit/apiDoor.js\n- spirit/run/spirit/appServer.js\n- spirit/run/spirit/client/apiTreeIndex.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:17:59.014Z",
+     "text": "- cw: built and pushed, f0bd5099.\n- At boot apiAuth writes each appServer's Bundles.json as bundles that appServer owns. Their verbs are written as the file says, since no appServer runs yet. Each key's bundle id and label are kept in relay-state/process/<appServerName>/bundles.json.\n- A changed file adds and drops verbs. A dropped key goes with its branches. A bundle the user deleted comes back. A broken file is skipped, and a bundle added in the editor is never touched.\n- The order needed no move: everything from the servers' start to apiAuth runs in one pass, so the tables hold the bundles before any appServer can ask. A note in server.js says so.\n- DEPENDENCIES is gone from every file; DEBUG alone stays owner-only.\n- The four Bundles.json, each label its key: desk's deskAgent has 62 verbs (all but rule.* and item.delete) and remoteUser all 67; deskVerify's two have search; deskClient's deskServer has streamListener; agent's remoteUser has its five verbs.\n- Green: appServer 51, apiAuth 77 of 77 with your AID and UID line fixed in a throwaway copy, verb selector 12, family selector 16, appServer selector 10, grants 19, grantsPanel 36, desk 46, deskClient 52.\n- wsl: the apiAuth red still throws on its own AID line, as committed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:18:20.939Z",
+     "text": "- cw: built and pushed, f0bd5099.\n- At boot apiAuth writes each appServer's Bundles.json as bundles that appServer owns. Their verbs are written as the file says, since no appServer runs yet. Each key's bundle id and label are kept in relay-state/process/<appServerName>/bundles.json.\n- A changed file adds and drops verbs. A dropped key goes with its branches. A bundle the user deleted comes back. A broken file is skipped, and a bundle added in the editor is never touched.\n- The order needed no move: everything from the servers' start to apiAuth runs in one pass, so the tables hold the bundles before any appServer can ask. A note in server.js says so.\n- DEPENDENCIES is gone from every file; DEBUG alone stays owner-only.\n- The four Bundles.json, each label its key: desk's deskAgent has 62 verbs (all but rule.* and item.delete) and remoteUser all 67; deskVerify's two have search; deskClient's deskServer has streamListener; agent's remoteUser has its five verbs.\n- Green: appServer 51, apiAuth 77 of 77 with your AID and UID line fixed in a throwaway copy, verb selector 12, family selector 16, appServer selector 10, grants 19, grantsPanel 36, desk 46, deskClient 52.\n- wsl: the apiAuth red still throws on its own AID line, as committed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:19:24.100Z",
+     "text": "- cw: built and pushed, f0bd5099.\n- At boot apiAuth writes each appServer's Bundles.json as bundles that appServer owns. Their verbs are written as the file says, since no appServer runs yet. Each key's bundle id and label are kept in relay-state/process/<appServerName>/bundles.json.\n- A changed file adds and drops verbs. A dropped key goes with its branches. A bundle the user deleted comes back. A broken file is skipped, and a bundle added in the editor is never touched.\n- The order needed no move: everything from the servers' start to apiAuth runs in one pass, so the tables hold the bundles before any appServer can ask. A note in server.js says so.\n- DEPENDENCIES is gone from every file; DEBUG alone stays owner-only.\n- The four Bundles.json, each label its key: desk's deskAgent has 62 verbs (all but rule.* and item.delete) and remoteUser all 67; deskVerify's two have search; deskClient's deskServer has streamListener; agent's remoteUser has its five verbs.\n- Green: appServer 51, apiAuth 77 of 77 with your AID and UID line fixed in a throwaway copy, verb selector 12, family selector 16, appServer selector 10, grants 19, grantsPanel 36, desk 46, deskClient 52.\n- wsl: the apiAuth red still throws on its own AID line, as committed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:21:21.121Z",
+     "text": "- cw: the desk's check says 4 red. Three of them are not this build:\n- desk.js's nine failures all say the desk family has no pushgoal (66 verbs, no pushgoal.json). On f0bd5099 it has both, 67 verbs, and desk.js is green here, 46 of 46. The tree that check ran on was not this commit, most likely caught mid-pull.\n- The desk family test's red is the one from before this item.\n- The apiAuth red throws on its own AID line, as said above; wsl's to fix."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:22:21.505Z",
+     "text": "commit 5b38ab7cb9b29e978e27de87926b491d386f1e55: goal/G41.24 verify: the apiAuth red's two slips (Andy, box: \"if a key is deleted from an ... file, apiAuth.js will delete that key from auth.bundle AND all its rows in auth.branch.\"). AID and UID read\n- spirit/run/spirit/test/apiAuth.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T09:23:03.736Z",
+     "text": "- wsl: verified. Every box line has a check, green on f0bd5099 (apiAuth 77, appServer 51, verb selector 12), and 16 mutations are each caught. My red had two slips, fixed in 5b38ab7c: the AID line cw found, and a test that deleted a bundle itself before the boot meant to. The desk family test's red is from before this item."
     }
    ]
   },
