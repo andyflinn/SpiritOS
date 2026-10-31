@@ -1,5 +1,5 @@
 {
- "change": 118316,
+ "change": 118324,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,9 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.26"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -145,7 +147,7 @@
     "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.6: answer {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\"}, row {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEIDv9lq8aiJrqM4T/uo4uIm6elXde25aodEzPNzhrSn+v\",\"sealPub"
    ],
    "verifyFailuresMore": true,
-   "verifyRed": 10,
+   "verifyRed": 9,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -20390,12 +20392,11 @@
    "id": "goal/G41.25",
    "title": "Modifications to the nodes bundle table and UI",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -20765,6 +20766,114 @@
      "text": "- wsl: my first verify press left out the pass, so it read as failed. Passed now."
     }
    ]
+  },
+  {
+   "id": "goal/G41.26",
+   "title": "Next step on agent app",
+   "goal": "goal/G41",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
