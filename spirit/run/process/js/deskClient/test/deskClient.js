@@ -56,7 +56,9 @@ let cacheAnswer = [];   // what appServer answers: [{ file, bytes }], a file per
 // goal/G41.22: the rows appServer's cache keeps, as it keeps them (the desk family's own cache.keep, spirit/appServer.js
 // keepRow), and, set before a restart, the rows it reads back into the fresh data set at the start, before deskClient
 // runs a line past serve() (appServer restoreCaches): through the translator, no onRow.
-const DESK_API = require(path.join(RUN, familyPath('desk')));
+// goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, clientCacheManager.js.
+const CCM = path.join(RUN, path.dirname(familyPath('desk')), 'clientCacheManager.js');
+const DESK_API = (function () { try { return require(CCM); } catch (e) { return { cache: { keep: function (rows, r) { return rows.concat([r]); } } }; } }());
 let cacheRows = [];
 let restoreRows = null;
 const appServerStub = {
@@ -349,6 +351,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   // goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/test/appServer.js); deskClient only switches it on.
   test.subHeading('the cache is appServer\'s: deskClient switches it on and saves nothing itself');
   ok(served.opts.stream && served.opts.stream.cache === true, 'deskClient follows the desk\'s stream with the cache switch on', 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache }));
+  // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's clientCacheManager.js.
+  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/family/clientCacheManager.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });
@@ -382,7 +386,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   test.subHeading('a restarted deskClient subscribes to its desk, the position appServer\'s');
   await new Promise(function (r) { setTimeout(r, 40); });
   const heard = Number(curD.get('desk/change')) || 0;
-  [FILE, path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')].forEach(function (f) { delete require.cache[require.resolve(f)]; });
+  [FILE, path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
   curD = require(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   globalThis.spirit.data = curD;
   served = null;
@@ -509,7 +513,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push(rowF);
   await settle();
   // The restart: a new deskClient on the same state folder, its data set read back from appServer's cache.
-  [FILE, path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')].forEach(function (f) { delete require.cache[require.resolve(f)]; });
+  [FILE, path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
   curD = require(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
   globalThis.spirit.data = curD;
   served = null;

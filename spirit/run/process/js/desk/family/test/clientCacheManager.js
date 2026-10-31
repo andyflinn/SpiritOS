@@ -1,16 +1,17 @@
 'use strict';
 
-// spirit/run/shell/shared/js/test/deskData.js
-// The tests of shell/shared/js/deskData.js, and of no other module (spec: ./deskData.md; goal/G41.11). The translator
+// spirit/run/process/js/desk/family/test/clientCacheManager.js
+// The tests of process/js/desk/family/clientCacheManager.js, and of no other module (spec: ./clientCacheManager.md;
+// goal/G41.11, moved from shell/shared/js/deskData.js by goal/G41.24). The translator
 // runs as it does: in a window of its own beside the real spirit.data (shell/shared/js/spiritData.js), which it writes into;
 // the desk's rows are handed in as appServer's streamListener hands them, jobs of module process/js/desk.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'deskData.js');
+const FILE = path.join(__dirname, '..', 'clientCacheManager.js');
 const SPIRIT_DATA = path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -34,7 +35,36 @@ function world(withData) {
 const it = function (id, goal, more) { return Object.assign({ id: id, goal: goal, title: id }, more || {}); };
 const whole = function (f) { return { verb: 'goal.whole', item: f }; };
 
-test.startTest('deskData.js: the desk\'s translator into spirit.data');
+test.startTest('clientCacheManager.js: the desk\'s translator into spirit.data, and its cache rules');
+
+// goal/G41.24, Andy: "isn't the clean way of doing things to put \"shell/shared/js/deskData.js\" where it belongs:
+// \"process/js/desk/family/clientCacheManager.js\"", "where clientCacheManager.js must work in both browser and an
+// appServer that subscribes? and deskClient can get it form its own disc?", and "if that's it, then DO IT, now, in this
+// item." The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules
+// (keep, shed, answer) that the desk family's api.js held (cw, agreed in the item's chat).
+test.subHeading('goal/G41.24: where it lives');
+ok(fs.existsSync(FILE), 'process/js/desk/family/clientCacheManager.js is there', 'no ' + FILE);
+ok(!fs.existsSync(path.join(RUN, 'shell', 'shared', 'js', 'deskData.js')), 'shell/shared/js/deskData.js is gone', 'shell/shared/js/deskData.js is still there');
+const inNode = (function () { try { return require(FILE); } catch (e) { return { threw: String(e && e.message) }; } }());
+const CACHE = inNode && inNode.cache;
+ok(!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; }),
+  'in node, as an appServer that subscribes requires it, it answers cache { keep, shed, answer }', 'required: ' + short(inNode && Object.keys(inNode)));
+const DESK_API = (function () { try { return require(path.join(__dirname, '..', 'api.js')); } catch (e) { return {}; } }());
+ok(!('cache' in DESK_API), 'and the desk family\'s api.js holds its verbs alone, no cache', 'api.js exports ' + short(Object.keys(DESK_API)));
+// No file still loads the old path: the desk page, deskDetails, desk, deskClient, appServer and their tests.
+const naming = (function walk(dir, out) {
+  let names = [];
+  try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
+  names.forEach(function (d) {
+    const p = path.join(dir, d.name);
+    if (d.isDirectory()) { if (['node_modules', '.git', 'brains', 'relay-state'].indexOf(d.name) === -1) walk(p, out); }
+    else if (/\.(js|html)$/.test(d.name) && p !== __filename && /shell[\/'", ]+shared[\/'", ]+js[\/'", ]+deskData\.js/.test(fs.readFileSync(p, 'utf8'))) out.push(path.relative(RUN, p));
+  });
+  return out;
+}(RUN, []));
+ok(naming.length === 0, 'no code file loads shell/shared/js/deskData.js any more', naming.length + ' still do: ' + naming.join(', '));
+// Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
+if (!fs.existsSync(FILE)) { test.fail('the translator\'s checks wait on the file'); test.reportSuccessFailureCount(); process.exit(0); }
 
 test.subHeading('it registers on spirit.data, and only when there is one');
 const w0 = world(false);

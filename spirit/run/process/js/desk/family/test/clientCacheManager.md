@@ -1,9 +1,20 @@
-# shell/shared/js/deskData.js
+# process/js/desk/family/clientCacheManager.js
 
-The desk's translator (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (`shell/shared/js/spiritData.js`),
-in the page and in node alike. A desk component's shared part, so in `shell/shared/js` (goal/G41.11; Andy: "desk
-components can make their own shared stuff in spirit/run/shell/shared/js"). Its test runs it beside the real
-spirit.data, as the module runs. Read from the module's code (goal/G41.11).
+What the desk knows of its own rows at the receiving end, in the page and in a subscribing appServer alike: the desk's
+translator into spirit.data (`shell/shared/js/spiritData.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
+it beside the real spirit.data, as the module runs.
+
+**Where it lives** (goal/G41.24). Andy: *"isn't the clean way of doing things to put \"shell/shared/js/deskData.js\"
+where it belongs: \"process/js/desk/family/clientCacheManager.js\""*, *"where clientCacheManager.js must work in both
+browser and an appServer that subscribes? and deskClient can get it form its own disc?"*, and *"if that's it, then DO IT,
+now, in this item."*
+
+- It is `process/js/desk/family/clientCacheManager.js`; `shell/shared/js/deskData.js` is gone, and no code file loads it.
+- Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
+  the cache rules the desk family's `api.js` held, which now holds its verbs alone.
+- deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
+- The cache file it fills stays appServer's: `relay-state/process/<client appServerName>/cache-<the sender's key in
+  hex>.json`, one per server followed (appServer.js).
 
 ## API
 
@@ -44,3 +55,4 @@ nothing. It writes only through `set`, `merge` and `del`:
 - A bundle that keeps only its last row, or a change number lowered.
 - A part kept for an item of another goal, for a narrower read, or for a part never read.
 - A late file losing its mark, or a mark appearing on a row that had none.
+- The old file left, or still loaded anywhere; the cache rules left in api.js, or missing from this file in node.

@@ -17,7 +17,7 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
-const TRANSLATOR = path.join(RUN, 'shell', 'shared', 'js', 'deskData.js');
+const TRANSLATOR = path.join(RUN, path.dirname(require(path.join(RUN, 'spirit.js')).familyPath('desk')), 'clientCacheManager.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
 
@@ -330,6 +330,8 @@ if (CHILD) {
     ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
 
     // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
+    // goal/G41.24: the desk's translator is its family's clientCacheManager.js; the stream checks below follow it.
+    if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, process/js/desk/family/clientCacheManager.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
     const { A, s, D } = start({}, { logMax: 5 });
     await tick(100);
     ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));
