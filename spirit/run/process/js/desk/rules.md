@@ -2,6 +2,10 @@
 
 ## ui
 
+### rule/29 (version 70): terms for selector elements
+
+ "Andy's terms": <name>Selector:pane and <name>Selector:dropdown are the two modes of a probabilitySearch derivative. Never "picker".
+
 ### rule/26 (version 64): every shell element loads its own stuff
 
 - every shell element loads its own elements dynamically through the fucking apirit.require functionality.
