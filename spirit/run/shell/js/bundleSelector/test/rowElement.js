@@ -83,8 +83,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = global.window.spirit.elements;
 
   test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['shell/js/rowElement.js', 'shell/js/fieldInput.js', 'shell/js/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
-    'it requires the shared row element, the field input and the arming button through spirit.require', 'required: ' + short(required));
+  // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
+  ok(['shell/js/rowElement.js', 'shell/js/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
+    'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
   ok(E.bundleElement && typeof E.bundleElement.create === 'function', 'it registers spirit.elements.bundleElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleElement || typeof E.bundleElement.create !== 'function') return;
 

@@ -9,7 +9,7 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `shell/js/rowElement.js`, `shell/js/fieldInput.js` and
+- It loads what it uses itself (rule/26): `shell/js/rowElement.js` and
   `shell/js/armingButton.js`, through `spirit.require`.
 - It registers `spirit.elements.bundleElement.create(row, opts)`: a row element (`shell/js/rowElement.js`) of kind
   `bundle`, keyed by the bundle's id. Its row is the bundle as `auth.bundle` answers it, `{ id, label }`.

@@ -124,7 +124,7 @@ function makeDom() {
 const REAL = [
   'shell/shared/js/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
-  'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'process/js/agent/table/model/updatePanel.js',
+  'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'shell/js/busyButton.js',
   'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
   'process/js/agent/table/job/elementTable.js', 'process/js/agent/table/job/elementRow.js',
 ];

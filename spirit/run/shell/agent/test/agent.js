@@ -302,7 +302,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   def2.mount(box('app2'), w2.api); await settle();
   const L2 = ((w2.created[0] || {}).opts || {}).left || [];
   const lb2 = box('left2'); if (L2[0]) L2[0].mount(lb2); await settle();
-  ok(L2.length === 1 + TABLES.length && !isOn(lb2), 'with no config file, showDebug is false: the checkbox is unchecked', 'checkbox: ' + (lb2.inputs[0] ? lb2.inputs[0].checked : 'none'));
+  // The app's tool, one per table, and 💬 Select Persona (goal/G41.26).
+  ok(L2.length === 2 + TABLES.length && !isOn(lb2), 'with no config file, showDebug is false: the checkbox is unchecked', 'checkbox: ' + (lb2.inputs[0] ? lb2.inputs[0].checked : 'none'));
   w2.stream(true); await settle();
   ok(w2.title().indexOf(BUG) === -1, 'and the title shows no bug, the server on or not', 'title: ' + short(w2.title()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
