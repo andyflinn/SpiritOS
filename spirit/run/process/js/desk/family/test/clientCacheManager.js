@@ -85,10 +85,12 @@ ok(w.D.get('desk/current') === 'goal/G9' && w.item('goal/G0') && w.item('goal/G0
 w.job({ verb: 'item.row', item: it('goal/G7.1', 'goal/G7') });
 ok(w.D.get('desk/current') === 'goal/G9' && w.item('goal/G9.1') && w.item('goal/G7.1'), 'a row that is not goal.whole is kept and drops nothing', 'current ' + w.D.get('desk/current'));
 
-test.subHeading('another goal pushed whole: what was kept of others goes, the group chat stays');
+test.subHeading('another goal pushed whole: it is current, and nothing kept of others goes (goal/G41.12)');
+// Andy, goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client
+// side"; goal/G41.24, his decision: "the three bundle checks go, and the other three assert my G41.12 words."
 w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
 w.job(whole(it('goal/G8.1', 'goal/G8')));
-ok(w.D.get('desk/current') === 'goal/G8' && !w.item('goal/G9.1') && !w.item('goal/G9') && !w.part('goal/G9.1') && !w.item('goal/G7.1'), 'goal/G9\'s rows and parts go, and so does another goal\'s row',
+ok(w.D.get('desk/current') === 'goal/G8' && !!w.item('goal/G9.1') && !!w.item('goal/G9') && !!w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && !!w.item('goal/G7.1'), 'it is current, and goal/G9\'s rows and parts stay, and so does another goal\'s row: every goal is kept',
   short(Object.keys(w.D.branch('deskItems'))));
 ok(w.item('goal/G0') && w.item('goal/G0.3') && w.item('goal/G8.1'), 'the group chat and its items stay; the new goal\'s row is kept', short(Object.keys(w.D.branch('deskItems'))));
 w.job({ verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
@@ -106,16 +108,12 @@ ok(w.D.get('desk/change') === 5, 'desk/change is raised to 5 and not lowered by 
 w.job({ change: '9', verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 ok(w.D.get('desk/change') === 5, 'a change that is not a number is not taken', 'desk/change ' + w.D.get('desk/change'));
 
-test.subHeading('a bundle is its rows (goal/G41.11)');
+test.subHeading('a bundle is appServer\'s: the translator takes one row at a time (goal/G41.12)');
+// The three bundle checks are gone (goal/G41.24, Andy: "the three bundle checks go"; "i think the translator has no
+// business knowing anything about \"bundling\""): appServer opens a bundle and hands its rows in one by one.
 const wb = world(true);
-wb.job({ change: 7, rows: [whole(it('goal/G9.1', 'goal/G9', { title: 'A' })), whole(it('goal/G9.2', 'goal/G9', { title: 'B' }))] });
-ok(wb.item('goal/G9.1') && wb.item('goal/G9.1').title === 'A' && wb.item('goal/G9.2') && wb.item('goal/G9.2').title === 'B', 'both rows of a bundle are kept (the second goal.whole does not drop the first)',
-  short(Object.keys(wb.D.branch('deskItems'))));
-ok(wb.D.get('desk/change') === 7 && wb.D.get('desk/current') === 'goal/G9', 'the bundle\'s change is desk/change, 7, and its goal is current', short({ change: wb.D.get('desk/change'), current: wb.D.get('desk/current') }));
-wb.job({ change: 8, rows: [{ table: 'box', id: 'goal/G9.1', row: { text: 'x' } }, { item: it('goal/G9.2', 'goal/G9'), removed: true }, null] });
-ok(!wb.item('goal/G9.2') && wb.item('goal/G9.1') && wb.D.get('desk/change') === 8, 'side rows and removes in a bundle are taken as single rows; a null one is skipped', short(Object.keys(wb.D.branch('deskItems'))));
 wb.job({ verb: 'goal.whole', item: it('goal/G9.3', 'goal/G9') });
-ok(wb.item('goal/G9.3'), 'a single row still works as before', short(Object.keys(wb.D.branch('deskItems'))));
+ok(wb.item('goal/G9.3'), 'a single row is taken as it comes', short(Object.keys(wb.D.branch('deskItems'))));
 
 test.subHeading('took: a part read for an item of the current goal is kept');
 const wt = world(true);
@@ -150,12 +148,15 @@ const ws = world(true);
 ws.job(whole(it('goal/G9.1', 'goal/G9')));
 ws.job(whole(it('goal/G9.2', 'goal/G9')));
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'never read' } });
-ok(!ws.part('goal/G9.1'), 'a part never read stays unread', short(ws.part('goal/G9.1')));
+// goal/G41.12: "The cache keeps everything the server sends": a box the stream brings is kept, read or not.
+ok(!!ws.part('goal/G9.1') && ws.part('goal/G9.1').box === 'never read', 'a box the stream brings is kept though the item was never read', short(ws.part('goal/G9.1')));
+ws.job({ table: 'chat', id: 'goal/G9.2', row: { by: 'a', at: '1', text: 'unread line' } });
+ok(!!ws.part('goal/G9.2') && Array.isArray(ws.part('goal/G9.2').chat) && ws.part('goal/G9.2').chat.some(function (l) { return l && l.text === 'unread line'; }), 'and so is a chat line', short(ws.part('goal/G9.2')));
 ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [] });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'x', version: 2 } });
 ws.job({ table: 'chat', id: 'goal/G9.1', row: { by: 'a', at: '1', text: 't' } });
 ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
-ok(!('box' in ws.part('goal/G9.1')) && !('chat' in ws.part('goal/G9.1')) && !('files' in ws.part('goal/G9.1')), 'the box, chat and files of an item whose checks alone were read are not kept', short(ws.part('goal/G9.1')));
+ok(ws.part('goal/G9.1').box === 'x' && ws.part('goal/G9.1').version === 2 && Array.isArray(ws.part('goal/G9.1').chat) && ws.part('goal/G9.1').chat.some(function (l) { return l && l.text === 't'; }), 'the box and the chat line the stream brings are kept beside the checks read', short(ws.part('goal/G9.1')));
 ws.X.took('item.box', { id: 'goal/G9.1' }, { box: 'old', version: 1 });
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'new', version: 2 } });
 ok(ws.part('goal/G9.1').box === 'new' && ws.part('goal/G9.1').version === 2, 'a box row replaces the box read, with its version', short(ws.part('goal/G9.1')));

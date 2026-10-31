@@ -29,19 +29,21 @@ nothing. It writes only through `set`, `merge` and `del`:
 
 - **A row** (`item`, an object or a JSON string, with an id) is kept as `deskItems/<id>`; facts without an id, broken
   JSON and non-objects are dropped.
-- **A goal pushed whole** (`verb: 'goal.whole'`) of a goal other than the current and the group chat (`goal/G0`):
-  everything kept of other goals goes, rows and parts; the group chat's items stay, and so do rows of the new goal that
-  came before it; it becomes `desk/current`. The group chat never becomes current; a goal.whole of the current goal or
-  any other row drops nothing.
+- **A goal pushed whole** (`verb: 'goal.whole'`) of a goal other than the group chat (`goal/G0`) becomes
+  `desk/current`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
+  everything the server sends, every goal, no filtering on the client side"*). The group chat never becomes current.
 - **A removed row** deletes the item's facts and its parts.
 - **The change number** is raised, never lowered; a change that is not a number is not taken.
-- **A bundle** (goal/G41.11) `{ change, rows: [...] }` sets `desk/change` and takes each row as the single row it is
-  (two goal.whole rows of one goal keep both).
+- **A bundle is appServer's**: it opens it and hands the rows in one by one, so the translator takes one row at a time
+  and knows nothing of bundling (goal/G41.24, Andy: *"i think the translator has no business knowing anything about
+  \"bundling\""*, and his decision: *"the three bundle checks go, and the other three assert my G41.12 words."*).
 - **took** keeps a part only for an item that has a row, of the current goal or the group chat, once a goal was
   pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (not an older page, `before`),
   `item.checks` `{checks}`, `item.files` `{files, filesMore}` (not files `under` a folder). Anything else keeps
   nothing and throws nothing.
-- **Side rows** keep current only a part already read:
+- **A box or a chat line the stream brings is kept**, read or not (goal/G41.12: the cache keeps everything the server
+  sends). A check or a file alone waits for a read.
+- **Side rows** keep current a part already read:
   - `box` replaces the box and version;
   - `chat` adds a line, or replaces the same line (by, at, text); a removed or row-less one changes nothing;
   - `checks` adds or replaces by number; answered and cleared go; removed goes by `at`;
@@ -51,8 +53,8 @@ nothing. It writes only through `set`, `merge` and `del`:
 
 ## What its test must try to break
 
-- A goal pushed whole that leaves another goal's rows or parts behind, or drops the group chat.
-- A bundle that keeps only its last row, or a change number lowered.
-- A part kept for an item of another goal, for a narrower read, or for a part never read.
+- A goal pushed whole that drops another goal's rows or parts, or the group chat.
+- A change number lowered.
+- A box or chat line the stream brings left out; a part kept for an item of another goal, or for a narrower read.
 - A late file losing its mark, or a mark appearing on a row that had none.
 - The old file left, or still loaded anywhere; the cache rules left in api.js, or missing from this file in node.
