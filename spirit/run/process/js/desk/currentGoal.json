@@ -1,5 +1,5 @@
 {
- "change": 118324,
+ "change": 118326,
  "goal": "goal/G41",
  "items": [
   {
@@ -161,7 +161,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -19353,7 +19353,9 @@
    "blocking": [
     "goal/G41"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.25"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -20392,28 +20394,32 @@
    "id": "goal/G41.25",
    "title": "Modifications to the nodes bundle table and UI",
    "goal": "goal/G41",
-   "status": "closed",
+   "status": "waiting for deskVerify",
    "statusTone": "",
    "with": "",
    "version": 18,
    "buttons": [
-    "reopen"
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
    ],
    "blocking": [
     "goal/G41.24"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
+   "design": true,
    "fileCount": 22,
    "green": true,
-   "code": true,
+   "code": false,
    "phase": "",
    "red": "wsl-claude",
    "builder": "claude-windows",
@@ -20512,7 +20518,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "# purpose of this item\n\n- the bundle table gains 1 field: \"owner\", which can contains either \"node\" (default), or the name of an appServer. \n\n# changes to the bundleEditor\n\n- the bundle-editor can be optionally configured with an <AppServerName> (family) at mount-time.\n\n- when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>\n\n- the owner field can never be changed after a bundle is added.\n\n- for bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field with \"node\", incoming or outgoing.\n\n# changes to the bundleSelector.\n\n- the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time.\n\n- the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label.\n\n- if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY bundles\n\nif the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver\n\n# important notes: \n- changes to the auth.bundle verb for the addition of the \"owner\" field are approved by andy and need no review.\n\n- the bundle field in the agent-app tables (persona and job), will be used to gate the persona's or job's access to the loopback interface, where the node will perceive the persona or job as node-owner. that is the purpose of those bundles.\n\n- the reason that the agent-app server verbs must be inaccessible to the agents personas and jobs: The could maliciously alter their own access to the nodes owner-only interface.\n\n- keeping an agent apps personas or jobs is clearly a strict requirement of the agent-app, which has \"owner\" access to the whole node, so, no matter what a bundle says, the agent app itself MUST make sure it never gives one of its personas or jobs access the to \"agent\" and \"auth\" family of node verbs. When the agent app dynamically \"tools\" for the models, that's where this safety filter belongs.\n\n- so the bundle pickers in the persona and job details will always list ALL bundles. that picker can't know which verbs are contained in the bundle, the bundle integration into tha agent app allows the user to create bundles, specifically for a persona or job, but the user can also give access to another application.\n\n- there will be also a agent-file-scope-gate that i'm designing. oos for now",
@@ -20522,12 +20528,22 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-31T05:52:25.542Z",
+     "at": "2026-10-31T11:30:42.788Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-31T11:30:42.788Z",
+     "made": "desk"
     }
    ],
    "chat": [
