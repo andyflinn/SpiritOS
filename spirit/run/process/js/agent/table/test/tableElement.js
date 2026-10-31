@@ -517,6 +517,9 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const bundleSays = bsel ? String((bsel.row && bsel.row.label) || bsel.opts.placeholder || '') : '';
   ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label: ' + bundleSays, 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
   ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
+  // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
+  // selector is mounted for no app server (shell/js/bundleSelector.js, options.family).
+  ok(!!bsel && (bsel.opts.family === undefined || bsel.opts.family === ''), 'the bundle field lists every bundle: its selector is mounted for no app server', 'opts: ' + short(bsel && bsel.opts));
   if (bsel) {
     w.calls.length = 0;
     bsel.value = 9; bsel.row = { id: 9, label: 'Reader' };

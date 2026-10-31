@@ -78,7 +78,9 @@ the table)"*.
   answers no row, the field is hidden (*"The Model field is hidden while the model table holds no model of this
   provider"*); with one, it is shown.
 - **A bundle field: kind `bundle`.** The editor loads `shell/js/bundleSelector.js` itself and makes a bundle selector in
-  the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`).
+  the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`). It lists every
+  bundle, whoever owns it (goal/G41.25, Andy: *"so the bundle pickers in the persona and job details will always list ALL
+  bundles"*): the selector is mounted for no app server.
 - **The bundle by its label** (Andy: *"why would the bundle picker show "bundle 2" for it's selection instead of the
   fucking label?"*): the bundle field shows the job's bundle by the label the node has for it (`auth.bundle { op: get }`),
   never as the word bundle and its number.
