@@ -215,9 +215,14 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   const badIn = [];
   for (const bad of ['', 42, 'not a name!', 'a.b', null]) {
     const r = await call(auth, 'bundle', { op: 'add', label: 'Bad ' + badIn.length, owner: bad });
-    badIn.push([bad, isNum(r.id) ? (await call(auth, 'bundle', { op: 'get', id: r.id })).owner : r]);
+    badIn.push([bad, isNum(r.id) ? (await call(auth, 'bundle', { op: 'get', id: r.id })).owner : r, r.id]);
   }
   ok(badIn.every(function (x) { return x[1] === 'node'; }), 'an add whose owner is not valid (empty, not a text, not a name) is owned by "node"', 'owners: ' + short(badIn));
+  // Incoming means kept: the table itself holds "node" for each, not the invalid owner read out as "node".
+  const kdb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'), { readOnly: true });
+  const kept2 = badIn.map(function (x) { try { const r = kdb.prepare('SELECT owner FROM bundle WHERE id = ?').get(x[2]); return r && r.owner; } catch (e) { return null; } });
+  kdb.close();
+  ok(kept2.length === badIn.length && kept2.every(function (v) { return v === 'node'; }), 'and the table keeps "node" for it, never the owner it was given', 'kept: ' + short(kept2));
   // Outgoing: a row the table holds with an owner that is not valid is answered "node", by get, search and the stream.
   const odb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
   let wrote = true;

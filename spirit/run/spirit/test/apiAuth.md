@@ -36,7 +36,8 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
   field are approved by andy and need no review."*
   - An add with no owner is owned by `node`; with an app server's name, by that server.
   - A set never changes the owner.
-  - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`.
+  - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`, and the table keeps
+    `node` for it.
   - Outgoing: a kept row whose owner is not valid is answered `node`, by get, by search and on the stream.
   - The bundles from before (a `bundle` table with no owner column) are each owned by `node`.
   - Each row told for the stream carries its owner.
