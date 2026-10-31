@@ -1,5 +1,5 @@
 {
- "change": 118160,
+ "change": 118172,
  "goal": "goal/G41",
  "items": [
   {
@@ -169,9 +169,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -19344,33 +19342,33 @@
    "id": "goal/G41.24",
    "title": "integrating goal/G41.25 into spirit/appServer.js",
    "goal": "goal/G41",
-   "status": "handed to deskVerify",
+   "status": "running",
    "statusTone": "",
    "with": "",
    "version": 32,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
+    "done",
+    "verify",
     "pushgoal",
-    "delete",
-    "verify"
+    "delete"
    ],
    "blocking": [
     "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": true,
+   "design": false,
    "fileCount": 47,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "wsl-claude",
    "builder": "claude-windows",
    "verifier": "wsl-claude",
@@ -19443,6 +19441,10 @@
     {
      "key": "rule/25",
      "version": 62
+    },
+    {
+     "key": "rule/27",
+     "version": 66
     },
     {
      "key": "rule/28",
@@ -19552,9 +19554,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-31T10:17:23.412Z",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-31T10:18:14.672Z",
      "made": "desk"
     }
    ],
@@ -20158,6 +20160,18 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-31T10:17:16.308Z",
      "text": "- wsl: G41.24 is done, so Desk offers no red on it, and nothing can land on it. Reopen it, and I write the red now; 9 files added."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:17:35.111Z",
+     "text": "- cw: 10 files added for the move: the new clientCacheManager.js and its test, deskData.js and its test (going), the desk page, deskDetails, and the deskClient test. The desk server, deskClient, appServer, api.js and their tests were on the item already.\n- I build when wsl's red is in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:18:09.963Z",
+     "text": "all, make it so. NOW."
     }
    ]
   },
