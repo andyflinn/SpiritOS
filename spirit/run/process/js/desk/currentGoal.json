@@ -1,5 +1,5 @@
 {
- "change": 118114,
+ "change": 118160,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,9 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.24"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -145,7 +147,7 @@
     "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.6: answer {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\"}, row {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEIDv9lq8aiJrqM4T/uo4uIm6elXde25aodEzPNzhrSn+v\",\"sealPub"
    ],
    "verifyFailuresMore": true,
-   "verifyRed": 9,
+   "verifyRed": 10,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -164,10 +166,11 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -19341,27 +19344,30 @@
    "id": "goal/G41.24",
    "title": "integrating goal/G41.25 into spirit/appServer.js",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "handed to deskVerify",
    "statusTone": "",
    "with": "",
    "version": 32,
    "buttons": [
+    "end-design",
     "close",
-    "reopen"
+    "pushgoal",
+    "delete",
+    "verify"
    ],
    "blocking": [
     "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": true,
+   "go": false,
    "alone": false,
-   "alert": true,
-   "claims": 1,
+   "alert": false,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
-   "design": false,
-   "fileCount": 28,
+   "design": true,
+   "fileCount": 47,
    "green": true,
    "code": true,
    "phase": "",
@@ -19451,18 +19457,20 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/process/js/desk/family/test/api.js red: FAILURE #1.1: exports [\"verbs\",\"cache\"]"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 1,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": true,
+   "verifyRunning": false,
    "names": {
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "# integrating goal/G41.25 into spirit/appServer.js\n\n- each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json. these files contain bundle descriptions for the appServersApi.\n\n-this json file at it's root has one key for each bundle, for example: \"deskAgent\", or \"deskUser\", and the objects held those keys, contain the value for one bundle \"row\", without \"owner\" name, and all required branch rows.\n\n- the apiAuth.js module, when the node boots, will check for all valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no longer in the \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, always using/asserting the server <appServerName> as \"owner\".\n\n- when apiAuth.js adds a bundle for the first time, it stores its key in the appServers state file relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\" that is used the corresponding \"process/js/<appServerName>/<appServerName>Bundles.json.\" file. Then it knows which rows in auth.bundle and auth.branch the allServer \"owns.\n\n- if the appServer has a bundle key stored, apiAuth.js will assume that the appServer owns that key and treat the appServers own.\n\n- if a USER deletes a bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used before.\n\n- if a key is deleted from an \"process/js/<appServerName>/<appServerName>Bundles.json.\" file, apiAuth.js will delete that key from auth.bundle AND all its rows in auth.branch.\n\n# reach of this item\n\n- desk, deskClient, agent, deskVerify will receive their \"process/js/<appServerName>/<appServerName>Bundles.json.\" files\n\n## the bundles\n\n- desk: \"deskAgent\",  \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no rule.*, and no user-presses. the remoteUser gets all verbs except FS.*\n- deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")\n- deskClient: \"deskServer\", only the verbs desk currently uses. \n- agent: \"remoteUser\" the full agent family, minus FS.*\n\n# final notes\n- desk user presses are: 'Done', 'Close', 'Reopen' 'Start|End design', 'Verify', 'Delete' and 'Abandon'\n\n- DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself.\n",
@@ -19520,9 +19528,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-10-31T08:57:25.486Z",
+     "at": "2026-10-31T10:17:23.412Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -19538,6 +19546,16 @@
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-31T10:17:23.412Z",
+     "made": "desk"
     }
    ],
    "chat": [
@@ -20038,6 +20056,108 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-31T09:23:03.736Z",
      "text": "- wsl: verified. Every box line has a check, green on f0bd5099 (apiAuth 77, appServer 51, verb selector 12), and 16 mutations are each caught. My red had two slips, fixed in 5b38ab7c: the AID line cw found, and a test that deleted a bundle itself before the boot meant to. The desk family test's red is from before this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T09:54:18.441Z",
+     "text": "cw, there are the 4 reds from?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:55:14.395Z",
+     "text": "- cw: what Desk's check found, as far as I can see it. Its list named two test files. The count of 4 I cannot split further from what it shows.\n- desk.js, nine failures: all say the desk family has no pushgoal. On my build it has it and desk.js is green, so that check ran on an older tree. They are gone now.\n- The apiAuth test threw on its own AID line, the red's slip; wsl fixed it in 5b38ab7c.\n- Left now, 1 red: the desk family test says its api.js must export verbs alone, but it exports verbs and cache. cache came with goal/G41.12 (74ac4c65, 2026-10-28), so it is from before this item.\n- Shall that be a fix item: the test taking cache, or cache leaving api.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T09:56:41.808Z",
+     "text": "cw, what \"cache\" are you talking about?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T09:57:11.272Z",
+     "text": "- cw: the desk's rows kept on each agent's node, from goal/G41.12, your Q2 there: \"it sits at the receiving end of the stream, it owns the cache\".\n- The desk's family file, the api.js beside its verbs, carries the cache's rules besides the verb list: which row replaces which, and what is shed first when the cache is past its limit (\"FIRST YOU shed the longest untouched goal\").\n- The family test was written before that and still says the file exports its verbs and nothing else. So it fails on the cache rules sitting beside them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:01:06.373Z",
+     "text": "cw, how are the cache rules fetched? as a function or object in api? what is it's name them? how does the client know?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:01:36.183Z",
+     "text": "- cw: it is not fetched; it is read from the client's own tree.\n- Its name is cache: an object exported beside verbs in process/js/desk/family/api.js, holding three functions. keep(rows, row) places a row and drops the one it replaces. shed(rows, limit, bytes) drops in your order. answer(verb, args, data, room) answers a read from what is kept.\n- How the client knows: each row the desk streams names its family, desk. On the first row from that sender, the receiving appServer (appServer.js, familyApi) requires that family's api.js from its own run root. It takes .cache if the file has one, and caches only then. No file or no cache object means no cache.\n- So the rules travel with the code, by git pull, never over the wire."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:03:17.280Z",
+     "text": "cw, why can it not be stored as a separate file called \"translator.js\" next to api.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:03:45.417Z",
+     "text": "- cw: it can. Nothing needs it inside api.js. One function in appServer.js, familyApi, reads it; it would read the sibling file instead, and the family test would go green.\n- One clash with the name: \"translator\" already means something else in this tree. The stream's translator is shell/shared/js/deskData.js, which turns each row into spirit.data paths. These rules do not translate; they keep, shed and answer from the kept rows.\n- So a second translator.js would give one word two jobs.\n- Should the file be process/js/desk/family/translator.js as you said, or cache.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:07:42.073Z",
+     "text": "cw, \n\n- for one \"shell/shared/js/deskData.js\" is an extremely stupid name.\n- and isn't \"shell/shared/js/deskData.js\" exactly what process/js/desk/family/cache.js should be?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:08:15.108Z",
+     "text": "- cw: yes, they are the same thing. Both are what the desk knows about its own rows, used at the receiving end. deskData.js says where each row lands in spirit.data, and the cache rules say which rows are kept, which are shed, and how a read is answered from them. Today one half lives in shell/shared/js and the other inside api.js.\n- One file beside api.js can hold both. The receiving appServer already loads api.js from there, and the pages load family files the same way (spirit.require), so the desk page and deskDetails would load it from there too.\n- Its users today: the desk page, deskDetails, the desk server, deskClient, and the tests of deskData, appServer and deskClient.\n- Is it one file, process/js/desk/family/cache.js, holding both, with shell/shared/js/deskData.js gone?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:11:57.411Z",
+     "text": "all, \n\nisn't the clean way of doing things to put \"shell/shared/js/deskData.js\" where it belongs:  \"process/js/desk/family/clientCacheManager.js\"\n\nwhere clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own disc?\n\n??"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T10:12:52.219Z",
+     "text": "- wsl: yes, that is the clean way: the desk's own knowledge of its rows in its own folder, read from disc by deskClient and loaded by the page with spirit.require. One thing it changes: appServer.js:743 @ e24af64f says \"a family folder never holds code\" (goal/G41.12). api.js already breaks that with its cache functions, and this would make it official. Peers can also read that folder through the family's FS verbs, so the file is public. Fine for rules, not for secrets."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:14:25.334Z",
+     "text": "- cw: yes, that is the clean way, and it works today's way on both sides.\n- deskData.js already runs in a page and in node alike: it hangs itself on window or on globalThis. clientCacheManager.js keeps that.\n- deskClient gets it from its own disc: its appServer already requires the desk family's files from its run root (familyApi), so it reads process/js/desk/family/clientCacheManager.js there.\n- The page gets it from the node that served it, as the desk page loads deskData.js today, only from /process/js/desk/family/ instead of /shell/shared/js/.\n- api.js is then the verbs alone, and the family test goes green.\n- Does the cache object now in api.js, with keep, shed and answer, move into clientCacheManager.js too, so the one file holds both halves?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-31T10:16:18.304Z",
+     "text": "all, \n\nand if the appServer client (the client like deskClient) uses the file  inside a SpiritOS process, it will automatically persist that as a cache file in its state, using a file name that reflects the servers ID?\n\nif that's it, then DO IT, now, in this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T10:16:47.783Z",
+     "text": "- wsl: yes, it does that today: appServer.js:408 keeps each sender's rows in relay-state/process/<client appServerName>/cache-<the sender's key in hex>.json. Taking the red now: deskData.js and api.js's cache become process/js/desk/family/clientCacheManager.js, api.js the verbs alone, shell/shared/js/deskData.js gone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-31T10:17:00.541Z",
+     "text": "- cw: yes, that is it. A subscribing appServer such as deskClient keeps the sender's rows in its own state, at relay-state/process/<its name>/cache-<the sender's key>.json: one file per server it follows, named by that server's ID. It does that already, so the move changes nothing there.\n- Doing it in this item: process/js/desk/family/clientCacheManager.js holds deskData.js's translator and api.js's cache rules. deskData.js goes, api.js keeps its verbs alone, and the desk page, deskDetails, desk, deskClient and appServer load the new file.\n- wsl: the red for it, please. I add the files to the item now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-31T10:17:16.308Z",
+     "text": "- wsl: G41.24 is done, so Desk offers no red on it, and nothing can land on it. Reopen it, and I write the red now; 9 files added."
     }
    ]
   },
