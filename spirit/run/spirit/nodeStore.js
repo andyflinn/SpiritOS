@@ -515,7 +515,8 @@ function open(rootDir, opts) {
     DROP TABLE IF EXISTS bundle_paths;
     CREATE TABLE IF NOT EXISTS bundle (
       id    INTEGER PRIMARY KEY,
-      label TEXT NOT NULL
+      label TEXT NOT NULL,
+      owner TEXT NOT NULL DEFAULT 'node'
     );
     CREATE TABLE IF NOT EXISTS branch (
       id     INTEGER PRIMARY KEY,
@@ -525,6 +526,11 @@ function open(rootDir, opts) {
     );
     CREATE INDEX IF NOT EXISTS branch_bundle ON branch (bundle);
   `);
+  // A BUNDLE'S OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either
+  // \"node\" (default), or the name of an appServer"): a node.db from before gains the column, its bundles owned by node.
+  if (db.prepare('PRAGMA table_info(bundle)').all().every(function (c) { return c.name !== 'owner'; })) {
+    db.exec("ALTER TABLE bundle ADD COLUMN owner TEXT NOT NULL DEFAULT 'node'");
+  }
 
   // ── THE MOVE, ON EACH NODE'S FIRST START ON THIS CODE (goal/G40.11) ──
   //
@@ -732,9 +738,9 @@ function open(rootDir, opts) {
     aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
     aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
     // goal/G41.14: the bundles, by id; all of them in label order. Their branches, by id or by bundle.
-    bundleGet: db.prepare('SELECT id, label FROM bundle WHERE id = ?'),
-    bundleAll: db.prepare('SELECT id, label FROM bundle ORDER BY label, id'),
-    bundlePut: db.prepare('INSERT INTO bundle (label) VALUES (?)'),
+    bundleGet: db.prepare('SELECT id, label, owner FROM bundle WHERE id = ?'),
+    bundleAll: db.prepare('SELECT id, label, owner FROM bundle ORDER BY label, id'),
+    bundlePut: db.prepare('INSERT INTO bundle (label, owner) VALUES (?, ?)'),
     bundleSet: db.prepare('UPDATE bundle SET label = ? WHERE id = ?'),
     bundleDel: db.prepare('DELETE FROM bundle WHERE id = ?'),
     branchGet: db.prepare('SELECT id, bundle, family, verb FROM branch WHERE id = ?'),
@@ -1444,9 +1450,10 @@ function open(rootDir, opts) {
 
     // goal/G41.14's two tables, for apiAuth.js alone: the bundles and their branches, each keyed by a number.
     bundles: {
-      get: function (id) { const r = q.bundleGet.get(Number(id)); return r ? { id: Number(r.id), label: r.label } : null; },
-      all: function () { return q.bundleAll.all().map(function (r) { return { id: Number(r.id), label: r.label }; }); },
-      add: function (label) { return Number(q.bundlePut.run(String(label)).lastInsertRowid); },
+      get: function (id) { const r = q.bundleGet.get(Number(id)); return r ? { id: Number(r.id), label: r.label, owner: r.owner } : null; },
+      all: function () { return q.bundleAll.all().map(function (r) { return { id: Number(r.id), label: r.label, owner: r.owner }; }); },
+      // The owner is set here once; nothing sets it after (goal/G41.25: "the owner field can never be changed").
+      add: function (label, owner) { return Number(q.bundlePut.run(String(label), String(owner || 'node')).lastInsertRowid); },
       set: function (id, label) { return q.bundleSet.run(String(label), Number(id)).changes > 0; },
       // A bundle goes with every branch that names it, in one transaction.
       del: function (id) {

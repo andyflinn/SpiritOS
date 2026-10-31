@@ -62,6 +62,9 @@ function createApiAuth(opts) {
     const res = bucket.serialize(null, SEARCH_ROOM);
     return { items: res.items, more: !!res.more };
   }
+  // A bundle's owner: "node", or an app server's name, a family's name; anything else is read as "node" (goal/G41.25).
+  function ownerOf(v) { return typeof v === 'string' && /^[A-Za-z][A-Za-z0-9_-]*$/.test(v) ? v : 'node'; }
+  function owned(row) { return row ? { id: row.id, label: row.label, owner: ownerOf(row.owner) } : row; }
   // A branch's family and verb against the live tree (Andy, box: "MUST be validated against the nodes API tree when a
   // row is added or changed, and refused if the values are not valid"). '' when they pass, else the refusal's code.
   function branchWhy(family, verb) {
@@ -171,25 +174,32 @@ function createApiAuth(opts) {
     //   add {label}        answers { id }, the number the table gives it; a label never empty
     //   set {id, label}    renames it, never to an empty label
     //   delete {id}        removes the bundle and every branch that names it; answers { id }
-    //   get {id}           answers { id, label }
-    //   search {text}      answers { items, more }, each keyed by the bundle's id, its label the bundle as get shows it,
-    //                      best first; no words is every bundle
+    //   get {id}           answers { id, label, owner }
+    //   search {text, owner?}
+    //                      answers { items, more }, each keyed by the bundle's id, its label the bundle as get shows it,
+    //                      best first; no words is every bundle, an owner that one's alone
+    // THE OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either \"node\"
+    // (default), or the name of an appServer"; "the owner field can never be changed after a bundle is added"; "for
+    // bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field
+    // with \"node\", incoming or outgoing"). Given at the add, never by a set; read as node wherever it is not valid.
     bundle: function (a) {
       const op = a && a.op;
       if (BUNDLE_OPS.indexOf(op) === -1) return refuse('bad-request');
       const B = bundles();
       if (op === 'add') {
         if (!text(a.label)) return refuse('bad-request');
-        const made = B.add(a.label);
-        told({ table: 'bundle', row: B.get(made) });
+        const made = B.add(a.label, ownerOf(a.owner));
+        told({ table: 'bundle', row: owned(B.get(made)) });
         return { id: made };
       }
       if (op === 'search') {
         if (a.text !== undefined && typeof a.text !== 'string') return refuse('bad-request');
-        return ranked(B.all(), String(a.text || '').trim(), function (row) { return { label: row.label }; });
+        const of = typeof a.owner === 'string' && a.owner ? ownerOf(a.owner) : '';
+        const rows = B.all().map(owned).filter(function (row) { return !of || row.owner === of; });
+        return ranked(rows, String(a.text || '').trim(), function (row) { return { label: row.label }; });
       }
       if (!isId(a.id)) return refuse('bad-request');
-      const was = B.get(a.id);
+      const was = owned(B.get(a.id));
       if (!was) return refuse('no-such-bundle');
       if (op === 'get') return was;
       if (op === 'delete') {
@@ -200,9 +210,9 @@ function createApiAuth(opts) {
         told({ table: 'bundle', row: { id: a.id }, gone: true });
         return { id: a.id };
       }
-      // set: the label, never an empty one; nothing else is a bundle's.
+      // set: the label, never an empty one; an owner it is given is left as the add made it.
       if (a.label !== undefined && !text(a.label)) return refuse('bad-request');
-      if (a.label !== undefined) { B.set(a.id, a.label); told({ table: 'bundle', row: B.get(a.id) }); }
+      if (a.label !== undefined) { B.set(a.id, a.label); told({ table: 'bundle', row: owned(B.get(a.id)) }); }
       return { id: a.id };
     },
 

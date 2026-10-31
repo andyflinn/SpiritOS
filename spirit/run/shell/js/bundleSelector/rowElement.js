@@ -1,6 +1,6 @@
 // spirit/run/shell/js/bundleSelector/rowElement.js
 // ONE BUNDLE, AS A ROW ELEMENT, AND WHAT A BUNDLE IS ON THE STREAM (goal/G41.14). Its subject is a bundle of node.db's
-// bundle table, keyed by its hidden number; its fields label, edit and delete. rowElement.js does the shared work; this
+// bundle table, keyed by its hidden number; its fields label, owner, edit and delete. rowElement.js does the shared work; this
 // file says what a bundle is (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
 // updates, wherever they are used").
 // Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [fieldInput:fieldRule:Label], displays
@@ -17,7 +17,7 @@
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
 //   bundleElement.create(row, opts) -> a rowElement of kind bundle
-//     row            { id, label }, as auth.bundle answers it
+//     row            { id, label, owner }, as auth.bundle answers it
 //     opts.editable  the label cell is an input that renames the bundle in place (the editor's pane); else drawn as text
 //     opts.api       the app's shell api, for the arming button's are-you-sure
 (function () {
@@ -43,7 +43,9 @@
         if (!d || d.table !== 'bundle' || !d.row || d.row.id == null) return;
         var path = 'bundles/' + Number(d.row.id);
         if (d.gone === true) D.del(path);
-        else D.set(path, { id: Number(d.row.id), label: String(d.row.label || '') });
+        // The owner as the node said it (it always says one, goal/G41.25); a row that names none keeps none.
+        else D.set(path, d.row.owner === undefined ? { id: Number(d.row.id), label: String(d.row.label || '') }
+          : { id: Number(d.row.id), label: String(d.row.label || ''), owner: String(d.row.owner) });
       },
     });
   });
@@ -54,7 +56,7 @@
       D.watch('bundles', function (path, v) {
         var key = String(path).slice('bundles/'.length);
         if (!key || !v) return;
-        idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || '') }); });
+        idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), owner: String(v.owner || 'node') }); });
       });
     });
   }
@@ -86,9 +88,12 @@
       kind: 'bundle',
       key: String(id),
       index: index(),
-      row: { id: id, label: String(r.label || '') },
+      row: { id: id, label: String(r.label || ''), owner: String(r.owner || 'node') },
       fields: [
         { name: 'label', paint: function (v) { return esc(v.label); } },
+        // THE OWNER, SHOWN ONLY (goal/G41.25; Andy, box: "the bundleSelector's list will gain a new column \"owner\",
+        // displayed right after the bundles label", and "the owner field can never be changed after a bundle is added").
+        { name: 'owner', paint: function (v) { return esc(v.owner); } },
         { name: 'edit', paint: function () { return '<button type="button" data-action="edit">Edit</button>'; } },
         { name: 'delete', paint: function () { return '<button type="button" class="cancel-btn" data-action="delete">Delete</button>'; } },
       ],

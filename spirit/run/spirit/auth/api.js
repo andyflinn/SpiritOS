@@ -13,7 +13,10 @@ module.exports = {
     relabel: { key: 'key', label: 'name' },
     // goal/G41.14: the node's bundles and their branches, one flat verb per table as the agent tables' are, op one of
     // add, set, delete, get and search; which arguments an op takes the node checks per op (apiAuth.js).
-    bundle: { op: 'id', id: 'number?', label: 'name?', text: 'text?' },
+    // goal/G41.25: its owner, given at the add and narrowing a search; one that is not valid the node reads as "node", so
+    // the rule here takes any text (Andy, box: "changes to the auth.bundle verb for the addition of the \"owner\" field
+    // are approved by andy and need no review.").
+    bundle: { op: 'id', id: 'number?', label: 'name?', text: 'text?', owner: 'text?' },
     branch: { op: 'id', id: 'number?', bundle: 'number?', family: 'text?', verb: 'text?', text: 'text?' },
   },
 };

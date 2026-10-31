@@ -24,6 +24,10 @@
   function create(box, options) {
     var o = options || {};
     var gone = false;
+    // ITS ADDS' OWNER (goal/G41.25; Andy, box: "the bundle-editor can be optionally configured with an <AppServerName>
+    // (family) at mount-time", and "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the
+    // bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>").
+    var owner = typeof o.family === 'string' && o.family ? o.family : 'node';
     parts.then(function () {
       if (gone) return;
       var E = window.spirit.elements;
@@ -46,7 +50,7 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are edited in place.
-      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true, api: o.api });
+      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], editable: true, api: o.api });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
@@ -54,7 +58,7 @@
         var got = labelOf(input.value);
         if (got.why) { say(got.why); return; }
         say('');
-        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(function () {
+        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value, owner: owner }); }).then(function () {
           input.value = '';
           bundles.refresh();
         }, function (e) { say((e && (e.message || e.refusal)) || 'not added'); });

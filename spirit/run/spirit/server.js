@@ -1727,7 +1727,7 @@ catch (e) {
     'relabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
     // goal/G41.14: the bundles and their branches (Andy, box: "TWO verbs under the auth family, auth.bundle and
     // auth.branch ... Granted, no review.").
-    'bundle': { request: { op: '', id: 0, label: '', text: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
+    'bundle': { request: { op: '', id: 0, label: '', text: '', owner: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
     'branch': { request: { op: '', id: 0, bundle: 0, family: '', verb: '', text: '' }, reply: {}, handler: authVerb(apiAuth.branch) },
   }, { wire: false, by: 'server.js' });
   loopbackVerbs.mount('jobs', path.join(__dirname, 'jobs'), {
