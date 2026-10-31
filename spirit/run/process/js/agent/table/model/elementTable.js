@@ -21,7 +21,7 @@
         if (gone) return;
         E = window.spirit.elements;
         container.innerHTML = '<div class="fill">' +
-          '<div style="display:flex;align-items:center;gap:1em"><span>from</span><div id="' + pre + 'from" style="flex:1 1 0;min-width:0"></div>' +
+          '<div id="' + pre + 'form" style="display:flex;align-items:center;gap:1em"><span>from</span><div id="' + pre + 'from" style="flex:1 1 0;min-width:0"></div>' +
           '<button type="button" id="' + pre + 'ask">Ask</button></div>' +
           '<div id="' + pre + 'said" class="job-manifest-note"></div>' +
           '<div id="' + pre + 'list" class="fill"></div></div>';
@@ -46,6 +46,11 @@
           // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon the server sends with the row.
           columns: [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', label: 'Model', sort: 'text' }],
         });
+        // THE TITLE ROW FIRST (Andy, on G41.26: "the title row \"🧠Models\" must come before the \"from [🛖 Unsloth Studio ▾] [Ask]
+        // row."): the form and its note moved in under the title the shared table draws.
+        var title = container.querySelector('#' + pre + 'list .agent-title');
+        if (title) title.parentNode.insertBefore(container.querySelector('#' + pre + 'said'), title.nextSibling);
+        if (title) title.parentNode.insertBefore(container.querySelector('#' + pre + 'form'), title.nextSibling);
       });
       return {
         refresh: function () { if (table) table.refresh(); },
