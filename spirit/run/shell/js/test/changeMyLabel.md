@@ -9,6 +9,10 @@ this node may.
 - A shell element of its own: it adds `changeMyLabel.create(host, { api, onSaved })` to `window.spirit.elements`, and
   answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
+- **Its form is a rowForm** (goal/G41.27; Andy: *"Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the
+  changeMyLabel element...."*): it loads `shell/js/rowForm.js` itself and makes one rowForm in its host, its icon ✏️ and
+  its button Save; its span says Name, then holds the name input, and nothing else; the rowForm's button is its Save,
+  and it draws no Save of its own; its bytes left and its message stand below the bubble, not in it.
 - **Its input is marked with its rule** (rule/12): `data-field="label"`, held at the name rule's byte limit by
   `fieldInput.attach(input, 'name')`, with the bytes left beside it, counted in bytes as typed (`fieldRules.MAX_BYTES`).
 - `set(value)` puts what the node stored in the field.
@@ -23,3 +27,5 @@ this node may.
 - The bytes left counted in characters, not bytes.
 - An invalid name sent to the node.
 - The field showing what was typed instead of what was stored.
+- A form of its own instead of a rowForm, another icon or button, more than Name and the input in its span, or its
+  message inside the bubble.

@@ -20,29 +20,43 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 // A node whose markup makes a child per tag; found by [attr="value"].
 function node(tag) {
   const heard = {}; let html = '';
-  const n = { tag: tag || '', nodes: [], value: '', className: '', textContent: '', hidden: false, style: {}, disabled: false,
+  const n = { tag: tag || '', nodes: [], kids: [], value: '', className: '', textContent: '', hidden: false, style: {}, disabled: false,
     get innerHTML() { return html; },
     set innerHTML(v) {
       html = String(v); n.nodes = [];
       const re = /<([a-z]+)\b([^>]*)>/gi; let m;
       while ((m = re.exec(html))) n.nodes.push(node(m[0]));
     },
-    getAttribute: function (k) { const m = new RegExp('\\s' + k + '="([^"]*)"').exec(n.tag); return m ? m[1] : null; },
+    attrs: {},
+    getAttribute: function (k) { if (k in n.attrs) return n.attrs[k]; const m = new RegExp('\\s' + k + '="([^"]*)"').exec(n.tag); return m ? m[1] : null; },
+    setAttribute: function (k, v) { n.attrs[k] = String(v); },
+    // What its markup made and what was appended to it, all the way down (goal/G41.27: a rowForm's parts are appended).
     querySelector: function (sel) {
       const a = /^\[([\w-]+)="([^"]*)"\]$/.exec(sel);
-      return a ? n.nodes.filter(function (c) { return c.getAttribute(a[1]) === a[2]; })[0] || null : null;
+      return a ? under(n).filter(function (c) { return c.getAttribute(a[1]) === a[2]; })[0] || null : null;
     },
+    appendChild: function (c) { n.kids.push(c); c.parentNode = n; return c; },
     addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); },
     fire: function (t, e) { (heard[t] || []).slice().forEach(function (fn) { fn(e || {}); }); },
   };
   return n;
 }
+function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).forEach(function (c) { out.push(c); walk(c); }); }(n)); return out; }
 
 function world(answer) {
-  const w = { calls: [], attached: [], required: [], saved: [] };
+  const w = { calls: [], attached: [], required: [], saved: [], forms: [] };
   const win = {
-    spirit: { elements: { fieldInput: { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } } },
+    spirit: { elements: { fieldInput: { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } },
+      // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the
+      // real one does, its root appended to the container it is given, its button saying the words it was handed.
+      rowForm: { create: function (c, o) {
+        const f = { container: c, opts: o || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
+        f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
+        if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
+        w.forms.push(f); return f;
+      } } },
       require: function (p) { w.required.push(String(p)); return Promise.resolve(true); } },
+    document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
@@ -72,10 +86,28 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
   const el = w.E.changeMyLabel.create(host, { api: w.api, onSaved: function (n) { w.saved.push(n); } });
   await settle();
   const input = host.querySelector('[data-field="label"]');
-  const save = host.querySelector('[data-label="save"]');
+  const rf = w.forms[0];
+  // Since goal/G41.27 its Save is the rowForm's button.
+  const save = rf ? rf.button : host.querySelector('[data-label="save"]');
   const left = host.querySelector('[data-label="left"]');
   const said = host.querySelector('[data-label="said"]');
   ok(!!input, 'its input is marked data-field="label"', 'markup: ' + short(host.innerHTML));
+
+  test.subHeading('its form, a rowForm: ✏️ "Name" [name-input] [Save] (goal/G41.27)');
+  // Andy, on G41.27: "Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the changeMyLabel element....".
+  // The box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+  // its form elements into span and wires the button itself", and "a line saying what a press did (a refusal, a result)
+  // is the mounter's, below the bubble, not in it."
+  ok(w.required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
+  ok(w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1, 'its form is one rowForm in its host, its icon ✏️ and its button Save', 'rowForms: ' + short(w.forms.map(function (f) { return f.opts; })));
+  const inSpan = rf ? under(rf.span) : [];
+  const spanText = rf ? (String(rf.span.innerHTML).replace(/<[^>]*>/g, ' ') + ' ' + inSpan.map(function (k) { return k.textContent || ''; }).join(' ')).replace(/\s+/g, ' ').trim() : '';
+  const nameBefore = rf ? (rf.span.innerHTML.indexOf('Name') !== -1 && rf.span.innerHTML.indexOf('Name') < rf.span.innerHTML.indexOf('data-field="label"')) ||
+    (rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) !== -1 && rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) < rf.span.kids.findIndex(function (k) { return k === input || under(k).indexOf(input) !== -1; })) : false;
+  ok(!!rf && inSpan.indexOf(input) !== -1 && spanText === 'Name' && nameBefore && !inSpan.some(function (k) { return /^<button|^<select/.test(k.tag) || (/^<input/.test(k.tag) && k !== input); }),
+    'its span says Name, then holds the name input, and nothing else', 'span: ' + short(spanText) + ', input in it ' + (inSpan.indexOf(input) !== -1) + ', Name first ' + nameBefore);
+  ok(!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML), 'its Save is the rowForm\'s button, and it draws no Save of its own', 'markup: ' + short(host.innerHTML));
+  ok(!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1, 'its bytes left and its message stand below the bubble, not in it', 'in the bubble: ' + short([rf && under(rf.root).indexOf(left) !== -1, rf && under(rf.root).indexOf(said) !== -1]));
   ok(!!save && !!left && !!said, 'it has its Save, its bytes left and its message', 'markup: ' + short(host.innerHTML));
   if (!input || !save || !left || !said) return;
   ok(w.attached.some(function (a) { return a.input === input && a.rule === 'name'; }), 'the input is held at its byte limit by fieldInput, the name rule', 'attached: ' + short(w.attached.map(function (a) { return a.rule; })));
@@ -107,7 +139,8 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
   r.E.changeMyLabel.create(h2, { api: r.api });
   await settle();
   const i2 = h2.querySelector('[data-field="label"]');
-  i2.value = 'Dana'; i2.fire('input'); h2.querySelector('[data-label="save"]').fire('click'); await settle();
+  const s2 = r.forms[0] ? r.forms[0].button : h2.querySelector('[data-label="save"]');
+  i2.value = 'Dana'; i2.fire('input'); s2.fire('click'); await settle();
   ok(/name reserved/.test(h2.querySelector('[data-label="said"]').textContent) && i2.value === 'Dana', 'the node\'s refusal is said beside the field', 'said: ' + h2.querySelector('[data-label="said"]').textContent);
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
