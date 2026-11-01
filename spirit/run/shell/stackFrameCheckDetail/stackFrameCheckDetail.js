@@ -28,6 +28,12 @@ var SD_PRE = 'sfcd-';
 var SD_SHARED = { deskDoorFields: '/shell/shared/js/deskDoorFields.js', createDeskChat: '/shell/shared/js/deskChat.js' };
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require.
 var sdParts = spirit.require('shell/js/armingButton.js');
+// THE DOOR AND ITS RUN ARE THE DESK FAMILY'S CACHE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure
+// when it changes shit it listens to fucking update via the spirit object"): what the plugin's reads answered is kept
+// in spirit.deskData (doors, doorRuns), the dialog drawing from their watches; the plugin's publish drops what changed,
+// and the watch reads it again.
+var sdData = spirit.cacheManager('desk');
+var sdStops = [];
 
 function sdEsc(s) { return sdApi && sdApi.escapeHtml ? sdApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function sdWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
@@ -126,10 +132,7 @@ function sdReadRun() {
   var id = sdId;
   if (!id) return Promise.resolve();
   return sdAsk('stackFrameChecks.runState', { id: id }).then(function (r) {
-    if (sdId !== id) return;
-    sdRun = r || null;
-    sdDrawRun();
-    sdTick();
+    if (sdId === id) window.spirit.deskData.doorRuns.keep(id, r);
   }, function (e) { if (sdId === id) sdSay('Its run could not be read: ' + sdErr(e)); });
 }
 // The door as the plugin holds it: its own read (goal/G33.7: one door, never the whole list).
@@ -137,11 +140,32 @@ function sdReadDoor() {
   var id = sdId;
   return sdAsk('stackFrameChecks.door', { id: id }).then(function (r) {
     if (sdId !== id) return;
-    sdDoor = r && r.id === id ? r : null;
-    if (!sdDoor) { sdSay('The list has no door ' + id + ' any more.'); return; }
-    sdFill();
-    sdMountChat();
+    if (!r || r.id !== id) { sdSay('The list has no door ' + id + ' any more.'); return; }
+    window.spirit.deskData.doors.keep(r);
   }, function (e) { if (sdId === id) sdSay('The door could not be read: ' + sdErr(e)); });
+}
+// The two watches of this door, made at each open and let go at the next: each draws what is kept, and a row the
+// plugin's publish dropped is read again.
+function sdWatch() {
+  sdStops.forEach(function (stop) { stop(); });
+  var id = sdId;
+  var K = window.spirit.deskData;
+  sdStops = [
+    K.doors.watch(id, function (door) {
+      if (sdId !== id) return;
+      if (!door) { sdReadDoor(); return; }
+      sdDoor = door;
+      sdFill();
+      sdMountChat();
+    }),
+    K.doorRuns.watch(id, function (run) {
+      if (sdId !== id) return;
+      if (!run) { sdReadRun(); return; }
+      sdRun = run;
+      sdDrawRun();
+      sdTick();
+    }),
+  ];
 }
 // ITS ITEM'S CHAT (D3), mounted once the door names its item.
 function sdMountChat() {
@@ -180,8 +204,8 @@ function sdSave() {
     });
     return steps.reduce(function (chain, s) { return chain.then(function () { return sdAsk(s[0], { id: id, path: s[1] }); }); }, Promise.resolve());
   }).then(function () {
+    // The door and its cleared run come back through the cache: each write's publish drops them, and they are read again.
     sdSay('Saved. Its last verdict is cleared: it described the door as it was.');
-    sdReadRun();
   }, function (e) { sdSay('Not saved: ' + sdErr(e)); });
 }
 function sdRunIt() {
@@ -216,17 +240,6 @@ spirit.shell.activateApp({
       var f = t && t.getAttribute ? t.getAttribute('data-field') : null;
       if (F && F.FIELDS.indexOf(f) !== -1) F.check(SD_PRE, 'sfcd-save');
     });
-    // The plugin's own publishes ({ plugin: 'stackFrameChecks', data: { what, id } }): this door changed or its run
-    // started or ended.
-    if (typeof api.onPublished === 'function') {
-      api.onPublished(function (obj) {
-        if (!obj || obj.plugin !== 'stackFrameChecks' || !sdId) return;
-        var data = obj.data || {};
-        if (data.id && data.id !== sdId) return;
-        if (data.what === 'run') sdReadRun();
-        else { sdReadDoor(); sdReadRun(); }
-      }, 'desk');
-    }
   },
 
   // Every call: which door this is. Nothing stale from the last one.
@@ -240,7 +253,7 @@ spirit.shell.activateApp({
     sdChat = null;
     sdFrame();
     sdDrawRun();
-    var first = Promise.all([sdReadDoor(), sdReadRun()]);
+    var first = sdData.then(function () { sdWatch(); return Promise.all([sdReadDoor(), sdReadRun()]); });
     // Its fields arrive with the shared element: drawn again then, the door's values put back.
     if (!sdElements().deskDoorFields) {
       var id = sdId;

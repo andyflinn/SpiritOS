@@ -30,6 +30,8 @@
   var PARTS = 'deskItem';
   var STATE = 'deskState';
   var RULES = 'deskRules';
+  var DOORS = 'deskDoors';
+  var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
     ? require('./cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ATTACHED TO ONE DATA SET ONCE: attach(root) on the root whose spirit.data it fills. A page attaches
@@ -173,6 +175,18 @@
       if (typeof o.change === 'number' && o.change > (Number(V.get(STATE + '/change')) || 0)) V.set(STATE + '/change', o.change);
       // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
       if (o.rule && o.row && typeof o.row === 'object') { V.set(RULES + '/' + String(o.rule), o.row); return; }
+      // A LINE SAID UNDER A RULE (rule.chat) comes without the line: the rule's chat read so far is dropped, so whoever
+      // watches it reads it again.
+      if (o.verb === 'rule.chat' && o.rule) { V.del(PARTS + '/' + String(o.rule)); return; }
+      // A STACK-FRAME DOOR CHANGED (the stackFrameChecks plugin's publish, { what, id }, carries no row): its run kept is
+      // dropped, and for any change but a run the door kept too, so whoever watches them reads them again.
+      if (o.plugin === 'stackFrameChecks') {
+        var door = o.data && o.data.id ? String(o.data.id) : '';
+        if (!door) return;
+        V.del(DOOR_RUNS + '/' + door);
+        if (o.data.what !== 'run') V.del(DOORS + '/' + door);
+        return;
+      }
       if (o.replace === true) { replaced(o); return; }
       if (stale(o)) return;
       if (o.table) { side(o); return; }
@@ -215,7 +229,27 @@
     //   parts dropped;  forgetAll()  every item's parts dropped
     //   current()  the goal last pushed whole;  change()  the newest change number heard;  rule(key)  a rule kept
     //   answer(verb, args, room)  a desk read answered from what is kept, or null
+    //   rules.keep(row)  a rule as rule.get answered it;  rules.watch(key, fn)  fn(row) on every change of that rule
+    //   parts.watch(id, fn)  fn(parts) on every change of an item's (or a rule's) parts, undefined once dropped
+    //   doors.keep(door), doorRuns.keep(id, run)  a stack-frame door and its run state as the plugin's reads answered
+    //   doors.watch(id, fn), doorRuns.watch(id, fn)  fn(row) on every change, undefined once the plugin said it changed
+    // Each watch answers its release.
+    function rowTable(branch) {
+      return {
+        watch: function (id, fn) { return HOME.watch(branch + '/' + String(id), function (whole, v) { if (typeof fn === 'function') fn(v); }); },
+      };
+    }
+    var rules = rowTable(RULES);
+    rules.keep = function (row) { if (row && row.key) V.set(RULES + '/' + String(row.key), row); };
+    var doors = rowTable(DOORS);
+    doors.keep = function (door) { if (door && door.id) V.set(DOORS + '/' + String(door.id), door); };
+    var doorRuns = rowTable(DOOR_RUNS);
+    doorRuns.keep = function (id, run) { if (id && run && typeof run === 'object') V.set(DOOR_RUNS + '/' + String(id), run); };
     var deskData = {
+      rules: rules,
+      parts: rowTable(PARTS),
+      doors: doors,
+      doorRuns: doorRuns,
       published: published, took: took,
       // Whole paths, the home node's, asked when a list is made.
       get branch() { return HOME.path(ITEMS); },

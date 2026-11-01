@@ -11,6 +11,9 @@
 // key), by name (desk.<verb>) as deskDetails does. The textbox is his: it shows his draft when there is one, else the
 // rule's text, and every change is saved as his draft (rule.draft) until Version makes it the rule (rule.version).
 // Activate and Delete are each one version with that status, both armed: the first press asks, the second sends.
+// THE RULE AND ITS CHAT ARE THE DESK FAMILY'S CACHE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure
+// when it changes shit it listens to fucking update via the spirit object"): what rule.get and item.chat answered is kept
+// in spirit.deskData, and the dialog draws from its watches; each of his writes comes back there, never by asking again.
 
 var rdApi = null;
 var rdKey = '';
@@ -22,6 +25,8 @@ var rdNote = '';
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): Activate and Delete are armingButtons
 // (shell/js/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
 var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+// And the desk family's cache manager, which keeps the rule and its chat (spirit.deskData).
+var rdData = spirit.cacheManager('desk');
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
 
@@ -158,30 +163,51 @@ function rdFill() {
 }
 function rdText() { var el = document.getElementById('rd-text'); return el ? String(el.value || '') : ''; }
 
-// The rule and its chat as the server has them now: at open, and after each of his versions.
+// The rule and its chat as the server has them now, read at open into the cache, and from then on as the cache keeps
+// them. The textbox takes the rule's words at open and after each of his versions (rdRefill), never after a draft.
+var rdRefill = false;
+var rdStops = [];
 function rdLoadRule() {
-  var key = rdKey;
-  return rdAsk('rule.get', { key: key }).then(function (r) {
-    if (rdKey !== key) return;
-    rdRule = r;
-    rdFill();
-    rdPaint();
-  });
+  return rdAsk('rule.get', { key: rdKey }).then(function (r) { window.spirit.deskData.rules.keep(r); });
 }
 function rdLoadChat() {
   var key = rdKey;
   return rdAsk('item.chat', { id: key }).then(function (c) {
-    if (rdKey !== key) return;
-    rdChat = c.chat || [];
-    rdChatMore = !!c.chatMore;
-    rdPaint();
+    window.spirit.deskData.keepPart(key, { chat: c.chat || [], chatMore: !!c.chatMore });
   });
 }
+function rdSaid(e) {
+  rdNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
+  rdPaint();
+}
+// The two watches of this rule, made at each open and let go at the next.
+function rdWatch() {
+  rdStops.forEach(function (stop) { stop(); });
+  var key = rdKey;
+  var K = window.spirit.deskData;
+  rdStops = [
+    K.rules.watch(key, function (row) {
+      if (rdKey !== key || !row) return;
+      rdRule = row;
+      if (rdRefill) { rdRefill = false; rdFill(); }
+      rdPaint();
+    }),
+    // A line said under the rule drops the chat kept (the manager's rule.chat): read again.
+    K.parts.watch(key, function (part) {
+      if (rdKey !== key) return;
+      if (!part) { rdLoadChat().then(null, rdSaid); return; }
+      rdChat = part.chat || [];
+      rdChatMore = !!part.chatMore;
+      rdPaint();
+    }),
+  ];
+}
 function rdLoad() {
-  return Promise.all([rdLoadRule(), rdLoadChat()]).then(null, function (e) {
-    rdNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
-    rdPaint();
-  });
+  return rdData.then(function () {
+    rdWatch();
+    rdRefill = true;
+    return Promise.all([rdLoadRule(), rdLoadChat()]);
+  }).then(null, rdSaid);
 }
 
 // ONE VERSION, ONE PRESS (rule.version {key, text, status, autoAttach}): the textbox as it stands, with the status given;
@@ -192,7 +218,9 @@ function rdVersion(status, autoAttach) {
   var toggling = typeof autoAttach === 'boolean';
   var args = { key: rdKey, text: toggling ? String(rdRule.text || '') : rdText(), status: status };
   if (toggling) args.autoAttach = autoAttach;
-  rdWrite('rule.version', args).then(function (taken) { if (taken) rdLoadRule(); });
+  // The version comes back as the rule's row in the cache, which refills the textbox.
+  rdRefill = true;
+  rdWrite('rule.version', args).then(function (taken) { if (!taken) rdRefill = false; });
 }
 
 var rdSending = false;
@@ -201,10 +229,10 @@ function rdSay() {
   var text = el ? String(el.value || '').trim() : '';
   if (!text || rdSending) return;
   rdSending = true;
+  // The line comes back through the cache: its rule.chat drops the chat kept, which is read again.
   rdWrite('chat.add', { id: rdKey, text: text }).then(function (taken) {
     rdSending = false;
     if (taken && el) el.value = '';
-    if (taken) rdLoadChat();
   });
 }
 
@@ -223,16 +251,6 @@ spirit.shell.activateApp({
     body.addEventListener('change', function (event) {
       if (event.target && event.target.id === 'rd-text' && rdKey) rdWrite('rule.draft', { key: rdKey, text: rdText() });
     });
-    // The desk server's changes: a publish naming this rule reads it again (its chat and its versions).
-    if (typeof api.onPublished === 'function') {
-      api.onPublished(function (obj) {
-        if (!rdKey || !obj) return;
-        var said = '';
-        try { said = JSON.stringify(obj); } catch (e) { said = ''; }
-        if (said.indexOf('"' + rdKey + '"') === -1) return;
-        rdLoadChat();
-      }, 'desk');
-    }
   },
 
   // Every call: which rule this is. Nothing stale from the last one.
