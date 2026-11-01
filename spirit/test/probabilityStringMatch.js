@@ -105,5 +105,19 @@ const pOrd = psm('relay key', farInOrder);
 if (pRev > pOrd) test.check('side by side but reversed (' + pRev.toFixed(4) + ') beats in order but 300 words apart (' + pOrd.toFixed(4) + '): proximity 0.35 over order 0.15');
 else test.fail(OWED29 + 'reversed but close ' + pRev + ', in order but far ' + pOrd);
 
+test.subHeading('7. goal/G41.28: two tokens compared, the shorter one first');
+// Andy, box v15: "probabilityStringMatch MUST, when comparing tokens, use the shorter token as first argument. This
+// overrules any previous ruling that disagrees." It overrules "if the result token is shorter, its obviously no match":
+// a query word longer than a field's word now counts by the shorter word's share of it.
+const OWED28 = 'OWED by goal/G41.28: ';
+// The rule is the tokens': where the whole search is not found at all (its rank), nothing is compared, as before.
+const both = psm('spiritos desk', 'spirit desk item');
+const deskOnly = psm('qqqqqqqq desk', 'spirit desk item');
+if (both > deskOnly) test.check('in a longer search it adds: "spiritos desk" (' + both.toFixed(4) + ') beats "qqqqqqqq desk" (' + deskOnly.toFixed(4) + ') against "spirit desk item"');
+else test.fail(OWED28 + '"spiritos desk" ' + both + ' against "qqqqqqqq desk" ' + deskOnly + ': only "desk" counts');
+const shortQuery = psm('spirit', 'spiritos desk');
+if (shortQuery > 0) test.check('a query word shorter than the field\'s word still counts as before: "spirit" against "spiritos desk" is ' + shortQuery.toFixed(4));
+else test.fail(OWED28 + '"spirit" against "spiritos desk" is ' + shortQuery);
+
 test.reportSuccessFailureCount();
 process.exit(0);
