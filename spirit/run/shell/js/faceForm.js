@@ -8,13 +8,18 @@
 // the node keeps no email, and a seat taken by email is a verified one, so the dropdown offers the relays this node is
 // seated on, and with none the form draws nothing.
 //
-//   row(relays, opts)  -> the form's markup, or '' with no relay to offer: relays are relay rows (url, label, face,
-//                         claimed or owned); opts.fixed, a url, fixes the dropdown to that relay; opts.picked.
-//   mount(box, opts)   -> draws the row and asks: opts.relays, opts.fixed, opts.reload() (Promise, after a face is
-//                         confirmed), opts.escape. It hears the shadow stream itself and, when a relay's row changed,
-//                         reads the relays again and redraws if the ones it offers changed (goal/G40.11).
+//   mount(box, opts)   -> draws the form and asks: opts.relays, relay rows (url, label, face, claimed or owned), nothing
+//                         drawn with no relay to offer; opts.fixed, a url, fixes the dropdown to that relay;
+//                         opts.reload() (Promise, after a face is confirmed), opts.escape. It hears the shadow stream itself
+//                         and, when a relay's row changed, reads the relays again and redraws if the ones it offers changed
+//                         (goal/G40.11).
+// A ROWFORM (goal/G41.27; Andy: "faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"): the title above the bubble,
+// then ❓, the relay dropdown and the face name in its span, Ask its button; what this node holds and the relay's answer
+// below it.
 
 (function () {
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
+  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('shell/js/rowForm.js');
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -30,23 +35,26 @@
     return face.name ? 'This node holds ' + face.name + ' on this relay.' : 'No face name on this relay yet.';
   }
 
-  function row(relays, opts) {
+  // The form drawn into box, or nothing with no relay to offer: the title, the rowForm, the lines under it.
+  function form(box, relays, opts) {
     var o = opts || {};
     var escape = o.escape || esc;
     var list = offered(relays, o);
-    if (!list.length) return '';
+    box.innerHTML = '';
+    if (!list.length) return;
     var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0];
-    return '<div class="label">A face name on one relay</div>' +
-      '<div class="start-job-form card">' +
-      '<label class="field-label">Relay<select class="sp-face-relay"' + (o.fixed ? ' disabled' : '') + '>' +
-        list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
-      '</select></label>' +
-      '<label class="field-label grow">Face name<input type="text" class="sp-face-name" placeholder="one word, letters and digits" value="' +
-        escape(o.name != null ? o.name : ((picked.face && picked.face.name) || '')) + '"></label>' +
-      '<button type="button" class="sp-face-go">Ask</button>' +
-      '</div>' +
+    box.innerHTML = '<div class="label">A face name on one relay</div>' +
+      '<div class="sp-face-form"></div>' +
       '<div class="job-manifest-note sp-face-now">' + escape(holds(picked)) + '</div>' +
       '<div class="job-start-error sp-face-out"></div>';
+    var f = window.spirit.elements.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask' });
+    f.button.className = 'sp-face-go';
+    f.span.innerHTML =
+      '<select class="sp-face-relay"' + (o.fixed ? ' disabled' : '') + '>' +
+        list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
+      '</select>' +
+      '<input type="text" class="sp-face-name" placeholder="face name: one word, letters and digits" value="' +
+        escape(o.name != null ? o.name : ((picked.face && picked.face.name) || '')) + '">';
   }
 
   function mount(box, opts) {
@@ -57,7 +65,7 @@
     box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, escape: o.escape, reload: o.reload };
     function draw(picked, name) {
       var now = box._spFace;
-      box.innerHTML = row(now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape });
+      form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape });
       if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
     }
     function say(text, bad) {
@@ -127,5 +135,5 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.faceForm = { row: row, mount: mount };
+  window.spirit.elements.faceForm = { mount: mount };
 }());
