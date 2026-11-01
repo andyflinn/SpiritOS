@@ -90,6 +90,12 @@ draws and ranks.
   - A multi choice is pressed off and on.
   - A plain choice takes its value.
   - Each press re-ranks and asks.
+- **Its rows' icons** (goal/G41.26). Andy: *"in probablitySearch, if there is a filter row, it must start wit a '🗜'
+  icon, and the search input row must start with a '🔎' icon"*.
+  - With filters, the filter row starts with 🗜, its filters after it, and keeps it when a press redraws them.
+  - The search row starts with 🔎, right before its input, with filters or without.
+  - With no filters there is no 🗜.
+  - A dropdown's pane alike.
 - **Clear** empties the field.
 - **Picking**:
   - A press on a row calls `details(row, key, el)` when given, in a pane.
@@ -128,3 +134,5 @@ draws and ranks.
 - A press inside a row's own action button.
 - Regex characters in the words.
 - Drawing after destroy.
+- A filter row without its 🗜, or a 🗜 with no filters; a search row with anything before its 🔎, or no 🔎; a redraw
+  of the filters that drops the 🗜.

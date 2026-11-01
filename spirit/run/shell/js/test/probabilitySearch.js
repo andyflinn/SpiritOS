@@ -345,6 +345,27 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   c4.fire('click', { target: filterTarget('size', 'big') });
   ok(c4.shown().join() === 'a', 'a plain choice takes its value', 'shown: ' + c4.shown());
   await tick(); await tick();
+
+  test.subHeading('create: the filter row starts with 🗜, the search row with 🔎 (goal/G41.26)');
+  // Andy, on G41.26: "in probablitySearch, if there is a filter row, it must start wit a '🗜' icon, and the search input
+  // row must start with a '🔎' icon". What is seen up to the search input, its markup taken away: 🗜, the filters' own
+  // words, then 🔎 at once before the input.
+  const seen = function (h) { return String(h).replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, ''); };
+  const upToInput = function (c) { const h = c.innerHTML; const at = h.indexOf('id="' + c.pre() + 'text"'); return at === -1 ? null : seen(h.slice(0, h.lastIndexOf('<', at))); };
+  const fWords = seen(fhtml).replace(/🗜/g, '');
+  const u4 = upToInput(c4);
+  ok(u4 === '🗜' + fWords + '🔎', 'with filters: 🗜 starts the filter row, its words follow, and 🔎 starts the search row', 'seen up to the input: ' + JSON.stringify(u4) + ', the filters\' words ' + JSON.stringify(fWords));
+  const before4 = c4.innerHTML.slice(0, c4.innerHTML.indexOf('id="' + c4.pre() + 'filters"'));
+  ok(/^🗜/.test(seen(c4.get('filters').innerHTML)) || /🗜/.test(seen(before4)), 'and a press that redraws the filters keeps their 🗜', 'filters now: ' + c4.get('filters').innerHTML.slice(0, 200));
+  const c4b = container();
+  PS.create(c4b, { rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }] });
+  const u4b = upToInput(c4b);
+  ok(u4b === '🔎', 'with no filters there is no filter row and no 🗜: 🔎 starts the search row', 'seen up to the input: ' + JSON.stringify(u4b));
+  const c4c = container();
+  PS.create(c4c, { face: 'dropdown', placeholder: 'pick one', rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }],
+    filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
+  const u4c = upToInput(c4c);
+  ok(u4c !== null && /^[^🗜🔎]*🗜Mine🔎$/u.test(u4c), 'and in a dropdown\'s pane alike', 'seen up to the input: ' + JSON.stringify(u4c));
   L4.destroy();
 
   test.subHeading('create: details in a pane, and fold');
