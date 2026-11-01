@@ -101,6 +101,15 @@ auth.branch."*
 - A bundle the user added for that appServer (the editor mounted for it, goal/G41.25) is under no key and left as it is.
 - A folder with no Bundles.json, or one that is not valid JSON, gets nothing; the others are written all the same.
 
+### A family's FS group is the owner's (goal/G41.28)
+
+Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
+
+- `auth.branch` add of a family's `FS.*` verb is refused `owner-only`; a set onto one is refused the same, the branch
+  kept as it was.
+- `auth.grant` of a path `<family>.FS.<verb>` is refused `owner-only`.
+- The family's other verbs make branches as before.
+
 ## What its test must try to break
 
 - A change, or a grant, not told; a refused one told.
@@ -115,3 +124,4 @@ auth.branch."*
 - A boot that adds a kept key twice, keeps a branch the file dropped, leaves a dropped key's bundle or branches, takes
   the owner a row names, touches a user's bundle, or stops at a file that is not valid.
 - A set that renames a bundle, or is told.
+- An FS verb taken into a branch, by add or by set, or granted; a refusal by any code but `owner-only`.

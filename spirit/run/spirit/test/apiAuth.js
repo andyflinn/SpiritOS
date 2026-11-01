@@ -333,6 +333,31 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     'a bundle of the appServer\'s that the user deleted is made again at the next boot, its new id kept under the same key', 'probe owns: ' + short(again4) + ', state ' + short(st4));
   try { fs.rmSync(bootRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
+  test.subHeading('goal/G41.28: a family\'s FS group is the owner\'s, never granted');
+  // Andy: "i still want the api.<family>.FS.* group \"ungrantable\" and OWNER ONLY". The tree serves the FS verbs, as
+  // the introSpector gives every family, so a refusal is the rule's and never an unknown verb's.
+  const fsRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-fs-'));
+  const fsTree = { desk: { 'chat.add': {}, 'FS.loadFile': {}, 'FS.path': {}, 'FS.saveFile': {} } };
+  const fsAuth = createApiAuth({ rootDir: fsRoot, tree: function () { return Promise.resolve(fsTree); } });
+  const fsBundle = await call(fsAuth, 'bundle', { op: 'add', label: 'FS probe' });
+  const keptId = (await call(fsAuth, 'branch', { op: 'add', bundle: fsBundle.id, family: 'desk', verb: 'chat.add' })).id;
+  ok(isNum(keptId), 'a verb of the family outside FS makes a branch', 'chat.add branch refused');
+  for (const v of ['FS.loadFile', 'FS.path', 'FS.saveFile']) {
+    const added = await call(fsAuth, 'branch', { op: 'add', bundle: fsBundle.id, family: 'desk', verb: v });
+    ok(added.refusal === 'owner-only', 'auth.branch add of desk.' + v + ' is refused owner-only', 'auth.branch add of desk.' + v + ': ' + short(added));
+  }
+  // In a bundle of its own, so a set is judged whatever the adds above did.
+  const setBundle = await call(fsAuth, 'bundle', { op: 'add', label: 'FS set probe' });
+  const setId = (await call(fsAuth, 'branch', { op: 'add', bundle: setBundle.id, family: 'desk', verb: 'chat.add' })).id;
+  const moved = await call(fsAuth, 'branch', { op: 'set', id: setId, verb: 'FS.loadFile' });
+  ok(moved.refusal === 'owner-only' && (await call(fsAuth, 'branch', { op: 'get', id: setId })).verb === 'chat.add',
+    'auth.branch set onto desk.FS.loadFile is refused owner-only, the branch kept', 'set: ' + short(moved));
+  for (const p of ['desk.FS.loadFile', 'desk.FS.path']) {
+    const g = await call(fsAuth, 'grant', { key: 'KEY-FS-PEER', path: p });
+    ok(g.refusal === 'owner-only', 'auth.grant of ' + p + ' is refused owner-only', 'auth.grant of ' + p + ': ' + short(g));
+  }
+  try { fs.rmSync(fsRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
   test.subHeading('the bundles persist');
   const again = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
   ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Reader' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
