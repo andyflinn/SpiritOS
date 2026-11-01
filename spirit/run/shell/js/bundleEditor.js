@@ -1,6 +1,7 @@
 // spirit/run/shell/js/bundleEditor.js
 // THE BUNDLES, MADE AND KEPT: a simple panel-type shell element (goal/G41.14). Andy, box: the "bundleEditor", "at the
-// top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]", "the
+// top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]" (a rowForm since
+// goal/G41.27, ➕ in place of "new"), "the
 // [add-Button] refused an empty or invalid label", and "filling the rest of the available vertical space: the
 // bundleSelector in pane-mode", its columns the label (shown only since goal/G41.26), the owner, Edit (the branch editor, a page of its own) and
 // Delete (an armingButton). The grants app draws it in its Bundles tab ("the Grant app must use the bundleEditor in its
@@ -10,7 +11,7 @@
 //     box  the space it fills; api the app's shell api, handed to the rows for their are-you-sure
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  var parts = Promise.all(['shell/js/fieldInput.js', 'shell/js/bundleSelector.js'].map(function (p) {
+  var parts = Promise.all(['shell/js/fieldInput.js', 'shell/js/bundleSelector.js', 'shell/js/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }));
   // The label's rule, the one definition both sides use (js/fieldRules.js).
@@ -32,20 +33,16 @@
       if (gone) return;
       var E = window.spirit.elements;
       box.innerHTML = '';
-      // AT THE TOP: new [label] [Add].
-      var form = document.createElement('div');
-      form.className = 'bundle-editor-add';
-      form.appendChild(document.createTextNode('new '));
+      // AT THE TOP, A ROWFORM (goal/G41.27; Andy: "bundleEditor:\n[➕] [label] [Add]"): ➕, the label input in its span,
+      // Add its button. What Add did is said below it.
+      var form = E.rowForm.create(box, { icon: '➕', button: 'Add' });
+      form.root.className += ' bundle-editor-add';
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
       E.fieldInput.attach(input, 'name');
-      form.appendChild(input);
-      var add = document.createElement('button');
-      add.type = 'button';
-      add.textContent = 'Add';
-      form.appendChild(add);
-      box.appendChild(form);
+      form.span.appendChild(input);
+      var add = form.button;
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
       box.appendChild(said);

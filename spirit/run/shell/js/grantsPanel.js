@@ -12,7 +12,7 @@
 //     api     the app's shell api
 //   Made without its ID table or its grants table, it is refused: it never falls back to one caller's setting.
 //
-// One panel: the one-row grant form, "grant" [ID selector] [bundle selector] [Grant] (goal/G41.13); then the grant list
+// One panel: the one-row grant form, a rowForm, ➕ [ID selector] [bundle selector] [Grant] (goal/G41.13, G41.27); then the grant list
 // (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (./grantSelector/listElement.js), the one box that
 // fills (rule/16). Deprecated is a REPORT read from the node's api tree (a server is away or the verb is gone, and the
 // grant waits for the owner, intact: suspend/repair, G1.4), following the stream, its filter off by default.
@@ -23,7 +23,7 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
   var parts = Promise.all(['shell/js/contactSelector.js', 'shell/js/bundleSelector.js', 'shell/js/apiFamilySelector.js',
-    'shell/js/grantSelector/listElement.js', 'shell/js/busyButton.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; }));
+    'shell/js/grantSelector/listElement.js', 'shell/js/busyButton.js', 'shell/js/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; }));
 
   function create(host, config) {
     var c = config || {};
@@ -46,6 +46,7 @@
     var list = null;          // the grant list
     var idSel = null;         // the grant form's ID selector
     var bundleSel = null;     // and its bundle selector
+    var form = null;          // the grant form, a rowForm holding both
     var filterId = null;      // the list's filters: an ID, and a family with its verb (the family selector)
     var filterFamily = null;
     var said = '';            // what the panel says a press did
@@ -203,22 +204,13 @@
     // Only the list fills (Andy: "and what about the HUGE vertical space in the grants tab, between the search filters and
     // the search input???"): the heading, the form and the filters take their own height.
     function paint() {
-      if (gone || !idSel) return;
+      if (gone || !form) return;
       host.innerHTML =
         '<div>' +
-          '<div data-grants="line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em">' +
-            '<span>grant</span><span data-grants="id"></span><span data-grants="bundle"></span>' +
-            '<button type="button" data-grants="grant">Grant</button>' +
-          '</div>' +
+          '<div data-grants="line" style="margin-top:1em"></div>' +
           '<div data-grants="said" class="' + (saidError ? 'job-refusal' : 'job-manifest-note') + '">' + esc(said) + '</div>' +
         '</div>';
-      host.querySelector('[data-grants="id"]').appendChild(idSel);
-      host.querySelector('[data-grants="bundle"]').appendChild(bundleSel);
-      // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
-      // requests"): greyed and turning until every grant of the bundle is answered.
-      var grantButton = host.querySelector('[data-grants="grant"]');
-      if (E.busyButton) E.busyButton.attach(grantButton, { run: grantBundle });
-      else grantButton.addEventListener('click', function () { grantBundle(); });
+      host.querySelector('[data-grants="line"]').appendChild(form.root);
       host.appendChild(listHost);
     }
 
@@ -234,6 +226,16 @@
       bundleSel = P.bundleSelector.create(slot(), { placeholder: 'choose a bundle…' });
       filterId = P.contactSelector.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
       filterFamily = P.apiFamilySelector.create(slot(), { all: 'every family' });
+      // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
+      // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
+      // did is said below it, not in it.
+      form = P.rowForm.create(slot(), { icon: '➕', button: 'Grant' });
+      form.span.appendChild(idSel);
+      form.span.appendChild(bundleSel);
+      // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
+      // requests"): greyed and turning until every grant of the bundle is answered.
+      if (P.busyButton) P.busyButton.attach(form.button, { run: grantBundle });
+      else form.button.addEventListener('click', function () { grantBundle(); });
       paint();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
       followServers();
