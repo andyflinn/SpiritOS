@@ -15,6 +15,9 @@ const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = familyPath('agent');
+// The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
+// base64url (spirit.data.nodeId).
+const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
@@ -84,6 +87,16 @@ test.startTest('tableElement.js: what the tables\' elements share');
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'spirit', 'spiritData.js'));
   const D = global.window.spirit.data;
+  // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
+  // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
+  // reads it from its own disk. The agent family's (process/js/agent/family/clientCacheManager.js) keeps the tables'
+  // branches, <node>/agent/<table>, and answers them through spirit.agentData.
+  global.window.spirit.node = { key: HOME_KEY };
+  D.home(HOME_KEY);
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  // A row's whole path in its table's branch, as the agent family's cache manager names it.
+  const rowPath = function (table, id) { return global.window.spirit.agentData.branch(table) + '/' + id; };
+  const BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
   // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
   // has not; each ask kept.
   w.bundleAsks = [];
@@ -120,6 +133,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
   global.window.spirit.elements.iconSelector = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
+  // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
+  await settle();
   const E = global.window.spirit.elements;
   ok(E.agentTable && typeof E.agentTable.create === 'function' && E.agentRow && typeof E.agentRow.create === 'function',
     'it registers spirit.elements.agentTable and agentRow, each with create', 'elements: ' + short(Object.keys(E)));
@@ -139,7 +154,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(AD.titleRow({ icon: '<x>' }, ['a&b']).indexOf('<x>') === -1, 'and escapes what it shows', 'titleRow: ' + short(AD.titleRow({ icon: '<x>' }, ['a&b'])));
   const fl = AD.fieldLine('L', '<input>');
   ok(/display:flex/.test(fl) && /gap:1em/.test(fl) && /flex:1 1 0/.test(fl), 'fieldLine(label, input): the label, 1em, then the input to the right edge', 'fieldLine: ' + short(fl));
-  ok(AD.branchOf('job') === 'agent.job', 'branchOf(table) is agent.<table>', 'branchOf: ' + short(AD.branchOf('job')));
+  ok(AD.branchOf('job') === BRANCH('job'), 'branchOf(table) is the home node\'s <node>/agent/<table>, as spirit.agentData names it (goal/G41.28)', 'branchOf: ' + short(AD.branchOf('job')));
   ok(AD.whyOf(refused('job takes no argument verb')) === 'job takes no argument verb' && AD.whyOf(new Error('bad')) === 'bad' && AD.whyOf(null) === 'refused',
     'whyOf(refusal) is the server\'s own reason, else the refusal\'s words, else refused', 'whyOf: ' + short([AD.whyOf(refused('x')), AD.whyOf(new Error('bad')), AD.whyOf(null)]));
 
@@ -161,7 +176,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(list && list.host === the(left, 'list') && list.refreshed >= 1, 'its list is a probabilitySearch in its own box, searched as it is made (Andy: "must be immediately shown")',
     'searches: ' + w.searches.length + ', refreshed ' + (list && list.refreshed));
   if (!list) return;
-  ok(list.o.server === 'agent' && list.o.verb === 'provider' && list.o.data === 'agent.provider', 'it searches the agent server\'s provider verb, seated in the branch agent.provider of spirit.data',
+  ok(list.o.server === 'agent' && list.o.verb === 'provider' && list.o.data === BRANCH('provider'), 'it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.data',
     'search: ' + short({ server: list.o.server, verb: list.o.verb, data: list.o.data }));
   ok(JSON.stringify(list.o.args('ab')) === JSON.stringify({ op: 'search', text: 'ab' }), 'its search asks { op: search, text }', 'args: ' + short(list.o.args('ab')));
   ok(JSON.stringify((list.o.columns || []).map(function (c) { return c.field; })) === '["icon","label"]', 'every row is shown by its icon and its label alone (Andy: "will only show: icon and label")',
@@ -234,7 +249,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const r = E.agentRow.create(ed, { api: {}, table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }), 'with the row not in its branch, it asks provider { op: get, id }', 'calls: ' + short(w.calls));
-  ok(D.get('agent.provider/KR') && D.get('agent.provider/KR').label === 'Row one', 'and puts the answer at agent.provider/<id>, where the stream writes it', 'branch: ' + short(D.get('agent.provider/KR')));
+  ok(global.window.spirit.agentData.row('provider', 'KR') && global.window.spirit.agentData.row('provider', 'KR').label === 'Row one', 'and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KR')));
   ok(/<b>Add<\/b>/.test(ed.innerHTML) && ed.innerHTML.indexOf('Provider') !== -1, 'its title row says Add while the row is new', 'title: ' + short(ed.innerHTML.slice(0, 200)));
   const ids = Object.keys(ed.parts).map(function (k) { return k.replace(/^ar\d+-/, ''); });
   ok(ids.indexOf('icon') !== -1 && ids.indexOf('icon') < ids.indexOf('label'), 'the icon is its first field, before the ones the table names (Andy: "the detail panel\'s first input will be the icon")',
@@ -280,7 +295,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   }
 
   test.subHeading('the editor follows its row in spirit.data');
-  D.merge('agent.provider/KR', { label: 'From the stream' });
+  D.merge(rowPath('provider', 'KR'), { label: 'From the stream' });
   await settle();
   ok(the(ed, 'label').value === 'From the stream', 'a row written to its path shows at once: nothing listens by hand', 'label: ' + short(the(ed, 'label').value));
 
@@ -298,9 +313,9 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
   ok(sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] }),
     'changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 'calls: ' + short(w.calls));
-  ok(D.get('agent.provider/KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(D.get('agent.provider/KR')));
+  ok(global.window.spirit.agentData.row('provider', 'KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KR')));
   // The server takes it and its stream says so, as rowTable publishes every row it changes.
-  D.merge('agent.provider/KR', { label: 'Typed' }); await settle();
+  D.merge(rowPath('provider', 'KR'), { label: 'Typed' }); await settle();
   w.calls.length = 0;
   the(ed, 'on').checked = false;
   the(ed, 'on').fire('change'); await settle();
@@ -330,7 +345,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   the(ed, 'delete').click(); await settle();
   ok(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; }).length === 1 && JSON.stringify(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; })[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }),
     'the second press calls provider { op: delete, id }, once', 'calls: ' + short(w.calls));
-  D.del('agent.provider/KR'); await settle();
+  D.del(rowPath('provider', 'KR')); await settle();
   ok(/Deleted\./.test(ed.innerHTML), 'and once the row is deleted from its branch, the editor says Deleted.', 'editor: ' + short(ed.innerHTML));
 
   test.subHeading('a row already in its branch is read whole by get (goal/G41.18)');
@@ -339,17 +354,17 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // for, to bring in the rest for detail panels etc...").
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KS', icon: '🧪', label: 'Seated', url: 'https://whole.example', apiKeySet: false } : { id: 'KS' }; };
-  D.set('agent.provider/KS', { id: 'KS', icon: '🧪', label: 'Seated' });
+  D.set(rowPath('provider', 'KS'), { id: 'KS', icon: '🧪', label: 'Seated' });
   const ed2 = box('editor2');
   const r2 = E.agentRow.create(ed2, { api: {}, table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }), 'it asks provider { op: get, id }, though the branch holds a row', 'calls ' + short(w.calls));
-  ok(D.get('agent.provider/KS') && D.get('agent.provider/KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
-    'and the whole row goes where the stream writes it, its fields shown', 'branch: ' + short(D.get('agent.provider/KS')));
+  ok(global.window.spirit.agentData.row('provider', 'KS') && global.window.spirit.agentData.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
+    'and the whole row goes where the stream writes it, its fields shown', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KS')));
   ok(the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML), 'it says Change when opened from the list', 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value));
   ok(w.icons[w.icons.length - 1].value === '🧪', 'the icon chooser shows the row\'s own icon', 'icon: ' + short(w.icons[w.icons.length - 1].value));
   r2.destroy();
-  D.merge('agent.provider/KS', { label: 'After' }); await settle();
+  D.merge(rowPath('provider', 'KS'), { label: 'After' }); await settle();
   ok(ed2.innerHTML === '', 'destroyed, it empties its box and hears its row no more', 'editor2: ' + short(ed2.innerHTML));
   r.destroy();
 
@@ -393,10 +408,10 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
   const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA }).id;
   const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB }).id;
-  D.seat('agent.model', sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
+  D.seat(BRANCH('model'), sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
   // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
   // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
-  const cellsOf = function (s, key) { const r = D.get('agent.model/' + key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
+  const cellsOf = function (s, key) { const r = global.window.spirit.agentData.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
   const narrowed = async function (models) {
     w.calls.length = 0;
     const before = w.searches.length;
@@ -436,7 +451,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   test.subHeading('an output field shows, and is never picked or sent (goal/G41.21)');
   // Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that.............".
   {
-    D.set('agent.provider/KOUT', { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
+    D.set(rowPath('provider', 'KOUT'), { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
     w.calls.length = 0;
     w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT' } : { id: 'KM' }; };
     const before = w.searches.length;
@@ -530,7 +545,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   }
   // Andy: "persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just
   // doesn't seem to hear the change from the server)": the row's bundle changed on the stream, the field says the new one.
-  D.merge('agent.job/KJ', { bundle: '9' }); await settle(); await settle();
+  D.merge(rowPath('job', 'KJ'), { bundle: '9' }); await settle(); await settle();
   const bsel2 = w.bundles[w.bundles.length - 1];
   const bundleSays2 = bsel2 ? String((bsel2.row && bsel2.row.label) || bsel2.opts.placeholder || '') : '';
   ok(/Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2), 'the row\'s bundle changed by the server, the field says the new one, Writer', 'the bundle field says ' + JSON.stringify(bundleSays2) + ' after the stream set bundle 9, Writer');

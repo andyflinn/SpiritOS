@@ -18,13 +18,14 @@ the table)"*.
   - `fieldLine(label, input)`: the label at its own width, 1em, then the input to the pane's right edge (*"with only the
     1em between the inputs label and the input itself"*).
   - `search(host, o, more)`: the one table search, for lists and pickers alike.
-  - `branchOf(table)` is `agent.<table>`.
+  - `branchOf(table)` is the home node's `<node>/agent/<table>`, as the agent family's cache manager names it
+    (`spirit.agentData.branch`, goal/G41.28).
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
 - **A table**, `agentTable.create(container, { api, table, detail, row, add, matched, buttons, columns })`:
   - Its title row is the table's icon and title, from `detail.look(table)`.
   - It has an Add button.
   - Its list is a `probabilitySearch` over the agent server's verb for that table, seated in the branch
-    `agent.<table>` of spirit.data. It is searched as it is made (*"must be immediately shown"*), asking
+    `<node>/agent/<table>` of spirit.data. It is searched as it is made (*"must be immediately shown"*), asking
     `{ op: 'search', text }`.
   - Every row is shown by its icon and its label alone (*"will only show: icon and label"*). A picker names a row the
     same way.
@@ -40,7 +41,7 @@ the table)"*.
     `<prefix>button<i>`; pressed, it calls its `press()` (goal/G41.18: the model table's *"provider models"*).
   - `destroy` destroys the list and empties the box.
 - **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields })`:
-  - Its row is the one at `agent.<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
+  - Its row is the one at `<node>/agent/<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
     branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
@@ -59,8 +60,9 @@ the table)"*.
     - Delete calls `{ op: 'delete', id }`.
   - `destroy` empties its box, and it hears its row no more.
 
-- It requires no data script (goal/G41.16): each table's row element (`<table>/elementRow.js`) takes its own rows
-  from the stream into `agent.<table>`.
+- It requires no data script (goal/G41.16): the agent family's cache manager
+  (`process/js/agent/family/clientCacheManager.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
+  rows from the stream into `<node>/agent/<table>`.
 
 ## Requirements (goal/G41.21, box v17)
 

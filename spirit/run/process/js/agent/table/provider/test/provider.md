@@ -60,9 +60,11 @@ which will never reach the browser or any place outside of the agent process exc
   - It builds on `agentRow` with the row's id, added, and the provider table's look.
   - Its fields are the label (name), the description, the url, and the API key as a secret.
 
-- **elementRow.js takes the provider table's rows from the stream itself** (goal/G41.16; Andy: *"get rid of thos FUCKING data.js
-  scripts"*): its page files require no data script; a row of the agent stream (`{ agent: { table: 'provider', row } }`,
-  module `process/js/agent`) lands at `agent.provider/<id>` and the branch's watcher hears it; a changed row is merged; one
+- **elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream** (goal/G41.16;
+  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
+  asks `spirit.cacheManager('agent')`, and `spirit.agentData.branch('provider')` is the home node's `<node>/agent/provider`; a row
+  of the agent stream (`{ agent: { table: 'provider', row } }`, module `process/js/agent`) lands at `<node>/agent/provider/<id>`,
+  read through `spirit.agentData.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ## Requirements (goal/G41.21, box v17)
@@ -81,7 +83,9 @@ wants"*. What he sees, asserted where he sees it: the real provider and model se
 providers, two models of one and one of the other; `./provider-picker.html`, opened at
 `/DEBUG/process/js/agent/table/provider/test/provider-picker.html` on a scratch node with its DEBUG on
 (`test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
-the real dropdown, the agent server a stand-in answering what the real tables answered for each call.
+the real dropdown, the agent server a stand-in answering what the real tables answered for each call. The page starts as
+the Agent app's does (`spirit.start()`: the data set, its home node from `node.card`), and the stand-in answers for the
+agent server's `FS.path` too: `spirit.cacheManager('agent')` loads the family's real `clientCacheManager.js` (goal/G41.28).
 
 - The provider's detail shows its Model field, the provider having models.
 - Pressed, it opens its dropdown.

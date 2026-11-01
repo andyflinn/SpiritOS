@@ -48,9 +48,11 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   - Its fields are the label, the description, the provider, the model name, and the capabilities as a list.
   - The provider is picked from a search of the provider table.
 
-- **elementRow.js takes the model table's rows from the stream itself** (goal/G41.16; Andy: *"get rid of thos FUCKING data.js
-  scripts"*): its page files require no data script; a row of the agent stream (`{ agent: { table: 'model', row } }`,
-  module `process/js/agent`) lands at `agent.model/<id>` and the branch's watcher hears it; a changed row is merged; one
+- **elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream** (goal/G41.16;
+  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
+  asks `spirit.cacheManager('agent')`, and `spirit.agentData.branch('model')` is the home node's `<node>/agent/model`; a row
+  of the agent stream (`{ agent: { table: 'model', row } }`, module `process/js/agent`) lands at `<node>/agent/model/<id>`,
+  read through `spirit.agentData.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ### The provider shown, never picked (goal/G41.21)

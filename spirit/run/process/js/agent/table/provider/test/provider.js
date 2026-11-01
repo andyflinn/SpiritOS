@@ -19,6 +19,9 @@ const { DatabaseSync } = require('node:sqlite');
 
 const TABLE = 'provider';
 const DIR = path.join(__dirname, '..');
+// The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
+// base64url (spirit.data.nodeId).
+const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } }
@@ -213,8 +216,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
-  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream lands there.
+  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream lands there, under
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
+  // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.data.home(HOME_KEY);
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.providerTable && typeof E.providerTable.create === 'function' && E.providerRow && typeof E.providerRow.create === 'function',
@@ -248,27 +256,36 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'its fields are the label, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 'fields: ' + short(r && r.fields));
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
-  test.subHeading('elementRow.js takes the provider table\'s rows from the stream itself (goal/G41.16)');
+  test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the provider table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is its row element's, loaded with it.
+  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's clientCacheManager's
+  // (process/js/agent/family/clientCacheManager.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // node that served them, and is read through spirit.agentData.
   {
     const DATA = global.window.spirit.data;
+    const AD = global.window.spirit.agentData;
     ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
-    const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
-    const heard = [];
-    const off = DATA.watch('agent.provider', function (p) { heard.push(p); });
-    DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
-    ok(DATA.get('agent.provider/KT') && DATA.get('agent.provider/KT').label === 'First' && heard.indexOf('agent.provider/KT') !== -1, 'a provider row on the stream lands at agent.provider/<id>, and the branch\'s watcher hears it', 'agent.provider: ' + short(DATA.branch('agent.provider')));
-    DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
-    ok(DATA.get('agent.provider/KT') && DATA.get('agent.provider/KT').label === 'Renamed' && DATA.get('agent.provider/KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(DATA.get('agent.provider/KT')));
-    DATA.take(job({ table: 'provider', id: 'KT', removed: true }));
-    ok(!DATA.get('agent.provider/KT'), 'a row removed, by its id, is gone', 'row: ' + short(DATA.get('agent.provider/KT')));
-    const before = JSON.stringify(DATA.branch('agent.provider'));
-    DATA.take(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
-    DATA.take(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
-    DATA.take(job({ table: 'provider', row: { label: 'no id' } }));
-    ok(JSON.stringify(DATA.branch('agent.provider')) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'agent.provider: ' + short(DATA.branch('agent.provider')));
-    off();
+    const BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
+    ok(!!AD && typeof AD.branch === 'function' && AD.branch('provider') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.agentData.branch(\'provider\') is the home node\'s <node>/agent/provider',
+      'agentData: ' + short(AD ? AD.branch('provider') : AD));
+    // With no manager loaded the check above is red; nothing below would judge anything.
+    if (AD) {
+      const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+      const heard = [];
+      const off = DATA.watch(BRANCH, function (p) { heard.push(p); });
+      DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
+      ok(AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1, 'a provider row on the stream lands at <node>/agent/provider/<id>, and the branch\'s watcher hears it', 'provider: ' + short(DATA.branch(BRANCH)));
+      DATA.take(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
+      ok(AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'Renamed' && AD.row('provider', 'KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(AD.row('provider', 'KT')));
+      DATA.take(job({ table: 'provider', id: 'KT', removed: true }));
+      ok(!AD.row('provider', 'KT') && !('KT' in DATA.branch(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('provider', 'KT')));
+      const before = JSON.stringify(DATA.branch(BRANCH));
+      DATA.take(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
+      DATA.take(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+      DATA.take(job({ table: 'provider', row: { label: 'no id' } }));
+      ok(JSON.stringify(DATA.branch(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'provider: ' + short(DATA.branch(BRANCH)));
+      off();
+    }
   }
 
   // ── THE MODEL PICKER IN A REAL BROWSER (goal/G41.21; Andy: "the model picker for anthropic simply shows: "Nothing
