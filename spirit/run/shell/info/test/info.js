@@ -77,8 +77,12 @@ function world() {
     spirit: { elements: E,
       require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
       relay: { status: function () { w.statuses = (w.statuses || 0) + 1; return Promise.resolve({ body: { rows: ROWS } }); } },
-      // The contact family's cache (goal/G41.28): its manager loads, and the app watches spirit.contactData's rows.
-      cacheManager: function (name) { w.managers = (w.managers || []).concat(name); win.spirit.contactData = { watch: function (h) { w.subs.push(h); return function () {}; } }; return Promise.resolve(true); },
+      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+      cacheManager: function (name) {
+        w.managers = (w.managers || []).concat(name);
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        return Promise.resolve(true);
+      },
       shell: { activateApp: function (d) { w.def = d; } } },
     document: { getElementById: function () { return null; }, createElement: function (t) { return node('<' + t + '>'); } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
@@ -86,8 +90,12 @@ function world() {
   };
   win.window = win;
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+INFO/NODE==' };
+  win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
-  w.api = api;
+  w.api = api; api.win = win;
   return w;
 }
 
@@ -121,10 +129,18 @@ test.startTest('info.js: the Info app');
   ok(w.posts.length === 0, 'a saved name is no longer posted to every relay', 'posts: ' + short(w.posts));
 
   test.subHeading('it reads the relays from the contact family\'s cache (goal/G41.28)');
-  ok((w.managers || []).indexOf('contact') !== -1 && w.subs.length === 1, 'it loads the contact manager and watches spirit.contactData', 'managers: ' + short(w.managers) + ', watches ' + w.subs.length);
+  ok((w.managers || []).indexOf('contact') !== -1, 'it loads the contact manager', 'managers: ' + short(w.managers));
   const before = w.statuses;
-  if (w.subs[0]) { w.subs[0]('RA', { relay: true, keep: true, seated: false }); await settle(); }
-  ok(w.statuses > before, 'a relay\'s row that changed reads the relays again', 'relay.status asked ' + before + ', then ' + w.statuses);
+  w.api.win.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'RA', relay: true, keep: true, seated: false } } });
+  await settle();
+  ok(w.statuses > before, 'a relay\'s row that changed in spirit.contactData reads the relays again', 'relay.status asked ' + before + ', then ' + w.statuses);
+
+  test.subHeading('its name and description are the node family\'s cache (goal/G41.28)');
+  const N = w.api.win.spirit.nodeData;
+  ok((w.managers || []).indexOf('node') !== -1 && !!N && N.card() && N.card().name === 'Bob' && N.card().description === 'a node', 'it loads the node manager: node.card\'s answer is kept in spirit.nodeData, and the saved name (Bob) with it', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card()));
+  const sets0 = w.sets.length;
+  N.keepCard({ description: 'changed elsewhere' }); await settle();
+  ok(w.sets.slice(sets0).some(function (x) { return x.kind === 'description' && x.value === 'changed elsewhere'; }), 'a card changed in the cache redraws its fields', 'sets after: ' + short(w.sets.slice(sets0)));
 
   test.subHeading('the two forms and the key rotation stay');
   const join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();
