@@ -22,19 +22,28 @@
   var SET = 'relay-state/shell/icons/iconSet.json';
   var SYSTEM_SET = 'shell/json/iconSet.json';
 
+  // THE ICON SET IN spirit.data (goal/G41.28; Andy, box v15: "If its rows are NOT cached in the proper place, with the shells
+  // one and only spirit.data object, then that must be fixed, too."): the icons branch, this element's, glyph -> its row.
+  // A set read again replaces it whole: a glyph the set no longer has leaves it.
+  var ICONS = 'icons';
+  function keepSet(set) {
+    var D = window.spirit && window.spirit.data;
+    if (!D) return;
+    Object.keys(D.branch(ICONS)).forEach(function (g) { if (!Object.prototype.hasOwnProperty.call(set, g)) D.del(ICONS + '/' + g); });
+    Object.keys(set).forEach(function (g) { D.set(ICONS + '/' + g, { glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }); });
+  }
+
   function create(host, opts) {
     var o = opts || {};
-    var rows = [];
     var list = null;
     function reload() {
       // Through the spirit object (goal/G32.2).
       return spirit.ready.then(function (s) { return s.fs.loadFile(SET).then(function (own) { return own != null ? own : s.fs.loadFile(SYSTEM_SET); }); }).then(function (text) {
         var set = {};
         try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
-        rows = Object.keys(set).map(function (g) { return { key: g, glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }; });
-        if (list) list.redraw();
+        keepSet(set);
         return set;
-      }, function () { rows = []; if (list) list.redraw(); return {}; });
+      }, function () { keepSet({}); return {}; });
     }
     list = E.probabilitySearch.create(host, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
@@ -44,7 +53,8 @@
       placeholder: o.placeholder || 'choose an icon…',
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
-      rows: function () { return rows; },
+      // A view of the icons branch: what keepSet writes, it draws.
+      data: ICONS,
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
@@ -63,5 +73,5 @@
     return list;
   }
 
-  E.iconList = { create: create, SET: SET };
+  E.iconList = { create: create, SET: SET, branch: ICONS };
 }());

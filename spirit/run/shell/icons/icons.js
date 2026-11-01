@@ -63,6 +63,18 @@ function iconsPanelDraw(host, page, api, row, glyph) {
     I.create(heading, { glyph: glyph });
   }, function () { /* the glyph stays text */ });
   function back() { page.close(); }
+  // WHAT IT CHANGES, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
+  // changes shit it listens to fucking update via the spirit object"): the icon's row in the icons branch the list keeps
+  // (iconList.branch). A save confirmed there repaints the keywords, unless they are being typed; the row gone, the
+  // page closes. It lets go once the page has left.
+  var D = window.spirit.data;
+  var B = window.spirit.elements.iconList && window.spirit.elements.iconList.branch;
+  var off = D && B ? D.watch(B + '/' + glyph, function (p, v) {
+    if (!host.isConnected) { if (typeof off === 'function') off(); return; }
+    if (!v) { back(); return; }
+    var field = host.querySelector('[data-icons="keywords"]');
+    if (field && document.activeElement !== field) field.value = (v.keywords || []).join(', ');
+  }) : null;
   // Saved as the field changes, no Save button (as the Apps panel).
   // The keywords stop at their limit as they are typed (shell/js/fieldInput.js), the description rule (goal/G41.27; Andy:
   // "icon text follows description rules.").
