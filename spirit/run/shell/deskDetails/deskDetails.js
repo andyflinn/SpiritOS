@@ -70,10 +70,16 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button here is an armingButton
 // (shell/js/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
 // made one after each paint; it arms, says so, and hands the shell its disarm, and its second press is ddSecondPress.
-var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+// A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
+// held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
+var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
+  ? Promise.all([spirit.require('shell/js/armingButton.js'), spirit.require('shell/js/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
     var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.fieldInput;
+    var say = document.getElementById('dd-say');
+    if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'line'); say.setAttribute('data-held', 'line'); }
     var body = document.getElementById('dd-body');
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {

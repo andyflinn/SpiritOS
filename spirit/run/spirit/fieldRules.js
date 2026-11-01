@@ -269,6 +269,35 @@ function emailProblem(text) {
   return '';
 }
 
+// THE GLYPH RULE (goal/G41.27; Andy: "icon fields need a rule in fieldRules.js? it would be:the max byte-length 1 glyph can
+// take, and it must be only 1 glyph/character", then "glyph field rule: max 1 char/glyph, 8-bytes maximum."). One glyph,
+// as the reader sees one (a grapheme), of at most 8 bytes.
+var GLYPH_MAX_BYTES = 8;
+
+function glyphCount(text) {
+  var s = typeof text === 'string' ? text : '';
+  if (!s) return 0;
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    var n = 0;
+    var it = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)[Symbol.iterator]();
+    while (!it.next().done) n += 1;
+    return n;
+  }
+  return Array.from(s).length;
+}
+
+function glyphProblem(text) {
+  var s = typeof text === 'string' ? text.trim() : '';
+  if (!s) return 'a glyph is needed';
+  if (glyphCount(s) > 1) return 'one glyph only';
+  if (byteLength(s) > GLYPH_MAX_BYTES) return 'a glyph is at most ' + GLYPH_MAX_BYTES + ' bytes';
+  return '';
+}
+
+// THE CHAT LINE RULE (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): a line said in a chat, at
+// most 1024 bytes.
+var LINE_MAX_BYTES = 1024;
+
 // A FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20; Andy: "keep counting the number of characters typed beyond the
 // limit, instead of just blocking input past the limit"). The text cut at maxBytes, never through a character: what a
 // field holds once its limit is reached, so typing past it adds nothing.
@@ -304,6 +333,10 @@ var RULE = {
   byteLength: byteLength,
   EMAIL_MAX_BYTES: EMAIL_MAX_BYTES,
   emailProblem: emailProblem,
+  GLYPH_MAX_BYTES: GLYPH_MAX_BYTES,
+  glyphCount: glyphCount,
+  glyphProblem: glyphProblem,
+  LINE_MAX_BYTES: LINE_MAX_BYTES,
   clip: clip,
 };
 

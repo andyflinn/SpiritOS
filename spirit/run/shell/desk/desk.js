@@ -1137,7 +1137,8 @@ function deskMountChat(el, goal) {
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
 // armingButton (shell/js/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
 // disarm, so it disarms the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
-var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
+  ? Promise.all([spirit.require('shell/js/armingButton.js'), spirit.require('shell/js/fieldInput.js')]) : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
@@ -1736,6 +1737,13 @@ spirit.shell.activateApp({
     deskHeader(api);
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);
+    // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the team
+    // box held to fieldRules' line rule as it is typed, by fieldInput, which the page loads itself.
+    deskParts.then(function () {
+      var F = window.spirit && window.spirit.elements && window.spirit.elements.fieldInput;
+      var say = container.querySelector('#desk-team-say');
+      if (F && say) F.attach(say, 'line');
+    });
     function show(tab) {
       // Apps opens on the inner tab last shown, Team the first time.
       if (tab === 'apps') tab = deskAppTab;

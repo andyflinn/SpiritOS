@@ -6,13 +6,15 @@
 // never says how far past the limit the text went: it simply does not get there.
 //
 //   spirit.elements.fieldInput.fits(value, rule) -> true when the rule takes it
-//   spirit.elements.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048)
+//   spirit.elements.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
+//                                                     'line' (1024, a chat line), 'glyph' (one glyph of at most 8 bytes)
 (function (root) {
   var E = (root.spirit = root.spirit || {}).elements = root.spirit.elements || {};
   // THE RULES IT HOLDS TO, IT LOADS ITSELF (rule/26; goal/G41.27, found by the general UI test: on a bare page, without
   // the boot's list, it held nothing). Asked as this file runs, so whoever requires it is answered once they are in.
   if (root.spirit && typeof root.spirit.require === 'function') root.spirit.require('spirit/fieldRules.js');
-  var LIMIT = { name: 'MAX_BYTES', description: 'DESCRIPTION_MAX_BYTES', paragraph: 'PARAGRAPH_MAX_BYTES' };
+  var LIMIT = { name: 'MAX_BYTES', description: 'DESCRIPTION_MAX_BYTES', paragraph: 'PARAGRAPH_MAX_BYTES', line: 'LINE_MAX_BYTES',
+    glyph: 'GLYPH_MAX_BYTES' };
 
   function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
   function bytes(s) {
@@ -24,7 +26,13 @@
     var max = R && LIMIT[rule] ? R[LIMIT[rule]] : undefined;
     return typeof max === 'number' ? max : Infinity;
   }
-  function fits(value, rule) { return bytes(value) <= limitOf(rule); }
+  // The glyph rule also counts glyphs: one, as the reader sees one (fieldRules.glyphCount).
+  function fits(value, rule) {
+    if (bytes(value) > limitOf(rule)) return false;
+    var R = rules();
+    if (rule === 'glyph' && R && typeof R.glyphCount === 'function' && R.glyphCount(String(value)) > 1) return false;
+    return true;
+  }
 
   function attach(input, rule) {
     if (!input || typeof input.addEventListener !== 'function') return input;

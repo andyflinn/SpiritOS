@@ -40,9 +40,10 @@
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
   // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
-  // the list is answered once they are in.
+  // the list is answered once they are in. And fieldInput, which holds the search words to their rule.
   if (window.spirit && typeof window.spirit.require === 'function') {
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/icon.js',
+      'shell/js/fieldInput.js'].forEach(function (p) { window.spirit.require(p); });
   }
   function P() { return window.spirit.probability || {}; }
   function esc(s) {
@@ -223,6 +224,10 @@
         '</span>'
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
+    // THE SEARCH WORDS STOP AT THEIR LIMIT (goal/G41.27; Andy: "of course search words need a limit, search words must
+    // follow the description rules."): fieldInput holds them to the description rule as they are typed.
+    var E0 = window.spirit.elements || {};
+    if (E0.fieldInput && el('text')) E0.fieldInput.attach(el('text'), 'description');
     // The selectors mounted in their row; a pick in any of them redraws the list.
     function onSelector() { draw(); }
     selectors.forEach(function (s, i) {

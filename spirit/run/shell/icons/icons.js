@@ -64,8 +64,9 @@ function iconsPanelDraw(host, page, api, row, glyph) {
   }, function () { /* the glyph stays text */ });
   function back() { page.close(); }
   // Saved as the field changes, no Save button (as the Apps panel).
-  // The keywords stop at their limit as they are typed (shell/js/fieldInput.js).
-  window.spirit.elements.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'paragraph');
+  // The keywords stop at their limit as they are typed (shell/js/fieldInput.js), the description rule (goal/G41.27; Andy:
+  // "icon text follows description rules.").
+  window.spirit.elements.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'description');
   host.querySelector('[data-icons="keywords"]').addEventListener('change', function (e) {
     var words = iconsWords(e.target.value);
     iconsChange(api, function (set) { set[glyph] = words; }, said);
@@ -99,7 +100,10 @@ spirit.shell.activateApp({
         '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">';
       form.button.setAttribute('data-icons', 'add');
       form.button.addEventListener('click', add);
-      E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
+      // The keywords to the description rule, the glyph to the glyph rule: one glyph of at most 8 bytes (goal/G41.27; Andy:
+      // "icon text follows description rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
+      E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'description');
+      E.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
       iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
         api: api,
         face: 'pane',
@@ -109,7 +113,7 @@ spirit.shell.activateApp({
     function add() {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
-      if (!window.spirit.elements.fieldInput.fits(words.join(', '), 'paragraph')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
+      if (!window.spirit.elements.fieldInput.fits(words.join(', '), 'description')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
       var said = container.querySelector('[data-icons="added"]');
       if (!glyph) { said.textContent = 'paste an icon first'; return; }
       // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"): an
