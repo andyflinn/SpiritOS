@@ -71,15 +71,18 @@
   function dispatch(idx) {
     var off = null;
     var gone = false;
-    contactReady.then(function (C) {
-      if (gone || !C) return;
+    function listen(C) {
+      if (gone || !C || off) return;
       off = C.watch(function (key, v) {
         if (!key || !v) return;
         var changes = {};
         ['present', 'name', 'keep', 'mine', 'blocked', 'held'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
         idx.forKey(key).forEach(function (el) { el.apply(changes); });
       });
-    });
+    }
+    // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
+    listen(contactData());
+    if (!off) contactReady.then(listen);
     return function () { gone = true; if (typeof off === 'function') off(); };
   }
   function index() {

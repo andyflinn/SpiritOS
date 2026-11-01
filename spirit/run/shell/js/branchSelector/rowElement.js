@@ -32,13 +32,16 @@
   function dispatch(idx) {
     var off = null;
     var gone = false;
-    authReady.then(function (B) {
-      if (gone || !B) return;
+    function listen(B) {
+      if (gone || !B || off) return;
       off = B.watch(function (key, v) {
         if (!key || !v) return;
         idx.forKey(key).forEach(function (el) { el.apply({ family: String(v.family || ''), verb: String(v.verb || '') }); });
       });
-    });
+    }
+    // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
+    listen(window.spirit.authData && window.spirit.authData.branches);
+    if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {

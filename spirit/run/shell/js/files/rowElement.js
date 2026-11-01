@@ -57,8 +57,8 @@
   function dispatch(idx) {
     var off = null;
     var gone = false;
-    fsReady.then(function (F) {
-      if (gone || !F) return;
+    function listen(F) {
+      if (gone || !F || off) return;
       off = F.watch(function (p, v) {
         if (!p) return;
         idx.forKey(p).forEach(function (el) {
@@ -66,7 +66,10 @@
           else el.apply({ kind: v.kind, size: v.size, modified: v.modified, core: v.core === true, gone: false });
         });
       });
-    });
+    }
+    // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
+    listen(fsData());
+    if (!off) fsReady.then(listen);
     return function () { gone = true; if (typeof off === 'function') off(); };
   }
 

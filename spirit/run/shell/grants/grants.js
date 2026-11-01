@@ -47,7 +47,7 @@ var GR_GRANTS = {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
 // tree...."): through spirit.require, each element bringing its own.
 var grParts = Promise.all(['shell/js/grantsPanel.js', 'shell/js/tabContainer.js', 'shell/js/bundleEditor.js']
-  .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('auth')]));
+  .map(function (p) { return spirit.require(p); }).concat([typeof spirit.cacheManager === 'function' ? Promise.resolve(spirit.cacheManager('auth')).then(null, function () {}) : null]));
 
 spirit.shell.activateApp({
   mount: function (container, api) {

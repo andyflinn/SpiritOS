@@ -83,7 +83,8 @@
     var g = o.grants;
     // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "no throw even unconfigured"): with no grants table there is
     // no field to read the row by, no stream and nothing to revoke, so the row is empty and has no Revoke.
-    var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function' && typeof g.stream === 'function');
+    // A table its family's cache manager keeps hands no stream (goal/G41.28): configured without one.
+    var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function');
     var r = configured ? (row || {}) : {};
     var key = configured ? r[g.key] : '';
     var label = configured ? r[g.label] : '';
