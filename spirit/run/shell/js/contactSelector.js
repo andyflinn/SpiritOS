@@ -187,6 +187,11 @@
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
         all: isPane ? undefined : options.all,
+        // A VIEW OF spirit.data (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
+        // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contacts' own element
+        // keeps (shell/js/contacts/), so a pick finds what any list of contacts was answered; an ID table of another
+        // family is the branch its caller names (options.data); a caller's own rows are the caller's.
+        data: options.data || (!table && typeof options.search !== 'function' && !Array.isArray(options.contacts) ? 'contacts' : undefined),
         api: api,
         server: 'node',
         verb: 'contact.search',
