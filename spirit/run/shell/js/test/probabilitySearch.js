@@ -26,6 +26,7 @@ vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
 const PS = window.spirit.elements.probabilitySearch;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 
 // ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -366,6 +367,36 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
   const u4c = upToInput(c4c);
   ok(u4c !== null && /^[^🗜🔎]*🗜Mine🔎$/u.test(u4c), 'and in a dropdown\'s pane alike', 'seen up to the input: ' + JSON.stringify(u4c));
+
+  test.subHeading('create: the filter row and the search row in one bubble (goal/G41.26)');
+  // Andy, on G41.26: "the filer row and search-input row must be set in a transparent bubble, with a border that has the
+  // same color as the type-face", "NO! the filtel row and the search-input row int eh SAME bubble", and
+  //   | 🗜 [filter1] [filter2] ...
+  //   | 🔎[search-input][search-button]
+  // "if there's no filters, there's no filer row." The bubble: the innermost element holding the filters and the search
+  // row, its border the type-face's colour, its background transparent; the list stays outside it.
+  const bubbleOf = function (c) {
+    const h = c.innerHTML; const pre = c.pre();
+    const has = function (part) { return part.indexOf('id="' + pre + 'filters"') !== -1 && part.indexOf('id="' + pre + 'text"') !== -1 && part.indexOf('id="' + pre + 'search"') !== -1; };
+    let best = null;
+    const re = /<div\b[^>]*>/g; let m;
+    while ((m = re.exec(h))) {
+      let depth = 0; const tags = /<(\/?)div\b[^>]*>/g; tags.lastIndex = m.index; let t; let end = -1;
+      while ((t = tags.exec(h))) { depth += t[1] ? -1 : 1; if (!depth) { end = tags.lastIndex; break; } }
+      const part = end === -1 ? '' : h.slice(m.index, end);
+      if (has(part) && (!best || part.length < best.part.length)) best = { open: m[0], part: part };
+    }
+    return best;
+  };
+  [['with filters', c4], ['with none', c4b], ['in a dropdown\'s pane', c4c]].forEach(function (x) {
+    const b = bubbleOf(x[1]); const pre = x[1].pre();
+    const st = b ? (/style="([^"]*)"/.exec(b.open) || [])[1] || '' : '';
+    ok(!!b && /border(-color)?\s*:[^;]*currentColor/.test(st) && /background(-color)?\s*:\s*transparent/.test(st) && /border-radius\s*:/.test(st),
+      x[0] + ': the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
+    ok(!!b && b.part.indexOf('id="' + pre + 'list"') === -1, x[0] + ': the list stands outside the bubble', 'the bubble holds the list');
+    ok(!!b && b.part.indexOf('id="' + pre + 'text"') < b.part.indexOf('id="' + pre + 'search"'), x[0] + ': its search row is 🔎, the input, then the search button', 'bubble: ' + short(b && b.part));
+  });
+  ok(seen(c4b.get('filters').innerHTML) === '' && !/🗜/.test(seen(c4b.innerHTML)), 'with no filters there is no filter row in the bubble', 'filters: ' + short(c4b.get('filters').innerHTML));
   L4.destroy();
 
   test.subHeading('create: details in a pane, and fold');

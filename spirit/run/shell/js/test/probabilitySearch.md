@@ -96,6 +96,14 @@ draws and ranks.
   - The search row starts with 🔎, right before its input, with filters or without.
   - With no filters there is no 🗜.
   - A dropdown's pane alike.
+- **One bubble** (goal/G41.26). Andy: *"the filer row and search-input row must be set in a transparent bubble, with a
+  border that has the same color as the type-face"*, *"NO! the filtel row and the search-input row int eh SAME
+  bubble"*, drawn as `| 🗜 [filter1] [filter2] ...` over `| 🔎[search-input][search-button]`, and *"if there's no
+  filters, there's no filer row."*
+  - The filter row and the search row stand in one box, transparent, its border `currentColor`, rounded.
+  - The list stands outside it.
+  - The search row is 🔎, the input, then the search button.
+  - With no filters, no filter row is in it. A dropdown's pane alike.
 - **Clear** empties the field.
 - **Picking**:
   - A press on a row calls `details(row, key, el)` when given, in a pane.
@@ -136,3 +144,4 @@ draws and ranks.
 - Drawing after destroy.
 - A filter row without its 🗜, or a 🗜 with no filters; a search row with anything before its 🔎, or no 🔎; a redraw
   of the filters that drops the 🗜.
+- A bubble of another border colour, or not transparent; the two rows in two bubbles; the list inside the bubble.
