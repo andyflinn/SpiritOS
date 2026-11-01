@@ -11,7 +11,24 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.7; Andy: every app bootstraps its own components, "lazy-load, is
 // a tree...."): the files list and the codeMirror element, through spirit.require.
-var textEditorParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/codeMirror.js'].map(function (p) { return spirit.require(p); }));
+var textEditorParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/codeMirror.js'].map(function (p) { return spirit.require(p); })
+  .concat([spirit.cacheManager('fs')]));
+
+// WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, G41.28; Andy, Q21: "just changed. it could be a message, edited in a
+// peers RAM...."): the open file's row in the node's file tree, as the fs family's cache keeps it (spirit.fsData). Its
+// own save is "saved" once the tree has it; any other change of the open file is "changed".
+var textEditorStop = null;
+var textEditorSaving = false;
+function textEditorFollow(path) {
+  if (textEditorStop) textEditorStop();
+  textEditorSaving = false;
+  textEditorStop = window.spirit.data.watch(window.spirit.fsData.branch + '/' + path, function (whole, row) {
+    var statusEl = document.getElementById('editor-status');
+    if (!row || !statusEl) return;
+    statusEl.textContent = textEditorSaving ? 'saved' : 'changed';
+    textEditorSaving = false;
+  });
+}
 
 // Hoisted out of mount() (rather than a closure inside it) so loadFile, below, can call the same loading logic: an app
 // stays mounted across navigation, so a later "Open with" against a different file goes through loadFile instead.
@@ -36,6 +53,7 @@ function textEditorShow(path, words, line, content) {
   place.innerHTML = '';
   textEditorView = null;
   return textEditorParts.then(function () {
+    textEditorFollow(path);
     return window.spirit.elements.codeMirror.create(place, { mode: 'edit', text: content == null ? '' : content, words: words || '', line: line || 0, path: path });
   }).then(function (view) {
     textEditorView = view;
@@ -66,7 +84,8 @@ spirit.shell.activateApp({
       textEditorLoadPath(textEditorPath);
     });
 
-    // WHAT THE NODE ANSWERED, AND ONLY THAT (rule/19): saved once it says ok, else its own words.
+    // WHAT THE NODE SAYS, AND ONLY THAT (rule/19): saved once its file tree has the save (textEditorFollow, above),
+    // else the refusal in its own words.
     document.getElementById('editor-save').addEventListener('click', function () {
       var path = textEditorPath;
       if (APP_ENTRY_SCRIPT_PATTERN.test(path)) {
@@ -75,9 +94,10 @@ spirit.shell.activateApp({
       }
       var content = textEditorView ? textEditorView.value() : '';
       statusEl.textContent = 'saving…';
+      textEditorSaving = true;
       spirit.fs.saveFile(path, content)
-        .then(function (r) { statusEl.textContent = r && r.ok === false ? 'save failed: ' + (r.reason || 'refused') : 'saved'; })
-        .catch(function (err) { statusEl.textContent = 'save failed: ' + err.message; });
+        .then(function (r) { if (r && r.ok === false) { textEditorSaving = false; statusEl.textContent = 'save failed: ' + (r.reason || 'refused'); } })
+        .catch(function (err) { textEditorSaving = false; statusEl.textContent = 'save failed: ' + err.message; });
     });
 
     return textEditorParts.then(function () {

@@ -52,9 +52,14 @@
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
   // A TABLE'S BRANCH IS THE agent FAMILY'S CACHE (goal/G41.28): its whole path in spirit.data, as the family's own
-  // clientCacheManager keeps it (spirit.agentData), loaded with this element.
-  if (typeof spirit.cacheManager === 'function') Promise.resolve(spirit.cacheManager('agent')).then(null, function () { /* no cache */ });
-  function branchOf(table) { return window.spirit.agentData ? window.spirit.agentData.branch(table) : ''; }
+  // clientCacheManager keeps it (spirit.agentData), loaded with this element, as part of its tree. A page where it could
+  // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
+  // without its branch.
+  spirit.cacheManager('agent');
+  function branchOf(table) {
+    if (!window.spirit.agentData) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
+    return window.spirit.agentData.branch(table);
+  }
   function D() { return window.spirit.data; }
 
   // EVERY PANE'S LOOK, IN THIS ONE PLACE (Andy, on G41.4: "is it possible to organize the code so that my changes so far
