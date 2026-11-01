@@ -77,6 +77,12 @@ function world() {
   const win = {
     spirit: { elements: page,
       require: function (p) { w.required.push(String(p)); (FILES[p] || []).forEach(function (k) { page[k] = E[k]; }); return Promise.resolve(true); },
+      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+      cacheManager: function (name) {
+        w.managers = (w.managers || []).concat(String(name));
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        return Promise.resolve(true);
+      },
       shell: { activateApp: function (d) { w.def = d; } }, escapeHtml: api.escapeHtml },
     document: { createElement: function (t) { return node('<' + t + '>'); } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number,
@@ -84,6 +90,10 @@ function world() {
   };
   win.window = win;
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+GRANTS/APP==' };
+  win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.api = api;
   return w;
@@ -132,9 +142,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const ids = p.cfg.ids || {};
   ok(ids.table === 'loopback://api/contact/search', 'its ID table is the contacts\', loopback://api/contact/search', 'ids: ' + short(ids));
   const g = p.cfg.grants || {};
-  ok(g.branch === 'grants' && g.key === 'key' && g.label === 'label', 'its grants table is the node\'s: branch grants, keyed key, labelled label', 'grants: ' + short({ branch: g.branch, key: g.key, label: g.label }));
-  ok(['search', 'grant', 'revoke', 'stream'].every(function (f) { return typeof g[f] === 'function'; }), 'with search, grant, revoke and stream of its own', 'grants: ' + short(Object.keys(g)));
-  if (!['search', 'grant', 'revoke', 'stream'].every(function (f) { return typeof g[f] === 'function'; })) return;
+  const A = w.win.spirit.authData;
+  ok((w.managers || []).indexOf('auth') !== -1 && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label',
+    'its grants table is the node\'s, the auth family\'s cache (spirit.authData.grants.branch), keyed key, labelled label', 'managers ' + short(w.managers) + ', grants: ' + short({ branch: g.branch, key: g.key, label: g.label }));
+  ok(['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g), 'with search, grant, revoke and watch, and no stream of its own', 'grants: ' + short(Object.keys(g)));
+  if (!A || !['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; })) return;
   let at = w.calls.length;
   const found = await g.search('bo');
   const s = w.calls.slice(at)[0];
@@ -153,9 +165,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await g.revoke('K3', 'jobs.list');
   const rv = w.calls.slice(at)[0];
   ok(rv && rv.name === 'auth.revoke' && rv.args.key === 'K3' && rv.args.path === 'jobs.list', 'revoke(id, path) asks auth.revoke { key, path }', 'asked ' + short(rv));
-  const one = g.stream({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
-  const gone = g.stream({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
-  ok(one && one.row.key === 'K9' && !one.gone && gone && gone.gone === true, 'stream(job): the auth tables\' job, table grant, is its grants, gone when revoked', 'stream: ' + short([one, gone]));
-  ok(!g.stream({ type: 'bundles', data: { table: 'bundle', row: { id: 1 } } }) && !g.stream({ type: 'shadow', data: { row: {} } }), 'a bundle row, or another job, is none of its grants', 'stream answered a non-grant');
+  // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
+  const heard = [];
+  const off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
+  const D = w.win.spirit.data;
+  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
+  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
+  ok(heard.length === 2 && heard[0].k === 'K9\njobs.list' && heard[0].row && heard[0].row.label === 'Zed' && heard[1].k === 'K9\njobs.list' && !heard[1].row,
+    'watch(fn): a grant kept is heard as <key>\\n<path> with its row, and once revoked with none', 'heard: ' + short(heard));
+  if (typeof off === 'function') off();
+  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
+  ok(heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

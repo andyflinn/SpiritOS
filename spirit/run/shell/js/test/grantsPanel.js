@@ -66,12 +66,13 @@ function config(w) {
       search: function (text) { w.calls.push({ name: 'grants.search', args: text }); return Promise.resolve({ items: [], more: false }); },
       grant: function (id, p) { w.calls.push({ name: 'grants.grant', args: { id: id, path: p } }); return Promise.resolve(w.grantAnswer ? w.grantAnswer(id, p) : { ok: true }); },
       revoke: function (id, p) { w.calls.push({ name: 'grants.revoke', args: { id: id, path: p } }); return Promise.resolve({ ok: true }); },
-      stream: function () { return null; } },
+      // Its own watch, as the auth cache manager hands it (goal/G41.28): fn(id + newline + path, row), answering its release.
+      watch: function (fn) { w.grantWatchers.push(fn); return function () { w.grantWatchers = w.grantWatchers.filter(function (x) { return x !== fn; }); }; } },
   };
 }
 
 function world() {
-  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [] };
+  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [], grantWatchers: [] };
   const E = {
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     bundleSelector: { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
@@ -264,7 +265,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'and grants each through the grants table it was handed, grant(id, path): family.verb, or the family alone for (ALL)', 'grants: ' + short(grants.map(function (c) { return c.args; })));
   ok(!w.calls.slice(at0).some(function (c) { return /^auth\.(grant|search)$/.test(c.name) || /^agent\./.test(c.name); }), 'nothing is granted, or read, past the table it was handed', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
   ok(!/already-granted|already granted|not granted|refused/i.test(box.innerHTML.replace(/<[^>]*>/g, ' ')), 'a path the ID holds already is counted done, never said as a refusal', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
-  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'grants.search'; }), 'and reads no grant again: each new grant arrives on the stream (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
+  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'grants.search'; }), 'and reads no grant again (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
+  // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
+  // object": the grants it sent come back through the grants table's own watch, and the panel says they arrived.
+  const said0 = box.innerHTML;
+  w.grantWatchers.slice().forEach(function (fn) { fn('J3\njobs.list', { job_id: 'J3', path: 'jobs.list' }); });
+  await settle();
+  ok(w.grantWatchers.length > 0 && /arrived/.test(box.innerHTML.replace(/<[^>]*>/g, ' ')) && box.innerHTML !== said0,
+    'a grant it sent, arriving through the grants table\'s watch, is said as arrived', 'watchers ' + w.grantWatchers.length + ', said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
   w.grantAnswer = function () { return { ok: false, code: 'owner-only', error: 'owner only' }; };
   press(); await settle();
   ok(/owner-only|owner only/.test(box.innerHTML), 'a grant refused for another reason says so', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));

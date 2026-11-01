@@ -20,18 +20,19 @@ panel draws and does is the panel's (`shell/js/test/grantsPanel.md`).
   editor with the app's api.
 - It configures the panel for contacts and the node's grants:
   - `ids`: the contacts' table, `loopback://api/contact/search`;
-  - `grants`: branch `grants`, keyed `key`, labelled `label`;
+  - `grants`: the auth family's cache (`spirit.cacheManager('auth')`, its branch `spirit.authData.grants.branch`;
+    goal/G41.28), keyed `key`, labelled `label`;
     - `search(text)` asks `auth.search { text }` and answers its `{ items, more }`, each found grant carrying whose it
       is in the label field, `label` (auth.search says it as `name`; found live by cw, goal/G41.16);
     - `grant(id, path)` asks `auth.grant { key, path }`, answering `{ ok: true }`, or a refusal as
       `{ ok: false, code, error }` in the node's words (`already-granted` among them);
     - `revoke(id, path)` asks `auth.revoke { key, path }`;
-    - `stream(job)`: the auth tables' job (type `bundles`, table `grant`) is its grants, gone when revoked; a bundle
-      row, or another job, is none.
+    - `watch(fn)`: a grant the auth family's manager keeps is heard as `<key>\n<path>` with its row, and once revoked
+      with none; its release ends it. It has no `stream` of its own.
 
 ## What its test must try to break
 
 - Anything the app draws or builds itself, or a data script.
 - A Grants tab that is not the panel, or a panel handed another ID table or grants table.
 - A grant, search or revoke asked of anything but the node's auth verbs; a refusal lost.
-- A stream row taken for a grant that is none.
+- A table of its own beside the auth family's cache, or a watch that goes on after its release.

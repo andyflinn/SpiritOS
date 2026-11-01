@@ -7,8 +7,8 @@
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
 // goal/G41.28 (shell/grants/grants.js: the branch the auth family's cache manager keeps, spirit.authData.grants.branch,
-// and no stream, the manager hears the rows), and a table that hands its own stream, shaped as the agent's grants by job
-// were, its branch a whole spirit.data path (node/family/branch). The auth family's clientCacheManager is loaded as a
+// and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
+// (node/family/branch) and its watch that branch's. The auth family's clientCacheManager is loaded as a
 // page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it
 // known (spirit.node.key, then data.home).
 
@@ -36,19 +36,19 @@ function cell() {
 
 // A grants table as its caller describes it (goal/G41.16, Andy: "the callers (Grants and agent shell apps should boody
 // well know how to configure the damn grantsPanel element"): its data branch, its rows' key and label fields, how a grant
-// is revoked, and which stream rows are its grants (left out when a family's cache manager keeps the table's rows).
+// is revoked, and its watch, fn(id + newline + path, row), its cache manager's (goal/G41.28).
 function grantsTable(o) {
-  const t = { key: o.key, label: o.label, revoked: [],
+  const t = { key: o.key, label: o.label, revoked: [], watch: o.watch,
     revoke: function (id, p) { t.revoked.push({ id: id, path: p }); return Promise.resolve({ ok: true }); } };
   Object.defineProperty(t, 'branch', Object.getOwnPropertyDescriptor(o, 'branch'));
-  if (o.stream) t.stream = o.stream;
   return t;
 }
-// As shell/grants/grants.js configures the node's grants (goal/G41.28): the auth family's branch, no stream.
-const NODE = grantsTable({ get branch() { return global.window.spirit.authData ? global.window.spirit.authData.grants.branch : ''; }, key: 'key', label: 'label' });
-// A table handing its own stream, its branch a whole spirit.data path, of the home node.
+// As shell/grants/grants.js configures the node's grants (goal/G41.28): the auth family's branch and its watch.
+const NODE = grantsTable({ get branch() { return global.window.spirit.authData ? global.window.spirit.authData.grants.branch : ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.authData.grants.watch(fn); } });
+// A second table, its branch a whole spirit.data path of the home node, its watch that branch's.
 const AGENT = grantsTable({ get branch() { return global.window.spirit.data.at(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
-  stream: function (job) { const a = job && job.module === 'process/js/agent' && job.app && job.app.agent; return a && a.table === 'grant' ? { row: a.row, gone: a.removed === true } : null; } });
+  watch: function (fn) { const v = global.window.spirit.data.at(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 test.startTest('grantSelector/rowElement.js: one grant, as a row, of whichever grants table it is handed');
 process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
@@ -121,29 +121,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(t.g.revoked.length === 1 && t.g.revoked[0].id === t.id && t.g.revoked[0].path === 'desk.chat<add>', 'its second press revokes through the table it was handed: revoke(id, path)', 'revoked: ' + short(t.g.revoked));
   }
 
-  test.subHeading('it takes each table\'s grant rows from the stream, into that table\'s own branch');
-  // The data type's code is its row element (G30.18): it reads only the stream rows its table says are its grants, and
-  // keeps them in its table's branch, so the node's grants and the agent's never mix on one page. The node's grants are
-  // the auth family's cache manager's since goal/G41.28: its table hands no stream, and they land in spirit.authData.grants.
-  const nodeRow = function (id) { return A.grants.row(A.grantKey(id, 'jobs.list')); };
-  const agentRow = function (id) { return DATA.get(AGENT.branch + '/' + id + '\njobs.list'); };
-  E.grantElement.create({ key: 'K0', path: 'fs.search' }, { grants: NODE });
-  E.grantElement.create({ job_id: 'J0', path: 'fs.search' }, { grants: AGENT });
-  DATA.take({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
-  DATA.take({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list', job: 'Night' } } } });
-  ok(nodeRow('K9') && nodeRow('K9').label === 'Zed', 'a node grant lands in the auth family\'s grants, <key>\\n<path>', 'grants: ' + short(A.grants.rows()));
-  ok(agentRow('J9') && agentRow('J9').job === 'Night', 'an agent grant lands in its table\'s branch, <job_id>\\n<path>', 'agent.grant: ' + short(DATA.branch(AGENT.branch)));
-  ok(!nodeRow('J9') && !agentRow('K9'), 'neither lands in the other\'s branch', 'grants ' + short(A.grants.rows()) + ', agent.grant ' + short(DATA.branch(AGENT.branch)));
-  DATA.take({ type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
-  DATA.take({ module: 'process/js/agent', data: {}, app: { agent: { table: 'grant', row: { job_id: 'J9', path: 'jobs.list' }, removed: true } } });
-  ok(nodeRow('K9') === null && agentRow('J9') === undefined, 'a grant told gone is taken out of its branch', 'grants ' + short(A.grants.rows()) + ', agent.grant ' + short(DATA.branch(AGENT.branch)));
-  const before = JSON.stringify([A.grants.rows(), DATA.branch(AGENT.branch)]);
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 1, label: 'not a grant' } } });
-  DATA.take({ type: 'shadow', data: { row: { publicKey: 'K8' } } });
-  DATA.take({ type: 'bundles', data: { table: 'grant', row: { label: 'no key' } } });
-  ok(JSON.stringify([A.grants.rows(), DATA.branch(AGENT.branch)]) === before, 'a row its tables do not call a grant, or a grant with no id or path, writes nothing', 'branches: ' + before);
+  test.subHeading('it translates no stream: a table\'s rows are its cache manager\'s (goal/G41.28)');
+  // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
+  // item. no exceptions."
+  ok(!/\.translate\s*\(|onJob|\bstream\b|events\.subscribe/.test(SRC), 'its code registers no translator and takes no stream', 'rowElement.js still translates or takes a stream');
+  const unwatched = grantsTable({ branch: NODE.branch, key: 'key', label: 'label' });
+  const nw = E.grantElement.create({ key: 'K5', path: 'fs.search', label: 'Eve' }, { grants: unwatched });
+  const nwCells = {}; (nw.cells() || []).forEach(function (c) { nwCells[c.name] = c.html; });
+  ok(!('revoke' in nwCells) || !/Revoke/.test(nwCells.revoke || ''), 'a table with no watch is no table: the row has no Revoke', 'cells: ' + short(nwCells));
 
-  test.subHeading('it repaints from its table\'s branch');
+  test.subHeading('it repaints from its table\'s watch');
   const live = E.grantElement.create({ key: 'K2', path: 'fs.search', label: 'Ann' }, { grants: NODE });
   const lh = { name: cell(), path: cell(), revoke: cell() };
   live.mount(lh);

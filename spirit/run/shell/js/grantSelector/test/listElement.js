@@ -57,7 +57,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Its branch a whole spirit.data path, node/family/branch (goal/G41.28), the node's key in base64url.
   const AGENT = { branch: 'nOdE-key_one/agent/grant', key: 'job_id', label: 'job',
     search: function (text) { searched.push(text); return Promise.resolve({ items: [{ key: 'J1\nfs.search', label: JSON.stringify({ job_id: 'J1', path: 'fs.search', job: 'Night' }) }], more: false }); },
-    revoke: function () { return Promise.resolve({}); }, stream: function () { return null; } };
+    revoke: function () { return Promise.resolve({}); }, watch: function () { return function () {}; } };
   const host = {};
   const filters = [{ name: 'id', test: function () { return 1; } }];
   const serves = function () { return true; };
@@ -83,29 +83,28 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(o.filters === filters, 'the filters the page hands it are its own', 'filters: ' + short(o.filters));
   ok(o.selectors === selectors, 'and the selectors it hands it go to the search as they are, for its 🪣 row (goal/G41.26)', 'selectors: ' + short(o.selectors && o.selectors.length));
 
-  test.subHeading('an empty list hears its first grant (goal/G41.16)');
-  // Found by cw live: a list with no rows drawn never heard its first grant, its table's stream heard only once a row of
-  // it was made. Here the real row element and the page's data set: a list is made for a table no row was ever drawn of,
-  // and its first grant arrives on the stream.
+  test.subHeading('an empty list holds its first grant (goal/G41.16), its cache manager\'s (goal/G41.28)');
+  // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
+  // family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
+  // for the node's grants with no row drawn, and its first grant taken by spirit.data.
   {
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
     const DATA = global.window.spirit.data;
     // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
     global.window.spirit.node = { key: 'nOdE+key/one==' };
     DATA.home('nOdE+key/one==');
-    global.window.spirit.elements.armingButton = { attach: function (b) { return b; } };
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' });
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'grantSelector', 'rowElement.js'), 'utf8'), { filename: 'grantSelector/rowElement.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'clientCacheManager.js'), 'utf8'), { filename: 'auth/clientCacheManager.js' });
+    const A = global.window.spirit.authData;
+    const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
+      revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
+    const n = lists.length;
+    E.grantList.create({}, { grants: GRANTS });
     await settle();
-    // Its branch a whole spirit.data path of the home node (goal/G41.28).
-    const FRESH = { branch: DATA.at(null, 'fresh').path('grant'), key: 'job_id', label: 'job', search: function () { return Promise.resolve({ items: [], more: false }); },
-      revoke: function () { return Promise.resolve({}); },
-      stream: function (job) { const a = job && job.module === 'process/js/fresh' && job.app && job.app.fresh; return a ? { row: a.row, gone: a.removed === true } : null; } };
-    E.grantList.create({}, { grants: FRESH });
+    DATA.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
     await settle();
-    DATA.take({ id: 'job-fresh', module: 'process/js/fresh', data: {}, app: { fresh: { row: { job_id: 'J7', path: 'jobs.list', job: 'First' } } } });
-    await settle();
-    ok(DATA.get(FRESH.branch + '/J7\njobs.list') && DATA.get(FRESH.branch + '/J7\njobs.list').job === 'First', 'a list made with no row drawn hears its table\'s first grant from the stream, into its branch', FRESH.branch + ': ' + short(DATA.branch(FRESH.branch)));
+    const fresh = lists[n];
+    const kept = A.grants.row(A.grantKey('K7', 'jobs.list'));
+    ok(!!fresh && fresh.o.data === A.grants.branch && kept && kept.label === 'First', 'a list made with no row drawn is a view of the branch its first grant lands in', 'data ' + short(fresh && fresh.o.data) + ', kept ' + short(kept));
   }
 
   test.subHeading('refresh and destroy are the search element\'s');

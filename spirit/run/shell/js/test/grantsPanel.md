@@ -16,7 +16,7 @@ boody well know how to configure the damn grantsPanel element"*.
   `label`;
 - `grants`: the grants table those IDs are granted in, as the grant list and row take it: `branch`, `key`, `label`,
   `search(text)`, `grant(id, path)` (answering `{ ok }`, or `{ ok: false, code, error }`), `revoke(id, path)`,
-  `stream(job)`;
+  `watch(fn(id + newline + path, row))`, its cache manager's, answering its release (goal/G41.28);
 - `api`: the app's shell api.
 
 Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing
@@ -50,8 +50,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 - **Grant**: with no bundle or no ID chosen, nothing is asked. Otherwise it reads the chosen bundle's branches
   (`auth.branch { op: 'search', bundle }`) and grants each through the grants table it was handed, `grant(id, path)`:
   `family.verb`, or the family alone for (ALL). Nothing is granted or read past that table. A path the ID holds already
-  is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives in
-  spirit.data (rule/19).
+  is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives through
+  the grants table's watch, and the panel says it arrived (rule/19).
 
 ### Grant is a busyButton (goal/G41.23)
 
