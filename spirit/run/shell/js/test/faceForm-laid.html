@@ -69,7 +69,13 @@ window.laid = function () {
       out.saidBelow = !!line && !!s2.f && !s2.f.f.root.contains(line) && (s2.f.f.root.compareDocumentPosition(line) & 4) !== 0;
       var b2 = box();
       F.mount(b2, { relays: RELAYS, fixed: 'wss://c.example' });
-      return wait(200).then(function () { out.fixed = Object.assign({}, seen(b2), { f: undefined }); return JSON.stringify(out); });
+      return wait(200).then(function () {
+        out.fixed = Object.assign({}, seen(b2), { f: undefined });
+        // No relay with a seat: the form draws nothing (Andy: "doesn't show up if the user has zero verified emails anywhere").
+        var b3 = box();
+        F.mount(b3, { relays: [RELAYS[0]] });
+        return wait(200).then(function () { out.none = { forms: seen(b3).forms, text: b3.textContent.trim(), kids: b3.children.length }; return JSON.stringify(out); });
+      });
     });
   });
 };

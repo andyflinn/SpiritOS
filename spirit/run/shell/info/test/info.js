@@ -21,7 +21,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 // A node whose markup makes a child per tag; found by [attr="value"].
 function node(tag) {
   const heard = {}; let html = '';
-  const n = { tag: tag || '', nodes: [], value: '', className: '', textContent: '', hidden: false, style: {}, isConnected: true,
+  const n = { tag: tag || '', nodes: [], kids: [], value: '', className: '', textContent: '', hidden: false, style: {}, isConnected: true,
     get innerHTML() { return html; },
     set innerHTML(v) {
       html = String(v); n.nodes = [];
@@ -31,8 +31,9 @@ function node(tag) {
     getAttribute: function (k) { const m = new RegExp('\\s' + k + '="([^"]*)"').exec(n.tag); return m ? m[1] : null; },
     querySelector: function (sel) {
       const a = /^\[([\w-]+)="([^"]*)"\]$/.exec(sel);
-      return a ? n.nodes.filter(function (c) { return c.getAttribute(a[1]) === a[2]; })[0] || null : null;
+      return a ? n.nodes.concat(n.kids).filter(function (c) { return c.getAttribute(a[1]) === a[2]; })[0] || null : null;
     },
+    appendChild: function (c) { n.kids.push(c); c.parentNode = n; return c; },
     addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); },
     fire: function (t, e) { (heard[t] || []).slice().forEach(function (fn) { fn(e || {}); }); },
   };
@@ -45,7 +46,7 @@ const ROWS = [
 ];
 
 function world() {
-  const w = { required: [], made: {}, sets: [], forms: [], calls: [], posts: [], dialogs: [], def: null, subs: [] };
+  const w = { required: [], made: {}, sets: [], forms: [], calls: [], posts: [], dialogs: [], def: null, subs: [], rowForms: [] };
   function field(kind) {
     return { create: function (host, opts) { const el = { host: host, opts: opts, set: function (v) { w.sets.push({ kind: kind, value: v }); }, destroy: function () {} };
       w.made[kind] = el; return el; } };
@@ -55,6 +56,14 @@ function world() {
     changeMyDescription: field('description'),
     joinForm: { mount: function (host, o) { w.forms.push({ form: 'join', host: host, o: o }); } },
     faceForm: { mount: function (host, o) { w.forms.push({ form: 'face', host: host, o: o }); } },
+    // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
+    // one does, its root appended to the container it is given, its button saying the words it was handed.
+    rowForm: { create: function (c, o) {
+      const f = { container: c, opts: o || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
+      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
+      if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
+      w.rowForms.push(f); return f;
+    } },
   };
   const api = {
     escapeHtml: function (s) { return String(s); },
@@ -115,8 +124,16 @@ test.startTest('info.js: the Info app');
   const face = w.forms.filter(function (f) { return f.form === 'face'; }).pop();
   ok(!!join && !!face, 'the email form and the face form are drawn', 'forms: ' + short(w.forms.map(function (f) { return f.form; })));
   ok(join && join.o.relays.length === 1 && join.o.relays[0].url === 'https://a.example', 'over the relays this node holds a seat on', 'relays: ' + short(join && join.o.relays));
-  const rotate = box.querySelector('[data-info="rotate"]');
-  ok(!!rotate, 'it has the Rotate key button', 'markup: ' + short(box.innerHTML));
-  if (rotate) { rotate.fire('click'); ok(w.dialogs[0] === 'shell/rotateKey', 'which opens the Rotate key page', 'dialogs: ' + short(w.dialogs)); }
+
+  test.subHeading('the key rotation, a rowForm: 🆘 [Rotate this node\'s cipher key] (goal/G41.27)');
+  // Andy, on G41.27: "Info App\n\n[🆘] [Rotate this node's cipher key]". The box: "the first element is always an icon
+  // shell-element", "the last element is always a button", "between the icon and the button is a span".
+  ok(w.required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
+  const rot = w.rowForms.filter(function (f) { return /Rotate/.test(f.opts.button || ''); });
+  const rf = rot[0];
+  ok(rot.length === 1 && rf.opts.icon === '🆘' && rf.opts.button === 'Rotate this node\'s cipher key', 'the key rotation is one rowForm, its icon 🆘 and its button Rotate this node\'s cipher key', 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; })));
+  ok(!!rf && rf.span.kids.length === 0 && rf.span.nodes.length === 0 && !String(rf.span.innerHTML || '').replace(/<[^>]*>/g, '').trim(), 'its span holds nothing', 'span: ' + short(rf && rf.span.innerHTML));
+  ok(!!rf && !/<button[^>]*>\s*Rotate/.test(box.innerHTML), 'it draws no Rotate button of its own', 'markup: ' + short(box.innerHTML));
+  if (rf) { rf.button.fire('click'); ok(w.dialogs[0] === 'shell/rotateKey', 'its button opens the Rotate key page', 'dialogs: ' + short(w.dialogs)); }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

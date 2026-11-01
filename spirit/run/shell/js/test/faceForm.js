@@ -48,6 +48,10 @@ test.startTest('faceForm.js: the face form, a rowForm');
       ok(r.holdsBelow, 'what this node holds on the relay stands below the bubble, not in it', 'holds ' + short(r.holds) + ', below ' + r.holdsBelow);
       ok(r.forms === 1 && r.others === 0, 'its Ask is the rowForm\'s button, the only one', 'other Asks: ' + r.others);
     });
+    test.subHeading('no relay with a seat');
+    // Andy: "doesn't show up if the user has zero verified emails anywhere" (a seat taken by email is a verified one, goal/G40.11).
+    const n = m.none || {};
+    ok(n.forms === 0 && n.text === '' && n.kids === 0, 'with no relay this node is seated on, it draws nothing', 'drew: ' + short(n));
     test.subHeading('a press, and the line below the bubble');
     // The box: "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."
     ok(/a face name is needed/.test(m.said || '') && m.saidBelow, 'pressed with no face name, it says so on a line below the bubble, not in it', 'said ' + short(m.said) + ', below ' + m.saidBelow);

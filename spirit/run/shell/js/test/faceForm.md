@@ -20,6 +20,8 @@ Asked of a real browser, the real rowForm composed: `./faceForm-laid.html`, open
 - **Its title**, A face name on one relay, stands above the bubble; **what this node holds** on the relay stands below
   it, not in it.
 - **Its Ask is the rowForm's button**, the only one.
+- **With no relay this node is seated on, it draws nothing** (Andy: *"doesn't show up if the user has zero verified
+  emails anywhere"*); this was asked of the old markup in `spirit/test/spiritInUse.js` until goal/G41.27.
 - **A press with no face name** says so on a line below the bubble, not in it.
 
 ## What its test must try to break
