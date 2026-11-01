@@ -144,17 +144,22 @@
       });
       }
 
-      // THE SERVER'S STATE, from its stream: its job's app, { agent: { debug } }. Read from the job that changed, or from
-      // the whole set when none did (what a new reader is handed at once), so the state is there as the app opens.
+      // THE SERVER'S STATE, from its job as spirit.data keeps it (goal/G41.28): its job's app, { agent: { debug } }, in
+      // the jobs family's cache (spirit.jobsData), read as the app opens and again each time that job changes.
       function stateOf(job) { var app = job && job.app; return app && app.agent && typeof app.agent.debug === 'boolean' ? app.agent.debug : null; }
-      api.onJobs(function (all, job) {
+      function heard(job) {
         var now = stateOf(job);
-        if (now === null) Object.keys(all || {}).forEach(function (id) { var s = stateOf(all[id]); if (s !== null) now = s; });
         if (now === null) return;
         debug = now;
         drawServer();
         title();
-      });
+      }
+      Promise.resolve(spirit.cacheManager('jobs')).then(function () {
+        var J = window.spirit.jobsData;
+        if (!J) return;
+        heard(J.find(function (j) { return stateOf(j) !== null; }));
+        J.watch(function (id, job) { heard(job); });
+      }, function () { /* the debug switch shows what it last knew */ });
       title();
     },
   });

@@ -250,7 +250,10 @@
 
   // ── THE STREAM, AND WHAT THE APPS SUBSCRIBE TO ──────────────────────────────────────────────────────────────────
   var subscribers = [];
-  var jobsById = {};
+  // THE FACE LINK'S SNAPSHOT: what this face's stream hands a subscriber that comes late, as spirit.js's own stream keeps
+  // its own (spirit.events). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
+  // (spirit.jobsData, goal/G41.28), which this stream feeds.
+  var linkJobs = {};
   var presence = {};
   var streamStopped = false;
   var retry = null;
@@ -262,24 +265,17 @@
     subscribers.slice().forEach(function (h) { if (h.onConnection) { try { h.onConnection(up); } catch (e) { /* one app's fault */ } } });
     hand();
   }
-  function jobsList() { return Object.keys(jobsById).map(function (k) { return jobsById[k]; }); }
+  function jobsList() { return Object.keys(linkJobs).map(function (k) { return linkJobs[k]; }); }
   function update(job) {
-    jobsById[job.id] = job;
+    linkJobs[job.id] = job;
     subscribers.slice().forEach(function (h) { if (h.onUpdate) { try { h.onUpdate(job); } catch (e) { /* one app's fault */ } } });
   }
   // The kernel's jobs.subscribe on a face (window.spirit.transport.events): what is known now, then every update.
   function events(handlers) {
     var h = handlers || {};
-    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.events (goal/G40.10): there is no face stream on loopback.
-    // The jobs as they come are kept here too, so the apps read them as on a relay.
-    if (state && state.home) {
-      return spirit.events.subscribe({
-        onSnapshot: function (jobs) { (jobs || []).forEach(function (j) { if (j && j.id) jobsById[j.id] = j; }); if (h.onSnapshot) h.onSnapshot(jobsList()); },
-        onUpdate: function (job) { if (job && job.id) jobsById[job.id] = job; if (h.onUpdate) h.onUpdate(job); },
-        onDelete: function (id) { delete jobsById[id]; if (h.onDelete) h.onDelete(id); },
-        onConnection: h.onConnection, onRelayEvent: h.onRelayEvent, onContactRename: h.onContactRename, onPacket: h.onPacket,
-      });
-    }
+    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.events (goal/G40.10): there is no face stream on loopback,
+    // and nothing is kept here.
+    if (state && state.home) return spirit.events.subscribe(h);
     subscribers.push(h);
     if (h.onSnapshot) { try { h.onSnapshot(jobsList()); } catch (e) { /* one app's fault */ } }
     if (h.onConnection) { try { h.onConnection(link.up); } catch (e) { /* one app's fault */ } }
@@ -447,13 +443,14 @@
     }, function () { /* no answer: the app is not shown */ });
   }
   // AN APP SHOWS ONLY WHILE ITS SERVER RUNS (goal/G27.16; on the face since goal/G41.1, box v14): an app naming a server
-  // shows while a server job of that module is running or pending (between restarts); one naming none always shows.
+  // shows while a server job of that module is running or pending (between restarts); one naming none always shows. The
+  // jobs are the jobs family's cache (spirit.jobsData, goal/G41.28).
   function serverUp(app) {
     var s = app && app.manifest && app.manifest.server;
     if (!s) return true;
     var module = 'process/js/' + s;
-    return Object.keys(jobsById).some(function (k) {
-      var j = jobsById[k];
+    var J = window.spirit.jobsData;
+    return !!J && !!J.find(function (j) {
       return !!j && j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending');
     });
   }
@@ -589,12 +586,8 @@
       addTitlebarLink: function () {},
       armUntilElsewhere: function (disarm) { if (typeof disarm === 'function') armed = { disarm: disarm, at: currentClick }; },
       isVisible: function () { return page.isTop(); },
-      onJobs: function (fn) {
-        return events({
-          onSnapshot: function () { fn(jobsById, null, { visible: page.isTop() }); },
-          onUpdate: function (job) { fn(jobsById, job, { visible: page.isTop() }); },
-        });
-      },
+      // NO onJobs (goal/G41.28; Andy: "anything not using the new spiritData.js and it's buddies clientCacheManager.js
+      // must do so in this item. no exceptions."): an app reads the jobs from the jobs family's cache, spirit.jobsData.
       onFiles: function () { return function () {}; },
       // What a relay the home node owns did, as the old shell hands it (goal/G30.15): Relay Details redraws on it.
       onRelayEvent: function (fn) { return events({ onRelayEvent: fn }); },
@@ -770,9 +763,10 @@
       // The spirit object (goal/G32.1), this page's first script, gets its families once the node can be reached, and the
       // parts load once they are there (goal/G40.7: "fetch the damn api's from home" first); then the file tree's row
       // element, which the home's app list reads.
+      // And the jobs family's cache manager, the jobs boot reads (goal/G41.28).
       var parts = function () {
-        return loadParts().then(function () { return window.spirit.require('shell/js/files/rowElement.js'); })
-          .then(null, function () { /* without it the home lists no apps; the files app says why */ });
+        return loadParts().then(function () { return Promise.all([window.spirit.require('shell/js/files/rowElement.js'), window.spirit.cacheManager('jobs')]); })
+          .then(null, function () { /* without them the home lists no apps; the files app says why */ });
       };
       return Promise.resolve(window.spirit.start()).then(parts, parts);
     }).then(function () {
@@ -787,8 +781,9 @@
       link.loaded = true;
       openStream(false);
       listApps();
-      // The servers' jobs as they change: an app comes or goes with its server (goal/G27.16).
-      events({ onSnapshot: followServers, onUpdate: function (job) { followFace(job); followServers(); }, onDelete: followServers });
+      // The servers' jobs as they change, in the jobs family's cache: an app comes or goes with its server (goal/G27.16).
+      if (window.spirit.jobsData) window.spirit.jobsData.watch(function (id, job) { if (job) followFace(job); followServers(); });
+      followServers();
       if (home) startJoin();
       // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).
       joinFromLink();

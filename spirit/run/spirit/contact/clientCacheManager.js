@@ -46,11 +46,12 @@
       onRename: function (d) { D.at(d && d.fromNode || null, 'contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
     });
     // THE READS, ANSWERED HERE:
-    //   contact(key)   a contact's row, or null
+    //   contact(key)   a contact's row, or null;  contacts()  every contact kept, key -> row
     //   watch(fn)      fn(key, row) on every change, row undefined once it is gone; answers its release
     //   branch         the contacts' whole path, for a list that is a view of it (probabilitySearch's data)
     var contactData = {
       contact: function (key) { return key ? HOME.get(CONTACTS + '/' + key) || null : null; },
+      contacts: function () { return HOME.branch(CONTACTS); },
       watch: function (fn) { return HOME.watch(CONTACTS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, CONTACTS), v); }); },
       get branch() { return HOME.path(CONTACTS); },
     };

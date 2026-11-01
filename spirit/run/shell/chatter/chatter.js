@@ -35,7 +35,6 @@ var chMore = false;       // the server cut the chat: older lines exist
 var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
-var chPresent = {};       // the keys the last relay-presence table named
 var chRows = {};          // chats.search's row per key: {at, sent, seq, unanswered}
 var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
 var CH_PREFS = 'prefs.json';
@@ -638,32 +637,17 @@ spirit.shell.activateApp({
       chSavePrefs();
     });
 
-    // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): the node's
-    // relay-presence job, heard through the shell's one stream, never a stream of chatter's own.
-    if (api.onJobs) {
-      api.onJobs(function (jobsById, job) {
-        var found = job && job.type === 'relay-presence' ? job : null;
-        if (!found && jobsById && typeof jobsById.forEach === 'function') {
-          jobsById.forEach(function (j) { if (j && j.type === 'relay-presence') found = j; });
-        }
-        var table = found && found.data && found.data.presence;
-        if (!table || !chPane) return;
-        // Both lists show the same dots: the peer pane and the new-chat dropdown (Andy, goal/G4.10: "the color of
-        // presence dots in the dropdown don't match the color of the presence dots in the pane").
-        var lists = [chPane].filter(function (l) { return l && typeof l.present === 'function'; });
-        // A key the table no longer names goes white again, as in Contacts: unknown is never present.
-        Object.keys(chPresent).forEach(function (key) {
-          if (!table[key]) lists.forEach(function (l) { l.present(key, false); });
-        });
-        chPresent = {};
-        Object.keys(table).forEach(function (key) {
-          var proof = table[key];
-          var on = !!(proof && typeof proof === 'object' && proof.present === true);
-          chPresent[key] = true;
-          lists.forEach(function (l) { l.present(key, on); });
-        });
-      });
-    }
+    // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): each contact's present
+    // as the contact family's cache keeps it (spirit.contactData, goal/G41.28), drawn as the app opens and again on each
+    // change; a key it no longer knows present goes white, as in Contacts: unknown is never present.
+    Promise.resolve(spirit.cacheManager('contact')).then(function () {
+      var C = window.spirit.contactData;
+      if (!C) return;
+      function dot(key, row) { if (chPane && typeof chPane.present === 'function') chPane.present(key, !!(row && row.present === true)); }
+      var all = C.contacts();
+      Object.keys(all).forEach(function (key) { dot(key, all[key]); });
+      C.watch(function (key, row) { if (key) dot(key, row); });
+    }, function () { /* the dots stay white */ });
 
     api.onPublished(chOnPublished, 'chatClerver');
     if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); if (chPeer) chOpen(chPeer); });
