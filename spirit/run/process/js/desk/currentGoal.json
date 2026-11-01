@@ -1,5 +1,5 @@
 {
- "change": 118925,
+ "change": 119004,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,7 +17,9 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G41.27"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -144,15 +146,19 @@
    ],
    "verified": "red",
    "verifyFailures": [
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.1: answer: {\"ok\":false,\"code\":\"no-such-argument\",\"error\":\"no such argument\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider takes no argument description\"}}",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.2: row: null, private columns []",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.3: secrets in the answer: 0",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.4: answer {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"provider\",\"why\":\"provider needs id\"}}, label null",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.5: answer {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\"}, row {\"id\":\"MCowBQYDK2VwAyEAm972y8mLEv8eeOXXl2bGVD6kjSOkXi2NMyw6/Ukzd0E=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEILqLtEsUoFjDO1My94KISnS8SKZ6VHsBv2OtG8ioDwhH\",\"sealPub",
-    "spirit/run/process/js/agent/test/agent.js red: FAILURE #1.6: answer {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\"}, row {\"id\":\"MCowBQYDK2VwAyEA61+eHOQ53yIkhbLoVMW6kf1dXz1V7K6vi/3r5BzxMpM=\",\"privateKey\":\"MC4CAQAwBQYDK2VwBCIEIDv9lq8aiJrqM4T/uo4uIm6elXde25aodEzPNzhrSn+v\",\"sealPub"
+    "spirit/run/process/js/desk/desk.family/test/api.js not run: missing from this checkout",
+    "spirit/run/process/js/deskClient/deskClient.family/test/api.js not run: missing from this checkout",
+    "spirit/run/shell/js/test/apiBranchSelector.js not run: missing from this checkout",
+    "spirit/run/shell/js/test/spiritData.js not run: missing from this checkout",
+    "spirit/run/shell/shared/js/test/deskData.js not run: missing from this checkout",
+    "spirit/run/shell/test/boot-sibling-generalRules.js red: FAILURE #1.1: /shell/js/codeMirror/headLessBrowser.html: 1 red, 9 green; first: div: it reaches past the mount box ❌",
+    "spirit/run/shell/test/boot-sibling-generalRules.js red: FAILURE #1.2: /shell/js/textViewer/headLessBrowser.html: 1 red, 9 green; first: div: it grows wider with its content ❌",
+    "spirit/run/shell/test/boot-sibling-generalRules.js red: FAILURE #1.3: /shell/textEditor/textEditor/headLessBrowser.html: 1 red, 9 green; first: div#editor-content > div: it reaches past the mount box ❌",
+    "spirit/test/spiritErrors.js red: FAILURE #1.1: uncatalogued errors — add each to spiritErrors.js with its meaning:",
+    "spirit/test/spiritErrors.js red: FAILURE #1.2: status disagrees with the catalogue:"
    ],
-   "verifyFailuresMore": true,
-   "verifyRed": 9,
+   "verifyFailuresMore": false,
+   "verifyRed": 8,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -166,7 +172,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -203,6 +209,18 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-27T16:55:57.862Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Shall I take the five moved or deleted test paths off the G41 items' file lists, so the goal's run stops naming them?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-01T00:55:17.204Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -454,6 +472,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-27T21:07:45.149Z",
      "text": "- cw: found why all: wakes zero or one agent. After every restart of your node the desk is meant to rebuild its subscribers from the grants, but it read the grant search in a shape that search no longer answers, so it restored nobody and sent no agent anything until that agent subscribed again by hand.\n- Your node log shows it: rows to my node until 21:41:16, your restart at 21:41:17, then not one row.\n- The fix is ready in my clone and tested, but G41.11 is closed, so the commit hook refuses it.\n- Under which item may I commit it: G41.12?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T00:53:04.227Z",
+     "text": "- cw: the goal's run is red 8, and none of it is a broken build of G41:\n- 5 are tests its items' file lists still name but that were moved or deleted. deskData's went with the clientCacheManager move in G41.24, apiBranchSelector's with the apiFamilySelector rename, and the desk and deskClient family tests with their folder moves. Taking them off those lists clears them.\n- 3 are the general rules on the codeMirror, textViewer and textEditor test pages: one box each reaches past or grows wider than its mount. None of those files is on a G41 item.\n- 2 are spiritErrors: hub.js has six refusals not in the error catalogue, and relay.js answers no such verb with 404 where the catalogue says 400. Also not G41's files.\n- I can take the five stale paths off the lists now. The other five want an item of their own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T00:54:00.575Z",
+     "text": "Q3: Shall I take the five moved or deleted test paths off the G41 items' file lists, so the goal's run stops naming them?\n\nyes"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T00:55:17.064Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-01T00:55:17.120Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T00:59:16.252Z",
+     "text": "- cw: correction: the goal's run reads each item's suites table, not its file list.\n- I took the stale paths off the file lists of G41.3, G41.5 and G41.24, and off the suites of G41.3 and G41.5, the two Desk let me edit.\n- wsl, the rest are yours as red writer; each file is gone from the tree:\n- G41.11: desk.family/test/api.js and shell/js/test/spiritData.js.\n- G41.12: desk.family/test/api.js, deskClient.family/test/api.js, shell/js/test/spiritData.js and shared/js/test/deskData.js.\n- G41.16: shell/js/test/spiritData.js.\n- G41.19: shell/js/test/spiritData.js and shared/js/test/deskData.js.\n- G41.22: shared/js/test/deskData.js."
     }
    ]
   },
@@ -2744,7 +2792,7 @@
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 59,
+   "fileCount": 58,
    "green": true,
    "code": true,
    "phase": "",
@@ -4937,7 +4985,7 @@
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 15,
+   "fileCount": 14,
    "green": true,
    "code": true,
    "phase": "",
@@ -19459,7 +19507,7 @@
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 47,
+   "fileCount": 46,
    "green": true,
    "code": true,
    "phase": "",
@@ -21949,6 +21997,231 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-01T00:51:17.044Z",
      "text": "- cw: yes, a new item.\n- It reaches past the agent app: the grant form, the bundle and branch editors' add rows, the model Ask row, and likely forms in contacts, the join and face forms, and the desk apps. That wants its own blast radius first.\n- G41.26 is verified green on b0fa5840 and can close as it stands.\n- One thought for it: the bubble becomes one shared shell piece that probabilitySearch uses too, not copies of its style."
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.27",
+   "title": "Bubbles around one-row forms.",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 3,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 6,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# general rules for one-row forms:\n\nnew shell element: rowForm\n\n- one row forms show as blocks taking up the full width of their container, and wrap, if it's form elements don't have enough space.\n\n- they form a bubble with transparent background, and a border with the color of the type-face. The bubble is one shared style, the same probabilitySearch's search bubble uses.\n\n- the first element is always an icon shell-element, and takes the (top-) left position in the one-row form\n\n- the last element is always a button that is positioned at the (bottom-) right for the form.\n\n- between the icon and the button is a span, into which the form elements can be dropped.\n\n- spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }: icon is the glyph, button the button's words. The mounter drops its form elements into span and wires the button itself (a busyButton or a click).\n\n- a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it.\n\n- its test runs in a real browser: the wrapping, the icon at the (top-) left and the button at the (bottom-) right are layout.\n\n- in this item, once the rowForm element is done, we identify the places in the face-shell where it will be used.",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall rowForm.create(container, { icon, button }) answer { root, span, button }, the mounter dropping its elements into span and wiring the button itself?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-01T01:11:05.850Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-01T01:17:35.924Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T01:07:56.120Z",
+     "text": "all,\n\nbox-feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T01:08:30.188Z",
+     "text": "- cw: box v2 reads well. Five points:\n- The call: shell elements are made as spirit.elements.<name>.create(container, options), like icon. So I read createRowForm(containter,{icon.button-name) as rowForm.create(container, { icon, button }): icon the glyph, button the button's words.\n- What it answers: the mounter needs the span to drop its elements into and the button to wire, as a busyButton or a click. So create answers { root, span, button }.\n- The bubble's look: probabilitySearch already draws the same bubble. One shared style for both keeps them from drifting.\n- What stays outside: a line under a form that says what a press did (the grant panel's, the model Ask's) is the mounter's, below the bubble, not in it.\n- Its test: wrapping, icon top-left and button bottom-right are layout, so the red needs a real browser, as the chat pane's did."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T01:08:59.813Z",
+     "text": "correct the box accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T01:10:17.337Z",
+     "text": "- cw: box v3 written. Your lines stand as you wrote them; added:\n- the bubble is one shared style, the same as probabilitySearch's;\n- spirit.elements.rowForm.create(container, { icon, button }) answers { root, span, button }, and the mounter fills span and wires the button;\n- a line saying what a press did stays below the bubble;\n- its test runs in a real browser."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T01:11:05.800Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T01:14:50.702Z",
+     "text": "wsl, what is going on?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-01T01:15:25.054Z",
+     "text": "- wsl: my desk client stopped answering for some minutes, so my posts failed; it answers again.\n- Done meanwhile: the gone suites are off G41.11, .12, .16, .19 and .22, as cw listed.\n- On G41.27: box v3 reads right to me. Waiting for your Go to write its red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-01T01:16:27.598Z",
+     "text": "add the files, and test/ folder files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T01:17:09.022Z",
+     "text": "- cw: files added:\n- shell/js/rowForm.js, the element.\n- shell.css, for the one bubble style, beside shell-icon.\n- shell/js/probabilitySearch.js, to draw its bubble with that same style.\n- test/: rowForm.js, rowForm.md and rowForm-laid.html, the browser page.\n- The places it will be used come later, once rowForm is done, as the box says."
     }
    ]
   }
