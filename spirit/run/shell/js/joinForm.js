@@ -6,16 +6,20 @@
 // [change-or-join] the SAME FUCKING FORM EVERYWHERE"): Join, Info and the relay details draw it by mount, each with its
 // relays; the relay details fix the dropdown to their one relay. None keeps a form of its own.
 //
-//   words(state)      -> { title, label, button, email } for where the node stands on a relay (seated).
-//   row(relays, opts) -> the form's markup: relays are relay rows (url, label, claimed or owned);
-//                        opts.fixed, a url, gives the dropdown that one relay and fixes it; opts.picked the url picked.
-//   mount(box, opts)  -> draws the row into box and sends it: opts.relays, opts.pick ('seated': only relays with a seat;
-//                        else every relay listed), opts.fixed, opts.escape. It hears the shadow stream itself and, when a
-//                        relay's row changed, reads its relays again and redraws if they changed (goal/G40.11), keeping
-//                        what is typed.
+//   words(state)      -> { title, icon, button, email } for where the node stands on a relay (seated).
+//   mount(box, opts)  -> draws the form into box and sends it: opts.relays, relay rows (url, label, claimed or owned);
+//                        opts.pick ('seated': only relays with a seat; else every relay listed); opts.fixed, a url, gives
+//                        the dropdown that one relay and fixes it; opts.escape. It hears the shadow stream itself and,
+//                        when a relay's row changed, reads its relays again and redraws if they changed (goal/G40.11),
+//                        keeping what is typed.
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
+// A ROWFORM (goal/G41.27; Andy: "joinForm? it has several modes"): the title above the bubble, then ➕ or ✏️, the relay
+// dropdown and the email in its span, Join or Change its button, the line of what was sent below it. The icon follows the
+// mode as the words do; a change of relay that changes the mode draws the form again, with its new icon and words.
 
 (function () {
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
+  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('shell/js/rowForm.js');
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -27,8 +31,8 @@
   // seating", Andy, 2026-10-26), so there is none to show.
   function words(state) {
     var s = state || {};
-    if (!s.seated) return { title: 'Join a relay', label: 'Your email', button: 'Join', email: '' };
-    return { title: 'Change email address', label: 'Email address', button: 'Change', email: '' };
+    if (!s.seated) return { title: 'Join a relay', icon: '➕', button: 'Join', email: '' };
+    return { title: 'Change email address', icon: '✏️', button: 'Change', email: '' };
   }
   function wordsFor(r) { return words({ seated: !!(r && (r.claimed || r.owned)) }); }
 
@@ -38,24 +42,27 @@
     return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
   }
 
-  function row(relays, opts) {
+  // The form drawn into box: the title, the rowForm, the line under it. relays are relay rows; o.fixed, o.picked the url
+  // picked, o.email what is typed.
+  function form(box, relays, opts) {
     var o = opts || {};
     var escape = o.escape || esc;
     var list = offered(relays, o);
-    if (!list.length) return '';
+    box.innerHTML = '';
+    if (!list.length) return;
     var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0];
     var w = wordsFor(picked);
     if (o.email != null) w.email = o.email;
-    return '<div class="label sp-join-title">' + escape(w.title) + '</div>' +
-      '<div class="start-job-form card">' +
-      '<label class="field-label">Relay<select class="sp-join-relay"' + (o.fixed ? ' disabled' : '') + '>' +
-        list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
-      '</select></label>' +
-      '<label class="field-label grow"><span class="sp-join-label">' + escape(w.label) + '</span>' +
-        '<input type="email" class="sp-join-email" placeholder="you@example.org" autocomplete="email" value="' + escape(w.email) + '"></label>' +
-      '<button type="button" class="sp-join-go">' + escape(w.button) + '</button>' +
-      '</div>' +
+    box.innerHTML = '<div class="label sp-join-title">' + escape(w.title) + '</div>' +
+      '<div class="sp-join-form"></div>' +
       '<div class="job-manifest-note sp-join-out"></div>';
+    var f = window.spirit.elements.rowForm.create(box.querySelector('.sp-join-form'), { icon: w.icon, button: w.button });
+    f.button.className = 'sp-join-go';
+    f.span.innerHTML =
+      '<select class="sp-join-relay"' + (o.fixed ? ' disabled' : '') + '>' +
+        list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
+      '</select>' +
+      '<input type="email" class="sp-join-email" placeholder="your email" autocomplete="email" value="' + escape(w.email) + '">';
   }
 
   function send(opts) {
@@ -95,7 +102,7 @@
     var was = box.querySelector('.sp-join-relay');
     var field = box.querySelector('.sp-join-email');
     var typed = field && field.value !== field.defaultValue ? field.value : null;
-    box.innerHTML = row(now.relays, { fixed: now.fixed, picked: now.picked || (was ? was.value : ''), email: typed, escape: now.escape });
+    form(box, now.relays, { fixed: now.fixed, picked: now.picked || (was ? was.value : ''), email: typed, escape: now.escape });
   }
   function mount(box, opts) {
     if (!box) return;
@@ -161,5 +168,5 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.joinForm = { words: words, row: row, mount: mount, send: send };
+  window.spirit.elements.joinForm = { words: words, mount: mount, send: send };
 }());
