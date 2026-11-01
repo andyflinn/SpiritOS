@@ -12,9 +12,9 @@
 //
 //   grantElement.create(row, opts) -> a rowElement of kind grant
 //     row            a grant row, its id and whose grant it is in the fields its table names
-//     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), stream(job) -> { row, gone } };
-//                    branch is a whole spirit.data path (node/family/branch), stream left out when a family's cache
-//                    manager keeps the table's rows
+//     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
+//                    row)) }; branch is a whole spirit.data path (node/family/branch), its rows its family's cache
+//                    manager's
 //     opts.api       the app's shell api, for the arming button's are-you-sure
 //     opts.serves(path)  whether a server serves that path today; one that does not reads deprecated (a REPORT: Andy,
 //                    "so we defer pruning to be triggered by the owners auth app, who can report deprecated branches")
@@ -26,43 +26,18 @@
   }));
   function keyOf(key, path) { return String(key) + '\n' + String(path); }
 
-  // THE DATA SET IT WRITES TO, IT LOADS ITSELF (rule/26): the page's one spirit.data (spirit/spiritData.js), which
-  // may not be on the page yet when an app loads this file. spirit.require loads a file once, so it is the page's one
-  // cache.
-  var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
-    : Promise.resolve(window.spirit.require ? window.spirit.require('spirit/spiritData.js') : null).then(function () { return window.spirit.data; });
-  function whenData(fn) {
-    dataSet.then(function (D) { if (D && typeof D.translate === 'function') fn(D); }, function () { /* no data set: the lists still search */ });
-  }
-  // PER GRANTS TABLE, BY ITS BRANCH: its translation, made once, when its list listens or its first row is made, and its
-  // index, made on its first row (the shared row element is on the page by then).
-  // <branch>/<id>\n<path> is the grant row, or nothing once it is gone.
+  // PER GRANTS TABLE, BY ITS BRANCH: its index, made on its first row (the shared row element is on the page by then).
+  // The table's rows are its family's cache manager's (the node's grants: the auth family's, goal/G41.28); each row
+  // repaints from the table's own watch, id + newline + path -> the grant row, or nothing once it is gone.
   var tables = {};
   function tableOf(g) {
     var b = String(g.branch);
     if (tables[b]) return tables[b];
     tables[b] = { index: null, dispatch: dispatch };
-    // A table whose rows a family's cache manager keeps already hands no stream (the node's grants: the auth family's,
-    // goal/G41.28); one that does is translated here, into its branch's whole path.
-    if (typeof g.stream === 'function') whenData(function (D) {
-      D.translate({
-        onJob: function (job) {
-          var got = g.stream(job);
-          var r = got && got.row;
-          if (!r || !r[g.key] || !r.path) return;
-          var p = b + '/' + keyOf(r[g.key], r.path);
-          if (got.gone === true) D.del(p);
-          else D.set(p, Object.assign({}, r));
-        },
-      });
-    });
     function dispatch(idx) {
-      whenData(function (D) {
-        D.watch(b, function (p, v) {
-          var key = String(p).slice(b.length + 1);
-          if (!key || !v) return;
-          idx.forKey(key).forEach(function (el) { el.apply({ label: String(v[g.label] || '') }); });
-        });
+      g.watch(function (key, v) {
+        if (!key || !v) return;
+        idx.forKey(key).forEach(function (el) { el.apply({ label: String(v[g.label] || '') }); });
       });
     }
     return tables[b];
@@ -82,9 +57,8 @@
     var o = opts || {};
     var g = o.grants;
     // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "no throw even unconfigured"): with no grants table there is
-    // no field to read the row by, no stream and nothing to revoke, so the row is empty and has no Revoke.
-    // A table its family's cache manager keeps hands no stream (goal/G41.28): configured without one.
-    var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function');
+    // no field to read the row by, nothing to follow and nothing to revoke, so the row is empty and has no Revoke.
+    var configured = !!(g && g.branch && g.key && g.label && typeof g.revoke === 'function' && typeof g.watch === 'function');
     var r = configured ? (row || {}) : {};
     var key = configured ? r[g.key] : '';
     var label = configured ? r[g.label] : '';
@@ -103,7 +77,7 @@
         } },
       ].concat(revoke),
       actions: configured ? [
-        // Its table revokes it, and the stream takes the row out.
+        // Its table revokes it, and its cache manager takes the row out.
         { name: 'revoke', label: 'Revoke', run: function (it) { return g.revoke(it.row.key, it.row.path); } },
       ] : [],
     });
@@ -122,14 +96,5 @@
     return el;
   }
 
-  // listen(grants): its table's grants taken from the stream from now on, before any row of it is made, so a list with
-  // no rows yet still hears its first grant (found live on G41.16: an empty agent grant list never filled). A table whose
-  // rows a family's cache manager keeps hands no stream: its manager hears them (goal/G41.28).
-  function listen(grants) {
-    var g = grants;
-    if (!g || !g.branch || !g.key || !g.label) throw new Error('grantElement: a grants table is required');
-    tableOf(g);
-  }
-
-  E.grantElement = { create: create, listen: listen };
+  E.grantElement = { create: create };
 }());

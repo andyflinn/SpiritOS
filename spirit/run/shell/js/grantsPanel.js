@@ -8,7 +8,8 @@
 //   grantsPanel.create(host, { ids, grants, api }) -> { destroy() }
 //     ids     the ID table, as the contact selector takes it (G41.13, Q2): { table, key, label }
 //     grants  the grants table those IDs are granted in, as the grant list and row take it: { branch, key, label,
-//             search(text), grant(id, path) -> { ok } or { ok: false, code, error }, revoke(id, path), stream(job) }
+//             search(text), grant(id, path) -> { ok } or { ok: false, code, error }, revoke(id, path),
+//             watch(fn(id + newline + path, row)) -> its release }
 //     api     the app's shell api
 //   Made without its ID table or its grants table, it is refused: it never falls back to one caller's setting.
 //
@@ -34,8 +35,8 @@
     // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured"; Andy: "you can
     // mount an element like \"grantsPanel\", with only the container, and an ID-table missing").
     var missing = !ids || !ids.table ? 'an ID table is required ({ table, key, label })'
-      : !g || !g.branch || !g.key || !g.label || typeof g.grant !== 'function' || typeof g.search !== 'function'
-        ? 'a grants table is required ({ branch, key, label, search, grant, revoke, stream })' : '';
+      : !g || !g.branch || !g.key || !g.label || typeof g.grant !== 'function' || typeof g.search !== 'function' || typeof g.watch !== 'function'
+        ? 'a grants table is required ({ branch, key, label, search, grant, revoke, watch })' : '';
     if (missing) {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
@@ -160,16 +161,15 @@
     }
 
     // WHAT IT GRANTS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-    // changes shit it listens to fucking update via the spirit object"): the grants table's branch (g.branch). A grant
-    // asked for counts as made once its row is there; the panel says how many of the bundle's paths arrived.
+    // changes shit it listens to fucking update via the spirit object"): the grants table's own watch (g.watch, its
+    // cache manager's). A grant asked for counts as made once its row is there; the panel says how many of the bundle's
+    // paths arrived.
     var waiting = null;   // { want: { '<id>\n<path>': true }, came: n, of: n, label, who }
     var unwatch = null;
     function watchGrants() {
-      var D = window.spirit.data;
-      if (!D || !g.branch || unwatch) return;
-      unwatch = D.watch(String(g.branch), function (whole, v) {
+      if (unwatch) return;
+      unwatch = g.watch(function (k, v) {
         if (!waiting || !v) return;
-        var k = String(whole).slice(String(g.branch).length + 1);
         if (!waiting.want[k]) return;
         delete waiting.want[k];
         waiting.came += 1;
