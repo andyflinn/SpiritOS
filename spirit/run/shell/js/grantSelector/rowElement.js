@@ -12,7 +12,9 @@
 //
 //   grantElement.create(row, opts) -> a rowElement of kind grant
 //     row            a grant row, its id and whose grant it is in the fields its table names
-//     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), stream(job) -> { row, gone } }
+//     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), stream(job) -> { row, gone } };
+//                    branch is a whole spirit.data path (node/family/branch), stream left out when a family's cache
+//                    manager keeps the table's rows
 //     opts.api       the app's shell api, for the arming button's are-you-sure
 //     opts.serves(path)  whether a server serves that path today; one that does not reads deprecated (a REPORT: Andy,
 //                    "so we defer pruning to be triggered by the owners auth app, who can report deprecated branches")
@@ -40,7 +42,9 @@
     var b = String(g.branch);
     if (tables[b]) return tables[b];
     tables[b] = { index: null, dispatch: dispatch };
-    whenData(function (D) {
+    // A table whose rows a family's cache manager keeps already hands no stream (the node's grants: the auth family's,
+    // goal/G41.28); one that does is translated here, into its branch's whole path.
+    if (typeof g.stream === 'function') whenData(function (D) {
       D.translate({
         onJob: function (job) {
           var got = g.stream(job);
@@ -118,10 +122,11 @@
   }
 
   // listen(grants): its table's grants taken from the stream from now on, before any row of it is made, so a list with
-  // no rows yet still hears its first grant (found live on G41.16: an empty agent grant list never filled).
+  // no rows yet still hears its first grant (found live on G41.16: an empty agent grant list never filled). A table whose
+  // rows a family's cache manager keeps hands no stream: its manager hears them (goal/G41.28).
   function listen(grants) {
     var g = grants;
-    if (!g || !g.branch || !g.key || !g.label || typeof g.stream !== 'function') throw new Error('grantElement: a grants table is required');
+    if (!g || !g.branch || !g.key || !g.label) throw new Error('grantElement: a grants table is required');
     tableOf(g);
   }
 

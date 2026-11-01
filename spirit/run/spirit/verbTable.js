@@ -358,7 +358,13 @@ function createVerbTable() {
             asked[name.slice(0, dot)] = {};
             asked[name.slice(0, dot)][name.slice(dot + 1)] = args;
           }
-          return d.ask(asked, ownerOf());
+          // THE OWNER ON HIS OWN MACHINE (goal/G41.28; Andy: "let's do that. my decision, and not a bad one, since we
+          // already decided that each node only reads code from it's own drive...."): a call through this door came in on
+          // loopback (server.js takes no other connection), so its answer travels nowhere and is bound by no ANSWER_MAX;
+          // marked here, where only the loopback door reaches. The owner door over the relay (call, below) is not.
+          var own = ownerOf();
+          own.loopback = true;
+          return d.ask(asked, own);
         }).then(function (a) {
           rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
           rs.end(JSON.stringify(a && a.body !== undefined ? a.body : { ok: false, code: 'handler-failed' }));

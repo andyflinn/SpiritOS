@@ -199,7 +199,7 @@
   // The verbs introSpector gives every family for its own folder, the same everywhere.
   var FOLDER = {
     loadFile: { path: 'path' }, saveFile: { path: 'path', content: 'text' }, deleteFile: { path: 'path' }, statFile: { path: 'path' },
-    fileExists: { path: 'path' }, loadJsonValue: { path: 'path' }, saveJsonValue: { path: 'path', value: 'object' },
+    fileExists: { path: 'path' }, path: { path: 'path' }, loadJsonValue: { path: 'path' }, saveJsonValue: { path: 'path', value: 'object' },
     getAnnotations: { path: 'path' }, annotateFile: { path: 'path', payload: 'object' }, search: { q: 'text?' },
   };
 
@@ -354,6 +354,45 @@
   // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A server's family
   // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
   function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
+  // A FAMILY'S CACHE MANAGER, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
+  // clientCacheManagers."): clientCacheManager.js beside the family's api.js, a node family's (spirit/<name>/) or a
+  // server's (its family folder). cacheManager(name) loads it once through the one loader; the manager attaches itself
+  // and puts its reader on spirit. A family with none answers not-found.
+  function managerPaths(name) {
+    var n = String(name || '');
+    return ['spirit/' + n + '/clientCacheManager.js', familyPath(n).replace(/api\.js$/, 'clientCacheManager.js')];
+  }
+  // ON A PAGE, FOUND THROUGH THE FAMILY'S OWN FS AND LOADED BY A GET (goal/G41.28; Andy: "for the owner, the api tree
+  // returns a FS set of verbs for every family", and on FS.path: "my approval is set, unless there's a valid objection"):
+  // spirit.<family>.FS.path names where the family's folder holds it, the node's or its server's alike, so no folder is
+  // guessed and no 404 is ever asked; then the one loader GETs that path, so a manager of any size travels, on loopback
+  // and through the face alike. In node, its own disk.
+  // Asked as a file runs, it is part of that file's tree: the file's require answers once it has, and a family with
+  // none fails no tree.
+  var MANAGER = 'clientCacheManager.js';
+  var managers = Object.create(null);
+  function cacheManager(name) {
+    var n = String(name || '');
+    if (!/^[A-Za-z]\w*$/.test(n)) return Promise.reject(refusal('not-found', 'no family ' + name));
+    if (!managers[n]) {
+      if (isNode()) {
+        var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(__dirname, p)); })[0];
+        managers[n] = at ? requireOne(at) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
+      } else {
+        managers[n] = bindOwn(n).then(function (fam) {
+          if (!fam || !fam.FS || typeof fam.FS.path !== 'function') throw refusal('not-found', 'the family ' + n + ' has no FS');
+          return fam.FS.path({ path: MANAGER });
+        }).then(function (b) {
+          var p = b && typeof b.path === 'string' ? b.path : '';
+          if (!p) throw refusal('not-found', 'the family ' + n + ' has no ' + MANAGER);
+          return requireOne(p);
+        });
+      }
+      managers[n].then(null, function () { /* asked again next time */ delete managers[n]; });
+    }
+    if (collecting) collecting.push(managers[n].then(null, function () {}));
+    return managers[n];
+  }
   function interfaceName(p) {
     var m = /^process\/js\/([^/]+)\/family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
@@ -443,6 +482,7 @@
   self.tree = tree;
   self.require = requireOne;
   self.familyPath = familyPath;
+  self.cacheManager = cacheManager;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;
@@ -714,6 +754,17 @@
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
       return parsed().then(function () { return requireOne('spirit/spiritData.js'); }).then(null, function () { /* no cache served here */ });
+    }).then(function () {
+      // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
+      // key as spirit.node.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.node as a
+      // process has it, and handed to the data set, which files the page's stream under it from then on.
+      if (!self.node || typeof self.node.card !== 'function') return null;
+      return Promise.resolve(self.node.card()).then(function (c) {
+        var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
+        if (!key) return;
+        self.node.key = key;
+        if (self.data && typeof self.data.home === 'function') self.data.home(key);
+      }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return self; });
     self.ready = started;
     return started;

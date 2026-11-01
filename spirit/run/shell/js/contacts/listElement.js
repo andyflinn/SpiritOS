@@ -25,6 +25,8 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
+  // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
+  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('contact')).then(null, function () { /* no contacts kept */ });
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, held, or relay.
   function is(kind) {
@@ -88,7 +90,8 @@
 
     list = window.spirit.elements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
-      data: 'contacts',
+      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.contactData.branch).
+      data: window.spirit.contactData ? window.spirit.contactData.branch : undefined,
       server: 'contact',
       verb: 'search',
       face: o.face,

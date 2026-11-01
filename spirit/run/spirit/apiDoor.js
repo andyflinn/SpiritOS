@@ -32,6 +32,9 @@
 // DEBUG is the owner's on every server (Andy, desk/G2.5: "DEBUG verb is never
 // allowed through peerPost()"), granted or not.
 const OWNER_VERBS = ['DEBUG'];
+// EVERY FAMILY'S FS VERBS ARE THE OWNER'S (goal/G41.28; Andy: "we also need to make the FS. verb group \"owner-only\""):
+// FS.loadFile, FS.saveFile and the rest of a family folder's verbs, on every family, granted or not, as DEBUG.
+function ownerVerb(verb) { return OWNER_VERBS.indexOf(String(verb)) !== -1 || String(verb).indexOf('FS.') === 0; }
 // THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
 // access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
 // naming it cannot be made (apiAuth.grant), and one left in the table from before is read as nothing here.
@@ -54,7 +57,7 @@ function stripTree(tree, paths) {
     if (!verbs || typeof verbs !== 'object') return;
     const whole = paths.indexOf(app) !== -1;
     Object.keys(verbs).forEach(function (verb) {
-      if (OWNER_VERBS.indexOf(verb) !== -1) return;
+      if (ownerVerb(verb)) return;
       if (whole || paths.indexOf(app + '.' + verb) !== -1) {
         (kept[app] = kept[app] || {})[verb] = verbs[verb];
       }
@@ -125,6 +128,7 @@ function answer(servers, ask, caller) {
     if (!verbs || typeof verbs !== 'object') return Promise.resolve(refusal('not-granted', String(app) + ' asks nothing grantable'));
     for (const verb of Object.keys(verbs)) {
       named += 1;
+      if (ownerVerb(verb)) return Promise.resolve(refusal('owner-only', app + '.' + verb + ' is the owner\'s alone'));
       if (!grantedVerb(app, verb)) return Promise.resolve(refusal('not-granted', app + '.' + verb + ' is not granted to this key'));
     }
   }

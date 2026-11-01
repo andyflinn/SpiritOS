@@ -15,16 +15,16 @@
 // Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
 var grApi = null;
 
-// The node's grants, as the panel, the grant list and the grant row take a grants table: kept in data.grants, keyed by
-// the peer's key, labelled by whose grant it is; each grant row arrives on the auth tables' job (table grant, gone when
-// revoked, goal/G41.14).
+// The node's grants, as the panel, the grant list and the grant row take a grants table: kept by the auth family's
+// cache manager (spirit.authData.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+// row arrives on the auth tables' job (table grant, gone when revoked, goal/G41.14), which the manager translates.
 function grAnswer(a) {
   if (a && a.status === 200) return { ok: true };
   var b = (a && a.body) || {};
   return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
 }
 var GR_GRANTS = {
-  branch: 'grants',
+  get branch() { return window.spirit.authData ? window.spirit.authData.grants.branch : ''; },
   key: 'key',
   label: 'label',
   // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
@@ -42,16 +42,12 @@ var GR_GRANTS = {
   },
   grant: function (id, path) { return grApi.verb('auth.grant', { key: id, path: path }).then(grAnswer); },
   revoke: function (id, path) { return grApi.verb('auth.revoke', { key: id, path: path }).then(grAnswer); },
-  stream: function (job) {
-    var d = job && job.type === 'bundles' ? job.data : null;
-    return d && d.table === 'grant' ? { row: d.row, gone: d.gone === true } : null;
-  },
 };
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
 // tree...."): through spirit.require, each element bringing its own.
 var grParts = Promise.all(['shell/js/grantsPanel.js', 'shell/js/tabContainer.js', 'shell/js/bundleEditor.js']
-  .map(function (p) { return spirit.require(p); }));
+  .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('auth')]));
 
 spirit.shell.activateApp({
   mount: function (container, api) {

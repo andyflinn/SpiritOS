@@ -5,25 +5,10 @@
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  // THE PROVIDER TABLE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of thos FUCKING data.js
-  // scripts"): the agent server publishes each row as it changes, its job's app { agent: { table, row } }, or
-  // { agent: { table, id, removed } } for one gone (../rowTable.js). This file puts the provider table's into
-  // agent.provider/<id> of spirit.data, merged, so the table's list and editors, views of that branch, follow it. Another
-  // table's rows, another module's, or a row with no id write nothing. The data set it writes to, it loads itself
-  // (rule/26).
-  var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
-    : Promise.resolve(window.spirit.require ? window.spirit.require('spirit/spiritData.js') : null).then(function () { return window.spirit.data; });
-  dataSet.then(function (D) {
-    if (!D || typeof D.translate !== 'function') return;
-    D.translate({
-      onJob: function (job) {
-        var a = job && job.module === 'process/js/agent' && job.app && job.app.agent;
-        if (!a || a.table !== 'provider') return;
-        if (a.removed) { if (a.id) D.del('agent.provider/' + String(a.id)); return; }
-        if (a.row && typeof a.row === 'object' && a.row.id) D.merge('agent.provider/' + String(a.row.id), a.row);
-      },
-    });
-  }, function () { /* no data set: the lists still search */ });
+  // Its table's rows are the agent family's cache (goal/G41.28): the family's own clientCacheManager
+  // (process/js/agent/family/clientCacheManager.js) translates them into the table's branch; it is loaded here, with
+  // this element.
+  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('agent')).then(null, function () { /* no cache */ });
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' },
     // goal/G41.21, box v17: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is
     // this provider": of names the model table's field that holds this provider's id; hidden while it holds none.

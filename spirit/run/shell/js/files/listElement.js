@@ -18,6 +18,9 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fileViewer.js'].forEach(function (p) { window.spirit.require(p); });
+  // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
+  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('fs')).then(null, function () { /* no file tree */ });
+  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;
@@ -39,7 +42,7 @@
     if (!a.contents || !a.q) { found(Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
     return spirit.ready.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
-      var D = window.spirit.data;
+      var F = fsData();
       var next = Object.create(null);
       var items = (body.items || []).map(function (i) {
         var row = null;
@@ -49,7 +52,7 @@
         var raw = String((row && row.path) || i.key);
         var folder = /\/$/.test(raw);
         var path = raw.replace(/\/+$/, '');
-        var k = D.get('files/' + path) || {};
+        var k = (F && F.file(path)) || {};
         return { key: path, label: JSON.stringify({ path: path, name: path.slice(path.lastIndexOf('/') + 1), kind: folder ? 'folder' : (k.kind || 'file'),
           size: k.size, modified: k.modified, line: (row && row.line) || 0 }) };
       });
@@ -69,7 +72,8 @@
     var inner = host.lastChild;
     list = E.probabilitySearch.create(inner, {
       api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
-      data: 'files',
+      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.fsData.branch).
+      data: fsData() ? fsData().branch : undefined,
       server: 'fs',
       verb: 'search',
       face: o.face,

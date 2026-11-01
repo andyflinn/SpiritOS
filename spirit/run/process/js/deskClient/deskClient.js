@@ -212,7 +212,8 @@ function heldByMe(row) {
 // here only when first read from, so that require is the one that runs it.
 const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.familyPath('desk')), 'clientCacheManager.js');
 function fromKept(name, args) {
-  return require(DESK_CCM).cache.answer(name, args, dataSet, ANSWER_ROOM);
+  const k = kept();
+  return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
 }
 // WHAT THE CACHE HOLDS OF THE DESK, ASKED OF ITS MANAGER (goal/G41.28; Andy: "doesn't the fucking ...
 // clientCacheManager.js take care of that"): spirit.deskData answers by what a thing is; no branch is named here.

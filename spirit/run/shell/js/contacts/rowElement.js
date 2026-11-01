@@ -1,11 +1,12 @@
 // spirit/run/shell/js/contacts/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
-// and add (a button on a row the owner does not keep). It reads data.contacts of the faceless layer (spirit/spiritData.js, goal/G30.16), which presence, renames, the
-// network search and every contact search keep, so a peer arriving repaints that peer's dot and a rename that peer's
-// label, and nothing else. rowElement.js does the shared work; this file says what a contact is.
+// and add (a button on a row the owner does not keep). It reads the node's contacts as the contact family's cache
+// manager keeps them (spirit.contactData, goal/G41.28), which presence, renames, the network search and every contact
+// search keep, so a peer arriving repaints that peer's dot and a rename that peer's label, and nothing else.
+// rowElement.js does the shared work; this file says what a contact is.
 //
-// THE DISPATCH OF CONTACTS: one watch on data.contacts for every contact row on the page, and an index by key. A row
+// THE DISPATCH OF CONTACTS: one watch on the contacts for every contact row on the page, and an index by key. A row
 // registers on create and leaves on destroy. A row found on the network joins every list through the tree.
 //
 // What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
@@ -22,38 +23,12 @@
   var iconReady = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/icon.js') : null).then(null, function () { /* the glyph stays as text */ });
   var contacts = null;
 
-  // WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of thos FUCKING
-  // data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"): the relay-presence job sets each key's present
-  // (a key the table drops goes back to not known), the peer-search job seats each row the network found, a contact
-  // rename sets its name. Every event ends in set or merge, in data.contacts of the page's one data set
-  // (spirit/spiritData.js), which it loads itself when it is not on the page yet (rule/26).
-  function translate(D) {
-    if (!D || typeof D.translate !== 'function') return;
-    var told = Object.create(null);   // keys the presence table has spoken of
-    D.translate({
-      onJob: function (job) {
-        if (job.type === 'relay-presence') {
-          var table = job.data.presence || {};
-          Object.keys(table).forEach(function (key) {
-            var proof = table[key];
-            if (!proof || typeof proof !== 'object') return;
-            told[key] = true;
-            if ((D.branch('contacts')[key] || {}).present !== (proof.present === true)) D.merge('contacts/' + key, { present: proof.present === true });
-          });
-          Object.keys(told).forEach(function (key) {
-            if (key in table) return;
-            delete told[key];
-            if (D.branch('contacts')[key]) D.merge('contacts/' + key, { present: undefined });
-          });
-          return;
-        }
-        if (job.type === 'peer-search' && job.data.item) D.seat('contacts', [job.data.item]);
-      },
-      onRename: function (d) { D.merge('contacts/' + d.key, { name: String(d.caption || '') }); },
-    });
-  }
-  if (window.spirit.data) translate(window.spirit.data);
-  else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
+  // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
+  // the family's own clientCacheManager's (spirit/contact/clientCacheManager.js), which this element loads itself
+  // (rule/26), as part of its tree; a row reads spirit.contactData.
+  function contactData() { return (window.spirit && window.spirit.contactData) || null; }
+  var contactReady = Promise.resolve(typeof window.spirit.cacheManager === 'function' ? window.spirit.cacheManager('contact') : null)
+    .then(function () { return contactData(); }, function () { return null; /* no contacts kept on this page */ });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -87,20 +62,25 @@
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 
-  function known(key) { var D = window.spirit.data; return (D && D.get('contacts/' + key)) || null; }
+  function known(key) { var C = contactData(); return C ? C.contact(key) : null; }
   // A RELAY'S ROW IS KEYED BY ITS OWN ID (goal/G40.11: a row of the one table), and the node marks a relay's own key
   // present while it holds the stream to it (goal/G40.5): its dot is its own key's, like anybody's.
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
   // Its release answered to the index, which lets it go with the kind's last row (rowElement.index).
+  // Made once the contact family's manager is on the page; let go at once if the index lets it go first.
   function dispatch(idx) {
-    if (!window.spirit.data) return null;
-    return window.spirit.data.watch('contacts', function (path, v) {
-      var key = String(path).slice('contacts/'.length);
-      if (!key || !v) return;
-      var changes = {};
-      ['present', 'name', 'keep', 'mine', 'blocked', 'held'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
-      idx.forKey(key).forEach(function (el) { el.apply(changes); });
+    var off = null;
+    var gone = false;
+    contactReady.then(function (C) {
+      if (gone || !C) return;
+      off = C.watch(function (key, v) {
+        if (!key || !v) return;
+        var changes = {};
+        ['present', 'name', 'keep', 'mine', 'blocked', 'held'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
+        idx.forKey(key).forEach(function (el) { el.apply(changes); });
+      });
     });
+    return function () { gone = true; if (typeof off === 'function') off(); };
   }
   function index() {
     contacts = contacts || E.rowElement.index(dispatch);

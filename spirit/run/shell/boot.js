@@ -399,8 +399,8 @@
 
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
   // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.21): an app is a shell/<app>/<app>.js whose
-  // sidecar's face part says app: true, with the name and icon the face draws. The scripts are found in data.files, the
-  // file tree already in the page (spirit/spiritData.js); each one's face part is asked once (fs.annotations), and each
+  // sidecar's face part says app: true, with the name and icon the face draws. The scripts are found in the file tree
+  // already in the page (spirit.fsData, the fs family's cache); each one's face part is asked once (fs.annotations), and each
   // icon is drawn as its answer arrives. An app's script loads when it is opened. The home shell's .json manifests are
   // not read here. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior }
@@ -478,18 +478,19 @@
     Object.keys(apps).forEach(function (id) { if (!serverUp(apps[id])) closePages(id); });
     hand();
   }
+  // The file tree is the fs family's cache (goal/G41.28): spirit.fsData, which the files row element brings.
   function listApps() {
-    var D = window.spirit.data;
-    if (!D) return;
+    var F = window.spirit.fsData;
+    if (!F) return;
     var SCRIPT = /^(shell\/([^/]+))\/\2\.js$/;
     var read = Object.create(null);   // the apps already asked, so another file's change asks nothing again
     function look() {
-      Object.keys(D.branch('files')).forEach(function (k) {
+      Object.keys(F.files()).forEach(function (k) {
         var m = SCRIPT.exec(k);
         if (m && !read[m[1]]) { read[m[1]] = true; readFace(m[1]); }
       });
     }
-    D.watch('files', look);
+    F.watch(look);
     look();
   }
 
@@ -534,7 +535,7 @@
     var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); } };
     events({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
     // Join's fact changed (it writes its state file): the file tree says so, and it is read again.
-    if (window.spirit.data) window.spirit.data.watch('files/' + JOIN_STATE, function () { joinReadFact().then(joinChanged); });
+    if (window.spirit.fsData) window.spirit.fsData.watchFile(JOIN_STATE, function () { joinReadFact().then(joinChanged); });
   }
 
   function loadApp(id) {

@@ -21,32 +21,34 @@
     var D = ((root || {}).spirit || {}).data;
     if (!D || typeof D.translate !== 'function') return;
     if (D[ATTACHED]) { (root.spirit = root.spirit || {}).verifyData = D[ATTACHED]; return; }
+    // The deskVerify family's view of the home node; a publish is filed under the node that sent it (goal/G41.28).
+    var HOME = D.at(null, 'deskVerify');
     D.translate({
       onJob: function (job) {
         var o = job && job.module === 'process/js/deskVerify' ? job.app : null;
-        if (o && typeof o === 'object' && typeof o.doing === 'string') D.set(STATE + '/now', o);
+        if (o && typeof o === 'object' && typeof o.doing === 'string') D.at(job.fromNode || null, 'deskVerify').set(STATE + '/now', o);
       },
     });
     // THE READS, ANSWERED HERE:
     //   state()       what the verifier last published of itself, or null
     //   watch(fn)     fn(state) on every publish kept from now on; answers its release
-    //   testsBranch   the tests' branch, for a list that is a view of it (probabilitySearch's data)
+    //   testsBranch   the tests' whole path, for a list that is a view of it (probabilitySearch's data)
     //   seatFlips(a)  a search answer over one test's history ({items: [{label}]}, each label a flip's row) kept, each flip
     //                 at its own key
     //   flips(suite, heading)  the flips kept of that test (title the heading, or "<heading> #<n>" under it)
     var verifyData = {
-      state: function () { return D.get(STATE + '/now') || null; },
-      watch: function (fn) { return D.watch(STATE + '/now', function (p, v) { if (v && typeof fn === 'function') fn(v); }); },
-      testsBranch: TESTS,
+      state: function () { return HOME.get(STATE + '/now') || null; },
+      watch: function (fn) { return HOME.watch(STATE + '/now', function (p, v) { if (v && typeof fn === 'function') fn(v); }); },
+      get testsBranch() { return HOME.path(TESTS); },
       seatFlips: function (answer) {
         ((answer && answer.items) || []).forEach(function (i) {
           var r = null;
           try { r = JSON.parse(i.label); } catch (e) { return; }
-          if (r && typeof r === 'object') D.set(FLIPS + '/' + [r.suite, r.title, r.at].join('\n'), r);
+          if (r && typeof r === 'object') HOME.set(FLIPS + '/' + [r.suite, r.title, r.at].join('\n'), r);
         });
       },
       flips: function (suite, heading) {
-        var all = D.get(FLIPS) || {};
+        var all = HOME.branch(FLIPS);
         return Object.keys(all).map(function (k) { return all[k]; }).filter(function (r) {
           var t = String((r && r.title) || '');
           return r && r.suite === suite && (t === heading || t.indexOf(heading + ' #') === 0);

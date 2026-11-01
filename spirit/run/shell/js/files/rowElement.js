@@ -1,9 +1,10 @@
 // spirit/run/shell/js/files/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it reads data.files of the faceless layer (spirit/spiritData.js, goal/G30.16), which the fs-watcher's stream keeps,
-// so a change to a file repaints that file's cells and nothing else. rowElement.js does the shared work; this file says what a file is.
+// it reads the node's file tree as the fs family's cache manager keeps it (spirit.fsData, goal/G41.28), which the
+// fs-watcher's stream keeps, so a change to a file repaints that file's cells and nothing else. rowElement.js does the
+// shared work; this file says what a file is.
 //
-// THE DISPATCH OF FILES: one watch on data.files for every file row on the page, and an index by path. A row registers
+// THE DISPATCH OF FILES: one watch on the file tree for every file row on the page, and an index by path. A row registers
 // on create and leaves on destroy.
 //
 // Actions: open (the viewer the page hands in, ctx.open, or the text launcher) and remove (fs.delete). An action asks
@@ -16,35 +17,13 @@
   if (window.spirit.require) ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
-  // WHAT THE FS-WATCHER'S STREAM MEANS FOR data.files, IN THE TYPE'S OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of
-  // thos FUCKING data.js scripts"): the page's mirror of the node's tree (spirit/spiritData.js). A connecting page is
-  // handed the tree as create commands, then treeComplete: the branch fills quietly and its watchers hear one word at
-  // the end; after that each change is told by path. Every event ends in set or del. The tree comes as updates of one
-  // job, so it is heard from the start: spirit.js loads this file with the cache (Q2: "the file tree must be cached.").
-  function translate(D) {
-    if (!D || typeof D.translate !== 'function') return;
-    D.translate({
-      onJob: function (job) {
-        if (job.type !== 'fs-watcher') return;
-        if (job.data.treeComplete) { D.ready('files', true); return; }
-        var cmd = job.data.command;
-        if (!cmd || !cmd.path) return;
-        if (!D.ready('files')) D.quietly('files', true);
-        var p = String(cmd.path);
-        if (cmd.op === 'deleteFile') D.del('files/' + p);
-        else if (cmd.op === 'deleteDirectory') {
-          D.del('files/' + p);
-          Object.keys(D.branch('files')).forEach(function (k) { if (k.indexOf(p + '/') === 0) D.del('files/' + k); });
-        } else {
-          var was = D.branch('files')[p] || {};
-          // core: the node's word that the file is core (goal/G30.21), painted yellow by its row.
-          D.set('files/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true });
-        }
-      },
-    });
-  }
-  if (window.spirit.data) translate(window.spirit.data);
-  else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
+  // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
+  // clientCacheManager's (spirit/fs/clientCacheManager.js), which this element loads itself (rule/26), with the data set
+  // it fills; a row reads spirit.fsData.
+  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
+  // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
+  var fsReady = Promise.resolve(typeof window.spirit.cacheManager === 'function' ? window.spirit.cacheManager('fs') : null)
+    .then(function () { return fsData(); }, function () { return null; /* no file tree on this page */ });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -71,19 +50,24 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
-  function known(p) { var D = window.spirit.data; return (D && D.get('files/' + p)) || null; }
+  function known(p) { var F = fsData(); return F ? F.file(p) : null; }
   // A write to data.files, by path, to the rows that show that path; its release answered to the index, which lets it go
   // with the kind's last row (rowElement.index).
+  // Made once the fs family's manager is on the page; let go at once if the index lets it go first.
   function dispatch(idx) {
-    if (!window.spirit.data) return null;
-    return window.spirit.data.watch('files', function (path, v) {
-      var p = String(path).slice('files/'.length);
-      if (!p) return;
-      idx.forKey(p).forEach(function (el) {
-        if (!v) el.apply({ gone: true });
-        else el.apply({ kind: v.kind, size: v.size, modified: v.modified, core: v.core === true, gone: false });
+    var off = null;
+    var gone = false;
+    fsReady.then(function (F) {
+      if (gone || !F) return;
+      off = F.watch(function (p, v) {
+        if (!p) return;
+        idx.forKey(p).forEach(function (el) {
+          if (!v) el.apply({ gone: true });
+          else el.apply({ kind: v.kind, size: v.size, modified: v.modified, core: v.core === true, gone: false });
+        });
       });
     });
+    return function () { gone = true; if (typeof off === 'function') off(); };
   }
 
   function index() { files = files || E.rowElement.index(dispatch); return files; }

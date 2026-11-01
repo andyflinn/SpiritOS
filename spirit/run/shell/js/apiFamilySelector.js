@@ -57,7 +57,8 @@
     var made = parts.then(function () {
       var E = window.spirit.elements;
       families = E.appServerSelector.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      verbs = E.apiVerbSelector.create(root, { own: typeof options.tree !== 'function' });
+      // options.grantable: for a grant or a branch, the FS group left out (goal/G41.28), as the verb half says.
+      verbs = E.apiVerbSelector.create(root, { own: typeof options.tree !== 'function', grantable: options.grantable === true });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;

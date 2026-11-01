@@ -23,38 +23,20 @@
     return window.spirit.require ? window.spirit.require(p) : null;
   }));
 
-  // WHAT A BUNDLE ROW ON THE STREAM MEANS: data.bundles/<id> is the row, or nothing once it is gone.
-  // THE DATA SET IT WRITES TO, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically
-  // through the fucking apirit.require functionality"): the page's one spirit.data (spirit/spiritData.js), which may
-  // not be on the page yet when an app loads this file. spirit.require loads a file once, so it is the page's one cache.
-  var dataSet = window.spirit.data ? Promise.resolve(window.spirit.data)
-    : Promise.resolve(window.spirit.require ? window.spirit.require('spirit/spiritData.js') : null).then(function () { return window.spirit.data; });
-  function whenData(fn) {
-    dataSet.then(function (D) { if (D && typeof D.translate === 'function') fn(D); }, function () { /* no data set: the lists still search */ });
-  }
-  whenData(function (D) {
-    D.translate({
-      onJob: function (job) {
-        var d = job && job.type === 'bundles' ? job.data : null;
-        if (!d || d.table !== 'bundle' || !d.row || d.row.id == null) return;
-        var path = 'bundles/' + Number(d.row.id);
-        if (d.gone === true) D.del(path);
-        // The owner as the node said it (it always says one, goal/G41.25); a row that names none keeps none.
-        else D.set(path, d.row.owner === undefined ? { id: Number(d.row.id), label: String(d.row.label || '') }
-          : { id: Number(d.row.id), label: String(d.row.label || ''), owner: String(d.row.owner) });
-      },
-    });
-  });
-  // THE KIND'S INDEX: one watch on data.bundles for every bundle row on the page, each change to the rows of that key;
+  // A NODE'S BUNDLES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
+  // are the family's own clientCacheManager's (spirit/auth/clientCacheManager.js), which this element loads itself
+  // (rule/26), as part of its tree; a row reads spirit.authData.bundles.
+  var authReady = Promise.resolve(typeof window.spirit.cacheManager === 'function' ? window.spirit.cacheManager('auth') : null)
+    .then(function () { return (window.spirit.authData && window.spirit.authData.bundles) || null; }, function () { return null; });
+  // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
   function dispatch(idx) {
     var off = null;
     var gone = false;
-    whenData(function (D) {
-      if (gone) return;
-      off = D.watch('bundles', function (path, v) {
-        var key = String(path).slice('bundles/'.length);
+    authReady.then(function (B) {
+      if (gone || !B) return;
+      off = B.watch(function (key, v) {
         if (!key || !v) return;
         idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), owner: String(v.owner || 'node') }); });
       });

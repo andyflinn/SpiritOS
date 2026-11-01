@@ -23,138 +23,15 @@
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
 (function (root) {
-  // THE DESK'S ROWS IN A CLIENT'S CACHE (goal/G41.12). Andy, Q2: "it sits at the receiving end of the stream, it owns the
-  // cache, it knows the default cache limit, IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE". The client's
-  // appServer keeps the rows the desk sends and hands them here, oldest first; the newest row is the one last touched.
-  //   keep(rows, row)          row placed last, the row of the same thing it makes old taken out: an item's facts, one
-  //                            side row (its table, item and own key), a rule, a plugin's word
-  //   shed(rows, limit, bytes) the rows that stay once bytes(rows), the cache file's size, is past limit
-  // THE SHED ORDER IS ANDY'S (Q2): "FIRST YOU shed the longest untouched goal, lock, stock and barrel / when there is
-  // only one goal, then you shed the longest untouched item, LOCK, stock and barrel, / when there is only one goal with
-  // one item you shed the oldest chat line." A goal's own row is no item, so it stays with its goal. Rows of no goal (the
-  // rules, a plugin's) are never shed.
+  // THE CACHE RULES ARE NODE'S (goal/G41.28; Andy: "the file has to fit into MAX_PAYLOAD."): keep, shed and the kept
+  // reads, in ./cacheRules.js, required in node alone (appServer, deskClient), handed this file's names; a page has none.
   // THE NAMES, here alone.
   var ITEMS = 'desk';
   var PARTS = 'deskItem';
   var STATE = 'deskState';
   var RULES = 'deskRules';
-  var cache = (function () {
-  function place(row) {
-    if (row && row.key && typeof row.key.goal === 'number' && !row.table) return { goal: row.key.goal, item: Number(row.key.item) || 0 };
-    if (row && row.table && typeof row.goal === 'number') return { goal: row.goal, item: Number(row.item) || 0 };
-    var id = row && (row.table ? row.id : row.item && row.item.id);
-    var m = /^goal\/G(\d+)(?:\.(\d+))?$/.exec(String(id || ''));
-    return m ? { goal: Number(m[1]), item: m[2] ? Number(m[2]) : 0 } : null;
-  }
-  function sideKey(row) {
-    if (row.removed) return String(row.at || '');
-    var r = row.row || {};
-    if (row.table === 'box') return '';
-    if (row.table === 'chat') return String(r.at || '') + '|' + String(r.by || '');
-    if (row.table === 'checks') return String(r.number || '');
-    if (row.table === 'files') return String(r.by || '') + '|' + String(r.path || '');
-    return null;
-  }
-  function identity(row) {
-    if (!row || typeof row !== 'object') return '';
-    if (row.table) { var k = sideKey(row); return k === null ? '' : 'side ' + row.table + ' ' + String(row.id || '') + ' ' + k; }
-    if (row.item && row.item.id) return 'item ' + row.item.id;
-    if (row.rule) return 'rule ' + row.rule;
-    if (row.plugin) return 'plugin ' + row.plugin;
-    return '';
-  }
-  // A PUSH GOAL REPLACES (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the current goal whole, no
-  // merge: nothing stale survives"; Q1: "nothing drops from the cache, unless the api.js from the server says so"): its
-  // end drops every row of that goal it did not bring, so a restart reads none of it back; after it, a row of that goal
-  // of an older change is not kept.
-  function replacedAt(rows, g) {
-    var at = 0;
-    rows.forEach(function (r) { var p = place(r); if (r.replace === true && r.end === true && p && p.goal === g && Number(r.change) > at) at = Number(r.change); });
-    return at;
-  }
-  function keep(rows, row) {
-    var p = place(row);
-    if (row && row.replace === true && row.end === true && p) {
-      return rows.filter(function (r) { var q = place(r); return !q || q.goal !== p.goal || (r.replace === true && r.change === row.change && !r.end); }).concat([row]);
-    }
-    if (p && row.replace !== true && typeof row.change === 'number' && row.change < replacedAt(rows, p.goal)) return rows;
-    var id = identity(row);
-    return rows.filter(function (r) { return !id || identity(r) !== id; }).concat([row]);
-  }
-  // Each group's newest row: the one touched last is the one kept longest.
-  function touched(rows, groupOf) {
-    var at = new Map();
-    rows.forEach(function (r, i) { var g = groupOf(r); if (g !== null) at.set(g, i); });
-    return at;
-  }
-  function oldest(at) {
-    var pick = null; var low = Infinity;
-    at.forEach(function (i, g) { if (i < low) { low = i; pick = g; } });
-    return pick;
-  }
-  function shed(rows, limit, bytes) {
-    var kept = rows.slice();
-    while (bytes(kept) > limit) {
-      var goals = touched(kept, function (r) { var p = place(r); return p ? p.goal : null; });
-      if (goals.size >= 2) {
-        var g = oldest(goals);
-        kept = kept.filter(function (r) { var p = place(r); return !p || p.goal !== g; });
-        continue;
-      }
-      if (goals.size !== 1) break;
-      var items = touched(kept, function (r) { var p = place(r); return p && p.item !== 0 ? p.item : null; });
-      if (items.size >= 2) {
-        var it = oldest(items);
-        kept = kept.filter(function (r) { var p = place(r); return !p || p.item !== it; });
-        continue;
-      }
-      var line = -1;
-      kept.forEach(function (r, i) { if (line === -1 && r.table === 'chat' && !r.removed && place(r)) line = i; });
-      if (line === -1) break;
-      kept.splice(line, 1);
-    }
-    return kept;
-  }
-  // THE CACHE ANSWERS A READ AS THE DESK WOULD (goal/G41.11's kept reads; box v15: "The client queries its own cache
-  // through that api.js"): item.get from an item's facts, item.box, item.checks, item.chat and item.files from the parts
-  // kept, each filled to room as the desk fills its answer; null when the cache does not hold it all, so the desk is
-  // asked. D is the client's data set as the desk's translator (deskData) keeps it.
-  function bytes(x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); }
-  function answer(verb, args, D, room) {
-    var id = String((args && args.id) || '');
-    var row = id ? D.get(ITEMS + '/' + id) : null;
-    var whole = id ? D.get(PARTS + '/' + id) : null;
-    // The facts come with the push (goal/G33.4, box v46); a part once it was read, or the stream brought it.
-    if (verb === 'item.get' && row && typeof row.version === 'number') return { item: JSON.stringify(row), version: row.version, change: Number(D.get(STATE + '/change')) || 0 };
-    if (!row || !whole) return null;
-    if (verb === 'item.box' && typeof whole.box === 'string') return { box: whole.box, version: Number(whole.version) || 0 };
-    if (verb === 'item.checks' && Array.isArray(whole.checks)) return { checks: whole.checks };
-    if (verb === 'item.chat' && Array.isArray(whole.chat)) {
-      // Newest first into one answer, as the desk's item.chat fills its room; more says some were left out.
-      var lines = [];
-      for (var i = whole.chat.length - 1; i >= 0; i--) {
-        if (bytes({ chat: [whole.chat[i]].concat(lines), chatMore: true }) > room) break;
-        lines.unshift(whole.chat[i]);
-      }
-      // Lines the stream brought before any read are the newest only (chatMore kept): older ones are the desk's.
-      return { chat: lines, chatMore: lines.length < whole.chat.length || whole.chatMore === true };
-    }
-    // goal/G33.7 (the approved list: "deskClient's kept file list (filled to one answer)"): as many as fit one answer,
-    // in the desk's order, and filesMore when some were left out; the push only ever adds to what is kept.
-    if (verb === 'item.files' && Array.isArray(whole.files) && !whole.filesMore) {
-      var under = args && typeof args.under === 'string' ? args.under : '';
-      var all = whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; });
-      var files = [];
-      for (var j = 0; j < all.length; j++) {
-        if (bytes({ files: files.concat([all[j]]), filesMore: true }) > room) break;
-        files.push(all[j]);
-      }
-      return { files: files, filesMore: files.length < all.length };
-    }
-    return null;
-  }
-  return { keep: keep, shed: shed, answer: answer };
-  }());
+  var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
+    ? require('./cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ATTACHED TO ONE DATA SET ONCE: attach(root) on the root whose spirit.data it fills. A page attaches
   // as it loads (below); in node the same module is required once and also read for its cache, so whoever holds the
   // data set attaches it (appServer, as it takes the stream's translator): a require before the data set is there
@@ -167,12 +44,18 @@
     // Attached before: the translator stays as it is, and this root is handed its spirit.deskData again (a root whose
     // spirit object was made anew after the first attach has none).
     if (D[ATTACHED]) { (root.spirit = root.spirit || {}).deskData = D[ATTACHED]; return; }
+    // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
+    // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
+    // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
+    // home node (spirit.data's home(): a page's own node, a process's sender).
+    var HOME = D.at(null, 'desk');
+    var V = HOME;
 
     function facts(x) {
       if (typeof x === 'string') { try { x = JSON.parse(x); } catch (e) { x = null; } }
       return x && typeof x === 'object' && x.id ? x : null;
     }
-    function keep(id, fields) { if (id) D.merge(PARTS + '/' + id, fields); }
+    function keep(id, fields) { if (id) V.merge(PARTS + '/' + id, fields); }
     function sameLine(a, b) { return a && b && a.at === b.at && a.by === b.by && a.text === b.text; }
     function goalOf(f) { return f.goal === '' ? f.id : f.goal; }
     var GROUP = 'goal/G0';
@@ -183,8 +66,8 @@
     // sends, every goal, no filtering on the client side"): another goal's rows stay; the cache's limit is the sender's
     // family's cache rules to keep (above, run by appServer).
     function rowOf(o, f) {
-      if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) D.set(STATE + '/current', goalOf(f));
-      D.set(ITEMS + '/' + f.id, f);
+      if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) V.set(STATE + '/current', goalOf(f));
+      V.set(ITEMS + '/' + f.id, f);
     }
 
     // ONE SIDE ROW: it keeps current the part of the item it belongs to, once that part was read; a part never read stays
@@ -194,7 +77,7 @@
     // file alone is no list, so those wait for a read.
     function side(o) {
       var id = String(o.id || '');
-      var whole = id ? D.get(PARTS + '/' + id) : null;
+      var whole = id ? V.get(PARTS + '/' + id) : null;
       if (!whole && id && o.row && !o.removed && o.table === 'box') { keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 }); return; }
       if (!whole && id && o.row && !o.removed && o.table === 'chat') { keep(id, { chat: [o.row], chatMore: true }); return; }
       if (!whole) return;
@@ -265,11 +148,11 @@
         var p = pushing[g];
         delete pushing[g];
         if (!p || p.change !== o.change) return;
-        var all = D.get(ITEMS) || {};
-        Object.keys(all).forEach(function (id) { if (ofGoal(id, g) && !p.ids[id]) D.del(ITEMS + '/' + id); });
-        var parts = D.get(PARTS) || {};
-        Object.keys(parts).forEach(function (id) { if (ofGoal(id, g)) D.del(PARTS + '/' + id); });
-        D.set(STATE + '/replaced' + g, o.change);
+        var all = V.get(ITEMS) || {};
+        Object.keys(all).forEach(function (id) { if (ofGoal(id, g) && !p.ids[id]) V.del(ITEMS + '/' + id); });
+        var parts = V.get(PARTS) || {};
+        Object.keys(parts).forEach(function (id) { if (ofGoal(id, g)) V.del(PARTS + '/' + id); });
+        V.set(STATE + '/replaced' + g, o.change);
         return;
       }
       if (!pushing[g] || pushing[g].change !== o.change) pushing[g] = { change: o.change, ids: {} };
@@ -281,21 +164,21 @@
       rowOf(o, it);
     }
     function stale(o) {
-      var at = Number(D.get(STATE + '/replaced' + goalNumber(o)));
+      var at = Number(V.get(STATE + '/replaced' + goalNumber(o)));
       return at > 0 && typeof o.change === 'number' && o.change < at;
     }
     function published(o) {
       if (!o || typeof o !== 'object') return;
       // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
-      if (typeof o.change === 'number' && o.change > (Number(D.get(STATE + '/change')) || 0)) D.set(STATE + '/change', o.change);
+      if (typeof o.change === 'number' && o.change > (Number(V.get(STATE + '/change')) || 0)) V.set(STATE + '/change', o.change);
       // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
-      if (o.rule && o.row && typeof o.row === 'object') { D.set(RULES + '/' + String(o.rule), o.row); return; }
+      if (o.rule && o.row && typeof o.row === 'object') { V.set(RULES + '/' + String(o.rule), o.row); return; }
       if (o.replace === true) { replaced(o); return; }
       if (stale(o)) return;
       if (o.table) { side(o); return; }
       var it = facts(o.item);
       if (!it) return;
-      if (o.removed) { D.del(ITEMS + '/' + it.id); D.del(PARTS + '/' + it.id); return; }
+      if (o.removed) { V.del(ITEMS + '/' + it.id); V.del(PARTS + '/' + it.id); return; }
       rowOf(o, it);
     }
 
@@ -307,8 +190,8 @@
     function took(verb, args, answer) {
       var id = String((args && args.id) || '');
       if (!id || !answer || typeof answer !== 'object') return;
-      var row = D.get(ITEMS + '/' + id);
-      var current = D.get(STATE + '/current');
+      var row = V.get(ITEMS + '/' + id);
+      var current = V.get(STATE + '/current');
       if (!row || !current) return;
       var g = goalOf(row);
       if (g !== current && g !== GROUP) return;
@@ -320,28 +203,34 @@
 
     D.translate({
       onJob: function (job) {
-        if (job && job.module === 'process/js/desk' && job.app && typeof job.app === 'object') published(job.app);
+        if (!(job && job.module === 'process/js/desk' && job.app && typeof job.app === 'object')) return;
+        V = D.at(job.fromNode || null, 'desk');
+        try { published(job.app); } finally { V = HOME; }
       },
     });
     // THE READS, ANSWERED HERE (goal/G41.28): what the cache holds of the desk, by what it is, never by branch name.
-    //   branch     the trunk's name, for a list that is a view of it (probabilitySearch's data); rulesBranch the rules'
+    //   branch     the trunk's whole path, for a list that is a view of it (probabilitySearch's data); rulesBranch the rules'
     //   item(id)   an item's facts;  items()  every item kept, id -> facts
     //   part(id)   the parts of an item read so far;  keepPart(id, fields)  more of them;  forget(id)  one item's
     //   parts dropped;  forgetAll()  every item's parts dropped
     //   current()  the goal last pushed whole;  change()  the newest change number heard;  rule(key)  a rule kept
+    //   answer(verb, args, room)  a desk read answered from what is kept, or null
     var deskData = {
       published: published, took: took,
-      branch: ITEMS,
-      rulesBranch: RULES,
-      item: function (id) { return id ? D.get(ITEMS + '/' + id) || null : null; },
-      items: function () { return D.branch(ITEMS); },
-      part: function (id) { return id ? D.get(PARTS + '/' + id) || null : null; },
+      // Whole paths, the home node's, asked when a list is made.
+      get branch() { return HOME.path(ITEMS); },
+      get rulesBranch() { return HOME.path(RULES); },
+      item: function (id) { return id ? V.get(ITEMS + '/' + id) || null : null; },
+      items: function () { return V.branch(ITEMS); },
+      part: function (id) { return id ? V.get(PARTS + '/' + id) || null : null; },
       keepPart: function (id, fields) { keep(String(id || ''), fields); },
-      forget: function (id) { if (id) D.del(PARTS + '/' + id); },
-      forgetAll: function () { Object.keys(D.branch(PARTS)).forEach(function (id) { D.del(PARTS + '/' + id); }); },
-      current: function () { return String(D.get(STATE + '/current') || ''); },
-      rule: function (key) { return key ? D.get(RULES + '/' + key) || null : null; },
-      change: function () { return Number(D.get(STATE + '/change')) || 0; },
+      forget: function (id) { if (id) V.del(PARTS + '/' + id); },
+      forgetAll: function () { Object.keys(V.branch(PARTS)).forEach(function (id) { V.del(PARTS + '/' + id); }); },
+      current: function () { return String(V.get(STATE + '/current') || ''); },
+      rule: function (key) { return key ? V.get(RULES + '/' + key) || null : null; },
+      change: function () { return Number(V.get(STATE + '/change')) || 0; },
+      // A desk read answered from what is kept, as the desk would answer it, or null (cache.answer, on the home node).
+      answer: function (verb, args, room) { return cache ? cache.answer(verb, args, HOME, room) : null; },
     };
     try { Object.defineProperty(D, ATTACHED, { value: deskData }); } catch (e) { D[ATTACHED] = deskData; }
     (root.spirit = root.spirit || {}).deskData = deskData;

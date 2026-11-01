@@ -43,10 +43,11 @@
   var escapeHtml = function (s) { return window.spirit.escapeHtml(String(s == null ? '' : s)); };
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). Its marks are the icon element (goal/G41.23; Andy, goal/G41.21: "this
   // element will replace icons painting all shell elements and apps.").
+  // The node's contacts are the contact family's cache (goal/G41.28): its manager comes with the parts.
   var parts = function () {
     return Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js'].map(function (p) {
       return window.spirit.require ? window.spirit.require(p) : null;
-    }));
+    }).concat([typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('contact')).then(null, function () {}) : null]));
   };
 
   function parseRow(item) {
@@ -188,10 +189,10 @@
         placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
         all: isPane ? undefined : options.all,
         // A VIEW OF spirit.data (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
-        // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contacts' own element
-        // keeps (shell/js/contacts/), so a pick finds what any list of contacts was answered; an ID table of another
+        // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contact family's manager
+        // keeps (spirit.contactData.branch), so a pick finds what any list of contacts was answered; an ID table of another
         // family is the branch its caller names (options.data); a caller's own rows are the caller's.
-        data: options.data || (!table && typeof options.search !== 'function' && !Array.isArray(options.contacts) ? 'contacts' : undefined),
+        data: options.data || (!table && typeof options.search !== 'function' && !Array.isArray(options.contacts) && window.spirit.contactData ? window.spirit.contactData.branch : undefined),
         api: api,
         server: 'node',
         verb: 'contact.search',

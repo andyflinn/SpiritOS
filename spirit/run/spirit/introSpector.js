@@ -114,6 +114,17 @@ function fsVerbs(dir, prefix) {
     try { const s = fs.statSync(inside(a.path)); return { size: s.size, mtimeMs: s.mtimeMs, birthtimeMs: s.birthtimeMs }; } catch (e) { if (e && e.refusal) throw e; return {}; }
   } };
   v[prefix + 'FS.fileExists'] = { request: { path: '' }, reply: { exists: false }, handler: function (a) { return { exists: fs.existsSync(inside(a.path)) }; } };
+  // WHERE A FILE OF THE FOLDER IS, FROM THE RUN ROOT (goal/G41.28; Andy, his approval set unless a valid objection, and
+  // wsl withdrew its own): the path a GET of the node takes, so a file of any size travels as a GET does, on loopback and
+  // through the face alike (faceHome streams it in pieces), where loadFile answers one answer. null when the folder holds
+  // no such file. Owner only and ungrantable, as the whole FS group (apiDoor, apiAuth).
+  v[prefix + 'FS.path'] = { request: { path: '' }, reply: {}, handler: function (a) {
+    const full = inside(a.path);
+    if (!fs.existsSync(full) || !fs.statSync(full).isFile()) return { path: null };
+    const rel = path.relative(fileSystem.ROOT_DIR, full);
+    if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) return { path: null };
+    return { path: rel.split(path.sep).join('/') };
+  } };
   v[prefix + 'FS.loadJsonValue'] = { request: { path: '' }, reply: {}, handler: function (a) {
     const text = read(inside(a.path));
     try { return { value: text == null ? null : JSON.parse(text) }; } catch (e) { return { value: null }; }

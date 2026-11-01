@@ -247,10 +247,14 @@ function createAppServer(verbs, opts) {
         // NO OVERSIZED REPLY LEAVES ANY SERVER. Andy: "the shared layer MUST instantly reject a payload, when the
         // json exceeds the maximum size, that will make this never happen again." Measured here, where every
         // server's answer is written, against one answer (limits.ANSWER_MAX); one over it is refused by name.
+        // THE OWNER ON LOOPBACK IS EXEMPT (goal/G41.28; Andy: "let's do that. my decision, and not a bad one, since we
+        // already decided that each node only reads code from it's own drive...."): his answer travels nowhere. The
+        // node alone sets the mark, on its own pipe, for a call its loopback door took.
         let text = JSON.stringify(a.body);
         const max = limits.ANSWER_MAX;
         const bytes = Buffer.byteLength(text, 'utf8');
-        if (bytes > max) {
+        const local = httpReq.headers['x-spirit-owner'] === '1' && httpReq.headers['x-spirit-loopback'] === '1';
+        if (bytes > max && !local) {
           a = refusal('app-answer-too-large', { bytes: bytes, max: max });
           text = JSON.stringify(a.body);
         }
@@ -382,7 +386,7 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
 // sets, 4 MB per sender by default." opts.stream.cache: true, or { limit } in bytes. "The cache keeps everything the
 // server sends, every goal, no filtering on the client side", per sender, in
-// relay-state/process/<client server>/cache-<sender key in hex>.json under the run root, saved as it changes and read
+// relay-state/<client server>/<sender key in base64url>.json under the run root (goal/G41.28), saved as it changes and read
 // back into the data set at the start, before any subscribe. The rows are kept as the sender sent them.
 // THE SENDER'S OWN api.js DOES THE CACHE'S WORK (box v15: "That api.js is the client's own: its appServer takes it from
 // the client's node ... never from the working folder and never the text a peer sends. No peer's code runs in the
@@ -404,8 +408,10 @@ function dataSet() {
 // paths are what the row wrote into the data set (spiritData recording), so a row that goes takes them with it.
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
-function hexKey(key) { return Buffer.from(String(key || ''), 'base64').toString('hex'); }
-function cacheFile(key) { return path.join(RUN_ROOT, 'relay-state', 'process', following.name, 'cache-' + hexKey(key) + '.json'); }
+// THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28; Andy, the box: "this way an appServer in client-mode can derive the
+// name of it's ./relay-state/<appServerName>/<server-public-key-in-base64url>.json"): the key as spirit.data names the node.
+function cacheDir() { return path.join(RUN_ROOT, 'relay-state', following.name); }
+function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
 // clientCacheManager.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
@@ -427,9 +433,10 @@ function senderOf(key, family) {
   return st;
 }
 // A row into the data set through the translator, answering the paths it wrote.
-function written(row) {
+// Filed under the sender's node (goal/G41.28): the data set stamps the row's job with it.
+function written(st, row) {
   const D = dataSet();
-  return D.recording(function () { D.take({ module: following.module, data: {}, app: row }); });
+  return D.recording(function () { D.take({ module: following.module, data: {}, app: row }, st.key); });
 }
 // THE BYTES OF A CACHE FILE, counted, never characters: its envelope and each row's JSON, a comma between rows.
 const rowBytes = new WeakMap();
@@ -471,17 +478,17 @@ function keepRow(st, rec) {
     if (!Array.isArray(left)) left = shedOldest(rows, limit, bytes);
     const stay = new Set(left);
     kept = placed.filter(function (r) { return stay.has(r.row); });
-    rewrite(kept, placed.filter(function (r) { return !stay.has(r.row); }));
+    rewrite(st, kept, placed.filter(function (r) { return !stay.has(r.row); }));
   }
   st.rows = kept;
 }
-function rewrite(kept, gone) {
+function rewrite(st, kept, gone) {
   const D = dataSet();
   const lost = new Set();
   gone.forEach(function (r) { r.paths.forEach(function (p) { lost.add(p); }); });
   if (!lost.size) return;
   lost.forEach(function (p) { D.del(p); });
-  kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(r.row); });
+  kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(st, r.row); });
 }
 // THE PUSH HAS LANDED WHOLE: its rows take precedence over what was kept, and nothing kept is dropped (goal/G41.15;
 // Andy: "make sure the deskClient doesn't loose cached info outside the current goal", and Q1: "nothing drops from the
@@ -509,18 +516,18 @@ function saveCache(st) {
 }
 // READ BACK AT THE START, BEFORE ANY SUBSCRIBE: every sender's cache file of this server, each row written again.
 function restoreCaches() {
-  const dir = path.join(RUN_ROOT, 'relay-state', 'process', following.name);
+  const dir = cacheDir();
   let names = [];
   try { names = fs.readdirSync(dir); } catch (e) { return; }
-  names.filter(function (f) { return /^cache-[0-9a-f]+\.json$/.test(f); }).forEach(function (f) {
+  names.filter(function (f) { return /^[A-Za-z0-9_-]+\.json$/.test(f); }).forEach(function (f) {
     let kept = null;
     try { kept = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch (e) { kept = null; }
-    if (!isPlain(kept) || typeof kept.key !== 'string' || 'cache-' + hexKey(kept.key) + '.json' !== f || !Array.isArray(kept.rows)) return;
+    if (!isPlain(kept) || typeof kept.key !== 'string' || dataSet().nodeId(kept.key) + '.json' !== f || !Array.isArray(kept.rows)) return;
     const st = senderOf(kept.key, String(kept.family || ''));
     if (!st.cached) return;
     st.run = typeof kept.run === 'string' ? kept.run : '';
     st.n = Number.isInteger(kept.n) && kept.n >= 0 ? kept.n : 0;
-    kept.rows.filter(isPlain).forEach(function (row) { st.rows.push({ row: row, paths: written(row) }); });
+    kept.rows.filter(isPlain).forEach(function (row) { st.rows.push({ row: row, paths: written(st, row) }); });
   });
 }
 // One entry of a bundle, taken.
@@ -534,7 +541,7 @@ function heard(st, from, e) {
     return null;
   }
   if (!isPlain(e.row)) return null;
-  const rec = { row: e.row, paths: written(e.row) };
+  const rec = { row: e.row, paths: written(st, e.row) };
   if (e.full === true) st.pushing.push(rec);
   else { keepRow(st, rec); st.run = e.run; st.n = e.n; saveSoon(st); }
   // Then the server's own word on it.
@@ -857,7 +864,7 @@ function serve(verbs, opts) {
   s.cached = function (key, verb, args) {
     const st = senders.get(String(key || ''));
     if (!st || !st.api || typeof st.api.answer !== 'function') return null;
-    try { return st.api.answer(String(verb), args || {}, dataSet(), ANSWER_ROOM) || null; } catch (e) { return null; }
+    try { return st.api.answer(String(verb), args || {}, dataSet().at(st.key, st.family), ANSWER_ROOM) || null; } catch (e) { return null; }
   };
   s.query = function (key, verb, args, how) {
     const k = String(key || '');
@@ -871,7 +878,7 @@ function serve(verbs, opts) {
       return p[v](args || {});
     })).then(function (r) {
       if (r.status !== 200 || !isPlain(r.body)) return null;
-      if (st.api && typeof st.api.took === 'function') { try { st.api.took(v, args || {}, r.body, dataSet()); } catch (e) { /* the answer stands */ } }
+      if (st.api && typeof st.api.took === 'function') { try { st.api.took(v, args || {}, r.body, dataSet().at(st.key, st.family)); } catch (e) { /* the answer stands */ } }
       return r.body;
     });
   };

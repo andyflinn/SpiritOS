@@ -116,13 +116,16 @@ function createAppClient(opts) {
     if (!caller || typeof caller !== 'object') return undefined;
     const h = {};
     if (caller.owner === true) h['X-Spirit-Owner'] = '1';
+    // The owner on loopback (goal/G41.28): his answer travels nowhere, so no ANSWER_MAX holds it (the server's own check,
+    // and this file's read below). Only the node's loopback door sets it (verbTable.js).
+    if (caller.owner === true && caller.loopback === true) h['X-Spirit-Loopback'] = '1';
     if (typeof caller.key === 'string' && caller.key) h['X-Spirit-Caller'] = caller.key;
     if (typeof caller.label === 'string' && caller.label) h['X-Spirit-Label'] = caller.label;
     return Object.keys(h).length ? h : undefined;
   }
   function knock(row, request_, caller) {
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
-      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
+      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: caller && caller.owner === true && caller.loopback === true ? Infinity : ANSWER_MAX,
       headers: callerHeaders(caller),
     })).then(function (a) {
       if (!a || a.refused) {

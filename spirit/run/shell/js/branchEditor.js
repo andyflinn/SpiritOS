@@ -24,7 +24,8 @@
     // [All Verbs ▾] [Add]"): ➕, the family selector in its span, its verb half with it, Add its button.
     var form = E.rowForm.create(box, { icon: '➕', button: 'Add' });
     form.root.className += ' branch-editor-add';
-    var family = E.apiFamilySelector.create(form.span, { all: 'choose a family…' });
+    // A branch is a grant's part: only what may be granted is offered (goal/G41.28, the FS group never).
+    var family = E.apiFamilySelector.create(form.span, { all: 'choose a family…', grantable: true });
     var add = form.button;
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
@@ -35,11 +36,11 @@
 
     function say(text) { said.textContent = String(text || ''); }
     // WHAT IT ADDS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-    // changes shit it listens to fucking update via the spirit object"): the branches branch the branch rows keep. The
-    // branch asked for, once there, is said added.
+    // changes shit it listens to fucking update via the spirit object"): the branches the auth family's cache keeps
+    // (spirit.authData.branches). The branch asked for, once there, is said added.
     var waiting = null;
-    var D = window.spirit.data;
-    var off = D ? D.watch('branches', function (p, v) {
+    var A = window.spirit.authData;
+    var off = A ? A.branches.watch(function (id, v) {
       if (!waiting || !v) return;
       if (Number(v.bundle) === waiting.bundle && String(v.family) === waiting.family && String(v.verb || '') === waiting.verb) { waiting = null; say('added'); }
     }) : null;

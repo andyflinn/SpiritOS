@@ -12,27 +12,19 @@
 
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
-  var parts = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null);
+  // The node family's cache manager comes with it, as part of its tree: the keeper of the api tree (goal/G41.28).
+  var parts = Promise.all([window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null,
+    typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('node')).then(null, function () {}) : null]);
 
-  // THE NODE'S API TREE IN spirit.data, THIS FILE'S TO KEEP (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the
-  // node's api tree in an apiTree branch of spirit.data, read again when a server job changes, and the family, verb and
-  // app-server selectors draw from it?" "yes."): apiTree, family -> { name }, and apiVerbs, 'family.verb' -> { family,
-  // name }, as apiTreeIndex reads the tree (a server that did not answer left out, DEBUG never offered). Read again, the
-  // tree replaces both whole. A server job changing on the stream reads it again: one translator for every selector.
+  // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
+  // apiTree branch of spirit.data, read again when a server job changes, and the family, verb and app-server selectors
+  // draw from it?" "yes."): this selector reads it, and the node family's cache manager keeps it (spirit.nodeData:
+  // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A
+  // server job changing on the stream reads it again: one translator for every selector.
   // Another party's tree (options.tree: introSpector's peer or relay) is that party's, and stays out of it.
-  var TREE = 'apiTree';
-  var VERBS = 'apiVerbs';
   function keepTree(tree) {
-    var D = window.spirit.data;
-    var I = window.spirit.apiTreeIndex;
-    if (!D || !I) return;
-    var names = tree ? I.servers(tree) : [];
-    var verbs = {};
-    names.forEach(function (name) { I.verbs(tree, name).forEach(function (v) { verbs[name + '.' + v] = { family: name, name: v }; }); });
-    Object.keys(D.branch(TREE)).forEach(function (k) { if (names.indexOf(k) === -1) D.del(TREE + '/' + k); });
-    Object.keys(D.branch(VERBS)).forEach(function (k) { if (!verbs[k]) D.del(VERBS + '/' + k); });
-    names.forEach(function (name) { D.set(TREE + '/' + name, { name: name }); });
-    Object.keys(verbs).forEach(function (k) { D.set(VERBS + '/' + k, verbs[k]); });
+    var N = window.spirit.nodeData;
+    if (N) N.keepTree(tree, window.spirit.apiTreeIndex);
   }
   var reading = null;
   function readOwnTree() {
@@ -95,7 +87,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'choose a server…',
         all: options.all,
-        data: own ? TREE : undefined,
+        data: own && window.spirit.nodeData ? window.spirit.nodeData.treeBranch : undefined,
         rows: own ? undefined : rows,
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
@@ -132,6 +124,5 @@
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
-  // tree and verbs: the two branches it keeps, for the verb selector that is a view of one (goal/G41.28).
-  window.spirit.elements.appServerSelector = { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; }, tree: TREE, verbs: VERBS };
+  window.spirit.elements.appServerSelector = { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } };
 })();

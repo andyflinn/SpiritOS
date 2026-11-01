@@ -210,6 +210,9 @@ function createApiAuth(opts) {
       if (!PATH.test(a.path)) return Promise.resolve(refuse('not-a-path'));
       // THE fs FAMILY IS THE OWNER'S (goal/G33.10, Andy: "i want fs to be hard-coded owner only"): never granted.
       if (a.path.split('.')[0] === 'fs') return Promise.resolve(refuse('owner-only'));
+      // A FAMILY'S FS VERBS ARE THE OWNER'S, on every family (goal/G41.28; Andy: "we also need to make the FS. verb group
+      // \"owner-only\""): never granted.
+      if (a.path.split('.')[1] === 'FS') return Promise.resolve(refuse('owner-only'));
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that
@@ -310,6 +313,9 @@ function createApiAuth(opts) {
         if (!isId(a.bundle) || !text(a.family) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
         if (!bundles().get(a.bundle)) return Promise.resolve(refuse('no-such-bundle'));
         const verb = a.verb || '';
+        // NO FS VERB IN A BRANCH (goal/G41.28; Andy: "so the introSpector gets the FS group, BUT the auth.branch won't see
+        // those verbs"): a bundle is a grant, and every family's FS group is the owner's alone.
+        if (verb.indexOf('FS.') === 0) return Promise.resolve(refuse('owner-only'));
         return branchWhy(a.family, verb).then(function (why) {
           if (why) return refuse(why);
           if (R.same(a.bundle, a.family, verb, 0)) return refuse('already-in-bundle');
@@ -327,6 +333,7 @@ function createApiAuth(opts) {
       if ((a.family !== undefined && !text(a.family)) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
       const family = a.family !== undefined ? a.family : was.family;
       const verb = a.verb !== undefined ? a.verb : was.verb;
+      if (String(verb || '').indexOf('FS.') === 0) return Promise.resolve(refuse('owner-only'));
       return branchWhy(family, verb).then(function (why) {
         if (why) return refuse(why);
         if (R.same(was.bundle, family, verb, was.id)) return refuse('already-in-bundle');

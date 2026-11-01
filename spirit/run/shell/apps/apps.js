@@ -26,19 +26,20 @@ function appsShowIcon(holder, glyph) {
   holder.textContent = '';
   if (I && typeof I.create === 'function') I.create(holder, { glyph: glyph }); else holder.textContent = glyph;
 }
-// An app: its .js, with its .json in the Files cache beside it.
+// An app: its .js, with its .json in the Files cache beside it: the node's file tree, the fs family's cache
+// (spirit.fsData, goal/G41.28), which the files row element brings.
 function appsIsApp(path) {
   var m = APP_SCRIPT.exec(String(path || ''));
-  var D = window.spirit.data;
-  return !!m && !!D && !!D.get('files/' + path.replace(/\.js$/, '.json'));
+  var F = window.spirit.fsData;
+  return !!m && !!F && !!F.file(path.replace(/\.js$/, '.json'));
 }
 // EVERY APP'S MANIFEST AND FACE PART, read once before the list is drawn (goal/G41.1, box v14 and v15), by its
 // script's path.
 var appsManifests = {};
 var appsFaces = {};
 function appsReadManifests() {
-  var D = window.spirit.data;
-  var paths = D ? Object.keys(D.branch('files')).filter(appsIsApp) : [];
+  var F = window.spirit.fsData;
+  var paths = F ? Object.keys(F.files()).filter(appsIsApp) : [];
   return spirit.ready.then(function (s) {
     return Promise.all(paths.map(function (p) {
       var manifest = Promise.resolve(s.fs.loadFile(p.replace(/\.js$/, '.json'))).then(function (t) {
@@ -161,7 +162,7 @@ function appsDraw(listHost, api) {
     var E = window.spirit.elements;
     appsList = E.probabilitySearch.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
-      data: 'files',
+      data: window.spirit.fsData ? window.spirit.fsData.branch : undefined,
       server: 'fs',
       verb: 'search',
       columns: [

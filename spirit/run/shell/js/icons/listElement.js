@@ -23,15 +23,12 @@
   var SYSTEM_SET = 'shell/json/iconSet.json';
 
   // THE ICON SET IN spirit.data (goal/G41.28; Andy, box v15: "If its rows are NOT cached in the proper place, with the shells
-  // one and only spirit.data object, then that must be fixed, too."): the icons branch, this element's, glyph -> its row.
-  // A set read again replaces it whole: a glyph the set no longer has leaves it.
-  var ICONS = 'icons';
-  function keepSet(set) {
-    var D = window.spirit && window.spirit.data;
-    if (!D) return;
-    Object.keys(D.branch(ICONS)).forEach(function (g) { if (!Object.prototype.hasOwnProperty.call(set, g)) D.del(ICONS + '/' + g); });
-    Object.keys(set).forEach(function (g) { D.set(ICONS + '/' + g, { glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }); });
-  }
+  // one and only spirit.data object, then that must be fixed, too."): kept by the fs family's cache manager, the set
+  // being a file the family serves (spirit.fsData.icons, glyph -> its row), loaded with this element. A set read again
+  // replaces it whole: a glyph the set no longer has leaves it.
+  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('fs')).then(null, function () { /* no cache */ });
+  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
+  function keepSet(set) { var F = fsData(); if (F) F.icons.keep(set); }
 
   function create(host, opts) {
     var o = opts || {};
@@ -53,8 +50,8 @@
       placeholder: o.placeholder || 'choose an icon…',
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
-      // A view of the icons branch: what keepSet writes, it draws.
-      data: ICONS,
+      // A view of the icon set's branch: what keepSet writes, it draws.
+      data: fsData() ? fsData().icons.branch : undefined,
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
@@ -65,7 +62,7 @@
       empty: o.empty || 'No icon matches.',
     });
     // The set written again (by the Icons app, or anyone): read again.
-    var unwatch = window.spirit && window.spirit.data ? window.spirit.data.watch('files/' + SET, function () { reload(); }) : null;
+    var unwatch = fsData() ? fsData().watchFile(SET, function () { reload(); }) : null;
     var destroy = list.destroy;
     list.destroy = function () { if (typeof unwatch === 'function') unwatch(); destroy(); };
     list.reload = reload;
@@ -73,5 +70,5 @@
     return list;
   }
 
-  E.iconList = { create: create, SET: SET, branch: ICONS };
+  E.iconList = { create: create, SET: SET };
 }());
