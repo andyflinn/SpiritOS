@@ -35,7 +35,7 @@ no page, so it runs in node, where `require` answers the api.
 - **seat** merges each item whose label is a JSON object. A null item, an item with no key, or a label that is not a
   JSON object is skipped.
 - **translate**:
-  - `take(job)` calls each translator's `onJob(job, api)`, and only when the job carries `data`.
+  - `take(job)` calls each translator's `onJob(job, api)` for every job, data or none (the jobs family keeps them whole), never for `null`.
   - `rename(d)` calls each translator's `onRename(d, api)`, and only when `d.key` is set.
   - A translator that throws costs the others nothing. A non-object is not registered.
 - **quietly and ready**:

@@ -183,11 +183,11 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['spirit/spiritData.js', 'process/js/desk/family/clientCacheManager.js'];
+  const REAL = ['spirit/spiritData.js', 'process/js/desk/family/clientCacheManager.js', 'process/js/backup/family/clientCacheManager.js'];
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
-    // The page's cache is the desk family's clientCacheManager.js, over the one spirit.data (goal/G41.28): both run as
+    // The page's caches are the desk and backup families' clientCacheManager.js, over the one spirit.data (goal/G41.28): both run as
     // they are, so the List is a search of what the cache holds; anything else is answered and not run.
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');

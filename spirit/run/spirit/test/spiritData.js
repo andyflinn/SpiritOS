@@ -118,7 +118,8 @@ try {
   D.rename({ caption: 'nokey' }); D.rename(null);
 } catch (e) { threw = e; }
 ok(!threw, 'take and rename survive a throwing translator and a non-object registration', 'threw ' + threw);
-ok(jobs.length === 1 && jobs[0][0].type === 'x' && jobs[0][1] === D, 'take calls onJob(job, api), only for a job carrying data',
+// Every job is handed over, data or none (goal/G41.28: the jobs family's manager keeps them whole); null is not a job.
+ok(jobs.length === 2 && jobs[0][0].type === 'x' && jobs[1][0].type === 'nodata' && jobs[0][1] === D, 'take calls onJob(job, api) for every job, data or none, and not for null',
   'jobs: ' + jobs.length);
 ok(renames.length === 1 && renames[0][0].key === 'K1' && renames[0][1] === D, 'rename calls onRename(d, api), only when d.key is set',
   'renames: ' + renames.length);
