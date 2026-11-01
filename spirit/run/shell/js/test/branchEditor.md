@@ -17,8 +17,11 @@ of itself"*). The way back is the shell's (*"the shell provides a back-button fr
   titled `Edit <label>`, and `branchEditor.create(container, options)`, which draws the same editor into the container
   and answers a handle with `destroy` (the shell's element shape, goal/G41.19).
 - Mounted, the page draws, each part made with its container (`<name>.create(container, options)`):
-  - the add form, reading `new`: one family selector, `apiFamilySelector.create(the add row, …)`, its verb half with
-    it, and an Add button in the same row;
+  - the add form, a rowForm (goal/G41.27; Andy: *"branchEditor:\n\n[➕] [choose a family… ▾] [Add]"*, then
+    *"careful, there's a hidden verb selector there that only displays when a family is selected... !\n[➕] [choose a
+    family… ▾] [All Verbs ▾] [Add]"*): it loads `shell/js/rowForm.js` itself and makes one rowForm with ➕ and Add; its
+    span holds the one family selector, `choose a family…`, its verb half with it (hidden until a family is chosen, the
+    family selector's own), and nothing else; the rowForm's button is the only Add; the word `new` is gone;
   - `branchSelector.create(the page, …)`, a pane on that bundle, its columns `family`, `verb`, `delete`.
 - Add:
   - with no family it asks nothing;

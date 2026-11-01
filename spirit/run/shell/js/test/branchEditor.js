@@ -41,9 +41,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const pages = [];
   const families = [];
   const branchSels = [];
+  const forms = [];
   let answer = function (a) { return Promise.resolve({ id: 11 }); };
   const auth = { branch: function (a) { asked.push(a); return answer(a); } };
   const STANDS = {
+    // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
+    // one does, its root appended to the container it is given, its button saying the words it was handed.
+    'shell/js/rowForm.js': function (E) { E.rowForm = { create: function (c, o) {
+      const f = { container: c, opts: o || {}, root: node('div'), span: node('span'), button: node('button') };
+      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f); return f;
+    } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'shell/js/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
     'shell/js/branchSelector.js': function (E) { E.branchSelector = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
@@ -79,14 +86,21 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
     'its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box));
 
-  test.subHeading('the add form: new [family, its verb] [Add]');
-  // Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself": the box's two dropdowns are its two halves.
+  test.subHeading('the add form, a rowForm: ➕ [family, its verb] [Add] (goal/G41.27)');
+  // Andy, on G41.27: "branchEditor:\n\n[➕] [choose a family… ▾] [Add]", then "careful, there's a hidden verb selector
+  // there that only displays when a family is selected... !\n[➕] [choose a family… ▾] [All Verbs ▾] [Add]". And
+  // "apiFamiliySelector.js will use apiVerbSelector as part of itself": the two dropdowns are its two halves, the verb's
+  // hiding until a family is chosen the family selector's own (its test).
   const fam = families[0];
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
-  ok(!!fam && !!add && families.length === 1 && all(box).indexOf(fam) !== -1 && fam.container.kids.indexOf(add) !== -1,
-    'it draws one family selector, apiFamilySelector.create(the add row), and an Add button beside it', 'family ' + families.length + ', Add ' + !!add + ', same row ' + !!(fam && add && fam.container.kids.indexOf(add) !== -1));
+  ok(required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
+  const rf = forms[0];
+  ok(forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in the page, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));
+  const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
+  ok(families.length === 1 && inSpan && fam.o.all === 'choose a family…', 'its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 'family ' + families.length + ', in the span ' + inSpan + ', all ' + short(fam && fam.o.all));
+  ok(!!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1, 'its Add is the rowForm\'s button, the only Add', 'Add is the form\'s ' + !!(rf && add === rf.button));
   if (!fam || !add) return;
-  ok(/\bnew\b/.test(text(box)), 'the row reads new', 'text: ' + short(text(box)));
+  ok(!/\bnew\b/.test(text(box)), 'the word "new" at its start is gone, ➕ in its place', 'text: ' + short(text(box)));
   add.dispatchEvent({ type: 'click' });
   await settle();
   ok(asked.length === 0, 'Add with no family asks nothing', 'asked: ' + short(asked));
