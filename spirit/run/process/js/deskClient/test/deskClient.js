@@ -69,12 +69,14 @@ const appServerStub = {
       const t = require(path.resolve(String(opts.stream.translator)));
       if (t && typeof t.attach === 'function') t.attach(globalThis);
     }
-    if (restoreRows) { restoreRows.forEach(function (r) { curD.take({ module: 'process/js/desk', data: {}, app: r }); }); restoreRows = null; }
+    // Each row under its sender, as appServer's restoreCaches writes it (written(st, row): take(job, st.key); goal/G41.28).
+    if (restoreRows) { restoreRows.forEach(function (r) { curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK); }); restoreRows = null; }
     served = { verbs: verbs, opts: opts || {} };
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
   publish: function () {},
-  // goal/G41.12: the cache is appServer's (cache-<sender key in hex>.json); deskClient's cache.dump asks it to save now.
+  // goal/G41.12: the cache is appServer's (relay-state/<server>/<sender key in base64url>.json, goal/G41.28); deskClient's
+  // cache.dump asks it to save now.
   saveCaches: function () { cacheSaves += 1; return cacheAnswer.slice(); },
 };
 globalThis.spirit = {
@@ -100,11 +102,13 @@ process.argv = [process.argv[0], FILE, JSON.stringify({ historyMax: 1000, resubs
   '--node', JSON.stringify({ name: SELF, publicKey: SELF_KEY, ownerKey: '' })];
 
 // ── THE STREAM, FED BY HAND ──────────────────────────────────────────
+// Each row under the node that sent it, the desk (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
+// SERVER-NODE-ID at it's lowest level."): appServer's streamListener takes it with its sender, take(job, key).
 let change = 0;
 function push(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
-  curD.take({ module: 'process/js/desk', data: {}, app: r });
+  curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK);
   cacheRows = DESK_API.cache.keep(cacheRows, r);
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
 }
@@ -115,13 +119,17 @@ function pushNoted(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
   let said = null;
-  curD.noting(function () { curD.take({ module: 'process/js/desk', data: {}, app: r }); said = served.opts.stream.onRow(r, DESK); });
+  curD.noting(function () { curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK); said = served.opts.stream.onRow(r, DESK); });
   return Promise.resolve(said);
 }
 let tick = Date.parse('2030-01-01T00:00:00Z');
 const at = function () { tick += 1000; return new Date(tick).toISOString(); };
 function factsOf(extra) { return Object.assign({ id: ITEM, goal: GOAL, title: 'an item', version: 1, with: '', phase: '', go: true }, extra || {}); }
 const verb = function (name) { return served.verbs[name]; };
+// WHAT THE CACHE HOLDS, ASKED OF THE DESK'S MANAGER (goal/G41.28; Andy: "doesn't the fucking ... clientCacheManager.js take
+// care of that"): spirit.deskData answers by what a thing is, the running deskClient's (a restart attaches it anew); no
+// branch is named here.
+const DD = function () { return globalThis.spirit.deskData || { item: function () { return null; }, part: function () { return null; }, current: function () { return ''; }, change: function () { return 0; } }; };
 function call(name, args, caller) { return Promise.resolve().then(function () { return verb(name).handler(args || {}, caller || OWNER); }); }
 function ask(name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}) }); }
 // One wait, as the agent's listener asks it: its lines, or a refusal's code.
@@ -145,7 +153,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
   await settle();
 
-  // goal/G41.12: the cache is appServer's, saved as relay-state/process/deskClient/cache-<desk key in hex>.json; deskClient
+  // goal/G41.12: the cache is appServer's, saved as relay-state/deskClient/<desk key in base64url>.json (goal/G41.28); deskClient
   // keeps no cache file of its own, and its cache.dump asks appServer to save now (Andy, goal/G41.15: "the 3 cache.json
   // checks look for the cache in appServer's own file, as G41.12 put it").
   test.subHeading('the cache dump: one owner-only verb, appServer\'s own file');
@@ -161,7 +169,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
     let none = null;
     try { none = await call('cache.dump', {}); } catch (e) { none = { threw: e.refusal || e.message }; }
     ok(none && none.threw === 'not-saved', 'with no cache kept yet, the dump is refused not-saved', 'answer: ' + short(none));
-    cacheAnswer = [{ file: 'cache-' + Buffer.from(DESK, 'base64').toString('hex') + '.json', bytes: 1234 }];
+    cacheAnswer = [{ file: D.nodeId(DESK) + '.json', bytes: 1234 }];
     let r = null;
     try { r = await call('cache.dump', { path: '../elsewhere.json' }); } catch (e) { r = { threw: e.refusal || e.message }; }
     ok(r && r.file === cacheAnswer[0].file && r.bytes === 1234 && cacheSaves === 2, 'the owner\'s dump asks appServer to save its cache now, and answers appServer\'s file and its bytes', 'answer: ' + short(r) + ', saves ' + cacheSaves);
@@ -360,7 +368,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });
-  ok(!!curD.get('desk/goal/G9.6') && !fs.existsSync(path.join(STATE, 'cache.json')), 'a row lands in the data set, and deskClient writes no cache.json of its own', 'held: ' + !!curD.get('desk/goal/G9.6') + ', cache.json: ' + fs.existsSync(path.join(STATE, 'cache.json')));
+  ok(!!DD().item('goal/G9.6') && !fs.existsSync(path.join(STATE, 'cache.json')), 'a row lands in the data set, and deskClient writes no cache.json of its own', 'held: ' + !!DD().item('goal/G9.6') + ', cache.json: ' + fs.existsSync(path.join(STATE, 'cache.json')));
 
   // goal/G41.15, Andy: "deskClient keeps what it cached outside the current goal; a push of one goal never drops another's",
   // and Q1: "nothing drops from the cache, unless the api.js from the server says so". A push is appServer's to land
@@ -372,24 +380,24 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM7, title: 'left out of the next push' }) });
   await push({ verb: 'goal.whole', goal: 8, item: factsOf({ id: OTHER_GOAL_ITEM, goal: 'goal/G8', title: 'another goal' }) });
   await settle();
-  const partBefore = curD.get('deskItem/' + ITEM);
+  const partBefore = DD().part(ITEM);
   // The current goal pushed whole again, naming every item but ITEM7, and no item of goal/G8.
   await push({ verb: 'goal.whole', goal: 9, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
   await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM4 }) });
   await settle();
-  ok(!!curD.get('desk/' + ITEM7) && !!curD.get('desk/' + ITEM) && !!curD.get('desk/' + ITEM4), 'an item the push leaves out stays kept, beside the ones it carries', short({ item7: !!curD.get('desk/' + ITEM7), item: !!curD.get('desk/' + ITEM), item4: !!curD.get('desk/' + ITEM4) }));
-  ok(!!curD.get('desk/' + OTHER_GOAL_ITEM), 'and another goal\'s items stay kept', 'goal/G8.1: ' + short(curD.get('desk/' + OTHER_GOAL_ITEM)));
-  const partAfter = curD.get('deskItem/' + ITEM);
-  ok(curD.get('deskState/current') === GOAL && curD.get('deskState/change') !== undefined && !!partBefore && !!partAfter && Array.isArray(partAfter.files),
-    'the push makes its goal current; deskState/change and a kept file list are never swept', short({ current: curD.get('deskState/current'), change: curD.get('deskState/change'), part: partAfter && Object.keys(partAfter) }));
+  ok(!!DD().item(ITEM7) && !!DD().item(ITEM) && !!DD().item(ITEM4), 'an item the push leaves out stays kept, beside the ones it carries', short({ item7: !!DD().item(ITEM7), item: !!DD().item(ITEM), item4: !!DD().item(ITEM4) }));
+  ok(!!DD().item(OTHER_GOAL_ITEM), 'and another goal\'s items stay kept', 'goal/G8.1: ' + short(DD().item(OTHER_GOAL_ITEM)));
+  const partAfter = DD().part(ITEM);
+  ok(DD().current() === GOAL && DD().change() > 0 && !!partBefore && !!partAfter && Array.isArray(partAfter.files),
+    'the push makes its goal current; the change heard and a kept file list are never swept', short({ current: DD().current(), change: DD().change(), part: partAfter && Object.keys(partAfter) }));
 
   // goal/G41.12: reading the cache back, and the position (run, n) a subscribe carries, are appServer's
   // (spirit/test/appServer.js: "started again, it reads its cache back before it subscribes"); deskClient subscribes to
   // the desk and leaves the position to appServer.
   test.subHeading('a restarted deskClient subscribes to its desk, the position appServer\'s');
   await new Promise(function (r) { setTimeout(r, 40); });
-  const heard = Number(curD.get('deskState/change')) || 0;
+  const heard = DD().change();
   [FILE, path.join(RUN, 'spirit', 'spiritData.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
   curD = require(path.join(RUN, 'spirit', 'spiritData.js'));
   globalThis.spirit.data = curD;
@@ -466,8 +474,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ];
   for (const row of pushed) await push(row);
   await settle();
-  ok(!curD.get('desk/' + G + '7') && !!curD.get('desk/goal/G8.1') && (curD.get('desk/' + ITEM) || {}).title === 'fresh title',
-    'an item of the goal the push lacks is gone, its stale row replaced; another goal\'s item stays', short({ g97: curD.get('desk/' + G + '7'), g81: !!curD.get('desk/goal/G8.1'), item: (curD.get('desk/' + ITEM) || {}).title }));
+  ok(!DD().item(G + '7') && !!DD().item('goal/G8.1') && (DD().item(ITEM) || {}).title === 'fresh title',
+    'an item of the goal the push lacks is gone, its stale row replaced; another goal\'s item stays', short({ g97: DD().item(G + '7'), g81: !!DD().item('goal/G8.1'), item: (DD().item(ITEM) || {}).title }));
   const boxNow = await ask('item.box', { id: ITEM });
   ok(boxNow && boxNow.version === 8, 'a part kept from before the push is not answered from the old copy: the box is read afresh (v8, not the kept v6)', 'item.box: ' + short(boxNow));
   const filesNow = await ask('item.files', { id: ITEM });
@@ -476,7 +484,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const late = { change: C - 1, verb: 'goal.whole', goal: 9, key: { goal: 9, item: 1 }, item: factsOf({ title: 'late title', version: 4 }) };
   await push(late);
   await settle();
-  ok((curD.get('desk/' + ITEM) || {}).title === 'fresh title', 'the read pointer is at the push\'s change: a row of an older change, coming after it, does not undo the fresh copy', 'item: ' + short(curD.get('desk/' + ITEM)));
+  ok((DD().item(ITEM) || {}).title === 'fresh title', 'the read pointer is at the push\'s change: a row of an older change, coming after it, does not undo the fresh copy', 'item: ' + short(DD().item(ITEM)));
 
   test.subHeading('push goal (goal/G41.22): the same wake hands every line of his for it that nobody took, nothing it read');
   const owedWake = await next(read);
@@ -524,7 +532,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   restoreRows = cacheRows.slice();
   try { require(FILE); } catch (e) { test.fail('the restarted deskClient threw as it loaded: ' + e.message); }
   await settle();
-  ok(!curD.get('desk/' + G + '7') && (curD.get('desk/' + ITEM) || {}).title === 'fresh title', 'what the push replaced stays replaced after the restart: the item it lacked is not read back, nor a stale row', short({ g97: curD.get('desk/' + G + '7'), item: (curD.get('desk/' + ITEM) || {}).title }));
+  ok(!DD().item(G + '7') && (DD().item(ITEM) || {}).title === 'fresh title', 'what the push replaced stays replaced after the restart: the item it lacked is not read back, nor a stale row', short({ g97: DD().item(G + '7'), item: (DD().item(ITEM) || {}).title }));
   // The catch-up after it hands rows already handed again: D was read, E was not.
   const again = cacheRows.filter(function (r) { return r.table === 'chat' && r.row && /wake D|handed, never read/.test(String(r.row.text)); });
   for (const r of again) await Promise.resolve(served.opts.stream.onRow(r, DESK));

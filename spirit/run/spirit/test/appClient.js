@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-require(path.join(RUN, 'spirit.js'));
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
@@ -43,7 +43,7 @@ test.startTest('appClient.js: the node asks its app servers');
       'the owner\'s load of ' + size + ' bytes answered ' + got.status + ': ' + (typeof back === 'string' ? back.length + ' bytes' : short(got.text)));
   } finally {
     try { await post('fileServer.FS.deleteFile', { path: name }); } catch (e) { /* judged below */ }
-    try { fs.rmSync(path.join(RUN, 'process', 'js', 'fileServer', 'family', name), { force: true }); } catch (e) { /* gone */ }
+    try { fs.rmSync(path.join(RUN, path.dirname(familyPath('fileServer')), name), { force: true }); } catch (e) { /* gone */ }
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     await H.sleep(300);
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

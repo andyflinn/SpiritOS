@@ -162,6 +162,8 @@ function armingStub(document, made) {
 const vm = require('vm');
 const raw = fs.readFileSync(FILE, 'utf8');
 
+// The node that served the page, its public key in base64 with a + and a / in it, as a node's key is.
+const PAGE_NODE_KEY = 'Pg+e/NoDe0123456789abcdefghijklmnopqrstuvw=';
 function deskWorld(goal, items) {
   const document = makeDom();
   const made = [];
@@ -199,6 +201,11 @@ function deskWorld(goal, items) {
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.require('spirit/spiritData.js');
+  // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the key as
+  // spirit.node.key, so a page files its own node's rows under it?" "yes."): as spirit.start does once node.card answers,
+  // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
+  win.spirit.node = { key: PAGE_NODE_KEY };
+  win.spirit.data.home(PAGE_NODE_KEY);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };

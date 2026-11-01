@@ -26,12 +26,21 @@ function world(withData) {
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const D = win.spirit.data;
   let n = 0;
-  return { win: win, D: D, X: win.spirit.deskData,
-    // A row as the stream hands it: a job of module process/js/desk whose app is the desk's publish.
-    job: function (app, module) { D.take({ id: 'j' + (++n), module: module || 'process/js/desk', data: {}, app: app }); },
-    item: function (id) { return D.get('desk/' + id); },
-    part: function (id) { return D.get('deskItem/' + id); } };
+  const X = win.spirit.deskData;
+  // THE ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY SERVER-NODE-ID at
+  // it's lowest level."): a row comes as appServer hands it, with its sender's key (take(job, key)); every read is
+  // spirit.deskData's, which alone names the desk's branches.
+  return { win: win, D: D, X: X,
+    // A row as the stream hands it: a job of module process/js/desk whose app is the desk's publish, from SENDER.
+    job: function (app, module) { D.take({ id: 'j' + (++n), module: module || 'process/js/desk', data: {}, app: app }, SENDER); },
+    item: function (id) { return X ? X.item(id) : undefined; },
+    part: function (id) { return X ? X.part(id) : undefined; },
+    current: function () { return X ? X.current() : ''; },
+    change: function () { return X ? X.change() : 0; },
+    ids: function () { return X ? Object.keys(X.items()) : []; } };
 }
+// The sender's public key, base64 with a + and a / in it, as a node's key is.
+const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const it = function (id, goal, more) { return Object.assign({ id: id, goal: goal, title: id }, more || {}); };
 const whole = function (f) { return { verb: 'goal.whole', item: f }; };
 
@@ -74,46 +83,46 @@ ok(!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function
 
 test.subHeading('a goal pushed whole: its rows kept, it is current');
 w.job(whole(it('goal/G9.1', 'goal/G9')));
-ok(w.item('goal/G9.1') && w.item('goal/G9.1').title === 'goal/G9.1' && w.D.get('deskState/current') === 'goal/G9', 'goal.whole keeps desk/<id> and makes its goal deskState/current', short({ row: w.item('goal/G9.1'), current: w.D.get('deskState/current') }));
+ok(w.item('goal/G9.1') && w.item('goal/G9.1').title === 'goal/G9.1' && w.current() === 'goal/G9', 'goal.whole keeps the item\'s facts and makes its goal the current one', short({ row: w.item('goal/G9.1'), current: w.current() }));
 w.job({ verb: 'goal.whole', item: JSON.stringify(it('goal/G9', '')) });
-ok(w.item('goal/G9') && w.D.get('deskState/current') === 'goal/G9', 'an item as a JSON string is read; a goal (goal \'\') is its own goal', short(w.item('goal/G9')));
+ok(w.item('goal/G9') && w.current() === 'goal/G9', 'an item as a JSON string is read; a goal (goal \'\') is its own goal', short(w.item('goal/G9')));
 w.job({ verb: 'goal.whole', item: { title: 'no id' } }); w.job({ verb: 'goal.whole', item: '{broken' }); w.job(null); w.job('text');
-ok(Object.keys(w.D.branch('desk')).length === 2, 'facts with no id, broken JSON, a non-object: nothing kept', short(Object.keys(w.D.branch('desk'))));
+ok(w.ids().length === 2, 'facts with no id, broken JSON, a non-object: nothing kept', short(w.ids()));
 w.job(whole(it('goal/G0', '')));
 w.job({ verb: 'item.row', item: it('goal/G0.3', 'goal/G0') });
-ok(w.D.get('deskState/current') === 'goal/G9' && w.item('goal/G0') && w.item('goal/G0.3'), 'the group chat\'s rows are kept, and never make it current', 'current ' + w.D.get('deskState/current'));
+ok(w.current() === 'goal/G9' && w.item('goal/G0') && w.item('goal/G0.3'), 'the group chat\'s rows are kept, and never make it current', 'current ' + w.current());
 w.job({ verb: 'item.row', item: it('goal/G7.1', 'goal/G7') });
-ok(w.D.get('deskState/current') === 'goal/G9' && w.item('goal/G9.1') && w.item('goal/G7.1'), 'a row that is not goal.whole is kept and drops nothing', 'current ' + w.D.get('deskState/current'));
+ok(w.current() === 'goal/G9' && w.item('goal/G9.1') && w.item('goal/G7.1'), 'a row that is not goal.whole is kept and drops nothing', 'current ' + w.current());
 
 test.subHeading('another goal pushed whole: it is current, and nothing kept of others goes (goal/G41.12)');
 // Andy, goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client
 // side"; goal/G41.24, his decision: "the three bundle checks go, and the other three assert my G41.12 words."
 w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
 w.job(whole(it('goal/G8.1', 'goal/G8')));
-ok(w.D.get('deskState/current') === 'goal/G8' && !!w.item('goal/G9.1') && !!w.item('goal/G9') && !!w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && !!w.item('goal/G7.1'), 'it is current, and goal/G9\'s rows and parts stay, and so does another goal\'s row: every goal is kept',
-  short(Object.keys(w.D.branch('desk'))));
-ok(w.item('goal/G0') && w.item('goal/G0.3') && w.item('goal/G8.1'), 'the group chat and its items stay; the new goal\'s row is kept', short(Object.keys(w.D.branch('desk'))));
+ok(w.current() === 'goal/G8' && !!w.item('goal/G9.1') && !!w.item('goal/G9') && !!w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && !!w.item('goal/G7.1'), 'it is current, and goal/G9\'s rows and parts stay, and so does another goal\'s row: every goal is kept',
+  short(w.ids()));
+ok(w.item('goal/G0') && w.item('goal/G0.3') && w.item('goal/G8.1'), 'the group chat and its items stay; the new goal\'s row is kept', short(w.ids()));
 w.job({ verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 w.job(whole(it('goal/G6', '')));
-ok(w.D.get('deskState/current') === 'goal/G6' && w.item('goal/G6.1') && w.item('goal/G6'), 'a row of the new goal that came before it was pushed stays', short(Object.keys(w.D.branch('desk'))));
+ok(w.current() === 'goal/G6' && w.item('goal/G6.1') && w.item('goal/G6'), 'a row of the new goal that came before it was pushed stays', short(w.ids()));
 w.job(whole(it('goal/G6.2', 'goal/G6')));
-ok(w.item('goal/G6.1') && w.item('goal/G6.2'), 'a goal.whole of the current goal drops nothing', short(Object.keys(w.D.branch('desk'))));
+ok(w.item('goal/G6.1') && w.item('goal/G6.2'), 'a goal.whole of the current goal drops nothing', short(w.ids()));
 w.job({ item: it('goal/G6.2', 'goal/G6'), removed: true });
 ok(!w.item('goal/G6.2') && !w.part('goal/G6.2'), 'a removed row deletes its facts and its parts', short(w.item('goal/G6.2')));
 
 test.subHeading('the change number: the newest heard, never lowered');
 w.job({ change: 5, verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 w.job({ change: 3, verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
-ok(w.D.get('deskState/change') === 5, 'deskState/change is raised to 5 and not lowered by 3', 'deskState/change ' + w.D.get('deskState/change'));
+ok(w.change() === 5, 'the change heard is raised to 5 and not lowered by 3', 'change ' + w.change());
 w.job({ change: '9', verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
-ok(w.D.get('deskState/change') === 5, 'a change that is not a number is not taken', 'deskState/change ' + w.D.get('deskState/change'));
+ok(w.change() === 5, 'a change that is not a number is not taken', 'change ' + w.change());
 
 test.subHeading('a bundle is appServer\'s: the translator takes one row at a time (goal/G41.12)');
 // The three bundle checks are gone (goal/G41.24, Andy: "the three bundle checks go"; "i think the translator has no
 // business knowing anything about \"bundling\""): appServer opens a bundle and hands its rows in one by one.
 const wb = world(true);
 wb.job({ verb: 'goal.whole', item: it('goal/G9.3', 'goal/G9') });
-ok(wb.item('goal/G9.3'), 'a single row is taken as it comes', short(Object.keys(wb.D.branch('desk'))));
+ok(wb.item('goal/G9.3'), 'a single row is taken as it comes', short(wb.ids()));
 
 test.subHeading('took: a part read for an item of the current goal is kept');
 const wt = world(true);
@@ -207,9 +216,9 @@ ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.pa
 test.subHeading('only the desk\'s jobs are read');
 const wm = world(true);
 wm.job(whole(it('goal/G9.1', 'goal/G9')), 'process/js/files');
-wm.D.take({ id: 'z', module: 'process/js/desk', data: {}, app: 'not an object' });
-ok(!wm.item('goal/G9.1') && !wm.D.get('deskState/current'), 'a job of another module, or an app that is no object, keeps nothing', short(Object.keys(wm.D.branch('desk'))));
+wm.D.take({ id: 'z', module: 'process/js/desk', data: {}, app: 'not an object' }, SENDER);
+ok(!wm.item('goal/G9.1') && !wm.current(), 'a job of another module, or an app that is no object, keeps nothing', short(wm.ids()));
 wm.X.published(whole(it('goal/G9.1', 'goal/G9')));
-ok(wm.item('goal/G9.1') && wm.D.get('deskState/current') === 'goal/G9', 'published takes a row handed to it directly', short(wm.item('goal/G9.1')));
+ok(wm.item('goal/G9.1') && wm.current() === 'goal/G9', 'published takes a row handed to it directly', short(wm.item('goal/G9.1')));
 
 test.reportSuccessFailureCount();

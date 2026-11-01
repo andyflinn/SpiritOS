@@ -13,24 +13,25 @@ now, in this item."*
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
   the cache rules the desk family's `api.js` held, which now holds its verbs alone.
 - deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
-- The cache file it fills stays appServer's: `relay-state/process/<client appServerName>/cache-<the sender's key in
-  hex>.json`, one per server followed (appServer.js).
+- The cache file it fills stays appServer's: `relay-state/<client appServerName>/<the sender's key in base64url>.json`,
+  one per server followed (appServer.js, goal/G41.28).
 
 ## API
 
 It registers a translator on `spirit.data` (its `onJob` reads jobs of module `process/js/desk` whose `app` is an
-object) and answers `spirit.deskData = { published(o), took(verb, args, answer) }`. Without `spirit.data` it does
-nothing. It writes only through `set`, `merge` and `del`:
-
-- `desk/<id>` an item's facts; `deskItem/<id>` the parts read so far; `deskState/current` the goal last pushed whole;
-  `deskState/change` the newest change number heard.
+object) and answers `spirit.deskData = { published(o), took(verb, args, answer), item, items, part, current, change,
+... }`. Without `spirit.data` it does nothing. It writes only through `set`, `merge` and `del`, into the desk family's
+view of the node that served the row (goal/G41.28, Andy, the box: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at
+it's lowest level."*): a row comes with its job's `fromNode`, appServer's sender. Its branches are its own and only it
+names them; the test reads through `spirit.deskData`: `item(id)` an item's facts, `items()` every one, `part(id)` the
+parts read so far, `current()` the goal last pushed whole, `change()` the newest change number heard.
 
 ## Requirements
 
-- **A row** (`item`, an object or a JSON string, with an id) is kept as `desk/<id>`; facts without an id, broken
+- **A row** (`item`, an object or a JSON string, with an id) is kept as the item's facts (`item(id)`); facts without an id, broken
   JSON and non-objects are dropped.
 - **A goal pushed whole** (`verb: 'goal.whole'`) of a goal other than the group chat (`goal/G0`) becomes
-  `deskState/current`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
+  `current()`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
   everything the server sends, every goal, no filtering on the client side"*). The group chat never becomes current.
 - **A removed row** deletes the item's facts and its parts.
 - **The change number** is raised, never lowered; a change that is not a number is not taken.
