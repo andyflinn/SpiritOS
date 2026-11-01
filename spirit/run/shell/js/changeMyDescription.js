@@ -12,6 +12,9 @@
   var E = (root.spirit = root.spirit || {}).elements = root.spirit.elements || {};
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.
   var parts = root.spirit.require ? root.spirit.require('shell/js/fieldInput.js') : Promise.resolve();
+  // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
+  // rowForm is in and create can draw it at once.
+  if (root.spirit.require) root.spirit.require('shell/js/rowForm.js');
 
   function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
   function esc(api, s) { return api && api.escapeHtml ? api.escapeHtml(s) : String(s); }
@@ -19,16 +22,15 @@
   function create(host, opts) {
     var o = opts || {};
     var api = o.api;
-    // Its blocks stacked 1em apart (rule/2), its row's items 1em apart (rule/1): the shell's stack and form classes.
+    // Its blocks stacked 1em apart (rule/2): the shell's stack class.
+    // A ROWFORM (goal/G41.27; Andy: "changeMyDescription:\n\n[✏️][Description-input][Save]"): ✏️, the input alone in its
+    // span, Save its button; the bytes left and what Save did stand below the bubble.
     host.innerHTML =
-      '<div class="stack"><div class="start-job-form card">' +
-        '<label class="field-label grow">Description' +
-          '<input type="text" data-field="description" placeholder="' + esc(api, 'a sentence somebody who has just found you would want to read') + '">' +
-        '</label>' +
-        '<button type="button" data-description="save">Save</button>' +
-      '</div>' +
+      '<div class="stack"><div data-description="form"></div>' +
       '<div data-description="left" class="job-manifest-note"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
+    var form = E.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save' });
+    form.span.innerHTML = '<input type="text" data-field="description" placeholder="' + esc(api, 'a sentence somebody who has just found you would want to read') + '">';
     var input = host.querySelector('[data-field="description"]');
     var left = host.querySelector('[data-description="left"]');
     var said = host.querySelector('[data-description="said"]');
@@ -71,7 +73,7 @@
       if (typeof e.preventDefault === 'function') e.preventDefault();
       save();
     });
-    host.querySelector('[data-description="save"]').addEventListener('click', save);
+    form.button.addEventListener('click', save);
     count();
 
     return {
