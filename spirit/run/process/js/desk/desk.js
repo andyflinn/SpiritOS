@@ -3054,7 +3054,7 @@ appServer.serve(withPlugins({
   // spirit/test/ for an item's suites, which a long list of core files would push past the room).
   'item.files': {
     request: { id: '', under: '' }, reply: { files: [{ path: '', by: '', core: false }], filesMore: false },
-    // under is optional: {id} alone answers the whole list, as the Details and deskAgent ask it.
+    // under is optional: {id} alone answers the whole list, as the Details ask it.
     accepts: function (x) {
       return !!x && typeof x === 'object' && !Array.isArray(x) && typeof x.id === 'string' &&
         Object.keys(x).every(function (k) { return k === 'id' || (k === 'under' && typeof x.under === 'string'); });

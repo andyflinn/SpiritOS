@@ -10,8 +10,7 @@
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
 //   AGENTS.md and the verb files through FS (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
-//   AGENTS.md file of the verb.json files?"). The verb file is still the allow mark: deskAgent offers a model only
-//   a verb that has one.
+//   AGENTS.md file of the verb.json files?"). The verb file is still the allow mark: a verb without one is not offered.
 //
 // WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is not the server's manifest, and that
 // parses to an object with a string description. A verb file naming a verb nobody declared is said at boot.
