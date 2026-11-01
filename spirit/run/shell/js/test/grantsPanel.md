@@ -32,8 +32,11 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
   (`auth.branch`) is its own.
 - Its selectors are made in the shell's element shape, `<name>.create(container, options)` (goal/G41.19), each in a
   container of its own, then set in the line it stands in.
-- **The grant form, one row**: "grant", the ID selector, the bundle selector, the Grant button. Both ID selectors (the
-  form's and the filter) search the ID table it was handed: its location, key and label.
+- **The grant form, a rowForm** (goal/G41.27; Andy: *"grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"*):
+  it loads `shell/js/rowForm.js` itself and makes one rowForm, its icon ➕ and its button Grant; its span holds the ID
+  selector then the bundle selector, nothing else; the word "grant" at its start is gone, and it draws no Grant button
+  of its own; the rowForm's button is the Grant, a busyButton. Both ID selectors (the form's and the filter) search the
+  ID table it was handed: its location, key and label.
 - **Its selectors in the search's 🪣 row** (goal/G41.26; Andy: *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*): it draws no filter line of its own and no
   deprecated button; it hands the grant list `selectors`, the ID filter then the family selector, each with a name and
   a test.

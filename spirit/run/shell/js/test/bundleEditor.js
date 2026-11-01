@@ -44,9 +44,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const asked = [];
   const required = [];
   const sels = [];
+  const forms = [];
   let answer = function () { return Promise.resolve({ id: 9 }); };
   const auth = { bundle: function (a) { asked.push(a); return answer(a); } };
   const STANDS = {
+    // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
+    // one does, its root appended to the container it is given, its button saying the words it was handed.
+    'shell/js/rowForm.js': function (E) { E.rowForm = { create: function (c, o) {
+      const f = { container: c, opts: o || {}, root: node('div'), span: node('span'), button: node('button') };
+      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f); return f;
+    } }; },
     'shell/js/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'shell/js/bundleSelector.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.refresh = function () { s.refreshed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
@@ -76,7 +83,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   ok(!!input && !!add, 'it draws a label input and an Add button', 'input ' + !!input + ', Add ' + !!add);
   if (!input || !add) return;
-  ok(/\bnew\b/.test(text(box)), 'the row reads new', 'text: ' + short(text(box)));
+  // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.elements.rowForm.create(container, { icon,
+  // button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
+  ok(required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
+  const rf = forms[0];
+  ok(forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in its box, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));
+  ok(!!rf && rf.span.kids.length === 1 && rf.span.kids[0] === input, 'its span holds the label input, and nothing else', 'span holds ' + (rf ? rf.span.kids.length : 0) + (rf && rf.span.kids[0] === input ? ', the input' : ''));
+  ok(!!rf && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1, 'its Add is the rowForm\'s button, the only Add', 'Add is the form\'s ' + (rf && add === rf.button));
+  ok(!/\bnew\b/.test(text(box)), 'the word "new" at its start is gone, ➕ in its place', 'text: ' + short(text(box)));
   ok(!!input.heard.beforeinput, 'the input is a fieldInput, held to the label\'s rule', 'listeners: ' + short(Object.keys(input.heard)));
   ok(asked.length === 0, 'drawn, it asks the node nothing', 'asked: ' + short(asked));
   add.dispatchEvent({ type: 'click' });

@@ -16,8 +16,10 @@ opens. So the editor names no description and no api-branch selector.
 - It loads what it uses itself (rule/26): `shell/js/fieldInput.js` and `shell/js/bundleSelector.js`.
 - It registers `spirit.elements.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
-- At the top, one row (Andy: *"top: a one-row add form: \"new\" [fieldInput.js/fieldRules:Label input field]
-  [Add-Button]"*): it reads `new`, then a label input, a `fieldInput` held to the label's rule, then an Add button.
+- At the top, one row, a rowForm (goal/G41.27; Andy: *"bundleEditor:\n[➕] [label] [Add]"*): it loads
+  `shell/js/rowForm.js` itself and makes one rowForm in its box, its icon ➕ and its button Add; its span holds the label
+  input, a `fieldInput` held to the label's rule, and nothing else; the rowForm's button is the only Add; the word
+  `new` at its start is gone.
 - Add (Andy: *"the [add-Button] refused an empty or invalid label"*):
   - an empty label, or one the label's rule refuses, asks nothing;
   - a valid one asks `auth.bundle { op: 'add', label, owner }`, the label as `fieldRules.normalize` writes it, the

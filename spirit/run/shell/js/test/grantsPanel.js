@@ -71,7 +71,7 @@ function config(w) {
 }
 
 function world() {
-  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [] };
+  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [] };
   const E = {
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     bundleSelector: { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
@@ -85,6 +85,12 @@ function world() {
       button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); });
       return button;
     } },
+    // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
+    // one does, its root appended to the container it is given.
+    rowForm: { create: function (c, opts) {
+      const f = { container: c, opts: opts || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
+      f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); w.rowForms.push(f); return f;
+    } },
     grantList: { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   };
   const api = {
@@ -97,7 +103,7 @@ function world() {
     },
   };
   const FILES = { 'shell/js/bundleSelector.js': ['bundleSelector'], 'shell/js/contactSelector.js': ['contactSelector'],
-    'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'], 'shell/js/busyButton.js': ['busyButton'] };
+    'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'], 'shell/js/busyButton.js': ['busyButton'], 'shell/js/rowForm.js': ['rowForm'] };
   const page = {};
   const win = {
     spirit: { elements: page,
@@ -159,18 +165,27 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   E.grantsPanel.create(box, Object.assign({ api: w.api }, cfg));
   await settle();
 
-  test.subHeading('the grant form, one row: grant [ID] [bundle] [Grant]');
+  test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
+  // Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
+  // rowForm", "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+  // its form elements into span and wires the button itself (a busyButton or a click)."
   ok(w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1, 'one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length);
   const parts = w.bundles.concat(w.ids, w.families);
   ok(parts.every(function (x) { return x.container && x.container.kids.indexOf(x) !== -1; }), 'each made with a container of its own, <name>.create(container, options)', 'containers: ' + short(parts.map(function (x) { return !!x.container; })));
   ok(w.ids.every(function (c) { return c.opts.table === cfg.ids.table && c.opts.key === cfg.ids.key && c.opts.label === cfg.ids.label; }), 'both ID selectors search the ID table it was handed: its location, key and label fields', 'ID selectors: ' + short(w.ids.map(function (c) { return c.opts; })));
-  const holder = function (el) { return box.nodes.findIndex(function (n) { return n.kids.indexOf(el) !== -1; }); };
-  const grantAt = box.nodes.findIndex(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || n.getAttribute('data-grants') || ''); });
-  const formId = w.ids.filter(function (c) { const i = holder(c); return i !== -1 && i < grantAt; })[0];
-  const filterId = w.ids.filter(function (c) { return c !== formId; })[0];
+  ok(w.required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
+  const rf = w.rowForms[0];
+  ok(w.rowForms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Grant', 'its grant form is one rowForm, its icon ➕ and its button Grant', 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; })));
+  // Where a selector stands in the form's span: itself, or the slot it was made in.
+  const inSpan = function (el) { if (!rf) return -1; return rf.span.kids.findIndex(function (k) { return k === el || k === el.container || (k.kids || []).indexOf(el) !== -1; }); };
+  // The filter's ID selector says every ID when none is chosen; the form's has no such choice.
+  const filterId = w.ids.filter(function (c) { return !!c.opts.all; })[0];
+  const formId = w.ids.filter(function (c) { return c !== filterId; })[0];
+  ok(!!formId && inSpan(formId) !== -1 && inSpan(formId) < inSpan(w.bundles[0]) && rf.span.kids.length === 2,
+    'its span holds the ID selector, then the bundle selector, and nothing else', 'span: ID at ' + (formId ? inSpan(formId) : 'none') + ', bundle at ' + inSpan(w.bundles[0]) + ', of ' + (rf ? rf.span.kids.length : 0));
   const text = box.innerHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
-  ok(formId && holder(formId) < holder(w.bundles[0]) && holder(w.bundles[0]) < grantAt && /\bgrant\b/i.test(text) && /<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML),
-    'the row reads "grant" [ID] [bundle], then the Grant button', 'holders: id ' + (formId ? holder(formId) : 'none') + ', bundle ' + holder(w.bundles[0]) + ', Grant ' + grantAt);
+  ok(!/\bgrant\b/i.test(text) && !/<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML), 'the word "grant" at its start is gone, ➕ in its place, and it draws no Grant button of its own', 'panel says: ' + short(text));
+  ok(!!rf && w.busy.some(function (a) { return a.button === rf.button; }), 'the rowForm\'s button is the Grant, a busyButton (goal/G41.23)', 'busyButtons: ' + w.busy.length);
 
   test.subHeading('its selectors go into the search\'s 🪣 row: no filter line of its own (goal/G41.26)');
   // Andy, on G41.26: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
@@ -224,7 +239,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(dep && dep.test(DAY, true) === 1, 'its toggle on, the deprecated grants are listed', 'Day ' + (dep && dep.test(DAY, true)));
 
   test.subHeading('Grant: the bundle\'s branches, through the grants table it was handed');
-  const grantBtn = box.nodes.filter(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || n.getAttribute('data-grants') || ''); })[0];
+  const grantBtn = rf ? rf.button : null;
   const press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
   let at0 = w.calls.length;
   press(); await settle();
@@ -251,7 +266,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
   ok(w.required.indexOf('shell/js/busyButton.js') !== -1, 'it loads the busyButton itself (rule/26)', 'required: ' + short(w.required));
   // The panel may draw its form again when it says something: its Grant button is found again.
-  const grantNow = function () { return box.nodes.filter(function (n) { return /<button/.test(n.tag) && n.getAttribute('data-grants') === 'grant'; }).pop() || null; };
+  // Since goal/G41.27 it is the rowForm's button.
+  const grantNow = function () { return rf ? rf.button : null; };
   const gb = grantNow();
   const gbusy = w.busy.filter(function (a) { return a.button === gb; }).pop() || null;
   ok(!!gbusy && typeof gbusy.opts.run === 'function', 'its Grant button is made a busyButton, the grant its request', 'busyButtons: ' + w.busy.length + (gbusy ? ', the Grant one with no request' : ', none on the Grant button'));
