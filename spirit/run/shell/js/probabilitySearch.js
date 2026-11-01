@@ -153,9 +153,10 @@
       return (typeof f.choices === 'function' ? f.choices(cachedRows()) : f.choices) || [];
     }
     // THE FILTER ROW STARTS WITH 🗜, THE SEARCH ROW WITH 🔎 (Andy, on G41.26: "in probablitySearch, if there is a filter row,
-    // it must start wit a '🗜' icon, and the search input row must start with a '🔎' icon"); EACH IN A TRANSPARENT BUBBLE
+    // it must start wit a '🗜' icon, and the search input row must start with a '🔎' icon"); BOTH IN ONE TRANSPARENT BUBBLE
     // ("the filer row and search-input row must be set in a transparent bubble, with a border that has the same color as
-    // the type-face"): its border currentColor. No filter shown, no filter row: no 🗜 and no bubble.
+    // the type-face", then "NO! the filtel row and the search-input row int eh SAME bubble"): its border currentColor.
+    // No filter shown, no filter row and no 🗜: the bubble holds the search row alone.
     var BUBBLE = 'background:transparent;border:1px solid currentColor;border-radius:1em;padding:0.3em 0.6em;';
     function filterHtml() {
       var row = filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
@@ -165,20 +166,22 @@
             (on ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">' + esc((c.icon ? c.icon + ' ' : '') + (c.word || '')) + '</button>';
         }).join('') + '</span>';
       }).join('');
-      return row ? '<div style="' + BUBBLE + '"><span style="margin-right:1em">🗜</span>' + row + '</div>' : '';
+      return row ? '<div style="margin-bottom:0.5em"><span style="margin-right:1em">🗜</span>' + row + '</div>' : '';
     }
     var paneHtml =
       // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
       // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
-      '<div id="' + pre + 'filters" style="margin-top:1em">' + filterHtml() + '</div>' +
-      '<div style="margin-top:1em;display:flex;gap:1em;align-items:center;' + BUBBLE + '">' +
+      '<div style="margin-top:1em;' + BUBBLE + '">' +
+      '<div id="' + pre + 'filters">' + filterHtml() + '</div>' +
+      '<div style="display:flex;gap:1em;align-items:center">' +
         '<span>🔎</span>' +
         '<span style="position:relative;display:inline-block;flex:1">' +
           '<input id="' + pre + 'text" type="text" autocomplete="off" style="width:100%;padding-right:2em;box-sizing:border-box">' +
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
+      '</div>' +
       '</div>' +
       // EVERY LIST SCROLLS IN ITS OWN BOX (goal/G40.8, the contained-app rule: "only a list or a viewer scrolls, inside
       // itself"): a dropdown's up to 20em, a pane's list filling what its pane leaves it.
