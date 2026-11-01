@@ -48,12 +48,22 @@ function world() {
   };
   win.window = win;
   vm.createContext(win);
+  // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  pageData = win.spirit.data;
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
   w.E = win.spirit.elements;
   return w;
 }
-const names = function (l) { return (typeof l.opts.rows === 'function' ? l.opts.rows() : []).map(function (r) { return r.key; }); };
+// What a list offers, as the search element would draw it: the rows of its spirit.data branch (goal/G41.28), or for
+// another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
+let pageData = null;
+const names = function (l) {
+  const rows = l.opts.data ? (pageData ? pageData.rows(l.opts.data) : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
+  return rows.filter(function (r) { return (l.opts.filters || []).every(function (f) { return typeof f.test !== 'function' || f.test(r, undefined) > 0; }); })
+    .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
+};
 
 test.startTest('appServerSelector.js: the app-server selector');
 
