@@ -134,6 +134,8 @@ const REAL = [
   'shell/shared/js/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
   'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'shell/js/busyButton.js',
+  // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
+  'shell/js/rowForm.js', 'shell/js/icon.js',
   'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
   'process/js/agent/table/job/elementTable.js', 'process/js/agent/table/job/elementRow.js',
 ];
@@ -203,13 +205,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     verb: function () { return Promise.resolve({ status: 200, body: { items: [], more: false } }); } });
   await settle();
   let modelOrder = null;
-  // Where, in the app's order of elements, the Models title rows, the "from" of the Ask row, and the model list stand.
-  const order = function (root, host) {
+  // Where, in the app's order of elements, the Models title rows, the Ask row (its providerSelector:dropdown, since
+  // goal/G41.27 drops the word from), and the model list stand.
+  const order = function (root, host, askRow) {
     const seq = [];
     (function walk(n) { n.children.forEach(function (c) { seq.push(c); walk(c); }); }(root));
     const titles = seq.filter(function (n) { return n.classList && n.classList.contains('agent-title') && /Models/.test(n.textContent); });
-    const from = seq.filter(function (n) { return n.tagName === 'SPAN' && n.textContent.trim() === 'from'; })[0];
-    return { titles: titles.length, title: titles.length ? seq.indexOf(titles[0]) : -1, from: from ? seq.indexOf(from) : -1, list: seq.indexOf(host) };
+    return { titles: titles.length, title: titles.length ? seq.indexOf(titles[0]) : -1, from: askRow ? seq.indexOf(askRow) : -1, list: seq.indexOf(host) };
   };
   const strip = function (name) { return w.document.querySelectorAll('[data-tool]').filter(function (b) { return b.getAttribute('data-tool') === name; })[0]; };
 
@@ -225,7 +227,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (!made.length) { test.fail('the ' + t[0] + ' tool drew no list pane'); continue; }
     const g = gaps(made[made.length - 1].host, app);
     ok(!g.length, 'the ' + t[0] + ' tool\'s list stands in a fill box, and every box up to the app is fill too', t[0] + ': not fill: ' + g.join(' < '));
-    if (t[0] === 'model') modelOrder = order(app, made[made.length - 1].host);
+    if (t[0] === 'model') {
+      const drop = w.panes.filter(function (p) { return p.o.face === 'dropdown' && p.o.verb === 'provider' && under(p.host, app); }).pop();
+      modelOrder = order(app, made[made.length - 1].host, drop ? drop.host : null);
+    }
   }
 
   test.subHeading('the 🧠 Models pane: its title row first (goal/G41.26)');
@@ -233,7 +238,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Studio ▾] [Ask] row."
   const mo = modelOrder || {};
   ok(mo.titles === 1, 'the pane draws one 🧠 Models title row', 'title rows saying Models: ' + mo.titles);
-  ok(mo.title !== -1 && mo.from !== -1 && mo.title < mo.from, 'the title row comes before the from [providerSelector:dropdown] [Ask] row', 'title at ' + mo.title + ', from at ' + mo.from);
+  ok(mo.title !== -1 && mo.from !== -1 && mo.title < mo.from, 'the title row comes before the Ask row, its providerSelector:dropdown', 'title at ' + mo.title + ', from at ' + mo.from);
   ok(mo.from !== -1 && mo.list !== -1 && mo.from < mo.list, 'and the model list after it', 'from at ' + mo.from + ', list at ' + mo.list);
 
   test.subHeading('every list pane the app drew');

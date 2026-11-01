@@ -114,7 +114,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(cols2.indexOf('providerIcon') === -1, 'it is shown, not kept: the model table has no providerIcon column', 'columns: ' + short(cols2));
 
   test.subHeading('the page: elementTable.js and elementRow.js');
-  const made = { tables: [], rows: [], required: [], searches: [], busy: [], calls: [], answer: null };
+  const made = { tables: [], rows: [], required: [], searches: [], busy: [], calls: [], answer: null, forms: [] };
   made.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
     return function (args) { made.calls.push({ table: table, args: args }); const a = made.answer ? made.answer(table, args) : {}; return a instanceof Error ? Promise.reject(a) : Promise.resolve(a); };
@@ -123,6 +123,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // The providerSelector:dropdown and the busyButton, each tested in its own folder: stand-ins that keep what they were
     // handed, as the Update model list pane's test had them.
     probabilitySearch: { create: function (host, o) { const s2 = { host: host, o: o, value: '', row: null, refresh: function () {}, destroy: function () { s2.destroyed = true; } }; made.searches.push(s2); return s2; } },
+    // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
+    // one does, its root appended to the container it is given.
+    rowForm: { create: function (c, o) {
+      const f = { container: c, opts: o || {}, root: part('<div>', ''), span: part('<span>', ''), button: part('<button>', '') };
+      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
+      if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
+      made.forms.push(f); return f;
+    } },
     busyButton: { attach: function (button, opts) { const a = { button: button, opts: opts || {}, answers: [] }; made.busy.push(a); button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); }); return button; } },
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29).
@@ -161,16 +169,22 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }), 'the list is handed no provider models button', 'buttons: ' + short(o && o.buttons));
   ok(!fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md')), 'the Update model list pane is gone: model/updatePanel.js and its test', 'still there: ' + short(['updatePanel.js', 'test/updatePanel.js', 'test/updatePanel.md'].filter(function (f) { return fs.existsSync(path.join(DIR, f)); })));
   ok(made.required.indexOf('process/js/agent/table/model/updatePanel.js') === -1 && !E.modelUpdate, 'and nothing loads it', 'required: ' + short(made.required));
-  ok(made.required.indexOf('shell/js/probabilitySearch.js') !== -1 && made.required.indexOf('shell/js/busyButton.js') !== -1, 'it loads what the form uses itself (rule/26): the search element and the busyButton', 'required: ' + short(made.required));
+  ok(made.required.indexOf('shell/js/probabilitySearch.js') !== -1 && made.required.indexOf('shell/js/busyButton.js') !== -1 && made.required.indexOf('shell/js/rowForm.js') !== -1,
+    'it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 'required: ' + short(made.required));
+  // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
+  // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.
+  const rf = made.forms[0];
+  ok(made.forms.length === 1 && rf.opts.icon === '❓' && rf.opts.button === 'Ask', 'the Ask form is one rowForm, its icon ❓ and its button Ask', 'rowForms: ' + short(made.forms.map(function (f) { return f.opts; })));
   const drop = made.searches.filter(function (x) { return x.o && x.o.verb === 'provider'; })[0];
-  ok(/>\s*from\s*</.test(pane.innerHTML) && !!drop && drop.o.face === 'dropdown' && drop.o.server === 'agent' && drop.o.data === 'agent.provider',
-    'it reads from, then a providerSelector:dropdown', 'pane: ' + short(pane.innerHTML) + ', dropdown ' + short(drop && { face: drop.o.face, verb: drop.o.verb, data: drop.o.data }));
-  const askBtn = the(pane, 'ask');
-  ok(!!askBtn && /<button\b[^>]*id="[^"]*-ask"[^>]*>\s*Ask\s*</.test(pane.innerHTML), 'then the Ask button', 'pane: ' + short(pane.innerHTML));
+  const inSpan = !!rf && !!drop && (drop.host === rf.span || rf.span.children.indexOf(drop.host) !== -1) && rf.span.children.length <= 1;
+  ok(!!drop && drop.o.face === 'dropdown' && drop.o.server === 'agent' && drop.o.data === 'agent.provider' && drop.o.placeholder === 'Pick a provider' && inSpan,
+    'its span holds the providerSelector:dropdown, Pick a provider, and nothing else', 'dropdown ' + short(drop && { face: drop.o.face, verb: drop.o.verb, data: drop.o.data, placeholder: drop.o.placeholder }) + ', in the span ' + inSpan);
+  ok(!/>\s*from\s*</.test(pane.innerHTML) && !/<button\b[^>]*>\s*Ask\s*</.test(pane.innerHTML), 'the word from is gone, and it draws no Ask button of its own', 'pane: ' + short(pane.innerHTML));
+  const askBtn = rf ? rf.button : the(pane, 'ask');
   // At the top: the list is drawn into a part of the pane below the form, never over it.
   const listAt = made.tables[0] && made.tables[0].c && made.tables[0].c.id ? pane.innerHTML.indexOf('id="' + made.tables[0].c.id + '"') : -1;
-  const askAt = askBtn ? pane.innerHTML.indexOf('id="' + askBtn.id + '"') : -1;
-  ok(askAt !== -1 && listAt > askAt, 'the form is at the top of the pane, the model list below it', 'Ask at ' + askAt + ', the list\'s box at ' + listAt);
+  const formAt = rf && rf.container && rf.container.id ? pane.innerHTML.indexOf('id="' + rf.container.id + '"') : -1;
+  ok(formAt !== -1 && listAt > formAt, 'the form is at the top of the pane, the model list below it', 'the form\'s box at ' + formAt + ', the list\'s box at ' + listAt);
   if (askBtn && drop) {
     askBtn.click(); await settle();
     ok(!made.calls.some(function (c) { return c.args && c.args.op === 'ask'; }), 'Ask with no provider chosen asks nothing', 'calls: ' + short(made.calls));

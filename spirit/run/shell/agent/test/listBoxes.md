@@ -38,8 +38,9 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 Andy: *"i the left side models panel: the title row \"🧠Models\" must come before the \"from [🛖 Unsloth Studio ▾]
 [Ask] row."*
 
-- The 🧠 Models pane draws one title row saying Models, then the `from [providerSelector:dropdown] [Ask]` row, then
-  the model list.
+- The 🧠 Models pane draws one title row saying Models, then the Ask row, then the model list. The Ask row is found by
+  its providerSelector:dropdown, since goal/G41.27 makes it a rowForm, `[❓] [Pick a provider ▾] [Ask]`, with no word
+  from; the app runs the real rowForm and icon element for it.
 
 ## What its test must try to break
 
