@@ -42,6 +42,16 @@ is the appServer serializes the cache to disk."*
      node serves it as a script with an `attach`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 
+7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
+   must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
+   from all documentation and all comments in the entire repo."*):
+   - no client file (under `shell/` or `process/js/`, but `shell/boot.js`, the face's own transport) takes the node's
+     stream itself (`events.subscribe`): only `spiritData.js` takes it, for every client;
+   - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
+     replaced way: `shell/js/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
+     branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
+     any other notion is read for by hand.
+
 ## What its test must try to break
 
 - A family without a clientCacheManager.js.

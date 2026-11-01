@@ -4,12 +4,10 @@ What the desk knows of its own rows at the receiving end, in the page and in a s
 translator into spirit.data (`spirit/spiritData.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
 it beside the real spirit.data, as the module runs.
 
-**Where it lives** (goal/G41.24). Andy: *"isn't the clean way of doing things to put \"shell/shared/js/deskData.js\"
-where it belongs: \"process/js/desk/family/clientCacheManager.js\""*, *"where clientCacheManager.js must work in both
-browser and an appServer that subscribes? and deskClient can get it form its own disc?"*, and *"if that's it, then DO IT,
-now, in this item."*
+**Where it lives** (goal/G41.24): beside the desk family's `api.js`, so it works in the browser and in an appServer
+that subscribes, which reads it from its own disc.
 
-- It is `process/js/desk/family/clientCacheManager.js`; `shell/shared/js/deskData.js` is gone, and no code file loads it.
+- It is `process/js/desk/family/clientCacheManager.js`.
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
   the cache rules the desk family's `api.js` held, which now holds its verbs alone.
 - deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
