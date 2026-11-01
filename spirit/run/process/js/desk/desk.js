@@ -143,8 +143,10 @@ const SEARCH_ROOM = Math.floor(ANSWER_ROOM / 2);
 // back, and the two open questions could not even be closed. The record keeps every check; the panel is the open and
 // the decided ones, never the answered.
 function shownChecks(it) {
-  // A Q he cleared (goal/G21.2) leaves the panel as an answered one does.
-  return (it.checks || []).filter(function (c) { return c.state !== 'answered' && c.state !== 'cleared'; });
+  // A Q he cleared (goal/G21.2) leaves the panel as an answered one does. A VOIDED GRANT LEAVES IT TOO (goal/G41.27; Andy:
+  // "cw, make that fix."): every core file added voids the core grant and opens a new one, so voided grants piled up on
+  // the panel until one more no longer fit an answer and the add was refused as line-too-large. It stays in the record.
+  return (it.checks || []).filter(function (c) { return c.state !== 'answered' && c.state !== 'cleared' && c.state !== 'voided'; });
 }
 // Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
 // its box (item.box) and its checks (item.checks). The largest, against the room.
