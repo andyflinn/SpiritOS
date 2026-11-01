@@ -142,24 +142,18 @@ spirit.shell.activateApp({
 
     // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this disk and lands at once; the relays are a
     // probe of every configured mailbox and take as long as the slowest of them.
-    // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer and what each save stored are kept in
-    // spirit.nodeData, and the two fields are drawn from its watch. It lets go once the page left.
+    // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.nodeData, and each of the
+    // two fields draws itself from it and keeps what its save stored there.
     var fields = Promise.all([infoParts, spirit.cacheManager('node')]).then(function () {
       var el = window.spirit.elements;
       var N = window.spirit.nodeData;
-      var name = el.changeMyLabel.create(container.querySelector('[data-info="name"]'), { api: api, onSaved: function (v) { N.keepCard({ name: v }); } });
-      var description = el.changeMyDescription.create(container.querySelector('[data-info="description"]'), { api: api, onSaved: function (v) { N.keepCard({ description: v }); } });
-      var cardStop = N.watchCard(function (card) {
-        if (container.isConnected === false) { cardStop(); return; }
-        if (!card) return;
-        name.set(card.name);
-        description.set(card.description);
-      });
+      el.changeMyLabel.create(container.querySelector('[data-info="name"]'), { api: api });
+      el.changeMyDescription.create(container.querySelector('[data-info="description"]'), { api: api });
       return Promise.resolve(api.verb('node.card', {})).then(function (r) {
         var card = r && r.body;
         var said = container.querySelector('[data-info="said"]');
         if (!card || !card.ok) { if (said) said.textContent = (card && card.error) || 'node.card did not answer'; return; }
-        N.keepCard(card);
+        N.card.keep(card);
       });
     }, function () {
       var said = container.querySelector('[data-info="said"]');

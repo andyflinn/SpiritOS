@@ -27,19 +27,21 @@
     //   keepTree(tree, index)   the node's api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name))
     //   families()  family -> row;  verbs()  'family.verb' -> row
     //   treeBranch, verbsBranch  whole paths, for a list that is a view of one (probabilitySearch's data)
-    //   keepCard(fields)   node.card's answer, or one field a save stored ({ description }), merged into the card
-    //   card()             the card kept, or null;  watchCard(fn)  fn(card) on every change; answers its release
+    //   card.keep(fields)  node.card's answer, or one field a save stored ({ description }), merged into the card
+    //   card.get()         the card kept, or null;  card.watch(fn)  fn(card) on every change; answers its release
     var nodeData = {
-      keepCard: function (fields) {
-        if (!fields || typeof fields !== 'object' || fields.ok === false) return;
-        var was = HOME.get(CARD + '/self') || {};
-        var card = { name: was.name, description: was.description };
-        if (fields.name !== undefined) card.name = fields.name;
-        if (fields.description !== undefined) card.description = fields.description;
-        HOME.set(CARD + '/self', card);
+      card: {
+        keep: function (fields) {
+          if (!fields || typeof fields !== 'object' || fields.ok === false) return;
+          var was = HOME.get(CARD + '/self') || {};
+          var card = { name: was.name, description: was.description };
+          if (fields.name !== undefined) card.name = fields.name;
+          if (fields.description !== undefined) card.description = fields.description;
+          HOME.set(CARD + '/self', card);
+        },
+        get: function () { return HOME.get(CARD + '/self') || null; },
+        watch: function (fn) { return HOME.watch(CARD + '/self', function (whole, v) { if (typeof fn === 'function') fn(v || null); }); },
       },
-      card: function () { return HOME.get(CARD + '/self') || null; },
-      watchCard: function (fn) { return HOME.watch(CARD + '/self', function (whole, v) { if (typeof fn === 'function') fn(v || null); }); },
       keepTree: function (tree, index) {
         var I = index || (root.spirit && root.spirit.apiTreeIndex);
         if (!I) return;

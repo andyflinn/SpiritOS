@@ -3,7 +3,7 @@
 // with its test folder"). One field, its Save and the bytes left: the second of the two things this node answers to
 // anybody who asks (js/nodeCard.js). Info draws it.
 //
-//   changeMyDescription.create(host, { api, onSaved }) -> { set(value), destroy() }
+//   changeMyDescription.create(host, { api }) -> { set(value), destroy() }
 //
 // The field is marked with its rule (rule/12, data-field="description") and held at the description rule's byte limit
 // by fieldInput, the bytes left beside it (fieldRules.describeRemaining), counted in bytes as typed. Save asks here first
@@ -56,12 +56,23 @@
       return Promise.resolve(api.verb('node.setDescription', { description: input.value })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
-        input.value = String(body.description == null ? '' : body.description);
-        count();
+        root.spirit.nodeData.card.keep({ description: String(body.description == null ? '' : body.description) });
         say('saved', false);
-        if (typeof o.onSaved === 'function') o.onSaved(input.value);
       }, function (e) { say((e && e.message) || 'could not save', true); });
     }
+    // WHAT IT CHANGES, IT LISTENS FOR (goal/G41.27, G41.28): the node's card as the node family's cache keeps it
+    // (spirit.nodeData). The field shows the description the card holds; a save keeps there what the node stored.
+    var stop = null;
+    function show(card) {
+      if (gone || !card) return;
+      input.value = String(card.description == null ? '' : card.description);
+      count();
+    }
+    root.spirit.cacheManager('node').then(function () {
+      if (gone) return;
+      stop = root.spirit.nodeData.card.watch(show);
+      show(root.spirit.nodeData.card.get());
+    });
 
     parts.then(function () {
       if (!gone && E.fieldInput) E.fieldInput.attach(input, 'description');
@@ -78,8 +89,8 @@
 
     return {
       set: function (value) { input.value = String(value == null ? '' : value); count(); },
-      // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it").
-      destroy: function () { gone = true; host.innerHTML = ''; },
+      // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), and lets the card go.
+      destroy: function () { gone = true; if (stop) stop(); stop = null; host.innerHTML = ''; },
     };
   }
 
