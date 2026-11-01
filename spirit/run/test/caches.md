@@ -28,8 +28,9 @@ is the appServer serializes the cache to disk."*
    uses the browser's storage; appServer writes each sender's cache to its own file; no other module writes a cache
    file of its own.
 
-5. **One contract**: every `clientCacheManager.js` exports `{ cache, attach }`, and attached it puts its reader on
-   `spirit`, for clients to ask (as the desk's puts `spirit.deskData`).
+5. **One contract**: every `clientCacheManager.js` exports an `attach`, and attached it puts its reader on `spirit`, for
+   clients to ask (as the desk's puts `spirit.deskData`). Its cache rules (`cache`, an object) are exported where its
+   family's clients keep a cache file, for appServer.
 6. **Found and downloaded by introspection** (Andy, on G41.28: *"We're not done until every family of the API tree as a
    clientCacheManager, and clients can use that to organize their spirit.data, and the shell can introspect to find and
    download their clientCacheManagers."*):

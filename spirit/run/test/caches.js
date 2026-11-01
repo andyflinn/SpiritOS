@@ -14,7 +14,8 @@
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.data;
 //   4. the one difference is the disk: no clientCacheManager.js touches a file or the browser's storage, and appServer
 //      writes the cache to disk.
-//   5. every manager is used the same way: it exports the cache rules and an attach, which puts its reader on spirit.
+//   5. every manager is used the same way: it exports an attach, which puts its reader on spirit (and its cache rules
+//      where its clients keep a cache file).
 //   6. the shell finds and downloads them by introspection (Andy, on G41.28: "We're not done until every family of the
 //      API tree as a clientCacheManager, and clients can use that to organize their spirit.data, and the shell can
 //      introspect to find and download their clientCacheManagers."): spirit.js knows where a family's manager lives, and
@@ -134,11 +135,13 @@ ok(!writers.length, 'no other module writes a cache file of its own', 'a cache f
 
 
 // ── 5. ONE CONTRACT ─────────────────────────────────────────────────────────────────────────────────────────────────
-test.subHeading('5. every manager is used the same way: its cache rules and an attach');
+test.subHeading('5. every manager is used the same way: an attach that puts its reader on spirit');
 managers.forEach(function (m) {
   let mod = null;
   try { mod = require(path.join(RUN, m)); } catch (e) { mod = { threw: e.message }; }
-  ok(!!mod && typeof mod.attach === 'function' && !!mod.cache && typeof mod.cache === 'object', m + ': it exports { cache, attach }', m + ': it exports ' + short(mod && Object.keys(mod)));
+  // attach is what a client uses to organise its spirit.data; cache rules are what appServer needs to keep it on disk,
+  // and a manager has them when its family's clients keep a cache file.
+  ok(!!mod && typeof mod.attach === 'function' && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object')), m + ': it exports an attach' + (mod && mod.cache ? ', and its cache rules' : ''), m + ': it exports ' + short(mod && Object.keys(mod)));
   const g = { spirit: { data: require(DATA) } };
   let before = Object.keys(g.spirit).length;
   try { if (mod && typeof mod.attach === 'function') mod.attach(g); } catch (e) { /* judged below */ }
