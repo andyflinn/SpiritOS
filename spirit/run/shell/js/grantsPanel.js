@@ -22,8 +22,10 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
+  // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28).
   var parts = Promise.all(['shell/js/contactSelector.js', 'shell/js/bundleSelector.js', 'shell/js/apiFamilySelector.js',
-    'shell/js/grantSelector/listElement.js', 'shell/js/busyButton.js', 'shell/js/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; }));
+    'shell/js/grantSelector/listElement.js', 'shell/js/busyButton.js', 'shell/js/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+    .concat([window.spirit.cacheManager ? window.spirit.cacheManager('jobs') : null]));
 
   function create(host, config) {
     var c = config || {};
@@ -110,21 +112,19 @@
         if (treeAgain) { treeAgain = false; treeChanged(); }
       });
     }
+    // The servers' jobs as the jobs family's cache keeps them (spirit.jobsData, goal/G41.28), followed while mounted.
+    var unfollow = null;
     function followServers() {
-      var D = window.spirit.data;
-      if (!D || typeof D.translate !== 'function') return;
-      var seen = Object.create(null);   // job id -> its last status, so a replay of the same says nothing new
-      D.translate({
-        onJob: function (job) {
-          if (gone || !job || job.kind !== 'server' || !job.id) return;
-          var status = String(job.status || '');
-          if (seen[job.id] === status) return;
-          var first = !(job.id in seen);
-          seen[job.id] = status;
-          // A server the page first hears of as it registers was in the tree already read.
-          if (first && list === null) return;
-          treeChanged();
-        },
+      var J = window.spirit.jobsData;
+      if (!J || unfollow) return;
+      var seen = Object.create(null);   // job id -> its last status, so a write of the same says nothing new
+      Object.keys(J.jobs()).forEach(function (id) { var j = J.job(id); if (j && j.kind === 'server') seen[id] = String(j.status || ''); });
+      unfollow = J.watch(function (id, job) {
+        if (gone || !id || !job || job.kind !== 'server') return;
+        var status = String(job.status || '');
+        if (seen[id] === status) return;
+        seen[id] = status;
+        treeChanged();
       });
     }
 
@@ -159,9 +159,27 @@
       });
     }
 
+    // WHAT IT GRANTS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
+    // changes shit it listens to fucking update via the spirit object"): the grants table's branch (g.branch). A grant
+    // asked for counts as made once its row is there; the panel says how many of the bundle's paths arrived.
+    var waiting = null;   // { want: { '<id>\n<path>': true }, came: n, of: n, label, who }
+    var unwatch = null;
+    function watchGrants() {
+      var D = window.spirit.data;
+      if (!D || !g.branch || unwatch) return;
+      unwatch = D.watch(String(g.branch), function (whole, v) {
+        if (!waiting || !v) return;
+        var k = String(whole).slice(String(g.branch).length + 1);
+        if (!waiting.want[k]) return;
+        delete waiting.want[k];
+        waiting.came += 1;
+        say('granted ' + waiting.label + ': ' + waiting.came + ' of ' + waiting.of + ' paths arrived for ' + waiting.who);
+        if (!Object.keys(waiting.want).length) waiting = null;
+      });
+    }
     // GRANT: the chosen bundle's branches to the chosen ID, one grant through the grants table per branch, after the
     // warnings of every path it reaches; a path the ID holds already is counted done; any other refusal is said. Nothing
-    // is read again: each new grant arrives on the stream, one row (rule/19).
+    // is read again: each new grant arrives on the stream, one row (rule/19), and is followed above.
     function grantBundle() {
       var id = idSel ? idSel.value : '';
       var bundle = bundleSel ? bundleSel.row : null;
@@ -179,10 +197,14 @@
         }
         var done = 0;
         var refused = [];
+        var who = (idSel.row && (idSel.row.name || idSel.row[ids.label])) || 'that ID';
+        waiting = { want: {}, came: 0, of: paths.length, label: bundle.label || 'the bundle', who: who };
+        paths.forEach(function (p) { waiting.want[String(id) + '\n' + String(p)] = true; });
         return paths.reduce(function (chain, p) {
           return chain.then(function () {
             return Promise.resolve(g.grant(id, p)).then(function (a) {
-              if (a && (a.ok !== false || a.code === 'already-granted')) { done += 1; return; }
+              if (a && (a.ok !== false || a.code === 'already-granted')) { done += 1; if (a.code === 'already-granted' && waiting) delete waiting.want[String(id) + '\n' + String(p)]; return; }
+              if (waiting) delete waiting.want[String(id) + '\n' + String(p)];
               refused.push(p + ': ' + refusal(a));
             });
           });
@@ -237,6 +259,7 @@
       if (P.busyButton) P.busyButton.attach(form.button, { run: grantBundle });
       else form.button.addEventListener('click', function () { grantBundle(); });
       paint();
+      watchGrants();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
       followServers();
       return loadTree().then(function () {
@@ -248,6 +271,10 @@
     return {
       destroy: function () {
         gone = true;
+        if (typeof unwatch === 'function') unwatch();
+        unwatch = null;
+        if (typeof unfollow === 'function') unfollow();
+        unfollow = null;
         if (list) list.destroy();
         list = null;
         host.innerHTML = '';

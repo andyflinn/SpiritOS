@@ -1668,24 +1668,23 @@ var ndPage = ({
     // status has effectively always landed by then. It is not a formal
     // guarantee, and it is the thing to suspect if an invite ever shows
     // up exactly one beat late.
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row whose seat,
-    // keep, ownership or block changed anywhere reads this page again (its presence is the dot's). The two forms in it
-    // hear the stream themselves.
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row in spirit.contactData whose
+    // seat, keep, ownership or block changed anywhere, or that went, reads this page again (its presence is the dot's).
+    // The two forms in it watch the same rows themselves.
     var ndRowHeard = Object.create(null);
     var ndRowsStop = null;
-    var ndRowsTake = function (job) {
-      var row = job && job.type === 'shadow' && job.data && job.data.row;
-      if (!row || row.relay !== true) return;
+    var ndRowsTake = function (key, row) {
+      if (!key || !(row ? row.relay === true : key in ndRowHeard)) return;
       var body = ndBody();
       if (!body || !body.isConnected) { if (ndRowsStop) ndRowsStop(); return; }
-      var said = [row.keep, row.seated, row.mine, row.blocked, !!row.gone].join();
-      if (ndRowHeard[row.publicKey] === said) return;
-      ndRowHeard[row.publicKey] = said;
+      var said = row ? [row.keep, row.seated, row.mine, row.blocked].join() : 'gone';
+      if (ndRowHeard[key] === said) return;
+      ndRowHeard[key] = said;
       if (ndUrl) ndLoad();
     };
-    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      ndRowsStop = window.spirit.events.subscribe({ onUpdate: ndRowsTake });
-    }
+    Promise.resolve(spirit.cacheManager('contact')).then(function () {
+      if (window.spirit.contactData) ndRowsStop = window.spirit.contactData.watch(ndRowsTake);
+    });
 
     if (api.onRelayEvent) {
       api.onRelayEvent(function (event) {

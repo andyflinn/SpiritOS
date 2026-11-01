@@ -123,22 +123,22 @@ spirit.shell.activateApp({
       });
     });
 
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; the relays are read again
-    // when a relay's row changed what it says of the relay (kept, seated, owned, blocked), and not for its presence.
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row as spirit.contactData keeps
+    // it; the relays are read again when a relay's row changed what it says of the relay (kept, seated, owned, blocked),
+    // or went, and not for its presence. It lets go once the page left.
     var rowsHeard = Object.create(null);
     var rowsStop = null;
-    var rowsTake = function (job) {
-      var row = job && job.type === 'shadow' && job.data && job.data.row;
-      if (!row || row.relay !== true) return;
+    var rowsTake = function (key, row) {
+      if (!key || !(row ? row.relay === true : key in rowsHeard)) return;
       if (container.isConnected === false) { if (rowsStop) rowsStop(); return; }
-      var said = [row.keep, row.seated, row.mine, row.blocked, !!row.gone].join();
-      if (rowsHeard[row.publicKey] === said) return;
-      rowsHeard[row.publicKey] = said;
+      var said = row ? [row.keep, row.seated, row.mine, row.blocked].join() : 'gone';
+      if (rowsHeard[key] === said) return;
+      rowsHeard[key] = said;
       infoLoadRelays(container);
     };
-    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      rowsStop = window.spirit.events.subscribe({ onUpdate: rowsTake });
-    }
+    Promise.resolve(spirit.cacheManager('contact')).then(function () {
+      if (window.spirit.contactData) rowsStop = window.spirit.contactData.watch(rowsTake);
+    });
 
     // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this disk and lands at once; the relays are a
     // probe of every configured mailbox and take as long as the slowest of them.

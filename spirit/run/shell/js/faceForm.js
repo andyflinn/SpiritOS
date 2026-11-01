@@ -78,13 +78,13 @@
     draw(was ? was.value : '', typed && typed.value ? typed.value : null);
     if (box._spFaceBound) return;
     box._spFaceBound = true;
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row changing (a
-    // seat taken or left anywhere) reads the relays again, and the form redraws only when the relays it offers changed,
-    // keeping what is picked and typed. It lets go once its box has left the page.
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row changing in
+    // spirit.contactData (a seat taken or left anywhere) reads the relays again, and the form redraws only when the
+    // relays it offers changed, keeping what is picked and typed. It lets go once its box has left the page.
     var heard = JSON.stringify(offered(box._spFace.relays, { fixed: box._spFace.fixed }));
     var stop = null;
-    function take(job) {
-      if (!job || job.type !== 'shadow' || !job.data || !job.data.row || job.data.row.relay !== true) return;
+    function take(key, row) {
+      if (!key || !row || row.relay !== true) return;
       if (!box.isConnected) { if (stop) stop(); return; }
       if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
       window.spirit.relay.status('').then(function (r) {
@@ -98,10 +98,11 @@
         draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
       }, function () { /* the next change reads them again */ });
     }
-    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      stop = window.spirit.events.subscribe({ onUpdate: take });
-    }
-    box._spFaceStop = function () { if (typeof stop === 'function') stop(); stop = null; };
+    var left = false;
+    Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
+      if (!left && window.spirit.contactData) stop = window.spirit.contactData.watch(take);
+    });
+    box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
 
     var busy = false;
     function save() {

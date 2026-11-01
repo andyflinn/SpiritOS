@@ -31,7 +31,6 @@
     var off = function () {};
     var isServer = !!m && m[1] === 'process/js';
     var module = m ? 'process/js/' + m[2] : '';
-    var jobs = {};
 
     function draw() {
       if (gone || !host) return;
@@ -43,9 +42,11 @@
       if (gone || !host) return;
       host.innerHTML = '<span class="job-manifest-note">always on</span>';
     }
-    // A SERVER IS ON WHILE A SERVER JOB OF ITS MODULE RUNS, or is pending between restarts (as goal/G27.16 counts it).
+    // A SERVER IS ON WHILE A SERVER JOB OF ITS MODULE RUNS, or is pending between restarts (as goal/G27.16 counts it): the
+    // jobs as the jobs family's cache keeps them (spirit.jobsData, goal/G41.28).
     function serverOn() {
-      return Object.keys(jobs).some(function (id) { var j = jobs[id]; return j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending'); });
+      var J = sp().jobsData;
+      return !!J && !!J.find(function (j) { return j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending'); });
     }
     // ONE STATE, DRAWN WHEN IT CHANGES: exempt (intrinsic, or the Apps app), else on or off.
     var shown = '';
@@ -57,14 +58,14 @@
       shown = now;
       if (isExempt) exempt(); else draw();
     }
-    // EVERY BUTTON LISTENS (box v15): its app's face part as the node streams it (an app-face job), and a server's job.
-    function heard(job) {
-      if (!job || !job.id) return;
+    // EVERY BUTTON LISTENS (box v15): its app's face part as the node streams it (an app-face job), and a server's job,
+    // both through the jobs family's cache (spirit.jobsData.watch, goal/G41.28).
+    function heard(id, job) {
+      if (!job) { if (isServer) render(); return; }
       if (job.type === 'app-face') {
         if (job.data && job.data.path === path) { face = (job.data.face && typeof job.data.face === 'object') ? job.data.face : {}; render(); }
         return;
       }
-      jobs[job.id] = job;
       if (isServer) render();
     }
     function readFace() {
@@ -89,15 +90,11 @@
     if (!m || !host) return { destroy: function () {} };
     readFace().then(function () {
       if (gone) return;
-      render();
-      var ev = sp().events;
-      if (ev && typeof ev.subscribe === 'function') {
-        off = ev.subscribe({
-          onSnapshot: function (list) { (list || []).forEach(heard); },
-          onUpdate: heard,
-          onDelete: function (id) { if (jobs[id]) { delete jobs[id]; render(); } },
-        }) || off;
-      }
+      return Promise.resolve(sp().cacheManager('jobs')).then(function () {
+        if (gone) return;
+        render();
+        if (sp().jobsData) off = sp().jobsData.watch(heard) || off;
+      });
     }, function () { if (!gone && host) host.innerHTML = '<span class="job-manifest-note">' + esc('could not read ' + path) + '</span>'; });
 
     return {

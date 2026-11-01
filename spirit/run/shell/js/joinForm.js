@@ -112,13 +112,13 @@
     if (box._spJoinBound) return;
     box._spJoinBound = true;
     function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; a relay's row changing
-    // (a seat taken or left anywhere) reads the relays again, and the form redraws only when its own relays changed. It
-    // lets go once its box has left the page.
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row changing in
+    // spirit.contactData (a seat taken or left anywhere) reads the relays again, and the form redraws only when its own
+    // relays changed. It lets go once its box has left the page.
     var heard = JSON.stringify(box._spJoin.relays);
     var stop = null;
-    function take(job) {
-      if (!job || job.type !== 'shadow' || !job.data || !job.data.row || job.data.row.relay !== true) return;
+    function take(key, row) {
+      if (!key || !row || row.relay !== true) return;
       if (!box.isConnected) { if (stop) stop(); return; }
       if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
       window.spirit.relay.status('').then(function (r) {
@@ -130,10 +130,11 @@
         draw(box);
       }, function () { /* the next change reads them again */ });
     }
-    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      stop = window.spirit.events.subscribe({ onUpdate: take });
-    }
-    box._spJoinStop = function () { if (typeof stop === 'function') stop(); stop = null; };
+    var left = false;
+    Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
+      if (!left && window.spirit.contactData) stop = window.spirit.contactData.watch(take);
+    });
+    box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
     // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.
     box.addEventListener('input', function (e) {
       var f = e.target;

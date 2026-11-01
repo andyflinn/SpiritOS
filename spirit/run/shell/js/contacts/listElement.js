@@ -136,24 +136,9 @@
     });
 
     list.refresh();
-    // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row of the table as it changed. A row this
-    // list does not show yet that the owner now lists (kept, owned, held, blocked), or a row it shows whose flags moved,
-    // makes the list search again; presence alone is the presence data's, and repaints nothing here. It lets go once
-    // the list left the page.
-    var FLAGS = ['keep', 'mine', 'relay', 'held', 'blocked', 'seated'];
-    var rowsStop = null;
-    function rowsTake(job) {
-      if (!job || job.type !== 'shadow' || !job.data || !job.data.row) return;
-      if (!host.isConnected) { if (rowsStop) rowsStop(); return; }
-      var row = job.data.row;
-      var el = els[row.publicKey];
-      var listed = row.keep || row.mine || row.held || row.blocked;
-      var moved = el ? (row.gone || FLAGS.some(function (f) { return (el.row && el.row[f] === true) !== (row[f] === true); })) : !!listed;
-      if (moved) list.refresh();
-    }
-    if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
-      rowsStop = window.spirit.events.subscribe({ onUpdate: rowsTake });
-    }
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): each row the shadow job hands as it changed
+    // is merged into the contacts branch by its manager, and this list, a view of that branch, redraws a row whose flags
+    // moved by itself; it hears no stream of its own.
     return {
       list: list,
       refresh: function () { list.refresh(); },

@@ -10,7 +10,8 @@
 //              present from the relay-presence job, a row the network found from the peer-search job, name from a rename
 // What the stream means for contacts (goal/G41.16; moved here from the contacts row element): the relay-presence job
 // sets each key's present (a key the table drops goes back to not known), the peer-search job seats each row the network
-// found, a contact rename sets its name. Every event ends in set, merge or seat; it asks nothing.
+// found, a contact rename sets its name, the shadow job sets each row of the one table as it changed. Every event ends in
+// set, merge, del or seat; it asks nothing.
 (function (root) {
   var CONTACTS = 'contacts';
   var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.contact.clientCacheManager') : '__contactClientCacheManager';
@@ -42,6 +43,13 @@
           return;
         }
         if (job.type === 'peer-search' && job.data.item) V.seat(CONTACTS, [job.data.item]);
+        // THE ONE TABLE (goal/G40.11): the node's shadow job hands each row of the contacts table as it changed, people
+        // and relays, by its public key; a row gone is let go (moved here from the clients that heard it themselves).
+        if (job.type === 'shadow' && job.data.row && job.data.row.publicKey) {
+          var r = job.data.row;
+          if (r.gone === true) V.del(CONTACTS + '/' + r.publicKey);
+          else V.merge(CONTACTS + '/' + r.publicKey, r);
+        }
       },
       onRename: function (d) { D.at(d && d.fromNode || null, 'contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
     });
