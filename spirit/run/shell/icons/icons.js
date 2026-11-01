@@ -77,7 +77,7 @@ function iconsPanelDraw(host, page, api, row, glyph) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
+var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js', 'shell/js/icon.js', 'shell/js/rowForm.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -85,15 +85,20 @@ spirit.shell.activateApp({
     container.innerHTML =
       // Its list column takes its pane: the add row fixed on top, the list's box the rest (goal/G40.8).
       '<div data-icons="list" class="fill">' +
-        '<div class="stat-tile wide" style="display:flex;gap:1em;align-items:center">' +
-          '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
-          '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">' +
-          '<button type="button" data-icons="add">Add</button><span data-icons="added" class="job-manifest-note"></span>' +
-        '</div>' +
+        '<div data-icons="form"></div>' +
+        '<div data-icons="added" class="job-manifest-note"></div>' +
         '<div data-icons="pane" class="fill"></div>' +
       '</div>';
     var drawn = iconsParts.then(function () {
       E = window.spirit.elements;
+      // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]"):
+      // ➕, the icon to paste and its keywords in its span, Add its button; what Add did is said below it.
+      var form = E.rowForm.create(container.querySelector('[data-icons="form"]'), { icon: '➕', button: 'Add' });
+      form.span.innerHTML =
+        '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
+        '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">';
+      form.button.setAttribute('data-icons', 'add');
+      form.button.addEventListener('click', add);
       E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'paragraph');
       iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
         api: api,
@@ -101,7 +106,7 @@ spirit.shell.activateApp({
         details: function (row, glyph) { iconsPanel(api, row, glyph); },
       });
     }, function () { container.querySelector('[data-icons="pane"]').textContent = 'Icons could not be loaded.'; });
-    container.querySelector('[data-icons="add"]').addEventListener('click', function () {
+    function add() {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
       if (!window.spirit.elements.fieldInput.fits(words.join(', '), 'paragraph')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
@@ -119,7 +124,7 @@ spirit.shell.activateApp({
         }
         set[glyph] = words;
       }, said);
-    });
+    }
     return drawn;
   },
 
