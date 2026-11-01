@@ -33,7 +33,8 @@ const appFamilies = {};
 function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(familyPath(name)), 'clientCacheManager.js') : 'spirit/' + name + '/clientCacheManager.js'; }
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-function code(file) { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
+// A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
+function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 const H = require(path.join(__dirname, 'headLessChrome.js'));
 const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
 
