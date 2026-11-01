@@ -66,6 +66,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/30 (version 72): One desk ear ONLY
+
+Agents using the desk Ear must use ONE LISTENER ONLY!
+
 ### rule/28 (version 68): ALL rules are LAW and a requirement.
 
 ALL desk rules are LAW and a requirement. THIS is a decision by andy, rules MUST be followed.
