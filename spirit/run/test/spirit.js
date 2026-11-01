@@ -245,8 +245,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')))
     test.check('nothing in spirit.js but isNode() and isBrowser() asks where it runs');
   else test.fail('spirit.js asks where it runs outside isNode() and isBrowser()');
-  // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12).
-  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'data', 'debug', 'error', 'escapeHtml', 'events', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+  // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); cacheManager: a
+  // family's clientCacheManager, found by its FS.path and loaded (goal/G41.28, Andy: "the shell can introspect to find and
+  // download their clientCacheManagers").
+  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'events', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
   if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'events', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
     test.check('in node the instance holds exactly its members: ' + MEMBERS.join(', ') + ' (and the families it binds)');
   else test.fail('in node the instance holds ' + short(Object.keys(s).sort()));
