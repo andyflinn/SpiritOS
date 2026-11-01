@@ -44,9 +44,9 @@ draws and ranks.
   - A row the words miss stays, last, at 0.
 - **What the words are matched against**:
   - `score(row, values)` replaces the match when it answers a value. A null or undefined answer falls back to the match.
-  - `matched(row, values)` is matched instead of the row.
-  - Otherwise, with columns, an object of the columns' values, each read from `from` or the field.
-  - Otherwise the row itself.
+  - Otherwise the whole row, as cached in `spirit.data`, its fields not shown too: with columns or without, and a
+    `matched(row)` a list hands is not used (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too,
+    and search the whole row, as cached in spirit.data."*).
 - **Without words**:
   - With `sort` naming a column that has a `sort`, the rows go by that column, ascending or descending.
     - `text` compares case-insensitively.

@@ -147,6 +147,12 @@ box is its own check, named by the element's path and the box's id chain."*
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
   (`shell-busy`), a button's `disabled`, `aria-busy` or class, and fine print (`job-manifest-note`, `job-start-error`,
   `job-refusal`, `fine-print`). A press that sends no write is not judged.
+- **Its searches match the whole row** (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and
+  search the whole row, as cached in spirit.data."*): judged in its code, no app or element but the search element
+  itself hands a search a `matched(...)` of its own, a few fields in place of the whole row.
+- **Every search it makes ranks spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.data
+  branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
+  red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
 - **Destroy**: an element's destroy leaves its container empty, and **lets go every subscription it made** (rule/8). An
   app is closed by the face and has none of its own.
 
@@ -169,3 +175,4 @@ cuts the extra off, so nothing spills: `shell/js/codeMirror` and `shell/textEdit
 - A write sent by a module that listens to nothing.
 - A draw made after a press and before its write is answered; a press that sends no write judged all the same.
 - A subscription still held after destroy.
+- A list that hands its search a matched(); a search made with no data branch, or fed by its own rows().

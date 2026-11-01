@@ -64,6 +64,14 @@ change keeping them all is taken. A table naming none takes a bare row, as befor
 
 Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS."*, *"ALL, from all agent-tables I mean..."*. The common fields are the key set, the icon and the label; a table with a description column from before loses it at start, its rows kept.
 
+## Requirements (goal/G41.28)
+
+Andy, box v15: *"a probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served
+through a single-row "get", using a probabilityStringObjectMatch."*
+
+- A search matches the row as its get serves it: a word in a list field (`tags: ["zebra"]`) finds the row.
+- A secret, which no get serves, is never searched: the words of a secret field find nothing.
+
 ## What its test must try to break
 
 - A private half, a seal private key or a secret in a get, a search or a published row.
@@ -75,3 +83,4 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 - A narrowed search answering another row's rows, or refusing the field.
 - A row made, or emptied, without a mandatory field; a refusal that does not name it.
 - A description column made, or kept from before.
+- A search that matches only the string fields, or a few by name; one that searches a secret.

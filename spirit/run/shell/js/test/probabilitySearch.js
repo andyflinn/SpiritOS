@@ -122,11 +122,13 @@ r = PS.order(W, { words: 'be', score: function (row) { return row.name === 'quin
 ok(r[0].key === 'q' && r[0].rank === 1, 'a score answer replaces the match, clamped to 1', 'score: ' + JSON.stringify(r.map(function (x) { return [x.key, x.rank]; })));
 ok(r.filter(function (x) { return x.key === 'z'; })[0].rank === 0 && r.filter(function (x) { return x.key === 'b1'; })[0].rank > 0,
   'a negative score is clamped to 0, and a null score falls back to the match', 'ranks: ' + JSON.stringify(r.map(function (x) { return [x.key, x.rank]; })));
+// THE WHOLE ROW, ALWAYS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole
+// row, as cached in spirit.data."): what a list shows, or a matched() it hands, narrows nothing.
 r = PS.order(W, { words: 'qu', matched: function (row) { return { other: row.name === 'zed' ? 'quiz' : 'nothing' }; } });
-ok(r[0].key === 'z' && r[0].rank > 0 && r[1].rank === 0, 'matched(row) is what the words are matched against', 'matched: ' + keys(r));
+ok(r[0].key === 'q' && r[0].rank > 0 && r.filter(function (x) { return x.key === 'z'; })[0].rank === 0, 'a matched(row) a list hands is not used: the whole row is matched', 'matched: ' + keys(r));
 const C = [{ key: 'x', row: { label: 'shown', hidden: 'secret' }, at: 0 }, { key: 'y', row: { label: 'plain', hidden: 'none' }, at: 1 }];
 r = PS.order(C, { words: 'secret', columns: [{ field: 'label' }] });
-ok(r[0].rank === 0 && r[1].rank === 0, 'with columns only the columns\' values are matched', 'ranks: ' + JSON.stringify(r.map(function (x) { return x.rank; })));
+ok(r[0].key === 'x' && r[0].rank > 0 && r[1].rank === 0, 'with columns the whole row is matched, its fields not shown too', 'ranks: ' + JSON.stringify(r.map(function (x) { return [x.key, x.rank]; })));
 r = PS.order(C, { words: 'secret', columns: [{ field: 'label', from: 'hidden' }] });
 ok(r[0].key === 'x' && r[0].rank > 0, 'a column\'s value is read from its from', 'from: ' + JSON.stringify(r.map(function (x) { return [x.key, x.rank]; })));
 r = PS.order(C, { words: 'secret' });

@@ -72,7 +72,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
 const WATCH = String.raw`(function () {
-  var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0 };
+  var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [] };
   var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|shell\/shared\/js\/spiritData\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
@@ -139,9 +139,21 @@ const WATCH = String.raw`(function () {
       return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
     };
   }
+  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.data branch, and whether it ranks rows of its own.
+  function searches(els) {
+    if (!els || typeof els !== 'object' || els.__searched) return;
+    try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
+    var cur = els.probabilitySearch;
+    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); return c.apply(this, arguments); }; v.create.__kept = true; } }
+    Object.defineProperty(els, 'probabilitySearch', { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
+    wrap(cur);
+  }
   function hook(o) {
     if (!o || typeof o !== 'object' || o.__watched) return;
     Object.defineProperty(o, '__watched', { value: true });
+    var els = o.elements;
+    Object.defineProperty(o, 'elements', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
+    searches(els);
     [['events', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];
       function wrap(v) { if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; } }
@@ -243,6 +255,14 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
   if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under shell/js/, or an agent table\'s page): not mounted'); return; }
+  // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
+  // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
+  // search element itself matches the whole row.
+  if (rel !== 'shell/js/probabilitySearch.js') {
+    test.subHeading(NAMED + ': ' + 'its searches match the whole row');
+    const src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    ok(!/\bmatched\s*:/.test(src), 'it hands no search a matched() of its own', 'it hands a search matched(), a few fields in place of the whole row');
+  }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
   const node = await scratchNode();
@@ -414,6 +434,14 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // is red"): judged while a write it sent is out, until the node answers it.
     test.subHeading(NAMED + ': ' + 'while a write is out, it draws nothing of its own');
     ok(!W.moved.length, W.writes.length ? 'while its writes were out it changed only busy marks, disabled buttons and fine print' : 'no write sent, nothing to judge', W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6)));
+
+    // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
+    // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.data branch (its
+    // data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.").
+    test.subHeading(NAMED + ': ' + 'every search it makes ranks spirit.data');
+    const made = W.searches || [];
+    const off = made.filter(function (x) { return !x.data || x.rows; });
+    ok(!off.length, made.length ? 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own' : 'it makes no search', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })));
 
     test.subHeading(NAMED + ': ' + 'destroy leaves its box empty');
     const destroyed = await page.evaluate('(function () { var m = window.spiritMount; if (typeof m.destroy !== "function") return "none"; m.destroy(); return m.box.childElementCount === 0 ? "empty" : "left"; }())');

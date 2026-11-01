@@ -111,6 +111,15 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
   ok(hit.items.length >= 1 && hit.items[0].key === id, 'a search of words ranks the row that has them first', 'search Renamed: ' + short(hit.items.map(function (i) { return i.key; })));
   const byUrl = call(verb, { op: 'search', text: 'one.example' });
   ok(byUrl.items.length >= 1 && byUrl.items[0].key === id, 'it still ranks by the fields it does not answer: a word of the url finds its row', 'search one.example: ' + short(byUrl.items.map(function (i) { return i.key; })));
+  // THE WHOLE ROW AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must
+  // ALWAYS search the whole bloody ROW, as it is served through a single-row \"get\""): a word in a list field is found,
+  // and a secret, which no get serves, is never searched.
+  const striped = call(verb, { op: 'add', label: 'Third', tags: ['zebra'], apiKey: 'quokkasecret' });
+  const byTag = call(verb, { op: 'search', text: 'zebra' });
+  ok(!!striped.id && byTag.items.length >= 1 && byTag.items[0].key === striped.id, 'a word in a list field its get serves finds its row: tags ["zebra"]', 'search zebra: ' + short(byTag.items.map(function (i) { return i.key; })) + ', the row ' + short(striped.id));
+  const bySecret = call(verb, { op: 'search', text: 'quokkasecret' });
+  ok(!bySecret.items.some(function (i) { return i.key === striped.id && Number(i.probability || i.score || 0) > 0; }) && (bySecret.items[0] || {}).key !== striped.id, 'a secret no get serves is never searched: its words find nothing', 'search of the secret ranked its row: ' + short(bySecret.items.slice(0, 3)));
+  call(verb, { op: 'delete', id: striped.id });
   {
     // A table names what its list shows (def.listed); its search answers the id and those fields alone. (def.shows is
     // another thing: fields computed onto every row shown, as the model's providerIcon.)
