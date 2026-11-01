@@ -2,7 +2,7 @@
 
 // spirit/run/shell/js/contacts/test/listElement.js
 // The tests of shell/js/contacts/listElement.js, and of no other module: the contacts list's filters, and what its
-// create hands the search element and does with the stream, a row's button and a pressed row (spec: ./listElement.md).
+// create hands the search element, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contactElement (contacts/rowElement.js), over the real data set
 // and the contact family's clientCacheManager (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
@@ -35,8 +35,9 @@ window.spirit.elements = {
 // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
 const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
-let onUpdate = null; let unsubscribed = 0;
-window.spirit.events = { subscribe: function (h) { onUpdate = h.onUpdate; return function () { unsubscribed += 1; }; } };
+// The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
+const subscribers = [];
+window.spirit.events = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
 load(path.join(JS, '..', '..', 'spirit', 'spiritData.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';
@@ -51,6 +52,7 @@ window.spirit.cacheManager = function (name) {
 };
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
+const dataSubscribed = subscribers.length;
 load(path.join(JS, 'contacts', 'listElement.js'));
 const L = window.spirit.elements.contactList;
 const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
@@ -60,7 +62,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   test.startTest('contacts/listElement.js: the contacts list');
 
   test.subHeading('it loads what it uses');
-  // goal/G41.16: no data script; what the stream means for contacts is the row element's, loaded with it.
+  // goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
   const own = ['shell/js/contacts/rowElement.js', 'shell/js/probabilitySearch.js'];
   if (own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); })) test.check('loading, it requires its row and the search element through spirit.require, and no data script');
   else test.fail('as it loaded, the list required: ' + JSON.stringify(required));
@@ -156,26 +158,16 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   if (asked.length === n && made.refreshes === r0 + 1) test.check('a click on no button, or on a row the list did not make, does nothing');
   else test.fail('a stray click asked ' + JSON.stringify(asked.slice(n)));
 
-  test.subHeading('the one table on the stream');
-  const r1 = made.refreshes;
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'K1', keep: true, present: true } } });
-  if (made.refreshes === r1) test.check('a row it shows whose flags did not move repaints nothing here');
-  else test.fail('an unmoved row refreshed');
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
-  if (made.refreshes === r1 + 1) test.check('a row it shows whose flags moved makes it search again');
-  else test.fail('a moved row did not refresh');
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'K1', keep: true, gone: true } } });
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'NEW', held: true } } });
-  if (made.refreshes === r1 + 3) test.check('a row gone, or one not shown that the owner now lists, searches again');
-  else test.fail('gone/new refreshed ' + (made.refreshes - r1 - 1));
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'NEW2', present: true } } });
-  onUpdate({ type: 'relay-presence', data: { row: { publicKey: 'NEW3', keep: true } } });
-  if (made.refreshes === r1 + 3) test.check('an unlisted row, or another job, searches nothing');
-  else test.fail('an unlisted row or another job refreshed');
-  host.isConnected = false;
-  onUpdate({ type: 'shadow', data: { row: { publicKey: 'NEW4', keep: true } } });
-  if (unsubscribed === 1 && made.refreshes === r1 + 3) test.check('once off the page it lets go of the stream, and searches nothing');
-  else test.fail('off the page: ' + JSON.stringify({ unsubscribed: unsubscribed, refreshes: made.refreshes - r1 }));
+  test.subHeading('the one table is the contact family\'s cache, and the list takes no stream itself (goal/G41.28)');
+  // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
+  // item. no exceptions."
+  if (subscribers.length === dataSubscribed) test.check('loaded and created, the list subscribes to no stream of its own');
+  else test.fail('the list subscribed to the stream ' + (subscribers.length - dataSubscribed) + ' times');
+  window.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
+  await tick();
+  const kept = CD && CD.contact('K1');
+  if (kept && kept.blocked === true && o.data === CD.branch) test.check('a row the node\'s shadow job hands is in the branch the list handed its search');
+  else test.fail('after the shadow job: ' + JSON.stringify(kept));
 
   test.subHeading('refresh and destroy are the search element\'s');
   const r2 = made.refreshes;

@@ -2,8 +2,9 @@
 
 // spirit/run/shell/js/test/appInstaller.js
 // The tests of shell/js/appInstaller.js, and of no other module (spec: ./appInstaller.md; goal/G41.1, box v14). The
-// browser file runs in node on a window of its own: the spirit object's fs, the stream and the face shell are stubs that
-// keep what the element asked of them, and the test plays the node's answers and the stream.
+// browser file runs in node on a window of its own: the spirit object's fs, the jobs family's cache (spirit.jobsData,
+// goal/G41.28) and the face shell are stubs that keep what the element asked of them, and the test plays the node's
+// answers and the cache's changes.
 
 const fs = require('fs');
 const path = require('path');
@@ -37,16 +38,20 @@ function host() {
 }
 const onOf = function (h) { return !!h.button && /data-on="true"/.test(h.button.attrs); };
 
-// A world: the node's annotations by path, what was written, the stream's subscribers, the face shell's word.
+// A world: the node's annotations by path, what was written, the jobs cache's watchers, the face shell's word.
 function world(faces) {
-  const w = { faces: faces, writes: [], subs: [], faceApp: [], unsubscribed: 0 };
+  const w = { faces: faces, writes: [], subs: [], faceApp: [], unsubscribed: 0, jobs: {}, managers: [] };
   const fsApi = {
     getAnnotations: function (p) { return Promise.resolve(JSON.parse(JSON.stringify(w.faces[p] || {}))); },
     annotate: function (a) { w.writes.push(JSON.parse(JSON.stringify(a))); w.faces[a.path] = Object.assign({}, w.faces[a.path] || {}, { face: a.payload }); return Promise.resolve({ ok: true }); },
   };
   const win = { spirit: {
     ready: Promise.resolve({ fs: fsApi }), fs: fsApi,
-    events: { subscribe: function (h) { w.subs.push(h); return function () { w.unsubscribed += 1; w.subs = w.subs.filter(function (x) { return x !== h; }); }; } },
+    cacheManager: function (name) { w.managers.push(name); return Promise.resolve(true); },
+    jobsData: {
+      find: function (fn) { return Object.keys(w.jobs).map(function (id) { return w.jobs[id]; }).find(fn); },
+      watch: function (h) { w.subs.push(h); return function () { w.unsubscribed += 1; w.subs = w.subs.filter(function (x) { return x !== h; }); }; },
+    },
     shell: { faceApp: function (id) { w.faceApp.push(id); } },
     escapeHtml: function (s) { return String(s); },
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
@@ -54,8 +59,9 @@ function world(faces) {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.E = win.spirit.elements || {};
-  w.job = function (module, status) { const j = { id: 'job-' + module, kind: 'server', module: module, status: status }; w.subs.slice().forEach(function (h) { if (h.onUpdate) h.onUpdate(j); }); };
-  w.snapshot = function (jobs) { w.subs.slice().forEach(function (h) { if (h.onSnapshot) h.onSnapshot(jobs); }); };
+  w.put = function (j) { w.jobs[j.id] = j; w.subs.slice().forEach(function (h) { h(j.id, j); }); };
+  w.job = function (module, status) { w.put({ id: 'job-' + module, kind: 'server', module: module, status: status }); };
+  w.snapshot = function (jobs) { jobs.forEach(w.put); };
   return w;
 }
 
@@ -68,7 +74,7 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   ok(w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function', 'it registers spirit.elements.appInstaller.create', 'elements: ' + short(Object.keys(w0.E)));
   if (!w0.E.appInstaller) return;
 
-  test.subHeading('an appServer: on while it runs, by the stream');
+  test.subHeading('an appServer: on while it runs, by the jobs family\'s cache (goal/G41.28)');
   const SRV = 'process/js/agent/agent.js';
   const w = world({ [SRV]: { face: { home: false, name: 'Agent', description: 'keep me' } } });
   const h = host();
@@ -83,9 +89,9 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   ok(wr1 && wr1.path === SRV && wr1.payload.home === true && wr1.payload.name === 'Agent' && wr1.payload.description === 'keep me',
     'a press writes the whole face part with home turned on, every other field kept', 'wrote ' + short(wr1));
   ok(e1.stopped, 'the click stays its own: it does not reach the row around it', 'the click propagated');
-  ok(!onOf(h) && h.button.text === 'Activate', 'until the stream says so, it stays off: it draws the stream, not the click', 'after the press: ' + short(h.button.text));
+  ok(!onOf(h) && h.button.text === 'Activate', 'until the cache says so, it stays off: it draws the cache, not the click', 'after the press: ' + short(h.button.text));
   w.job('process/js/agent', 'running'); await settle();
-  ok(onOf(h) && h.button.text === 'Deactivate', 'its job running on the stream: Deactivate, on', 'after running: ' + short(h.button.text));
+  ok(onOf(h) && h.button.text === 'Deactivate', 'its job running in the cache: Deactivate, on', 'after running: ' + short(h.button.text));
   w.job('process/js/agent', 'pending'); await settle();
   ok(onOf(h), 'pending (between restarts) counts as running', 'off while pending');
   h.button.click(); await settle();
@@ -94,7 +100,7 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   w.job('process/js/agent', 'cancelled'); await settle();
   ok(!onOf(h) && h.button.text === 'Activate', 'its job cancelled: Activate, off', 'after cancelled: ' + short(h.button.text));
   inst.destroy();
-  ok(w.unsubscribed === 1, 'destroy ends its stream subscription', 'unsubscribed ' + w.unsubscribed);
+  ok(w.unsubscribed === 1, 'destroy ends its watch on spirit.jobsData', 'unsubscribed ' + w.unsubscribed);
   w.job('process/js/agent', 'running'); await settle();
   ok(!onOf(h), 'and nothing is drawn after it', 'drew after destroy');
 
@@ -121,12 +127,12 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   const annotate = wn.writes.length;
   ok(annotate === 0, 'drawing writes nothing', 'writes on draw: ' + annotate);
 
-  test.subHeading('every button listens: a face part streamed redraws it (box v15)');
+  test.subHeading('every button listens: a face part in the jobs cache redraws it');
   const wl = world({ [APP]: { face: { app: false, name: 'Icons' } } });
   const hl = host();
   wl.E.appInstaller.create(hl, { path: APP }); await settle();
-  const faceJob = function (p, face) { const j = { id: 'job-app-face', type: 'app-face', data: { path: p, face: face } }; wl.subs.slice().forEach(function (h) { if (h.onUpdate) h.onUpdate(j); }); };
-  ok(wl.subs.length > 0, 'a shell app\'s button listens to the stream too', 'it subscribed to nothing');
+  const faceJob = function (p, face) { wl.put({ id: 'job-app-face', type: 'app-face', data: { path: p, face: face } }); };
+  ok(wl.subs.length > 0 && wl.managers.indexOf('jobs') !== -1, 'a shell app\'s button watches the jobs family\'s cache too, its manager loaded', 'managers ' + short(wl.managers) + ', watches ' + wl.subs.length);
   faceJob('shell/files/files.js', { app: true }); await settle();
   ok(!onOf(hl), 'another app\'s face part leaves it as it was', 'turned on by another app\'s face');
   faceJob(APP, { app: true, name: 'Icons' }); await settle();

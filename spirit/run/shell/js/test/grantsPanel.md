@@ -50,8 +50,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 - **Grant**: with no bundle or no ID chosen, nothing is asked. Otherwise it reads the chosen bundle's branches
   (`auth.branch { op: 'search', bundle }`) and grants each through the grants table it was handed, `grant(id, path)`:
   `family.verb`, or the family alone for (ALL). Nothing is granted or read past that table. A path the ID holds already
-  is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives on
-  the stream (rule/19).
+  is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives in
+  spirit.data (rule/19).
 
 ### Grant is a busyButton (goal/G41.23)
 

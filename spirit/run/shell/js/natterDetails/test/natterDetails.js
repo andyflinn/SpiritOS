@@ -184,6 +184,8 @@ function world(rows, relayStatus) {
     ownerBadge: { removalRefusal: function () { return ''; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
+    // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.contactData's rows.
+    cacheManager: function (name) { w.managers = (w.managers || []).concat(name); win.spirit.contactData = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
     elements: {
       navigation: { push: function (page) {
         const box = document.createElement('div'); document.body.appendChild(box);

@@ -106,9 +106,16 @@ function world() {
     'shell/js/apiFamilySelector.js': ['apiFamilySelector'], 'shell/js/grantSelector/listElement.js': ['grantList'], 'shell/js/busyButton.js': ['busyButton'], 'shell/js/rowForm.js': ['rowForm'] };
   const page = {};
   const win = {
-    spirit: { elements: page,
+    // The page knows its node: spirit.data files nothing before it does (goal/G41.28, Q10).
+    spirit: { elements: page, node: { key: 'KEY+GRANTS/PANEL==' },
       require: function (p) { w.required.push(String(p)); (FILES[p] || []).forEach(function (k) { page[k] = E[k]; }); return Promise.resolve(true); },
       tree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
+      // A family's cache (goal/G41.28): the jobs family's own manager, run on this window, so the server jobs the test
+      // hands spirit.data reach the panel as the page's would.
+      cacheManager: function (name) {
+        if (name === 'jobs') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'jobs', 'clientCacheManager.js'), 'utf8'), win, { filename: 'clientCacheManager.js' });
+        return Promise.resolve(true);
+      },
       escapeHtml: api.escapeHtml },
     document: { createElement: function (t) { return node('<' + t + '>'); }, getElementById: function (id) { return byId[id] || null; } },
     Event: function (type) { this.type = type; },

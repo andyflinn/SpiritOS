@@ -76,8 +76,9 @@ function world() {
   const win = {
     spirit: { elements: E,
       require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
-      relay: { status: function () { return Promise.resolve({ body: { rows: ROWS } }); } },
-      events: { subscribe: function (h) { w.subs.push(h); return function () {}; } },
+      relay: { status: function () { w.statuses = (w.statuses || 0) + 1; return Promise.resolve({ body: { rows: ROWS } }); } },
+      // The contact family's cache (goal/G41.28): its manager loads, and the app watches spirit.contactData's rows.
+      cacheManager: function (name) { w.managers = (w.managers || []).concat(name); win.spirit.contactData = { watch: function (h) { w.subs.push(h); return function () {}; } }; return Promise.resolve(true); },
       shell: { activateApp: function (d) { w.def = d; } } },
     document: { getElementById: function () { return null; }, createElement: function (t) { return node('<' + t + '>'); } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
@@ -118,6 +119,12 @@ test.startTest('info.js: the Info app');
     'each element is set to what the node stored', 'sets: ' + short(w.sets));
   if (w.made.label && typeof w.made.label.opts.onSaved === 'function') { w.made.label.opts.onSaved('Bob'); await settle(); }
   ok(w.posts.length === 0, 'a saved name is no longer posted to every relay', 'posts: ' + short(w.posts));
+
+  test.subHeading('it reads the relays from the contact family\'s cache (goal/G41.28)');
+  ok((w.managers || []).indexOf('contact') !== -1 && w.subs.length === 1, 'it loads the contact manager and watches spirit.contactData', 'managers: ' + short(w.managers) + ', watches ' + w.subs.length);
+  const before = w.statuses;
+  if (w.subs[0]) { w.subs[0]('RA', { relay: true, keep: true, seated: false }); await settle(); }
+  ok(w.statuses > before, 'a relay\'s row that changed reads the relays again', 'relay.status asked ' + before + ', then ' + w.statuses);
 
   test.subHeading('the two forms and the key rotation stay');
   const join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();

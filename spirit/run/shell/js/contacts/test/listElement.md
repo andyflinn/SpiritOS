@@ -25,14 +25,13 @@ goal/G41.28), drawn by `probabilitySearch`, each row a `contactElement` (`contac
   the card, or that a different key answered.
 - **A row's Add**: a click on a `[data-action]` inside a row runs that element's action, says `added <label>`, calls
   `onAdded`, searches again. A click on no button or a row the list did not make does nothing.
-- **The stream** (`shadow` jobs): a shown row whose flags moved or that is gone, or an unshown row now kept, mine, held
-  or blocked, searches again; presence alone, an unlisted row and other jobs do not. Once the host is off the page it
-  unsubscribes.
+- **The one table is the contact family's cache** (goal/G41.28): the list subscribes to no stream of its own; a row
+  the node's `shadow` job hands is in `spirit.contactData`'s branch, the one the list hands its search.
 - `refresh` and `destroy` are the search element's.
 - **It loads what it uses** (goal/G41.3): loading, it requires `contacts/rowElement.js` and `probabilitySearch.js`
-  through `spirit.require`, and no data script (goal/G41.16): what the stream means for contacts is the row element's.
+  through `spirit.require`, and no data script (goal/G41.16): what the stream means for contacts is the contact family's manager's.
 
 ## What its test must try to break
 
 A flag that is truthy but not `true`; a held row that is also kept or a relay; a null row; an empty search answer; a
-card from the wrong key; stray clicks; a presence-only stream row; a row arriving after the list left the page.
+card from the wrong key; stray clicks; a subscription of its own to the stream.
