@@ -1,5 +1,5 @@
 {
- "change": 118924,
+ "change": 118925,
  "goal": "goal/G41",
  "items": [
   {
@@ -166,7 +166,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -20886,12 +20886,11 @@
    "id": "goal/G41.26",
    "title": "Next step on agent app",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 22,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
