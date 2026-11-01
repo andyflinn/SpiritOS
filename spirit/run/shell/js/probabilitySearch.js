@@ -172,7 +172,8 @@
     // they not use the icon element? I'd like it, if the controls in the search bubble look better aligned.", then "do it
     // for all probabilitySearch object in the new face-shell."): a square of 1em, the row's controls 1em after it, so
     // every row's first control starts at the same place. The row is text, so the icon is written as the markup it made.
-    var BUBBLE = 'background:transparent;border:1px solid currentColor;border-radius:1em;padding:0.3em 0.6em;';
+    // THE BUBBLE IS THE ONE SHARED STYLE (goal/G41.27; Andy, box: "The bubble is one shared style, the same
+    // probabilitySearch's search bubble uses."): shell.css's .shell-bubble, the rowForm's too.
     var ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:1em;';
     function iconHtml(glyph) {
       var I = window.spirit.elements && window.spirit.elements.icon;
@@ -195,7 +196,7 @@
       // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
       // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
-      '<div style="margin-top:1em;' + BUBBLE + '">' +
+      '<div class="shell-bubble" style="margin-top:1em">' +
       (selectors.length ? '<div id="' + pre + 'selectors" style="margin-bottom:0.5em;' + ROW + '">' + iconHtml('🪣') +
         selectors.map(function (s, i) { return '<span id="' + pre + 'selector' + i + '"></span>'; }).join('') + '</div>' : '') +
       '<div id="' + pre + 'filters">' + filterHtml() + '</div>' +

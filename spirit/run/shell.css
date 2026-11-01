@@ -493,6 +493,23 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 .shell-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
   width: 1em; height: 1em; line-height: 1; overflow: visible; vertical-align: middle; }
 
+/* THE BUBBLE (goal/G41.27; Andy, box: "they form a bubble with transparent background, and a border with the color of
+   the type-face. The bubble is one shared style, the same probabilitySearch's search bubble uses."): the one style, the
+   rowForm's (shell/js/rowForm.js) and probabilitySearch's search bubble alike. */
+.shell-bubble { background: transparent; border: 1px solid currentColor; border-radius: 1em; padding: 0.3em 0.6em;
+  box-sizing: border-box; }
+
+/* THE ONE-ROW FORM (goal/G41.27; shell/js/rowForm.js; Andy, box: "one row forms show as blocks taking up the full width of
+   their container, and wrap", "the first element is always an icon shell-element, and takes the (top-) left position",
+   "the last element is always a button that is positioned at the (bottom-) right", "between the icon and the button is
+   a span, into which the form elements can be dropped."): a block the container's width; the span takes what is left
+   and wraps its elements onto more rows, none wider than it; the icon held at the top, the button at the bottom right. */
+.shell-row-form { display: flex; align-items: center; gap: 1em; width: 100%; }
+.shell-row-form > .shell-icon { align-self: flex-start; }
+.shell-row-form > .shell-row-form-span { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1em; }
+.shell-row-form > .shell-row-form-span > * { max-width: 100%; box-sizing: border-box; }
+.shell-row-form > button { flex: none; align-self: flex-end; margin-left: auto; }
+
 /* THE BUSY BUTTON'S TURN (goal/G41.23; shell/js/busyButton.js; Andy: "an animated icon showing to the left of the
    buttons label, when the button is waiting"): one turn for every app, here in the one sheet. */
 .shell-busy { display: inline-block; flex: none; width: 0.8em; height: 0.8em; margin-right: 0.4em; box-sizing: border-box;
