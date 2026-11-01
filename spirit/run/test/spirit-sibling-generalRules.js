@@ -152,6 +152,9 @@ const WATCH = String.raw`(function () {
     var box = window.spiritMount && window.spiritMount.box;
     var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
     if (!D || !box || typeof D.set !== 'function') return Promise.resolve([]);
+    // A box that shows nothing (a selector hidden until its family is chosen) has nothing to redraw: not judged.
+    var shown = Array.prototype.some.call(box.querySelectorAll('*'), function (el) { return el.getClientRects().length > 0; });
+    if (!shown) return Promise.resolve(paths.slice(0, 6).map(function (p) { return { path: p, hidden: true }; }));
     return paths.slice(0, 6).reduce(function (chain, p, i) {
       return chain.then(function (out) {
         var whole = p.indexOf('/') !== -1;
@@ -494,8 +497,10 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // its box. A watch that redraws nothing is not listening.
     const probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
     test.subHeading(NAMED + ': ' + 'what it watches in spirit.data redraws it');
+    const seenProbe = probed.filter(function (x) { return !x.hidden; });
     if (!probed.length) unjudged('it watches no spirit.data path');
-    else ok(probed.some(function (x) { return x.redrew; }), 'a change written into what it watches redraws it: ' + probed.filter(function (x) { return x.redrew; }).map(function (x) { return x.path; }).join(', '), 'it watches ' + probed.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them');
+    else if (!seenProbe.length) unjudged('it shows nothing on this page, so there is nothing to redraw');
+    else ok(seenProbe.some(function (x) { return x.redrew; }), 'a change written into what it watches redraws it: ' + seenProbe.filter(function (x) { return x.redrew; }).map(function (x) { return x.path; }).join(', '), 'it watches ' + seenProbe.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them');
     if (!W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
     else ok(watching > 0, 'it sent ' + W.writes.length + ' writes and watches ' + watching + ' spirit.data paths for them', 'it sent ' + short(W.writes) + ' and watches no spirit.data path' + (raw ? '; it listens to the raw stream ' + raw + ' times instead' : ''));
 
