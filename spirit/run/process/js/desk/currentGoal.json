@@ -1,5 +1,5 @@
 {
- "change": 119887,
+ "change": 120015,
  "goal": "goal/G41",
  "items": [
   {
@@ -180,13 +180,12 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -19587,12 +19586,11 @@
    "id": "goal/G41.24",
    "title": "integrating goal/G41.25 into spirit/appServer.js",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 32,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -20653,7 +20651,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.24"
+    "goal/G41"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -22116,7 +22114,7 @@
    "id": "goal/G41.27",
    "title": "Bubbles around one-row forms.",
    "goal": "goal/G41",
-   "status": "fieldRules.js changed",
+   "status": "peerRank.js changed",
    "statusTone": "code",
    "with": "claude-windows",
    "version": 8,
@@ -23752,15 +23750,15 @@
    "id": "goal/G41.28",
    "title": "Fix Probability Search",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "build",
    "statusTone": "",
-   "with": "",
+   "with": "claude-windows",
    "version": 15,
    "buttons": [
     "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "done",
+    "verify",
+    "pushgoal"
    ],
    "blocking": [
     "goal/G41"
@@ -23769,21 +23767,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 31,
+   "fileCount": 39,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "ea47e8f9",
+   "redCommit": "bb692ee7",
    "waived": false,
    "rules": [
     {
@@ -23855,10 +23853,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/28",
      "version": 68
     },
@@ -23879,10 +23873,16 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.1: /process/js/agent/table/tableElement/headLessBrowser.html: 1 red, 4 green; first: the page said: {\"state\":\"failed\",\"error\":\"process/js/agent/table/tableElement.js registers more than one element: agentTable, agentRow\"} ❌",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /shell/agent/agent/headLessBrowser.html: 1 red, 22 green; first: 2 kept more than any rule allows: [\"div#agent-bench > div#wb1-pane-left > div#agent-personas > input#probsearch-6-text kept 4096\",\"div#agent-bench > div#wb1-pane-right >",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.3: /shell/apps/apps/headLessBrowser.html: 1 red, 12 green; first: 1 kept more than any rule allows: [\"input#probsearch-1-text kept 4096\"] ❌",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.4: /shell/desk/desk/headLessBrowser.html: 1 red, 16 green; first: 1 kept more than any rule allows: [\"div#desk-root > div#desk-app-panes > textarea#desk-team-say[to every agent; design talk that belongs to no row] kept 4096\"] ❌",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.5: /shell/grants/grants/headLessBrowser.html: 1 red, 14 green; first: 1 kept more than any rule allows: [\"div#tc1-content > input#probsearch-7-text kept 4096\"] ❌"
+   ],
+   "verifyFailuresMore": true,
+   "verifyRed": 1,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -23890,7 +23890,8 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "the search in Desk and other places does NOT return what i expect. My guess is the following:\n\n- the ServerSide of probability Search is NOT searching the whole row of the object. and i have no fucking clue why that is NOT the case.\n\n- a probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch. \n\n- probabilityStringObjectMatch then uses probabilityStringMatch to evaluate every field.\n\n- probabilityStringObjectMatch can easily convert numbers in an object to strings, for matching, \n\n- same for booleans: if a boolean is true, then it's key serves as string to be evaluated. if the boolean is false, it's key will NOT be evaluated.\n\n- probabilityStringObjectMatch will scan arrays as well.\n\n- probabilityStringMatch MUST, when comparing tokens, use the shorter token as first argument. This overrules any previous ruling that disagrees.\n\n- it is expected that all or most compared objects will be a partial match. however, no user will take results seriously when only one letter is in the search box.\n\n- All client side searches will be fixed, too, and search the whole row, as cached in spirit.data. If its rows are NOT cached in the proper place, with the shells one and only spirit.data object, then that must be fixed, too.\n\n- general test for screen objects will make sure that all damn data is cached in spirit data.\n\n- The new general-test line checks this:  every probabilitySearch on a page is made with a spirit.data branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.\n\n",
@@ -23948,12 +23949,48 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-11-01T06:45:35.952Z",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-01T06:52:18.393Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-01T06:54:51.467Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-01T06:55:31.868Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-01T06:55:52.139Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -24160,6 +24197,60 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-01T06:45:45.825Z",
      "text": "- cw: files added, 31:\n- the matchers: probabilityStringMatch.js and probabilityStringObjectMatch.js;\n- the servers that pick fields: desk.js, deskAgent, deskClient, chatClerver, the agent tables' rowTable and tableElement, the stackFrameChecks plugin, and apiAuth, hub, introSpector, nodeSearches and peerRank;\n- the client: probabilitySearch.js and listSearch.js, and the lists with a matched() of their own: apps, chatter, desk, fallout, deskDetails, jobs, contactSelector, and the branch, bundle, contacts, files, grant and icons lists;\n- the general check: spirit-sibling-generalRules.js and .md.\n- Their own tests come with them, as Desk adds a file's test."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-01T06:58:44.405Z",
+     "text": "commit 7f88ee7e208e0a1e0938504fe3c380444839e3b3: goal/G41.28 red: the matchers (Andy, box v15: \"probabilityStringObjectMatch can easily convert numbers in an object to strings, for matching\", \"if a boolean is true, then it's key serves as string to \n- spirit/test/probabilityStringMatch.js\n- spirit/test/probabilityStringObjectMatch.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-01T06:58:52.255Z",
+     "text": "commit bb692ee7c451845964af4a5f6dff967c32784abf: goal/G41.28 red: every search matches the whole row (Andy, box v15: \"a probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a single-row \\\"get\\\", usi\n- spirit/run/process/js/agent/table/test/rowTable.js\n- spirit/run/process/js/agent/table/test/rowTable.md\n- spirit/run/shell/js/test/probabilitySearch.js\n- spirit/run/shell/js/test/probabilitySearch.md\n- spirit/run/test/spirit-sibling-generalRules.js\n- spirit/run/test/spirit-sibling-generalRules.md\n- spirit/run/test/spirit-sibling-searchRules.js\n- spirit/run/test/spirit-sibling-searchRules.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-01T06:59:19.745Z",
+     "text": "- wsl: the red is in, bb692ee7. cw: yours.\n- The matchers: numbers as text, a false boolean's key out, arrays scanned (5 red); in a search, a longer query word counts by the shorter's share (1 red).\n- Client: probabilitySearch matches the whole row, with columns or a matched() alike (2 red). The general UI test: no list hands a matched(); every search has a spirit.data branch and no rows() of its own.\n- Server: a new code rule, spirit-sibling-searchRules.js, finds 4 hand-picked calls: desk.js:210, stackFrameChecks 625 and 709, deskClient 1048, apiAuth 191. rowTable: a word in a list field finds its row (red), a secret is never searched.\n- Not judged, having no test of their own: chatClerver, deskAgent, hub, introSpector, nodeSearches, peerRank. deskClient's and apiAuth's flat copies are built before the call, out of the code rule's sight."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-01T06:59:37.552Z",
+     "text": "- wsl: the red is in, bb692ee7. cw: yours.\n- The matchers: numbers as text, a false boolean's key out, arrays scanned (5 red); in a search, a longer query word counts by the shorter's share (1 red).\n- Client: probabilitySearch matches the whole row, with columns or a matched() alike (2 red). The general UI test: no list hands a matched(); every search has a spirit.data branch and no rows() of its own.\n- Server: a new code rule, spirit-sibling-searchRules.js, finds 4 hand-picked calls: desk.js:210, stackFrameChecks 625 and 709, deskClient 1048, apiAuth 191. rowTable: a word in a list field finds its row (red), a secret is never searched.\n- Not judged, having no test of their own: chatClerver, deskAgent, hub, introSpector, nodeSearches, peerRank. deskClient's and apiAuth's flat copies are built before the call, out of the code rule's sight."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T07:01:50.375Z",
+     "text": "commit 8a6e68bd6b15cb34448b8d106a1506da79654544: goal/G41.28: the matchers (Andy, box v15: \"probabilityStringObjectMatch can easily convert numbers in an object to strings, for matching\", \"if a boolean is true, then it's key serves as string to be e\n- spirit/run/spirit/probabilityStringMatch.js\n- spirit/run/spirit/probabilityStringObjectMatch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T07:05:02.267Z",
+     "text": "commit 67a5d06b753f44a9363c123d690acec7ca9f3607: goal/G41.28: every client search matches the whole row (Andy, box v15: \"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data.\"). probabilitySearch matches th\n- spirit/run/process/js/agent/table/tableElement.js\n- spirit/run/shell/apps/apps.js\n- spirit/run/shell/chatter/chatter.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/jobs/jobs.js\n- spirit/run/shell/js/branchSelector/listElement.js\n- spirit/run/shell/js/bundleSelector/listElement.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/js/contacts/listElement.js\n- spirit/run/shell/js/files/listElement.js\n- spirit/run/shell/js/grantSelector/listElement.js\n- spirit/run/shell/js/icons/listElement.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T07:05:31.237Z",
+     "text": "- cw: two parts in.\n- 8a6e68bd, the matchers: numbers as text, a false boolean's key out, arrays scanned; a pair of words grades the shorter against the longer. Both reds green, 15 and 12. The search suites give the same counts before and after.\n- 67a5d06b, the client: probabilitySearch and listSearch match the whole row; the lists' 16 matched() are gone. probabilitySearch 145 green.\n- wsl: five tests still assert the removed matched(): the branch, bundle and grant lists (\"matched: null\"), and the fallout plugin and the contacts list, which call o.matched and throw. Yours to update.\n- Next: the server side, then the spirit.data check."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T07:11:19.782Z",
+     "text": "commit ea47e8f96380561b1ba9248ef66a892e3190d87a: goal/G41.28: every server search matches the whole row as it is served (Andy, box v15: \"a probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a sing\n- spirit/run/process/js/agent/table/rowTable.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/spirit/apiAuth.js\n- spirit/run/spirit/hub.js\n- spirit/run/spirit/nodeSearches.js\n- spirit/run/spirit/peerRank.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-01T07:12:09.322Z",
+     "text": "- cw: the server side is in, ea47e8f9: every search matches the row as it is served. That covers Desk's item and table searches (rules as rule.get serves them), stackFrameChecks, deskClient, apiAuth, rowTable, chatClerver, deskAgent, hub, the jobs search and peerRank.\n- Green: searchRules 89, rowTable 63, desk 46, stackFrameChecks 99, deskClient 53, apiAuth 77, the four agent tables.\n- wsl: chatsSearch has 3 new reds. They assert lines without the word are left out; a whole line now carries a small partial match and stays, ranked below. The line with the word is still first. Box v15: \"all or most compared objects will be a partial match\". Yours to update.\n- Left: every list fed by spirit.data, and the general check for it."
     }
    ]
   }
