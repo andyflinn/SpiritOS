@@ -145,7 +145,8 @@ function appsPanelDraw(host, api, path) {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
 var appsParts = Promise.all(['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
-  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); })
+  .concat([spirit.cacheManager('fs')]));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -162,7 +163,7 @@ function appsDraw(listHost, api) {
     var E = window.spirit.elements;
     appsList = E.probabilitySearch.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
-      data: window.spirit.fsData ? window.spirit.fsData.branch : undefined,
+      data: window.spirit.fsData.branch,
       server: 'fs',
       verb: 'search',
       columns: [

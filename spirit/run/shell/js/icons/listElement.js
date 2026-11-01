@@ -26,7 +26,7 @@
   // one and only spirit.data object, then that must be fixed, too."): kept by the fs family's cache manager, the set
   // being a file the family serves (spirit.fsData.icons, glyph -> its row), loaded with this element. A set read again
   // replaces it whole: a glyph the set no longer has leaves it.
-  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('fs')).then(null, function () { /* no cache */ });
+  window.spirit.cacheManager('fs');
   function fsData() { return (window.spirit && window.spirit.fsData) || null; }
   function keepSet(set) { var F = fsData(); if (F) F.icons.keep(set); }
 
@@ -51,7 +51,7 @@
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
       // A view of the icon set's branch: what keepSet writes, it draws.
-      data: fsData() ? fsData().icons.branch : undefined,
+      data: fsData().icons.branch,
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },

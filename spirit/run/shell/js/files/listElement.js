@@ -19,7 +19,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fileViewer.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
-  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('fs')).then(null, function () { /* no file tree */ });
+  window.spirit.cacheManager('fs');
   function fsData() { return (window.spirit && window.spirit.fsData) || null; }
 
   function accepted(accept, row) {
@@ -73,7 +73,7 @@
     list = E.probabilitySearch.create(inner, {
       api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.fsData.branch).
-      data: fsData() ? fsData().branch : undefined,
+      data: fsData().branch,
       server: 'fs',
       verb: 'search',
       face: o.face,

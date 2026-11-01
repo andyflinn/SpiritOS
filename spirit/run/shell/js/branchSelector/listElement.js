@@ -17,9 +17,10 @@
 // in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
+  // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28).
   var parts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/branchSelector/rowElement.js', 'shell/js/apiFamilySelector.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }));
+  }).concat([window.spirit.cacheManager('auth')]));
   var COLUMNS = {
     family: { field: 'family', label: 'Family', sort: 'text' },
     verb: { field: 'verb', label: 'Verb', sort: 'text' },
@@ -50,7 +51,7 @@
     list = E.probabilitySearch.create(box, {
       api: { verb: function (name, args) { return search(args); } },
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.authData.branches.branch).
-      data: window.spirit.authData ? window.spirit.authData.branches.branch : undefined,
+      data: window.spirit.authData.branches.branch,
       server: 'auth',
       verb: 'branch',
       face: o.face,
