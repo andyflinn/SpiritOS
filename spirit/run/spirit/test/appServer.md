@@ -13,8 +13,10 @@ stream"); Desk and deskClient move onto it.
   caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
   spirit.js holds the function, since the browser cannot load appServer, and appServer hands out the same one (cw,
   goal/G41.12 Q3); it is the one other file that writes the path.
-- **The eight family folders are `process/js/<name>/family/`** (agent, backup, chatClerver, desk, deskAgent,
-  deskClient, deskVerify, fileServer); no `<name>.family` is left.
+- **The family folders are `process/js/<name>/family/`** (agent, backup, chatClerver, desk, deskClient,
+  deskVerify, fileServer); no `<name>.family` is left.
+- **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): `process/js/deskAgent/` is gone and no file names
+  the server. The desk's bundle named `deskAgent` is his name for a desk agent, and stays.
 
 ### Bundles (goal/G41.12)
 

@@ -30,8 +30,8 @@ const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms 
 const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
-// The eight server families (box v15, Family folders).
-const FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskAgent', 'deskClient', 'deskVerify', 'fileServer'];
+// The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
+const FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 
 const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
 // A server name of the test's own, so its cache folder (relay-state/process/<name>/) is no real server's.
@@ -232,7 +232,7 @@ function runChild(mode, name, fam) {
 }
 function clearCache(name) { [path.join(RUN, 'relay-state', 'process', name), path.join(RUN, 'relay-state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
-// ── the tree: one family path, eight folders (box v15, Family folders) ─────────────────────────────────────────────
+// ── the tree: one family path, a folder per server (box v15, Family folders) ─────────────────────────────────────────────
 function jsonFiles(dir, out) {
   let names = [];
   try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
@@ -271,6 +271,11 @@ if (CHILD) {
       ok(moved, n + ': its family folder is process/js/' + n + '/family/, no ' + n + '.family is left',
         n + ': family/api.js ' + fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) + ', ' + n + '.family still there: ' + fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family')));
     });
+    // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it; the desk's
+    // bundle named deskAgent (deskBundles.json, deskVerifyBundles.json) is his name for a desk agent, and stays.
+    ok(!fs.existsSync(path.join(RUN, 'process', 'js', 'deskAgent')), 'deskAgent is killed: process/js/deskAgent/ is gone', 'process/js/deskAgent/ is still there');
+    const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /process\/js\/deskAgent\/|['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
+    ok(namers.length === 0, 'and no file names the deskAgent server', namers.length + ' files still name it: ' + namers.join(', '));
     // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
     // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
     // spirit.js holds the function and appServer hands out the same one (cw, goal/G41.12 Q3).
