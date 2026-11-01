@@ -2,7 +2,7 @@
 
 // spirit/run/process/js/agent/table/test/tableElement.js
 // The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
-// The browser file runs in node on a window of its own, over the real spirit.data (shell/shared/js/spiritData.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.data (spirit/spiritData.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 
@@ -82,7 +82,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const w = world();
   global.window = { spirit: { elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'));
+  load(path.join(RUN, 'spirit', 'spiritData.js'));
   const D = global.window.spirit.data;
   // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
   // has not; each ask kept.

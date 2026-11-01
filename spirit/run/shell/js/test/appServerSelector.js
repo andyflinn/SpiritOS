@@ -49,7 +49,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   pageData = win.spirit.data;
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });

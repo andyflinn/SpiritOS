@@ -181,7 +181,7 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['shell/shared/js/spiritData.js', 'process/js/desk/family/clientCacheManager.js'];
+  const REAL = ['spirit/spiritData.js', 'process/js/desk/family/clientCacheManager.js'];
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
@@ -198,7 +198,7 @@ function deskWorld(goal, items) {
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
-  win.spirit.require('shell/shared/js/spiritData.js');
+  win.spirit.require('spirit/spiritData.js');
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };

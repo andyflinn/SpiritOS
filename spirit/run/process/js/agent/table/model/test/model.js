@@ -140,8 +140,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
-  // The page's one data set (shell/shared/js/spiritData.js), which spirit.js brings with the client: the stream lands there.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream lands there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.modelTable && typeof E.modelTable.create === 'function' && E.modelRow && typeof E.modelRow.create === 'function',

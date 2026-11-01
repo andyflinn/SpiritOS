@@ -118,7 +118,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.api = api; w.page = page;
   return w;

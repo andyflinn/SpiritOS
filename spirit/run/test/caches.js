@@ -60,8 +60,14 @@ families.forEach(function (api) {
 test.subHeading('2. the browser and node load the same files, and nothing else keeps a family\'s cache');
 const spiritJs = code(path.join(RUN, 'spirit.js'));
 const appServer = code(path.join(RUN, 'spirit', 'appServer.js'));
-ok(/['"]shell\/shared\/js\/spiritData\.js['"]/.test(spiritJs) && /require\(\s*['"]\.\.\/shell\/shared\/js\/spiritData\.js['"]\s*\)/.test(appServer),
-  'the data set is one file: spirit.js brings shell/shared/js/spiritData.js to a page, and appServer requires the same file', 'spirit.js or appServer.js loads a data set of its own');
+// Andy: "we needed it so node.js based clients could share the exact same client code. please move the file to
+// repo:/spirit/run/spirit/spiritData.js". Every client's file, so it sits with spirit's own, not the shell's.
+ok(/['"]spirit\/spiritData\.js['"]/.test(spiritJs) && /require\(\s*['"]\.\/spiritData\.js['"]\s*\)/.test(appServer),
+  'the data set is one file: spirit.js brings spirit/spiritData.js to a page, and appServer requires the same file', 'spirit.js or appServer.js loads a data set from somewhere else than spirit/spiritData.js');
+ok(tracked.indexOf('spirit/spiritData.js') !== -1 && tracked.indexOf('shell/shared/js/spiritData.js') === -1,
+  'spiritData.js is in spirit/, the old shell/shared/js/spiritData.js gone', 'spiritData.js is not at spirit/spiritData.js alone' + (tracked.indexOf('shell/shared/js/spiritData.js') !== -1 ? ': shell/shared/js/spiritData.js is still there' : ''));
+const oldPlace = tracked.filter(function (f) { return /\.(js|html)$/.test(f) && f !== 'test/caches.js' && /shell\/shared\/js\/spiritData\.js|shared['"],\s*['"]js['"],\s*['"]spiritData/.test(code(path.join(RUN, f))); });
+ok(!oldPlace.length, 'no file loads spiritData.js from the shell', 'still naming shell/shared/js/spiritData.js: ' + short(oldPlace));
 ok(/path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]clientCacheManager\.js['"]/.test(appServer),
   'appServer takes a family\'s cache from the family\'s own clientCacheManager.js, beside its api.js', 'appServer finds a family\'s cache somewhere else than beside its api.js');
 const managers = tracked.filter(function (f) { return /\/clientCacheManager\.js$/.test(f) && !/\/test\//.test(f); });
@@ -82,7 +88,7 @@ Object.keys(owned).forEach(function (b) {
 
 // ── 3. THE SAME ROWS, THE SAME CACHE ────────────────────────────────────────────────────────────────────────────────
 test.subHeading('3. the same rows make the same spirit.data in node and in a page');
-const DATA = path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js');
+const DATA = path.join(RUN, 'spirit', 'spiritData.js');
 const DESK = path.join(RUN, managerOf('desk'));
 const ROWS = [
   { verb: 'goal.whole', change: 3, item: { id: 'goal/G9', goal: '', title: 'A goal', status: 'open' } },

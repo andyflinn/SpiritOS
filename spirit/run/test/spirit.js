@@ -516,7 +516,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 
   // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
   // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
-  // cache is shell/js/spiritData.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
+  // cache is spirit/spiritData.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
   test.subHeading('7b. spirit.js loads the cache itself, on a page and in a process');
   const isCache = function (d) { return !!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'; };
   const cq = page();

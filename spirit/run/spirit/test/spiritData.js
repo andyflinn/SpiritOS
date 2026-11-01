@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/shell/shared/js/test/spiritData.js
-// The tests of shell/shared/js/spiritData.js, and of no other module (spec: ./spiritData.md). The faceless layer runs in node:
+// spirit/run/spirit/test/spiritData.js
+// The tests of spirit/spiritData.js, and of no other module (spec: ./spiritData.md). The faceless layer runs in node:
 // required, it answers its api and ranks with the spirit's own probability files.
 
 const path = require('path');

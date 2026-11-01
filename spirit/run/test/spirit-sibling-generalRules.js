@@ -64,7 +64,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
 // sourceURL). Spirit's own code is spirit.js, its families (spirit-interface/), spirit/client/ and the page's data set
-// (shell/shared/js/spiritData.js); shell/boot.js, the face's own transport, is the one exception the network rule names
+// (spirit/spiritData.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
 //   subs:  every spirit.events.subscribe and spirit.data.watch, live until let go, and whether a module made it;
@@ -73,7 +73,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
 const WATCH = String.raw`(function () {
   var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [] };
-  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|shell\/shared\/js\/spiritData\.js|shell\/boot\.js)$/;
+  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/spiritData\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
   function spirits(f) { return SPIRIT.test(file(f)); }

@@ -131,7 +131,7 @@ function makeDom() {
 // The real files the app and its elements load, run on the page when they are required; anything else is answered and
 // not run.
 const REAL = [
-  'shell/shared/js/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
+  'spirit/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
   'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'shell/js/busyButton.js',
   // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
@@ -173,7 +173,7 @@ function world() {
   };
   win.spirit.ready = Promise.resolve(win.spirit);
   vm.createContext(win);
-  win.spirit.require('shell/shared/js/spiritData.js');
+  win.spirit.require('spirit/spiritData.js');
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   return { document: document, win: win, panes: panes };
 }

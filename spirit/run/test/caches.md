@@ -14,7 +14,7 @@ is the appServer serializes the cache to disk."*
    (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `clientCacheManager.js` beside it. Each family
    is its own check, named by the family.
 2. **One code**:
-   - the data set is one file, `shell/shared/js/spiritData.js`: `spirit.js` brings it to a page, appServer requires the
+   - the data set is one file, `spirit/spiritData.js`: `spirit.js` brings it to a page, appServer requires the
      same file;
    - appServer takes a family's cache from the family's own `clientCacheManager.js`, beside its api.js;
    - a manager's branches (the names it gives `var` constants, `var ITEMS = 'desk'`) are named by it alone: no other
