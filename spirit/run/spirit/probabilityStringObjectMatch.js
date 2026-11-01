@@ -12,10 +12,13 @@
 //   and all the weights of the string in the table must add up to 1.0", "4. the overall input string is then matched
 //   agains all strings in the object, using pobabilityStringMatch(). each of those results is then multiplied by the
 //   weight of the corresponding object-string, and added to the overall result.", "5. the overall result is returned."
-//   And, decided with him: empty strings stay out of the table; "no arrays are searched in this version"; "nested
-//   objects will be searched for strings to put into the table."; "if keys are string, they are included, this is
-//   supposed to be "dumb""; the weights his (S - L) / S, divided by n - 1 so they add up to 1 ("you
-//   formula-correction is accepted"), one string alone 1.0.
+//   And, decided with him: empty strings stay out of the table; "nested objects will be searched for strings to put
+//   into the table."; "if keys are string, they are included, this is supposed to be "dumb""; the weights his
+//   (S - L) / S, divided by n - 1 so they add up to 1 ("you formula-correction is accepted"), one string alone 1.0.
+//   SINCE goal/G41.28 (Andy, box v15): "probabilityStringObjectMatch can easily convert numbers in an object to strings,
+//   for matching", "if a boolean is true, then it's key serves as string to be evaluated. if the boolean is false, it's
+//   key will NOT be evaluated.", and "probabilityStringObjectMatch will scan arrays as well.": numbers go in as text, a
+//   key whose value is false stays out, and every element of an array is a value of its own.
 //
 // A WEIGHTED SUM, NOT THE BEST FIELD, ON PURPOSE: a perfect hit on one field among many is diluted, and that is
 // accepted: "when searching a table of objects, dilution doesn't matter because we look for the best matching contact
@@ -35,21 +38,28 @@ function probabilityStringMatch(a, b) {
 
 function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
-// MEASURE THE OBJECT: every key, every string value, of it and of the plain objects inside it, in the order met.
-// Arrays are not entered and empty strings are left out. An object met again (a cycle) is measured once.
+// MEASURE THE OBJECT: every key (but one whose value is false), every string value, every number as text, of it, of
+// the plain objects inside it and of every array element, in the order met. Empty strings are left out. An object or an
+// array met again (a cycle) is measured once.
 function measureObject(object) {
   var table = [];
   var seen = [];
-  (function walk(o) {
+  function value(v) {
+    if (typeof v === 'string') { if (v !== '') table.push({ objectString: v, weight: 0.0 }); }
+    else if (typeof v === 'number') table.push({ objectString: String(v), weight: 0.0 });
+    else if (Array.isArray(v)) { if (seen.indexOf(v) === -1) { seen.push(v); v.forEach(value); } }
+    else if (isPlainObject(v)) walk(v);
+  }
+  function walk(o) {
     if (seen.indexOf(o) !== -1) return;
     seen.push(o);
     Object.keys(o).forEach(function (key) {
-      if (key !== '') table.push({ objectString: key, weight: 0.0 });
-      var value = o[key];
-      if (typeof value === 'string') { if (value !== '') table.push({ objectString: value, weight: 0.0 }); }
-      else if (isPlainObject(value)) walk(value);
+      var v = o[key];
+      if (key !== '' && v !== false) table.push({ objectString: key, weight: 0.0 });
+      value(v);
     });
-  })(object);
+  }
+  walk(object);
   return table;
 }
 

@@ -33,14 +33,17 @@ function tokens(text) {
   return String(text || '').split(/[\s\-_.,/]+/).filter(function (t) { return t.length > 0; });
 }
 
-// ONE TOKEN AGAINST ONE TOKEN: the whole word is worth its length, a part of a longer word the share it accounts for,
-// a longer query word nothing ("if the result token is shorter, its obviously no match").
+// ONE TOKEN AGAINST ONE TOKEN, THE SHORTER FIRST (goal/G41.28; Andy, box v15: "probabilityStringMatch MUST, when
+// comparing tokens, use the shorter token as first argument. This overrules any previous ruling that disagrees."): the
+// whole word is worth its length, a part of the longer word the share the shorter accounts for, whichever of the two is
+// the query's.
 function tokenScore(queryToken, resultToken) {
-  if (resultToken.length < queryToken.length) return 0;
   if (resultToken === queryToken) return queryToken.length;
-  var run = longestRun(queryToken, resultToken);
+  var shorter = queryToken.length <= resultToken.length ? queryToken : resultToken;
+  var longer = shorter === queryToken ? resultToken : queryToken;
+  var run = longestRun(shorter, longer);
   if (!run) return 0;
-  return run * (run / resultToken.length);
+  return run * (run / longer.length);
 }
 
 // The longest run of characters two words share, two rolling rows.
