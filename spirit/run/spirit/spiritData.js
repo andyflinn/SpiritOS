@@ -250,8 +250,9 @@
     if (!onPage && n) homeNode = n;
     return Object.assign({}, ev, { fromNode: n });
   }
+  // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   function onJob(job, from) {
-    if (!job || !job.data) return;
+    if (!job || typeof job !== 'object') return;
     if (onPage && job.id) seenJobs.set(job.id, job);
     if (handing()) each('onJob', stamped(job, from));
   }
@@ -259,6 +260,13 @@
     if (!d || !d.key) return;
     if (onPage) seenRenames.set(String(d.key), d);
     if (handing()) each('onRename', stamped(d, from));
+  }
+  // A JOB GONE FROM THE STREAM (goal/G41.28): every translator is told { id, fromNode }, so a family that keeps the job
+  // itself (the jobs family's cache manager) lets it go.
+  function onGone(id, from) {
+    if (id == null) return;
+    if (onPage) seenJobs.delete(String(id));
+    if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
   // A SNAPSHOT IS A CONNECT (spirit.events hands one on every open of the stream, the first and each reconnect): what
   // was kept is forgotten, and the snapshot is the partner's whole push.
@@ -344,7 +352,7 @@
   // file is fed by its own streamListener (appServer) and opens no stream of its own.
   var sp = root.spirit;
   if (onPage && sp.events && typeof sp.events.subscribe === 'function') {
-    sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { seenJobs.delete(id); }, onContactRename: onRename });
+    sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename });
   }
   (root.spirit = root.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

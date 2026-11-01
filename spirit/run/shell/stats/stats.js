@@ -60,20 +60,23 @@ function statsCountsHtml(counts) {
   }).join('');
 }
 
-// The shell hands render() the job map it already keeps, so this app
-// needs no subscription and no fetch of its own — the same data the
-// Stats tiles have always shown, arriving the same way.
-function statsFindJob(jobsById, type) {
-  var found = null;
-  if (!jobsById || typeof jobsById.forEach !== 'function') return null;
-  jobsById.forEach(function (job) {
-    if (job && job.type === type) found = job;
-  });
-  return found;
+// THE NODE'S server-stats JOB, AS spirit.data KEEPS IT (goal/G41.28; Andy: "anything not using the new spiritData.js and
+// it's buddies clientCacheManager.js must do so in this item. no exceptions."): the jobs family's cache manager
+// (spirit.jobsData), loaded here; the tiles are drawn again each time that job changes there.
+var statsParts = Promise.resolve(spirit.cacheManager('jobs'));
+function statsJob() {
+  var J = window.spirit.jobsData;
+  return J ? J.find(function (job) { return job && job.type === 'server-stats'; }) : null;
 }
+function statsDraw() { statsRender(); }
 
 spirit.shell.activateApp({
   mount: function (container) {
+    statsParts.then(function () {
+      var J = window.spirit.jobsData;
+      if (J) J.watch(function (id, job) { if (!id || (job && job.type === 'server-stats')) statsDraw(); });
+      statsDraw();
+    }, function () { /* the tiles wait for stats */ });
     container.innerHTML = '<div class="stats-grid" id="stats-grid"></div>';
     document.getElementById('stats-grid').addEventListener('click', function (event) {
       var tile = event.target.closest('[data-launch-app]');
@@ -86,11 +89,14 @@ spirit.shell.activateApp({
     });
   },
 
-  render: function (jobsById) {
+  render: function () { statsRender(); },
+});
+
+function statsRender() {
     var grid = document.getElementById('stats-grid');
     if (!grid) return;
 
-    var job = statsFindJob(jobsById, 'server-stats');
+    var job = statsJob();
     if (!job || !job.data || !job.data.memory) {
       grid.innerHTML = statsTileHtml('…', 'waiting for stats', true);
       return;
@@ -126,5 +132,4 @@ spirit.shell.activateApp({
       statsCountsHtml(d.requests.byStatusClass) + '</div>';
 
     grid.innerHTML = html;
-  },
-});
+}

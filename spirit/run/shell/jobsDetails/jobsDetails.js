@@ -17,17 +17,19 @@
 // last event clicked, JSON.stringify(object, null, 2), in a read-only CodeMirror text view). The log and the Extract
 // box scroll inside themselves.
 //
-// LIVE THROUGH THE SHELL, NOT A STREAM OF ITS OWN. A dialog is never driven by the job tick (switchTo, renderActive),
-// so this asks the shell for the jobs with api.onJobs, once at mount, kept for the pane's life: the shell mounts a
-// dialog once and opens it per subject. Every job's events are heard whatever is on screen, so a reopen shows what
-// came meanwhile.
+// LIVE THROUGH spirit.data (goal/G41.28; Andy: "anything not using the new spiritData.js and it's buddies
+// clientCacheManager.js must do so in this item. no exceptions."): the job and its last events are the jobs family's
+// cache manager's (spirit.jobsData), which keeps every job's events whatever is on screen, so a reopen shows what came
+// meanwhile. The screen repaints when its job changes there.
 
 var jdEscapeHtml = spirit.escapeHtml;
 var jdApi = null;
 
 var jdId = '';          // which job this screen is about
-var jdJobs = null;      // the shell's live Map, as api.onJobs last handed it over
 var jdView = null;      // the Extract box's read-only text view
+// What it reads from, it loads itself (rule/26): the jobs family's cache manager.
+var jdParts = Promise.resolve(spirit.cacheManager('jobs'));
+function jdData() { return window.spirit.jobsData || null; }
 
 // The canonical set lives in js/jobs.js, node-side; shell/jobs/jobs.js and app/stats keep the same copy.
 var JD_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
@@ -43,35 +45,16 @@ var JD_STATUS_ICON = {
 };
 
 function jdJob() {
-  return (jdJobs && jdId && jdJobs.get(jdId)) || null;
+  var J = jdData();
+  return J && jdId ? J.job(jdId) : null;
 }
 
-// ── THE EVENTS, THE LAST 256 PER JOB (goal/G29.14) ─────────────────────
-//
-// An event is what a job publishes: its `app` object, when it differs from the one heard before (a job-updated for a
-// log line carries the same object again, and is no event). For fs-watcher it is the tree command each change carries
-// (goal/G4.25), {op, path, at}. The node's own other jobs (server-stats, relay-presence) report through their data, a
-// plain JSON object, so for them the data is the event, each time it changes (goal/G29.14, box v10). Kept here, in the
-// page, oldest falling off the top; nothing is asked of the node.
-var JD_WINDOW = 256;
-var jdEvents = Object.create(null);    // job id -> [{at, json}]
-var jdLast = Object.create(null);      // job id -> the json heard last
-
-function jdHear(job) {
-  if (!job) return;
-  var obj = job.type === 'fs-watcher' ? (job.data && job.data.command) : job.kind === 'permanent' ? job.data : job.app;
-  if (!obj || typeof obj !== 'object') return;
-  var json = '';
-  try { json = JSON.stringify(obj); } catch (e) { return; }
-  if (jdLast[job.id] === json) return;
-  jdLast[job.id] = json;
-  var lines = jdEvents[job.id] || (jdEvents[job.id] = []);
-  lines.push({ at: job.updatedAt || Date.now(), json: json });
-  if (lines.length > JD_WINDOW) lines.splice(0, lines.length - JD_WINDOW);
-}
+// THE EVENTS, THE LAST 256 PER JOB (goal/G29.14): what a job publishes, as the jobs family's cache manager keeps them
+// (spirit.jobsData.events, oldest falling off the top); nothing is asked of the node.
+function jdLines(id) { var J = jdData(); return J ? J.events(id) : []; }
 
 function jdLogHtml(job) {
-  var lines = jdEvents[job.id] || [];
+  var lines = jdLines(job.id);
   if (!lines.length) return '<div class="job-log-empty">(no events heard yet)</div>';
   return lines.map(function (l, i) {
     return '<div class="job-log-entry" data-event="' + i + '" title="' + jdEscapeHtml(new Date(l.at).toLocaleTimeString()) +
@@ -129,7 +112,7 @@ function jdRender() {
 
 // THE EXTRACT/ANALYZE BOX: the clicked event, as JSON.stringify(object, null, 2) writes it.
 function jdExtract(i) {
-  var line = (jdEvents[jdId] || [])[Number(i)];
+  var line = jdLines(jdId)[Number(i)];
   if (!line || !jdView || !jdView.cm) return;
   var pretty = line.json;
   try { pretty = JSON.stringify(JSON.parse(line.json), null, 2); } catch (e) { /* shown as it came */ }
@@ -146,7 +129,7 @@ spirit.shell.activateApp({
     container.innerHTML =
       '<div id="jd-body" class="stack">' +
         '<div class="stat-tile wide" id="jd-head"></div>' +
-        '<div class="stat-tile wide"><div class="job-manifest-note">Events (the last ' + JD_WINDOW + ')</div>' +
+        '<div class="stat-tile wide"><div class="job-manifest-note">Events (the last ' + ((jdData() && jdData().eventWindow) || 256) + ')</div>' +
           '<div class="job-log-panel" id="jd-log" style="height:33vh;max-height:33vh;overflow:auto"></div></div>' +
         '<div class="stat-tile wide"><div class="job-manifest-note">Extract</div>' +
           '<div id="jd-extract" style="height:33vh;overflow:auto"></div></div>' +
@@ -163,15 +146,13 @@ spirit.shell.activateApp({
       }, function () { /* the Extract box stays empty */ });
     }
 
-    // The shell's live jobs, once for the pane's life. Every job's events are heard; the screen repaints when the
-    // event is about the job shown, or when the shell did not say which job moved.
-    api.onJobs(function (jobsById, changed) {
-      jdJobs = jobsById;
-      if (changed) jdHear(changed);
-      else if (jobsById && jobsById.forEach) jobsById.forEach(jdHear);
-      if (!jdId) return;
-      if (!changed || changed.id === jdId) jdRender();
-    });
+    // The jobs as spirit.data keeps them, once for the pane's life: the screen repaints when its job changes there, or
+    // when the whole set is read again.
+    jdParts.then(function () {
+      var J = jdData();
+      if (J) J.watch(function (id) { if (jdId && (!id || id === jdId)) jdRender(); });
+      if (jdId) jdRender();
+    }, function () { /* the screen says no job */ });
 
     // A click on an event line puts it in the Extract box. Delegated, because the log is repainted on every event.
     document.getElementById('jd-log').addEventListener('click', function (event) {
