@@ -14,6 +14,11 @@
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.data;
 //   4. the one difference is the disk: no clientCacheManager.js touches a file or the browser's storage, and appServer
 //      writes the cache to disk.
+//   5. every manager is used the same way: it exports the cache rules and an attach, which puts its reader on spirit.
+//   6. the shell finds and downloads them by introspection (Andy, on G41.28: "We're not done until every family of the
+//      API tree as a clientCacheManager, and clients can use that to organize their spirit.data, and the shell can
+//      introspect to find and download their clientCacheManagers."): spirit.js knows where a family's manager lives, and
+//      for every family the node's own api tree names, a scratch node answers that file.
 
 const fs = require('fs');
 const path = require('path');
@@ -24,6 +29,7 @@ const RUN = path.join(__dirname, '..');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function code(file) { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
+const H = require(path.join(__dirname, 'headLessChrome.js'));
 const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
 
 test.startTest('caches: every family has a clientCacheManager, one code in the browser and in node');
@@ -126,4 +132,39 @@ ok(/cacheFile\(/.test(appServer) && /writeFileSync\([^)]*\.tmp/.test(appServer),
 const writers = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && f !== 'spirit/appServer.js' && /cache[^'"]*\.json/.test(code(path.join(RUN, f))) && /writeFile/.test(code(path.join(RUN, f))); });
 ok(!writers.length, 'no other module writes a cache file of its own', 'a cache file written by ' + short(writers));
 
-test.reportSuccessFailureCount();
+
+// ── 5. ONE CONTRACT ─────────────────────────────────────────────────────────────────────────────────────────────────
+test.subHeading('5. every manager is used the same way: its cache rules and an attach');
+managers.forEach(function (m) {
+  let mod = null;
+  try { mod = require(path.join(RUN, m)); } catch (e) { mod = { threw: e.message }; }
+  ok(!!mod && typeof mod.attach === 'function' && !!mod.cache && typeof mod.cache === 'object', m + ': it exports { cache, attach }', m + ': it exports ' + short(mod && Object.keys(mod)));
+  const g = { spirit: { data: require(DATA) } };
+  let before = Object.keys(g.spirit).length;
+  try { if (mod && typeof mod.attach === 'function') mod.attach(g); } catch (e) { /* judged below */ }
+  ok(Object.keys(g.spirit).length > before, m + ': attached, it puts its reader on spirit, for clients to ask', m + ': attach put nothing on spirit');
+});
+
+// ── 6. FOUND AND DOWNLOADED BY INTROSPECTION ────────────────────────────────────────────────────────────────────────
+(async function () {
+  test.subHeading('6. the shell finds every family\'s manager from the api tree, and downloads it');
+  ok(/['"]clientCacheManager\.js['"]/.test(spiritJs), 'spirit.js knows where a family\'s clientCacheManager.js lives, so a page finds it by the family\'s name', 'spirit.js names no clientCacheManager.js: a page cannot find a family\'s manager by itself');
+  const node = await H.scratchNode();
+  try {
+    if (!node.up) { test.fail('the scratch node did not come up'); return; }
+    const tree = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }, function () { return null; });
+    const names = tree && typeof tree === 'object' ? Object.keys(tree).filter(function (k) { return tree[k] && typeof tree[k] === 'object' && tree[k].ok !== false; }) : [];
+    test.comment('the node\'s api tree names ' + names.length + ' families: ' + names.join(', '));
+    ok(names.length > 0, 'the node\'s api tree names its families', 'the node answered no tree: ' + short(tree));
+    for (const name of names) {
+      const at = tracked.indexOf('process/js/' + name + '/family/api.js') !== -1 ? 'process/js/' + name + '/family/clientCacheManager.js' : 'spirit/' + name + '/clientCacheManager.js';
+      const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
+      ok(got.status === 200 && /\battach\b/.test(got.text), name + ': the shell downloads its manager, /' + at, name + ': /' + at + ' answered ' + got.status);
+    }
+  } finally {
+    try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+    await H.sleep(300);
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    test.reportSuccessFailureCount();
+  }
+}());

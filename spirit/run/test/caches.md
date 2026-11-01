@@ -28,6 +28,17 @@ is the appServer serializes the cache to disk."*
    uses the browser's storage; appServer writes each sender's cache to its own file; no other module writes a cache
    file of its own.
 
+5. **One contract**: every `clientCacheManager.js` exports `{ cache, attach }`, and attached it puts its reader on
+   `spirit`, for clients to ask (as the desk's puts `spirit.deskData`).
+6. **Found and downloaded by introspection** (Andy, on G41.28: *"We're not done until every family of the API tree as a
+   clientCacheManager, and clients can use that to organize their spirit.data, and the shell can introspect to find and
+   download their clientCacheManagers."*):
+   - `spirit.js` knows where a family's `clientCacheManager.js` lives, so a page finds it by the family's name alone;
+   - for every family the node's own api tree names (a scratch node, `api`), the node answers that family's manager,
+     beside its interface (`process/js/<name>/family/` or `spirit/<name>/`), as a script with an `attach`. Each family is
+     its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
+     every family the tree holds is asked in 1.
+
 ## What its test must try to break
 
 - A family without a clientCacheManager.js.
@@ -35,3 +46,5 @@ is the appServer serializes the cache to disk."*
 - A file other than the manager naming one of its branches.
 - A manager that does one thing in node and another in a page.
 - A manager that keeps its cache itself, on disk or in browser storage; a module writing a cache file besides appServer.
+- A manager without the contract; a page that cannot find a family's manager by its name; a manager the node does not
+  serve.
