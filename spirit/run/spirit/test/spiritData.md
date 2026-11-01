@@ -6,13 +6,16 @@ no page, so it runs in node, where `require` answers the api.
 ## API
 
 - `data` is the tree: `type -> key -> value`.
-- `set(path, v)`, `merge(path, fields)` and `del(path)` write. A path is `'<type>/<key>'`, and a key may hold slashes.
-- `get(path)` gives a value, or with a bare type the whole branch. `branch(type)` gives the branch, made if missing.
+- `set(path, v)`, `merge(path, fields)` and `del(path)` write. A path is `'<node>/<family>/<branch>/<key>'` (goal/G41.28;
+  Andy, the box: *"spirit.data.<server-public-key-in-base64url>.<api-family>...."*), node the serving node's key in
+  base64url (`nodeId(key)`), and a key may hold slashes. `at(node, family)` is a family's view: the same verbs, given
+  `'<branch>/<key>'`. The test writes and reads through one such view, its node a key holding a `+` and a `/`.
+- `get(path)` gives a value, or with a bare type the whole branch. `branch(type)` gives the branch; a missing one answers empty, for a read makes nothing (goal/G41.28).
 - `watch(path, fn)` returns its unwatch. `rows(type)` gives `[{ key, ...value }]`.
 - `seat(type, items)` merges a search answer's `{ key, label: json }` items.
 - `translate(t)` registers a type's translator. `take(job)` and `rename(d)` feed it by hand.
 - `quietly(type, on)` and `ready(type, now?)` control a quiet fill.
-- `search({ text, branches, room })` gives `{ items: [{ key: '<type>/<key>', label, probability }], more }`.
+- `search({ text, branches, room })` gives `{ items: [{ key: <the row's whole path>, label, probability }], more }`.
 
 ## Requirements
 
@@ -44,7 +47,7 @@ no page, so it runs in node, where `require` answers the api.
   - Weighs every row of every branch, or of the branches named, against the text, and ranks the best first.
   - A row the text misses still comes back, with probability 0.
   - Without text, every row comes back with probability 0.
-  - The label is the row as JSON, and the key is `'<type>/<key>'`.
+  - The label is the row as JSON, and the key is the row's whole path; `branches` names whole branch paths.
   - The answer `{ items, more }` fits `room` bytes. When rows are left out, `more` is true.
   - A single row too big for the room is left out and sets `more`.
   - It writes nothing to the tree and tells no watcher.

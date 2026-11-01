@@ -96,6 +96,12 @@ const ROWS = [
   { verb: 'item.set', change: 4, item: JSON.stringify({ id: 'goal/G9.2', goal: 'goal/G9', title: 'Another', status: 'build' }) },
   { rule: 'rule/1', row: { key: 'rule/1', label: 'A rule', status: 'active' }, change: 5 },
 ];
+// The node that served the rows: a public key holding a + and a /, as real keys do. Andy, the box: "The RAM-CACHE-is
+// organized BY SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>....".
+// Both sides are told it the one way the data set offers, home(key): a page learns it from node.card, a process from
+// the sender whose rows it takes.
+const SERVER = Buffer.from('KEY-CACHES\xfb\xef\xbf\xfe', 'latin1').toString('base64');
+const SERVER_ID = Buffer.from(SERVER, 'base64').toString('base64url');
 // In node, as appServer runs them: the data set required, the manager required and attached to the process's global.
 function inNode() {
   const g = { spirit: {} };
@@ -109,6 +115,7 @@ function inNode() {
     g.spirit.data = D;
     const M = require(DESK);
     M.attach(g);
+    D.home(SERVER);
     ROWS.forEach(function (r) { g.spirit.deskData.published(JSON.parse(JSON.stringify(r))); });
     out = JSON.parse(JSON.stringify(D.data));
   } catch (e) { out = { threw: e.message }; }
@@ -126,6 +133,7 @@ function inPage() {
     vm.runInContext(fs.readFileSync(DESK, 'utf8'), win, { filename: 'clientCacheManager.js' });
     if (!win.spirit.deskData && typeof win.spirit.deskAttach === 'function') win.spirit.deskAttach(win);
     if (!win.spirit.deskData) return { threw: 'the page has no spirit.deskData once both files ran' };
+    win.spirit.data.home(SERVER);
     ROWS.forEach(function (r) { win.spirit.deskData.published(JSON.parse(JSON.stringify(r))); });
     return JSON.parse(JSON.stringify(win.spirit.data.data));
   } catch (e) { return { threw: e.message }; }
@@ -134,6 +142,8 @@ const node = inNode();
 const page = inPage();
 ok(!node.threw && Object.keys(node).length > 0, 'in node, as appServer runs it, the rows land in spirit.data: ' + Object.keys(node).join(', '), 'in node: ' + short(node));
 ok(!page.threw && Object.keys(page).length > 0, 'in a page, as a page runs it, the rows land in spirit.data: ' + Object.keys(page).join(', '), 'in a page: ' + short(page));
+ok(!node.threw && JSON.stringify(Object.keys(node)) === JSON.stringify([SERVER_ID]) && node[SERVER_ID] && node[SERVER_ID].desk && typeof node[SERVER_ID].desk === 'object',
+  'its top level is the serving node alone, its key in base64url, and the desk family under it', 'in node the top level is ' + short(Object.keys(node)) + ', not ' + SERVER_ID + ' with desk under it');
 ok(!node.threw && !page.threw && JSON.stringify(node) === JSON.stringify(page), 'the same rows make the same spirit.data in node and in a page', 'node ' + short(node) + ' against the page ' + short(page));
 
 // ── 4. THE ONE DIFFERENCE IS THE DISK ───────────────────────────────────────────────────────────────────────────────
@@ -173,10 +183,19 @@ managers.forEach(function (m) {
     const names = tree && typeof tree === 'object' ? Object.keys(tree).filter(function (k) { return tree[k] && typeof tree[k] === 'object' && tree[k].ok !== false; }) : [];
     test.comment('the node\'s api tree names ' + names.length + ' families: ' + names.join(', '));
     ok(names.length > 0, 'the node\'s api tree names its families', 'the node answered no tree: ' + short(tree));
+    // As the shell finds it (spirit.cacheManager): the family is asked where its manager is, <family>.FS.path, the
+    // owner's verb on loopback, and the path it answers is downloaded; no folder is guessed from the name.
+    const ask = function (call, args) {
+      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+        .then(function (r) { return r.json(); }, function () { return null; });
+    };
     for (const name of names) {
-      const at = managerOf(name);
+      const where = await ask(name + '.FS.path', { path: 'clientCacheManager.js' });
+      const at = where && typeof where.path === 'string' ? where.path : '';
+      if (!at) { test.fail(name + ': ' + name + '.FS.path names no clientCacheManager.js: ' + short(where)); continue; }
       const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-      ok(got.status === 200 && /\battach\b/.test(got.text), name + ': the shell downloads its manager, /' + at, name + ': /' + at + ' answered ' + got.status);
+      ok(at === managerOf(name) && got.status === 200 && /\battach\b/.test(got.text), name + ': the shell asks ' + name + '.FS.path and downloads its manager, /' + at,
+        name + ': ' + name + '.FS.path answered ' + at + (at === managerOf(name) ? '' : ', not ' + managerOf(name)) + '; /' + at + ' answered ' + got.status);
     }
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }

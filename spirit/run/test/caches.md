@@ -22,8 +22,9 @@ is the appServer serializes the cache to disk."*
      manager.
 3. **The same rows make the same cache**: the desk's `clientCacheManager.js` and the data set, run in node as appServer
    runs them (required, attached to the process's global) and in a page's window as a page runs them (plain scripts,
-   no module), are handed the same rows (two goal pushes, an item as a JSON string, a rule) and end with the same
-   `spirit.data`.
+   no module), are told the same serving node (`home(key)`, a key holding a `+` and a `/`) and handed the same rows (two
+   goal pushes, an item as a JSON string, a rule), and end with the same `spirit.data`. Its top level is that node
+   alone, its key in base64url, with the desk family under it (Andy, the box: *"spirit.data.<server-public-key-in-base64url>.<api-family>...."*).
 4. **The one difference is the disk**: no `clientCacheManager.js` requires `fs` or `path`, writes or reads a file, or
    uses the browser's storage; appServer writes each sender's cache to its own file; no other module writes a cache
    file of its own.
@@ -35,9 +36,10 @@ is the appServer serializes the cache to disk."*
    clientCacheManager, and clients can use that to organize their spirit.data, and the shell can introspect to find and
    download their clientCacheManagers."*):
    - `spirit.js` knows where a family's `clientCacheManager.js` lives, so a page finds it by the family's name alone;
-   - for every family the node's own api tree names (a scratch node, `api`), the node answers that family's manager,
-     beside its interface (`process/js/<name>/family/` or `spirit/<name>/`), as a script with an `attach`. Each family is
-     its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
+   - for every family the node's own api tree names (a scratch node, `api`), the shell asks the family where its manager
+     is, `<family>.FS.path({ path: 'clientCacheManager.js' })` (the owner's, on loopback), as `spirit.cacheManager`
+     does; the path answered is the one beside its interface (`process/js/<name>/family/` or `spirit/<name>/`), and the
+     node serves it as a script with an `attach`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 
 ## What its test must try to break
