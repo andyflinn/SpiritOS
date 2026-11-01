@@ -48,7 +48,7 @@
     if (D && typeof D.translate === 'function') D.translate({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
   if (window.spirit && window.spirit.data) follow(window.spirit.data);
-  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('shell/shared/js/spiritData.js')).then(function () { follow(window.spirit.data); }, function () {});
+  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/spiritData.js')).then(function () { follow(window.spirit.data); }, function () {});
 
   // ── THE APPSERVER SELECTOR (apiAuth/G1.8) ──────────────────────────
   //

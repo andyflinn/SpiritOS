@@ -400,7 +400,7 @@
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
   // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.21): an app is a shell/<app>/<app>.js whose
   // sidecar's face part says app: true, with the name and icon the face draws. The scripts are found in data.files, the
-  // file tree already in the page (shell/shared/js/spiritData.js); each one's face part is asked once (fs.annotations), and each
+  // file tree already in the page (spirit/spiritData.js); each one's face part is asked once (fs.annotations), and each
   // icon is drawn as its answer arrives. An app's script loads when it is opened. The home shell's .json manifests are
   // not read here. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior }

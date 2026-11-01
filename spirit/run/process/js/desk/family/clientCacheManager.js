@@ -6,7 +6,7 @@
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (shell/shared/js/spiritData.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (spirit/spiritData.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache

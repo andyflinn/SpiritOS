@@ -1,7 +1,7 @@
 // spirit/run/shell/js/contacts/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
-// and add (a button on a row the owner does not keep). It reads data.contacts of the faceless layer (shell/shared/js/spiritData.js, goal/G30.16), which presence, renames, the
+// and add (a button on a row the owner does not keep). It reads data.contacts of the faceless layer (spirit/spiritData.js, goal/G30.16), which presence, renames, the
 // network search and every contact search keep, so a peer arriving repaints that peer's dot and a rename that peer's
 // label, and nothing else. rowElement.js does the shared work; this file says what a contact is.
 //
@@ -26,7 +26,7 @@
   // data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"): the relay-presence job sets each key's present
   // (a key the table drops goes back to not known), the peer-search job seats each row the network found, a contact
   // rename sets its name. Every event ends in set or merge, in data.contacts of the page's one data set
-  // (shell/shared/js/spiritData.js), which it loads itself when it is not on the page yet (rule/26).
+  // (spirit/spiritData.js), which it loads itself when it is not on the page yet (rule/26).
   function translate(D) {
     if (!D || typeof D.translate !== 'function') return;
     var told = Object.create(null);   // keys the presence table has spoken of
@@ -53,7 +53,7 @@
     });
   }
   if (window.spirit.data) translate(window.spirit.data);
-  else if (window.spirit.require) Promise.resolve(window.spirit.require('shell/shared/js/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
+  else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/spiritData.js')).then(function () { translate(window.spirit.data); }, function () {});
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

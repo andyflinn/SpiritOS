@@ -938,7 +938,7 @@ function ddRename() {
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
-// one cache for deskClient and this page: spirit.data (shell/shared/js/spiritData.js) with the desk's translator
+// one cache for deskClient and this page: spirit.data (spirit/spiritData.js) with the desk's translator
 // (the desk family's clientCacheManager.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 // Asked of the cache's manager (goal/G41.28): spirit.deskData answers an item's parts; no branch is named here.
