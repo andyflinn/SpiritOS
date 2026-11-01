@@ -1,10 +1,13 @@
 'use strict';
 
-// spirit/run/shell/test/boot-sibling-generalRules.js <file>
+// spirit/run/test/spirit-sibling-generalRules.js <file>
 // THE GENERAL RULES OF A SHELL APP OR ELEMENT (goal/G41.18), run once per file it judges, the file its argument, as
-// ../../test/spirit-child-generalRules.js is for a module (spec: ./boot-sibling-generalRules.md). ITS NAME IS ITS REACH
-// (../../test/TEST_SYSTEM.md; Andy: "the NAME of the file should tell testModule.js which folder this it belongs to"): a
-// -sibling- test beside shell/boot.js judges every module in shell/ and below that has its own test. Andy: "we may require a
+// ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-generalRules.md). ITS NAME IS ITS REACH
+// (./TEST_SYSTEM.md; Andy: "the NAME of the file should tell testModule.js which folder this it belongs to"): a -sibling-
+// test beside spirit.js judges every module in spirit/run/ and below that has its own test, shell/ and the agent tables'
+// pages alike (goal/G41.27; Andy: "1. The checks judge every module under spirit/run/: the test is
+// spirit/run/test/spirit-sibling-generalRules.js instead of shell-child. No page moves; one test covers shell/ and the
+// agent tables alike."). It was shell/test/boot-sibling-generalRules.js, its reach shell/ and hung on shell/boot.js. Andy: "we may require a
 // ./test/shell-child-generalRules.js with a test that catches all violators of this sort of thing, THAT's were a general
 // test belongs"; "shell-child-generalRules.js can also run headless chrome test to assert UI standards..."; "who says it
 // shouln't check general \"mountability\" of elements and apps?", "mount each element or app all by itself, to \"unit\"
@@ -13,7 +16,7 @@
 //
 // HOW: a scratch copy of spirit/run (the tracked files) on a node of its own, on a free port, its DEBUG switched on, so
 // neither Andy's node nor an agent's is touched. Headless Chrome, driven over its debugging port with node's own
-// WebSocket, opens the node's DEBUG page for the file (goal/G41.19, ../../spirit/test/DEBUG.md; Andy: "wsl's element
+// WebSocket, opens the node's DEBUG page for the file (goal/G41.19, ../spirit/test/DEBUG.md; Andy: "wsl's element
 // mount tests must be the first user of this DEBUG feature"), /DEBUG/<path>/<module>/headLessBrowser.html: spirit.js
 // alone, then the one app or element, mounted by itself into a box of the whole page. What the page reports, and the
 // real layout it drew, are judged here.
@@ -22,9 +25,9 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
-const test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));
+const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..', '..');
+const RUN = path.join(__dirname, '..');
 const REPO = path.join(RUN, '..', '..');
 // Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
 const ARGS = process.argv.slice(2);
@@ -44,13 +47,113 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // an app (from the path pattern), why the fuck would would it need manifests for standard patterns?", "the test knows
 // fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
 // under shell/js/. Anything else in its reach is neither, and is not mounted.
+// THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
+// (process/js/agent/table/tableElement.js) and each table's list and editor (<table>/elementTable.js, elementRow.js).
+// Their servers beside them are not pages, and are not mounted.
 function kindOf(file) {
   const f = String(file || '');
   if (/^shell\/js\/.+\.js$/.test(f)) return 'element';
+  if (/^process\/js\/agent\/table\/(tableElement|[^/]+\/element(Table|Row))\.js$/.test(f)) return 'element';
   const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
   return m && m[1] === m[2] ? 'app' : '';
 }
 const WAIT = 20000;
+// THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
+const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
+const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
+// THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
+// rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
+// sourceURL). Spirit's own code is spirit.js, its families (spirit-interface/), spirit/client/ and the page's data set
+// (shell/shared/js/spiritData.js); shell/boot.js, the face's own transport, is the one exception the network rule names
+// (Andy: "boot.js MUST be an exception to the rules.").
+//   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
+//   subs:  every spirit.events.subscribe and spirit.data.watch, live until let go, and whether a module made it;
+//   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
+//           no read verb);
+//   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
+const WATCH = String.raw`(function () {
+  var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0 };
+  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|shell\/shared\/js\/spiritData\.js|shell\/boot\.js)$/;
+  function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
+  function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
+  function spirits(f) { return SPIRIT.test(file(f)); }
+  function caller() { var f = frames()[0] || ''; return { file: file(f), spirit: spirits(f) }; }
+  function moduleMade() { return frames().some(function (f) { var x = file(f); return !!x && !SPIRIT.test(x); }); }
+  var READ_OPS = ['search', 'get', 'list', 'status', 'card', 'read', 'tree', 'history'];
+  var READ_VERB = /\.(search|get|list|status|card|read|tree|history|load|loadFile|ls|stat)$/;
+  function isWrite(body) {
+    var b = null; try { b = JSON.parse(String(body || '')); } catch (e) { return null; }
+    // Spirit's own asks are no write: the stream (events.subscribe) and a family's interface (api).
+    if (!b || typeof b.call !== 'string' || b.call === 'events.subscribe' || b.call === 'api') return null;
+    var op = b.args && b.args.op;
+    if (op ? READ_OPS.indexOf(String(op)) !== -1 : READ_VERB.test(b.call)) return null;
+    return b.call + (op ? ' ' + op : '');
+  }
+  // A PRESS WATCHED: from the press until the node has answered every write it sent; judged only when it sent one.
+  var watching = null; var buf = []; var w0 = 0;
+  function allowed(r) {
+    var t = r.target && r.target.nodeType === 1 ? r.target : r.target && r.target.parentElement;
+    if (!t) return true;
+    if (r.type === 'attributes' && t.tagName === 'BUTTON' && /^(disabled|aria-busy|class)$/.test(r.attributeName)) return true;
+    var nodes = [t].concat(Array.prototype.slice.call(r.addedNodes || []), Array.prototype.slice.call(r.removedNodes || []));
+    if (nodes.every(function (n) { return n.nodeType === 1 ? (n.classList.contains('shell-busy') || !!n.closest('.shell-busy')) : !!(t.closest && t.closest('.shell-busy')); })) return true;
+    return !!(t.closest && t.closest('.job-manifest-note, .job-start-error, .job-refusal, .fine-print'));
+  }
+  function chain(el) { var box = window.spiritMount && window.spiritMount.box; var parts = []; for (var n = el; n && n !== box && n.tagName; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '')); } return parts.join(' > '); }
+  function stop() { if (!watching) return; buf = buf.concat(watching.takeRecords()); watching.disconnect(); watching = null; }
+  function opened() { W.out += 1; }
+  function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
+  W.press = function (i) {
+    var box = window.spiritMount && window.spiritMount.box;
+    var b = box && Array.prototype.slice.call(box.querySelectorAll('button')).filter(function (x) { return x.isConnected && !x.disabled && x.getClientRects().length; })[i];
+    if (!b) return false;
+    stop(); buf = []; w0 = W.writes.length;
+    watching = new MutationObserver(function (list) { buf = buf.concat(list); });
+    watching.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
+    try { b.click(); } catch (e) { /* its own fault, judged above */ }
+    return true;
+  };
+  W.settle = function () {
+    stop();
+    if (W.writes.length > w0) buf.forEach(function (r) { if (!allowed(r)) W.moved.push(r.type + ' ' + chain(r.target.nodeType === 1 ? r.target : r.target.parentElement)); });
+    buf = [];
+    return W.out;
+  };
+  var realFetch = window.fetch;
+  window.fetch = function (url, o) {
+    W.net.push(Object.assign({ kind: 'fetch', url: String(url) }, caller()));
+    // A write is the module's: made with its code on the way, spirit carrying it.
+    var w = moduleMade() ? isWrite(o && o.body) : null;
+    if (!w) return realFetch.apply(this, arguments);
+    W.writes.push(w); opened();
+    return realFetch.apply(this, arguments).then(function (r) { setTimeout(closed, 0); return r; }, function (e) { setTimeout(closed, 0); throw e; });
+  };
+  var xo = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (m, url) { W.net.push(Object.assign({ kind: 'XMLHttpRequest', url: String(url) }, caller())); return xo.apply(this, arguments); };
+  ['WebSocket', 'EventSource'].forEach(function (k) { var C = window[k]; if (!C) return; window[k] = function (url) { W.net.push(Object.assign({ kind: k, url: String(url) }, caller())); return new (Function.prototype.bind.apply(C, [null].concat(Array.prototype.slice.call(arguments))))(); }; window[k].prototype = C.prototype; });
+  if (navigator.sendBeacon) { var sb = navigator.sendBeacon.bind(navigator); navigator.sendBeacon = function (url) { W.net.push(Object.assign({ kind: 'sendBeacon', url: String(url) }, caller())); return sb.apply(null, arguments); }; }
+  function kept(kind, fn) {
+    return function () {
+      var s = { kind: kind, mine: moduleMade(), live: true }; W.subs.push(s);
+      var off = fn.apply(this, arguments);
+      return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
+    };
+  }
+  function hook(o) {
+    if (!o || typeof o !== 'object' || o.__watched) return;
+    Object.defineProperty(o, '__watched', { value: true });
+    [['events', 'subscribe'], ['data', 'watch']].forEach(function (k) {
+      var cur = o[k[0]];
+      function wrap(v) { if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; } }
+      Object.defineProperty(o, k[0], { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
+      wrap(cur);
+    });
+  }
+  var real = window.spirit;
+  Object.defineProperty(window, 'spirit', { configurable: true, get: function () { return real; }, set: function (v) { real = v; hook(v); } });
+  hook(real);
+}());
+//# sourceURL=spiritWatch.js`;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -96,13 +199,16 @@ function iconsLoaded() {
   test.comment('glyphs among words only, read by hand: ' + Object.keys(TEXT_ONLY).map(function (f) { return f + ' (' + TEXT_ONLY[f] + ')'; }).join('; '));
   files.forEach(function (f) {
     const src = fs.readFileSync(path.join(RUN, f), 'utf8');
-    ok(src.indexOf('shell/js/icon.js') !== -1, f + ': it paints icons and loads shell/js/icon.js', f + ': it paints icons and never loads shell/js/icon.js');
+    // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
+    // itself (rule/26).
+    const through = src.indexOf('shell/js/icon.js') !== -1 ? 'loads shell/js/icon.js' : src.indexOf('shell/js/rowForm.js') !== -1 ? 'paints them through shell/js/rowForm.js, which loads it' : '';
+    ok(!!through, f + ': it paints icons and ' + through, f + ': it paints icons and never loads shell/js/icon.js');
   });
 }
 
 async function every() {
   iconsLoaded();
-  const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'shell/test/boot-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
+  const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
   test.comment('every app and element in its reach: ' + files.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
   if (!files.length) { test.fail('testModule.js gives it no file to judge'); return; }
@@ -131,12 +237,12 @@ async function every() {
   }
 }
 
-test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a shell app or element');
+test.startTest((full ? NAMED : 'every page module') + ': the general rules of an app or element');
 
 (async function () {
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
-  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under shell/js/): not mounted'); return; }
+  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under shell/js/, or an agent table\'s page): not mounted'); return; }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
   const node = await scratchNode();
@@ -154,6 +260,7 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
     const mountPage = await fetch(node.base + address);
     ok(mountPage.status === 200, 'the node answers its DEBUG page for it, ' + address, address + ' answered ' + mountPage.status);
     if (mountPage.status !== 200) return;
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: WATCH });
     await page.send('Page.navigate', { url: node.base + address });
     let report = null;
     await until(function () {
@@ -243,9 +350,75 @@ test.startTest((full ? NAMED : 'every shell module') + ': the general rules of a
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
 
+    // EVERY INPUT HELD AT ITS LIMIT (goal/G41.27; Andy: "in the general UI tests (headless browser), any input field must
+    // be checked for size-limits, and get a \"red\" if it violates that rule."): every text field it draws, as drawn and
+    // after its tools are pressed, is typed far past the longest field the rules allow, as a hand would type it, and must
+    // keep no more than that. A field nothing holds keeps it all.
+    test.subHeading(NAMED + ': ' + 'every field it draws stops at its limit');
+    const typed = 'x'.repeat(MOST_BYTES * 2);
+    // Typed through the browser's own input (Input.insertText), which fires beforeinput as a hand's typing does; a script's
+    // execCommand does not, and would type past any field.
+    const FIELDS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("textarea, input"), function (el) { return (el.tagName === "TEXTAREA" || /^(|text|email|search|url|tel|password)$/.test(el.type || "")) && el.getClientRects().length && !el.disabled && !el.readOnly; })';
+    const fieldCount = await page.evaluate(FIELDS + '.length');
+    const fields = [];
+    for (let i = 0; i < fieldCount; i++) {
+      const at = await page.evaluate('(function () { var box = window.spiritMount.box; var el = ' + FIELDS + '[' + i + ']; if (!el) return ""; el.focus(); el.value = "";' +
+        ' var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + (n === el && el.placeholder ? "[" + el.placeholder + "]" : "")); } return parts.join(" > "); }())');
+      if (!at) continue;
+      await page.send('Input.insertText', { text: typed });
+      const kept = await page.evaluate('(function () { var el = ' + FIELDS + '[' + i + ']; var n = el ? new TextEncoder().encode(el.value).length : 0; if (el) el.value = ""; return n; }())');
+      fields.push({ at: at, kept: kept });
+    }
+    const free = fields.filter(function (f) { return f.kept > MOST_BYTES; });
+    test.comment(fields.length + ' fields typed past ' + MOST_BYTES + ' bytes');
+    ok(!free.length, 'every field it draws stops at its limit (' + fields.length + ' typed past ' + MOST_BYTES + ' bytes)', free.length + ' kept more than any rule allows: ' + short(free.map(function (f) { return f.at + ' kept ' + f.kept; })));
+
+    // EVERY BUTTON PRESSED, AND WHAT A PRESS DOES WATCHED (goal/G41.27): each button it draws is pressed in turn, and what
+    // leaves the page, what it listens to and what it draws are judged by the rules that follow.
+    let pressed = 0;
+    for (let i = 0; i < 60; i++) {
+      if (!(await page.evaluate('window.spiritWatch && window.spiritWatch.press(' + i + ')'))) break;
+      pressed += 1;
+      // Its writes answered, or two seconds, whichever comes first.
+      const t0 = Date.now();
+      await sleep(150);
+      while (Date.now() - t0 < 2000 && await page.evaluate('window.spiritWatch.out')) await sleep(100);
+      await page.evaluate('window.spiritWatch.settle()');
+    }
+    const W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null)')) || { net: [], subs: [], writes: [], moved: [] };
+    test.comment('pressed ' + pressed + ' buttons; ' + W.net.length + ' calls on the wire; ' + W.writes.length + ' writes; ' + W.subs.length + ' subscriptions');
+
+    // EVERY CALL ON THE WIRE THROUGH SPIRIT (goal/G41.27; Andy: "can it assert that no element posts or fetches by itself,
+    // and that all wire-stuff goes through spirit?", "boot.js MUST be an exception to the rules."): each one the page made
+    // was made by spirit's own code.
+    test.subHeading(NAMED + ': ' + 'all it sends goes through spirit');
+    const own = W.net.filter(function (c) { return !c.spirit; });
+    ok(!own.length, 'every call it puts on the wire goes through spirit (' + W.net.length + ' made)', own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(node.base, '') + ' from ' + (c.file || 'an unnamed script'); })));
+
+    // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes
+    // they cause, since andy request an element generates would imply that it must listen for confirmation of the
+    // results"): one that sent a write holds, while mounted, a listener on the page's stream of its own making.
+    test.subHeading(NAMED + ': ' + 'what it changes, it listens for');
+    const mineLive = W.subs.filter(function (x) { return x.mine && x.live; }).length;
+    ok(!W.writes.length || mineLive > 0, W.writes.length ? 'it sent ' + W.writes.length + ' writes and holds ' + mineLive + ' listeners on the stream' : 'it sent no write when pressed', 'it sent ' + short(W.writes) + ' and listens to nothing on the stream');
+
+    // IT DRAWS ONLY WHAT THE STREAM SAYS (rule/19; goal/G41.27, the box: "after a press, until the stream answers, an
+    // element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
+    // is red"): judged while a write it sent is out, until the node answers it.
+    test.subHeading(NAMED + ': ' + 'while a write is out, it draws nothing of its own');
+    ok(!W.moved.length, W.writes.length ? 'while its writes were out it changed only busy marks, disabled buttons and fine print' : 'no write sent, nothing to judge', W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6)));
+
     test.subHeading(NAMED + ': ' + 'destroy leaves its box empty');
     const destroyed = await page.evaluate('(function () { var m = window.spiritMount; if (typeof m.destroy !== "function") return "none"; m.destroy(); return m.box.childElementCount === 0 ? "empty" : "left"; }())');
     ok(destroyed === 'empty' || destroyed === 'none', destroyed === 'none' ? 'it has no destroy of its own (an app is closed by the face)' : 'destroyed, its box is empty', 'after destroy its box still holds what it drew');
+    // EVERY ELEMENT BRINGS ITS OWN SUBSCRIPTIONS, AND LETS THEM GO (rule/8; goal/G41.27): destroyed, nothing it listened to
+    // is still held.
+    if (destroyed !== 'none') {
+      await sleep(200);
+      const after = JSON.parse(await page.evaluate('JSON.stringify((window.spiritWatch || { subs: [] }).subs)'));
+      const held = after.filter(function (x) { return x.mine && x.live; });
+      ok(!held.length, 'destroyed, it lets every subscription it made go (' + after.filter(function (x) { return x.mine; }).length + ' made)', held.length + ' still held after destroy: ' + short(held.map(function (x) { return x.kind; })));
+    }
   } finally {
     if (page && page.sock) try { page.sock.close(); } catch (e) { /* gone */ }
     if (page && page.kid) try { page.kid.kill(); } catch (e) { /* gone */ }

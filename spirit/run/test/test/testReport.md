@@ -19,7 +19,7 @@ test files went by 8 names (six were `rowElement.js`), and a red in Fallout did 
   - `spirit/run/test/spirit.js`, the test of `spirit/run/spirit.js`, is sent as `/spirit`.
 - **A general test is sent by the file it judges.** A `-child-` or `-sibling-` test runs once per file, the file its
   argument (`TEST_SYSTEM.md`), so the module tested is that file:
-  `spirit/run/shell/test/boot-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`.
+  `spirit/run/test/spirit-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`.
 - **Every test name starts with the path** (Andy, box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS
   WITH THE MUTHERCUCKING PATH!!!!!!!!!!"*): a record's `title` is `/<path>/<module> <section> #<n>`, the same path as
   its `suite`, so a title read alone in Fallout names its module. The two `rowElement.js` tests' titles start with

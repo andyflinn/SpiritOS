@@ -1,15 +1,18 @@
-# boot-sibling-generalRules.js
+# spirit-sibling-generalRules.js
 
 The general rules of a shell app or element (goal/G41.18), judged in a real browser. It runs once per file, the file its
-argument, as `../../test/spirit-child-generalRules.js` does for a module:
+argument, as `./spirit-child-generalRules.js` does for a module:
 
-    node shell/test/boot-sibling-generalRules.js shell/agent/agent.js
+    node test/spirit-sibling-generalRules.js shell/agent/agent.js
 
-**Its name is its reach** (`../../test/TEST_SYSTEM.md`; Andy: *"the NAME of the file should tell testModule.js which
+**Its name is its reach** (`./TEST_SYSTEM.md`; Andy: *"the NAME of the file should tell testModule.js which
 folder this it belongs to. there are some nameing standards that are supposed to tell the product test system, which
-general test must be run against which modules"*). It is a `-sibling-` test beside `shell/boot.js`, so `testModule.js`
-runs it for every module in `shell/` and below that has its own test. A shell file outside `shell/`, such as an agent
-table's page files in `process/js/agent/table/`, is not in its reach.
+general test must be run against which modules"*). It is a `-sibling-` test beside `spirit.js`, so `testModule.js` runs
+it for every module in `spirit/run/` and below that has its own test: `shell/` and the agent tables' pages alike
+(goal/G41.27; Andy: *"1. The checks judge every module under spirit/run/: the test is
+spirit/run/test/spirit-sibling-generalRules.js instead of shell-child. No page moves; one test covers shell/ and the
+agent tables alike."*). It was `shell/test/boot-sibling-generalRules.js`, whose reach was `shell/` and hung on
+`shell/boot.js`.
 
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 
@@ -18,7 +21,11 @@ is an app (from the path pattern), why the fuck would would it need manifests fo
 fucking well, which are elements scripts in ./shell/js/"*):
 
 - an **app** is `shell/<app>/<app>.js`;
-- an **element** is any script under `shell/js/`;
+- an **element** is any script under `shell/js/`, and an agent table's page: the tables' shared element
+  (`process/js/agent/table/tableElement.js`) and each table's list and editor (`<table>/elementTable.js`,
+  `elementRow.js`). Their servers beside them are not pages (goal/G41.27; Andy, Q5: *"it covers them, too"*). Like
+  every module, each is judged once it has its own test (`TEST_SYSTEM.md`, opting in): today `tableElement.js` alone;
+  the tables' lists and editors share their table's test, and Q6, which asked whether they get one each, was cleared;
 - anything else in its reach (`shell/boot.js`, `shell/seal.js`, a Desk plugin, `shell/shared/js/`) is neither, is not
   mounted, and its run says so.
 
@@ -27,7 +34,7 @@ run of this test alone takes every shell module `testModule.js` gives it that is
 node, each file in a run of its own so each is recorded under its own module. That run records one line per file, named by the address
 it opened: green when the file's own run had no red.
 
-    node shell/test/boot-sibling-generalRules.js
+    node test/spirit-sibling-generalRules.js
 
 **Every test name starts with the path** (Andy: *"please start the test descriptions always with the exact URL to the
 server, without \"/DEBUG\" service"*; box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH THE
@@ -114,10 +121,34 @@ box is its own check, named by the element's path and the box's id chain."*
   mounts: a bare mount draws no data, so most icons are seen only in the code). A shell script, no test and no vendor
   code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
   icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
-  icon selector, the workBench), names `shell/js/icon.js`. Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
+  icon selector, the workBench), names `shell/js/icon.js`, or hands them to the one-row form, `shell/js/rowForm.js`,
+  which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
   before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
   blocked and held marks, and the contacts list's filter icons, drawn before their words.
-- **Destroy**: an element's destroy leaves its container empty. An app is closed by the face and has none of its own.
+- **Every field stops at its limit** (goal/G41.27; Andy: *"in the general UI tests (headless browser), any input field
+  must be checked for size-limits, and get a "red" if it violates that rule."*): every text field it draws (a textarea,
+  or an input of type text, email, search, url, tel or password, shown and editable), after its tools are pressed, is
+  typed twice the longest field the rules allow (`spirit/fieldRules.js`, its largest `*MAX_BYTES`) through the
+  browser's own input (`Input.insertText`, which fires `beforeinput` as typing does), and keeps no more than that. A
+  field nothing holds keeps it all. Each field it lets through is named by its id chain and its placeholder.
+- **Every button pressed, one at a time**, after the fields are judged, each watched from the press until the node has
+  answered every write it sent, or two seconds.
+- **All it sends goes through spirit** (goal/G41.27; Andy: *"can it assert that no element posts or fetches by itself,
+  and that all wire-stuff goes through spirit?"*): every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon
+  the page makes, watched from before its first script, is made by spirit's own code (`spirit.js`, its families,
+  `spirit/client/`, the page's data set `shell/shared/js/spiritData.js`), told by the file the call was made in. The one
+  exception is `shell/boot.js`, the face's own transport (Andy: *"boot.js MUST be an exception to the rules."*).
+- **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
+  since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
+  that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
+  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watch` of its own making.
+- **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
+  element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
+  is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
+  (`shell-busy`), a button's `disabled`, `aria-busy` or class, and fine print (`job-manifest-note`, `job-start-error`,
+  `job-refusal`, `fine-print`). A press that sends no write is not judged.
+- **Destroy**: an element's destroy leaves its container empty, and **lets go every subscription it made** (rule/8). An
+  app is closed by the face and has none of its own.
 
 **Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we
 defer the red's on them: because it's codeMirror."*): `shell/js/codeMirror`, `shell/js/textViewer` and
@@ -132,3 +163,8 @@ on purpose, to hide the native scrollbars (its own css: *"Things will break if t
 - A destroy that leaves what it drew.
 - A pictograph painted as text of its own, outside the icon element, as drawn or after a press.
 - A glyph among the words of a label or a description counted as an icon.
+- A field nothing holds; a field held only by a rule not loaded on the page.
+- A fetch, XMLHttpRequest, WebSocket, EventSource or sendBeacon of its own.
+- A write sent by a module that listens to nothing.
+- A draw made after a press and before its write is answered; a press that sends no write judged all the same.
+- A subscription still held after destroy.
