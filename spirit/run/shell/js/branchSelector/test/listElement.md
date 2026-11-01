@@ -7,7 +7,8 @@ dropdown, with its filter. Its test is `./listElement.js`.
 Andy, box: *"the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers
 for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\"."*,
 and since: *"apiFamiliySelector.js will use apiVerbSelector as part of itself"*: the family selector carries the verb.
-Since goal/G41.14 it is a view of `data.branches`, kept current by the node's stream, which its row element takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+Since goal/G41.14 it is a view of the node's branches (since goal/G41.28 the auth family's cache manager's,
+`spirit.authData.branches.branch`), kept current by the node's stream, which its row element takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of branches on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 

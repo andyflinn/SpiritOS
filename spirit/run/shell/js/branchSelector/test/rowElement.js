@@ -4,7 +4,9 @@
 // The tests of shell/js/branchSelector/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.14). The
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
 // row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
-// family is the spirit object's, each call recorded.
+// family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
+// clientCacheManager (goal/G41.28), loaded as a page's spirit.cacheManager('auth') loads it, the page's node known as
+// spirit.start makes it known (spirit.node.key, then data.home).
 
 const fs = require('fs');
 const path = require('path');
@@ -49,14 +51,30 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The page's one data set (spirit/spiritData.js): the stream's branch rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  global.window.spirit.node = { key: NODE_KEY };
+  DATA.home(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
+  // The direct writes below are the auth family's own view of the home node, as its manager files them.
+  const V = DATA.at(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.elements;
+  const A = global.window.spirit.authData;
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['shell/js/rowElement.js', 'shell/js/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
+  ok(managers.indexOf('auth') !== -1 && A && A.branches && typeof A.branches.row === 'function', 'it loads the auth family\'s cache manager, which puts spirit.authData on the page', 'managers: ' + short(managers));
+  if (!A || !A.branches || typeof A.branches.row !== 'function') return;
   ok(E.branchElement && typeof E.branchElement.create === 'function', 'it registers spirit.elements.branchElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.branchElement || typeof E.branchElement.create !== 'function') return;
 
@@ -81,15 +99,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (del) { await del.o.run(); await settle(); }
   ok(asked.length === 1 && asked[0].op === 'delete' && asked[0].id === 3, 'its second press asks auth.branch { op: delete, id }', 'asked: ' + short(asked));
 
-  test.subHeading('it repaints from data.branches (goal/G41.14)');
+  test.subHeading('it repaints from the auth family\'s branches (goal/G41.14, G41.28)');
   // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
   const live = E.branchElement.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
   const lh = { family: cell(), verb: cell(), delete: cell() };
   live.mount(lh);
-  DATA.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });
+  V.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });
   await settle();
-  ok(live.row.verb === '' && lh.verb.innerHTML === '(ALL)', 'its row in data.branches changed, the row repaints: the verb now (ALL)', 'row: ' + short(live.row) + ', verb cell ' + short(lh.verb.innerHTML));
-  DATA.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
+  ok(live.row.verb === '' && lh.verb.innerHTML === '(ALL)', 'its row in the branches changed, the row repaints: the verb now (ALL)', 'row: ' + short(live.row) + ', verb cell ' + short(lh.verb.innerHTML));
+  V.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
   await settle();
   ok(live.row.family === 'files', 'another branch\'s row changes nothing here', 'row: ' + short(live.row));
 
@@ -99,16 +117,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
   DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
-  ok(JSON.stringify(DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }), 'a branch row published lands in data.branches by its id, through the row element\'s own translation (its kind\'s index, shell/js/rowElement.js, G30.18)', 'data: ' + short(DATA.branch('branches')));
+  ok(JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }), 'a branch row published lands in the auth family\'s branches by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 'data: ' + short(A.branches.rows()));
   DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
-  const again = DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
+  const again = A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
   ok(again && again.verb === '', 'a row published again replaces the one kept', 'data: ' + short(again));
   DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
-  ok(DATA.get('branches/' + { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('branches')));
-  const before = JSON.stringify(DATA.branch('branches'));
+  ok(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null, 'a row published gone is taken out', 'data: ' + short(A.branches.rows()));
+  const before = JSON.stringify(A.branches.rows());
   DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
   DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
   DATA.take({ type: 'bundles', data: { table: 'branch', row: { label: 'no id' } } });
-  ok(JSON.stringify(DATA.branch('branches')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.branches', 'data: ' + short(DATA.branch('branches')));
+  ok(JSON.stringify(A.branches.rows()) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in the branches', 'data: ' + short(A.branches.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

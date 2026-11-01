@@ -4,7 +4,9 @@
 // The tests of shell/js/files/listElement.js, and of no other module (spec: ./listElement.md; goal/G30.20, goal/G41.16).
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
-// the file viewer are stand-ins; the page's data set is real. The node's fs family is the spirit object's.
+// the file viewer are stand-ins; the page's data set is real, and so is the fs family's clientCacheManager (goal/G41.28),
+// loaded as a page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known
+// (spirit.node.key, then data.home). The node's fs family is the spirit object's.
 
 const fs = require('fs');
 const path = require('path');
@@ -47,19 +49,33 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const D = global.window.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  global.window.spirit.node = { key: NODE_KEY };
+  D.home(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.elements;
+  const F = global.window.spirit.fsData;
 
   test.subHeading('it loads what it uses itself (rule/26), and no data script');
   ok(['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fileViewer.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires its row element, the search element and the file viewer', 'required: ' + short(required));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the row element's.
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
+  ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts spirit.fsData on the page', 'managers: ' + short(managers));
+  if (!F || typeof F.file !== 'function') return;
   ok(E.fileList && typeof E.fileList.create === 'function', 'it registers spirit.elements.fileList.create', 'elements: ' + short(Object.keys(E)));
   if (!E.fileList || typeof E.fileList.create !== 'function') return;
 
-  test.subHeading('a view of data.files, the node\'s tree');
+  test.subHeading('a view of the node\'s file tree');
   const picked = [];
   const host = hostNode();
   const list = E.fileList.create(host, { face: 'pane', accept: '.md', pick: function (row, key) { picked.push(key); } });
@@ -68,7 +84,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML), 'it draws one probabilitySearch into a fill box of its host', 'host: ' + short(host.innerHTML.slice(0, 120)));
   if (!l) return;
   const o = l.o;
-  ok(o.data === 'files' && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]', 'it is a view of data.files, in path order, filled as it is drawn', 'data ' + short(o.data) + ', sorted ' + short(l.sorted) + ', refreshes ' + l.refreshes);
+  ok(typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]', 'it is a view of the fs family\'s file tree (spirit.fsData.branch), in path order, filled as it is drawn', 'data ' + short(o.data) + ' (fsData.branch ' + short(F.branch) + ')' + ', sorted ' + short(l.sorted) + ', refreshes ' + l.refreshes);
   ok(JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["name","size","changed"]', 'its columns are name, size and changed', 'columns: ' + short(o.columns));
   const el = o.element({ kind: 'file' }, 'docs/a.md');
   ok(el && el.kind === 'file' && el.row.path === 'docs/a.md', 'each row is a fileElement of its path', 'element: ' + short(el));
@@ -79,13 +95,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('names from the mirror; fs.search only by contents');
   const none = await o.api.verb('fs.search', o.args('a', { in: 'names' }));
   ok(asked.length === 0 && none.body && none.body.items.length === 0, 'a search of names asks the node nothing: the mirror answers it', 'asked: ' + short(asked));
-  D.set('files/docs/a.md', { kind: 'file', size: 5, modified: '2030-01-01T00:00:00Z' });
+  D.take({ id: 'job-fs', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   const found = await o.api.verb('fs.search', o.args('hello', { in: 'contents' }));
   const items = (found.body && found.body.items) || [];
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }
   ok(asked.length === 1 && asked[0].q === 'hello' && asked[0].contents === 'yes', 'a search by contents asks fs.search { q, contents: yes }', 'asked: ' + short(asked));
   ok(first && first.path === 'docs/a.md' && first.size === 5 && first.line === 3 && items[1] && JSON.parse(items[1].label).kind === 'folder' && items[1].key === 'docs',
-    'each find carries its facts from data.files and its matched line; a folder comes without its trailing slash', 'items: ' + short(items));
+    'each find carries its facts from the file tree and its matched line; a folder comes without its trailing slash', 'items: ' + short(items));
   ok(o.score({ path: 'docs/a.md' }, { in: 'contents' }) === 0.9 && o.score({ path: 'docs/a.md' }, { in: 'names' }) === null, 'by contents a file ranks by the node\'s score; by names the list ranks', 'scores: ' + short([o.score({ path: 'docs/a.md' }, { in: 'contents' }), o.score({ path: 'docs/a.md' }, { in: 'names' })]));
 
   test.subHeading('the tree: folded folders, the app\'s types');

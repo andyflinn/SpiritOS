@@ -77,15 +77,32 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream's rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  global.window.spirit.node = { key: NODE_KEY };
+  DATA.home(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the
+  // bundles are the auth family's (goal/G41.28).
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
+  // The direct writes below are the auth family's own view of the home node, as its manager files them.
+  const V = DATA.at(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.elements;
+  const A = global.window.spirit.authData;
 
   test.subHeading('it loads what it uses itself (rule/26)');
   // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
   ok(['shell/js/rowElement.js', 'shell/js/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
+  ok(managers.indexOf('auth') !== -1 && A && A.bundles && typeof A.bundles.row === 'function', 'it loads the auth family\'s cache manager, which puts spirit.authData on the page', 'managers: ' + short(managers));
+  if (!A || !A.bundles || typeof A.bundles.row !== 'function') return;
   ok(E.bundleElement && typeof E.bundleElement.create === 'function', 'it registers spirit.elements.bundleElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleElement || typeof E.bundleElement.create !== 'function') return;
 
@@ -118,11 +135,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(/Read &lt;files>|Read <files>/.test(labelText()) && !/<files>/.test(String(hosts.label.innerHTML || '')), 'it shows the label, escaped', 'label cell: ' + short(labelText()));
   ok(asked.every(function (a) { return a.op !== 'set'; }), 'and asks the node no set, ever', 'asked: ' + short(asked));
   // rule/19: a ui only draws what the server's stream says; goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING
-  // LISTING to anything that changes their data set". The row repaints from data.bundles.
-  DATA.set('bundles/7', { id: 7, label: 'Mover' });
+  // LISTING to anything that changes their data set". The row repaints from the auth family's bundles.
+  V.set('bundles/7', { id: 7, label: 'Mover' });
   await settle();
-  ok(ed.row.label === 'Mover' && /Mover/.test(labelText()), 'the bundle\'s row in data.bundles changed, the row repaints its label', 'row: ' + short(ed.row) + ', label cell ' + short(labelText()));
-  DATA.set('bundles/8', { id: 8, label: 'Someone else' });
+  ok(ed.row.label === 'Mover' && /Mover/.test(labelText()), 'the bundle\'s row in the bundles changed, the row repaints its label', 'row: ' + short(ed.row) + ', label cell ' + short(labelText()));
+  V.set('bundles/8', { id: 8, label: 'Someone else' });
   await settle();
   ok(ed.row.label === 'Mover', 'another bundle\'s row changes nothing here', 'row: ' + short(ed.row));
 
@@ -143,16 +160,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
   DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
-  ok(JSON.stringify(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in data.bundles by its id, through the row element\'s own translation (its kind\'s index, shell/js/rowElement.js, G30.18)', 'data: ' + short(DATA.branch('bundles')));
+  ok(JSON.stringify(A.bundles.row({ id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in the auth family\'s bundles by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 'data: ' + short(A.bundles.rows()));
   DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
-  const again = DATA.get('bundles/' + { id: 7, label: 'Reader' }.id);
+  const again = A.bundles.row({ id: 7, label: 'Reader' }.id);
   ok(again && again.label === 'Lister', 'a row published again replaces the one kept', 'data: ' + short(again));
   DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
-  ok(DATA.get('bundles/' + { id: 7, label: 'Reader' }.id) === undefined, 'a row published gone is taken out', 'data: ' + short(DATA.branch('bundles')));
-  const before = JSON.stringify(DATA.branch('bundles'));
+  ok(A.bundles.row({ id: 7, label: 'Reader' }.id) === null, 'a row published gone is taken out', 'data: ' + short(A.bundles.rows()));
+  const before = JSON.stringify(A.bundles.rows());
   DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
   DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
   DATA.take({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
-  ok(JSON.stringify(DATA.branch('bundles')) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in data.bundles', 'data: ' + short(DATA.branch('bundles')));
+  ok(JSON.stringify(A.bundles.rows()) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in the bundles', 'data: ' + short(A.bundles.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

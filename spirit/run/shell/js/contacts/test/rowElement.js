@@ -3,7 +3,9 @@
 // spirit/run/shell/js/contacts/test/rowElement.js
 // The tests of shell/js/contacts/rowElement.js, and of no other module: one contact as a row element (spec:
 // ./rowElement.md). The browser file runs in node on a window of its own, over the shared rowElement.js and the
-// faceless layer it reads; the node behind spirit.ready is a recorder.
+// faceless layer it reads, with the contact family's clientCacheManager (goal/G41.28) loaded as a page's
+// spirit.cacheManager('contact') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// data.home); the node behind spirit.ready is a recorder.
 
 const fs = require('fs');
 const path = require('path');
@@ -26,10 +28,24 @@ window.spirit.elements = { contactDetails: { open: function (o) { asked.push({ v
 const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
 load(path.join(JS, '..', '..', 'spirit', 'spiritData.js'));
+// THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+const NODE_KEY = 'nOdE+key/one==';
+window.spirit.node = { key: NODE_KEY };
+window.spirit.data.home(NODE_KEY);
+// spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+const managers = [];
+window.spirit.cacheManager = function (name) {
+  managers.push(String(name));
+  load(path.join(JS, '..', '..', 'spirit', String(name), 'clientCacheManager.js'));
+  return Promise.resolve(true);
+};
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
 const C = window.spirit.elements.contactElement;
 const D = window.spirit.data;
+const CD = window.spirit.contactData;
+// The direct writes below are the contact family's own view of the home node, as its manager files them.
+const V = D.at(null, 'contact');
 const names = function (el) { return el.actions.map(function (a) { return a.name; }).join(','); };
 const cell = function (el, name) { return el.cells().filter(function (c) { return c.name === name; })[0].html; };
 function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { innerHTML: '' }; }); return h; }
@@ -53,6 +69,10 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   if (byPublic.key === 'K9') test.check('a row carrying publicKey instead of key is keyed by it');
   else test.fail('publicKey row keyed ' + byPublic.key);
+
+  if (managers.indexOf('contact') !== -1 && CD && typeof CD.contact === 'function') test.check('the row loads the contact family\'s cache manager, which puts spirit.contactData on the page');
+  else test.fail('managers asked: ' + JSON.stringify(managers));
+  if (!CD || typeof CD.contact !== 'function') { test.reportSuccessFailureCount(); return; }
 
   test.subHeading('the actions ask the node, and paint nothing');
   await held.act('add');
@@ -89,8 +109,8 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (cell(held, 'add').indexOf('data-action="add"') !== -1 && cell(kept, 'add') === '' && cell(C.create({ key: 'R2', relay: true }), 'add') === '') test.check('the Add button only on a row not in the book and not a relay');
   else test.fail('add cells: ' + JSON.stringify([cell(held, 'add'), cell(kept, 'add')]));
 
-  test.subHeading('data.contacts repaints the rows that show that key, only the fields that changed');
-  D.set('contacts/K10', { present: true });
+  test.subHeading('the contacts repaint the rows that show that key, only the fields that changed');
+  V.set('contacts/K10', { present: true });
   const late = C.create({ key: 'K10', keep: true, present: false });
   if (cell(late, 'presence').indexOf('🟢') !== -1) test.check('a row made after presence is known starts with the known dot');
   else test.fail('a late row\'s dot: ' + cell(late, 'presence'));
@@ -101,31 +121,31 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const hb = hostsFor(b); b.mount(hb);
   const ho = hostsFor(other); other.mount(ho);
   ha.status.innerHTML = 'untouched'; hb.label.innerHTML = 'stale'; ho.presence.innerHTML = 'untouched';
-  D.merge('contacts/K11', { present: true, name: 'Carl' });
+  V.merge('contacts/K11', { present: true, name: 'Carl' });
   if (ha.presence.innerHTML.indexOf('🟢') !== -1 && ha.label.innerHTML === 'Carl' && hb.label.innerHTML === 'Carl') test.check('a write to a key repaints every row of that key');
   else test.fail('after the write: ' + JSON.stringify({ a: ha.label.innerHTML, b: hb.label.innerHTML }));
   if (ha.status.innerHTML === 'untouched' && ho.presence.innerHTML === 'untouched') test.check('a field whose value did not change, and another key\'s row, are not repainted');
   else test.fail('repainted beyond the change: ' + JSON.stringify({ status: ha.status.innerHTML, other: ho.presence.innerHTML }));
-  D.merge('contacts/K11', { blocked: true });
+  V.merge('contacts/K11', { blocked: true });
   if (ha.status.innerHTML === '❌') test.check('a flag the status is drawn from repaints the status');
   else test.fail('status after block: ' + ha.status.innerHTML);
   // A row added stays on the page and becomes a row of the book: its Add goes, and it offers what a kept row offers.
   const found = C.create({ key: 'K14', publicLabel: 'finn' });
   const hf = hostsFor(found); found.mount(hf);
   const beforeAdd = names(found) + '|' + (hf.add.innerHTML.indexOf('data-action="add"') !== -1);
-  D.merge('contacts/K14', { keep: true });
+  V.merge('contacts/K14', { keep: true });
   if (beforeAdd === 'add|true' && hf.add.innerHTML === '' && names(found) === 'open,block,unblock,remove') test.check('a row the owner adds loses its Add, and offers open, block, unblock, remove');
   else test.fail('a row after its add: ' + JSON.stringify({ before: beforeAdd, add: hf.add.innerHTML, actions: names(found) }));
   await found.act('block');
   const blockAfterAdd = asked.pop();
   if (blockAfterAdd && blockAfterAdd.verb === 'contact.block' && blockAfterAdd.body.publicKey === 'K14') test.check('and its new actions ask the node');
   else test.fail('block after the add asked: ' + JSON.stringify(blockAfterAdd));
-  D.merge('contacts/K14', { keep: false });
+  V.merge('contacts/K14', { keep: false });
   if (names(found) === 'add' && hf.add.innerHTML.indexOf('data-action="add"') !== -1) test.check('a row that leaves the book offers Add again');
   else test.fail('a row out of the book: ' + JSON.stringify({ add: hf.add.innerHTML, actions: names(found) }));
   b.destroy();
   hb.label.innerHTML = 'after destroy';
-  D.merge('contacts/K11', { name: 'Carla' });
+  V.merge('contacts/K11', { name: 'Carla' });
   if (hb.label.innerHTML === 'after destroy' && ha.label.innerHTML === 'Carla') test.check('a destroyed row leaves the dispatch; the others stay');
   else test.fail('after destroy: ' + JSON.stringify({ a: ha.label.innerHTML, b: hb.label.innerHTML }));
 
@@ -159,13 +179,13 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   test.subHeading('the type\'s own element takes the contacts\' stream: no data script');
   if (!required.some(function (p) { return /data\.js$/.test(p); })) test.check('the contact row element requires no data script');
   else test.fail('the contact row element still requires ' + required.filter(function (p) { return /data\.js$/.test(p); }).join(', '));
-  const row = function (k) { return D.get('contacts/' + k); };
+  const row = function (k) { return CD.contact(k); };
   test.subHeading('relay-presence sets present, by key');
   D.take({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
   if (row('KA') && row('KA').present === true && row('KB') && row('KB').present === false) test.check('a present key reads present, an absent one absent');
   else test.fail('presence: ' + JSON.stringify({ a: row('KA'), b: row('KB') }));
   let writes = 0;
-  const stop = D.watch('contacts/KA', function () { writes += 1; });
+  const stop = CD.watch(function (key) { if (key === 'KA') writes += 1; });
   D.take({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
   if (writes === 0) test.check('the same table again writes nothing');
   else test.fail('an unchanged presence wrote ' + writes + ' times');
@@ -174,19 +194,20 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (row('KA') && row('KA').present === undefined && (row('KB') || {}).present === false) test.check('a key the table drops goes back to not known; the others stand');
   else test.fail('a dropped key: ' + JSON.stringify(row('KA')));
   D.take({ type: 'relay-presence', data: { presence: { KC: 'not a proof', KD: null } } });
-  if (row('KC') === undefined && row('KD') === undefined) test.check('an entry that is no proof writes nothing');
+  if (row('KC') === null && row('KD') === null) test.check('an entry that is no proof writes nothing');
   else test.fail('a bad entry wrote: ' + JSON.stringify({ c: row('KC'), d: row('KD') }));
 
   test.subHeading('peer-search seats the row the network found');
   D.take({ type: 'peer-search', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', held: true }) } } });
   if (row('KE') && row('KE').name === 'bert' && row('KE').held === true) test.check('the item\'s label is merged into its row, by key');
   else test.fail('the network row: ' + JSON.stringify(row('KE')));
-  const seated = JSON.stringify(D.branch('contacts'));
+  const seated = JSON.stringify(D.branch(CD.branch));
   D.take({ type: 'peer-search', data: { q: 'be' } });
-  if (JSON.stringify(D.branch('contacts')) === seated) test.check('a peer-search update with no item seats nothing');
-  else test.fail('rows after an empty update: ' + Object.keys(D.branch('contacts')).join(','));
+  // The branch read is the one the rows are in (KE just seated there), so an equal answer judges something.
+  if ('KE' in D.branch(CD.branch) && JSON.stringify(D.branch(CD.branch)) === seated) test.check('a peer-search update with no item seats nothing');
+  else test.fail('rows after an empty update: ' + Object.keys(D.branch(CD.branch)).join(','));
   D.take({ type: 'peer-search', data: { item: { key: 'KF', label: 'not json' } } });
-  if (row('KF') === undefined) test.check('a label that is not JSON seats nothing');
+  if (row('KF') === null) test.check('a label that is not JSON seats nothing');
   else test.fail('a bad label seated ' + JSON.stringify(row('KF')));
 
   test.subHeading('a rename sets the name, and keeps the rest');
@@ -198,9 +219,9 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('a rename of a new key: ' + JSON.stringify(row('KG')));
 
   test.subHeading('other jobs are not contacts\' business');
-  const beforeC = JSON.stringify(D.branch('contacts'));
+  const beforeC = JSON.stringify(D.branch(CD.branch));
   D.take({ type: 'fs-watcher', data: { presence: { KZ: { present: true } }, item: { key: 'KZ', label: '{"name":"z"}' } } });
-  if (JSON.stringify(D.branch('contacts')) === beforeC) test.check('a job of another type changes no contact');
+  if ('KE' in D.branch(CD.branch) && JSON.stringify(D.branch(CD.branch)) === beforeC) test.check('a job of another type changes no contact');
   else test.fail('another job changed contacts');
 
 

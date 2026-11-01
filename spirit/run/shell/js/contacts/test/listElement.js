@@ -4,7 +4,9 @@
 // The tests of shell/js/contacts/listElement.js, and of no other module: the contacts list's filters, and what its
 // create hands the search element and does with the stream, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
-// list and not the search under it; the rows are the real contactElement (contacts/rowElement.js).
+// list and not the search under it; the rows are the real contactElement (contacts/rowElement.js), over the real data set
+// and the contact family's clientCacheManager (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
+// the page's node known as spirit.start makes it known (spirit.node.key, then data.home).
 
 const fs = require('fs');
 const path = require('path');
@@ -36,6 +38,17 @@ window.spirit.require = function (p) { required.push(p); return Promise.resolve(
 let onUpdate = null; let unsubscribed = 0;
 window.spirit.events = { subscribe: function (h) { onUpdate = h.onUpdate; return function () { unsubscribed += 1; }; } };
 load(path.join(JS, '..', '..', 'spirit', 'spiritData.js'));
+// THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+const NODE_KEY = 'nOdE+key/one==';
+window.spirit.node = { key: NODE_KEY };
+window.spirit.data.home(NODE_KEY);
+// spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+const managers = [];
+window.spirit.cacheManager = function (name) {
+  managers.push(String(name));
+  load(path.join(JS, '..', '..', 'spirit', String(name), 'clientCacheManager.js'));
+  return Promise.resolve(true);
+};
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
 load(path.join(JS, 'contacts', 'listElement.js'));
@@ -82,9 +95,10 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
     return Promise.resolve(key === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } }); } };
   const pane = L.create(host, { api: api, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   const o = made.opts;
-  if (o.data === 'contacts' && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
-    test.check('data.contacts, the list\'s filters, columns presence, status, label, add');
-  else test.fail('the opts: ' + JSON.stringify({ data: o.data, columns: o.columns }));
+  const CD = window.spirit.contactData;
+  if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
+    test.check('a view of the contact family\'s contacts (spirit.contactData.branch), the list\'s filters, columns presence, status, label, add');
+  else test.fail('the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns }));
   if (made.refreshes === 1) test.check('it fills as soon as it is drawn: one refresh at create');
   else test.fail('refreshes at create: ' + made.refreshes);
   const got = await o.api.verb('search', { q: '  an ' });

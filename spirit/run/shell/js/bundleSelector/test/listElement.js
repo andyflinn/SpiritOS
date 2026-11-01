@@ -35,13 +35,27 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }; },
-    'shell/js/bundleSelector/rowElement.js': function (E) { E.bundleElement = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
+    // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
+    'shell/js/bundleSelector/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.bundleElement = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  global.window.spirit.node = { key: NODE_KEY };
+  DATA.home(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
+  // The direct writes below are the auth family's own view of the home node, as its manager files them.
+  const V = DATA.at(null, 'auth');
   global.document = { createElement: function () { return {}; } };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -68,8 +82,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(picked.length === 1 && picked[0] === '7', 'a pick reaches opts.pick', 'picked: ' + short(picked));
   ok(l.refreshes === 1, 'it fills as soon as it is drawn: one refresh at create', 'refreshes: ' + l.refreshes);
   // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
-  // view of data.bundles, so a bundle added anywhere on the page shows in every bundle list (probabilitySearch's data).
-  ok(o.data === 'bundles', 'it is a view of data.bundles, the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data));
+  // view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
+  // on the page shows in every bundle list (probabilitySearch's data).
+  const B = global.window.spirit.authData && global.window.spirit.authData.bundles;
+  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s bundles (spirit.authData.bundles.branch), the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data) + ', authData.bundles.branch ' + short(B && B.branch));
 
   const got = await o.api.verb(o.server + '.' + o.verb, o.args('  rea ', {}));
   ok(o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea',
@@ -118,7 +134,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (fo && fo.api && typeof fo.args === 'function') await fo.api.verb(fo.server + '.' + fo.verb, fo.args(' too ', {}));
   const fa = asked[nA];
   ok(!!fa && asked.length === nA + 1 && fa.op === 'search' && fa.text === 'too' && fa.owner === 'agent', 'its search asks auth.bundle { op: search, text, owner: family }, the text trimmed', 'asked: ' + short(asked.slice(nA)));
-  // WHAT IT OFFERS: the list is a view of data.bundles, which holds every bundle the page has, so what it shows is that
+  // WHAT IT OFFERS: the list is a view of the node's bundles, which holds every bundle the page has, so what it shows is that
   // branch filtered and ranked by the real list's own heart, probabilitySearch.order, the state it is made with.
   const LIST = (function () {
     const win = { window: null, spirit: { elements: {} }, console: console };
@@ -129,9 +145,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     });
     return win.spirit.elements.probabilitySearch;
   }());
-  DATA.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
-  DATA.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });
-  DATA.set('bundles/23', { id: 23, label: 'Desk hand', owner: 'desk' });
+  V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
+  V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });
+  V.set('bundles/23', { id: 23, label: 'Desk hand', owner: 'desk' });
   const offered = function (opts) {
     if (!opts || !LIST || typeof LIST.order !== 'function') return null;
     const rows = DATA.rows(opts.data) || [];

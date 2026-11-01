@@ -13,12 +13,15 @@ and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*
   Its row is the branch as `auth.branch` answers it, `{ id, bundle, family, verb }`.
 - Its fields are `family`, `verb` and `delete`, in that order. Family and verb are drawn escaped; an empty verb shows as
   `(ALL)`. Delete is a button naming its action.
-- It repaints from the data set (goal/G41.14): when `data.branches/<its id>` changes, as the node's stream sets it
+- It repaints from the data set (goal/G41.14): when its row in the auth family's branches (`spirit.authData.branches.row(<its id>)`; goal/G41.28,
+  `<node>/auth/branches/<id>` in `spirit.data`) changes, as the node's stream sets it
   (as it takes it from the node's stream), its fields repaint; another branch's row changes nothing.
 - Mounted, its Delete is an `armingButton`: the first press asks nothing, the second asks
   `auth.branch { op: 'delete', id }`.
 
-- It takes the node's branch rows from the stream itself, its kind's index (`shell/js/rowElement.js`, G30.18: the data type's code is its row element), into `data.branches`: the node publishes each changed row of its two
+- The node's branch rows are taken from the stream by the auth family's cache manager
+  (`spirit/run/spirit/auth/clientCacheManager.js`, goal/G41.28), which the row element loads itself
+  (`spirit.cacheManager('auth')`; G41.14 until then, its own translation), into `spirit.authData.branches`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

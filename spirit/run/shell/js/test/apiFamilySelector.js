@@ -7,7 +7,9 @@
 // the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
 // window (rule/26): its two halves, appServerSelector.js and apiVerbSelector.js, are put there real once required;
 // probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
-// object's answer.
+// object's answer, kept by the node family's clientCacheManager (goal/G41.28), loaded as a page's
+// spirit.cacheManager('node') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// data.home).
 
 const fs = require('fs');
 const path = require('path');
@@ -60,6 +62,17 @@ function world() {
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   pageData = win.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  win.spirit.node = { key: 'nOdE+key/one==' };
+  pageData.home('nOdE+key/one==');
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the api
+  // tree is the node family's (spirit.nodeData).
+  w.managers = [];
+  win.spirit.cacheManager = function (name) {
+    w.managers.push(String(name));
+    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.E = win.spirit.elements;

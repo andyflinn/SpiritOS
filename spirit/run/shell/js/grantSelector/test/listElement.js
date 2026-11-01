@@ -54,7 +54,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('a pane of the table it is handed, a view of that table\'s branch');
   const searched = [];
-  const AGENT = { branch: 'agent.grant', key: 'job_id', label: 'job',
+  // Its branch a whole spirit.data path, node/family/branch (goal/G41.28), the node's key in base64url.
+  const AGENT = { branch: 'nOdE-key_one/agent/grant', key: 'job_id', label: 'job',
     search: function (text) { searched.push(text); return Promise.resolve({ items: [{ key: 'J1\nfs.search', label: JSON.stringify({ job_id: 'J1', path: 'fs.search', job: 'Night' }) }], more: false }); },
     revoke: function () { return Promise.resolve({}); }, stream: function () { return null; } };
   const host = {};
@@ -69,7 +70,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!l && l.host === host && l.refreshes === 1, 'it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 'lists: ' + lists.length + ', refreshes ' + (l && l.refreshes));
   if (!l) return;
   const o = l.o;
-  ok(o.data === 'agent.grant', 'it is a view of the branch its table names: here data.agent.grant', 'data: ' + short(o.data));
+  ok(o.data === 'nOdE-key_one/agent/grant', 'it is a view of the branch its table names: here nOdE-key_one/agent/grant', 'data: ' + short(o.data));
   const got = await o.api.verb(String(o.server || '') + '.' + String(o.verb || ''), o.args(' ni ', {}));
   ok(searched.length === 1 && searched[0] === 'ni' && got && got.status === 200 && got.body && got.body.items.length === 1, 'its search is the table\'s search(text), the text trimmed, answered as a reply', 'searched ' + short(searched) + ', got ' + short(got));
   const cols = (o.columns || []).map(function (c) { return c.field; });
@@ -89,18 +90,22 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   {
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
     const DATA = global.window.spirit.data;
+    // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+    global.window.spirit.node = { key: 'nOdE+key/one==' };
+    DATA.home('nOdE+key/one==');
     global.window.spirit.elements.armingButton = { attach: function (b) { return b; } };
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' });
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'grantSelector', 'rowElement.js'), 'utf8'), { filename: 'grantSelector/rowElement.js' });
     await settle();
-    const FRESH = { branch: 'fresh.grant', key: 'job_id', label: 'job', search: function () { return Promise.resolve({ items: [], more: false }); },
+    // Its branch a whole spirit.data path of the home node (goal/G41.28).
+    const FRESH = { branch: DATA.at(null, 'fresh').path('grant'), key: 'job_id', label: 'job', search: function () { return Promise.resolve({ items: [], more: false }); },
       revoke: function () { return Promise.resolve({}); },
       stream: function (job) { const a = job && job.module === 'process/js/fresh' && job.app && job.app.fresh; return a ? { row: a.row, gone: a.removed === true } : null; } };
     E.grantList.create({}, { grants: FRESH });
     await settle();
     DATA.take({ id: 'job-fresh', module: 'process/js/fresh', data: {}, app: { fresh: { row: { job_id: 'J7', path: 'jobs.list', job: 'First' } } } });
     await settle();
-    ok(DATA.get('fresh.grant/J7\njobs.list') && DATA.get('fresh.grant/J7\njobs.list').job === 'First', 'a list made with no row drawn hears its table\'s first grant from the stream, into its branch', 'fresh.grant: ' + short(DATA.branch('fresh.grant')));
+    ok(DATA.get(FRESH.branch + '/J7\njobs.list') && DATA.get(FRESH.branch + '/J7\njobs.list').job === 'First', 'a list made with no row drawn hears its table\'s first grant from the stream, into its branch', FRESH.branch + ': ' + short(DATA.branch(FRESH.branch)));
   }
 
   test.subHeading('refresh and destroy are the search element\'s');

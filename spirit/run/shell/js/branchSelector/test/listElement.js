@@ -47,7 +47,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }; },
-    'shell/js/branchSelector/rowElement.js': function (E) { E.branchElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
+    // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
+    'shell/js/branchSelector/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.branchElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'shell/js/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
@@ -58,6 +59,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
   const DATA = global.window.spirit.data;
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  global.window.spirit.node = { key: NODE_KEY };
+  DATA.home(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -78,8 +90,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!l) return;
   const o = l.o;
   ok(l.refreshes >= 1, 'it fills as soon as it is drawn', 'refreshes: ' + l.refreshes);
-  // goal/G41.14: a view of data.branches, kept current by the node's stream, so every branch list on a page agrees.
-  ok(o.data === 'branches', 'it is a view of data.branches, the spirit object\'s cache', 'data: ' + short(o.data));
+  // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
+  // goal/G41.28: the branch the auth family's cache manager keeps.
+  const B = global.window.spirit.authData && global.window.spirit.authData.branches;
+  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s branches (spirit.authData.branches.branch), the spirit object\'s cache', 'data: ' + short(o.data) + ', authData.branches.branch ' + short(B && B.branch));
 
   const got = await o.api.verb(o.server + '.' + o.verb, o.args(' cha ', {}));
   ok(o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7,

@@ -1,7 +1,8 @@
 # shell/js/contacts/listElement.js
 
 The contacts list, a drop-in shell element: a pane in Contacts and Join, a dropdown in grants and introSpector. It is
-a view of `data.contacts` drawn by `probabilitySearch`, each row a `contactElement` (`contacts/rowElement.js`).
+a view of the node's contacts, the branch the contact family's cache manager keeps (`spirit.contactData.branch`,
+goal/G41.28), drawn by `probabilitySearch`, each row a `contactElement` (`contacts/rowElement.js`).
 
 ## API
 
@@ -16,7 +17,7 @@ a view of `data.contacts` drawn by `probabilitySearch`, each row a `contactEleme
 - **network** (a toggle, last): a held row with no other flag (not kept, mine, blocked or a relay) shows only when on;
   every other row always.
 - **named** (never a button): a row passes only with a name or as a relay; a bare presence is no row.
-- **create** hands `probabilitySearch` `data: 'contacts'`, these filters, columns presence, status, label, add, and
+- **create** hands `probabilitySearch` `data: spirit.contactData.branch`, these filters, columns presence, status, label, add, and
   refreshes once at once. Its search asks `contact.search { q }` with the text trimmed and answers `{ status: 200,
   body: { ok, items, more } }`, an empty answer an empty list. Rows are `contactElement`s by key; a row matches on name
   and public label.

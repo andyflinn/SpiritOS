@@ -11,10 +11,14 @@ grantsPanel element"*: the row knows no table.
 
 `grantElement.create(row, { grants, serves, api })`, `grants` the caller's configuration of one grants table:
 
-- `branch`: the data branch its grants are kept in (`grants`, `agent.grant`);
+- `branch`: the data branch its grants are kept in, a whole `spirit.data` path, node/family/branch (goal/G41.28): the
+  node's grants are the auth family's cache manager's (`spirit.authData.grants.branch`, as `shell/grants/grants.js`
+  configures them), a table handing its own stream names one of its own;
 - `key`, `label`: the fields of a grant row holding its ID and whose grant it is (`key`/`label`, `job_id`/`job`);
 - `revoke(id, path)`: how a grant is revoked;
-- `stream(job)`: which stream rows are its grants: `{ row, gone }` for one, nothing for any other.
+- `stream(job)`: which stream rows are its grants: `{ row, gone }` for one, nothing for any other; left out when a
+  family's cache manager keeps the table's rows (the node's grants, goal/G41.28). Such a table is configured all the
+  same: its rows are keyed, drawn and revoked as any other's.
 
 ## Requirements
 
@@ -25,7 +29,8 @@ grantsPanel element"*: the row knows no table.
   path are drawn escaped.
 - Mounted, its Revoke is an `armingButton`: the first press asks nothing, the second revokes through the table,
   `revoke(id, path)`.
-- It takes each table's grant rows from the stream itself, its kind's index (`shell/js/rowElement.js`, G30.18): a row
+- It takes each table's grant rows from the stream itself, its kind's index (`shell/js/rowElement.js`, G30.18), or its
+  family's cache manager does (the node's grants, into `spirit.authData.grants`): a row
   its table's `stream(job)` calls a grant lands in that table's branch, `<branch>/<id>\n<path>`; gone takes it out. One
   table's grants never land in another's branch. A row no table calls a grant, or a grant with no id or path, writes
   nothing.
