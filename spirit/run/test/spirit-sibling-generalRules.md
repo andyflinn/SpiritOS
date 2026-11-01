@@ -174,8 +174,9 @@ box is its own check, named by the element's path and the box's id chain."*
   - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
     subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
     `spirit.data` never held;
-  - its watching redraws it: a marked row written into each `spirit.data` path it watches (a type gets a row of its
-    own, a key path is set and put back) must change its box within a second. A watch that redraws nothing is not
+  - its watching redraws it: a marked row written into each `spirit.data` path it watches must change its box within a
+    second. A path is by server node first (goal/G41.28), `<node>/<family>/<branch>[/<row>]`, a watch of the home node
+    holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back. A watch that redraws nothing is not
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
     and is not judged;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a

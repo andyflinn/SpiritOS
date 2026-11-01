@@ -146,7 +146,9 @@ const WATCH = String.raw`(function () {
     var cur = els.probabilitySearch;
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
-  // box changed for it within a second. A watch path is a type ('contacts') or a type and a key ('contacts/K').
+  // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
+  // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
+  // own node (data.home()) once it knows it.
   W.probe = function () {
     var D = window.spirit && window.spirit.data;
     var box = window.spiritMount && window.spiritMount.box;
@@ -157,8 +159,11 @@ const WATCH = String.raw`(function () {
     if (!shown) return Promise.resolve(paths.slice(0, 6).map(function (p) { return { path: p, hidden: true }; }));
     return paths.slice(0, 6).reduce(function (chain, p, i) {
       return chain.then(function (out) {
-        var whole = p.indexOf('/') !== -1;
-        var at = whole ? p : p + '/zz-probe-' + i;
+        var real = p.charAt(0) === '~' && typeof D.home === 'function' ? D.home() + p.slice(1) : p;
+        var parts = real.split('/');
+        // A row's path names its row; a branch's gets a marked row of its own; a family's whole watch, a branch of its own.
+        var whole = parts.length >= 4 && parts[3] !== '';
+        var at = whole ? real : parts.length >= 3 && parts[2] !== '' ? parts.slice(0, 3).join('/') + '/zz-probe-' + i : parts.slice(0, 2).join('/') + '/zz-probe/zz-probe-' + i;
         var before = whole && typeof D.get === 'function' ? D.get(at) : undefined;
         var mark = 'zzprobe' + i;
         var changed = 0;
