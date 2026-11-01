@@ -45,16 +45,21 @@
       },
     });
   });
-  // THE KIND'S INDEX: one watch on data.bundles for every bundle row on the page, each change to the rows of that key.
+  // THE KIND'S INDEX: one watch on data.bundles for every bundle row on the page, each change to the rows of that key;
+  // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
   function dispatch(idx) {
+    var off = null;
+    var gone = false;
     whenData(function (D) {
-      D.watch('bundles', function (path, v) {
+      if (gone) return;
+      off = D.watch('bundles', function (path, v) {
         var key = String(path).slice('bundles/'.length);
         if (!key || !v) return;
         idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), owner: String(v.owner || 'node') }); });
       });
     });
+    return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
     bundles = bundles || E.rowElement.index(dispatch);

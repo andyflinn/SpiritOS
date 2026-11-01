@@ -101,6 +101,7 @@
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
       stop = window.spirit.events.subscribe({ onUpdate: take });
     }
+    box._spFaceStop = function () { if (typeof stop === 'function') stop(); stop = null; };
 
     var busy = false;
     function save() {
@@ -135,5 +136,11 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.faceForm = { mount: mount };
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19; goal/G41.27, the general UI test): create(container, options) mounts the form
+  // and answers its destroy, which lets the stream go and leaves the container empty.
+  function create(container, options) {
+    mount(container, options);
+    return { destroy: function () { if (container && typeof container._spFaceStop === 'function') container._spFaceStop(); if (container) container.innerHTML = ''; } };
+  }
+  window.spirit.elements.faceForm = { create: create, mount: mount };
 }());

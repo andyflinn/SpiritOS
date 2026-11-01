@@ -9,6 +9,9 @@
 //   spirit.elements.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048)
 (function (root) {
   var E = (root.spirit = root.spirit || {}).elements = root.spirit.elements || {};
+  // THE RULES IT HOLDS TO, IT LOADS ITSELF (rule/26; goal/G41.27, found by the general UI test: on a bare page, without
+  // the boot's list, it held nothing). Asked as this file runs, so whoever requires it is answered once they are in.
+  if (root.spirit && typeof root.spirit.require === 'function') root.spirit.require('spirit/fieldRules.js');
   var LIMIT = { name: 'MAX_BYTES', description: 'DESCRIPTION_MAX_BYTES', paragraph: 'PARAGRAPH_MAX_BYTES' };
 
   function rules() { return (root.spirit && root.spirit.fieldRules) || null; }

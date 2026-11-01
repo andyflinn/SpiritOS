@@ -41,16 +41,21 @@
       },
     });
   });
-  // THE KIND'S INDEX: one watch on data.branches for every branch row on the page, each change to the rows of that key.
+  // THE KIND'S INDEX: one watch on data.branches for every branch row on the page, each change to the rows of that key;
+  // its release answered to the index, which lets it go with the kind's last row.
   var branches = null;
   function dispatch(idx) {
+    var off = null;
+    var gone = false;
     whenData(function (D) {
-      D.watch('branches', function (path, v) {
+      if (gone) return;
+      off = D.watch('branches', function (path, v) {
         var key = String(path).slice('branches/'.length);
         if (!key || !v) return;
         idx.forKey(key).forEach(function (el) { el.apply({ family: String(v.family || ''), verb: String(v.verb || '') }); });
       });
     });
+    return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
     branches = branches || E.rowElement.index(dispatch);

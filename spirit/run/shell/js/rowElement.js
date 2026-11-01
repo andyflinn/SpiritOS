@@ -26,7 +26,9 @@
 // rowElement.index(subscribe)
 //   The stream dispatch of one kind (the box: it lives per kind, in the element's own file). subscribe(index) is called
 //   once, on the first add: one stream subscription for every row of that kind, however many. forKey(key) gives the
-//   elements registered for a subject, so an event costs one lookup.
+//   elements registered for a subject, so an event costs one lookup. subscribe may answer its release: the index calls it
+//   when its last row leaves, and subscribes again on the next add (goal/G41.27, rule/8: an element's subscriptions go
+//   with it, the general UI test finding a kind's watch still held after its last row was destroyed).
 (function () {
   function create(parts) {
     var p = parts || {};
@@ -92,10 +94,11 @@
   function index(subscribe) {
     var byKey = Object.create(null);
     var subscribed = false;
+    var release = null;
     var idx = {
       add: function (key, el) {
         (byKey[key] = byKey[key] || []).push(el);
-        if (!subscribed && typeof subscribe === 'function') { subscribed = true; subscribe(idx); }
+        if (!subscribed && typeof subscribe === 'function') { subscribed = true; release = subscribe(idx); }
       },
       remove: function (key, el) {
         var list = byKey[key];
@@ -103,6 +106,12 @@
         var i = list.indexOf(el);
         if (i !== -1) list.splice(i, 1);
         if (!list.length) delete byKey[key];
+        // The last row gone, its kind's subscription goes with it.
+        if (subscribed && !Object.keys(byKey).length) {
+          subscribed = false;
+          if (typeof release === 'function') release();
+          release = null;
+        }
       },
       forKey: function (key) { return (byKey[key] || []).slice(); },
       keys: function () { return Object.keys(byKey); },

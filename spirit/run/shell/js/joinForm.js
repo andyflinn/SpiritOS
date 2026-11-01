@@ -133,6 +133,7 @@
     if (window.spirit && window.spirit.events && typeof window.spirit.events.subscribe === 'function') {
       stop = window.spirit.events.subscribe({ onUpdate: take });
     }
+    box._spJoinStop = function () { if (typeof stop === 'function') stop(); stop = null; };
     // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.
     box.addEventListener('input', function (e) {
       var f = e.target;
@@ -168,5 +169,11 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.joinForm = { words: words, mount: mount, send: send };
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19; goal/G41.27, the general UI test): create(container, options) mounts the form
+  // and answers its destroy, which lets the stream go and leaves the container empty.
+  function create(container, options) {
+    mount(container, options);
+    return { destroy: function () { if (container && typeof container._spJoinStop === 'function') container._spJoinStop(); if (container) container.innerHTML = ''; } };
+  }
+  window.spirit.elements.joinForm = { words: words, create: create, mount: mount, send: send };
 }());

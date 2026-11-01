@@ -21,7 +21,6 @@
   // all shell elements and apps."): an icon that stands alone, loaded here too.
   var iconReady = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/icon.js') : null).then(null, function () { /* the glyph stays as text */ });
   var contacts = null;
-  var subscribed = false;
 
   // WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; G30.18; Andy: "get rid of thos FUCKING
   // data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"): the relay-presence job sets each key's present
@@ -92,10 +91,10 @@
   // A RELAY'S ROW IS KEYED BY ITS OWN ID (goal/G40.11: a row of the one table), and the node marks a relay's own key
   // present while it holds the stream to it (goal/G40.5): its dot is its own key's, like anybody's.
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
+  // Its release answered to the index, which lets it go with the kind's last row (rowElement.index).
   function dispatch(idx) {
-    if (subscribed || !window.spirit.data) return;
-    subscribed = true;
-    window.spirit.data.watch('contacts', function (path, v) {
+    if (!window.spirit.data) return null;
+    return window.spirit.data.watch('contacts', function (path, v) {
       var key = String(path).slice('contacts/'.length);
       if (!key || !v) return;
       var changes = {};

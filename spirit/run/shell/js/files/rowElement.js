@@ -72,12 +72,11 @@
   }
 
   function known(p) { var D = window.spirit.data; return (D && D.get('files/' + p)) || null; }
-  var subscribed = false;
-  // A write to data.files, by path, to the rows that show that path.
+  // A write to data.files, by path, to the rows that show that path; its release answered to the index, which lets it go
+  // with the kind's last row (rowElement.index).
   function dispatch(idx) {
-    if (subscribed || !window.spirit.data) return;
-    subscribed = true;
-    window.spirit.data.watch('files', function (path, v) {
+    if (!window.spirit.data) return null;
+    return window.spirit.data.watch('files', function (path, v) {
       var p = String(path).slice('files/'.length);
       if (!p) return;
       idx.forKey(p).forEach(function (el) {
